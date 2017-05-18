@@ -73,7 +73,7 @@ public class MinerServerImpl implements MinerServer {
 
     private static final Logger logger = LoggerFactory.getLogger("minerserver");
 
-    private static final int CACHE_SIZE = 10;
+    private static final int CACHE_SIZE = 20;
 
     @GuardedBy("LOCK")
     private LinkedHashMap<Sha3Hash, Block> blocksWaitingforPoW;
@@ -174,7 +174,6 @@ public class MinerServerImpl implements MinerServer {
         if (!isValid(newBlock)) {
             logger.error("Invalid block supplied by miner " + " : " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber() + ". Hash: " + newBlock.getShortHash());
         } else {
-            blocksWaitingforPoW.remove(key);
             ImportResult importResult = ethereum.addNewMinedBlock(newBlock);
             logger.info("Mined block import result is " + importResult + " : " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber() + ". Hash: " + newBlock.getShortHash());
         }
