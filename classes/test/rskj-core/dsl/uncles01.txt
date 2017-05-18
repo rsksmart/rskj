@@ -1,0 +1,24 @@
+
+# DSL test file
+
+# Create one block and two uncles
+block_chain g00 b01
+block_chain g00 u01
+block_chain g00 u02
+
+# Create second block with uncles
+
+block_build b02
+    parent b01
+    uncles u01 u02
+    build
+
+# Add the two blocks
+block_connect b01 u01 u02 b02
+
+# Assert best block
+assert_best b02
+
+# Assert latest connect result
+assert_connect best
+

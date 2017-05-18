@@ -1,0 +1,33 @@
+wrapper.gradleVersion = '3.5.0'
+
+buildscript {
+    repositories { jcenter() }
+    dependencies { classpath 'com.netflix.nebula:gradle-lint-plugin:latest.release' }
+}
+
+allprojects {
+    if (JavaVersion.current().isJava8Compatible()) {
+        // Disable lint of javadoc until someone fixes all the html
+        tasks.withType(Javadoc) {
+          options.addStringOption('Xdoclint:none', '-quiet')
+      }
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    def config = new ConfigSlurper().parse(new File("$projectDir/src/main/resources/version.properties").toURI().toURL())
+
+    group = 'co.rsk'
+    version = config.modifier?.trim() ? config.versionNumber + "-" + config.modifier : config.versionNumber
+
+    compileJava.options.encoding = 'UTF-8'
+    compileJava.options.compilerArgs << '-XDignore.symbol.file'
+
+    compileTestJava.options.encoding = 'UTF-8'
+
+    repositories {
+        jcenter()
+    }
+}

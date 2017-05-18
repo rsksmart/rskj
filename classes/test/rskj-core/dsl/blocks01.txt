@@ -1,0 +1,16 @@
+
+# DSL test file
+
+# Create two blocks, starting from genesis block
+block_chain g00 b01 b02
+
+# Add the two blocks, in order, to current block chain
+block_connect b01 b02
+
+# Assert best block
+assert_best b02
+
+# Assert latest connect result
+assert_connect best
+
+

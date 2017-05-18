@@ -1,0 +1,31 @@
+account_new acc1 10000000
+
+transaction_build tx01
+    sender acc1
+    receiverAddress 0000000000000000000000000000000001000006
+    value 5000
+    data fafafafa
+    gas 1200000
+    build
+
+block_build b01
+    parent g00
+    transactions tx01
+    build
+
+block_connect b01
+
+# Assert best block
+assert_best b01
+
+# NOTE: The bridge contract returns null, to be reviewed, it should return something like
+# an exception
+
+# TOFIX
+# assert_balance 0000000000000000000000000000000001000006 21000000000000000000000000
+
+# TOFIX
+# gas was applied (10000000 - 1200000 * 1)
+# assert_balance acc1 8800000
+
+
