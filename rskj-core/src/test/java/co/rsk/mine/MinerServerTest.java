@@ -193,10 +193,10 @@ public class MinerServerTest {
 
         Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
 
-        // Finally, submit the same block again and validate that addNewMinedBlock is not called again
+        // Finally, submit the same block again and validate that addNewMinedBlock is called again
         minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
-        Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+        Mockito.verify(ethereumImpl, Mockito.times(2)).addNewMinedBlock(Mockito.any());
     }
 
     @Test
