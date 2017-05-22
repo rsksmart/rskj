@@ -11,7 +11,7 @@ You may also want to check [our blog](http://media.rsk.co) for articles and upda
 
 
 # Getting Started
-Information about compiling and running and RSK node can be found in the [wiki](https://github.com/rsksmart/rskj/wiki).
+Information about compiling and running an RSK node can be found in the [wiki](https://github.com/rsksmart/rskj/wiki).
 
 # License
 RskJ is licensed under the GNU Lesser General Public License v3.0, also included in our repository in the COPYING.LESSER file.
