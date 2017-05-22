@@ -70,6 +70,8 @@ public class NodeBlockProcessor implements BlockProcessor {
 
     private Map<ByteArrayWrapper, Integer> unknownBlockHashes = new HashMap<>();
 
+    private long lastStatusTime;
+
     /**
      * Creates a new NodeBlockProcessor using the given BlockStore and Blockchain.
      *
@@ -187,8 +189,10 @@ public class NodeBlockProcessor implements BlockProcessor {
             sendStatus(sender);
         }
 
-        if (this.hasBetterBlockToSync())
-            sendStatusToAll();
+        if (this.hasBetterBlockToSync()) {
+            logger.trace("Has better block to sync");
+            sendStatusToAll(processedBlocksCounter % 50 == 0);
+        }
 
         this.store.removeHeader(block.getHeader());
 
@@ -632,7 +636,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         }
     }
 
-    private boolean sendStatusToAll() {
+    private boolean sendStatusToAll(boolean force) {
         synchronized (statusLock) {
             if (this.channelManager == null)
                 return false;
@@ -644,8 +648,15 @@ public class NodeBlockProcessor implements BlockProcessor {
 
             Status status = new Status(block.getNumber(), block.getHash());
 
-            if (status.getBestBlockNumber() < lastStatusBestBlock + 80)
+            if (!force && status.getBestBlockNumber() < lastStatusBestBlock + 80)
                 return false;
+
+            long currentTime = System.currentTimeMillis();
+
+            if (currentTime - lastStatusTime < 1000)
+                return false;
+
+            lastStatusTime = currentTime;
 
             lastStatusBestBlock = status.getBestBlockNumber();
 
