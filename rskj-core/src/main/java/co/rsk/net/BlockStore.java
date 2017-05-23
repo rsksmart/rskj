@@ -137,6 +137,18 @@ public class BlockStore {
         return ls;
     }
 
+    public synchronized List<Block> getBlocksByParentHash(byte[] hash) {
+        List<Block> childrennephews = this.getBlocksByParentUncleHash(hash);
+
+        List<Block> result = new ArrayList<>();
+
+        for (Block b : childrennephews)
+            if (Arrays.equals(hash, b.getParentHash()))
+                result.add(b);
+
+        return result;
+    }
+
     public synchronized List<Block> getBlocksByParentUncleHash(byte[] hash) {
         ByteArrayWrapper key = new ByteArrayWrapper(hash);
 
