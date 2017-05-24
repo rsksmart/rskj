@@ -650,7 +650,7 @@ public class NodeBlockProcessor implements BlockProcessor {
 
             long currentTime = System.currentTimeMillis();
 
-            if (currentTime - lastStatusTime < 5000)
+            if (currentTime - lastStatusTime < 1000)
                 return false;
 
             lastStatusTime = currentTime;
