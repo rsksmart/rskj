@@ -24,7 +24,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
-import org.ethereum.config.blockchain.DevNetConfig;
+import org.ethereum.config.net.DevNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.config.net.*;

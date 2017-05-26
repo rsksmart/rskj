@@ -21,13 +21,14 @@ package org.ethereum.config.blockchain;
 
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeDevNetConstants;
+import org.ethereum.config.Constants;
 
 /**
  * Created by Oscar Guindzberg on 25.10.2016.
  */
-public class DevNetConfig extends TestNetAfterBridgeSyncConfig {
+public class DevNetConfigPreFork extends TestNetAfterBridgeSyncConfig {
 
-    public static class DevNetConstants extends TestNetConstants {
+    public static class DevNetPreForkConstants extends TestNetConstants {
         private static final byte CHAIN_ID = 32;
         @Override
         public BridgeConstants getBridgeConstants() {
@@ -36,12 +37,16 @@ public class DevNetConfig extends TestNetAfterBridgeSyncConfig {
 
         @Override
         public byte getChainId() {
-            return DevNetConstants.CHAIN_ID;
+            return DevNetPreForkConstants.CHAIN_ID;
         }
     }
 
-    public DevNetConfig() {
-        super(new DevNetConstants());
+    public DevNetConfigPreFork() {
+        super(new DevNetPreForkConstants());
+    }
+
+    protected DevNetConfigPreFork(Constants constants) {
+        super(constants);
     }
 
     @Override
