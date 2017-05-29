@@ -80,7 +80,6 @@ public class BlockStore {
             return;
 
         ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
-        ByteArrayWrapper pkey = new ByteArrayWrapper(block.getParentHash());
         Long nkey = Long.valueOf(block.getNumber());
 
         this.blocks.remove(key);
@@ -101,20 +100,28 @@ public class BlockStore {
                 bynumber.remove(toremove);
         }
 
-        Set<Block> byparent = this.blocksbyparentuncle.get(pkey);
+        List<ByteArrayWrapper> parentAndUncles = new ArrayList<>();
+        parentAndUncles.add(new ByteArrayWrapper(block.getParentHash()));
+        for (BlockHeader uncle : block.getUncleList()) {
+            parentAndUncles.add(new ByteArrayWrapper(uncle.getHash()));
+        }
 
-        if (byparent != null && !byparent.isEmpty()) {
-            Block toremove = null;
+        for (ByteArrayWrapper pkey : parentAndUncles) {
+            Set<Block> byparent = this.blocksbyparentuncle.get(pkey);
 
-            for (Block blk : byparent) {
-                if (new ByteArrayWrapper(blk.getHash()).equals(key)) {
-                    toremove = blk;
-                    break;
+            if (byparent != null && !byparent.isEmpty()) {
+                Block toremove = null;
+
+                for (Block blk : byparent) {
+                    if (new ByteArrayWrapper(blk.getHash()).equals(key)) {
+                        toremove = blk;
+                        break;
+                    }
                 }
-            }
 
-            if (toremove != null)
-                byparent.remove(toremove);
+                if (toremove != null)
+                    byparent.remove(toremove);
+            }
         }
     }
 
