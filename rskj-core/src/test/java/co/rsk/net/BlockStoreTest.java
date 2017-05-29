@@ -73,7 +73,7 @@ public class BlockStoreTest {
 
         Assert.assertNull(store.getBlockByHash(block.getHash()));
         Assert.assertTrue(store.getBlocksByNumber(block.getNumber()).isEmpty());
-        Assert.assertTrue(store.getBlocksByParentUncleHash(block.getParentHash()).isEmpty());
+        Assert.assertTrue(store.getBlocksByParentHash(block.getParentHash()).isEmpty());
         Assert.assertEquals(0, store.size());
     }
 
@@ -104,7 +104,7 @@ public class BlockStoreTest {
 
         Assert.assertArrayEquals(eve.getHash(), childrenByNumber.get(0).getHash());
 
-        List<Block> childrenByParent = store.getBlocksByParentUncleHash(adam.getHash());
+        List<Block> childrenByParent = store.getBlocksByParentHash(adam.getHash());
 
         Assert.assertNotNull(childrenByParent);
         Assert.assertEquals(1, childrenByParent.size());
@@ -166,31 +166,11 @@ public class BlockStoreTest {
         store.saveBlock(block1);
         store.saveBlock(block2);
 
-        List<Block> blocks = store.getBlocksByParentUncleHash(genesis.getHash());
+        List<Block> blocks = store.getBlocksByParentHash(genesis.getHash());
 
         Assert.assertTrue(blocks.contains(block1));
         Assert.assertTrue(blocks.contains(block2));
         Assert.assertEquals(2, store.size());
-    }
-
-    @Test
-    public void saveAndGetBlocksByUncleHash() {
-        BlockStore store = new BlockStore();
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block1 = BlockGenerator.createChildBlock(genesis);
-        Block uncle1 = BlockGenerator.createChildBlock(genesis);
-        List<BlockHeader> uncles = new ArrayList<>();
-        uncles.add(uncle1.getHeader());
-        Block block2 = new BlockBuilder().parent(block1).uncles(uncles).build();
-
-        store.saveBlock(block1);
-        store.saveBlock(uncle1);
-        store.saveBlock(block2);
-
-        List<Block> blocks = store.getBlocksByParentUncleHash(uncle1.getHash());
-
-        Assert.assertTrue(blocks.contains(block2));
-        Assert.assertEquals(3, store.size());
     }
 
     @Test

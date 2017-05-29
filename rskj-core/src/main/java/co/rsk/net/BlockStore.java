@@ -31,7 +31,7 @@ import java.util.*;
 public class BlockStore {
     private Map<ByteArrayWrapper, Block> blocks = new HashMap<>();
     private Map<Long, Set<Block>> blocksbynumber = new HashMap<>();
-    private Map<ByteArrayWrapper, Set<Block>> blocksbyparentuncle = new HashMap<>();
+    private Map<ByteArrayWrapper, Set<Block>> blocksbyparent = new HashMap<>();
 
     private final Map<ByteArrayWrapper, BlockHeader> headers = new HashMap<>();
     private final Map<Long, Set<ByteArrayWrapper>> headersbynumber = new HashMap<>();
@@ -52,27 +52,14 @@ public class BlockStore {
 
         bsbynumber.add(block);
 
-        Set<Block> bsbyphash = this.blocksbyparentuncle.get(pkey);
+        Set<Block> bsbyphash = this.blocksbyparent.get(pkey);
 
         if (bsbyphash == null) {
             bsbyphash = new HashSet<>();
-            this.blocksbyparentuncle.put(pkey, bsbyphash);
+            this.blocksbyparent.put(pkey, bsbyphash);
         }
 
         bsbyphash.add(block);
-
-        for (BlockHeader uncle : block.getUncleList()) {
-            ByteArrayWrapper ukey = new ByteArrayWrapper(uncle.getHash());
-
-            Set<Block> bsbyuhash = this.blocksbyparentuncle.get(ukey);
-
-            if (bsbyuhash == null) {
-                bsbyuhash = new HashSet<>();
-                this.blocksbyparentuncle.put(ukey, bsbyuhash);
-            }
-
-            bsbyuhash.add(block);
-        }
     }
 
     public synchronized void removeBlock(Block block) {
@@ -97,11 +84,14 @@ public class BlockStore {
                 }
             }
 
-            if (toremove != null)
+            if (toremove != null) {
                 bynumber.remove(toremove);
+                if (bynumber.isEmpty())
+                    this.blocksbynumber.remove(nkey);
+            }
         }
 
-        Set<Block> byparent = this.blocksbyparentuncle.get(pkey);
+        Set<Block> byparent = this.blocksbyparent.get(pkey);
 
         if (byparent != null && !byparent.isEmpty()) {
             Block toremove = null;
@@ -113,8 +103,11 @@ public class BlockStore {
                 }
             }
 
-            if (toremove != null)
+            if (toremove != null) {
                 byparent.remove(toremove);
+                if (byparent.isEmpty())
+                    this.blocksbyparent.remove(pkey);
+            }
         }
     }
 
@@ -138,21 +131,9 @@ public class BlockStore {
     }
 
     public synchronized List<Block> getBlocksByParentHash(byte[] hash) {
-        List<Block> childrennephews = this.getBlocksByParentUncleHash(hash);
-
-        List<Block> result = new ArrayList<>();
-
-        for (Block b : childrennephews)
-            if (Arrays.equals(hash, b.getParentHash()))
-                result.add(b);
-
-        return result;
-    }
-
-    public synchronized List<Block> getBlocksByParentUncleHash(byte[] hash) {
         ByteArrayWrapper key = new ByteArrayWrapper(hash);
 
-        Set<Block> blocks = this.blocksbyparentuncle.get(key);
+        Set<Block> blocks = this.blocksbyparent.get(key);
 
         if (blocks == null)
             blocks = new HashSet<Block>();
