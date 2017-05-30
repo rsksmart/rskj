@@ -30,6 +30,6 @@ public class DevNetConfig extends AbstractNetConfig {
 
     public DevNetConfig() {
         add(0, new DevNetConfigPreFork());
-        add(66000, new DevNetConfigAfterFork());
+        add(5000, new DevNetConfigAfterFork());
     }
 }
