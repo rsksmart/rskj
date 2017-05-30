@@ -394,7 +394,7 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
     private String getDataSourceName() {
-        return "newdetails-storage/" + toHexString(address);
+        return "details-storage/" + toHexString(address);
     }
 
     private String getAddressAsString() {

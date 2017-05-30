@@ -307,7 +307,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
             logger.trace("Start onBlock");
             onBlock(block, result);
             logger.trace("Start flushData");
-            flushData();
+            flushData(block.getNumber());
 
             logger.trace("Better block {} {}", block.getNumber(), block.getShortHash());
 
@@ -329,7 +329,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
             logger.trace("Start onBlock");
             onBlock(block, result);
             logger.trace("Start flushData");
-            flushData();
+            flushData(block.getNumber());
 
             if (bestBlock != null && block.getNumber() > bestBlock.getNumber())
                 logger.warn("Strange block number state");
@@ -516,8 +516,8 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         return blockValidator.isValid(block);
     }
 
-    private void flushData() {
-        if (RskSystemProperties.RSKCONFIG.isFlushEnabled()) {
+    private void flushData(long number) {
+        if (number % 100 == 0 || RskSystemProperties.RSKCONFIG.isFlushEnabled()) {
             long saveTime = System.nanoTime();
             repository.flush();
             long totalTime = System.nanoTime() - saveTime;
