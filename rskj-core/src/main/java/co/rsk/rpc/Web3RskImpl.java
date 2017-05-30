@@ -110,7 +110,11 @@ public class Web3RskImpl extends Web3Impl {
             writer = new PrintWriter(new FileWriter(graphFile));
 
             List<Block> result = new LinkedList<>();
-            for (long i = bestBlock.getNumber()-numberOfBlocks; i < bestBlock.getNumber(); i++) {
+            long firstBlock = bestBlock.getNumber() - numberOfBlocks;
+            if (firstBlock < 0) {
+                firstBlock = 0;
+            }
+            for (long i = firstBlock; i < bestBlock.getNumber(); i++) {
                 result.addAll(bs.getChainBlocksByNumber(i));
             }
             for (Block block : result) {
