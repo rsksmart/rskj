@@ -22,6 +22,7 @@ import co.rsk.core.Rsk;
 import co.rsk.panic.PanicProcessor;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.SystemProperties;
+import org.ethereum.config.net.DevNetConfig;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
@@ -101,7 +102,7 @@ public class MinerClientImpl implements MinerClient {
 
     public void doWork() {
         try {
-            if (mineBlock() && !(SystemProperties.CONFIG.getBlockchainConfig() instanceof TestNetConfig))
+            if (mineBlock() && !(SystemProperties.CONFIG.getBlockchainConfig() instanceof TestNetConfig) && !(SystemProperties.CONFIG.getBlockchainConfig() instanceof DevNetConfig))
                 Thread.sleep(20000);
         } catch (Exception e) {
             logger.error("Error on mining", e);
