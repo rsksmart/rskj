@@ -160,7 +160,7 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public int flushNumberOfBlocks() {
-        return config.hasPath("blockchain.flushNumberOfBlocks") ?
+        return config.hasPath("blockchain.flushNumberOfBlocks") && config.getInt("blockchain.flushNumberOfBlocks") > 0 ?
                 config.getInt("blockchain.flushNumberOfBlocks") : 20;
     }
 
