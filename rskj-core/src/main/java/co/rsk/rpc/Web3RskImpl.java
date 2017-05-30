@@ -27,15 +27,24 @@ import co.rsk.core.WalletFactory;
 import co.rsk.mine.MinerWork;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.db.BlockStore;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3Impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+
+import static org.ethereum.rpc.TypeConverter.StringHexToBigInteger;
 
 /**
  * Created by adrian.eidelman on 3/11/2016.
@@ -84,6 +93,51 @@ public class Web3RskImpl extends Web3Impl {
         Block bestBlcock = worldManager.getBlockStore().getBestBlock();
         logger.info("Dumping state for block hash {}, block number {}", Hex.toHexString(bestBlcock.getHash()), bestBlcock.getNumber());
         this.worldManager.getNetworkStateExporter().exportStatus(System.getProperty("user.dir") + "/" + "rskdump.json");
+    }
+
+    /**
+     * Export the blockchain tree as a tgf file to user.dir/rskblockchain.tgf
+     * @param numberOfBlocks Number of block heights to include. Eg if best block is block 2300 and numberOfBlocks is 10, the graph will include blocks in heights 2290 to 2300.
+     * @param includeUncles Whether to show uncle links (recommended value is false)
+     */
+    public void ext_dumpBlockchain(long numberOfBlocks, boolean includeUncles)  {
+        BlockStore bs = worldManager.getBlockStore();
+        Block bestBlock = bs.getBestBlock();
+        logger.info("Dumping blockchain starting on block number {}, to best block number {}", bestBlock.getNumber()-numberOfBlocks, bestBlock.getNumber());
+        PrintWriter writer = null;
+        try {
+            File graphFile = new File(System.getProperty("user.dir") + "/" + "rskblockchain.tgf");
+            writer = new PrintWriter(new FileWriter(graphFile));
+
+            List<Block> result = new LinkedList<>();
+            for (long i = bestBlock.getNumber()-numberOfBlocks; i < bestBlock.getNumber(); i++) {
+                result.addAll(bs.getChainBlocksByNumber(i));
+            }
+            for (Block block : result) {
+                writer.println(toSmallHash(block.getHash()) + " " + block.getNumber()+"-"+toSmallHash(block.getHash()));
+            }
+            writer.println("#");
+            for (Block block : result) {
+                writer.println(toSmallHash(block.getHash()) + " " + toSmallHash(block.getParentHash()) + " P");
+                if (includeUncles) {
+                    for (BlockHeader uncleHeader : block.getUncleList()) {
+                        writer.println(toSmallHash(block.getHash()) + " " + toSmallHash(uncleHeader.getHash()) + " U");
+                    }
+                }
+            }
+        } catch (IOException e) {
+            logger.error("Could nos save node graph to file", e);
+        } finally {
+            if (writer!=null) {
+                try {
+                    writer.close();
+                } catch (Exception e) {}
+            }
+        }
+    }
+
+    private String toSmallHash(byte[] input) {
+        return Hex.toHexString(input).substring(56,64);
     }
 
 }
