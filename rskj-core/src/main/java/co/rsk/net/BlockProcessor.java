@@ -58,4 +58,6 @@ public interface BlockProcessor {
     boolean isSyncingBlocks();
 
     boolean hasBetterBlockToSync();
+
+    void sendStatusToAll();
 }
