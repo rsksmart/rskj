@@ -56,6 +56,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
     @Override
     public boolean isValid(Block block, Block parent) {
         if(block == null || parent == null) {
+            logger.warn("BlockTxsValidationRule - block or parent are null");
             return false;
         }
 
@@ -78,7 +79,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
             BigInteger txNonce = new BigInteger(1, tx.getNonce());
 
             if (!expectedNonce.equals(txNonce)) {
-                logger.error("Invalid transaction: Tx nonce {} != expected nonce {} (parent nonce: {}): {}",
+                logger.warn("Invalid transaction: Tx nonce {} != expected nonce {} (parent nonce: {}): {}",
                         txNonce, expectedNonce, parentRepo.getNonce(txSender), tx);
 
                 panicProcessor.panic("invalidtransaction", String.format("Invalid transaction: Tx nonce %s != expected nonce %s (parent nonce: %s): %s",

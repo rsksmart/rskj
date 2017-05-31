@@ -42,7 +42,7 @@ public class RemascValidationRule implements BlockValidationRule{
         List<Transaction> txs = block.getTransactionsList();
         boolean result = CollectionUtils.isNotEmpty(txs) && (txs.get(txs.size()-1) instanceof RemascTransaction);
         if(!result) {
-            logger.error("Remasc tx not found in block");
+            logger.warn("Remasc tx not found in block");
             panicProcessor.panic("invalidremasctx", "Remasc tx not found in block");
         }
         return result;

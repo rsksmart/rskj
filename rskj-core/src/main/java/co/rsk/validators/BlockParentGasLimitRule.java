@@ -36,7 +36,7 @@ import java.math.BigInteger;
  */
 public class BlockParentGasLimitRule implements BlockParentDependantValidationRule {
 
-    private static final Logger logger = LoggerFactory.getLogger(BlockParentGasLimitRule.class);
+    private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
     private int gasLimitBoundDivisor;
 
@@ -48,6 +48,7 @@ public class BlockParentGasLimitRule implements BlockParentDependantValidationRu
     @Override
     public boolean isValid(Block block, Block parent) {
         if(block == null || parent == null) {
+            logger.warn("BlockParentGasLimitRule - block or parent are null");
             return false;
         }
 
@@ -57,7 +58,7 @@ public class BlockParentGasLimitRule implements BlockParentDependantValidationRu
 
         if (headerGasLimit.compareTo(parentGasLimit.multiply(BigInteger.valueOf(gasLimitBoundDivisor - 1L)).divide(BigInteger.valueOf(gasLimitBoundDivisor))) < 0 ||
             headerGasLimit.compareTo(parentGasLimit.multiply(BigInteger.valueOf(gasLimitBoundDivisor + 1L)).divide(BigInteger.valueOf(gasLimitBoundDivisor))) > 0) {
-          logger.error(String.format("#%d: gas limit exceeds parentBlock.getGasLimit() (+-) GAS_LIMIT_BOUND_DIVISOR", header.getNumber()));
+            logger.warn(String.format("#%d: gas limit exceeds parentBlock.getGasLimit() (+-) GAS_LIMIT_BOUND_DIVISOR", header.getNumber()));
             return false;
         }
         return true;

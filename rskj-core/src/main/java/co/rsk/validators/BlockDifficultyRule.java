@@ -36,11 +36,12 @@ import static org.ethereum.util.BIUtil.isEqual;
  */
 public class BlockDifficultyRule implements BlockParentDependantValidationRule {
 
-    private static final Logger logger = LoggerFactory.getLogger(BlockDifficultyRule.class);
+    private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
     @Override
     public boolean isValid(Block block, Block parent) {
         if(block == null || parent == null) {
+            logger.warn("BlockDifficultyRule - block or parent are null");
             return false;
         }
         BlockHeader header = block.getHeader();
@@ -48,7 +49,7 @@ public class BlockDifficultyRule implements BlockParentDependantValidationRule {
         BigInteger difficulty = header.getDifficultyBI();
 
         if (!isEqual(difficulty, calcDifficulty)) {
-            logger.error(String.format("#%d: difficulty != calcDifficulty", header.getNumber()));
+            logger.warn(String.format("#%d: difficulty != calcDifficulty", header.getNumber()));
             return false;
         }
         return true;

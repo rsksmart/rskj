@@ -60,7 +60,7 @@ public class ProofOfWorkRule implements BlockValidationRule {
         BigInteger bitcoinMergedMiningBlockHashBI = bitcoinMergedMiningBlock.getHash().toBigInteger();
 
         if (bitcoinMergedMiningBlockHashBI.compareTo(target) > 0) {
-            logger.error("Hash {} is higher than target {}", bitcoinMergedMiningBlockHashBI.toString(16), target.toString(16));
+            logger.warn("Hash {} is higher than target {}", bitcoinMergedMiningBlockHashBI.toString(16), target.toString(16));
             return false;
         }
         
@@ -79,7 +79,7 @@ public class ProofOfWorkRule implements BlockValidationRule {
 
         int rskTagPosition = Collections.lastIndexOfSubList(bitcoinMergedMiningCoinbaseTransactionTailAsList, expectedCoinbaseMessageBytesAsList);
         if (rskTagPosition == -1) {
-            logger.error("bitcoin coinbase transaction tail message does not contain expected RSKBLOCK:RskBlockHeaderHash. Expected: {} . Actual: {} .", Arrays.toString(expectedCoinbaseMessageBytes), Arrays.toString(bitcoinMergedMiningCoinbaseTransactionTail));
+            logger.warn("bitcoin coinbase transaction tail message does not contain expected RSKBLOCK:RskBlockHeaderHash. Expected: {} . Actual: {} .", Arrays.toString(expectedCoinbaseMessageBytes), Arrays.toString(bitcoinMergedMiningCoinbaseTransactionTail));
             return false;
         }
 
@@ -89,14 +89,14 @@ public class ProofOfWorkRule implements BlockValidationRule {
         * another mid state with 9 blocks, 64bytes + the rsk tag, giving us two blocks with different hashes but the same spv proof.
         * */
         if (rskTagPosition >= 64) {
-            logger.error("bitcoin coinbase transaction tag position is bigger than expected 64. Actual: {}.", Integer.toString(rskTagPosition));
+            logger.warn("bitcoin coinbase transaction tag position is bigger than expected 64. Actual: {}.", Integer.toString(rskTagPosition));
             return false;
         }
 
         List<Byte> rskTagAsList = java.util.Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
         if (rskTagPosition !=
                 Collections.lastIndexOfSubList(bitcoinMergedMiningCoinbaseTransactionTailAsList, rskTagAsList)) {
-            logger.error("The valid RSK tag is not the last RSK tag. Tail: {}.", Arrays.toString(bitcoinMergedMiningCoinbaseTransactionTail));
+            logger.warn("The valid RSK tag is not the last RSK tag. Tail: {}.", Arrays.toString(bitcoinMergedMiningCoinbaseTransactionTail));
             return false;
         }
 
@@ -105,7 +105,7 @@ public class ProofOfWorkRule implements BlockValidationRule {
                 RskMiningConstants.RSK_TAG.length -
                 RskMiningConstants.BLOCK_HEADER_HASH_SIZE;
         if (remainingByteCount > RskMiningConstants.MAX_BYTES_AFTER_MERGED_MINING_HASH) {
-            logger.error("More than 128 bytes after ROOOTSTOCK tag");
+            logger.warn("More than 128 bytes after ROOOTSTOCK tag");
             return false;
         }
 
@@ -118,11 +118,11 @@ public class ProofOfWorkRule implements BlockValidationRule {
         List<co.rsk.bitcoinj.core.Sha256Hash> txHashesInTheMerkleBranch = new ArrayList<>();
         co.rsk.bitcoinj.core.Sha256Hash merkleRoot = bitcoinMergedMiningMerkleBranch.getTxnHashAndMerkleRoot(txHashesInTheMerkleBranch);
         if (!merkleRoot.equals(bitcoinMergedMiningBlock.getMerkleRoot())) {
-            logger.error("bitcoin merkle root of bitcoin block does not match the merkle root of merkle branch");
+            logger.warn("bitcoin merkle root of bitcoin block does not match the merkle root of merkle branch");
             return false;
         }
         if (!txHashesInTheMerkleBranch.contains(bitcoinMergedMiningCoinbaseTransactionHash)) {
-            logger.error("bitcoin coinbase transaction {} not included in merkle branch", bitcoinMergedMiningCoinbaseTransactionHash);
+            logger.warn("bitcoin coinbase transaction {} not included in merkle branch", bitcoinMergedMiningCoinbaseTransactionHash);
             return false;
         }
 
