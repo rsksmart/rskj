@@ -64,19 +64,6 @@ public class BlockUtils {
         return unknownAncestorsHashes(hashes, blockChain, store, false);
     }
 
-    public static Set<ByteArrayWrapper> unknownAncestorsHashes(Block block, Blockchain blockChain, BlockStore store) {
-        Set<ByteArrayWrapper> hashes = new HashSet<>();
-
-        hashes.add(new ByteArrayWrapper(block.getParentHash()));
-
-        for (BlockHeader uncleHeader : block.getUncleList()) {
-            ByteArrayWrapper uncleHash = new ByteArrayWrapper(uncleHeader.getHash());
-            hashes.add(uncleHash);
-        }
-
-        return unknownAncestorsHashes(hashes, blockChain, store, true);
-    }
-
     public static Set<ByteArrayWrapper> unknownAncestorsHashes(byte[] blockHash, Blockchain blockChain, BlockStore store) {
         Set<ByteArrayWrapper> hashes = new HashSet<>();
         hashes.add(new ByteArrayWrapper(blockHash));
