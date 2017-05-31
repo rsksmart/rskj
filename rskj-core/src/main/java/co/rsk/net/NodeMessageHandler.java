@@ -24,6 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.validator.ProofOfWorkRule;
@@ -33,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -54,6 +56,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private TransactionNodeInformation transactionNodeInformation;
 
     private LinkedBlockingQueue<MessageTask> queue = new LinkedBlockingQueue<>();
+    private Set<ByteArrayWrapper> receivedMessages = Collections.synchronizedSet(new HashSet<ByteArrayWrapper>());
     private volatile boolean stopped;
 
     private TxHandler txHandler;
@@ -94,9 +97,10 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         if (mType == MessageType.GET_BLOCK_HEADERS_MESSAGE)
             this.processGetBlockHeadersMessage(sender, (GetBlockHeadersMessage) message);
 
-        if (mType == MessageType.BLOCK_MESSAGE)
+        if (mType == MessageType.BLOCK_MESSAGE) {
+            addReceivedMessage(message);
             this.processBlockMessage(sender, (BlockMessage) message);
-
+        }
         if (mType == MessageType.STATUS_MESSAGE)
             this.processStatusMessage(sender, (StatusMessage) message);
 
@@ -107,21 +111,32 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             if (mType == MessageType.NEW_BLOCK_HASHES)
                 this.processNewBlockHashesMessage(sender, (NewBlockHashesMessage) message);
 
-            if (mType == MessageType.TRANSACTIONS)
+            if (mType == MessageType.TRANSACTIONS) {
+                addReceivedMessage(message);
                 this.processTransactionsMessage(sender, (TransactionsMessage) message);
+            }
         }
         loggerMessageProcess.debug("Message[{}] processed after [{}] nano.", message.getMessageType(), System.nanoTime() - start);
     }
 
     @Override
     public void postMessage(MessageSender sender, Message message) throws InterruptedException {
-        try {
-            logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message.getMessageType());
-            this.queue.put(new MessageTask(sender, message));
-            logger.trace("End post message (queue size {})", this.queue.size());
-        } catch (InterruptedException e) {
-            logger.error("Error post message", e);
-            throw e;
+        ByteArrayWrapper encodedMessage = new ByteArrayWrapper(HashUtil.sha3(message.getEncoded()));
+        logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message.getMessageType());
+        if (!receivedMessages.contains(encodedMessage)) {
+            this.queue.offer(new MessageTask(sender, message));
+        } else {
+            logger.trace("Message was known, not being added");
+        }
+        logger.trace("End post message (queue size {})", this.queue.size());
+    }
+
+    private void addReceivedMessage(Message message) {
+        if (message != null) {
+            if (this.receivedMessages.size() >= 2500) {
+                this.receivedMessages.clear();
+            }
+            this.receivedMessages.add(new ByteArrayWrapper(HashUtil.sha3(message.getEncoded())));
         }
     }
 
