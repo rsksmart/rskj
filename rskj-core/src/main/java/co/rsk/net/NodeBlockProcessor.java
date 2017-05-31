@@ -322,9 +322,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         if (peerBestBlockNumber > this.lastKnownBlockNumber)
             this.lastKnownBlockNumber = peerBestBlockNumber;
 
-        int initial = Math.abs(random.nextInt() % 10);
-
-        for (long n = peerBestBlockNumber + initial; n <= bestBlockNumber && n < peerBestBlockNumber + 100; n += 10) {
+        for (long n = peerBestBlockNumber; n <= bestBlockNumber && n < peerBestBlockNumber + 25; n++) {
             logger.trace("Trying to send block {}", n);
             
             final Block b = this.blockchain.getBlockByNumber(n);
@@ -332,13 +330,15 @@ public class NodeBlockProcessor implements BlockProcessor {
             if (b == null)
                 continue;
 
-            for (BlockHeader uncleHeader : b.getUncleList()) {
-                Block uncle = this.getBlock(uncleHeader.getHash());
+            if (bestBlockNumber - b.getNumber() <= 10) {
+                for (BlockHeader uncleHeader : b.getUncleList()) {
+                    Block uncle = this.getBlock(uncleHeader.getHash());
 
-                if (uncle != null) {
-                    nodeInformation.addBlockToNode(new ByteArrayWrapper(uncle.getHash()), sender.getNodeID());
-                    logger.trace("Sending uncle block {} {}", uncle.getNumber(), uncle.getShortHash());
-                    sender.sendMessage(new BlockMessage(uncle));
+                    if (uncle != null) {
+                        nodeInformation.addBlockToNode(new ByteArrayWrapper(uncle.getHash()), sender.getNodeID());
+                        logger.trace("Sending uncle block {} {}", uncle.getNumber(), uncle.getShortHash());
+                        sender.sendMessage(new BlockMessage(uncle));
+                    }
                 }
             }
 
