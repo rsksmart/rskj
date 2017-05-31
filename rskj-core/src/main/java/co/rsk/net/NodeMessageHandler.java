@@ -142,7 +142,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                 MessageTask task;
 
                 if (this.queue.isEmpty())
-                    task = this.queue.poll(60, TimeUnit.SECONDS);
+                    task = this.queue.poll(10, TimeUnit.SECONDS);
                 else
                     task = this.queue.poll();
 
@@ -152,7 +152,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                     logger.trace("Start task");
                     this.processMessage(task.getSender(), task.getMessage());
                     logger.trace("End task");
-                } else
+                } else if (this.blockProcessor != null && this.blockProcessor.hasBetterBlockToSync())
+                    this.blockProcessor.sendStatusToAll();
+                else
                     logger.trace("No task");
             }
             catch (Throwable ex) {
