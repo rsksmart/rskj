@@ -75,3 +75,6 @@ rskj-core/java/nodeId.properties
 rskj-core/libs/gradle-witness.jar
 gradle/wrapper/gradle-wrapper.jar
 
+#Classes
+classes/
+
