@@ -330,18 +330,6 @@ public class NodeBlockProcessor implements BlockProcessor {
             if (b == null)
                 continue;
 
-            if (bestBlockNumber - b.getNumber() <= 10) {
-                for (BlockHeader uncleHeader : b.getUncleList()) {
-                    Block uncle = this.getBlock(uncleHeader.getHash());
-
-                    if (uncle != null) {
-                        nodeInformation.addBlockToNode(new ByteArrayWrapper(uncle.getHash()), sender.getNodeID());
-                        logger.trace("Sending uncle block {} {}", uncle.getNumber(), uncle.getShortHash());
-                        sender.sendMessage(new BlockMessage(uncle));
-                    }
-                }
-            }
-
             nodeInformation.addBlockToNode(new ByteArrayWrapper(b.getHash()), sender.getNodeID());
             logger.trace("Sending block {} {}", b.getNumber(), b.getShortHash());
             sender.sendMessage(new BlockMessage(b));
