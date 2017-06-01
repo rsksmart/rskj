@@ -97,10 +97,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         if (mType == MessageType.GET_BLOCK_HEADERS_MESSAGE)
             this.processGetBlockHeadersMessage(sender, (GetBlockHeadersMessage) message);
 
-        if (mType == MessageType.BLOCK_MESSAGE) {
-            addReceivedMessage(message);
+        if (mType == MessageType.BLOCK_MESSAGE)
             this.processBlockMessage(sender, (BlockMessage) message);
-        }
+
         if (mType == MessageType.STATUS_MESSAGE)
             this.processStatusMessage(sender, (StatusMessage) message);
 
@@ -111,10 +110,8 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             if (mType == MessageType.NEW_BLOCK_HASHES)
                 this.processNewBlockHashesMessage(sender, (NewBlockHashesMessage) message);
 
-            if (mType == MessageType.TRANSACTIONS) {
-                addReceivedMessage(message);
+            if (mType == MessageType.TRANSACTIONS)
                 this.processTransactionsMessage(sender, (TransactionsMessage) message);
-            }
         }
         loggerMessageProcess.debug("Message[{}] processed after [{}] nano.", message.getMessageType(), System.nanoTime() - start);
     }
@@ -124,6 +121,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         ByteArrayWrapper encodedMessage = new ByteArrayWrapper(HashUtil.sha3(message.getEncoded()));
         logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message.getMessageType());
         if (!receivedMessages.contains(encodedMessage)) {
+            if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
+                addReceivedMessage(encodedMessage);
+            }
             this.queue.offer(new MessageTask(sender, message));
         } else {
             logger.trace("Message was known, not being added");
@@ -131,12 +131,12 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         logger.trace("End post message (queue size {})", this.queue.size());
     }
 
-    private void addReceivedMessage(Message message) {
+    private void addReceivedMessage(ByteArrayWrapper message) {
         if (message != null) {
-            if (this.receivedMessages.size() >= 2500) {
+            if (this.receivedMessages.size() >= 5000) {
                 this.receivedMessages.clear();
             }
-            this.receivedMessages.add(new ByteArrayWrapper(HashUtil.sha3(message.getEncoded())));
+            this.receivedMessages.add(message);
         }
     }
 
