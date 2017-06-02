@@ -1,5 +1,0 @@
-# create account with initial balance
-account_new acc1 10000000
-
-# check account balance
-assert_balance acc1 10000000
