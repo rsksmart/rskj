@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 public class NodeMessageHandler implements MessageHandler, Runnable {
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
+    public static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
     private final BlockProcessor blockProcessor;
     private final ChannelManager channelManager;
     private final PendingState pendingState;
@@ -126,14 +127,14 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             }
             this.queue.offer(new MessageTask(sender, message));
         } else {
-            logger.trace("Message was known, not being added");
+            logger.trace("Received message already known, not added to the queue");
         }
         logger.trace("End post message (queue size {})", this.queue.size());
     }
 
     private void addReceivedMessage(ByteArrayWrapper message) {
         if (message != null) {
-            if (this.receivedMessages.size() >= 5000) {
+            if (this.receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
                 this.receivedMessages.clear();
             }
             this.receivedMessages.add(message);
