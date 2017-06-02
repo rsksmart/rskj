@@ -116,4 +116,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
 
     @Override
     public boolean hasBetterBlockToSync() { return false; }
+
+    @Override
+    public void sendStatusToAll() { }
 }
