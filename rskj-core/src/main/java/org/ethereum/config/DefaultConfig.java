@@ -114,11 +114,11 @@ public class DefaultConfig {
 
 
         IndexedBlockStore cache = new IndexedBlockStore();
-        cache.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), null, null);
+        cache.init(new HashMap<>(), new HashMapDB(), null, null);
 
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
 
-        indexedBlockStore.init(indexMap, blocksDB, null, indexDB);
+        indexedBlockStore.init(indexMap, blocksDB, cache, indexDB);
 
         return indexedBlockStore;
     }
