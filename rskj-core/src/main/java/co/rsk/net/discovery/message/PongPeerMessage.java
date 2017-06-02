@@ -76,6 +76,13 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
         return message;
     }
 
+    public String getHost() {
+        return this.host;
+    }
+
+    public int getPort() {
+        return this.port;
+    }
     @Override
     public final void parse(byte[] data) {
 

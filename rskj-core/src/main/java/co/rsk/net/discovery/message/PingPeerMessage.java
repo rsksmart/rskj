@@ -93,6 +93,14 @@ public class PingPeerMessage extends PeerDiscoveryMessage {
         return this.messageId;
     }
 
+    public String getHost() {
+        return this.host;
+    }
+
+    public int getPort() {
+        return this.port;
+    }
+
     @Override
     public DiscoveryMessageType getMessageType() {
         return DiscoveryMessageType.PING;
