@@ -360,7 +360,7 @@ public class NodeMessageHandlerTest {
             protected final NewBlockHashesMessage message;
             protected final List<Block> expected;
 
-            public TestCase(@Nonnull final NewBlockHashesMessage message, @Nonnull final List<Block> expected) {
+            public TestCase(@Nonnull final NewBlockHashesMessage message, final List<Block> expected) {
                 this.message = message;
                 this.expected = expected;
             }
@@ -500,7 +500,7 @@ public class NodeMessageHandlerTest {
             protected final GetBlockHeadersMessage gbhMessage;
             protected final List<BlockHeader> expected;
 
-            public TestCase(@Nonnull final GetBlockHeadersMessage gbhMessage, @Nonnull final List<BlockHeader> expected) {
+            public TestCase(@Nonnull final GetBlockHeadersMessage gbhMessage, final List<BlockHeader> expected) {
                 this.gbhMessage = gbhMessage;
                 this.expected = expected;
             }
