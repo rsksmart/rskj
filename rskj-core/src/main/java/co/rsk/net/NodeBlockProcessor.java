@@ -615,6 +615,9 @@ public class NodeBlockProcessor implements BlockProcessor {
         }
     }
 
+    // This does not send status to ALL anymore.
+    // Should be renamed to something like sendStatusToSome.
+    // Not renamed yet to avoid merging hell.
     @Override
     public void sendStatusToAll() {
         synchronized (statusLock) {
