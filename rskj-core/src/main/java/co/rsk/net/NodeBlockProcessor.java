@@ -496,7 +496,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         final List<Block> children = new ArrayList<Block>();
 
         for (final Block block : blocks)
-            BlockUtils.addBlocksToList(children, this.store.getBlocksByParentUncleHash(block.getHash()));
+            BlockUtils.addBlocksToList(children, this.store.getBlocksByParentHash(block.getHash()));
 
         return children;
     }
