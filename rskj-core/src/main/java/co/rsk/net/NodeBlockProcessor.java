@@ -35,7 +35,6 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
-import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -54,7 +53,6 @@ public class NodeBlockProcessor implements BlockProcessor {
     @GuardedBy("syncLock")
     private volatile boolean syncing = false;
 
-    private SecureRandom random = new SecureRandom();
     private long processedBlocksCounter;
     private static final Logger logger = LoggerFactory.getLogger("blockprocessor");
 
