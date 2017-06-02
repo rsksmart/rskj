@@ -103,10 +103,10 @@ public class PeerExplorer {
     public void handleMessage(DiscoveryEvent event) {
         DiscoveryMessageType type = event.getMessage().getMessageType();
         if (type == DiscoveryMessageType.PING)
-            this.handlePingMessage((PingPeerMessage) event.getMessage());
+            this.handlePingMessage(event.getAddressIp(), (PingPeerMessage) event.getMessage());
 
         if (type == DiscoveryMessageType.PONG)
-            this.handlePong((PongPeerMessage) event.getMessage());
+            this.handlePong(event.getAddressIp(), (PongPeerMessage) event.getMessage());
 
         if (type == DiscoveryMessageType.FIND_NODE)
             this.handleFindNode((FindNodePeerMessage) event.getMessage());
@@ -115,23 +115,23 @@ public class PeerExplorer {
             this.handleNeighborsMessage((NeighborsPeerMessage) event.getMessage());
     }
 
-    public void handlePingMessage(PingPeerMessage message) {
-        this.sendPong(message);
+    public void handlePingMessage(String ip, PingPeerMessage message) {
+        this.sendPong(ip, message);
         Node connectedNode = this.establishedConnections.get(new ByteArrayWrapper(message.getNodeId()));
         if (connectedNode == null) {
-            this.sendPing(new InetSocketAddress(message.getHost(), message.getPort()), 1);
+            this.sendPing(new InetSocketAddress(ip, message.getPort()), 1);
         } else {
             this.distanceTable.updateEntry(connectedNode);
         }
     }
 
-    public void handlePong(PongPeerMessage message) {
+    public void handlePong(String ip, PongPeerMessage message) {
         PeerDiscoveryRequest request = this.pendingPingRequests.get(message.getMessageId());
         if (request != null && request.validateMessageResponse(message)) {
             this.pendingPingRequests.remove(message.getMessageId());
             NodeChallenge challenge = this.challengeManager.removeChallenge(message.getMessageId());
             if (challenge == null)
-                this.addConnection(message, new InetSocketAddress(message.getHost(), message.getPort()));
+                this.addConnection(message, new InetSocketAddress(ip, message.getPort()));
         }
     }
 
@@ -195,10 +195,10 @@ public class PeerExplorer {
         return null;
     }
 
-    public PongPeerMessage sendPong(PingPeerMessage message) {
+    public PongPeerMessage sendPong(String ip, PingPeerMessage message) {
         InetSocketAddress localAddress = this.localNode.getAddress();
         PongPeerMessage pongPeerMessage = PongPeerMessage.create(localAddress.getHostName(), localAddress.getPort(), message.getMessageId(), this.key);
-        InetSocketAddress nodeAddress = new InetSocketAddress(message.getHost(), message.getPort());
+        InetSocketAddress nodeAddress = new InetSocketAddress(ip, message.getPort());
         udpChannel.write(new DiscoveryEvent(pongPeerMessage, nodeAddress));
         return pongPeerMessage;
     }
