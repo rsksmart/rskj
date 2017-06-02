@@ -215,9 +215,8 @@ public class NodeBlockProcessor implements BlockProcessor {
         }
 
         final Set<ByteArrayWrapper> unknownHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
-        final Set<ByteArrayWrapper> unknownAllHashes = BlockUtils.unknownAncestorsHashes(block, blockchain, store);
 
-        this.processMissingHashes(sender, unknownAllHashes);
+        this.processMissingHashes(sender, unknownHashes);
 
         // We can't add the block if there are missing ancestors or uncles. Request the missing blocks to the sender.
         if (!unknownHashes.isEmpty()) {

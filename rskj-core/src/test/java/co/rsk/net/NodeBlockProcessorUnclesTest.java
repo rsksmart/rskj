@@ -105,9 +105,7 @@ public class NodeBlockProcessorUnclesTest {
         Assert.assertEquals(2, processor.getBlockchain().getBestBlock().getNumber());
         Assert.assertArrayEquals(block2.getHash(), processor.getBlockchain().getBestBlockHash());
 
-        Assert.assertEquals(2, sender.getGetBlockMessages().size());
-        Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(new ByteArrayWrapper(uncle1.getHash())));
-        Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(new ByteArrayWrapper(uncle2.getHash())));
+        Assert.assertEquals(0, sender.getGetBlockMessages().size());
     }
 
     @Test
@@ -132,11 +130,8 @@ public class NodeBlockProcessorUnclesTest {
 
         Assert.assertEquals(0, processor.getBlockchain().getBestBlock().getNumber());
         Assert.assertArrayEquals(genesis.getHash(), processor.getBlockchain().getBestBlockHash());
-        Assert.assertEquals(3, sender.getGetBlockMessages().size());
-        // Assert.assertEquals(1, sender.getGetBlockMessages().size());
+        Assert.assertEquals(1, sender.getGetBlockMessages().size());
         Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(new ByteArrayWrapper(block1.getHash())));
-        Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(new ByteArrayWrapper(uncle1.getHash())));
-        Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(new ByteArrayWrapper(uncle2.getHash())));
     }
 
     private static NodeBlockProcessor createNodeBlockProcessor() {
