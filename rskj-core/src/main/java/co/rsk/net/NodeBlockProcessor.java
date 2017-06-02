@@ -460,17 +460,6 @@ public class NodeBlockProcessor implements BlockProcessor {
         while (block != null && !this.hasBlockInSomeBlockchain(block.getHash())) {
             BlockUtils.addBlockToList(blocks, block);
 
-            for (BlockHeader uncleHeader : block.getUncleList()) {
-                Block uncle = getBlock(uncleHeader.getHash());
-
-                if (uncle == null)
-                    continue;
-
-                List<Block> uncles = getBlocksNotInBlockchain(uncle);
-
-                BlockUtils.addBlocksToList(blocks, uncles);
-            }
-
             block = this.getBlock(block.getParentHash());
         }
 
