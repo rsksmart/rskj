@@ -28,6 +28,7 @@ import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.messages.NewBlockHashesMessage;
 import co.rsk.net.messages.StatusMessage;
 import co.rsk.net.messages.TransactionsMessage;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.LRUMap;
 import org.ethereum.config.NodeFilter;
@@ -245,12 +246,27 @@ public class ChannelManagerImpl implements ChannelManager {
         int npeers = 0;
 
         synchronized (activePeers) {
-            for (Channel peer : activePeers.values()) {
-                peer.sendMessage(message);
-                npeers++;
+            int peerCount = activePeers.size();
+            if (peerCount > 0) {
+                int numberOfPeersToSendStatusTo = getNumberOfPeersToSendStatusTo(peerCount);
+                List<Channel> shuffledPeers = new ArrayList<>(activePeers.values());
+                Collections.shuffle(shuffledPeers);
+                for (int i = 0; i < numberOfPeersToSendStatusTo; i++) {
+                    shuffledPeers.get(i).sendMessage(message);
+                    npeers++;
+                }
             }
         }
         return npeers;
+    }
+
+    @VisibleForTesting
+    int getNumberOfPeersToSendStatusTo(int peerCount) {
+        // Send to the sqrt of number of peers.
+        // Make sure the number is between 3 and 10 (unless there are less than 3 peers).
+        int peerCountSqrt = (int) Math.sqrt(peerCount);
+        int numberOfPeersToSendStatusTo = Math.min(10, Math.min(Math.max(3, peerCountSqrt), peerCount));
+        return numberOfPeersToSendStatusTo;
     }
 
     /**
@@ -301,4 +317,5 @@ public class ChannelManagerImpl implements ChannelManager {
     public Collection<Channel> getActivePeers() {
         return Collections.unmodifiableCollection(activePeers.values());
     }
+
 }
