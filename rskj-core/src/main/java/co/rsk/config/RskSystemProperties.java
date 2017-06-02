@@ -159,6 +159,11 @@ public class RskSystemProperties extends SystemProperties {
                 config.getBoolean("blockchain.flush") : true;
     }
 
+    public int flushNumberOfBlocks() {
+        return config.hasPath("blockchain.flushNumberOfBlocks") && config.getInt("blockchain.flushNumberOfBlocks") > 0 ?
+                config.getInt("blockchain.flushNumberOfBlocks") : 20;
+    }
+
     public int soLingerTime() {
         return config.hasPath("rpc.linger.time") ?
                 config.getInt("rpc.linger.time") : -1;

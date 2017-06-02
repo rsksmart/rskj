@@ -516,8 +516,13 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         return blockValidator.isValid(block);
     }
 
+
+    // Rolling counter that helps doing flush every RskSystemProperties.RSKCONFIG.flushNumberOfBlocks() flush attempts
+    // We did this because flush is slow, and doing flush for every block degrades the node performance.
+    private int nFlush = 0;
+
     private void flushData() {
-        if (RskSystemProperties.RSKCONFIG.isFlushEnabled()) {
+        if (RskSystemProperties.RSKCONFIG.isFlushEnabled() && nFlush == 0)  {
             long saveTime = System.nanoTime();
             repository.flush();
             long totalTime = System.nanoTime() - saveTime;
@@ -527,6 +532,8 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
             totalTime = System.nanoTime() - saveTime;
             logger.info("blockstore flush: [{}]nano", totalTime);
         }
+        nFlush++;
+        nFlush = nFlush % RskSystemProperties.RSKCONFIG.flushNumberOfBlocks();
     }
 
     public static byte[] calcTxTrie(List<Transaction> transactions) {
