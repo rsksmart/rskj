@@ -45,7 +45,7 @@ public class BlockTimeStampValidationRule implements BlockValidationRule{
 
         boolean result = blockTime - currentTime <= this.validPeriodLength;
         if(!result) {
-            logger.error("Error validating block. Invalid timestamp {}.", blockTime);
+            logger.warn("Error validating block. Invalid timestamp {}.", blockTime);
             panicProcessor.panic("invalidtimestamp", String.format("Error validating block. Invalid timestamp %d.", blockTime));
         }
         return result;

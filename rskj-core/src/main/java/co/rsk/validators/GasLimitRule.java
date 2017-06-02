@@ -44,7 +44,7 @@ public class GasLimitRule implements BlockValidationRule {
     @Override
     public boolean isValid(Block block) {
         if (new BigInteger(1, block.getHeader().getGasLimit()).compareTo(BigInteger.valueOf(this.minGasLimit)) < 0) {
-            logger.error("header.getGasLimit() < MIN_GAS_LIMIT");
+            logger.warn("header.getGasLimit() < MIN_GAS_LIMIT");
             panicProcessor.panic("invalidMinGasLimit", "header.getGasLimit() < MIN_GAS_LIMIT");
             return false;
         }

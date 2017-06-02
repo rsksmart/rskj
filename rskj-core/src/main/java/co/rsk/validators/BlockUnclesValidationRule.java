@@ -74,13 +74,16 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         String unclesListHash = Hex.toHexString(HashUtil.sha3(header.getUnclesEncoded(block.getUncleList())));
 
         if (!unclesHash.equals(unclesListHash)) {
-            logger.error("Block's given Uncle Hash doesn't match: {} != {}", unclesHash, unclesListHash);
+            logger.warn("Block's given Uncle Hash doesn't match: {} != {}", unclesHash, unclesListHash);
             panicProcessor.panic("invaliduncle", String.format("Block's given Uncle Hash doesn't match: %s != %s", unclesHash, unclesListHash));
             return false;
         }
         List<BlockHeader> uncles = block.getUncleList();
         if (CollectionUtils.isNotEmpty(uncles) && !validateUncleList(block.getNumber(), uncles, FamilyUtils.getAncestors(blockStore, block, uncleGenerationLimit), FamilyUtils.getUsedUncles(blockStore, block, uncleGenerationLimit)))
+        {
+            logger.warn("Uncles list validation failed");
             return false;
+        }
 
         return true;
     }
