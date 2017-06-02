@@ -246,8 +246,9 @@ public class ChannelManagerImpl implements ChannelManager {
         int npeers = 0;
 
         synchronized (activePeers) {
-            if (activePeers.size() > 0) {
-                int numberOfPeersToSendStatusTo = getNumberOfPeersToSendStatusTo();
+            int peerCount = activePeers.size();
+            if (peerCount > 0) {
+                int numberOfPeersToSendStatusTo = getNumberOfPeersToSendStatusTo(peerCount);
                 List<Channel> shuffledPeers = new ArrayList<>(activePeers.values());
                 Collections.shuffle(shuffledPeers);
                 for (int i = 0; i < numberOfPeersToSendStatusTo; i++) {
@@ -260,10 +261,9 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     @VisibleForTesting
-    int getNumberOfPeersToSendStatusTo() {
+    int getNumberOfPeersToSendStatusTo(int peerCount) {
         // Send to the sqrt of number of peers.
         // Make sure the number is between 3 and 10 (unless there are less than 3 peers).
-        int peerCount = activePeers.size();
         int peerCountSqrt = (int) Math.sqrt(peerCount);
         int numberOfPeersToSendStatusTo = Math.min(10, Math.min(Math.max(3, peerCountSqrt), peerCount));
         return numberOfPeersToSendStatusTo;
