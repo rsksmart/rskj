@@ -103,38 +103,35 @@ public class IndexedBlockStore extends AbstractBlockstore{
         return getChainBlockByNumber(blockNumber).getHash(); // FIXME: can be improved by accessing the hash directly in the index
     }
 
-
     @Override
-    public void flush(){
-
-        if (cache == null) return;
-
+    public void flush() {
         long t1 = System.nanoTime();
 
-        for (byte[] hash : cache.blocks.keys()){
-            blocks.put(hash, cache.blocks.get(hash));
+        if (cache != null) {
+
+            for (byte[] hash : cache.blocks.keys()) {
+                blocks.put(hash, cache.blocks.get(hash));
+            }
+
+            for (Map.Entry<Long, List<BlockInfo>> e : cache.index.entrySet()) {
+                Long number = e.getKey();
+                List<BlockInfo> infos = e.getValue();
+
+                if (index.containsKey(number)) infos.addAll(index.get(number));
+                index.put(number, infos);
+            }
+
+            cache.blocks.close();
+            cache.index.clear();
         }
-
-        for (Map.Entry<Long, List<BlockInfo>> e : cache.index.entrySet()) {
-            Long number = e.getKey();
-            List<BlockInfo> infos = e.getValue();
-
-            if (index.containsKey(number)) infos.addAll(index.get(number));
-            index.put(number, infos);
-        }
-
-        cache.blocks.close();
-        cache.index.clear();
-
-        long t2 = System.nanoTime();
 
         if (indexDB != null)
             indexDB.commit();
 
+        long t2 = System.nanoTime();
+
         logger.info("Flush block store in: {} ms", ((float)(t2 - t1) / 1_000_000));
-
     }
-
 
     @Override
     public void saveBlock(Block block, BigInteger cummDifficulty, boolean mainChain){
