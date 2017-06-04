@@ -203,6 +203,10 @@ public class IndexedBlockStore extends AbstractBlockstore{
 
                 byte[] hash = blockInfo.getHash();
                 byte[] blockRlp = blocks.get(hash);
+
+                if (blockRlp == null)
+                    return null;
+
                 return new Block(blockRlp);
             }
         }
