@@ -20,11 +20,13 @@ package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.test.builders.BlockBuilder;
+import com.google.common.collect.Lists;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -73,8 +75,32 @@ public class BlockStoreTest {
 
         Assert.assertNull(store.getBlockByHash(block.getHash()));
         Assert.assertTrue(store.getBlocksByNumber(block.getNumber()).isEmpty());
-        Assert.assertTrue(store.getBlocksByParentUncleHash(block.getParentHash()).isEmpty());
+        Assert.assertTrue(store.getBlocksByParentHash(block.getParentHash()).isEmpty());
         Assert.assertEquals(0, store.size());
+    }
+
+    @Test
+    public void saveRemoveAndGetBlockByHashWithUncles() {
+        BlockStore store = new BlockStore();
+        Block parent = BlockGenerator.getGenesisBlock();
+        Block son1 = BlockGenerator.createChildBlock(parent);
+        Block son2 = BlockGenerator.createChildBlock(parent);
+        Block grandson = BlockGenerator.createChildBlock(son1, new ArrayList<>(), Lists.newArrayList(son2.getHeader()), 1, BigInteger.ONE);
+
+        store.saveBlock(son1);
+        store.saveBlock(son2);
+        store.saveBlock(grandson);
+
+        Assert.assertEquals(1, store.minimalHeight());
+        Assert.assertEquals(2, store.maximumHeight());
+
+        store.removeBlock(grandson);
+
+        Assert.assertNull(store.getBlockByHash(grandson.getHash()));
+        Assert.assertTrue(store.getBlocksByNumber(grandson.getNumber()).isEmpty());
+        Assert.assertTrue(store.getBlocksByParentHash(son1.getHash()).isEmpty());
+        Assert.assertTrue(store.getBlocksByParentHash(son2.getHash()).isEmpty());
+        Assert.assertEquals(2, store.size());
     }
 
     @Test
@@ -104,7 +130,7 @@ public class BlockStoreTest {
 
         Assert.assertArrayEquals(eve.getHash(), childrenByNumber.get(0).getHash());
 
-        List<Block> childrenByParent = store.getBlocksByParentUncleHash(adam.getHash());
+        List<Block> childrenByParent = store.getBlocksByParentHash(adam.getHash());
 
         Assert.assertNotNull(childrenByParent);
         Assert.assertEquals(1, childrenByParent.size());
@@ -166,31 +192,11 @@ public class BlockStoreTest {
         store.saveBlock(block1);
         store.saveBlock(block2);
 
-        List<Block> blocks = store.getBlocksByParentUncleHash(genesis.getHash());
+        List<Block> blocks = store.getBlocksByParentHash(genesis.getHash());
 
         Assert.assertTrue(blocks.contains(block1));
         Assert.assertTrue(blocks.contains(block2));
         Assert.assertEquals(2, store.size());
-    }
-
-    @Test
-    public void saveAndGetBlocksByUncleHash() {
-        BlockStore store = new BlockStore();
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block1 = BlockGenerator.createChildBlock(genesis);
-        Block uncle1 = BlockGenerator.createChildBlock(genesis);
-        List<BlockHeader> uncles = new ArrayList<>();
-        uncles.add(uncle1.getHeader());
-        Block block2 = new BlockBuilder().parent(block1).uncles(uncles).build();
-
-        store.saveBlock(block1);
-        store.saveBlock(uncle1);
-        store.saveBlock(block2);
-
-        List<Block> blocks = store.getBlocksByParentUncleHash(uncle1.getHash());
-
-        Assert.assertTrue(blocks.contains(block2));
-        Assert.assertEquals(3, store.size());
     }
 
     @Test

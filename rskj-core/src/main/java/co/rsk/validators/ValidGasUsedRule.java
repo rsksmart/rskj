@@ -41,7 +41,7 @@ public class ValidGasUsedRule implements BlockValidationRule {
         long gasLimit = new BigInteger(1, header.getGasLimit()).longValue();
 
         if(gasUsed < 0 || gasUsed > gasLimit) {
-            logger.error("Block gas used is less than 0 or more than the gas limit of the block");
+            logger.warn("Block gas used is less than 0 or more than the gas limit of the block");
             panicProcessor.panic("invalidGasValue", "Block gas used is less than 0 or more than the gas limit of the block");
             return false;
         }

@@ -40,4 +40,8 @@ public class DiscoveryEvent {
         return address;
     }
 
+    public String getAddressIp() {
+        return this.address.getAddress().getHostAddress();
+    }
+
 }

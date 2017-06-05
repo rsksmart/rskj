@@ -44,7 +44,7 @@ public class ExtraDataRule implements BlockValidationRule {
         if (block.getHeader().getExtraData() != null && block.getHeader().getExtraData().length > this.maximumExtraDataSize) {
 
             String logMessage = String.format("#%d: header.getExtraData().length > MAXIMUM_EXTRA_DATA_SIZE", block.getHeader().getNumber());
-            logger.error(logMessage);
+            logger.warn(logMessage);
             panicProcessor.panic("invalidExtraData", logMessage);
 
             return false;

@@ -44,7 +44,7 @@ public class BlockRootValidationRule implements BlockValidationRule {
         boolean isValid = true;
 
         if (!trieHash.equals(trieListHash)) {
-            logger.error("Block's given Trie Hash doesn't match: {} != {}", trieHash, trieListHash);
+            logger.warn("Block's given Trie Hash doesn't match: {} != {}", trieHash, trieListHash);
             panicProcessor.panic("invalidtrie", String.format("Block's given Trie Hash doesn't match: %s != %s", trieHash, trieListHash));
             isValid = false;
         }

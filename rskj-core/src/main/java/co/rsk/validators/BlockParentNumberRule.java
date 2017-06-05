@@ -32,17 +32,18 @@ import org.slf4j.LoggerFactory;
  */
 public class BlockParentNumberRule implements BlockParentDependantValidationRule {
 
-    private static final Logger logger = LoggerFactory.getLogger(BlockParentNumberRule.class);
+    private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
     @Override
     public boolean isValid(Block block, Block parent) {
         if(block == null || parent == null) {
+            logger.warn("BlockParentNumberRule - block or parent are null");
             return false;
         }
         BlockHeader header = block.getHeader();
         BlockHeader parentHeader = parent.getHeader();
         if (header.getNumber() != (parentHeader.getNumber() + 1)) {
-            logger.error(String.format("#%d: block number is not parentBlock number + 1", header.getNumber()));
+            logger.warn(String.format("#%d: block number is not parentBlock number + 1", header.getNumber()));
             return false;
         }
         return true;

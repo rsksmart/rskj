@@ -41,18 +41,21 @@ public class TxsMinGasPriceRule implements BlockValidationRule {
     public boolean isValid(Block block) {
         List<Transaction> txs = block.getTransactionsList();
         if(block.getMinGasPriceAsInteger() == null) {
+            logger.warn("Could not retrieve block min gas priceß");
             return false;
         }
+
         BigInteger blockMgp = block.getMinGasPriceAsInteger();
         if(CollectionUtils.isNotEmpty(block.getTransactionsList())) {
             for (Transaction tx : txs) {
                 if (!(tx instanceof RemascTransaction) && tx.getGasPriceAsInteger().compareTo(blockMgp) < 0) {
-                    logger.error("Tx gas price is under the Min gas Price of the block");
+                    logger.warn("Tx gas price is under the Min gas Price of the block");
                     panicProcessor.panic("invalidmingasprice", "Tx gas price is under the Min gas Price of the block");
                     return false;
                 }
             }
         }
+
         return true;
     }
 }

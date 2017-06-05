@@ -24,6 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.validator.ProofOfWorkRule;
@@ -33,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -45,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 public class NodeMessageHandler implements MessageHandler, Runnable {
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
+    public static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
     private final BlockProcessor blockProcessor;
     private final ChannelManager channelManager;
     private final PendingState pendingState;
@@ -54,6 +57,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private TransactionNodeInformation transactionNodeInformation;
 
     private LinkedBlockingQueue<MessageTask> queue = new LinkedBlockingQueue<>();
+    private Set<ByteArrayWrapper> receivedMessages = Collections.synchronizedSet(new HashSet<ByteArrayWrapper>());
     private volatile boolean stopped;
 
     private TxHandler txHandler;
@@ -115,13 +119,25 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     @Override
     public void postMessage(MessageSender sender, Message message) throws InterruptedException {
-        try {
-            logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message.getMessageType());
-            this.queue.put(new MessageTask(sender, message));
-            logger.trace("End post message (queue size {})", this.queue.size());
-        } catch (InterruptedException e) {
-            logger.error("Error post message", e);
-            throw e;
+        ByteArrayWrapper encodedMessage = new ByteArrayWrapper(HashUtil.sha3(message.getEncoded()));
+        logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message.getMessageType());
+        if (!receivedMessages.contains(encodedMessage)) {
+            if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
+                addReceivedMessage(encodedMessage);
+            }
+            this.queue.offer(new MessageTask(sender, message));
+        } else {
+            logger.trace("Received message already known, not added to the queue");
+        }
+        logger.trace("End post message (queue size {})", this.queue.size());
+    }
+
+    private void addReceivedMessage(ByteArrayWrapper message) {
+        if (message != null) {
+            if (this.receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
+                this.receivedMessages.clear();
+            }
+            this.receivedMessages.add(message);
         }
     }
 
@@ -142,7 +158,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                 MessageTask task;
 
                 if (this.queue.isEmpty())
-                    task = this.queue.poll(60, TimeUnit.SECONDS);
+                    task = this.queue.poll(10, TimeUnit.SECONDS);
                 else
                     task = this.queue.poll();
 
@@ -152,7 +168,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                     logger.trace("Start task");
                     this.processMessage(task.getSender(), task.getMessage());
                     logger.trace("End task");
-                } else
+                } else if (this.blockProcessor != null && this.blockProcessor.hasBetterBlockToSync())
+                    this.blockProcessor.sendStatusToAll();
+                else
                     logger.trace("No task");
             }
             catch (Throwable ex) {

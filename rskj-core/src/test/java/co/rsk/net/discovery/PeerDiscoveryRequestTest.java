@@ -47,8 +47,7 @@ public class PeerDiscoveryRequestTest {
                 .expirationPeriod(1000).attemptNumber(1).build();
 
         Assert.assertNotNull(request);
-        Assert.assertTrue(request.validateMessageResponse(address, pongPeerMessage));
-        Assert.assertFalse(request.validateMessageResponse(address, pingPeerMessage));
-        Assert.assertFalse(request.validateMessageResponse(new InetSocketAddress("localhost", 8081), pongPeerMessage));
+        Assert.assertTrue(request.validateMessageResponse(pongPeerMessage));
+        Assert.assertFalse(request.validateMessageResponse(pingPeerMessage));
     }
 }

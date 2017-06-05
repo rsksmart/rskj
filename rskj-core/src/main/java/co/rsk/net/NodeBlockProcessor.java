@@ -35,7 +35,6 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
-import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -54,7 +53,6 @@ public class NodeBlockProcessor implements BlockProcessor {
     @GuardedBy("syncLock")
     private volatile boolean syncing = false;
 
-    private SecureRandom random = new SecureRandom();
     private long processedBlocksCounter;
     private static final Logger logger = LoggerFactory.getLogger("blockprocessor");
 
@@ -69,6 +67,8 @@ public class NodeBlockProcessor implements BlockProcessor {
     private long lastKnownBlockNumber = 0;
 
     private Map<ByteArrayWrapper, Integer> unknownBlockHashes = new HashMap<>();
+
+    private long lastStatusTime;
 
     /**
      * Creates a new NodeBlockProcessor using the given BlockStore and Blockchain.
@@ -187,6 +187,7 @@ public class NodeBlockProcessor implements BlockProcessor {
             sendStatus(sender);
         }
 
+        // On incoming block, refresh status if needed
         if (this.hasBetterBlockToSync())
             sendStatusToAll();
 
@@ -215,9 +216,8 @@ public class NodeBlockProcessor implements BlockProcessor {
         }
 
         final Set<ByteArrayWrapper> unknownHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
-        final Set<ByteArrayWrapper> unknownAllHashes = BlockUtils.unknownAncestorsHashes(block, blockchain, store);
 
-        this.processMissingHashes(sender, unknownAllHashes);
+        this.processMissingHashes(sender, unknownHashes);
 
         // We can't add the block if there are missing ancestors or uncles. Request the missing blocks to the sender.
         if (!unknownHashes.isEmpty()) {
@@ -234,7 +234,13 @@ public class NodeBlockProcessor implements BlockProcessor {
 
         logger.trace("Trying to add to blockchain");
 
-        return new BlockProcessResult(true, connectBlocksAndDescendants(sender, BlockUtils.sortBlocksByNumber(getBlocksNotInBlockchain(block))));
+        BlockProcessResult result = new BlockProcessResult(true, connectBlocksAndDescendants(sender, BlockUtils.sortBlocksByNumber(getBlocksNotInBlockchain(block))));
+
+        // After adding a long blockchain, refresh status if needed
+        if (this.hasBetterBlockToSync())
+            sendStatusToAll();
+
+        return result;
     }
 
     private Map<ByteArrayWrapper, ImportResult> connectBlocksAndDescendants(MessageSender sender, List<Block> blocks) {
@@ -322,25 +328,13 @@ public class NodeBlockProcessor implements BlockProcessor {
         if (peerBestBlockNumber > this.lastKnownBlockNumber)
             this.lastKnownBlockNumber = peerBestBlockNumber;
 
-        int initial = Math.abs(random.nextInt() % 10);
-
-        for (long n = peerBestBlockNumber + initial; n <= bestBlockNumber && n < peerBestBlockNumber + 100; n += 10) {
+        for (long n = peerBestBlockNumber; n <= bestBlockNumber && n < peerBestBlockNumber + 25; n++) {
             logger.trace("Trying to send block {}", n);
             
             final Block b = this.blockchain.getBlockByNumber(n);
 
             if (b == null)
                 continue;
-
-            for (BlockHeader uncleHeader : b.getUncleList()) {
-                Block uncle = this.getBlock(uncleHeader.getHash());
-
-                if (uncle != null) {
-                    nodeInformation.addBlockToNode(new ByteArrayWrapper(uncle.getHash()), sender.getNodeID());
-                    logger.trace("Sending uncle block {} {}", uncle.getNumber(), uncle.getShortHash());
-                    sender.sendMessage(new BlockMessage(uncle));
-                }
-            }
 
             nodeInformation.addBlockToNode(new ByteArrayWrapper(b.getHash()), sender.getNodeID());
             logger.trace("Sending block {} {}", b.getNumber(), b.getShortHash());
@@ -461,17 +455,6 @@ public class NodeBlockProcessor implements BlockProcessor {
         while (block != null && !this.hasBlockInSomeBlockchain(block.getHash())) {
             BlockUtils.addBlockToList(blocks, block);
 
-            for (BlockHeader uncleHeader : block.getUncleList()) {
-                Block uncle = getBlock(uncleHeader.getHash());
-
-                if (uncle == null)
-                    continue;
-
-                List<Block> uncles = getBlocksNotInBlockchain(uncle);
-
-                BlockUtils.addBlocksToList(blocks, uncles);
-            }
-
             block = this.getBlock(block.getParentHash());
         }
 
@@ -509,7 +492,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         final List<Block> children = new ArrayList<Block>();
 
         for (final Block block : blocks)
-            BlockUtils.addBlocksToList(children, this.store.getBlocksByParentUncleHash(block.getHash()));
+            BlockUtils.addBlocksToList(children, this.store.getBlocksByParentHash(block.getHash()));
 
         return children;
     }
@@ -632,25 +615,33 @@ public class NodeBlockProcessor implements BlockProcessor {
         }
     }
 
-    private boolean sendStatusToAll() {
+    // This does not send status to ALL anymore.
+    // Should be renamed to something like sendStatusToSome.
+    // Not renamed yet to avoid merging hell.
+    @Override
+    public void sendStatusToAll() {
         synchronized (statusLock) {
             if (this.channelManager == null)
-                return false;
+                return;
 
             Block block = this.blockchain.getBestBlock();
 
             if (block == null)
-                return false;
+                return;
 
             Status status = new Status(block.getNumber(), block.getHash());
 
-            if (status.getBestBlockNumber() < lastStatusBestBlock + 80)
-                return false;
+            long currentTime = System.currentTimeMillis();
+
+            if (currentTime - lastStatusTime < 1000)
+                return;
+
+            lastStatusTime = currentTime;
 
             lastStatusBestBlock = status.getBestBlockNumber();
 
             logger.trace("Sending status best block {} to all", status.getBestBlockNumber());
-            return this.channelManager.broadcastStatus(status) > 0;
+            this.channelManager.broadcastStatus(status);
         }
     }
 
