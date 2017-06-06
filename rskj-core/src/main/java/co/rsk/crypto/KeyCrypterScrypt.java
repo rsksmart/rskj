@@ -71,7 +71,7 @@ public class KeyCrypterScrypt implements KeyCrypter {
     public static final int BLOCK_LENGTH = 16;  // = 128 bits.
 
     static {
-        secureRandom = new SecureRandom();
+        secureRandom = SecureRandom.getInstanceStrong();
     }
 
     private static final SecureRandom secureRandom;
