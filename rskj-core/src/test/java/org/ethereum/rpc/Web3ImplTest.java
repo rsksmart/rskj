@@ -665,6 +665,8 @@ public class Web3ImplTest {
         Assert.notNull(bresult);
 
         org.junit.Assert.assertEquals(2, bresult.length);
+        org.junit.Assert.assertEquals(TypeConverter.toJsonHex(block1.getHash()), bresult[0].hash);
+        org.junit.Assert.assertEquals(TypeConverter.toJsonHex(block1b.getHash()), bresult[1].hash);
     }
 
     @Test
