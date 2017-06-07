@@ -26,6 +26,7 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.util.FileUtil;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -93,7 +94,7 @@ public class IndexedBlockStoreTest {
     public void test1(){
 
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
-        indexedBlockStore.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), null, null);
+        indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null, null);
 
         BigInteger cummDiff = BigInteger.ZERO;
         for (Block block : blocks){
@@ -153,20 +154,20 @@ public class IndexedBlockStoreTest {
         //  testing: getBlocksByNumber(long)
 
         block  = blocks.get(50);
-        block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-        assertEquals(block.getNumber(), block_.getNumber());
+        BlockInformation blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         block  = blocks.get(150);
-        block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-        assertEquals(block.getNumber(), block_.getNumber());
+        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         block  = blocks.get(0);
-        block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-        assertEquals(block.getNumber(), block_.getNumber());
+        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         block  = blocks.get(8003);
-        block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-        assertEquals(block.getNumber(), block_.getNumber());
+        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         int blocksNum  = indexedBlockStore.getBlocksByNumber(10000).size();
         assertEquals(0, blocksNum);
@@ -263,20 +264,20 @@ public class IndexedBlockStoreTest {
         //  testing: getBlocksByNumber(long)
 
         block  = blocks.get(50);
-        block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-        assertEquals(block.getNumber(), block_.getNumber());
+        BlockInformation blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         block  = blocks.get(150);
-        block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-        assertEquals(block.getNumber(), block_.getNumber());
+        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         block  = blocks.get(0);
-        block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-        assertEquals(block.getNumber(), block_.getNumber());
+        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         block  = blocks.get(8003);
-        block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-        assertEquals(block.getNumber(), block_.getNumber());
+        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         int blocksNum  = indexedBlockStore.getBlocksByNumber(10000).size();
         assertEquals(0, blocksNum);
@@ -375,20 +376,20 @@ public class IndexedBlockStoreTest {
         //  testing: getBlocksByNumber(long)
 
         block  = blocks.get(50);
-        block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-        assertEquals(block.getNumber(), block_.getNumber());
+        BlockInformation blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         block  = blocks.get(150);
-        block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-        assertEquals(block.getNumber(), block_.getNumber());
+        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         block  = blocks.get(0);
-        block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-        assertEquals(block.getNumber(), block_.getNumber());
+        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         block  = blocks.get(8003);
-        block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-        assertEquals(block.getNumber(), block_.getNumber());
+        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         int blocksNum  = indexedBlockStore.getBlocksByNumber(10000).size();
         assertEquals(0, blocksNum);
@@ -414,15 +415,11 @@ public class IndexedBlockStoreTest {
             String hash_ = Hex.toHexString( block.getHash() );
             assertEquals(hash_, hash);
         }
-
     }
-
-
 
     @Test // cache + leveldb + mapdb, save some load, flush to disk, and check it exist
     @Ignore
     public void test4() throws IOException {
-
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
         SystemProperties.CONFIG.setDataBaseDir(testDir);
@@ -435,7 +432,6 @@ public class IndexedBlockStoreTest {
 
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
         indexedBlockStore.init(indexMap, blocksDB, null, indexDB);
-
 
         BigInteger cummDiff = BigInteger.ZERO;
         for (Block block : blocks){
@@ -495,20 +491,20 @@ public class IndexedBlockStoreTest {
         //  testing: getBlocksByNumber(long)
 
         block  = blocks.get(50);
-        block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-        assertEquals(block.getNumber(), block_.getNumber());
+        BlockInformation blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         block  = blocks.get(150);
-        block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-        assertEquals(block.getNumber(), block_.getNumber());
+        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         block  = blocks.get(0);
-        block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-        assertEquals(block.getNumber(), block_.getNumber());
+        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         block  = blocks.get(8003);
-        block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-        assertEquals(block.getNumber(), block_.getNumber());
+        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         int blocksNum  = indexedBlockStore.getBlocksByNumber(10000).size();
         assertEquals(0, blocksNum);
@@ -657,20 +653,20 @@ public class IndexedBlockStoreTest {
             //  testing: getBlocksByNumber(long)
 
             block  = blocks.get(50);
-            block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-            assertEquals(block.getNumber(), block_.getNumber());
+            BlockInformation blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+            Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
             block  = blocks.get(150);
-            block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-            assertEquals(block.getNumber(), block_.getNumber());
+            blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+            Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
             block  = blocks.get(0);
-            block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-            assertEquals(block.getNumber(), block_.getNumber());
+            blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+            Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
             block  = blocks.get(8003);
-            block_ = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
-            assertEquals(block.getNumber(), block_.getNumber());
+            blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+            Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
             int blocksNum  = indexedBlockStore.getBlocksByNumber(10000).size();
             assertEquals(0, blocksNum);

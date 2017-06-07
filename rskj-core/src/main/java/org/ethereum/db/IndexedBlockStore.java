@@ -27,6 +27,7 @@ import org.mapdb.DataIO;
 import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -39,7 +40,7 @@ import static java.math.BigInteger.ZERO;
 import static org.ethereum.crypto.HashUtil.shortHash;
 import static org.spongycastle.util.Arrays.areEqual;
 
-public class IndexedBlockStore extends AbstractBlockstore{
+public class IndexedBlockStore extends AbstractBlockstore {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
 
@@ -162,25 +163,26 @@ public class IndexedBlockStore extends AbstractBlockstore{
         index.put(block.getNumber(), blockInfos);
     }
 
+    @Override
+    public List<BlockInformation> getBlocksByNumber(long number) {
+        List<BlockInformation> result = new ArrayList<>();
 
-    public List<Block> getBlocksByNumber(long number){
-
-        List<Block> result = new ArrayList<>();
         if (cache != null)
             result = cache.getBlocksByNumber(number);
 
         List<BlockInfo> blockInfos = index.get(number);
-        if (blockInfos == null){
+
+        if (blockInfos == null)
             return result;
+
+        for (BlockInfo blockInfo : blockInfos) {
+            byte[] hash = ByteUtils.clone(blockInfo.getHash());
+            BigInteger totalDifficulty = blockInfo.getCummDifficulty();
+            boolean isInBlockChain = blockInfo.isMainChain();
+
+            result.add(new BlockInformation(hash, totalDifficulty, isInBlockChain));
         }
 
-        for (BlockInfo blockInfo : blockInfos){
-
-            byte[] hash = blockInfo.getHash();
-            byte[] blockRlp = blocks.get(hash);
-
-            result.add(new Block(blockRlp));
-        }
         return result;
     }
 
