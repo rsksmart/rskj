@@ -8,12 +8,12 @@ import java.math.BigInteger;
 public class BlockInformation {
     private byte[] hash;
     private BigInteger totalDifficulty;
-    private boolean inBlockChain;
+    private boolean inMainChain;
 
-    public BlockInformation(byte[] hash, BigInteger totalDifficulty, boolean inBlockChain) {
+    public BlockInformation(byte[] hash, BigInteger totalDifficulty, boolean inMainChain) {
         this.hash = hash;
         this.totalDifficulty = totalDifficulty;
-        this.inBlockChain = inBlockChain;
+        this.inMainChain = inMainChain;
     }
 
     public byte[] getHash() {
@@ -24,7 +24,7 @@ public class BlockInformation {
         return this.totalDifficulty;
     }
 
-    public boolean isInBlockChain() {
-        return this.inBlockChain;
+    public boolean isInMainChain() {
+        return this.inMainChain;
     }
 }

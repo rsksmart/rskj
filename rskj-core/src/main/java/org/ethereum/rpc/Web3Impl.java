@@ -36,6 +36,7 @@ import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.BlockInformation;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -589,7 +590,6 @@ public class Web3Impl implements Web3 {
             if (logger.isDebugEnabled())
                 logger.debug("eth_sendTransaction({}): {}", args, s);
         }
-
     }
 
     public String eth_sendRawTransaction(String rawData) throws Exception {
@@ -635,6 +635,15 @@ public class Web3Impl implements Web3 {
     public String eth_estimateGas(CallArguments args) throws Exception {
         ProgramResult res = createCallTxAndExecute(args, this.getKeyToSign(args.from));
         return toJsonHex(res.getGasUsed());
+    }
+
+    public BlockInformationResult getBlockInformationResult(BlockInformation blockInformation) {
+        BlockInformationResult bir = new BlockInformationResult();
+        bir.hash = TypeConverter.toJsonHex(blockInformation.getHash());
+        bir.totalDifficulty = TypeConverter.toJsonHex(blockInformation.getTotalDifficulty());
+        bir.inMainChain = blockInformation.isInMainChain();
+
+        return bir;
     }
 
     public BlockResult getBlockResult(Block b, boolean fullTx) {
@@ -684,6 +693,28 @@ public class Web3Impl implements Web3 {
         br.uncles = ul.toArray(new String[ul.size()]);
 
         return br;
+    }
+
+    public BlockInformationResult[] eth_getBlocksByNumber(String number) {
+        long blockNumber;
+
+        try {
+            blockNumber = StringHexToBigInteger(number).longValue();
+        } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+            throw new JsonRpcInvalidParamException("invalid blocknumber " + number);
+        }
+
+        List<BlockInformationResult> result = new ArrayList<>();
+        Blockchain blockchain = this.worldManager.getBlockchain();
+
+        synchronized (blockchain) {
+            List<BlockInformation> binfos = blockchain.getBlockStore().getBlocksByNumber(blockNumber);
+
+            for (BlockInformation binfo : binfos)
+                result.add(getBlockInformationResult(binfo));
+        }
+
+        return result.toArray(new BlockInformationResult[result.size()]);
     }
 
     public BlockResult eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) throws Exception {
