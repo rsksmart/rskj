@@ -93,10 +93,9 @@ public class BlockChainLoader {
 
             logger.info("Genesis block loaded");
         } else {
+            BigInteger totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash());
 
             blockchain.setBestBlock(bestBlock);
-
-            BigInteger totalDifficulty = blockStore.getTotalDifficulty();
             blockchain.setTotalDifficulty(totalDifficulty);
 
             logger.info("*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",
