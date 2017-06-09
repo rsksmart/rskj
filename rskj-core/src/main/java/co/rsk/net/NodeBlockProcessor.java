@@ -18,6 +18,7 @@
 
 package co.rsk.net;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.net.messages.*;
 import org.ethereum.core.Block;
@@ -69,6 +70,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     private Map<ByteArrayWrapper, Integer> unknownBlockHashes = new HashMap<>();
 
     private long lastStatusTime;
+    private long blocksForPeers = 100;
 
     /**
      * Creates a new NodeBlockProcessor using the given BlockStore and Blockchain.
@@ -84,6 +86,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         this.nodeInformation = new BlockNodeInformation();
         worldManager.setNodeBlockProcessor(this);
         this.channelManager = worldManager.getChannelManager();
+        this.blocksForPeers = RskSystemProperties.RSKCONFIG.getBlocksForPeers();
     }
 
     /**
@@ -328,7 +331,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         if (peerBestBlockNumber > this.lastKnownBlockNumber)
             this.lastKnownBlockNumber = peerBestBlockNumber;
 
-        for (long n = peerBestBlockNumber; n <= bestBlockNumber && n < peerBestBlockNumber + 100; n++) {
+        for (long n = peerBestBlockNumber; n <= bestBlockNumber && n < peerBestBlockNumber + this.blocksForPeers; n++) {
             logger.trace("Trying to send block {}", n);
             
             final Block b = this.blockchain.getBlockByNumber(n);

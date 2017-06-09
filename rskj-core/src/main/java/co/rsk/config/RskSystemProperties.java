@@ -285,4 +285,13 @@ public class RskSystemProperties extends SystemProperties {
 
         return messageRecorder;
     }
+
+    public long getBlocksForPeers() {
+        long ret = config.hasPath("blocksforpeers") ?
+                config.getLong("blocksforpeers") : 100;
+        if (ret > 0)
+            return ret;
+        return 100;
+
+    }
 }
