@@ -291,7 +291,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         // It is the new best block
         if (totalDifficulty.compareTo(status.getTotalDifficulty()) > 0) {
             if (bestBlock != null && !bestBlock.isParentOf(block)) {
-                logger.info("Rebranching: {} ~> {} From block {} ~> {} ", bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber());
+                logger.info("Rebranching: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}", bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(), status.getTotalDifficulty().toString(), totalDifficulty.toString());
                 BlockFork fork = new BlockFork();
                 fork.calculate(bestBlock, block, blockStore);
                 Metrics.rebranch(bestBlock, block, fork.getNewBlocks().size() + fork.getOldBlocks().size());
