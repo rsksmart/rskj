@@ -328,7 +328,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         if (peerBestBlockNumber > this.lastKnownBlockNumber)
             this.lastKnownBlockNumber = peerBestBlockNumber;
 
-        for (long n = peerBestBlockNumber; n <= bestBlockNumber && n < peerBestBlockNumber + 25; n++) {
+        for (long n = peerBestBlockNumber; n <= bestBlockNumber && n < peerBestBlockNumber + 100; n++) {
             logger.trace("Trying to send block {}", n);
             
             final Block b = this.blockchain.getBlockByNumber(n);
