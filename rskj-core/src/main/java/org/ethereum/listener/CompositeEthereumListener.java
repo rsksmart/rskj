@@ -68,13 +68,6 @@ public class CompositeEthereumListener implements EthereumListener {
     }
 
     @Override
-    public void onSendMessage(Channel channel, Message message) {
-        for (EthereumListener listener : listeners) {
-            listener.onSendMessage(channel, message);
-        }
-    }
-
-    @Override
     public void onPeerDisconnect(String host, long port) {
         for (EthereumListener listener : listeners) {
             listener.onPeerDisconnect(host, port);
