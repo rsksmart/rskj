@@ -20,6 +20,7 @@ package co.rsk.core;
 
 import co.rsk.core.bc.BlockChainStatus;
 import org.ethereum.core.*;
+import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
@@ -136,5 +137,10 @@ public class BlockchainDummy implements Blockchain {
     @Override
     public void removeBlocksByNumber(long blockNumber) {
         // unused
+    }
+
+    @Override
+    public List<BlockInformation> getBlocksInformationByNumber(long number) {
+        throw new UnsupportedOperationException();
     }
 }

@@ -707,12 +707,10 @@ public class Web3Impl implements Web3 {
         List<BlockInformationResult> result = new ArrayList<>();
         Blockchain blockchain = this.worldManager.getBlockchain();
 
-        synchronized (blockchain) {
-            List<BlockInformation> binfos = blockchain.getBlockStore().getBlocksInformationByNumber(blockNumber);
+        List<BlockInformation> binfos = blockchain.getBlocksInformationByNumber(blockNumber);
 
-            for (BlockInformation binfo : binfos)
-                result.add(getBlockInformationResult(binfo));
-        }
+        for (BlockInformation binfo : binfos)
+            result.add(getBlockInformationResult(binfo));
 
         return result.toArray(new BlockInformationResult[result.size()]);
     }
