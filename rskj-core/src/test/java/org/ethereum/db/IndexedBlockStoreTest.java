@@ -151,26 +151,26 @@ public class IndexedBlockStoreTest {
         block_  = indexedBlockStore.getChainBlockByNumber(10000);
         assertEquals(null, block_);
 
-        //  testing: getBlocksByNumber(long)
+        //  testing: getBlocksInformationByNumber(long)
 
         block  = blocks.get(50);
-        BlockInformation blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        BlockInformation blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
         Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         block  = blocks.get(150);
-        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
         Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         block  = blocks.get(0);
-        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
         Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         block  = blocks.get(8003);
-        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
         Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
         Assert.assertTrue(blockInformation.getTotalDifficulty().compareTo(BigInteger.ZERO) > 0);
 
-        int blocksNum  = indexedBlockStore.getBlocksByNumber(10000).size();
+        int blocksNum  = indexedBlockStore.getBlocksInformationByNumber(10000).size();
         assertEquals(0, blocksNum);
 
         //  testing: getListHashesEndWith(byte[], long)
@@ -261,28 +261,28 @@ public class IndexedBlockStoreTest {
         block_  = indexedBlockStore.getChainBlockByNumber(10000);
         assertEquals(null, block_);
 
-        //  testing: getBlocksByNumber(long)
+        //  testing: getBlocksInformationByNumber(long)
 
         block  = blocks.get(50);
-        BlockInformation blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        BlockInformation blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
         Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
         Assert.assertTrue(blockInformation.getTotalDifficulty().compareTo(BigInteger.ZERO) > 0);
 
         block  = blocks.get(150);
-        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
         Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
         Assert.assertTrue(blockInformation.getTotalDifficulty().compareTo(BigInteger.ZERO) > 0);
 
         block  = blocks.get(0);
-        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
         Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
         Assert.assertTrue(blockInformation.getTotalDifficulty().compareTo(BigInteger.ZERO) > 0);
 
         block  = blocks.get(8003);
-        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
         Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
-        int blocksNum  = indexedBlockStore.getBlocksByNumber(10000).size();
+        int blocksNum  = indexedBlockStore.getBlocksInformationByNumber(10000).size();
         assertEquals(0, blocksNum);
 
         //  testing: getListHashesEndWith(byte[], long)
@@ -375,27 +375,27 @@ public class IndexedBlockStoreTest {
         block_  = indexedBlockStore.getChainBlockByNumber(10000);
         assertEquals(null, block_);
 
-        //  testing: getBlocksByNumber(long)
+        //  testing: getBlocksInformationByNumber(long)
 
         block  = blocks.get(50);
-        BlockInformation blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        BlockInformation blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
         Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
         Assert.assertTrue(blockInformation.getTotalDifficulty().compareTo(BigInteger.ZERO) > 0);
 
         block  = blocks.get(150);
-        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
         Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
         Assert.assertTrue(blockInformation.getTotalDifficulty().compareTo(BigInteger.ZERO) > 0);
 
         block  = blocks.get(0);
-        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
         Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
         block  = blocks.get(8003);
-        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
         Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
 
-        int blocksNum  = indexedBlockStore.getBlocksByNumber(10000).size();
+        int blocksNum  = indexedBlockStore.getBlocksInformationByNumber(10000).size();
         assertEquals(0, blocksNum);
 
         //  testing: getListHashesEndWith(byte[], long)
@@ -492,29 +492,29 @@ public class IndexedBlockStoreTest {
         block_  = indexedBlockStore.getChainBlockByNumber(10000);
         assertEquals(null, block_);
 
-        //  testing: getBlocksByNumber(long)
+        //  testing: getBlocksInformationByNumber(long)
 
         block  = blocks.get(50);
-        BlockInformation blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        BlockInformation blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
         Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
         Assert.assertTrue(blockInformation.getTotalDifficulty().compareTo(BigInteger.ZERO) > 0);
 
         block  = blocks.get(150);
-        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
         Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
         Assert.assertTrue(blockInformation.getTotalDifficulty().compareTo(BigInteger.ZERO) > 0);
 
         block  = blocks.get(0);
-        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
         Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
         Assert.assertTrue(blockInformation.getTotalDifficulty().compareTo(BigInteger.ZERO) > 0);
 
         block  = blocks.get(8003);
-        blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+        blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
         Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
         Assert.assertTrue(blockInformation.getTotalDifficulty().compareTo(BigInteger.ZERO) > 0);
 
-        int blocksNum  = indexedBlockStore.getBlocksByNumber(10000).size();
+        int blocksNum  = indexedBlockStore.getBlocksInformationByNumber(10000).size();
         assertEquals(0, blocksNum);
 
         //  testing: getListHashesEndWith(byte[], long)
@@ -655,29 +655,29 @@ public class IndexedBlockStoreTest {
             block_  = indexedBlockStore.getChainBlockByNumber(10000);
             assertEquals(null, block_);
 
-            //  testing: getBlocksByNumber(long)
+            //  testing: getBlocksInformationByNumber(long)
 
             block  = blocks.get(50);
-            BlockInformation blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+            BlockInformation blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
             Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
             Assert.assertTrue(blockInformation.getTotalDifficulty().compareTo(BigInteger.ZERO) > 0);
 
             block  = blocks.get(150);
-            blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+            blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
             Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
             Assert.assertTrue(blockInformation.getTotalDifficulty().compareTo(BigInteger.ZERO) > 0);
 
             block  = blocks.get(0);
-            blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+            blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
             Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
             Assert.assertTrue(blockInformation.getTotalDifficulty().compareTo(BigInteger.ZERO) > 0);
 
             block  = blocks.get(8003);
-            blockInformation = indexedBlockStore.getBlocksByNumber(block.getNumber()).get(0);
+            blockInformation = indexedBlockStore.getBlocksInformationByNumber(block.getNumber()).get(0);
             Assert.assertArrayEquals(block.getHash(), blockInformation.getHash());
             Assert.assertTrue(blockInformation.getTotalDifficulty().compareTo(BigInteger.ZERO) > 0);
 
-            int blocksNum  = indexedBlockStore.getBlocksByNumber(10000).size();
+            int blocksNum  = indexedBlockStore.getBlocksInformationByNumber(10000).size();
             assertEquals(0, blocksNum);
 
             //  testing: getListHashesEndWith(byte[], long)

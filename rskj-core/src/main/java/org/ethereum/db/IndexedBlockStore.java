@@ -164,11 +164,11 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public List<BlockInformation> getBlocksByNumber(long number) {
+    public List<BlockInformation> getBlocksInformationByNumber(long number) {
         List<BlockInformation> result = new ArrayList<>();
 
         if (cache != null)
-            result = cache.getBlocksByNumber(number);
+            result = cache.getBlocksInformationByNumber(number);
 
         List<BlockInfo> blockInfos = index.get(number);
 

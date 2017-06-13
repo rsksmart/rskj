@@ -708,7 +708,7 @@ public class Web3Impl implements Web3 {
         Blockchain blockchain = this.worldManager.getBlockchain();
 
         synchronized (blockchain) {
-            List<BlockInformation> binfos = blockchain.getBlockStore().getBlocksByNumber(blockNumber);
+            List<BlockInformation> binfos = blockchain.getBlockStore().getBlocksInformationByNumber(blockNumber);
 
             for (BlockInformation binfo : binfos)
                 result.add(getBlockInformationResult(binfo));

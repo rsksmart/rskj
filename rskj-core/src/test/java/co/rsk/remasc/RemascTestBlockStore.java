@@ -139,5 +139,5 @@ public class RemascTestBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public List<BlockInformation> getBlocksByNumber(long blockNumber) { return null; }
+    public List<BlockInformation> getBlocksInformationByNumber(long blockNumber) { return null; }
 }

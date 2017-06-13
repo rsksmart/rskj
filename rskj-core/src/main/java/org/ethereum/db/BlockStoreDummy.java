@@ -133,5 +133,5 @@ public class BlockStoreDummy implements BlockStore {
     }
 
     @Override
-    public List<BlockInformation> getBlocksByNumber(long blockNumber) { return null; }
+    public List<BlockInformation> getBlocksInformationByNumber(long blockNumber) { return null; }
 }
