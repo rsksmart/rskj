@@ -71,8 +71,8 @@ public class MessageQueue {
         }
     });
 
-    private Queue<MessageRoundtrip> requestQueue = new ConcurrentLinkedQueue<>();
-    private Queue<MessageRoundtrip> respondQueue = new ConcurrentLinkedQueue<>();
+    private Queue<MessageRoundtrip> requestQueue = new LinkedBlockingQueue<>();
+    private Queue<MessageRoundtrip> respondQueue = new LinkedBlockingQueue<>();
     private ChannelHandlerContext ctx = null;
 
     boolean hasPing = false;
