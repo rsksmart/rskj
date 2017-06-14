@@ -699,7 +699,7 @@ public class Web3Impl implements Web3 {
         long blockNumber;
 
         try {
-            blockNumber = StringHexToBigInteger(number).longValue();
+            blockNumber = TypeConverter.StringNumberAsBigInt(number).longValue();
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
             throw new JsonRpcInvalidParamException("invalid blocknumber " + number);
         }
@@ -1325,7 +1325,6 @@ public class Web3Impl implements Web3 {
             if (logger.isDebugEnabled()) logger.debug("personal_dumpRawKey(*****): " + s);
         }
     }
-
 
     @Override
     public String[] personal_listAccounts() {

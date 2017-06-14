@@ -28,7 +28,7 @@ import java.math.BigInteger;
 public class TypeConverter {
     private static byte[] emptyByteArray = new byte[0];
 
-    public static BigInteger StringNumberAsBigInt(String input) throws Exception {
+    public static BigInteger StringNumberAsBigInt(String input) {
         if (input.startsWith("0x"))
             return TypeConverter.StringHexToBigInteger(input);
         else
