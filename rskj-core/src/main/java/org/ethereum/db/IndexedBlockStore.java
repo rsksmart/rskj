@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.net.BlockCache;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -44,6 +45,7 @@ public class IndexedBlockStore extends AbstractBlockstore{
     private static final Logger logger = LoggerFactory.getLogger("general");
 
     IndexedBlockStore cache;
+    private BlockCache blockCache = new BlockCache(200);
     Map<Long, List<BlockInfo>> index;
     KeyValueDataSource blocks;
 
@@ -63,6 +65,8 @@ public class IndexedBlockStore extends AbstractBlockstore{
         if (this.cache != null)
             this.cache.removeBlock(block);
 
+        this.blockCache.removeBlock(block);
+
         this.blocks.delete(block.getHash());
 
         List<BlockInfo> binfos = this.index.get(block.getNumber());
@@ -80,7 +84,6 @@ public class IndexedBlockStore extends AbstractBlockstore{
     }
 
     public Block getBestBlock(){
-
         Long maxLevel = getMaxNumber();
         if (maxLevel < 0) return null;
 
@@ -139,6 +142,8 @@ public class IndexedBlockStore extends AbstractBlockstore{
             addInternalBlock(block, cummDifficulty, mainChain);
         else
             cache.saveBlock(block, cummDifficulty, mainChain);
+
+        this.blockCache.addBlock(block);
     }
 
     private void addInternalBlock(Block block, BigInteger cummDifficulty, boolean mainChain){
@@ -216,6 +221,10 @@ public class IndexedBlockStore extends AbstractBlockstore{
 
     @Override
     public Block getBlockByHash(byte[] hash) {
+        Block block = this.blockCache.getBlockByHash(hash);
+
+        if (block != null)
+            return block;
 
         if (cache != null) {
             Block cachedBlock = cache.getBlockByHash(hash);
@@ -231,7 +240,6 @@ public class IndexedBlockStore extends AbstractBlockstore{
 
     @Override
     public boolean isBlockExist(byte[] hash) {
-
         if (cache != null) {
             Block cachedBlock = cache.getBlockByHash(hash);
             if (cachedBlock != null) return true;
@@ -240,7 +248,6 @@ public class IndexedBlockStore extends AbstractBlockstore{
         byte[] blockRlp = blocks.get(hash);
         return blockRlp != null;
     }
-
 
     @Override
     public BigInteger getTotalDifficultyForHash(byte[] hash){
