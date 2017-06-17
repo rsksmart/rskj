@@ -96,7 +96,7 @@ public class BlockChainLoader {
 
             blockchain.setBestBlock(bestBlock);
 
-            BigInteger totalDifficulty = blockStore.getTotalDifficulty();
+            BigInteger totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash());
             blockchain.setTotalDifficulty(totalDifficulty);
 
             logger.info("*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",

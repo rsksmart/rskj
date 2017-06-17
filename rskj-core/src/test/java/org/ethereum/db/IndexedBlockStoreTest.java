@@ -88,7 +88,7 @@ public class IndexedBlockStoreTest {
     }
 
 
-    @Test // no cache, save some load, and check it exist
+    @Test // save some load, and check it exist
     @Ignore
     public void test1(){
 
@@ -101,12 +101,12 @@ public class IndexedBlockStoreTest {
             indexedBlockStore.saveBlock(block, cummDiff, true);
         }
 
-        //  testing:   getTotalDifficulty()
+        //  testing:   getTotalDifficultyForHash(byte[])
         //  testing:   getMaxNumber()
 
         long bestIndex = blocks.get(blocks.size() - 1).getNumber();
         assertEquals(bestIndex, indexedBlockStore.getMaxNumber());
-        assertEquals(cumDifficulty, indexedBlockStore.getTotalDifficulty());
+        assertEquals(cumDifficulty, indexedBlockStore.getTotalDifficultyForHash(blocks.get(blocks.size() - 1).getHash()));
 
         //  testing:  getBlockByHash(byte[])
 
@@ -211,12 +211,12 @@ public class IndexedBlockStoreTest {
             indexedBlockStore.saveBlock(block, cummDiff, true);
         }
 
-        //  testing:   getTotalDifficulty()
+        //  testing:   getTotalDifficultyForHash(byte[])
         //  testing:   getMaxNumber()
 
         long bestIndex = blocks.get(blocks.size() - 1).getNumber();
         assertEquals(bestIndex, indexedBlockStore.getMaxNumber());
-        assertEquals(cumDifficulty, indexedBlockStore.getTotalDifficulty());
+        assertEquals(cumDifficulty, indexedBlockStore.getTotalDifficultyForHash(blocks.get(blocks.size() - 1).getHash()));
 
         //  testing:  getBlockByHash(byte[])
 
@@ -323,12 +323,12 @@ public class IndexedBlockStoreTest {
 
         indexedBlockStore.flush();
 
-        //  testing:   getTotalDifficulty()
+        //  testing:   getTotalDifficultyForHash(byte[])
         //  testing:   getMaxNumber()
 
         long bestIndex = blocks.get(blocks.size() - 1).getNumber();
         assertEquals(bestIndex, indexedBlockStore.getMaxNumber());
-        assertEquals(cumDifficulty, indexedBlockStore.getTotalDifficulty());
+        assertEquals(cumDifficulty, indexedBlockStore.getTotalDifficultyForHash(blocks.get(blocks.size() - 1).getHash()));
 
         //  testing:  getBlockByHash(byte[])
 
@@ -443,12 +443,12 @@ public class IndexedBlockStoreTest {
             indexedBlockStore.saveBlock(block, cummDiff, true);
         }
 
-        //  testing:   getTotalDifficulty()
+        //  testing:   getTotalDifficultyForHash(byte[])
         //  testing:   getMaxNumber()
 
         long bestIndex = blocks.get(blocks.size() - 1).getNumber();
         assertEquals(bestIndex, indexedBlockStore.getMaxNumber());
-        assertEquals(cumDifficulty, indexedBlockStore.getTotalDifficulty());
+        assertEquals(cumDifficulty, indexedBlockStore.getTotalDifficultyForHash(blocks.get(blocks.size() - 1).getHash()));
 
         //  testing:  getBlockByHash(byte[])
 
@@ -605,12 +605,12 @@ public class IndexedBlockStoreTest {
                 indexedBlockStore.saveBlock(block, cummDiff, true);
             }
 
-            //  testing:   getTotalDifficulty()
+            //  testing:   getTotalDifficultyForHash(byte[])
             //  testing:   getMaxNumber()
 
             long bestIndex = blocks.get(blocks.size() - 1).getNumber();
             assertEquals(bestIndex, indexedBlockStore.getMaxNumber());
-            assertEquals(cumDifficulty, indexedBlockStore.getTotalDifficulty());
+            assertEquals(cumDifficulty, indexedBlockStore.getTotalDifficultyForHash(blocks.get(blocks.size() - 1).getHash()));
 
             //  testing:  getBlockByHash(byte[])
 
@@ -758,9 +758,9 @@ public class IndexedBlockStoreTest {
 
             indexedBlockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
-            for (int i = 0; i < bestLine.size(); ++i){
+            BigInteger td = genesis.getCumulativeDifficulty();
 
-                BigInteger td = indexedBlockStore.getTotalDifficulty();
+            for (int i = 0; i < bestLine.size(); ++i){
                 Block newBlock = bestLine.get(i);
                 td = td.add(newBlock.getCumulativeDifficulty());
 
@@ -776,7 +776,7 @@ public class IndexedBlockStoreTest {
 
                 Block newBlock = forkLine.get(i);
                 Block parentBlock = indexedBlockStore.getBlockByHash(newBlock.getParentHash());
-                BigInteger td = indexedBlockStore.getTotalDifficultyForHash(parentBlock.getHash());
+                td = indexedBlockStore.getTotalDifficultyForHash(parentBlock.getHash());
 
                 td = td.add(newBlock.getCumulativeDifficulty());
                 indexedBlockStore.saveBlock(newBlock, td, false);
@@ -785,7 +785,7 @@ public class IndexedBlockStoreTest {
 
             // calc all TDs
             Map<ByteArrayWrapper, BigInteger> tDiffs = new HashMap<>();
-            BigInteger td = Genesis.getInstance(SystemProperties.CONFIG).getCumulativeDifficulty();
+            td = Genesis.getInstance(SystemProperties.CONFIG).getCumulativeDifficulty();
             for (Block block : bestLine){
                 td = td.add(block.getCumulativeDifficulty());
                 tDiffs.put(wrap(block.getHash()), td);
@@ -824,8 +824,8 @@ public class IndexedBlockStoreTest {
             }
 
             // check total difficulty
-            BigInteger totalDifficulty  = indexedBlockStore.getTotalDifficulty();
             Block bestBlock = bestLine.get(bestLine.size() - 1);
+            BigInteger totalDifficulty  = indexedBlockStore.getTotalDifficultyForHash(bestBlock.getHash());
             BigInteger totalDifficulty_ = tDiffs.get(wrap(bestBlock.getHash()));
 
             assertEquals(totalDifficulty_, totalDifficulty);
@@ -845,7 +845,7 @@ public class IndexedBlockStoreTest {
         }
     }
 
-    @Test // cache + leveldb + mapdb, multi branch, total re-branch test
+    @Test // leveldb + mapdb, multi branch, total re-branch test
     public void test7() throws IOException {
 
         BigInteger bi = new BigInteger(32, new Random());
@@ -871,9 +871,9 @@ public class IndexedBlockStoreTest {
 
             indexedBlockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
-            for (int i = 0; i < bestLine.size(); ++i){
+            BigInteger td = genesis.getCumulativeDifficulty();
 
-                BigInteger td = indexedBlockStore.getTotalDifficulty();
+            for (int i = 0; i < bestLine.size(); ++i){
                 Block newBlock = bestLine.get(i);
                 td = td.add(newBlock.getCumulativeDifficulty());
 
@@ -886,10 +886,9 @@ public class IndexedBlockStoreTest {
 
 
             for (int i = 0; i < forkLine.size(); ++i){
-
                 Block newBlock = forkLine.get(i);
                 Block parentBlock = indexedBlockStore.getBlockByHash(newBlock.getParentHash());
-                BigInteger td = indexedBlockStore.getTotalDifficultyForHash(parentBlock.getHash());
+                td = indexedBlockStore.getTotalDifficultyForHash(parentBlock.getHash());
 
                 td = td.add(newBlock.getCumulativeDifficulty());
                 indexedBlockStore.saveBlock(newBlock, td, false);
@@ -899,20 +898,7 @@ public class IndexedBlockStoreTest {
             Block bestBlock = bestLine.get(bestLine.size() - 1);
             Block forkBlock = forkLine.get(forkLine.size() - 1);
 
-            // check total difficulty
-            BigInteger totalDifficulty  = indexedBlockStore.getTotalDifficulty();
-            BigInteger totalDifficulty_ = indexedBlockStore.getTotalDifficultyForHash( bestBlock.getHash() );
-            assertEquals(totalDifficulty_, totalDifficulty);
-
-
             indexedBlockStore.reBranch(forkBlock);
-
-            // check total difficulty
-            totalDifficulty  = indexedBlockStore.getTotalDifficulty();
-            totalDifficulty_ = indexedBlockStore.getTotalDifficultyForHash( forkBlock.getHash() );
-            assertEquals(totalDifficulty_, totalDifficulty);
-
-
         } finally {
             blocksDB.close();
             indexDB.close();
@@ -946,9 +932,9 @@ public class IndexedBlockStoreTest {
 
             indexedBlockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
-            for (int i = 0; i < bestLine.size(); ++i){
+            BigInteger td = BigInteger.ZERO;
 
-                BigInteger td = indexedBlockStore.getTotalDifficulty();
+            for (int i = 0; i < bestLine.size(); ++i){
                 Block newBlock = bestLine.get(i);
                 td = td.add(newBlock.getCumulativeDifficulty());
 
@@ -959,38 +945,23 @@ public class IndexedBlockStoreTest {
             long forkParentNumber = bestLine.get(60).getNumber();
             List<Block> forkLine = getRandomChain(forkParentHash, forkParentNumber + 1, 10);
 
-
             for (int i = 0; i < forkLine.size(); ++i){
-
                 Block newBlock = forkLine.get(i);
                 Block parentBlock = indexedBlockStore.getBlockByHash(newBlock.getParentHash());
-                BigInteger td = indexedBlockStore.getTotalDifficultyForHash(parentBlock.getHash());
+                td = indexedBlockStore.getTotalDifficultyForHash(parentBlock.getHash());
 
                 td = td.add(newBlock.getCumulativeDifficulty());
                 indexedBlockStore.saveBlock(newBlock, td, false);
             }
-
 
             Block bestBlock = bestLine.get(bestLine.size() - 1);
             Block forkBlock = forkLine.get(forkLine.size() - 1);
 
             assertTrue( indexedBlockStore.getBestBlock().getNumber() == 100);
 
-            // check total difficulty
-            BigInteger totalDifficulty  = indexedBlockStore.getTotalDifficulty();
-            BigInteger totalDifficulty_ = indexedBlockStore.getTotalDifficultyForHash( bestBlock.getHash() );
-            assertEquals(totalDifficulty_, totalDifficulty);
-
-
             indexedBlockStore.reBranch(forkBlock);
 
             assertTrue( indexedBlockStore.getBestBlock().getNumber() == 71);
-
-            // check total difficulty
-            totalDifficulty  = indexedBlockStore.getTotalDifficulty();
-            totalDifficulty_ = indexedBlockStore.getTotalDifficultyForHash( forkBlock.getHash() );
-            assertEquals(totalDifficulty_, totalDifficulty);
-
 
             // Assert that all fork moved to the main line
             for (Block currBlock : forkLine){

@@ -91,12 +91,6 @@ public class BlockStoreDummy implements BlockStore {
         // unused
     }
 
-
-    @Override
-    public BigInteger getTotalDifficulty() {
-        return null;
-    }
-
     @Override
     public Block getBestBlock() {
         return null;
