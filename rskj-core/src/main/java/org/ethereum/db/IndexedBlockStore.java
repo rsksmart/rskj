@@ -53,7 +53,7 @@ public class IndexedBlockStore extends AbstractBlockstore{
     public IndexedBlockStore(){
     }
 
-    public void init(Map<Long, List<BlockInfo>> index, KeyValueDataSource blocks, IndexedBlockStore cache, DB indexDB) {
+    public void init(Map<Long, List<BlockInfo>> index, KeyValueDataSource blocks, DB indexDB) {
         this.index = index;
         this.blocks = blocks;
         this.indexDB  = indexDB;

@@ -51,7 +51,7 @@ public class BlockChainBuilder {
         Repository repository = new RepositoryImpl(store);
 
         IndexedBlockStore blockStore = new IndexedBlockStore();
-        blockStore.init(new HashMap<>(), new HashMapDB(), null, null);
+        blockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         KeyValueDataSource ds = new HashMapDB();
         ds.init();

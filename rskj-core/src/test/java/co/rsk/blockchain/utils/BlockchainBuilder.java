@@ -97,7 +97,7 @@ public class BlockchainBuilder {
 
         if (blockStore == null) {
             IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
-            indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null, null);
+            indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
             blockStore = indexedBlockStore;
         }
 

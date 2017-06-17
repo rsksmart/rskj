@@ -93,7 +93,7 @@ public class IndexedBlockStoreTest {
     public void test1(){
 
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
-        indexedBlockStore.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), null, null);
+        indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         BigInteger cummDiff = BigInteger.ZERO;
         for (Block block : blocks){
@@ -195,15 +195,11 @@ public class IndexedBlockStoreTest {
 
     }
 
-    @Test // predefined cache, save some load, and check it exist
+    @Test // save some load, and check it exist
     @Ignore
     public void test2(){
-
-        IndexedBlockStore cache = new IndexedBlockStore();
-        cache.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), null, null);
-
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
-        indexedBlockStore.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), cache, null);
+        indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         BigInteger cummDiff = BigInteger.ZERO;
         for (Block block : blocks){
@@ -305,17 +301,14 @@ public class IndexedBlockStoreTest {
 
     }
 
-    @Test // predefined cache loaded and flushed, check it exist
+    @Test
     @Ignore
     public void test3(){
-
-        IndexedBlockStore cache = new IndexedBlockStore();
-        cache.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), null, null);
-
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
-        indexedBlockStore.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), cache, null);
+        indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         BigInteger cummDiff = BigInteger.ZERO;
+
         for (Block block : blocks){
             cummDiff = cummDiff.add( block.getCumulativeDifficulty() );
             indexedBlockStore.saveBlock(block, cummDiff, true);
@@ -418,8 +411,7 @@ public class IndexedBlockStoreTest {
     }
 
 
-
-    @Test // cache + leveldb + mapdb, save some load, flush to disk, and check it exist
+    @Test // leveldb + mapdb, save some load, flush to disk, and check it exist
     @Ignore
     public void test4() throws IOException {
 
@@ -434,8 +426,7 @@ public class IndexedBlockStoreTest {
         blocksDB.init();
 
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
-        indexedBlockStore.init(indexMap, blocksDB, null, indexDB);
-
+        indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
         BigInteger cummDiff = BigInteger.ZERO;
         for (Block block : blocks){
@@ -548,7 +539,7 @@ public class IndexedBlockStoreTest {
         blocksDB.init();
 
         indexedBlockStore = new IndexedBlockStore();
-        indexedBlockStore.init(indexMap, blocksDB, null, indexDB);
+        indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
         //  testing: getListHashesStartWith(long, long)
 
@@ -566,7 +557,7 @@ public class IndexedBlockStoreTest {
         FileUtil.recursiveDelete(testDir);
     }
 
-    @Test // cache + leveldb + mapdb, save part to disk part to cache, and check it exist
+    @Test // leveldb + mapdb, save part to disk part to cache, and check it exist
     @Ignore
     public void test5() throws IOException {
 
@@ -581,13 +572,8 @@ public class IndexedBlockStoreTest {
         blocksDB.init();
 
         try {
-
-            IndexedBlockStore cache = new IndexedBlockStore();
-            cache.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), null, null);
-
             IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
-            indexedBlockStore.init(indexMap, blocksDB, cache, indexDB);
-
+            indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
             BigInteger cummDiff = BigInteger.ZERO;
             int preloadSize = blocks.size() / 2;
@@ -711,7 +697,7 @@ public class IndexedBlockStoreTest {
             blocksDB.init();
 
             indexedBlockStore = new IndexedBlockStore();
-            indexedBlockStore.init(indexMap, blocksDB, null, indexDB);
+            indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
             //  testing: getListHashesStartWith(long, long)
 
@@ -731,9 +717,8 @@ public class IndexedBlockStoreTest {
 
     }
 
-    @Test // cache + leveldb + mapdb, multi branch, total difficulty test
+    @Test // leveldb + mapdb, multi branch, total difficulty test
     public void test6() throws IOException {
-
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
         SystemProperties.CONFIG.setDataBaseDir(testDir);
@@ -745,13 +730,8 @@ public class IndexedBlockStoreTest {
         blocksDB.init();
 
         try {
-
-            IndexedBlockStore cache = new IndexedBlockStore();
-            cache.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), null, null);
-
             IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
-            indexedBlockStore.init(indexMap, blocksDB, cache, indexDB);
-
+            indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
             Block genesis = Genesis.getInstance(SystemProperties.CONFIG);
             List<Block> bestLine = getRandomChain(genesis.getHash(), 1, 100);
@@ -859,12 +839,8 @@ public class IndexedBlockStoreTest {
         blocksDB.init();
 
         try {
-
-            IndexedBlockStore cache = new IndexedBlockStore();
-            cache.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), null, null);
-
             IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
-            indexedBlockStore.init(indexMap, blocksDB, cache, indexDB);
+            indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
             Block genesis = Genesis.getInstance(SystemProperties.CONFIG);
             List<Block> bestLine = getRandomChain(genesis.getHash(), 1, 100);
@@ -906,7 +882,7 @@ public class IndexedBlockStoreTest {
         }
     }
 
-    @Test // cache + leveldb + mapdb, multi branch, total re-branch test
+    @Test // leveldb + mapdb, multi branch, total re-branch test
     public void test8() throws IOException {
 
         BigInteger bi = new BigInteger(32, new Random());
@@ -920,12 +896,8 @@ public class IndexedBlockStoreTest {
         blocksDB.init();
 
         try {
-
-            IndexedBlockStore cache = new IndexedBlockStore();
-            cache.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), null, null);
-
             IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
-            indexedBlockStore.init(indexMap, blocksDB, cache, indexDB);
+            indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
             Block genesis = Genesis.getInstance(SystemProperties.CONFIG);
             List<Block> bestLine = getRandomChain(genesis.getHash(), 1, 100);
@@ -994,12 +966,8 @@ public class IndexedBlockStoreTest {
 
     @Test // test index merging during the flush
     public void test9() {
-
-        IndexedBlockStore cache = new IndexedBlockStore();
-        cache.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), null, null);
-
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
-        indexedBlockStore.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), cache, null);
+        indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         // blocks with the same block number
         Block block1 = new Block(Hex.decode("f90202f901fda0ad0d51e8d64c364a7b77ef2fe252f3f4df0940c7cfa69cedc1fbd6ea66894936a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d493479414a3bc0f103706650a19c5d24e5c4cf1ea5af78ea0e0580f4fdd1e3ae8346efaa6b1018605361f6e2fb058580e31414c8cbf5b0d49a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421b90100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008605065cf2c43a8303e52e832fefd8808455fcbe1b80a017247341fd5d2f1d384682fea9302065a95dbd3e4f8260dde88a386f3cb95be3880f3fc8d5e0c87378c0c0"));

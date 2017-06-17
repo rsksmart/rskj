@@ -92,7 +92,6 @@ public class DefaultConfig {
 
     @Bean
     public BlockStore blockStore() {
-
         String database = config.databaseDir();
 
         String blocksIndexFile = database + "/blocks/index";
@@ -112,13 +111,9 @@ public class DefaultConfig {
         KeyValueDataSource blocksDB = appCtx.getBean(LevelDbDataSource.class, "blocks");
         blocksDB.init();
 
-
-        IndexedBlockStore cache = new IndexedBlockStore();
-        cache.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), null, null);
-
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
 
-        indexedBlockStore.init(indexMap, blocksDB, null, indexDB);
+        indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
         return indexedBlockStore;
     }
