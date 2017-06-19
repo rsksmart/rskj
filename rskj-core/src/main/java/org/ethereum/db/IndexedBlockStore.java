@@ -429,7 +429,7 @@ public class IndexedBlockStore extends AbstractBlockstore{
                 BlockInfo blockInfo = getBlockInfoForHash(blocks, bestLine.getHash());
                 if (blockInfo != null) {
                     blockInfo.setMainChain(false);
-                    updateInfoForLevel(currentLevel, blocks);
+                    index.put(currentLevel, blocks);
                 }
                 bestLine = getBlockByHash(bestLine.getParentHash());
                 --currentLevel;
@@ -444,13 +444,13 @@ public class IndexedBlockStore extends AbstractBlockstore{
             BlockInfo bestInfo = getBlockInfoForHash(levelBlocks, bestLine.getHash());
             if (bestInfo != null) {
                 bestInfo.setMainChain(false);
-                updateInfoForLevel(currentLevel, levelBlocks);
+                index.put(currentLevel, levelBlocks);
             }
 
             BlockInfo forkInfo = getBlockInfoForHash(levelBlocks, forkLine.getHash());
             if (forkInfo != null) {
                 forkInfo.setMainChain(true);
-                updateInfoForLevel(currentLevel, levelBlocks);
+                index.put(currentLevel, levelBlocks);
             }
 
 
@@ -462,11 +462,6 @@ public class IndexedBlockStore extends AbstractBlockstore{
 
 
     }
-
-    private void updateInfoForLevel(long level, List<BlockInfo> info) {
-        index.put(level, info);
-    }
-
 
     public List<byte[]> getListHashesStartWith(long number, long maxBlocks){
 
