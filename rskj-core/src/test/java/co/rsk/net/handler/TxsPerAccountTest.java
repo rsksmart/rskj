@@ -60,9 +60,37 @@ public class TxsPerAccountTest {
         Assert.assertNotNull(txs);
         Assert.assertFalse(txs.isEmpty());
         Assert.assertEquals(1, txs.size());
+        Assert.assertEquals(tx, txs.get(0));
 
         Assert.assertNotNull(txspa.getNextNonce());
         Assert.assertEquals(BigInteger.valueOf(2), txspa.getNextNonce());
+    }
+
+    @Test
+    public void retrieveTransactionsReadyToBeSendAndRemoveNonce() {
+        TxsPerAccount txspa = new TxsPerAccount();
+
+        Transaction tx =  buildTransaction(1);
+        Transaction tx2 =  buildTransaction(1);
+
+        txspa.getTransactions().add(tx);
+        txspa.getTransactions().add(tx2);
+
+        List<Transaction> txs = txspa.readyToBeSent(BigInteger.ONE);
+
+        Assert.assertNotNull(txs);
+        Assert.assertFalse(txs.isEmpty());
+        Assert.assertEquals(1, txs.size());
+
+        Assert.assertNotNull(txspa.getNextNonce());
+        Assert.assertEquals(BigInteger.valueOf(2), txspa.getNextNonce());
+
+        txspa.removeNonce(BigInteger.ONE);
+
+        Assert.assertNotNull(txspa.getTransactions());
+        Assert.assertTrue(txspa.getTransactions().isEmpty());
+
+        Assert.assertNull(txspa.getNextNonce());
     }
 
     private static Transaction buildTransaction(long nonce) {

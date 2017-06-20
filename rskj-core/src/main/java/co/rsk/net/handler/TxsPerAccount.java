@@ -66,13 +66,18 @@ public class TxsPerAccount {
 
     void removeNonce(BigInteger nonce) {
         List<Transaction> newlist = new LinkedList<>();
-        for (Transaction tx : txs) {
-            if (new BigInteger(1, tx.getNonce()).compareTo(nonce) == 0) {
+
+        for (Transaction tx : this.txs) {
+            if (new BigInteger(1, tx.getNonce()).compareTo(nonce) == 0)
                 continue;
-            }
+
             newlist.add(tx);
         }
-        txs = newlist;
+
+        this.txs = newlist;
+
+        if (newlist.isEmpty())
+            this.nextNonce = null;
     }
 
     @VisibleForTesting
