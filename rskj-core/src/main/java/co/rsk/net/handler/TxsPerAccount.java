@@ -18,6 +18,7 @@
 
 package co.rsk.net.handler;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Transaction;
 
 import java.math.BigInteger;
@@ -72,5 +73,10 @@ public class TxsPerAccount {
             newlist.add(tx);
         }
         txs = newlist;
+    }
+
+    @VisibleForTesting
+    public BigInteger getNextNonce() {
+        return this.nextNonce;
     }
 }
