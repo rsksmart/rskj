@@ -62,6 +62,33 @@ public class TxHandlerTest {
     }
 
     @Test
+    public void cleanOldTxsAndTxsPerAccountTest() {
+        long time = System.currentTimeMillis();
+        final long threshold = 300001;
+        Random random = new Random(0);
+
+        Transaction tx1 = Tx.create(0, 0, 0, 0, 0, 0, random);
+
+        Map<String, TxTimestamp> knownTxs = new HashMap<>();
+        Map<String, TxsPerAccount> txsPerAccounts = new HashMap<>();
+
+        knownTxs.put("2", new TxTimestamp(tx1, time - threshold));
+
+        TxsPerAccount tpa = new TxsPerAccount();
+        tpa.getTransactions().add(tx1);
+        txsPerAccounts.put(TypeConverter.toJsonHex(tx1.getSender()), tpa);
+
+        TxHandlerImpl txHandler = new TxHandlerImpl();
+        txHandler.setKnownTxs(knownTxs);
+        txHandler.setTxsPerAccounts(txsPerAccounts);
+
+        txHandler.cleanOldTxs();
+
+        Assert.assertTrue(txHandler.getKnownTxs().isEmpty());
+        Assert.assertTrue(txHandler.getTxsPerAccounts().isEmpty());
+    }
+
+    @Test
     public void listenerTest() {
         long time = System.currentTimeMillis();
         Random random = new Random(0);
