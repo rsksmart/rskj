@@ -70,7 +70,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     private Map<ByteArrayWrapper, Integer> unknownBlockHashes = new HashMap<>();
 
     private long lastStatusTime;
-    private long blocksForPeers = 100;
+    private long blocksForPeers;
 
     /**
      * Creates a new NodeBlockProcessor using the given BlockStore and Blockchain.
@@ -100,6 +100,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         this.blockchain = blockchain;
         this.nodeInformation = new BlockNodeInformation();
         this.channelManager = null;
+        this.blocksForPeers = RskSystemProperties.RSKCONFIG.getBlocksForPeers();
     }
 
     @Override
