@@ -13,7 +13,7 @@ buildscript {
     }
     dependencies {
         classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
-        classpath files('libs/gradle-witness.jar')
+        classpath files('libs/rsk-gradle-witness.jar')
     }
 }
 
@@ -157,7 +157,9 @@ dependencies {
     testCompile "junit:junit:${junitVersion}"
     testCompile "org.springframework:spring-test:${springVersion}"
     testCompile "org.mockito:mockito-core:${mockitoVersion}"
-    testCompile "org.powermock:powermock-mockito-release-full:${powermockitoVersion}"
+    testCompile "org.powermock:powermock-core:${powermockitoVersion}"
+    testCompile "org.powermock:powermock-module-testng:${powermockitoVersion}"
+    testCompile "org.powermock:powermock-module-junit4:${powermockitoVersion}"
     testCompile "co.rsk:lll-compiler:${rskLllVersion}"
     testCompile "org.springframework:spring-tx:${springVersion}"
     testCompile "org.springframework:spring-orm:${springVersion}"
@@ -191,6 +193,17 @@ dependencyVerification {
         'com.github.briandilley.jsonrpc4j:jsonrpc4j:59f592e3a096cef77239c75c9095d7ed01ac19aa41a86015b8cdb688f314838f',
         'com.googlecode.json-simple:json-simple:4e69696892b88b41c55d49ab2fdcc21eead92bf54acc588c0050596c3b75199c',
         'commons-io:commons-io:a10418348d234968600ccb1d988efcbbd08716e1d96936ccc1880e7d22513474',
+        'org.slf4j:jcl-over-slf4j:53c6d81ae92ab7a67abf03439b0a2c3872cfe04bab3bf8db9c58fd03f5e71948',
+        'org.springframework:spring-test:5659b135bd6f32e11ea00ae5411a206fd6ae7754bc0a749da9e4722cf354f018',
+        'org.mockito:mockito-core:d5831ee4f71055800821a34a3051cf1ed5b3702f295ffebd50f65fb5d81a71b8',
+        'org.powermock:powermock-core:9b4da42d513500dda03f4d90e303647f6a7b50c6bc5ed88cd39118680f6b329f',
+        'org.powermock:powermock-module-testng:c668057772b6970ba27b6bc5acc5dd7f7d1cc468854e288779fca839e2b55013',
+        'org.powermock:powermock-module-junit4:a90e4bc135e349852eaebed9f1a14d404e14c5a8a7248b4e20e062879a97e63f',
+        'co.rsk:lll-compiler:a645fdb272f56721761f65dd32caa952453efc07d98d292259d99353b6f647d0',
+        'org.springframework:spring-tx:63d0a80c5c87008eb958ee6d8c121d175d5fb69523a1aec91959682c1a4202a7',
+        'org.springframework:spring-orm:32557ae0c762d842097bc1383f9b98d9264870f047f67618ac6a195c88e2a831',
+        'com.h2database:h2:b1cf34c64871014aa73580281cc464dfa72450d8860cc0752fc175e87edd6544',
+        'org.awaitility:awaitility:a02982e89585a52c1c84296a895bfeb86ea250cca1a53bcfc8a14092fffa87c4',
         'org.hamcrest:hamcrest-core:66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9',
         'org.iq80.leveldb:leveldb-api:279e3a5649cde0bf0d4e09fd1369ec0e9ee80344ec06527c37148c9a58684140',
         'com.google.guava:guava:d664fbfc03d2e5ce9cab2a44fb01f1d0bf9dfebeccc1a473b1f9ea31f79f6f99',
@@ -213,11 +226,21 @@ dependencyVerification {
         'org.eclipse.jetty:jetty-io:be6688927ccb350bc00e4b98987df69c333b726b9d0698e02f1dc3eb14abcd47',
         'org.eclipse.jetty:jetty-security:0143547dd07bdc988b91f7ebc21572c67caf806cd98c256297f7be6f8966a2e6',
         'net.iharder:base64:bbf41fda22877a538f6bc2d5ad0aa372a7ddf4a756af3386aa09d3d4eea84f7f',
+        'org.powermock:powermock-reflect:14e3b046621ddb6a39113f145c5c129709d3af3d36caad2df7d547778d271c3e',
+        'org.javassist:javassist:d7691062fb779c2381640c8f72acba2c23873b01c243866d41c15dc4c8848ea2',
+        'org.testng:testng:0811dcf08fe329ef5d4d37d51a6a00032697e7f54ba84c6687bbf7cd39d29fec',
+        'org.powermock:powermock-module-testng-common:e26f4d047bdfe5cee329ebbf54ee878e40b42eec4a07eaf8a64b36dedd4da3c5',
+        'org.powermock:powermock-module-junit4-common:1b4928d42a8e6f0aa196d0f6fcf7831e0bc29b8a925ce755479b4bd29b3643bb',
+        'org.springframework:spring-jdbc:b2f2c988c22744441f422ddfd7880bbe6d6d73148b9df76835921f533ca9e430',
+        'org.hamcrest:hamcrest-library:711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c',
         'aopalliance:aopalliance:0addec670fedcd3f113c5c8091d783280d23f75e3acb841b61a9cdb079376a08',
         'commons-logging:commons-logging:daddea1ea0be0f56978ab3006b8ac92834afeefbd9b7e4e6316fca57df0fa636',
         'com.squareup.okio:okio:114bdc1f47338a68bcbc95abf2f5cdc72beeec91812f2fcd7b521c1937876266',
         'org.eclipse.jetty:jetty-util:f0cee2d68b68509a35231472a6f09046b0a0dbe75416b866e611e139c7a62d10',
+        'org.beanshell:bsh:91395c07885839a8c6986d5b7c577cd9bacf01bf129c89141f35e8ea858427b6',
+        'com.beust:jcommander:0b7873f51a5f292637f49423d9a83b19de15c4be3dc092decbd6afeff56263fa',
         'org.slf4j:slf4j-api:18c4a0095d5c1da6b817592e767bb23d29dd2f560ad74df75ff3961dbde25b79',
+        'org.objenesis:objenesis:b043f03e466752f7f03e2326a3b13a49b7c649f8f2a2dc87715827e24f73d9c6',
     ]
 }
 
