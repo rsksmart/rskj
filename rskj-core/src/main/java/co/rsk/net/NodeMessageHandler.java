@@ -51,6 +51,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private final BlockProcessor blockProcessor;
     private final ChannelManager channelManager;
     private final PendingState pendingState;
+    private long lastStatusSent = 0;
 
     private ProofOfWorkRule PoWRule;
 
@@ -155,12 +156,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             try {
                 logger.trace("Get task");
 
-                MessageTask task;
-
-                if (this.queue.isEmpty())
-                    task = this.queue.poll(10, TimeUnit.SECONDS);
-                else
-                    task = this.queue.poll();
+                final MessageTask task = this.queue.poll(10, TimeUnit.SECONDS);
 
                 loggerMessageProcess.debug("Queued Messages: {}", this.queue.size());
 
@@ -168,10 +164,16 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                     logger.trace("Start task");
                     this.processMessage(task.getSender(), task.getMessage());
                     logger.trace("End task");
-                } else if (this.blockProcessor != null && this.blockProcessor.hasBetterBlockToSync())
-                    this.blockProcessor.sendStatusToAll();
-                else
+                } else {
                     logger.trace("No task");
+                }
+
+                //Refresh status to peers every 10 seconds or so
+                Long now = System.currentTimeMillis();
+                if (now - lastStatusSent > TimeUnit.SECONDS.toMillis(10)) {
+                    this.blockProcessor.sendStatusToAll();
+                    lastStatusSent = now;
+                }
             }
             catch (Throwable ex) {
                 logger.error("Error {}", ex.getMessage());
