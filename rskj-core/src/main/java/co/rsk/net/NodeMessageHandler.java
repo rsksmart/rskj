@@ -170,7 +170,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
                 //Refresh status to peers every 10 seconds or so
                 Long now = System.currentTimeMillis();
-                if (now - lastStatusSent > 10000) {
+                if (now - lastStatusSent > TimeUnit.SECONDS.toMillis(10)) {
                     this.blockProcessor.sendStatusToAll();
                     lastStatusSent = now;
                 }
