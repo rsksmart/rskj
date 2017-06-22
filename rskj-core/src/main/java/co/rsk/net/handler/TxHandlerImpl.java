@@ -107,7 +107,10 @@ public class TxHandlerImpl implements TxHandler {
                 if (txsPerAccount != null)
                 {
                     txsPerAccount.removeNonce(new BigInteger(1, txt.tx.getNonce()));
+                    if (txsPerAccount.getTransactions().isEmpty())
+                        txsPerAccounts.remove(accountId);
                 }
+
                 continue;
             }
 
