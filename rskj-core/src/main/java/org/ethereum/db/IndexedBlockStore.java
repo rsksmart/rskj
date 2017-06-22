@@ -413,7 +413,11 @@ public class IndexedBlockStore extends AbstractBlockstore{
             while(currentLevel > bestBlock.getNumber()){
                 List<BlockInfo> blocks =  getBlockInfoForLevel(currentLevel);
                 BlockInfo blockInfo = getBlockInfoForHash(blocks, forkLine.getHash());
-                if (blockInfo != null) blockInfo.setMainChain(true);
+                if (blockInfo != null) {
+                    blockInfo.setMainChain(true);
+                    if (index.containsKey(currentLevel))
+                        index.put(currentLevel, blocks);
+                }
                 forkLine = getBlockByHash(forkLine.getParentHash());
                 --currentLevel;
             }
@@ -428,7 +432,8 @@ public class IndexedBlockStore extends AbstractBlockstore{
                 BlockInfo blockInfo = getBlockInfoForHash(blocks, bestLine.getHash());
                 if (blockInfo != null) {
                     blockInfo.setMainChain(false);
-                    index.put(currentLevel, blocks);
+                    if (index.containsKey(currentLevel))
+                        index.put(currentLevel, blocks);
                 }
                 bestLine = getBlockByHash(bestLine.getParentHash());
                 --currentLevel;
@@ -443,13 +448,15 @@ public class IndexedBlockStore extends AbstractBlockstore{
             BlockInfo bestInfo = getBlockInfoForHash(levelBlocks, bestLine.getHash());
             if (bestInfo != null) {
                 bestInfo.setMainChain(false);
-                index.put(currentLevel, levelBlocks);
+                if (index.containsKey(currentLevel))
+                    index.put(currentLevel, levelBlocks);
             }
 
             BlockInfo forkInfo = getBlockInfoForHash(levelBlocks, forkLine.getHash());
             if (forkInfo != null) {
                 forkInfo.setMainChain(true);
-                index.put(currentLevel, levelBlocks);
+                if (index.containsKey(currentLevel))
+                    index.put(currentLevel, levelBlocks);
             }
 
 
