@@ -642,6 +642,34 @@ public class Web3ImplTest {
     }
 
     @Test
+    public void getBlocksByNumber() throws Exception {
+        World world = new World();
+        SimpleWorldManager worldManager = new SimpleWorldManager();
+        worldManager.setBlockchain(world.getBlockChain());
+
+        Web3Impl web3 = new Web3Impl(compiler, WalletFactory.createWallet());
+        web3.worldManager = worldManager;
+
+        Block genesis = world.getBlockChain().getBestBlock();
+        Block block1 = new BlockBuilder(world).parent(genesis).build();
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+        Block block1b = new BlockBuilder(world).parent(genesis).build();
+        block1b.setBitcoinMergedMiningHeader(new byte[]{0x01});
+        Block block2b = new BlockBuilder(world).parent(block1b).build();
+        block2b.setBitcoinMergedMiningHeader(new byte[] { 0x02 });
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
+
+        Web3.BlockInformationResult[] bresult = web3.eth_getBlocksByNumber("0x1");
+
+        Assert.notNull(bresult);
+
+        org.junit.Assert.assertEquals(2, bresult.length);
+        org.junit.Assert.assertEquals(TypeConverter.toJsonHex(block1.getHash()), bresult[0].hash);
+        org.junit.Assert.assertEquals(TypeConverter.toJsonHex(block1b.getHash()), bresult[1].hash);
+    }
+
+    @Test
     public void getBlockByNumberRetrieveLatestBlock() throws Exception {
         World world = new World();
         SimpleWorldManager worldManager = new SimpleWorldManager();

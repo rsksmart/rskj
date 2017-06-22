@@ -26,6 +26,7 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockParentDependantValidationRule;
 import org.ethereum.core.*;
+import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.validator.ProofOfWorkRule;
@@ -841,5 +842,8 @@ public class BlockValidatorTest {
         public void removeBlock(Block block) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public List<BlockInformation> getBlocksInformationByNumber(long blockNumber) { return null; }
     }
 }

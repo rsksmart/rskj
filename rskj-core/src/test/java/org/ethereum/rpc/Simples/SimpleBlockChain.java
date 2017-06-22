@@ -22,6 +22,7 @@ package org.ethereum.rpc.Simples;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainStatus;
 import org.ethereum.core.*;
+import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
@@ -142,6 +143,11 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
 
     @Override
     public void removeBlocksByNumber(long number) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<BlockInformation> getBlocksInformationByNumber(long number) {
         throw new UnsupportedOperationException();
     }
 }
