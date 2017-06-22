@@ -48,6 +48,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
     public static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
+    public static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
     private final BlockProcessor blockProcessor;
     private final ChannelManager channelManager;
     private final PendingState pendingState;
@@ -59,6 +60,8 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private LinkedBlockingQueue<MessageTask> queue = new LinkedBlockingQueue<>();
     private Set<ByteArrayWrapper> receivedMessages = Collections.synchronizedSet(new HashSet<ByteArrayWrapper>());
+    private long cleanMsgTimestamp = 0;
+
     private volatile boolean stopped;
 
     private TxHandler txHandler;
@@ -131,6 +134,17 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             logger.trace("Received message already known, not added to the queue");
         }
         logger.trace("End post message (queue size {})", this.queue.size());
+
+        // There's an obvious race condition here, but fear not.
+        // receivedMessages and logger are thread-safe
+        // cleanMsgTimestamp is a long replaced by the next value, we don't care
+        // enough about the precision of the value it takes
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - cleanMsgTimestamp > RECEIVED_MESSAGES_CACHE_DURATION) {
+            logger.trace("Cleaning {} messages from rlp queue", receivedMessages.size());
+            receivedMessages.clear();
+            cleanMsgTimestamp = currentTime;
+        }
     }
 
     private void addReceivedMessage(ByteArrayWrapper message) {
