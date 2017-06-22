@@ -98,11 +98,6 @@ public class RemascTestBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public BigInteger getTotalDifficulty() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Block getBestBlock() {
         if (blocks.size() == 0) return null;
         return blocks.get(blocks.size() - 1);

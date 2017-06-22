@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -267,10 +268,8 @@ public class IndexedBlockStore extends AbstractBlockstore{
         return ZERO;
     }
 
-
-        @Override
-    public BigInteger getTotalDifficulty(){
-
+    @VisibleForTesting
+    public BigInteger getTotalDifficulty() {
         BigInteger cacheTotalDifficulty = ZERO;
 
         long maxNumber = getMaxNumber();
