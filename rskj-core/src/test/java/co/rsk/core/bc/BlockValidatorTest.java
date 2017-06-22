@@ -813,11 +813,6 @@ public class BlockValidatorTest {
         }
 
         @Override
-        public BigInteger getTotalDifficulty() {
-            return null;
-        }
-
-        @Override
         public Block getBestBlock() {
             return null;
         }
