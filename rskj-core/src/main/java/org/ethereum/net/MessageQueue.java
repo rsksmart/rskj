@@ -71,12 +71,10 @@ public class MessageQueue {
         }
     });
 
-    private Queue<MessageRoundtrip> requestQueue = new ConcurrentLinkedQueue<>();
-    private Queue<MessageRoundtrip> respondQueue = new ConcurrentLinkedQueue<>();
+    private Queue<MessageRoundtrip> requestQueue = new LinkedBlockingQueue<>();
+    private Queue<MessageRoundtrip> respondQueue = new LinkedBlockingQueue<>();
     private ChannelHandlerContext ctx = null;
 
-    @Autowired
-    EthereumListener ethereumListener;
     boolean hasPing = false;
     private ScheduledFuture<?> timerTask;
     private Channel channel;
@@ -130,8 +128,6 @@ public class MessageQueue {
 
     public void receivedMessage(Message msg) throws InterruptedException {
 
-        ethereumListener.trace("[Recv: " + msg + "]");
-
         MessageRoundtrip messageRoundtrip = requestQueue.peek();
         if (messageRoundtrip != null) {
             Message waitingMessage = messageRoundtrip.getMsg();
@@ -168,8 +164,6 @@ public class MessageQueue {
             // TODO: retry logic. See messageRoundtrip.hasToRetry
 
             Message msg = messageRoundtrip.getMsg();
-
-            ethereumListener.onSendMessage(channel, msg);
 
             ctx.writeAndFlush(msg).addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
 

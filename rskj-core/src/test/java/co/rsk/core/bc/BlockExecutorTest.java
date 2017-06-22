@@ -507,11 +507,6 @@ public class BlockExecutorTest {
         }
 
         @Override
-        public void onSendMessage(Channel channel, Message message) {
-
-        }
-
-        @Override
         public void onBlock(Block block, List<TransactionReceipt> receipts) {
             latestBlock = block;
             latestReceipts = receipts;
