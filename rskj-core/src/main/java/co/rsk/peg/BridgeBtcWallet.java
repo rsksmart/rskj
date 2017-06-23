@@ -30,6 +30,7 @@ import java.util.Arrays;
 
 /**
  * Created by ajlopez on 7/19/2016.
+ * @author Oscar Guindzberg
  */
 public class BridgeBtcWallet extends Wallet {
     private BridgeConstants bridgeConstants;

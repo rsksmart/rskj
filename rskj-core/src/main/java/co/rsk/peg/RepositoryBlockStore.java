@@ -29,6 +29,10 @@ import org.spongycastle.util.encoders.Hex;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Implementation of a bitcoinj blockstore that persists to RSK's Repository
+ * @author Oscar Guindzberg
+ */
 public class RepositoryBlockStore implements BtcBlockStore{
 
     public static final String BLOCK_STORE_CHAIN_HEAD_KEY = "blockStoreChainHead";

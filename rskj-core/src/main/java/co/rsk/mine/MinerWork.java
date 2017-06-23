@@ -24,6 +24,7 @@ import javax.annotation.concurrent.Immutable;
 /**
  * Work to do.
  * Requested by MinerClient to MinerServer
+ * @author Oscar Guindzberg
  */
 @Immutable
 public class MinerWork {
