@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import com.google.common.annotations.VisibleForTesting;
+import co.rsk.net.BlockCache;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -45,7 +45,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
 
-    IndexedBlockStore cache;
+    private BlockCache blockCache = new BlockCache(200);
     Map<Long, List<BlockInfo>> index;
     KeyValueDataSource blocks;
 
@@ -54,16 +54,14 @@ public class IndexedBlockStore extends AbstractBlockstore {
     public IndexedBlockStore(){
     }
 
-    public void init(Map<Long, List<BlockInfo>> index, KeyValueDataSource blocks, IndexedBlockStore cache, DB indexDB) {
-        this.cache = cache;
+    public void init(Map<Long, List<BlockInfo>> index, KeyValueDataSource blocks, DB indexDB) {
         this.index = index;
         this.blocks = blocks;
         this.indexDB  = indexDB;
     }
 
     public void removeBlock(Block block) {
-        if (this.cache != null)
-            this.cache.removeBlock(block);
+        this.blockCache.removeBlock(block);
 
         this.blocks.delete(block.getHash());
 
@@ -81,8 +79,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         binfos.removeAll(toremove);
     }
 
-    public Block getBestBlock(){
-
+    public Block getBestBlock() {
         Long maxLevel = getMaxNumber();
         if (maxLevel < 0) return null;
 
@@ -109,24 +106,6 @@ public class IndexedBlockStore extends AbstractBlockstore {
     public void flush() {
         long t1 = System.nanoTime();
 
-        if (cache != null) {
-
-            for (byte[] hash : cache.blocks.keys()) {
-                blocks.put(hash, cache.blocks.get(hash));
-            }
-
-            for (Map.Entry<Long, List<BlockInfo>> e : cache.index.entrySet()) {
-                Long number = e.getKey();
-                List<BlockInfo> infos = e.getValue();
-
-                if (index.containsKey(number)) infos.addAll(index.get(number));
-                index.put(number, infos);
-            }
-
-            cache.blocks.close();
-            cache.index.clear();
-        }
-
         if (indexDB != null)
             indexDB.commit();
 
@@ -136,17 +115,15 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public void saveBlock(Block block, BigInteger cummDifficulty, boolean mainChain){
-        if (cache == null)
-            addInternalBlock(block, cummDifficulty, mainChain);
-        else
-            cache.saveBlock(block, cummDifficulty, mainChain);
+    public void saveBlock(Block block, BigInteger cummDifficulty, boolean mainChain) {
+        addInternalBlock(block, cummDifficulty, mainChain);
+        this.blockCache.addBlock(block);
     }
 
     private void addInternalBlock(Block block, BigInteger cummDifficulty, boolean mainChain){
 
         List<BlockInfo> blockInfos = index.get(block.getNumber());
-        if (blockInfos == null){
+        if (blockInfos == null) {
             blockInfos = new ArrayList<>();
         }
 
@@ -168,9 +145,6 @@ public class IndexedBlockStore extends AbstractBlockstore {
     public List<BlockInformation> getBlocksInformationByNumber(long number) {
         List<BlockInformation> result = new ArrayList<>();
 
-        if (cache != null)
-            result = cache.getBlocksInformationByNumber(number);
-
         List<BlockInfo> blockInfos = index.get(number);
 
         if (blockInfos == null)
@@ -189,28 +163,17 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     @Override
     public Block getChainBlockByNumber(long number){
-
-        if (cache != null) {
-            Block block = cache.getChainBlockByNumber(number);
-            if (block != null) return block;
-        }
-
         List<BlockInfo> blockInfos = index.get(number);
-        if (blockInfos == null){
+        if (blockInfos == null) {
             return null;
         }
 
-        for (BlockInfo blockInfo : blockInfos){
+        for (BlockInfo blockInfo : blockInfos) {
 
-            if (blockInfo.isMainChain()){
+            if (blockInfo.isMainChain()) {
 
                 byte[] hash = blockInfo.getHash();
-                byte[] blockRlp = blocks.get(hash);
-
-                if (blockRlp == null)
-                    return null;
-
-                return new Block(blockRlp);
+                return getBlockByHash(hash);
             }
         }
 
@@ -219,11 +182,10 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     @Override
     public Block getBlockByHash(byte[] hash) {
+        Block block = this.blockCache.getBlockByHash(hash);
 
-        if (cache != null) {
-            Block cachedBlock = cache.getBlockByHash(hash);
-            if (cachedBlock != null) return cachedBlock;
-        }
+        if (block != null)
+            return block;
 
         byte[] blockRlp = blocks.get(hash);
         if (blockRlp == null)
@@ -234,25 +196,11 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     @Override
     public boolean isBlockExist(byte[] hash) {
-
-        if (cache != null) {
-            Block cachedBlock = cache.getBlockByHash(hash);
-            if (cachedBlock != null) return true;
-        }
-
-        byte[] blockRlp = blocks.get(hash);
-        return blockRlp != null;
+        return getBlockByHash(hash) != null;
     }
-
 
     @Override
     public BigInteger getTotalDifficultyForHash(byte[] hash){
-
-        if (cache != null && cache.getBlockByHash(hash) != null) {
-
-            return cache.getTotalDifficultyForHash(hash);
-        }
-
         Block block = this.getBlockByHash(hash);
         if (block == null) return ZERO;
 
@@ -270,68 +218,15 @@ public class IndexedBlockStore extends AbstractBlockstore {
         return ZERO;
     }
 
-    @VisibleForTesting
-    public BigInteger getTotalDifficulty() {
-        BigInteger cacheTotalDifficulty = ZERO;
-
-        long maxNumber = getMaxNumber();
-        if (cache != null) {
-
-            List<BlockInfo> infos = getBlockInfoForLevel(maxNumber);
-
-            if (infos != null){
-                for (BlockInfo blockInfo : infos){
-                    if (blockInfo.isMainChain()){
-                        return blockInfo.getCummDifficulty();
-                    }
-                }
-
-                // todo: need better testing for that place
-                // here is the place when you know
-                // for sure that the potential fork
-                // branch is higher than main branch
-                // in that case the correct td is the
-                // first level when you have [mainchain = true] Blockinfo
-                boolean found = false;
-                Map<Long, List<BlockInfo>> searching = cache.index;
-                while (!found){
-
-                    --maxNumber;
-                    infos = getBlockInfoForLevel(maxNumber);
-
-                    for (BlockInfo blockInfo : infos) {
-                        if (blockInfo.isMainChain()) {
-                            found = true;
-                            return blockInfo.getCummDifficulty();
-                        }
-                    }
-                }
-            }
-        }
-
-        List<BlockInfo> blockInfos = index.get(maxNumber);
-        for (BlockInfo blockInfo : blockInfos){
-            if (blockInfo.isMainChain()){
-                return blockInfo.getCummDifficulty();
-            }
-        }
-
-        return cacheTotalDifficulty;
-    }
-
     @Override
     public long getMaxNumber(){
-
         Long bestIndex = 0L;
 
         if (index.size() > 0){
             bestIndex = (long) index.size();
         }
 
-        if (cache != null){
-            return bestIndex + cache.index.size() - 1L;
-        } else
-            return bestIndex - 1L;
+        return bestIndex - 1L;
     }
 
     @Override
@@ -362,39 +257,21 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     @Override
     public List<Block> getListBlocksEndWith(byte[] hash, long qty) {
-
-        if (cache == null)
-            return getListBlocksEndWithInner(hash, qty);
-
-        List<Block> cachedBlocks = cache.getListBlocksEndWith(hash, qty);
-
-        if (cachedBlocks.size() == qty) return cachedBlocks;
-
-        if (cachedBlocks.isEmpty())
-            return getListBlocksEndWithInner(hash, qty);
-
-        Block latestCached = cachedBlocks.get(cachedBlocks.size() - 1);
-
-        List<Block> notCachedBlocks = getListBlocksEndWithInner(latestCached.getParentHash(), qty - cachedBlocks.size());
-        cachedBlocks.addAll(notCachedBlocks);
-
-        return cachedBlocks;
+        return getListBlocksEndWithInner(hash, qty);
     }
 
     private List<Block> getListBlocksEndWithInner(byte[] hash, long qty) {
+        Block block = getBlockByHash(hash);
 
-        byte[] rlp = this.blocks.get(hash);
-
-        if (rlp == null) return new ArrayList<>();
+        if (block == null) return new ArrayList<>();
 
         List<Block> blocks = new ArrayList<>((int) qty);
 
         for (int i = 0; i < qty; ++i) {
 
-            Block block = new Block(rlp);
             blocks.add(block);
-            rlp = this.blocks.get(block.getParentHash());
-            if (rlp == null) break;
+            block = getBlockByHash(hash);
+            if (block == null) break;
         }
 
         return blocks;
@@ -461,14 +338,11 @@ public class IndexedBlockStore extends AbstractBlockstore {
                     index.put(currentLevel, levelBlocks);
             }
 
-
             bestLine = getBlockByHash(bestLine.getParentHash());
             forkLine = getBlockByHash(forkLine.getParentHash());
 
             --currentLevel;
         }
-
-
     }
 
     public List<byte[]> getListHashesStartWith(long number, long maxBlocks){
@@ -489,9 +363,6 @@ public class IndexedBlockStore extends AbstractBlockstore {
             ++number;
         }
         maxBlocks -= i;
-
-        if (cache != null)
-            result.addAll( cache.getListHashesStartWith(number, maxBlocks) );
 
         return result;
     }
@@ -578,18 +449,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
             }
 
         }
-
-        if (cache != null)
-            cache.printChain();
     }
 
     private List<BlockInfo> getBlockInfoForLevel(Long level){
-
-        if (cache != null){
-            List<BlockInfo> infos =  cache.index.get(level);
-            if (infos != null) return infos;
-        }
-
         return index.get(level);
     }
 
@@ -610,8 +472,6 @@ public class IndexedBlockStore extends AbstractBlockstore {
     @Override
     public List<Block> getChainBlocksByNumber(long number){
         List<Block> result = new ArrayList<>();
-        if (cache != null)
-            result = cache.getChainBlocksByNumber(number);
 
         List<BlockInfo> blockInfos = index.get(number);
 
@@ -622,11 +482,12 @@ public class IndexedBlockStore extends AbstractBlockstore {
         for (BlockInfo blockInfo : blockInfos){
 
             byte[] hash = blockInfo.getHash();
-            byte[] blockRlp = blocks.get(hash);
+            Block block = getBlockByHash(hash);
 
-            result.add(new Block(blockRlp));
+            result.add(block);
         }
 
         return result;
     }
+
 }

@@ -89,19 +89,15 @@ public class TestRunner {
 
 
     public List<String> runTestCase(BlockTestCase testCase) {
-
-
         /* 1 */ // Create genesis + init pre state
         Block genesis = BlockBuilder.build(testCase.getGenesisBlockHeader(), null, null);
         Repository repository = RepositoryBuilder.build(testCase.getPre());
 
         IndexedBlockStore blockStore = new IndexedBlockStore();
-        blockStore.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), null, null);
+        blockStore.init(new HashMap<>(), new HashMapDB(), null);
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
-        AdminInfo adminInfo = new AdminInfo();
         EthereumListener listener = new CompositeEthereumListener();
-        ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
 
         KeyValueDataSource ds = new HashMapDB();
         ds.init();
@@ -112,15 +108,12 @@ public class TestRunner {
         //        new CommonConfig().parentHeaderValidator(), receiptStore);
 
         blockchain.setNoValidation(true);
-        // blockchain.byTest = true;
 
         PendingStateImpl pendingState = new PendingStateImpl(blockchain, repository, null, null, listener, 10, 100);
         pendingState.init();
 
         blockchain.setBestBlock(genesis);
         blockchain.setTotalDifficulty(genesis.getCumulativeDifficulty());
-        // blockchain.setParentHeaderValidator(new DependentBlockHeaderRuleAdapter());
-        // blockchain.setProgramInvokeFactory(programInvokeFactory);
 
         blockchain.setPendingState(pendingState);
 

@@ -754,7 +754,7 @@ public class BlockChainImplTest {
         Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
 
         IndexedBlockStore blockStore = new IndexedBlockStore();
-        blockStore.init(new HashMap<>(), new HashMapDB(), null, null);
+        blockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
         validatorBuilder.addBlockRootValidationRule().addBlockUnclesValidationRule(blockStore)
@@ -786,7 +786,7 @@ public class BlockChainImplTest {
         Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
 
         IndexedBlockStore blockStore = new IndexedBlockStore();
-        blockStore.init(new HashMap<>(), new HashMapDB(), null, null);
+        blockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
         validatorBuilder.blockStore(blockStore)
@@ -825,7 +825,7 @@ public class BlockChainImplTest {
 
     public static BlockChainImpl createBlockChain(Repository repository) {
         IndexedBlockStore blockStore = new IndexedBlockStore();
-        blockStore.init(new HashMap<>(), new HashMapDB(), null, null);
+        blockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
         validatorBuilder.addBlockRootValidationRule().addBlockUnclesValidationRule(blockStore)
