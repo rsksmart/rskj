@@ -78,6 +78,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         PoWRule = new ProofOfWorkRule();
         transactionNodeInformation = new TransactionNodeInformation();
         this.txHandler = txHandler;
+        this.lastImportedBestBlock = System.currentTimeMillis();
     }
 
     @VisibleForTesting
