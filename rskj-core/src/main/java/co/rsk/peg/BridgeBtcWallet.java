@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 
 /**
- * Created by ajlopez on 7/19/2016.
+ * @author ajlopez
  * @author Oscar Guindzberg
  */
 public class BridgeBtcWallet extends Wallet {
