@@ -197,12 +197,12 @@ public enum OpCode {
     GASPRICE(0x3a, 0, 1, BASE_TIER),
     /**
      * (0x3b) Get size of code in
-     * another address.
+     * another contract address.
      */
     EXTCODESIZE(0x3b, 1, 1, EXT_TIER),
     /**
-     * (0x3c) Copy code running in current
-     * environment to memory with given offset
+     * (0x3c) Copy code running in another
+     * contract address to memory with given offset
      */
     EXTCODECOPY(0x3c, 4, 0, EXT_TIER),
 
