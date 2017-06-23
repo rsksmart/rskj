@@ -61,6 +61,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private LinkedBlockingQueue<MessageTask> queue = new LinkedBlockingQueue<>();
     private Set<ByteArrayWrapper> receivedMessages = Collections.synchronizedSet(new HashSet<ByteArrayWrapper>());
     private long cleanMsgTimestamp = 0;
+    private long lastImportedBestBlock;
 
     private volatile boolean stopped;
 
@@ -246,13 +247,27 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         }
 
         long start = System.nanoTime();
+
         BlockProcessResult result = this.blockProcessor.processBlock(sender, block);
 
         long time = System.nanoTime() - start;
-        if(time >= 1000000000)
+
+        if (time >= 1000000000)
             result.logResult(block.getShortHash(), time);
 
         Metrics.processBlockMessage("blockProcessed", block, sender.getNodeID());
+
+        long currentTimeMillis = System.currentTimeMillis();
+
+        if (result.anyImportedBestResult())
+            lastImportedBestBlock = currentTimeMillis;
+
+        if (currentTimeMillis - lastImportedBestBlock > TimeUnit.MINUTES.toMillis(10))
+        {
+            logger.trace("Removed blocks advanced filter in NodeBlockProcessor");
+            this.blockProcessor.acceptAnyBlock();
+            this.receivedMessages.clear();
+        }
 
         // is new block and it is not orphan, it is in some blockchain
         if (wasOrphan && result.wasBlockAdded(block) && !this.blockProcessor.isSyncingBlocks()) {

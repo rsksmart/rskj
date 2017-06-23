@@ -60,4 +60,6 @@ public interface BlockProcessor {
     boolean hasBetterBlockToSync();
 
     void sendStatusToAll();
+
+    void acceptAnyBlock();
 }
