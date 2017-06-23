@@ -232,7 +232,7 @@ public class BlockGenerator {
 
         newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash());
 
-        newHeader.setStateRoot(parent.getStateRoot());
+        newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
 
         Block newBlock = new Block(newHeader, txs, uncles);
 
