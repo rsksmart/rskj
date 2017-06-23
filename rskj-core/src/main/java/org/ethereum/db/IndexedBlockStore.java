@@ -79,7 +79,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         binfos.removeAll(toremove);
     }
 
-    public Block getBestBlock(){
+    public Block getBestBlock() {
         Long maxLevel = getMaxNumber();
         if (maxLevel < 0) return null;
 
@@ -115,7 +115,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public void saveBlock(Block block, BigInteger cummDifficulty, boolean mainChain){
+    public void saveBlock(Block block, BigInteger cummDifficulty, boolean mainChain) {
         addInternalBlock(block, cummDifficulty, mainChain);
         this.blockCache.addBlock(block);
     }
@@ -123,7 +123,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     private void addInternalBlock(Block block, BigInteger cummDifficulty, boolean mainChain){
 
         List<BlockInfo> blockInfos = index.get(block.getNumber());
-        if (blockInfos == null){
+        if (blockInfos == null) {
             blockInfos = new ArrayList<>();
         }
 
@@ -164,21 +164,16 @@ public class IndexedBlockStore extends AbstractBlockstore {
     @Override
     public Block getChainBlockByNumber(long number){
         List<BlockInfo> blockInfos = index.get(number);
-        if (blockInfos == null){
+        if (blockInfos == null) {
             return null;
         }
 
-        for (BlockInfo blockInfo : blockInfos){
+        for (BlockInfo blockInfo : blockInfos) {
 
-            if (blockInfo.isMainChain()){
+            if (blockInfo.isMainChain()) {
 
                 byte[] hash = blockInfo.getHash();
-                byte[] blockRlp = blocks.get(hash);
-
-                if (blockRlp == null)
-                    return null;
-
-                return new Block(blockRlp);
+                return getBlockByHash(hash);
             }
         }
 
@@ -201,8 +196,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     @Override
     public boolean isBlockExist(byte[] hash) {
-        byte[] blockRlp = blocks.get(hash);
-        return blockRlp != null;
+        return getBlockByHash(hash) != null;
     }
 
     @Override
@@ -267,18 +261,17 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     private List<Block> getListBlocksEndWithInner(byte[] hash, long qty) {
-        byte[] rlp = this.blocks.get(hash);
+        Block block = getBlockByHash(hash);
 
-        if (rlp == null) return new ArrayList<>();
+        if (block == null) return new ArrayList<>();
 
         List<Block> blocks = new ArrayList<>((int) qty);
 
         for (int i = 0; i < qty; ++i) {
 
-            Block block = new Block(rlp);
             blocks.add(block);
-            rlp = this.blocks.get(block.getParentHash());
-            if (rlp == null) break;
+            block = getBlockByHash(hash);
+            if (block == null) break;
         }
 
         return blocks;
@@ -489,15 +482,12 @@ public class IndexedBlockStore extends AbstractBlockstore {
         for (BlockInfo blockInfo : blockInfos){
 
             byte[] hash = blockInfo.getHash();
-            byte[] blockRlp = blocks.get(hash);
+            Block block = getBlockByHash(hash);
 
-            result.add(new Block(blockRlp));
+            result.add(block);
         }
 
         return result;
     }
 
-    private void updateInfoForLevel(long level, List<BlockInfo> info) {
-        index.put(level, info);
-    }
 }
