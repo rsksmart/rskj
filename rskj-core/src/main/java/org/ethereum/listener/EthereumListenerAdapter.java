@@ -47,10 +47,6 @@ public class EthereumListenerAdapter implements EthereumListener {
     }
 
     @Override
-    public void onSendMessage(Channel channel, Message message) {
-    }
-
-    @Override
     public void onPeerDisconnect(String host, long port) {
     }
 

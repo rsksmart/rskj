@@ -96,7 +96,6 @@ public class BlockStoreDummy implements BlockStore {
         return null;
     }
 
-
     @Override
     public void flush() {
     }

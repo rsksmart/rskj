@@ -44,8 +44,6 @@ public interface EthereumListener {
 
     void onRecvMessage(Channel channel, Message message);
 
-    void onSendMessage(Channel channel, Message message);
-
     void onBlock(Block block, List<TransactionReceipt> receipts);
 
     void onPeerDisconnect(String host, long port);

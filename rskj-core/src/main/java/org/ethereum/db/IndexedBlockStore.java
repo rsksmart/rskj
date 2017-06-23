@@ -340,14 +340,12 @@ public class IndexedBlockStore extends AbstractBlockstore{
                 updateInfoForLevel(currentLevel, levelBlocks);
             }
 
-
             bestLine = getBlockByHash(bestLine.getParentHash());
             forkLine = getBlockByHash(forkLine.getParentHash());
 
             --currentLevel;
         }
     }
-
 
     public List<byte[]> getListHashesStartWith(long number, long maxBlocks){
 
