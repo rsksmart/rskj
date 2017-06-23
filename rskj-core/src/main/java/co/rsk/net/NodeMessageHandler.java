@@ -49,6 +49,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
     public static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
     public static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
+    public static final long WAIT_TIME_ACCEPT_ADVANCED_BLOCKS = TimeUnit.MINUTES.toMillis(10);
     private final BlockProcessor blockProcessor;
     private final ChannelManager channelManager;
     private final PendingState pendingState;
@@ -262,7 +263,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         if (result.anyImportedBestResult())
             lastImportedBestBlock = currentTimeMillis;
 
-        if (currentTimeMillis - lastImportedBestBlock > TimeUnit.MINUTES.toMillis(10))
+        if (currentTimeMillis - lastImportedBestBlock > WAIT_TIME_ACCEPT_ADVANCED_BLOCKS)
         {
             logger.trace("Removed blocks advanced filter in NodeBlockProcessor");
             this.blockProcessor.acceptAnyBlock();
