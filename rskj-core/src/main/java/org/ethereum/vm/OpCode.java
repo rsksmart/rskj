@@ -196,8 +196,8 @@ public enum OpCode {
      */
     GASPRICE(0x3a, 0, 1, BASE_TIER),
     /**
-     * (0x3b) Get size of code running in
-     * current environment with given offset
+     * (0x3b) Get size of code in
+     * another address.
      */
     EXTCODESIZE(0x3b, 1, 1, EXT_TIER),
     /**
