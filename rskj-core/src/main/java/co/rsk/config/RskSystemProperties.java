@@ -47,6 +47,7 @@ public class RskSystemProperties extends SystemProperties {
 
     public static final RskSystemProperties RSKCONFIG = new RskSystemProperties();
     public static final int PD_DEFAULT_REFRESH_PERIOD = 60000;
+    public static final int BLOCKS_FOR_PEERS_DEFAULT = 100;
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
@@ -284,5 +285,12 @@ public class RskSystemProperties extends SystemProperties {
         }
 
         return messageRecorder;
+    }
+
+    public long getBlocksForPeers() {
+        long ret = config.hasPath("blocksforpeers") ? config.getLong("blocksforpeers") : 0;
+
+        return (ret > 0) ? ret : BLOCKS_FOR_PEERS_DEFAULT;
+
     }
 }

@@ -26,6 +26,7 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
@@ -388,6 +389,13 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     @Override
     public List<Block> getBlocksByNumber(long number) {
         return blockStore.getChainBlocksByNumber(number);
+    }
+
+    @Override
+    public List<BlockInformation> getBlocksInformationByNumber(long number) {
+        synchronized (accessLock) {
+            return this.blockStore.getBlocksInformationByNumber(number);
+        }
     }
 
     @Override

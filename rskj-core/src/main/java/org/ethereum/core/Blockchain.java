@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.core.bc.BlockChainStatus;
+import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
@@ -73,4 +74,6 @@ public interface Blockchain {
     BlockStore getBlockStore();
 
     Repository getRepository();
+
+    List<BlockInformation> getBlocksInformationByNumber(long number);
 }

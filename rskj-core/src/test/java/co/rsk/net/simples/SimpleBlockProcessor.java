@@ -119,4 +119,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
 
     @Override
     public void sendStatusToAll() { }
+
+    @Override
+    public void acceptAnyBlock() { }
 }

@@ -48,9 +48,12 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
     public static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
+    public static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
+    public static final long WAIT_TIME_ACCEPT_ADVANCED_BLOCKS = TimeUnit.MINUTES.toMillis(10);
     private final BlockProcessor blockProcessor;
     private final ChannelManager channelManager;
     private final PendingState pendingState;
+    private long lastStatusSent = 0;
 
     private ProofOfWorkRule PoWRule;
 
@@ -58,6 +61,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private LinkedBlockingQueue<MessageTask> queue = new LinkedBlockingQueue<>();
     private Set<ByteArrayWrapper> receivedMessages = Collections.synchronizedSet(new HashSet<ByteArrayWrapper>());
+    private long cleanMsgTimestamp = 0;
+    private long lastImportedBestBlock;
+
     private volatile boolean stopped;
 
     private TxHandler txHandler;
@@ -72,6 +78,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         PoWRule = new ProofOfWorkRule();
         transactionNodeInformation = new TransactionNodeInformation();
         this.txHandler = txHandler;
+        this.lastImportedBestBlock = System.currentTimeMillis();
     }
 
     @VisibleForTesting
@@ -130,6 +137,17 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             logger.trace("Received message already known, not added to the queue");
         }
         logger.trace("End post message (queue size {})", this.queue.size());
+
+        // There's an obvious race condition here, but fear not.
+        // receivedMessages and logger are thread-safe
+        // cleanMsgTimestamp is a long replaced by the next value, we don't care
+        // enough about the precision of the value it takes
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - cleanMsgTimestamp > RECEIVED_MESSAGES_CACHE_DURATION) {
+            logger.trace("Cleaning {} messages from rlp queue", receivedMessages.size());
+            receivedMessages.clear();
+            cleanMsgTimestamp = currentTime;
+        }
     }
 
     private void addReceivedMessage(ByteArrayWrapper message) {
@@ -155,12 +173,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             try {
                 logger.trace("Get task");
 
-                MessageTask task;
-
-                if (this.queue.isEmpty())
-                    task = this.queue.poll(10, TimeUnit.SECONDS);
-                else
-                    task = this.queue.poll();
+                final MessageTask task = this.queue.poll(10, TimeUnit.SECONDS);
 
                 loggerMessageProcess.debug("Queued Messages: {}", this.queue.size());
 
@@ -168,10 +181,16 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                     logger.trace("Start task");
                     this.processMessage(task.getSender(), task.getMessage());
                     logger.trace("End task");
-                } else if (this.blockProcessor != null && this.blockProcessor.hasBetterBlockToSync())
-                    this.blockProcessor.sendStatusToAll();
-                else
+                } else {
                     logger.trace("No task");
+                }
+
+                //Refresh status to peers every 10 seconds or so
+                Long now = System.currentTimeMillis();
+                if (now - lastStatusSent > TimeUnit.SECONDS.toMillis(10)) {
+                    this.blockProcessor.sendStatusToAll();
+                    lastStatusSent = now;
+                }
             }
             catch (Throwable ex) {
                 logger.error("Error {}", ex.getMessage());
@@ -230,13 +249,27 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         }
 
         long start = System.nanoTime();
+
         BlockProcessResult result = this.blockProcessor.processBlock(sender, block);
 
         long time = System.nanoTime() - start;
-        if(time >= 1000000000)
+
+        if (time >= 1000000000)
             result.logResult(block.getShortHash(), time);
 
         Metrics.processBlockMessage("blockProcessed", block, sender.getNodeID());
+
+        long currentTimeMillis = System.currentTimeMillis();
+
+        if (result.anyImportedBestResult())
+            lastImportedBestBlock = currentTimeMillis;
+
+        if (currentTimeMillis - lastImportedBestBlock > WAIT_TIME_ACCEPT_ADVANCED_BLOCKS)
+        {
+            logger.trace("Removed blocks advanced filter in NodeBlockProcessor");
+            this.blockProcessor.acceptAnyBlock();
+            this.receivedMessages.clear();
+        }
 
         // is new block and it is not orphan, it is in some blockchain
         if (wasOrphan && result.wasBlockAdded(block) && !this.blockProcessor.isSyncingBlocks()) {

@@ -72,4 +72,5 @@ public interface BlockStore {
 
     void load();
 
+    List<BlockInformation> getBlocksInformationByNumber(long number);
 }
