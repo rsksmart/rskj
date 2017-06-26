@@ -109,6 +109,7 @@ public class Block {
                 header.getBitcoinMergedMiningMerkleProof(),
                 header.getBitcoinMergedMiningCoinbaseTransaction(),
                 header.getReceiptsRoot(),
+                header.getContractsLogRoot(),
                 header.getTxTrieRoot(),
                 header.getStateRoot(),
                 transactionsList,
@@ -122,11 +123,12 @@ public class Block {
                  byte[] mixHash,
                  byte[] nonce, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                  byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] receiptsRoot,
+                 byte[] contractsLogRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
-                gasUsed, timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot,
+                gasUsed, timestamp, extraData, mixHash, nonce, receiptsRoot, contractsLogRoot, transactionsRoot,
                 stateRoot, transactionsList, uncleList, minimumGasPrice, 0L);
 
         this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
@@ -143,6 +145,7 @@ public class Block {
 
         this.header.setStateRoot(stateRoot);
         this.header.setReceiptsRoot(receiptsRoot);
+        this.header.setContractsLogRoot(contractsLogRoot);
 
         this.flushRLP();
     }
@@ -151,6 +154,7 @@ public class Block {
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp, byte[] extraData,
                  byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
+                 byte[] contractsLogRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, long paidFees) {
 
@@ -167,7 +171,7 @@ public class Block {
 
         this.header.setStateRoot(stateRoot);
         this.header.setReceiptsRoot(receiptsRoot);
-
+        this.header.setContractsLogRoot(contractsLogRoot);
         this.flushRLP();
     }
 
