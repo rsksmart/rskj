@@ -56,6 +56,12 @@ public interface Web3 {
         }
     }
 
+    class BlockInformationResult {
+        public String hash;
+        public String totalDifficulty;
+        public boolean inMainChain;
+    }
+
     class BlockResult {
         public String number; // QUANTITY - the block number. null when its pending block.
         public String hash; // DATA, 32 Bytes - hash of the block. null when its pending block.

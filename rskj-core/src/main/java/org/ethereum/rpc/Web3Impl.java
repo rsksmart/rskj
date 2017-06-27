@@ -36,6 +36,7 @@ import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.BlockInformation;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -589,7 +590,6 @@ public class Web3Impl implements Web3 {
             if (logger.isDebugEnabled())
                 logger.debug("eth_sendTransaction({}): {}", args, s);
         }
-
     }
 
     public String eth_sendRawTransaction(String rawData) throws Exception {
@@ -637,6 +637,15 @@ public class Web3Impl implements Web3 {
         return toJsonHex(res.getGasUsed());
     }
 
+    public BlockInformationResult getBlockInformationResult(BlockInformation blockInformation) {
+        BlockInformationResult bir = new BlockInformationResult();
+        bir.hash = TypeConverter.toJsonHex(blockInformation.getHash());
+        bir.totalDifficulty = TypeConverter.toJsonHex(blockInformation.getTotalDifficulty());
+        bir.inMainChain = blockInformation.isInMainChain();
+
+        return bir;
+    }
+
     public BlockResult getBlockResult(Block b, boolean fullTx) {
         if (b==null)
             return null;
@@ -656,7 +665,7 @@ public class Web3Impl implements Web3 {
         br.receiptsRoot = TypeConverter.toJsonHex(b.getReceiptsRoot());
         br.miner = isPending ? null : TypeConverter.toJsonHex(b.getCoinbase());
         br.difficulty = TypeConverter.toJsonHex(b.getDifficulty());
-        br.totalDifficulty = TypeConverter.toJsonHex(worldManager.getBlockchain().getTotalDifficulty());
+        br.totalDifficulty = TypeConverter.toJsonHex(worldManager.getBlockchain().getBlockStore().getTotalDifficultyForHash(b.getHash()));
         br.extraData = TypeConverter.toJsonHex(b.getExtraData());
         br.size = TypeConverter.toJsonHex(b.getEncoded().length);
         br.gasLimit = TypeConverter.toJsonHex(b.getGasLimit());
@@ -684,6 +693,26 @@ public class Web3Impl implements Web3 {
         br.uncles = ul.toArray(new String[ul.size()]);
 
         return br;
+    }
+
+    public BlockInformationResult[] eth_getBlocksByNumber(String number) {
+        long blockNumber;
+
+        try {
+            blockNumber = TypeConverter.StringNumberAsBigInt(number).longValue();
+        } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+            throw new JsonRpcInvalidParamException("invalid blocknumber " + number);
+        }
+
+        List<BlockInformationResult> result = new ArrayList<>();
+        Blockchain blockchain = this.worldManager.getBlockchain();
+
+        List<BlockInformation> binfos = blockchain.getBlocksInformationByNumber(blockNumber);
+
+        for (BlockInformation binfo : binfos)
+            result.add(getBlockInformationResult(binfo));
+
+        return result.toArray(new BlockInformationResult[result.size()]);
     }
 
     public BlockResult eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) throws Exception {
@@ -1296,7 +1325,6 @@ public class Web3Impl implements Web3 {
             if (logger.isDebugEnabled()) logger.debug("personal_dumpRawKey(*****): " + s);
         }
     }
-
 
     @Override
     public String[] personal_listAccounts() {

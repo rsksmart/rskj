@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PLATFORM=''
-GRADLE_WITNESS="80ef67b8cc503e68e1ad97f4b802676e08e074d50ea4deef65055e3234b1bdf1"
+GRADLE_WITNESS="1b8eaa3a788aac37ee78fa65579246d1ad268e3c8cf42cd2caeffc50b3e50056"
 GRADLE_WRAPPER="0f49043be582d7a39b671f924c66bd9337b92fa88ff5951225acc60560053067"
 DOWNLOADED_HASH1=''
 DOWNLOADED_HASH2=''
@@ -13,7 +13,7 @@ function downloadJar(){
 	if [ ! -d ./rskj-core/libs ]; then
 		mkdir ./rskj-core/libs
 	fi
-	curl https://deps.rsklabs.io/gradle-witness.jar -o ~/$DOWNLOAD_FILE1
+	curl https://deps.rsklabs.io/rsk-gradle-witness.jar -o ~/$DOWNLOAD_FILE1
 	curl https://deps.rsklabs.io/gradle-wrapper.jar -o ~/$DOWNLOAD_FILE2
 	if [[ $PLATFORM == 'linux' ]]; then
 		DOWNLOADED_HASH1=$(sha256sum ~/${DOWNLOAD_FILE1} | cut -d' ' -f1)
@@ -26,7 +26,7 @@ function downloadJar(){
 		rm -f ~/$DOWNLOAD_FILE1
 		exit 1
 	else
-		mv ~/${DOWNLOAD_FILE1} ./rskj-core/libs/gradle-witness.jar
+		mv ~/${DOWNLOAD_FILE1} ./rskj-core/libs/rsk-gradle-witness.jar
 		rm -f ~/${DOWNLOAD_FILE1}
 	fi
 	if [[ $GRADLE_WRAPPER != $DOWNLOADED_HASH2 ]]; then

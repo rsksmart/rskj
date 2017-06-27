@@ -26,6 +26,7 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
@@ -291,7 +292,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         // It is the new best block
         if (totalDifficulty.compareTo(status.getTotalDifficulty()) > 0) {
             if (bestBlock != null && !bestBlock.isParentOf(block)) {
-                logger.info("Rebranching: {} ~> {} From block {} ~> {} ", bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber());
+                logger.info("Rebranching: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}", bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(), status.getTotalDifficulty().toString(), totalDifficulty.toString());
                 BlockFork fork = new BlockFork();
                 fork.calculate(bestBlock, block, blockStore);
                 Metrics.rebranch(bestBlock, block, fork.getNewBlocks().size() + fork.getOldBlocks().size());
@@ -388,6 +389,13 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     @Override
     public List<Block> getBlocksByNumber(long number) {
         return blockStore.getChainBlocksByNumber(number);
+    }
+
+    @Override
+    public List<BlockInformation> getBlocksInformationByNumber(long number) {
+        synchronized (accessLock) {
+            return this.blockStore.getBlocksInformationByNumber(number);
+        }
     }
 
     @Override

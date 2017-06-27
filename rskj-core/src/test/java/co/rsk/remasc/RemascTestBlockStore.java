@@ -21,6 +21,7 @@ package co.rsk.remasc;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.AbstractBlockstore;
+import org.ethereum.db.BlockInformation;
 import org.ethereum.db.ByteArrayWrapper;
 
 import java.math.BigInteger;
@@ -131,4 +132,7 @@ public class RemascTestBlockStore extends AbstractBlockstore {
     public void removeBlock(Block block) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public List<BlockInformation> getBlocksInformationByNumber(long blockNumber) { return null; }
 }

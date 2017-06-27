@@ -74,6 +74,24 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
+    public void processBlockWithTooMuchHeightAfterFilterIsRemoved() {
+        final BlockStore store = new BlockStore();
+        final MessageSender sender = new SimpleMessageSender();
+
+        final Blockchain blockchain = createBlockchain(0);
+        final Block block = BlockGenerator.createBlock(1000, 0);
+
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        processor.acceptAnyBlock();
+
+        processor.processBlock(sender, block);
+
+        Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(block.getHash()).size() == 1);
+        Assert.assertTrue(store.hasBlock(block));
+        Assert.assertEquals(1, store.size());
+    }
+
+    @Test
     public void processBlockAddingToBlockchain() {
         Blockchain blockchain = createBlockchain(10);
 

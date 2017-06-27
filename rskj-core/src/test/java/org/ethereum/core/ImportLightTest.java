@@ -63,7 +63,7 @@ public class ImportLightTest {
 
     public static BlockChainImpl createBlockchain(Genesis genesis) {
         IndexedBlockStore blockStore = new IndexedBlockStore();
-        blockStore.init(new HashMap<>(), new HashMapDB(), null, null);
+        blockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
 
