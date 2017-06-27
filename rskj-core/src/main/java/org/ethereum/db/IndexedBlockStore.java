@@ -102,7 +102,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     public synchronized byte[] getBlockHashByNumber(long blockNumber){
         List<BlockInfo> infos = this.index.get(blockNumber);
         if (infos != null) {
-            Optional<BlockInfo> info =  infos.stream().filter(i -> i.isMainChain()).findAny();
+            Optional<BlockInfo> info =  infos.stream().filter(BlockInfo::isMainChain).findAny();
             if (info.isPresent())
                 return info.get().getHash();
 
