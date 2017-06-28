@@ -20,6 +20,7 @@ package co.rsk.net;
 
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
+import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
@@ -263,6 +264,8 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         Metrics.processBlockMessage("blockProcessed", block, sender.getNodeID());
 
+        recordEvent(sender, EventType.VALID_BLOCK);
+
         long currentTimeMillis = System.currentTimeMillis();
 
         if (result.anyImportedBestResult())
@@ -381,6 +384,16 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Metrics.processTxsMessage("txToNodeInfoUpdated", acceptedTxs, sender.getNodeID());
         Metrics.processTxsMessage("finish", acceptedTxs, sender.getNodeID());
         loggerMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
+    }
+
+    private void recordEvent(MessageSender sender, EventType event) {
+        if (this.peerScoringManager == null)
+            return;
+
+        if (sender == null)
+            return;
+
+        this.peerScoringManager.recordEvent(sender.getNodeID(), null, event);
     }
 
     private static class MessageTask {

@@ -27,13 +27,22 @@ import org.ethereum.db.ByteArrayWrapper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Created by ajlopez on 5/11/2016.
  */
 public class SimpleMessageSender implements MessageSender {
+    private static Random random = new Random();
+
     private List<Message> messages = new ArrayList<>();
-    private NodeID nodeID = new NodeID(new byte[]{});
+    private NodeID nodeID;
+
+    public SimpleMessageSender() {
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        this.nodeID = new NodeID(bytes);
+    }
 
     public void sendMessage(Message message) {
         this.messages.add(message);

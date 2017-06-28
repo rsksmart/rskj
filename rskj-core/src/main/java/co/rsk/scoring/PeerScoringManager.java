@@ -42,4 +42,8 @@ public class PeerScoringManager {
 
         return new PeerScoring();
     }
+
+    public boolean isEmpty() {
+        return this.peersByAddress.isEmpty() && this.peersByNodeID.isEmpty();
+    }
 }

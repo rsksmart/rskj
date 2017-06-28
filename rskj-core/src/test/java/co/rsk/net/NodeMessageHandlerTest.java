@@ -25,6 +25,9 @@ import co.rsk.net.simples.SimpleMessageSender;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.net.simples.SimpleBlockProcessor;
 import co.rsk.net.simples.SimplePendingState;
+import co.rsk.scoring.EventType;
+import co.rsk.scoring.PeerScoring;
+import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.SystemProperties;
@@ -72,16 +75,27 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processBlockMessageUsingProcessor() {
+        MessageSender sender = new SimpleMessageSender();
+        PeerScoringManager scoring = new PeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null);
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, scoring);
         Block block = new Block(Hex.decode(rlp));
         Message message = new BlockMessage(block);
 
-        processor.processMessage(new SimpleMessageSender(), message);
+        processor.processMessage(sender, message);
 
         Assert.assertNotNull(sbp.getBlocks());
         Assert.assertEquals(1, sbp.getBlocks().size());
         Assert.assertSame(block, sbp.getBlocks().get(0));
+
+        Assert.assertFalse(scoring.isEmpty());
+
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getNodeID());
+
+        Assert.assertNotNull(pscoring);
+        Assert.assertFalse(pscoring.isEmpty());
+        Assert.assertEquals(1, pscoring.getTotalEventCounter());
+        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
     }
 
     @Test
