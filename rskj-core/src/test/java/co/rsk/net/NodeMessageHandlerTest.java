@@ -145,21 +145,33 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processMissingPoWBlockMessageUsingProcessor() {
+        MessageSender sender = new SimpleMessageSender();
+        PeerScoringManager scoring = new PeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null).disablePoWValidation();
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, scoring).disablePoWValidation();
         Block block = BlockGenerator.getGenesisBlock();
         Message message = new BlockMessage(block);
-        processor.processMessage(new SimpleMessageSender(), message);
+        processor.processMessage(sender, message);
 
         for (int i = 0; i < 50; i++) {
             block = BlockGenerator.createChildBlock(block);
         }
 
         message = new BlockMessage(block);
-        processor.processMessage(new SimpleMessageSender(), message);
+        processor.processMessage(sender, message);
 
         Assert.assertNotNull(sbp.getBlocks());
         Assert.assertEquals(2, sbp.getBlocks().size());
+
+        Assert.assertFalse(scoring.isEmpty());
+
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getNodeID());
+
+        Assert.assertNotNull(pscoring);
+        Assert.assertFalse(pscoring.isEmpty());
+        Assert.assertEquals(2, pscoring.getTotalEventCounter());
+        Assert.assertEquals(2, pscoring.getEventCounter(EventType.VALID_BLOCK));
+        Assert.assertEquals(0, pscoring.getEventCounter(EventType.INVALID_BLOCK));
     }
 
     @Test
