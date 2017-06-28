@@ -20,6 +20,7 @@ package co.rsk.net;
 
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
+import co.rsk.scoring.PeerScoringManager;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.PendingState;
@@ -53,6 +54,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private final BlockProcessor blockProcessor;
     private final ChannelManager channelManager;
     private final PendingState pendingState;
+    private final PeerScoringManager peerScoringManager;
     private long lastStatusSent = 0;
 
     private ProofOfWorkRule powRule;
@@ -71,7 +73,8 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     public NodeMessageHandler(@Nonnull final BlockProcessor blockProcessor,
                               @Nullable final ChannelManager channelManager,
                               @Nullable final PendingState pendingState,
-                              final TxHandler txHandler) {
+                              final TxHandler txHandler,
+                              @Nullable final PeerScoringManager peerScoringManager) {
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
         this.pendingState = pendingState;
@@ -79,6 +82,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         transactionNodeInformation = new TransactionNodeInformation();
         this.txHandler = txHandler;
         this.lastImportedBestBlock = System.currentTimeMillis();
+        this.peerScoringManager = peerScoringManager;
     }
 
     @VisibleForTesting

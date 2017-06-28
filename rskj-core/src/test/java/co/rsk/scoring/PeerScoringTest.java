@@ -6,10 +6,10 @@ import org.junit.Test;
 /**
  * Created by ajlopez on 27/06/2017.
  */
-public class NodeScoringTest {
+public class PeerScoringTest {
     @Test
     public void newStatusHasCounterInZero() {
-        NodeScoring scoring = new NodeScoring();
+        PeerScoring scoring = new PeerScoring();
 
         Assert.assertEquals(0, scoring.getEventCounter(EventType.INVALID_BLOCK));
         Assert.assertEquals(0, scoring.getEventCounter(EventType.INVALID_TRANSACTION));
@@ -18,7 +18,7 @@ public class NodeScoringTest {
 
     @Test
     public void recordEvent() {
-        NodeScoring scoring = new NodeScoring();
+        PeerScoring scoring = new PeerScoring();
 
         scoring.recordEvent(EventType.INVALID_BLOCK);
 
@@ -29,7 +29,7 @@ public class NodeScoringTest {
 
     @Test
     public void recordManyEvent() {
-        NodeScoring scoring = new NodeScoring();
+        PeerScoring scoring = new PeerScoring();
 
         scoring.recordEvent(EventType.INVALID_BLOCK);
         scoring.recordEvent(EventType.INVALID_BLOCK);
@@ -42,7 +42,7 @@ public class NodeScoringTest {
 
     @Test
     public void recordManyEventOfDifferentType() {
-        NodeScoring scoring = new NodeScoring();
+        PeerScoring scoring = new PeerScoring();
 
         scoring.recordEvent(EventType.INVALID_BLOCK);
         scoring.recordEvent(EventType.INVALID_BLOCK);

@@ -11,15 +11,15 @@ import java.util.Random;
 /**
  * Created by ajlopez on 28/06/2017.
  */
-public class NodeScoringManagerTest {
+public class PeerScoringManagerTest {
     private static Random random = new Random();
 
     @Test
     public void getEmptyNodeStatusFromUnknownNodeId() {
         NodeID id = generateNodeID();
-        NodeScoringManager manager = new NodeScoringManager();
+        PeerScoringManager manager = new PeerScoringManager();
 
-        NodeScoring result = manager.getNodeScoring(id);
+        PeerScoring result = manager.getPeerScoring(id);
 
         Assert.assertNotNull(result);
         Assert.assertTrue(result.isEmpty());
@@ -28,11 +28,11 @@ public class NodeScoringManagerTest {
     @Test
     public void recordEventUsingNodeID() {
         NodeID id = generateNodeID();
-        NodeScoringManager manager = new NodeScoringManager();
+        PeerScoringManager manager = new PeerScoringManager();
 
         manager.recordEvent(id, null, EventType.INVALID_BLOCK);
 
-        NodeScoring result = manager.getNodeScoring(id);
+        PeerScoring result = manager.getPeerScoring(id);
 
         Assert.assertNotNull(result);
         Assert.assertFalse(result.isEmpty());
@@ -46,18 +46,18 @@ public class NodeScoringManagerTest {
         NodeID id = generateNodeID();
         InetAddress address = generateIPAddressV4();
 
-        NodeScoringManager manager = new NodeScoringManager();
+        PeerScoringManager manager = new PeerScoringManager();
 
         manager.recordEvent(id, address, EventType.INVALID_BLOCK);
 
-        NodeScoring result = manager.getNodeScoring(id);
+        PeerScoring result = manager.getPeerScoring(id);
 
         Assert.assertNotNull(result);
         Assert.assertFalse(result.isEmpty());
         Assert.assertEquals(1, result.getEventCounter(EventType.INVALID_BLOCK));
         Assert.assertEquals(1, result.getTotalEventCounter());
 
-        result = manager.getNodeScoring(address);
+        result = manager.getPeerScoring(address);
 
         Assert.assertNotNull(result);
         Assert.assertFalse(result.isEmpty());
@@ -68,11 +68,11 @@ public class NodeScoringManagerTest {
     @Test
     public void recordEventUsingIPV4Address() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
-        NodeScoringManager manager = new NodeScoringManager();
+        PeerScoringManager manager = new PeerScoringManager();
 
         manager.recordEvent(null, address, EventType.INVALID_BLOCK);
 
-        NodeScoring result = manager.getNodeScoring(address);
+        PeerScoring result = manager.getPeerScoring(address);
 
         Assert.assertNotNull(result);
         Assert.assertFalse(result.isEmpty());
@@ -83,11 +83,11 @@ public class NodeScoringManagerTest {
     @Test
     public void recordEventUsingIPV6Address() throws UnknownHostException {
         InetAddress address = generateIPAddressV6();
-        NodeScoringManager manager = new NodeScoringManager();
+        PeerScoringManager manager = new PeerScoringManager();
 
         manager.recordEvent(null, address, EventType.INVALID_BLOCK);
 
-        NodeScoring result = manager.getNodeScoring(address);
+        PeerScoring result = manager.getPeerScoring(address);
 
         Assert.assertNotNull(result);
         Assert.assertFalse(result.isEmpty());

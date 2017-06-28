@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * Created by ajlopez on 27/06/2017.
  */
-public class NodeScoring {
+public class PeerScoring {
     private Map<EventType, Integer> counters = new HashMap<>();
 
     public void recordEvent(EventType evt) {
