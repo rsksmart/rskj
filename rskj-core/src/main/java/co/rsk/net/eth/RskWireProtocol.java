@@ -20,14 +20,12 @@ package co.rsk.net.eth;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
-import co.rsk.net.MessageHandler;
-import co.rsk.net.MessageSender;
-import co.rsk.net.Metrics;
-import co.rsk.net.Status;
+import co.rsk.net.*;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.StatusMessage;
+import co.rsk.scoring.EventType;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -51,6 +49,9 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -183,6 +184,7 @@ public class RskWireProtocol extends EthHandler {
                     || msg.getProtocolVersion() != version.getCode()) {
                 loggerNet.info("Removing EthHandler for {} due to protocol incompatibility", ctx.channel().remoteAddress());
                 ethState = EthState.STATUS_FAILED;
+                recordEvent(ctx, EventType.INCOMPATIBLE_PROTOCOL);
                 disconnect(ReasonCode.INCOMPATIBLE_PROTOCOL);
                 ctx.pipeline().remove(this); // Peer is not compatible for the 'eth' sub-protocol
                 return;
@@ -190,6 +192,7 @@ public class RskWireProtocol extends EthHandler {
 
             if (msg.getNetworkId() != config.networkId()) {
                 ethState = EthState.STATUS_FAILED;
+                recordEvent(ctx, EventType.INVALID_NETWORK);
                 disconnect(ReasonCode.NULL_IDENTITY);
                 return;
             }
@@ -207,6 +210,22 @@ public class RskWireProtocol extends EthHandler {
             }
         } catch (NoSuchElementException e) {
             loggerNet.debug("EthHandler already removed");
+        }
+    }
+
+    private void recordEvent(ChannelHandlerContext ctx, EventType event) {
+        SocketAddress socketAddress = ctx.channel().remoteAddress();
+
+        if (socketAddress instanceof InetSocketAddress) {
+            byte[] nid = channel.getNodeId();
+
+            NodeID nodeID = null;
+
+            if (nid != null)
+                nodeID = new NodeID(nid);
+
+            InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
+            this.rsk.getPeerScoringManager().recordEvent(nodeID, address, event);
         }
     }
 
