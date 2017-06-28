@@ -9,37 +9,37 @@ import java.util.Map;
 /**
  * Created by ajlopez on 28/06/2017.
  */
-public class NodeStatusManager {
-    private Map<NodeID, NodeStatus> nodesById = new HashMap<>();
-    private Map<InetAddress, NodeStatus> nodesByAddress = new HashMap<>();
+public class NodeScoringManager {
+    private Map<NodeID, NodeScoring> nodesById = new HashMap<>();
+    private Map<InetAddress, NodeScoring> nodesByAddress = new HashMap<>();
 
     public void recordEvent(NodeID id, InetAddress address, EventType event) {
         if (id != null) {
             if (!nodesById.containsKey(id))
-                nodesById.put(id, new NodeStatus());
+                nodesById.put(id, new NodeScoring());
 
             nodesById.get(id).recordEvent(event);
         }
 
         if (address != null) {
             if (!nodesByAddress.containsKey(address))
-                nodesByAddress.put(address, new NodeStatus());
+                nodesByAddress.put(address, new NodeScoring());
 
             nodesByAddress.get(address).recordEvent(event);
         }
     }
 
-    public NodeStatus getNodeStatus(NodeID id) {
+    public NodeScoring getNodeScoring(NodeID id) {
         if (nodesById.containsKey(id))
             return nodesById.get(id);
 
-        return new NodeStatus();
+        return new NodeScoring();
     }
 
-    public NodeStatus getNodeStatus(InetAddress address) {
+    public NodeScoring getNodeScoring(InetAddress address) {
         if (nodesByAddress.containsKey(address))
             return nodesByAddress.get(address);
 
-        return new NodeStatus();
+        return new NodeScoring();
     }
 }
