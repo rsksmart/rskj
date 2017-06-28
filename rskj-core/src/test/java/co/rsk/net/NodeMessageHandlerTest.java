@@ -119,17 +119,28 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processInvalidPoWMessageUsingProcessor() {
+        MessageSender sender = new SimpleMessageSender();
+        PeerScoringManager scoring = new PeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null);
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, scoring);
         Block block = new Block(Hex.decode(rlp));
         byte[] mergedMiningHeader = block.getBitcoinMergedMiningHeader();
         mergedMiningHeader[76] += 3; //change merged mining nonce.
         Message message = new BlockMessage(block);
 
-        processor.processMessage(new SimpleMessageSender(), message);
+        processor.processMessage(sender, message);
 
         Assert.assertNotNull(sbp.getBlocks());
         Assert.assertEquals(0, sbp.getBlocks().size());
+
+        Assert.assertFalse(scoring.isEmpty());
+
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getNodeID());
+
+        Assert.assertNotNull(pscoring);
+        Assert.assertFalse(pscoring.isEmpty());
+        Assert.assertEquals(1, pscoring.getTotalEventCounter());
+        Assert.assertEquals(1, pscoring.getEventCounter(EventType.INVALID_BLOCK));
     }
 
     @Test

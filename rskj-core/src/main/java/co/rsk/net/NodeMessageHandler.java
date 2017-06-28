@@ -250,6 +250,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         if (!isValidBlock(block)) {
             logger.trace("Invalid block {} {}", block.getNumber(), block.getShortHash());
+            recordEvent(sender, EventType.INVALID_BLOCK);
             return;
         }
 
