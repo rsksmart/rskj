@@ -18,9 +18,7 @@
 
 package co.rsk.net;
 
-import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.BridgeConstants;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageSender;
