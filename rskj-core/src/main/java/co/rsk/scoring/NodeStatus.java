@@ -22,4 +22,17 @@ public class NodeStatus {
 
         return counters.get(evt).intValue();
     }
+
+    public int getTotalEventCounter() {
+        int counter = 0;
+
+        for (Map.Entry<EventType, Integer> entry : counters.entrySet())
+            counter += entry.getValue().intValue();
+
+        return counter;
+    }
+
+    public boolean isEmpty() {
+        return counters.isEmpty();
+    }
 }

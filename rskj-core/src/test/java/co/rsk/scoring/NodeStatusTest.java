@@ -13,6 +13,7 @@ public class NodeStatusTest {
 
         Assert.assertEquals(0, status.getEventCounter(EventType.INVALID_BLOCK));
         Assert.assertEquals(0, status.getEventCounter(EventType.INVALID_TRANSACTION));
+        Assert.assertEquals(0, status.getTotalEventCounter());
     }
 
     @Test
@@ -23,6 +24,7 @@ public class NodeStatusTest {
 
         Assert.assertEquals(1, status.getEventCounter(EventType.INVALID_BLOCK));
         Assert.assertEquals(0, status.getEventCounter(EventType.INVALID_TRANSACTION));
+        Assert.assertEquals(1, status.getTotalEventCounter());
     }
 
     @Test
@@ -35,6 +37,7 @@ public class NodeStatusTest {
 
         Assert.assertEquals(3, status.getEventCounter(EventType.INVALID_BLOCK));
         Assert.assertEquals(0, status.getEventCounter(EventType.INVALID_TRANSACTION));
+        Assert.assertEquals(3, status.getTotalEventCounter());
     }
 
     @Test
@@ -49,5 +52,6 @@ public class NodeStatusTest {
 
         Assert.assertEquals(3, status.getEventCounter(EventType.INVALID_BLOCK));
         Assert.assertEquals(2, status.getEventCounter(EventType.INVALID_TRANSACTION));
+        Assert.assertEquals(5, status.getTotalEventCounter());
     }
 }
