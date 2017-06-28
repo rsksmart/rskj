@@ -641,17 +641,16 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processTransactionsMessage() {
+        PeerScoringManager scoring = new PeerScoringManager();
         final SimpleChannelManager channelManager = new SimpleChannelManager();
         TxHandler txmock = Mockito.mock(TxHandler.class);
         BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, channelManager, null, txmock, null);
+        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, channelManager, null, txmock, scoring);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
-        sender.setNodeID(new byte[] {1});
         final SimpleMessageSender sender2 = new SimpleMessageSender();
-        sender2.setNodeID(new byte[] {2});
 
         final List<Transaction> txs = TransactionUtils.getTransactions(10);
         Mockito.when(txmock.retrieveValidTxs(any(List.class))).thenReturn(txs);
@@ -675,6 +674,53 @@ public class NodeMessageHandlerTest {
         Assert.assertEquals(2, channelManager.getLastSkip().size());
         Assert.assertTrue(channelManager.getLastSkip().contains(sender.getNodeID()));
         Assert.assertTrue(channelManager.getLastSkip().contains(sender2.getNodeID()));
+
+        Assert.assertFalse(scoring.isEmpty());
+
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getNodeID());
+
+        Assert.assertNotNull(pscoring);
+        Assert.assertFalse(pscoring.isEmpty());
+        Assert.assertEquals(1, pscoring.getTotalEventCounter());
+        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
+
+        pscoring = scoring.getPeerScoring(sender2.getNodeID());
+
+        Assert.assertNotNull(pscoring);
+        Assert.assertFalse(pscoring.isEmpty());
+        Assert.assertEquals(1, pscoring.getTotalEventCounter());
+        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
+    }
+
+    @Test
+    public void processRejectedTransactionsMessage() {
+        PeerScoringManager scoring = new PeerScoringManager();
+        final SimpleChannelManager channelManager = new SimpleChannelManager();
+        TxHandler txmock = Mockito.mock(TxHandler.class);
+        BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
+        Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
+
+        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, channelManager, null, txmock, scoring);
+
+        final SimpleMessageSender sender = new SimpleMessageSender();
+
+        final List<Transaction> txs = TransactionUtils.getTransactions(0);
+        Mockito.when(txmock.retrieveValidTxs(any(List.class))).thenReturn(txs);
+        final TransactionsMessage message = new TransactionsMessage(txs);
+
+        handler.processMessage(sender, message);
+
+        Assert.assertNotNull(channelManager.getTransactions());
+        Assert.assertEquals(0, channelManager.getTransactions().size());
+
+        Assert.assertFalse(scoring.isEmpty());
+
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getNodeID());
+
+        Assert.assertNotNull(pscoring);
+        Assert.assertFalse(pscoring.isEmpty());
+        Assert.assertEquals(1, pscoring.getTotalEventCounter());
+        Assert.assertEquals(1, pscoring.getEventCounter(EventType.INVALID_TRANSACTION));
     }
 
     @Test

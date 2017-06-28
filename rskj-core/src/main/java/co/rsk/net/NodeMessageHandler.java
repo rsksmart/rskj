@@ -362,6 +362,11 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         Metrics.processTxsMessage("validTxsAddedToPendingState", acceptedTxs, sender.getNodeID());
 
+        if (acceptedTxs.isEmpty())
+            recordEvent(sender, EventType.INVALID_TRANSACTION);
+        else
+            recordEvent(sender, EventType.VALID_TRANSACTION);
+
         if (channelManager != null) {
             /* Relay all transactions to peers that don't have them */
             for (Transaction tx : acceptedTxs) {
@@ -384,6 +389,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         Metrics.processTxsMessage("txToNodeInfoUpdated", acceptedTxs, sender.getNodeID());
         Metrics.processTxsMessage("finish", acceptedTxs, sender.getNodeID());
+
         loggerMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
     }
 
