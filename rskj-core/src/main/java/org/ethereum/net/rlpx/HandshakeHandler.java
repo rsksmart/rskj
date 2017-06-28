@@ -19,6 +19,9 @@
 
 package org.ethereum.net.rlpx;
 
+import co.rsk.core.Rsk;
+import co.rsk.net.NodeID;
+import co.rsk.scoring.EventType;
 import com.google.common.io.ByteStreams;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -43,7 +46,9 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.List;
 
 import static org.ethereum.net.rlpx.FrameCodec.Frame;
@@ -67,6 +72,9 @@ public class HandshakeHandler extends ByteToMessageDecoder {
 
     @Autowired
     SystemProperties config;
+
+    @Autowired
+    Rsk rsk;
 
     private static final Logger loggerWire = LoggerFactory.getLogger("wire");
     private static final Logger loggerNet = LoggerFactory.getLogger("net");
@@ -333,6 +341,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        recordFailedHandshake(ctx);
         if (channel.isDiscoveryMode()) {
             loggerNet.debug("Handshake failed: " + ctx.channel().remoteAddress() + "(" + cause.getMessage() + ")");
         } else {
@@ -344,5 +353,21 @@ public class HandshakeHandler extends ByteToMessageDecoder {
             }
         }
         ctx.close();
+    }
+
+    private void recordFailedHandshake(ChannelHandlerContext ctx) {
+        SocketAddress socketAddress = ctx.channel().remoteAddress();
+
+        if (socketAddress instanceof InetSocketAddress) {
+            byte[] nid = channel.getNodeId();
+
+            NodeID nodeID = null;
+
+            if (nid != null)
+                nodeID = new NodeID(nid);
+
+            InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
+            this.rsk.getPeerScoringManager().recordEvent(nodeID, address, EventType.FAILED_HANDSHAKE);
+        }
     }
 }
