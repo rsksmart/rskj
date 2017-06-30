@@ -45,7 +45,6 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
 
-    private BlockCache blockCache = new BlockCache(200);
     Map<Long, List<BlockInfo>> index;
     KeyValueDataSource blocks;
 
@@ -61,8 +60,6 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     public void removeBlock(Block block) {
-        this.blockCache.removeBlock(block);
-
         this.blocks.delete(block.getHash());
 
         List<BlockInfo> binfos = this.index.get(block.getNumber());
@@ -117,7 +114,6 @@ public class IndexedBlockStore extends AbstractBlockstore {
     @Override
     public void saveBlock(Block block, BigInteger cummDifficulty, boolean mainChain) {
         addInternalBlock(block, cummDifficulty, mainChain);
-        this.blockCache.addBlock(block);
     }
 
     private void addInternalBlock(Block block, BigInteger cummDifficulty, boolean mainChain){
@@ -182,11 +178,6 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     @Override
     public Block getBlockByHash(byte[] hash) {
-        Block block = this.blockCache.getBlockByHash(hash);
-
-        if (block != null)
-            return block;
-
         byte[] blockRlp = blocks.get(hash);
         if (blockRlp == null)
             return null;
