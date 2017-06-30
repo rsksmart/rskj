@@ -42,6 +42,7 @@ import java.util.*;
 /**
  * Precompiled contract that manages the 2 way peg between bitcoin and RSK.
  * This class is just a wrapper, actual functionality is found in BridgeSupport.
+ * @author Oscar Guindzberg
  */
 public class Bridge extends PrecompiledContracts.PrecompiledContract {
 

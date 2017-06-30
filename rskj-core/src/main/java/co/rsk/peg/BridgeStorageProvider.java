@@ -39,7 +39,8 @@ import java.util.SortedSet;
 /**
  * Provides an object oriented facade of the bridge contract memory.
  * @see co.rsk.remasc.RemascStorageProvider
- * Created by ajlopez on 6/7/2016.
+ * @author ajlopez
+ * @author Oscar Guindzberg
  */
 public class BridgeStorageProvider {
     private static final String btcUTXOsKey = "btcUTXOs";
