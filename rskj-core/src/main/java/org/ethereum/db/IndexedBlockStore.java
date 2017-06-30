@@ -129,17 +129,25 @@ public class IndexedBlockStore extends AbstractBlockstore {
             blockInfos = new ArrayList<>();
         }
 
-        BlockInfo blockInfo = new BlockInfo();
+        BlockInfo blockInfo = null;
+        for (BlockInfo bi : blockInfos) {
+            if (areEqual(bi.getHash(), block.getHash())) {
+                blockInfo = bi;
+            } else if (mainChain) {
+                bi.setMainChain(false);
+            }
+        }
+        if (blockInfo == null) {
+            blockInfo = new BlockInfo();
+            blockInfos.add(blockInfo);
+        }
+
         blockInfo.setCummDifficulty(cummDifficulty);
         blockInfo.setHash(block.getHash());
         blockInfo.setMainChain(mainChain);
 
-        if (mainChain)
-            for (BlockInfo bi : blockInfos)
-                bi.setMainChain(false);
-
-        blockInfos.add(blockInfo);
-        blocks.put(block.getHash(), block.getEncoded());
+        if (blocks.get(block.getHash()) == null)
+            blocks.put(block.getHash(), block.getEncoded());
         index.put(block.getNumber(), blockInfos);
         blockCache.addBlock(block);
     }
