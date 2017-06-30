@@ -233,7 +233,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     @Override
     public synchronized long getMaxNumber() {
-        return Math.max(0, index.size() - 1);
+        return index.size() - 1;
     }
 
     @Override
