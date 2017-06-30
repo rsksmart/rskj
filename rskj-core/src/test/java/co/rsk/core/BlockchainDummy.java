@@ -20,10 +20,7 @@ package co.rsk.core;
 
 import co.rsk.core.bc.BlockChainStatus;
 import org.ethereum.core.*;
-import org.ethereum.db.BlockInformation;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.TransactionInfo;
+import org.ethereum.db.*;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -127,6 +124,9 @@ public class BlockchainDummy implements Blockchain {
 
     @Override
     public ReceiptStore getReceiptStore() { return null; }
+
+    @Override
+    public PerContractLogStore getPerContractLogStore() { return null; }
 
     @Override
     public Repository getRepository() { return null; }

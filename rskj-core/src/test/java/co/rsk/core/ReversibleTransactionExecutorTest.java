@@ -54,6 +54,7 @@ public class ReversibleTransactionExecutorTest {
                 factory.getRepository(),
                 factory.getBlockStore(),
                 factory.getReceiptStore(),
+                factory.getPerContractLogStore(),
                 new ProgramInvokeFactoryImpl(),
                 bestBlock,
                 args);
@@ -86,6 +87,7 @@ public class ReversibleTransactionExecutorTest {
                 factory.getRepository(),
                 factory.getBlockStore(),
                 factory.getReceiptStore(),
+                factory.getPerContractLogStore(),
                 new ProgramInvokeFactoryImpl(),
                 bestBlock,
                 args);
@@ -119,6 +121,7 @@ public class ReversibleTransactionExecutorTest {
                 factory.getRepository(),
                 factory.getBlockStore(),
                 factory.getReceiptStore(),
+                factory.getPerContractLogStore(),
                 new ProgramInvokeFactoryImpl(),
                 bestBlock,
                 args);
@@ -152,6 +155,7 @@ public class ReversibleTransactionExecutorTest {
                 factory.getRepository(),
                 factory.getBlockStore(),
                 factory.getReceiptStore(),
+                factory.getPerContractLogStore(),
                 new ProgramInvokeFactoryImpl(),
                 bestBlock,
                 args);
@@ -166,6 +170,7 @@ public class ReversibleTransactionExecutorTest {
                 factory.getRepository(),
                 factory.getBlockStore(),
                 factory.getReceiptStore(),
+                factory.getPerContractLogStore(),
                 new ProgramInvokeFactoryImpl(),
                 bestBlock,
                 args);

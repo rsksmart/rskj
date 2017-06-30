@@ -22,6 +22,7 @@ package org.ethereum.util;
 import co.rsk.util.ByteBufferUtil;
 import co.rsk.util.RLPElementView;
 import co.rsk.util.RLPException;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -503,6 +504,7 @@ public class RLP {
         }
     }
 
+
     public static byte[] encodeInt(int singleInt) {
         if ((singleInt & 0xFF) == singleInt)
             return encodeByte((byte) singleInt);
@@ -707,8 +709,40 @@ public class RLP {
             totalLength += element1.length;
         }
 
-        byte[] data;
+        Pair<Integer,byte[]> ret = encodeListLength(totalLength);
+        int copyPos = ret.getLeft();
+        byte data[] = ret.getRight();
+        for (byte[] element : elements) {
+            System.arraycopy(element, 0, data, copyPos, element.length);
+            copyPos += element.length;
+        }
+        return data;
+    }
+
+    public static byte[] encodeList(List<byte[]> elements) {
+
+        if (elements == null) {
+            return new byte[]{(byte) OFFSET_SHORT_LIST};
+        }
+
+        int totalLength = 0;
+        for (byte[] element1 : elements) {
+            totalLength += element1.length;
+        }
+
+        Pair<Integer,byte[]> ret = encodeListLength(totalLength);
+        int copyPos = ret.getLeft();
+        byte data[] = ret.getRight();
+        for (byte[] element : elements) {
+            System.arraycopy(element, 0, data, copyPos, element.length);
+            copyPos += element.length;
+        }
+        return data;
+    }
+
+    static Pair<Integer,byte[]> encodeListLength(int totalLength) {
         int copyPos;
+        byte[] data;
         if (totalLength < SIZE_THRESHOLD) {
 
             data = new byte[1 + totalLength];
@@ -735,12 +769,10 @@ public class RLP {
 
             copyPos = lenBytes.length + 1;
         }
-        for (byte[] element : elements) {
-            System.arraycopy(element, 0, data, copyPos, element.length);
-            copyPos += element.length;
-        }
-        return data;
+
+        return Pair.of(copyPos,data);
     }
+
 
     /*
      *  Utility function to convert Objects into byte arrays

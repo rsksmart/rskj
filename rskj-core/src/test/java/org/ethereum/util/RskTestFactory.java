@@ -3,6 +3,7 @@ package org.ethereum.util;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.core.bc.PerContractLog;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.trie.TrieStoreImpl;
@@ -49,6 +50,7 @@ public class RskTestFactory {
                     getRepository(),
                     getBlockStore(),
                     getReceiptStore(),
+                    getPerContractLogStore(),
                     null, //circular dependency
                     null,
                     null,
@@ -64,6 +66,11 @@ public class RskTestFactory {
     public ReceiptStore getReceiptStore() {
         HashMapDB receiptStore = new HashMapDB();
         return new ReceiptStoreImpl(receiptStore);
+    }
+
+    public PerContractLogStore getPerContractLogStore() {
+        HashMapDB perContractLogStore = new HashMapDB();
+        return new PerContractLogStoreImpl(perContractLogStore);
     }
 
     public BlockStore getBlockStore() {

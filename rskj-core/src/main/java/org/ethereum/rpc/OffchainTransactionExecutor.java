@@ -20,6 +20,7 @@ package org.ethereum.rpc;
 
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.PerContractLogStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
@@ -50,6 +51,9 @@ public class OffchainTransactionExecutor {
     // Must make sure that this blockChain is never modified, only read.
     @Autowired
     private ReceiptStore receiptStore;
+
+    @Autowired
+    private PerContractLogStore perContractLogStore;
 
     // Must make sure that this blockStore is never modified, only read.
     // It seems that the ONLY use of blockStore is in Program.java:
@@ -88,7 +92,9 @@ public class OffchainTransactionExecutor {
             logger.info("executeTransactions: [{}] tx: [{}] ", block.getNumber(), i);
 
             TransactionExecutor executor = new TransactionExecutor(tx, block.getCoinbase(),
-                    track, blockStore, receiptStore,
+                    track, blockStore,
+                    receiptStore,
+                    perContractLogStore,
                     programInvokeFactory, block, null, totalGasUsed);
 
             executor.setLocalCall(true);

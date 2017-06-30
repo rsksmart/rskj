@@ -24,6 +24,7 @@ import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
+import org.ethereum.db.PerContractLogStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
@@ -67,6 +68,7 @@ public class EthereumImpl implements Ethereum {
     private final SystemProperties config;
     private final CompositeEthereumListener compositeEthereumListener;
     private final ReceiptStore receiptStore;
+    private final PerContractLogStore perContractLogStore;
     private final PeerClientFactory peerClientFactory;
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
@@ -80,6 +82,7 @@ public class EthereumImpl implements Ethereum {
                         SystemProperties config,
                         CompositeEthereumListener compositeEthereumListener,
                         ReceiptStore receiptStore,
+                        PerContractLogStore perContractLogStore,
                         PeerClientFactory peerClientFactory) {
         this.worldManager = worldManager;
         this.adminInfo = adminInfo;
@@ -90,6 +93,7 @@ public class EthereumImpl implements Ethereum {
         this.config = config;
         this.compositeEthereumListener = compositeEthereumListener;
         this.receiptStore = receiptStore;
+        this.perContractLogStore = perContractLogStore;
         this.peerClientFactory = peerClientFactory;
     }
 
@@ -194,6 +198,7 @@ public class EthereumImpl implements Ethereum {
                 (Repository) getRepository(),
                 worldManager.getBlockStore(),
                 receiptStore,
+                perContractLogStore,
                 programInvokeFactory,
                 bestBlock,
                 args
@@ -213,7 +218,10 @@ public class EthereumImpl implements Ethereum {
 
         try {
             org.ethereum.core.TransactionExecutor executor = new org.ethereum.core.TransactionExecutor
-                    (tx, bestBlock.getCoinbase(), repository, worldManager.getBlockStore(), receiptStore,
+                    (tx, bestBlock.getCoinbase(), repository,
+                            worldManager.getBlockStore(),
+                            receiptStore,
+                    perContractLogStore,
                     programInvokeFactory, bestBlock)
                     .setLocalCall(true);
 

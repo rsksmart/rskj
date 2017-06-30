@@ -195,7 +195,7 @@ public class TransactionTest {
                     Block bestBlock = block;
 
                     TransactionExecutor executor = new TransactionExecutor
-                            (txConst, bestBlock.getCoinbase(), track, new BlockStoreDummy(), null,
+                            (txConst, bestBlock.getCoinbase(), track, new BlockStoreDummy(), null,null,
                                     invokeFactory, bestBlock)
                             .setLocalCall(true);
 

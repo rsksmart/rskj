@@ -29,10 +29,7 @@ import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.db.IndexedBlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.manager.AdminInfo;
 import org.junit.AfterClass;
@@ -73,10 +70,15 @@ public class ImportLightTest {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
+        KeyValueDataSource dsp = new HashMapDB();
+        dsp.init();
+        PerContractLogStore perContractLogStore = new PerContractLogStoreImpl(dsp);
+
         BlockChainImpl blockchain = new BlockChainImpl(
                 repository,
                 blockStore,
                 receiptStore,
+                perContractLogStore,
                 null,
                 listener,
                 new AdminInfo(),

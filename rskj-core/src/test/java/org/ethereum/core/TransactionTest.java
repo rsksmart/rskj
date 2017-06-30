@@ -435,7 +435,7 @@ public class TransactionTest {
                     Block bestBlock = block;
 
                     TransactionExecutor executor = new TransactionExecutor
-                            (txConst, bestBlock.getCoinbase(), track, new BlockStoreDummy(), null,
+                            (txConst, bestBlock.getCoinbase(), track, new BlockStoreDummy(), null,null,
                                     invokeFactory, bestBlock)
                             .setLocalCall(true);
 
@@ -693,7 +693,10 @@ public class TransactionTest {
     private TransactionExecutor executeTransaction(Blockchain blockchain, Transaction tx) {
         Repository track = blockchain.getRepository().startTracking();
         TransactionExecutor executor = new TransactionExecutor(tx, new byte[32], blockchain.getRepository(),
-                blockchain.getBlockStore(), blockchain.getReceiptStore(), new ProgramInvokeFactoryImpl(), blockchain.getBestBlock());
+                blockchain.getBlockStore(),
+                blockchain.getReceiptStore(),
+                blockchain.getPerContractLogStore(),
+                new ProgramInvokeFactoryImpl(), blockchain.getBestBlock());
 
         executor.init();
         executor.execute();

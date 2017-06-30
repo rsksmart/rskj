@@ -22,15 +22,15 @@ import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * BlockExecutor has methods to execute block with its transactions.
@@ -80,6 +80,7 @@ public class BlockExecutor {
         BlockHeader header = block.getHeader();
         header.setTransactionsRoot(Block.getTxTrie(block.getTransactionsList()).getHash());
         header.setReceiptsRoot(result.getReceiptsRoot());
+        header.setContractsLogRoot(result.getPerContractLogRoot());
         header.setGasUsed(result.getGasUsed());
         header.setPaidFees(result.getPaidFees());
         block.setStateRoot(result.getStateRoot());
@@ -194,11 +195,19 @@ public class BlockExecutor {
         long totalGasUsed = 0;
         long totalPaidFees = 0;
         List<TransactionReceipt> receipts = new ArrayList<>();
+        // Maps and address to its logs.
+        PerContractLog perContractLog;
+
+        perContractLog = new PerContractLog();
+
         List<Transaction> executedTransactions = new ArrayList<>();
 
         for (Transaction tx : block.getTransactionsList()) {
             logger.info("apply block: [{}] tx: [{}] ", block.getNumber(), i);
-            TransactionExecutor txExecutor = new TransactionExecutor(tx, block.getCoinbase(), track, blockStore, blockChain.getReceiptStore(), programInvokeFactory, block, listener, totalGasUsed);
+            TransactionExecutor txExecutor = new TransactionExecutor(tx, block.getCoinbase(), track, blockStore,
+                    blockChain.getReceiptStore(),
+                    blockChain.getPerContractLogStore(),
+                    programInvokeFactory, block, listener, totalGasUsed);
 
             boolean readyToExecute = txExecutor.init();
             if (!ignoreReadyToExecute && !readyToExecute) {
@@ -236,6 +245,24 @@ public class BlockExecutor {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(txExecutor.getVMLogs());
 
+            // For every log that contains the 0xff..ff logged topic
+            // it must also be logged in the PerContractLog
+            int logN =0;
+            for (LogInfo log : txExecutor.getVMLogs()) {
+                for (DataWord topic : log.getTopics()) {
+                    if (topic.equalValue(DataWord.MAX_DATAWORD_VALUE)) {
+                        ContractLog amap =perContractLog.get(log.getAddress());
+                        if (amap==null)  {
+                            amap = new ContractLog();
+                            perContractLog.put(log.getAddress(),amap);
+                        }
+                        amap.put(i,logN,log);
+                        break;
+                    }
+
+                }
+                logN++;
+            }
             logger.info("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()),
                     Hex.toHexString(lastStateRootHash));
 
@@ -248,6 +275,6 @@ public class BlockExecutor {
             logger.info("tx done");
         }
 
-        return new BlockResult(executedTransactions, receipts, lastStateRootHash, totalGasUsed, totalPaidFees);
+        return new BlockResult(executedTransactions, receipts, perContractLog,lastStateRootHash, totalGasUsed, totalPaidFees);
     }
 }

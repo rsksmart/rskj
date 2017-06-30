@@ -26,10 +26,7 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.BlockInformation;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.TransactionInfo;
+import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
 import co.rsk.trie.Trie;
@@ -85,6 +82,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     private final Repository repository;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
+    private final PerContractLogStore perContractLogStore;
     private PendingState pendingState;
     private EthereumListener listener;
     private final AdminInfo adminInfo;
@@ -102,6 +100,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     public BlockChainImpl(Repository repository,
                           BlockStore blockStore,
                           ReceiptStore receiptStore,
+                          PerContractLogStore perContractLogStore,
                           PendingState pendingState,
                           EthereumListener listener,
                           AdminInfo adminInfo,
@@ -109,6 +108,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         this.repository = repository;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
+        this.perContractLogStore =perContractLogStore;
         this.listener = listener;
         this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
@@ -469,6 +469,9 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     @Override
     public ReceiptStore getReceiptStore() { return receiptStore; }
 
+    @Override
+    public PerContractLogStore getPerContractLogStore() { return perContractLogStore; }
+
     private void switchToBlockChain(Block block, BigInteger totalDifficulty) {
         synchronized (accessLock) {
             storeBlock(block, totalDifficulty, true);
@@ -495,6 +498,16 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
             return;
 
         receiptStore.saveMultiple(block.getHash(), result.getTransactionReceipts());
+    }
+
+    private void savePerContractLog(Block block, BlockResult result) {
+        if (result == null)
+            return;
+
+        if (result.getPerContractLog().isEmpty())
+            return;
+
+        perContractLogStore.save(block.getHash(), result.getPerContractLog());
     }
 
     private void processBest(final Block block) {

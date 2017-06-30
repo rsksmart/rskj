@@ -20,10 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.core.bc.BlockChainStatus;
-import org.ethereum.db.BlockInformation;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.TransactionInfo;
+import org.ethereum.db.*;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -70,6 +67,8 @@ public interface Blockchain {
     void removeBlocksByNumber(long blockNr);
 
     ReceiptStore getReceiptStore();
+
+    PerContractLogStore getPerContractLogStore();
 
     BlockStore getBlockStore();
 

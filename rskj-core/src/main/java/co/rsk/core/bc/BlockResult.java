@@ -25,8 +25,11 @@ import org.ethereum.crypto.HashUtil;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.ethereum.util.RLP;
+import org.ethereum.vm.LogInfo;
 
+import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by ajlopez on 01/08/2016.
@@ -37,8 +40,10 @@ public class BlockResult {
     private boolean interruptedExecution;
     private List<Transaction> executedTransactions;
     private List<TransactionReceipt> transactionReceipts;
+    private PerContractLog perContractLog;
     private byte[] stateRoot;
     private byte[] receiptsRoot;
+    private byte[] perContractLogRoot;
     private long gasUsed;
     private long paidFees;
     private byte[] logsBloom;
@@ -48,15 +53,21 @@ public class BlockResult {
         this.interruptedExecution = interruptedExecution;
     }
 
-    public BlockResult(List<Transaction> executedTransactions, List<TransactionReceipt> transactionReceipts, byte[] stateRoot, long gasUsed, long paidFees) {
+    public BlockResult(List<Transaction> executedTransactions,
+                       List<TransactionReceipt> transactionReceipts,
+                       PerContractLog contractLogs,
+                       byte[] stateRoot, long gasUsed, long paidFees) {
         interruptedExecution = false;
         this.executedTransactions = executedTransactions;
         this.transactionReceipts = transactionReceipts;
+        this.perContractLog = contractLogs;
         this.stateRoot = stateRoot;
         this.gasUsed = gasUsed;
         this.paidFees = paidFees;
 
+        this.perContractLogRoot = calculatePerContractLogTrie(contractLogs);
         this.receiptsRoot = calculateReceiptsTrie(transactionReceipts);
+
         this.logsBloom = calculateLogsBloom(transactionReceipts);
     }
 
@@ -66,8 +77,16 @@ public class BlockResult {
         return this.transactionReceipts;
     }
 
+    public PerContractLog getPerContractLog() {
+        return this.perContractLog;
+    }
+
     public byte[] getStateRoot() {
         return this.stateRoot;
+    }
+
+    public byte[] getPerContractLogRoot() {
+        return this.perContractLogRoot;
     }
 
     public byte[] getReceiptsRoot() {
@@ -87,6 +106,7 @@ public class BlockResult {
     }
 
     // from original BlockchainImpl
+
     private static byte[] calculateReceiptsTrie(List<TransactionReceipt> receipts) {
         //TODO Fix Trie hash for receipts - doesnt match cpp
         Trie receiptsTrie = new TrieImpl();
@@ -98,6 +118,44 @@ public class BlockResult {
             receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
 
         return receiptsTrie.getHash();
+    }
+
+
+    private static byte[] calculateContractLogTrie(ContractLog cl) {
+
+        if (cl == null )
+            return HashUtil.EMPTY_TRIE_HASH;
+
+        Map<byte[], LogInfo> t = cl.getMap();
+
+        if (t == null || t.isEmpty())
+            return HashUtil.EMPTY_TRIE_HASH;
+
+        Trie aTrie = new TrieImpl();
+        for (byte[] index : t.keySet()) {
+            aTrie = aTrie.put(index, t.get(index).getEncoded());
+        }
+        return aTrie.getHash();
+    }
+
+    private static byte[] calculatePerContractLogTrie(PerContractLog pcl) {
+        Trie clTrie = new TrieImpl();
+
+        if (pcl == null)
+            return HashUtil.EMPTY_TRIE_HASH;
+
+
+        Map<byte[],ContractLog> contractLogs = pcl.getMap();
+
+        if (contractLogs == null || contractLogs.isEmpty())
+            return HashUtil.EMPTY_TRIE_HASH;
+
+        for (byte[] addr : contractLogs.keySet()) {
+            ContractLog t = contractLogs.get(addr);
+
+            clTrie = clTrie.put(RLP.encodeElement(addr), calculateContractLogTrie(t));
+        }
+        return clTrie.getHash();
     }
 
     private static byte[] calculateLogsBloom(List<TransactionReceipt> receipts) {

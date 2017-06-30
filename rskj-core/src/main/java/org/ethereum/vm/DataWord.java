@@ -46,7 +46,7 @@ public class DataWord implements Comparable<DataWord> {
     public static final DataWord ZERO = new DataWord(new byte[32]);      // don't push it in to the stack
     public static final DataWord ONE = new DataWord(1);
     public static final DataWord ZERO_EMPTY_ARRAY = new DataWord(new byte[0]);      // don't push it in to the stack
-
+    public static final DataWord MAX_DATAWORD_VALUE = new DataWord().setMax();
     private byte[] data; // Optimization, do not initialize until needed
 
     public DataWord() {
@@ -315,6 +315,10 @@ public class DataWord implements Comparable<DataWord> {
         return this;
     }
 
+    public DataWord setMax() {
+        Arrays.fill(this.data, (byte) -1);
+        return this;
+    }
     public void negate() {
 
         if (this.isZero()) {
