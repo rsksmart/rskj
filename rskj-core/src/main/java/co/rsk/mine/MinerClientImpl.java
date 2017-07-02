@@ -31,7 +31,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
-import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -43,7 +42,7 @@ import java.util.TimerTask;
 
 @Component("MinerClient")
 public class MinerClientImpl implements MinerClient {
-    private static Random random = new Random();
+    private long nextNonceToUse = 0;
 
     @Autowired
     private Rsk rsk;
@@ -173,7 +172,7 @@ public class MinerClientImpl implements MinerClient {
      */
     private boolean findNonce(@Nonnull final co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock,
                               @Nonnull final BigInteger target) {
-        bitcoinMergedMiningBlock.setNonce(random.nextLong());
+        bitcoinMergedMiningBlock.setNonce(nextNonceToUse++);
 
         while (!stop && !newBestBlockArrivedFromAnotherNode) {
             // Is our proof of work valid yet?
@@ -182,7 +181,7 @@ public class MinerClientImpl implements MinerClient {
                 return true;
             }
             // No, so increment the nonce and try again.
-            bitcoinMergedMiningBlock.setNonce(bitcoinMergedMiningBlock.getNonce() + 1);
+            bitcoinMergedMiningBlock.setNonce(nextNonceToUse++);
             if (bitcoinMergedMiningBlock.getNonce() % 100000 == 0) {
                 logger.debug("Solving block. Nonce: " + bitcoinMergedMiningBlock.getNonce());
             }
