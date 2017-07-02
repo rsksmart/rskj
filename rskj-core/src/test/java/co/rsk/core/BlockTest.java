@@ -19,6 +19,7 @@
 package co.rsk.core;
 
 
+import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.peg.PegTestUtils;
 import org.spongycastle.util.encoders.Hex;
@@ -94,4 +95,109 @@ public class BlockTest {
         Assert.assertEquals(RemascTransaction.class, parsedBlock.getTransactionsList().get(2).getClass());
     }
 
+    @Test
+    public void sealedBlockAddUncle() {
+        Block block = BlockGenerator.createBlock(10, 0);
+        Block uncle = BlockGenerator.createBlock(9, 0);
+
+        block.seal();
+
+        try {
+            block.addUncle(uncle.getHeader());
+            Assert.fail();
+        }
+        catch (RuntimeException ex) {
+            Assert.assertEquals("Sealed block: trying to add uncle", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void sealedBlockSetStateRoot() {
+        Block block = BlockGenerator.createBlock(10, 0);
+
+        block.seal();
+
+        try {
+            block.setStateRoot(new byte[32]);
+            Assert.fail();
+        }
+        catch (RuntimeException ex) {
+            Assert.assertEquals("Sealed block: trying to alter state root", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void sealedBlockSetExtraData() {
+        Block block = BlockGenerator.createBlock(10, 0);
+
+        block.seal();
+
+        try {
+            block.setExtraData(new byte[32]);
+            Assert.fail();
+        }
+        catch (RuntimeException ex) {
+            Assert.assertEquals("Sealed block: trying to alter extra data", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void sealedBlockSetTransactionList() {
+        Block block = BlockGenerator.createBlock(10, 0);
+
+        block.seal();
+
+        try {
+            block.setTransactionsList(null);
+            Assert.fail();
+        }
+        catch (RuntimeException ex) {
+            Assert.assertEquals("Sealed block: trying to alter transaction list", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void sealedBlockSetBitcoinMergedMiningCoinbaseTransaction() {
+        Block block = BlockGenerator.createBlock(10, 0);
+
+        block.seal();
+
+        try {
+            block.setBitcoinMergedMiningCoinbaseTransaction(new byte[32]);
+            Assert.fail();
+        }
+        catch (RuntimeException ex) {
+            Assert.assertEquals("Sealed block: trying to alter bitcoin merged mining coinbase transaction", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void sealedBlockSetBitcoinMergedMiningHeader() {
+        Block block = BlockGenerator.createBlock(10, 0);
+
+        block.seal();
+
+        try {
+            block.setBitcoinMergedMiningHeader(new byte[32]);
+            Assert.fail();
+        }
+        catch (RuntimeException ex) {
+            Assert.assertEquals("Sealed block: trying to alter bitcoin merged mining header", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void sealedBlockSetBitcoinMergedMiningMerkleProof() {
+        Block block = BlockGenerator.createBlock(10, 0);
+
+        block.seal();
+
+        try {
+            block.setBitcoinMergedMiningMerkleProof(new byte[32]);
+            Assert.fail();
+        }
+        catch (RuntimeException ex) {
+            Assert.assertEquals("Sealed block: trying to alter bitcoin merged mining Merkle proof", ex.getMessage());
+        }
+    }
 }

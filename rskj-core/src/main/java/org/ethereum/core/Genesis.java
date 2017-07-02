@@ -56,6 +56,7 @@ public class Genesis extends Block {
 
     public Genesis(byte[] rawData){
         super(rawData);
+        this.sealed = false;
     }
 
     public Genesis(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,

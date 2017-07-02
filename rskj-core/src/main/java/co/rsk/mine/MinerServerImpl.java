@@ -167,7 +167,7 @@ public class MinerServerImpl implements MinerServer {
             }
 
             // clone the block
-            newBlock = new Block(workingBlock.getEncoded());
+            newBlock = workingBlock.cloneBlock();
 
             logger.debug("blocksWaitingforPoW size " + blocksWaitingforPoW.size());
         }

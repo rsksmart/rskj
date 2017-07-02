@@ -70,9 +70,12 @@ public class Block {
 
     private Trie txsState;
 
+    protected boolean sealed;
+
     /* Constructors */
     public Block(byte[] rawData) {
         this.rlpEncoded = rawData;
+        this.sealed = true;
     }
 
     public Block(BlockHeader header) {
@@ -159,7 +162,6 @@ public class Block {
         this.flushRLP();
     }
 
-
     public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp,
@@ -180,6 +182,17 @@ public class Block {
         }
 
         this.parsed = true;
+    }
+
+    public void seal() {
+        this.sealed = true;
+    }
+
+    public Block cloneBlock() {
+        Block clone = new Block(this.getEncoded());
+        clone.sealed = false;
+
+        return clone;
     }
 
     private void parseRLP() {
@@ -207,6 +220,9 @@ public class Block {
     }
 
     public void setTransactionsList(List<Transaction> transactionsList) {
+        if (this.sealed)
+            throw new RuntimeException("Sealed block: trying to alter transaction list");
+
         this.transactionsList = transactionsList;
         rlpEncoded = null;
     }
@@ -248,6 +264,9 @@ public class Block {
     }
 
     public void setStateRoot(byte[] stateRoot) {
+        if (this.sealed)
+            throw new RuntimeException("Sealed block: trying to alter state root");
+
         if (!parsed)
             parseRLP();
         this.header.setStateRoot(stateRoot);
@@ -332,6 +351,9 @@ public class Block {
     }
 
   public void setExtraData(byte[] data) {
+      if (this.sealed)
+          throw new RuntimeException("Sealed block: trying to alter extra data");
+
         this.header.setExtraData(data);
         rlpEncoded = null;
     }
@@ -514,6 +536,9 @@ public class Block {
     }
 
     public void addUncle(BlockHeader uncle) {
+        if (this.sealed)
+            throw new RuntimeException("Sealed block: trying to add uncle");
+
         uncleList.add(uncle);
         this.getHeader().setUnclesHash(SHA3Helper.sha3(getUnclesEncoded()));
         rlpEncoded = null;
@@ -600,6 +625,9 @@ public class Block {
     }
 
     public void setBitcoinMergedMiningHeader(byte[] bitcoinMergedMiningHeader) {
+        if (this.sealed)
+            throw new RuntimeException("Sealed block: trying to alter bitcoin merged mining header");
+
         this.header.setBitcoinMergedMiningHeader(bitcoinMergedMiningHeader);
         rlpEncoded = null;
     }
@@ -613,6 +641,9 @@ public class Block {
     }
 
     public void setBitcoinMergedMiningMerkleProof(byte[] bitcoinMergedMiningMerkleProof) {
+        if (this.sealed)
+            throw new RuntimeException("Sealed block: trying to alter bitcoin merged mining Merkle proof");
+
         this.header.setBitcoinMergedMiningMerkleProof(bitcoinMergedMiningMerkleProof);
         rlpEncoded = null;
     }
@@ -626,6 +657,9 @@ public class Block {
     }
 
     public void setBitcoinMergedMiningCoinbaseTransaction(byte[] bitcoinMergedMiningCoinbaseTransaction) {
+        if (this.sealed)
+            throw new RuntimeException("Sealed block: trying to alter bitcoin merged mining coinbase transaction");
+
         this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
         rlpEncoded = null;
     }
@@ -651,6 +685,9 @@ public class Block {
     }
 
     private byte[] calcTxTrie(List<Transaction> transactions){
+        if (this.sealed)
+            throw new RuntimeException("Sealed block: trying to alter transaction root");
+
         this.txsState = getTxTrie(transactions);
 
         return txsState.getHash();
