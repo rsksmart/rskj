@@ -47,6 +47,10 @@ public class PeerScoringManager {
         return this.getPeerScoring(id).hasGoodReputation();
     }
 
+    public boolean hasGoodReputation(InetAddress address) {
+        return this.getPeerScoring(address).hasGoodReputation();
+    }
+
     public boolean isEmpty() {
         return this.peersByAddress.isEmpty() && this.peersByNodeID.isEmpty();
     }

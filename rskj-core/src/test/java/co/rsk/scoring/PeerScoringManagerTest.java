@@ -48,6 +48,13 @@ public class PeerScoringManagerTest {
         Assert.assertEquals(1, result.getTotalEventCounter());
     }
 
+    @Test
+    public void newAddressHasGoodReputation() throws UnknownHostException {
+        InetAddress address = generateIPAddressV4();
+        PeerScoringManager manager = new PeerScoringManager();
+
+        Assert.assertTrue(manager.hasGoodReputation(address));
+    }
 
     @Test
     public void recordEventUsingNodeIDAndAddress() throws UnknownHostException {
