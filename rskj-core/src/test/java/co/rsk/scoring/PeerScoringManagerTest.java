@@ -96,6 +96,46 @@ public class PeerScoringManagerTest {
     }
 
     @Test
+    public void invalidBlockGivesBadReputationToNode() throws UnknownHostException {
+        NodeID id = generateNodeID();
+        PeerScoringManager manager = new PeerScoringManager();
+
+        manager.recordEvent(id, null, EventType.INVALID_BLOCK);
+
+        Assert.assertFalse(manager.hasGoodReputation(id));
+    }
+
+    @Test
+    public void invalidTransactionGivesBadReputationToNode() throws UnknownHostException {
+        NodeID id = generateNodeID();
+        PeerScoringManager manager = new PeerScoringManager();
+
+        manager.recordEvent(id, null, EventType.INVALID_TRANSACTION);
+
+        Assert.assertFalse(manager.hasGoodReputation(id));
+    }
+
+    @Test
+    public void invalidBlockGivesBadReputationToAddress() throws UnknownHostException {
+        InetAddress address = generateIPAddressV4();
+        PeerScoringManager manager = new PeerScoringManager();
+
+        manager.recordEvent(null, address, EventType.INVALID_BLOCK);
+
+        Assert.assertFalse(manager.hasGoodReputation(address));
+    }
+
+    @Test
+    public void invalidTransactionGivesBadReputationToAddress() throws UnknownHostException {
+        InetAddress address = generateIPAddressV4();
+        PeerScoringManager manager = new PeerScoringManager();
+
+        manager.recordEvent(null, address, EventType.INVALID_TRANSACTION);
+
+        Assert.assertFalse(manager.hasGoodReputation(address));
+    }
+
+    @Test
     public void recordEventUsingIPV6Address() throws UnknownHostException {
         InetAddress address = generateIPAddressV6();
         PeerScoringManager manager = new PeerScoringManager();

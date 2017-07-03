@@ -10,6 +10,7 @@ import java.util.Map;
  * Created by ajlopez on 28/06/2017.
  */
 public class PeerScoringManager {
+    private ScoringCalculator calculator = new ScoringCalculator();
     private Map<NodeID, PeerScoring> peersByNodeID = new HashMap<>();
     private Map<InetAddress, PeerScoring> peersByAddress = new HashMap<>();
 
@@ -18,14 +19,18 @@ public class PeerScoringManager {
             if (!peersByNodeID.containsKey(id))
                 peersByNodeID.put(id, new PeerScoring());
 
-            peersByNodeID.get(id).recordEvent(event);
+            PeerScoring scoring = peersByNodeID.get(id);
+            scoring.recordEvent(event);
+            reviewReputation(scoring);
         }
 
         if (address != null) {
             if (!peersByAddress.containsKey(address))
                 peersByAddress.put(address, new PeerScoring());
 
-            peersByAddress.get(address).recordEvent(event);
+            PeerScoring scoring = peersByAddress.get(address);
+            scoring.recordEvent(event);
+            reviewReputation(scoring);
         }
     }
 
@@ -53,5 +58,12 @@ public class PeerScoringManager {
 
     public boolean isEmpty() {
         return this.peersByAddress.isEmpty() && this.peersByNodeID.isEmpty();
+    }
+
+    private void reviewReputation(PeerScoring scoring) {
+        boolean reputation = calculator.hasGoodReputation(scoring);
+
+        if (reputation != scoring.hasGoodReputation())
+            scoring.setGoodReputation(reputation);
     }
 }

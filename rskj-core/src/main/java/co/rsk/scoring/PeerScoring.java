@@ -38,4 +38,8 @@ public class PeerScoring {
     }
 
     public boolean hasGoodReputation() { return this.goodReputation; }
+
+    public void setGoodReputation(boolean value) {
+        this.goodReputation = value;
+    }
 }
