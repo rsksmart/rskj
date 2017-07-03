@@ -26,6 +26,8 @@ import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.StatusMessage;
 import co.rsk.scoring.EventType;
+import io.netty.channel.ChannelConfig;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -139,7 +141,13 @@ public class RskWireProtocol extends EthHandler {
         if (this.messageRecorder != null)
             this.messageRecorder.recordMessage(messageSender.getNodeID(), msg);
 
+        if (!hasGoodReputation(ctx)) {
+            ctx.disconnect();
+            return;
+        }
+
         Metrics.messageBytes(messageSender.getNodeID(), msg.getEncoded().length);
+
         switch (msg.getCommand()) {
             case STATUS:
                 processStatus((org.ethereum.net.eth.message.StatusMessage) msg, ctx);
@@ -211,6 +219,29 @@ public class RskWireProtocol extends EthHandler {
         } catch (NoSuchElementException e) {
             loggerNet.debug("EthHandler already removed");
         }
+    }
+
+    private boolean hasGoodReputation(ChannelHandlerContext ctx) {
+        SocketAddress socketAddress = ctx.channel().remoteAddress();
+
+        if (socketAddress instanceof InetSocketAddress) {
+            byte[] nid = channel.getNodeId();
+
+            NodeID nodeID = null;
+
+            if (nid != null)
+                nodeID = new NodeID(nid);
+
+            InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
+
+            if (!this.rsk.getPeerScoringManager().hasGoodReputation(address))
+                return false;
+
+            if (nodeID != null && !this.rsk.getPeerScoringManager().hasGoodReputation(nodeID))
+                return false;
+        }
+
+        return true;
     }
 
     private void recordEvent(ChannelHandlerContext ctx, EventType event) {
