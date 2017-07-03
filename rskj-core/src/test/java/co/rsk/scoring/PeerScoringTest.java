@@ -17,6 +17,13 @@ public class PeerScoringTest {
     }
 
     @Test
+    public void newStatusHasGoodReputation() {
+        PeerScoring scoring = new PeerScoring();
+
+        Assert.assertTrue(scoring.hasGoodReputation());
+    }
+
+    @Test
     public void recordEvent() {
         PeerScoring scoring = new PeerScoring();
 

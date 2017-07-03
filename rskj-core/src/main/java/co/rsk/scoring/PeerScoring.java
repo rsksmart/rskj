@@ -8,6 +8,7 @@ import java.util.Map;
  */
 public class PeerScoring {
     private Map<EventType, Integer> counters = new HashMap<>();
+    private boolean goodReputation = true;
 
     public void recordEvent(EventType evt) {
         if (!counters.containsKey(evt))
@@ -35,4 +36,6 @@ public class PeerScoring {
     public boolean isEmpty() {
         return counters.isEmpty();
     }
+
+    public boolean hasGoodReputation() { return this.goodReputation; }
 }
