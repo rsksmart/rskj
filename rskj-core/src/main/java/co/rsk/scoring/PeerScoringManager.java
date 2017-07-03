@@ -43,6 +43,10 @@ public class PeerScoringManager {
         return new PeerScoring();
     }
 
+    public boolean hasGoodReputation(NodeID id) {
+        return this.getPeerScoring(id).hasGoodReputation();
+    }
+
     public boolean isEmpty() {
         return this.peersByAddress.isEmpty() && this.peersByNodeID.isEmpty();
     }

@@ -26,6 +26,14 @@ public class PeerScoringManagerTest {
     }
 
     @Test
+    public void newNodeHasGoodReputation() {
+        NodeID id = generateNodeID();
+        PeerScoringManager manager = new PeerScoringManager();
+
+        Assert.assertTrue(manager.hasGoodReputation(id));
+    }
+
+    @Test
     public void recordEventUsingNodeID() {
         NodeID id = generateNodeID();
         PeerScoringManager manager = new PeerScoringManager();
