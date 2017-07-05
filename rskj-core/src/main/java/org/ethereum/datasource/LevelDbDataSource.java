@@ -54,6 +54,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
     private static final Logger logger = LoggerFactory.getLogger("db");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
+    private long lastTimeUsed;
+
     @Autowired
     SystemProperties config  = SystemProperties.CONFIG; // initialized for standalone test
 
@@ -81,6 +83,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public void init() {
         resetDbLock.writeLock().lock();
         try {
+            updateLastTimeUsed();
             logger.debug("~> LevelDbDataSource.init(): " + name);
 
             if (isAlive()) return;
@@ -157,6 +160,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public byte[] get(byte[] key) {
         resetDbLock.readLock().lock();
         try {
+            updateLastTimeUsed();
             if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.get(): " + name + ", key: " + Hex.toHexString(key));
             try {
                 byte[] ret = db.get(key);
@@ -183,6 +187,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public byte[] put(byte[] key, byte[] value) {
         resetDbLock.readLock().lock();
         try {
+            updateLastTimeUsed();
             if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.put(): " + name + ", key: " + Hex.toHexString(key) + ", " + (value == null ? "null" : value.length));
             db.put(key, value);
             if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.put(): " + name + ", key: " + Hex.toHexString(key) + ", " + (value == null ? "null" : value.length));
@@ -196,6 +201,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public void delete(byte[] key) {
         resetDbLock.readLock().lock();
         try {
+            updateLastTimeUsed();
             if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.delete(): " + name + ", key: " + Hex.toHexString(key));
             db.delete(key);
             if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.delete(): " + name + ", key: " + Hex.toHexString(key));
@@ -208,6 +214,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public Set<byte[]> keys() {
         resetDbLock.readLock().lock();
         try {
+            updateLastTimeUsed();
             if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.keys(): " + name);
             try (DBIterator iterator = db.iterator()) {
                 Set<byte[]> result = new HashSet<>();
@@ -239,6 +246,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public void updateBatch(Map<byte[], byte[]> rows) {
         resetDbLock.readLock().lock();
         try {
+            updateLastTimeUsed();
             if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.updateBatch(): " + name + ", " + rows.size());
             try {
                 updateBatchInternal(rows);
@@ -278,5 +286,13 @@ public class LevelDbDataSource implements KeyValueDataSource {
         } finally {
             resetDbLock.writeLock().unlock();
         }
+    }
+
+    public long getLastTimeUsed() {
+        return this.lastTimeUsed;
+    }
+
+    private void updateLastTimeUsed() {
+        this.lastTimeUsed = System.currentTimeMillis();
     }
 }

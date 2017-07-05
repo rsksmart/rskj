@@ -20,6 +20,7 @@ package co.rsk.datasource;
 
 import org.ethereum.datasource.DataSourcePool;
 import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.LevelDbDataSource;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -79,5 +80,14 @@ public class DataSourcePoolTest {
         for (int k = 0; k < 10; k++) {
             DataSourcePool.closeDataSource("test4");
         }
+    }
+
+    @Test
+    public void openAndCloseLevelDBDataSource() {
+        KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test5");
+
+        Assert.assertNotNull(dataSource);
+        Assert.assertTrue(dataSource instanceof LevelDbDataSource);
+        dataSource.close();
     }
 }
