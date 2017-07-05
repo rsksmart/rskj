@@ -88,6 +88,11 @@ public class DataSourcePoolTest {
 
         Assert.assertNotNull(dataSource);
         Assert.assertTrue(dataSource instanceof LevelDbDataSource);
+
+        LevelDbDataSource lds = (LevelDbDataSource)dataSource;
+
+        Assert.assertNotEquals(0, lds.getLastTimeUsed());
+
         dataSource.close();
     }
 }
