@@ -720,4 +720,11 @@ public class SystemProperties {
         // default value: 1 week
         return config.hasPath("scoring.addresses.maximum") ? config.getInt("scoring.addresses.maximum") * 60000L : 1000L * 60 * 60 * 24 * 7;
     }
+
+    protected long getLongProperty(String propertyName, long defaultValue) {
+        return config.hasPath(propertyName) ? config.getLong(propertyName) : defaultValue;
+    }
+    protected boolean getBooleanProperty(String propertyName, boolean defaultValue) {
+        return config.hasPath(propertyName) ? config.getBoolean(propertyName) : defaultValue;
+    }
 }
