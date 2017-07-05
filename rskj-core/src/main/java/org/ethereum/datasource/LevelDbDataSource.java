@@ -21,7 +21,12 @@ package org.ethereum.datasource;
 
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.SystemProperties;
-import org.iq80.leveldb.*;
+import org.iq80.leveldb.CompressionType;
+import org.iq80.leveldb.DB;
+import org.iq80.leveldb.DBException;
+import org.iq80.leveldb.DBIterator;
+import org.iq80.leveldb.Options;
+import org.iq80.leveldb.WriteBatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -34,11 +39,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.lang.System.getProperty;
 import static org.fusesource.leveldbjni.JniDBFactory.factory;
@@ -57,11 +63,10 @@ public class LevelDbDataSource implements KeyValueDataSource {
     private long lastTimeUsed;
 
     @Autowired
-    SystemProperties config  = SystemProperties.CONFIG; // initialized for standalone test
+    private SystemProperties config  = SystemProperties.CONFIG; // initialized for standalone test
 
-    String name;
-    DB db;
-    boolean alive;
+    private String name;
+    private DB db;
 
     // The native LevelDB insert/update/delete are normally thread-safe
     // However close operation is not thread-safe and may lead to a native crash when
@@ -86,8 +91,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
             updateLastTimeUsed();
             logger.debug("~> LevelDbDataSource.init(): " + name);
 
-            if (isAlive()) return;
-
+            if (isAlive()) throw new IllegalStateException("This is already initialised... bug?");
             if (name == null) throw new NullPointerException("no name set to the db");
 
             Options options = new Options();
@@ -95,6 +99,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
             options.compressionType(CompressionType.NONE);
             options.blockSize(10 * 1024 * 1024);
             options.writeBufferSize(10 * 1024 * 1024);
+            options.maxOpenFiles(128);
+            options.logger(message -> logger.debug(message));
             options.cacheSize(0);
             options.paranoidChecks(true);
             options.verifyChecksums(true);
@@ -111,13 +117,11 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 Files.createDirectories(dbPath.getParent());
 
                 logger.debug("Initializing new or existing database: '{}'", name);
-                db = factory.open(dbPath.toFile(), options);
+                this.db = factory.open(dbPath.toFile(), options);
 
-                alive = true;
             } catch (IOException ioe) {
-                logger.error(ioe.getMessage(), ioe);
                 panicProcessor.panic("leveldb", ioe.getMessage());
-                throw new RuntimeException("Can't initialize database");
+                throw new RuntimeException("Can't initialize database", ioe);
             }
             logger.debug("<~ LevelDbDataSource.init(): " + name);
         } finally {
@@ -127,7 +131,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public boolean isAlive() {
-        return alive;
+        return this.db != null;
     }
 
     public void destroyDB(File fileLocation) {
@@ -161,22 +165,18 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             updateLastTimeUsed();
-            if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.get(): " + name + ", key: " + Hex.toHexString(key));
+            if (logger.isTraceEnabled())
+                logger.trace("~> LevelDbDataSource.get(): {}, key: {}", name, Hex.toHexString(key));
             try {
                 byte[] ret = db.get(key);
-                if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.get(): " + name + ", key: " + Hex.toHexString(key) + ", " + (ret == null ? "null" : ret.length));
+                if (logger.isTraceEnabled())
+                logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, {}", name, Hex.toHexString(key), ret==null?"null":ret.length );
+
                 return ret;
             } catch (DBException e) {
-                logger.error("Exception. Retrying again...", e);
-                try {
-                    byte[] ret = db.get(key);
-                    if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.get(): " + name + ", key: " + Hex.toHexString(key) + ", " + (ret == null ? "null" : ret.length));
-                    return ret;
-                } catch (DBException e2) {
-                    logger.error("Exception. Not retrying.", e2);
-                    panicProcessor.panic("leveldb", String.format("Exception. Not retrying. %s", e2.getMessage()));
-                    throw e2;
-                }
+                logger.error("Couldn't read from LevelDb, very bad.", e);
+                panicProcessor.panic("leveldb", String.format("Couldn't read from LevelDb, very bad. %s", e.getMessage()));
+                throw e;
             }
         } finally {
             resetDbLock.readLock().unlock();
@@ -188,9 +188,10 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             updateLastTimeUsed();
-            if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.put(): " + name + ", key: " + Hex.toHexString(key) + ", " + (value == null ? "null" : value.length));
+            if (logger.isTraceEnabled())
+                logger.trace("~> LevelDbDataSource.put(): {}, key: {}, {}", name, Hex.toHexString(key), value==null?"null":value.length);
             db.put(key, value);
-            if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.put(): " + name + ", key: " + Hex.toHexString(key) + ", " + (value == null ? "null" : value.length));
+                logger.trace("<~ LevelDbDataSource.put(): {}, key: {}, {}", name, Hex.toHexString(key), value==null?"null":value.length);
             return value;
         } finally {
             resetDbLock.readLock().unlock();
@@ -202,9 +203,11 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             updateLastTimeUsed();
-            if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.delete(): " + name + ", key: " + Hex.toHexString(key));
+            if (logger.isTraceEnabled())
+                logger.trace("~> LevelDbDataSource.delete(): {}, key: {}", name, Hex.toHexString(key));
             db.delete(key);
-            if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.delete(): " + name + ", key: " + Hex.toHexString(key));
+            if (logger.isTraceEnabled())
+                logger.trace("<~ LevelDbDataSource.delete(): {}, key: {}", name, Hex.toHexString(key));
         } finally {
             resetDbLock.readLock().unlock();
         }
@@ -215,17 +218,14 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             updateLastTimeUsed();
-            if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.keys(): " + name);
+            if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.keys(): {}", name);
             try (DBIterator iterator = db.iterator()) {
-                Set<byte[]> result = new HashSet<>();
-                for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
-                    result.add(iterator.peekNext().getKey());
-                }
-                if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.keys(): " + name + ", " + result.size());
+                Set<byte[]> result = Stream.generate(iterator::next).map(Map.Entry::getKey).collect(Collectors.toSet());
+                if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.keys(): {}, {} ", name, result.size());
                 return result;
             } catch (IOException e) {
-                logger.error("Unexpected", e);
-                panicProcessor.panic("leveldb", String.format("Unexpected %s", e.getMessage()));
+                logger.error("Error retrieving Keys from LevelDBDataSource", e);
+                panicProcessor.panic("leveldb", String.format("Unexpected while retrieving keys: %s", e.getMessage()));
                 throw new RuntimeException(e);
             }
         } finally {
@@ -247,21 +247,14 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             updateLastTimeUsed();
-            if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.updateBatch(): " + name + ", " + rows.size());
+            if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
             try {
                 updateBatchInternal(rows);
-                if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.updateBatch(): " + name + ", " + rows.size());
-            } catch (Exception e) {
-                logger.error("Error, retrying one more time...", e);
-                // try one more time
-                try {
-                    updateBatchInternal(rows);
-                    if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.updateBatch(): " + name + ", " + rows.size());
-                } catch (Exception e1) {
-                    logger.error("Error", e);
-                    panicProcessor.panic("leveldb", String.format("Error %s", e.getMessage()));
-                    throw new RuntimeException(e);
-                }
+                if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
+            } catch (IOException e) {
+                logger.error("Failed to update batch", e);
+                panicProcessor.panic("leveldb", String.format("Failed to update batch with error %s", e.getMessage()));
+                throw new RuntimeException(e);
             }
         } finally {
             resetDbLock.readLock().unlock();
@@ -277,8 +270,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
             try {
                 logger.debug("Close db: {}", name);
                 db.close();
-
-                alive = false;
+                this.db = null;
             } catch (IOException e) {
                 logger.error("Failed to find the db file on the close: {} ", name);
                 panicProcessor.panic("leveldb", String.format("Failed to find the db file on the close: %s", name));
