@@ -85,6 +85,38 @@ public class DataSourcePoolTest {
     }
 
     @Test
+    public void openAndCloseManyTimesGivingTheSameDataSource() {
+        KeyValueDataSource originalDataSource = DataSourcePool.levelDbByName("test6");
+
+        for (int k = 0; k < 10; k++) {
+            KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test6");
+            Assert.assertSame(originalDataSource, dataSource);
+        }
+
+        for (int k = 0; k < 11; k++)
+            DataSourcePool.closeDataSource("test6");
+
+        KeyValueDataSource newDataSource = DataSourcePool.levelDbByName("test6");
+
+        Assert.assertNotSame(originalDataSource, newDataSource);
+        DataSourcePool.closeDataSource("test6");
+    }
+
+    @Test
+    public void openAndCloseManyTimesUsingTimeUnused() throws InterruptedException {
+        KeyValueDataSource originalDataSource = DataSourcePool.levelDbByName("test7");
+
+        for (int k = 0; k < 10; k++) {
+            TimeUnit.MILLISECONDS.sleep(100);
+            DataSourcePool.closeUnusedDataSources(10);
+            KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test7");
+            Assert.assertNotSame(originalDataSource, dataSource);
+        }
+
+        DataSourcePool.closeDataSource("test7");
+    }
+
+    @Test
     public void openAndCloseLevelDBDataSource() {
         KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test5");
 

@@ -19,9 +19,14 @@
 
 package org.ethereum.datasource;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -31,6 +36,7 @@ public class DataSourcePool {
 
     private static final Logger logger = getLogger("db");
     private static ConcurrentMap<String, DataSourceEx> pool = new ConcurrentHashMap<>();
+    private static long timeUnused = 0L;
 
     public static KeyValueDataSource hashMapDBByName(String name){
         return (KeyValueDataSource) getDataSourceFromPool(name, new HashMapDB());
@@ -40,7 +46,7 @@ public class DataSourcePool {
         return (KeyValueDataSource) getDataSourceFromPool(name, new LevelDbDataSource());
     }
 
-    private static DataSource getDataSourceFromPool(String name, @Nonnull DataSource dataSource) {
+    private static synchronized DataSource getDataSourceFromPool(String name, @Nonnull DataSource dataSource) {
         dataSource.setName(name);
         DataSourceEx dataSourceEx = new DataSourceEx(dataSource);
         DataSourceEx result = pool.putIfAbsent(name, dataSourceEx);
@@ -59,7 +65,7 @@ public class DataSourcePool {
         return result.getDataSource();
     }
 
-    public static void closeDataSource(String name){
+    public static synchronized void closeDataSource(String name){
         DataSourceEx dataSourceEx = pool.get(name);
 
         if (dataSourceEx == null)
@@ -77,11 +83,42 @@ public class DataSourcePool {
 
         pool.remove(name);
 
-        synchronized (dataSource) {
-            dataSource.close();
+        dataSource.close();
 
-            logger.debug("Data source '{}' closed and removed from pool.\n", dataSource.getName());
+        logger.debug("Data source '{}' closed and removed from pool.\n", dataSource.getName());
+    }
+
+    public static synchronized void closeUnusedDataSources() {
+        if (timeUnused == 0)
+            return;
+
+        closeUnusedDataSources(timeUnused);
+    }
+
+    @VisibleForTesting
+    public static synchronized void closeUnusedDataSources(long unused) {
+        long now = System.currentTimeMillis();
+        long expire = now - unused;
+
+        List<String> toremove = new ArrayList<>();
+
+        for (Map.Entry<String, DataSourceEx> entry : pool.entrySet()) {
+            DataSourceEx dsx = entry.getValue();
+            DataSource ds = dsx.getDataSource();
+
+            if (!(ds instanceof LevelDbDataSource))
+                continue;
+
+            LevelDbDataSource ldb = (LevelDbDataSource)ds;
+
+            if (ldb.getLastTimeUsed() <= expire) {
+                ldb.close();
+                toremove.add(entry.getKey());
+            }
         }
+
+        for (String key : toremove)
+            pool.remove(key);
     }
 
     private static class DataSourceEx {

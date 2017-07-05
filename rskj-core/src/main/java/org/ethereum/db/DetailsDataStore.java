@@ -20,6 +20,7 @@
 package org.ethereum.db;
 
 import co.rsk.db.ContractDetailsImpl;
+import org.ethereum.datasource.DataSourcePool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -121,6 +122,7 @@ public class DetailsDataStore {
 
         cache.clear();
         removes.clear();
+        DataSourcePool.closeUnusedDataSources();
 
         return totalSize;
     }
