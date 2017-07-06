@@ -24,6 +24,13 @@ public class PeerScoringTest {
     }
 
     @Test
+    public void newStatusHasNoTimeLostGoodReputation() {
+        PeerScoring scoring = new PeerScoring();
+
+        Assert.assertEquals(0, scoring.getTimeLostGoodReputation());
+    }
+
+    @Test
     public void recordEvent() {
         PeerScoring scoring = new PeerScoring();
 

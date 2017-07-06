@@ -9,6 +9,7 @@ import java.util.Map;
 public class PeerScoring {
     private Map<EventType, Integer> counters = new HashMap<>();
     private boolean goodReputation = true;
+    private long timeLostGoodReputation;
 
     public void recordEvent(EventType evt) {
         if (!counters.containsKey(evt))
@@ -40,6 +41,13 @@ public class PeerScoring {
     public boolean hasGoodReputation() { return this.goodReputation; }
 
     public void setGoodReputation(boolean value) {
+        if (value == false && this.goodReputation == true)
+            this.timeLostGoodReputation = System.currentTimeMillis();
+
         this.goodReputation = value;
+    }
+
+    public long getTimeLostGoodReputation() {
+        return this.timeLostGoodReputation;
     }
 }

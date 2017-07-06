@@ -103,6 +103,8 @@ public class PeerScoringManagerTest {
         manager.recordEvent(id, null, EventType.INVALID_BLOCK);
 
         Assert.assertFalse(manager.hasGoodReputation(id));
+
+        Assert.assertNotEquals(0, manager.getPeerScoring(id).getTimeLostGoodReputation());
     }
 
     @Test
@@ -113,6 +115,8 @@ public class PeerScoringManagerTest {
         manager.recordEvent(id, null, EventType.INVALID_TRANSACTION);
 
         Assert.assertFalse(manager.hasGoodReputation(id));
+
+        Assert.assertNotEquals(0, manager.getPeerScoring(id).getTimeLostGoodReputation());
     }
 
     @Test
@@ -123,6 +127,8 @@ public class PeerScoringManagerTest {
         manager.recordEvent(null, address, EventType.INVALID_BLOCK);
 
         Assert.assertFalse(manager.hasGoodReputation(address));
+
+        Assert.assertNotEquals(0, manager.getPeerScoring(address).getTimeLostGoodReputation());
     }
 
     @Test
@@ -133,6 +139,8 @@ public class PeerScoringManagerTest {
         manager.recordEvent(null, address, EventType.INVALID_TRANSACTION);
 
         Assert.assertFalse(manager.hasGoodReputation(address));
+
+        Assert.assertNotEquals(0, manager.getPeerScoring(address).getTimeLostGoodReputation());
     }
 
     @Test
