@@ -21,6 +21,7 @@ package org.ethereum.datasource;
 
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.SystemProperties;
+import org.fusesource.leveldbjni.JniDBFactory;
 import org.iq80.leveldb.CompressionType;
 import org.iq80.leveldb.DB;
 import org.iq80.leveldb.DBException;
@@ -60,11 +61,19 @@ public class LevelDbDataSource implements KeyValueDataSource {
     private static final Logger logger = LoggerFactory.getLogger("db");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private long lastTimeUsed;
+    // following might need to be configured at runtime, tbd
+    public static final int LDB_CACHE_SIZE = 0;
+    public static final int LDB_BLOCK_SIZE = 10 * 1024 * 1024;
+    public static final int LDB_WRITE_BUFFER_SIZE = 10 * 1024 * 1024;
+    public static final int LDB_MAX_OPEN_FILES = 128;
+    public static final boolean LDB_PARANOID_CHECKS = true;
+    public static final boolean LDB_VERIFY_CHECKSUMS = true;
+    public static final int LDB_JNI_MEMORY_POOL_SIZE = 1024 * 512;
 
     @Autowired
-    private SystemProperties config  = SystemProperties.CONFIG; // initialized for standalone test
+    private SystemProperties config = SystemProperties.CONFIG; // initialized for standalone test
 
+    private long lastTimeUsed;
     private String name;
     private DB db;
 
@@ -97,13 +106,13 @@ public class LevelDbDataSource implements KeyValueDataSource {
             Options options = new Options();
             options.createIfMissing(true);
             options.compressionType(CompressionType.NONE);
-            options.blockSize(10 * 1024 * 1024);
-            options.writeBufferSize(10 * 1024 * 1024);
-            options.maxOpenFiles(128);
+            options.blockSize(LDB_BLOCK_SIZE);
+            options.writeBufferSize(LDB_WRITE_BUFFER_SIZE);
+            options.maxOpenFiles(LDB_MAX_OPEN_FILES);
             options.logger(message -> logger.debug(message));
-            options.cacheSize(0);
-            options.paranoidChecks(true);
-            options.verifyChecksums(true);
+            options.cacheSize(LDB_CACHE_SIZE);
+            options.paranoidChecks(LDB_PARANOID_CHECKS);
+            options.verifyChecksums(LDB_VERIFY_CHECKSUMS);
 
             try {
                 logger.debug("Opening database");
@@ -170,7 +179,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
             try {
                 byte[] ret = db.get(key);
                 if (logger.isTraceEnabled())
-                logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, {}", name, Hex.toHexString(key), ret==null?"null":ret.length );
+                    logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, {}", name, Hex.toHexString(key), ret == null ? "null" : ret.length);
 
                 return ret;
             } catch (DBException e) {
@@ -189,9 +198,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
         try {
             updateLastTimeUsed();
             if (logger.isTraceEnabled())
-                logger.trace("~> LevelDbDataSource.put(): {}, key: {}, {}", name, Hex.toHexString(key), value==null?"null":value.length);
+                logger.trace("~> LevelDbDataSource.put(): {}, key: {}, {}", name, Hex.toHexString(key), value == null ? "null" : value.length);
             db.put(key, value);
-                logger.trace("<~ LevelDbDataSource.put(): {}, key: {}, {}", name, Hex.toHexString(key), value==null?"null":value.length);
+            logger.trace("<~ LevelDbDataSource.put(): {}, key: {}, {}", name, Hex.toHexString(key), value == null ? "null" : value.length);
             return value;
         } finally {
             resetDbLock.readLock().unlock();
@@ -219,6 +228,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
         try {
             updateLastTimeUsed();
             if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.keys(): {}", name);
+            JniDBFactory.pushMemoryPool(LDB_JNI_MEMORY_POOL_SIZE);
             try (DBIterator iterator = db.iterator()) {
                 Set<byte[]> result = Stream.generate(iterator::next).map(Map.Entry::getKey).collect(Collectors.toSet());
                 if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.keys(): {}, {} ", name, result.size());
@@ -229,6 +239,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 throw new RuntimeException(e);
             }
         } finally {
+            JniDBFactory.popMemoryPool();
             resetDbLock.readLock().unlock();
         }
     }
@@ -248,15 +259,18 @@ public class LevelDbDataSource implements KeyValueDataSource {
         try {
             updateLastTimeUsed();
             if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
+            JniDBFactory.pushMemoryPool(LDB_JNI_MEMORY_POOL_SIZE);
             try {
                 updateBatchInternal(rows);
-                if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
+                if (logger.isTraceEnabled())
+                    logger.trace("<~ LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
             } catch (IOException e) {
                 logger.error("Failed to update batch", e);
                 panicProcessor.panic("leveldb", String.format("Failed to update batch with error %s", e.getMessage()));
                 throw new RuntimeException(e);
             }
         } finally {
+            JniDBFactory.popMemoryPool();
             resetDbLock.readLock().unlock();
         }
     }
