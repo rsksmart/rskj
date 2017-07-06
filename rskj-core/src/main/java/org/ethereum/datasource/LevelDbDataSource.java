@@ -41,12 +41,11 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.lang.System.getProperty;
 import static org.fusesource.leveldbjni.JniDBFactory.factory;
@@ -233,7 +232,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
             if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.keys(): {}", name);
             JniDBFactory.pushMemoryPool(LDB_JNI_MEMORY_POOL_SIZE);
             try (DBIterator iterator = db.iterator()) {
-                Set<byte[]> result = Stream.generate(iterator::next).map(Map.Entry::getKey).collect(Collectors.toSet());
+                Set<byte[]> result = new HashSet<>();
+                iterator.seekToFirst();
+                iterator.forEachRemaining( x -> result.add(x.getKey()) );
                 if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.keys(): {}, {} ", name, result.size());
                 return result;
             } catch (IOException e) {

@@ -19,47 +19,102 @@
 
 package org.ethereum.datasource;
 
-import org.junit.Ignore;
+import org.ethereum.config.SystemProperties;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.ethereum.TestUtils.randomBytes;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
-@Ignore
 public class LevelDbDataSourceTest {
+
+    @Rule
+    public TemporaryFolder dbsTempFolder = new TemporaryFolder();
+
+    private LevelDbDataSource underTest;
+
+    private static byte[] A_KEY = "lala".getBytes();
+    private static byte[] A_VALUE = "lele".getBytes();
+
+    @Before
+    public void before() {
+        SystemProperties.CONFIG.setDataBaseDir(dbsTempFolder.getRoot().getAbsolutePath());
+        underTest = new LevelDbDataSource("test");
+        underTest.init();
+    }
+
+    @After
+    public void close() {
+        underTest.close();
+    }
 
     @Test
     public void testBatchUpdating() {
-        LevelDbDataSource dataSource = new LevelDbDataSource("test");
-        dataSource.init();
-
         final int batchSize = 100;
         Map<byte[], byte[]> batch = createBatch(batchSize);
         
-        dataSource.updateBatch(batch);
+        underTest.updateBatch(batch);
 
-        assertEquals(batchSize, dataSource.keys().size());
-        
-        dataSource.close();
+        assertEquals(batchSize, underTest.keys().size());
+    }
+
+    @Test
+    public void testDeleteSimple() {
+        underTest.put(A_KEY, A_VALUE);
+        assertNotNull(underTest.get(A_KEY));
+        underTest.delete(A_KEY);
+        assertNull(underTest.get(A_VALUE));
+    }
+
+    @Test
+    public void testDeleteMultipleWithKeysAssertion() {
+        int batchSize = 100;
+        Map<byte[], byte[]> batch = createBatch(batchSize);
+        underTest.updateBatch(batch);
+
+        for (byte[] key: batch.keySet()) {
+            underTest.delete(key);
+            assertEquals(--batchSize, underTest.keys().size());
+        }
+
+        assertEquals(0, underTest.keys().size());
     }
 
     @Test
     public void testPutting() {
-        LevelDbDataSource dataSource = new LevelDbDataSource("test");
-        dataSource.init();
-
         byte[] key = randomBytes(32);
-        dataSource.put(key, randomBytes(32));
+        underTest.put(key, randomBytes(32));
 
-        assertNotNull(dataSource.get(key));
-        assertEquals(1, dataSource.keys().size());
-        
-        dataSource.close();
+        assertNotNull(underTest.get(key));
+        assertEquals(1, underTest.keys().size());
     }
+
+    @Test
+    public void testDestroy() {
+        underTest = new LevelDbDataSource("to-destroy");
+        underTest.init();
+        underTest.close();
+
+        File thisDbPath = Paths.get(dbsTempFolder.getRoot().getAbsolutePath(), "to-destroy").toFile();
+
+        assertTrue(thisDbPath.exists());
+        underTest.destroyDB(thisDbPath);
+        assertFalse(thisDbPath.exists());
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------
 
     private static Map<byte[], byte[]> createBatch(int batchSize) {
         HashMap<byte[], byte[]> result = new HashMap<>();
