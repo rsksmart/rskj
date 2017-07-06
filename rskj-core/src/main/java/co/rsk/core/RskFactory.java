@@ -27,6 +27,7 @@ import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
+import org.ethereum.datasource.DataSourcePool;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.util.BuildInfo;
@@ -129,6 +130,8 @@ public class RskFactory {
                 }.start();
             }
         }
+
+        DataSourcePool.setTimeUnused(RskSystemProperties.RSKCONFIG.getDatasourceClose());
 
         return rs;
     }

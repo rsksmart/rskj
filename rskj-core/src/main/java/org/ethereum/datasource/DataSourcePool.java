@@ -95,6 +95,10 @@ public class DataSourcePool {
         closeUnusedDataSources(timeUnused);
     }
 
+    public static void setTimeUnused(long unused) {
+        timeUnused = unused;
+    }
+
     @VisibleForTesting
     public static synchronized void closeUnusedDataSources(long unused) {
         long now = System.currentTimeMillis();

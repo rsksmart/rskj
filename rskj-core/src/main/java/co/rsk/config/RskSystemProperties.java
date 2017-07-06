@@ -293,4 +293,10 @@ public class RskSystemProperties extends SystemProperties {
         return (ret > 0) ? ret : BLOCKS_FOR_PEERS_DEFAULT;
 
     }
+
+    public long getDatasourceClose() {
+        long ret = config.hasPath("datasource.close") ? config.getLong("datasource.close") * 1000 : 0;
+
+        return (ret > 0) ? ret : 0;
+    }
 }
