@@ -37,6 +37,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -60,15 +61,16 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("db");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
+    private static final String MY_PANIC_TOPIC = "leveldb";
 
     // following might need to be configured at runtime, tbd
-    public static final int LDB_CACHE_SIZE = 0;
-    public static final int LDB_BLOCK_SIZE = 10 * 1024 * 1024;
-    public static final int LDB_WRITE_BUFFER_SIZE = 10 * 1024 * 1024;
-    public static final int LDB_MAX_OPEN_FILES = 128;
-    public static final boolean LDB_PARANOID_CHECKS = true;
-    public static final boolean LDB_VERIFY_CHECKSUMS = true;
-    public static final int LDB_JNI_MEMORY_POOL_SIZE = 1024 * 512;
+    private static final int LDB_CACHE_SIZE = 0;
+    private static final int LDB_BLOCK_SIZE = 10 * 1024 * 1024;
+    private static final int LDB_WRITE_BUFFER_SIZE = 10 * 1024 * 1024;
+    private static final int LDB_MAX_OPEN_FILES = 128;
+    private static final boolean LDB_PARANOID_CHECKS = true;
+    private static final boolean LDB_VERIFY_CHECKSUMS = true;
+    private static final int LDB_JNI_MEMORY_POOL_SIZE = 1024 * 512;
 
     @Autowired
     private SystemProperties config = SystemProperties.CONFIG; // initialized for standalone test
@@ -90,7 +92,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     public LevelDbDataSource(String name) {
         this.name = name;
-        logger.info("New LevelDbDataSource: " + name);
+        logger.info("New LevelDbDataSource: {}", name);
     }
 
     @Override
@@ -98,7 +100,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.writeLock().lock();
         try {
             updateLastTimeUsed();
-            logger.debug("~> LevelDbDataSource.init(): " + name);
+            logger.debug("~> LevelDbDataSource.init(): {}", name);
 
             if (isAlive()) throw new IllegalStateException("This is already initialised... bug?");
             if (name == null) throw new NullPointerException("no name set to the db");
@@ -129,10 +131,10 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 this.db = factory.open(dbPath.toFile(), options);
 
             } catch (IOException ioe) {
-                panicProcessor.panic("leveldb", ioe.getMessage());
-                throw new RuntimeException("Can't initialize database", ioe);
+                panicProcessor.panic(MY_PANIC_TOPIC, ioe.getMessage());
+                throw new UncheckedIOException("Can't initialize database", ioe);
             }
-            logger.debug("<~ LevelDbDataSource.init(): " + name);
+            logger.debug("<~ LevelDbDataSource.init(): {}", name);
         } finally {
             resetDbLock.writeLock().unlock();
         }
@@ -146,13 +148,13 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public void destroyDB(File fileLocation) {
         resetDbLock.writeLock().lock();
         try {
-            logger.debug("Destroying existing database: " + fileLocation);
+            logger.debug("Destroying existing database: {}", fileLocation);
             Options options = new Options();
             try {
                 factory.destroy(fileLocation, options);
             } catch (IOException e) {
                 logger.error(e.getMessage(), e);
-                panicProcessor.panic("leveldb", e.getMessage());
+                panicProcessor.panic(MY_PANIC_TOPIC, e.getMessage());
             }
         } finally {
             resetDbLock.writeLock().unlock();
@@ -184,7 +186,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 return ret;
             } catch (DBException e) {
                 logger.error("Couldn't read from LevelDb, very bad.", e);
-                panicProcessor.panic("leveldb", String.format("Couldn't read from LevelDb, very bad. %s", e.getMessage()));
+                panicProcessor.panic(MY_PANIC_TOPIC, String.format("Couldn't read from LevelDb, very bad. %s", e.getMessage()));
                 throw e;
             }
         } finally {
@@ -200,7 +202,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
             if (logger.isTraceEnabled())
                 logger.trace("~> LevelDbDataSource.put(): {}, key: {}, {}", name, Hex.toHexString(key), value == null ? "null" : value.length);
             db.put(key, value);
-            logger.trace("<~ LevelDbDataSource.put(): {}, key: {}, {}", name, Hex.toHexString(key), value == null ? "null" : value.length);
+            if (logger.isTraceEnabled())
+                logger.trace("<~ LevelDbDataSource.put(): {}, key: {}, {}", name, Hex.toHexString(key), value == null ? "null" : value.length);
             return value;
         } finally {
             resetDbLock.readLock().unlock();
@@ -235,8 +238,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 return result;
             } catch (IOException e) {
                 logger.error("Error retrieving Keys from LevelDBDataSource", e);
-                panicProcessor.panic("leveldb", String.format("Unexpected while retrieving keys: %s", e.getMessage()));
-                throw new RuntimeException(e);
+                panicProcessor.panic(MY_PANIC_TOPIC, String.format("Unexpected while retrieving keys: %s", e.getMessage()));
+                throw new UncheckedIOException(e);
             }
         } finally {
             JniDBFactory.popMemoryPool();
@@ -266,8 +269,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
                     logger.trace("<~ LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
             } catch (IOException e) {
                 logger.error("Failed to update batch", e);
-                panicProcessor.panic("leveldb", String.format("Failed to update batch with error %s", e.getMessage()));
-                throw new RuntimeException(e);
+                panicProcessor.panic(MY_PANIC_TOPIC, String.format("Failed to update batch with error %s", e.getMessage()));
+                throw new UncheckedIOException(e);
             }
         } finally {
             JniDBFactory.popMemoryPool();
@@ -287,7 +290,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 this.db = null;
             } catch (IOException e) {
                 logger.error("Failed to find the db file on the close: {} ", name);
-                panicProcessor.panic("leveldb", String.format("Failed to find the db file on the close: %s", name));
+                panicProcessor.panic(MY_PANIC_TOPIC, String.format("Failed to find the db file on the close: %s", name));
             }
         } finally {
             resetDbLock.writeLock().unlock();
