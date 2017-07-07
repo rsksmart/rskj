@@ -293,4 +293,10 @@ public class RskSystemProperties extends SystemProperties {
         return (ret > 0) ? ret : BLOCKS_FOR_PEERS_DEFAULT;
 
     }
+
+    public long getReputationExpirationTime() {
+        long ret = config.hasPath("reputation.expires") ? config.getLong("reputation.expires") * 1000 : 0;
+
+        return (ret > 0) ? ret : 0;
+    }
 }

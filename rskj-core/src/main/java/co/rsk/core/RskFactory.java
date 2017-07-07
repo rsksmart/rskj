@@ -93,6 +93,8 @@ public class RskFactory {
 
         rs.getBlockchain().setRsk(true);
 
+        rs.getPeerScoringManager().setExpirationTime(RskSystemProperties.RSKCONFIG.getReputationExpirationTime());
+
         if (RskSystemProperties.RSKCONFIG.isBlocksEnabled()) {
             String recorder = RskSystemProperties.RSKCONFIG.blocksRecorder();
 
