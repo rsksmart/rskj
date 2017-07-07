@@ -13,6 +13,7 @@ import java.util.Map;
 public class PeerScoringManager {
     private ScoringCalculator calculator = new ScoringCalculator();
     private final Object accessLock = new Object();
+    private long expirationTime = 0L;
 
     @GuardedBy("accessLock")
     private Map<NodeID, PeerScoring> peersByNodeID = new HashMap<>();
@@ -61,11 +62,36 @@ public class PeerScoringManager {
     }
 
     public boolean hasGoodReputation(NodeID id) {
-        return this.getPeerScoring(id).hasGoodReputation();
+        synchronized (accessLock) {
+            PeerScoring scoring = this.getPeerScoring(id);
+            boolean goodReputation = scoring.hasGoodReputation();
+
+            if (goodReputation == false && this.expirationTime > 0 && scoring.getTimeLostGoodReputation() + expirationTime <= System.currentTimeMillis()) {
+                this.peersByNodeID.put(id, new PeerScoring());
+                return true;
+            }
+
+            return goodReputation;
+        }
     }
 
-    public boolean hasGoodReputation(InetAddress address) {
-        return this.getPeerScoring(address).hasGoodReputation();
+    public boolean hasGoodReputation(InetAddress address)
+    {
+        synchronized (accessLock) {
+            PeerScoring scoring = this.getPeerScoring(address);
+            boolean goodReputation = scoring.hasGoodReputation();
+
+            if (goodReputation == false && this.expirationTime > 0 && scoring.getTimeLostGoodReputation() + expirationTime <= System.currentTimeMillis()) {
+                this.peersByAddress.put(address, new PeerScoring());
+                return true;
+            }
+
+            return goodReputation;
+        }
+    }
+
+    public void setExpirationTime(long time) {
+        this.expirationTime = time;
     }
 
     public boolean isEmpty() {
