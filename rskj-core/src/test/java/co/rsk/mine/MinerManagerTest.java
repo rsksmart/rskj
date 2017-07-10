@@ -32,6 +32,8 @@ import org.ethereum.rpc.Simples.SimpleWorldManager;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
@@ -96,6 +98,43 @@ public class MinerManagerTest {
         Assert.assertTrue(minerClient.mineBlock());
 
         Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
+    }
+
+    @Test
+    public void mineBlockTwiceReusingTheSameWork() {
+        World world = new World();
+        Blockchain blockchain = world.getBlockChain();
+
+        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+
+        MinerServerImpl minerServer = getMinerServer(blockchain);
+        MinerClientImpl minerClient = getMinerClient(minerServer);
+
+        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+
+        MinerWork minerWork = minerServer.getWork();
+
+        Assert.assertNotNull(minerWork);
+
+        Assert.assertTrue(minerClient.mineBlock());
+
+        Block bestBlock = blockchain.getBestBlock();
+
+        Assert.assertNotNull(bestBlock);
+        Assert.assertEquals(1, bestBlock.getNumber());
+
+        // reuse the same work
+        Assert.assertNull(minerServer.getWork());
+        minerServer.setWork(minerWork);
+        Assert.assertNotNull(minerServer.getWork());
+
+        Assert.assertTrue(minerClient.mineBlock());
+
+        List<Block> blocks = blockchain.getBlocksByNumber(1);
+
+        Assert.assertNotNull(blocks);
+        Assert.assertEquals(2, blocks.size());
+        Assert.assertFalse(Arrays.equals(blocks.get(0).getHash(), blocks.get(1).getHash()));
     }
 
     @Test
