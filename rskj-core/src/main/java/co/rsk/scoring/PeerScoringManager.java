@@ -1,6 +1,7 @@
 package co.rsk.scoring;
 
 import co.rsk.net.NodeID;
+import com.google.common.annotations.VisibleForTesting;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.net.InetAddress;
@@ -43,24 +44,6 @@ public class PeerScoringManager {
         }
     }
 
-    public PeerScoring getPeerScoring(NodeID id) {
-        synchronized (accessLock) {
-            if (peersByNodeID.containsKey(id))
-                return peersByNodeID.get(id);
-
-            return new PeerScoring();
-        }
-    }
-
-    public PeerScoring getPeerScoring(InetAddress address) {
-        synchronized (accessLock) {
-            if (peersByAddress.containsKey(address))
-                return peersByAddress.get(address);
-
-            return new PeerScoring();
-        }
-    }
-
     public boolean hasGoodReputation(NodeID id) {
         return this.getPeerScoring(id).hasGoodReputation();
     }
@@ -74,8 +57,29 @@ public class PeerScoringManager {
         this.expirationTime = time;
     }
 
+    @VisibleForTesting
     public boolean isEmpty() {
         return this.peersByAddress.isEmpty() && this.peersByNodeID.isEmpty();
+    }
+
+    @VisibleForTesting
+    public PeerScoring getPeerScoring(NodeID id) {
+        synchronized (accessLock) {
+            if (peersByNodeID.containsKey(id))
+                return peersByNodeID.get(id);
+
+            return new PeerScoring();
+        }
+    }
+
+    @VisibleForTesting
+    public PeerScoring getPeerScoring(InetAddress address) {
+        synchronized (accessLock) {
+            if (peersByAddress.containsKey(address))
+                return peersByAddress.get(address);
+
+            return new PeerScoring();
+        }
     }
 
     private void reviewReputation(PeerScoring scoring) {
