@@ -10,16 +10,31 @@ public class PeerScoring {
     private Map<EventType, Integer> counters = new HashMap<>();
     private boolean goodReputation = true;
     private long timeLostGoodReputation;
+    private int score;
 
     public void recordEvent(EventType evt) {
         if (!counters.containsKey(evt))
             counters.put(evt, new Integer(1));
         else
             counters.put(evt, new Integer(counters.get(evt).intValue() + 1));
+
+        switch (evt) {
+            case INVALID_NETWORK:
+            case INVALID_BLOCK:
+            case INVALID_TRANSACTION:
+                if (score > 0)
+                    score = 0;
+                score--;
+                break;
+            default:
+                if (score >= 0)
+                    score++;
+                break;
+        }
     }
 
     public int getScore() {
-        return 0;
+        return score;
     }
 
     public int getEventCounter(EventType evt) {
