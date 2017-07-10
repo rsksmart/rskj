@@ -460,8 +460,8 @@ public class MinerServerImpl implements MinerServer {
         final long timestampSeconds = this.getCurrentTimeInSeconds();
 
         // Set gas limit before executing block
-        BigInteger minGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getMinGasLimit());
-        BigInteger targetGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getTargetGasLimit());
+        BigInteger minGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getMIN_GAS_LIMIT());
+        BigInteger targetGasLimit = BigInteger.valueOf(RskSystemProperties.RSKCONFIG.getTargetGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, newBlockParent.getGasLimit());
         BigInteger gasUsed = BigInteger.valueOf(newBlockParent.getGasUsed());
         boolean forceLimit = RskSystemProperties.RSKCONFIG.getForceTargetGasLimit();
