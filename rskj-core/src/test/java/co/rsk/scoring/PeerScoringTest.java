@@ -131,4 +131,17 @@ public class PeerScoringTest {
 
         Assert.assertTrue(scoring.getScore() < 0);
     }
+
+    @Test
+    public void twoValidEventsHasBetterScoreThanOnlyOne() {
+        PeerScoring scoring1 = new PeerScoring();
+        PeerScoring scoring2 = new PeerScoring();
+
+        scoring1.recordEvent(EventType.VALID_TRANSACTION);
+        scoring1.recordEvent(EventType.VALID_TRANSACTION);
+
+        scoring2.recordEvent(EventType.VALID_TRANSACTION);
+
+        Assert.assertTrue(scoring1.getScore() > scoring2.getScore());
+    }
 }

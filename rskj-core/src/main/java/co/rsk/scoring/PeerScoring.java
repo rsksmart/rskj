@@ -59,11 +59,9 @@ public class PeerScoring {
 
     public boolean hasGoodReputation() { return this.goodReputation; }
 
-    public void setGoodReputation(boolean value) {
-        if (value == false && this.goodReputation == true)
-            this.timeLostGoodReputation = System.currentTimeMillis();
-
-        this.goodReputation = value;
+    public void lostGoodReputation() {
+        this.goodReputation = false;
+        this.timeLostGoodReputation = System.currentTimeMillis();
     }
 
     public long getTimeLostGoodReputation() {

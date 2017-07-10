@@ -101,7 +101,7 @@ public class PeerScoringManager {
     private void reviewReputation(PeerScoring scoring) {
         boolean reputation = calculator.hasGoodReputation(scoring);
 
-        if (reputation != scoring.hasGoodReputation())
-            scoring.setGoodReputation(reputation);
+        if (!reputation && scoring.hasGoodReputation())
+            scoring.lostGoodReputation();
     }
 }
