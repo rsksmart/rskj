@@ -158,6 +158,48 @@ public class PeerScoringManagerTest {
     }
 
     @Test
+    public void firstPunishment() throws UnknownHostException, InterruptedException {
+        InetAddress address = generateIPAddressV4();
+        PeerScoringManager manager = new PeerScoringManager();
+
+        manager.setExpirationTime(10);
+
+        manager.recordEvent(null, address, EventType.INVALID_BLOCK);
+
+        Assert.assertEquals(1, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_BLOCK));
+        Assert.assertEquals(1, manager.getPeerScoring(address).getPunishmentCounter());
+        Assert.assertEquals(10, manager.getPeerScoring(address).getPunishmentTime());
+        Assert.assertFalse(manager.hasGoodReputation(address));
+    }
+
+    @Test
+    public void secondPunishment() throws UnknownHostException, InterruptedException {
+        InetAddress address = generateIPAddressV4();
+        PeerScoringManager manager = new PeerScoringManager();
+
+        manager.setExpirationTime(10);
+
+        manager.recordEvent(null, address, EventType.INVALID_BLOCK);
+
+        Assert.assertEquals(1, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_BLOCK));
+        Assert.assertEquals(0, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_TRANSACTION));
+        Assert.assertEquals(10, manager.getPeerScoring(address).getPunishmentTime());
+        Assert.assertFalse(manager.hasGoodReputation(address));
+
+        TimeUnit.MILLISECONDS.sleep(100);
+
+        Assert.assertTrue(manager.hasGoodReputation(address));
+
+        manager.recordEvent(null, address, EventType.INVALID_TRANSACTION);
+
+        Assert.assertEquals(0, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_BLOCK));
+        Assert.assertEquals(1, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_TRANSACTION));
+        Assert.assertEquals(2, manager.getPeerScoring(address).getPunishmentCounter());
+        Assert.assertEquals(11, manager.getPeerScoring(address).getPunishmentTime());
+        Assert.assertFalse(manager.hasGoodReputation(address));
+    }
+
+    @Test
     public void invalidTransactionGivesBadReputationToNode() throws UnknownHostException {
         NodeID id = generateNodeID();
         PeerScoringManager manager = new PeerScoringManager();

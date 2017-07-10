@@ -89,11 +89,11 @@ public class PeerScoring {
         return this.punishmentTime;
     }
 
-    @VisibleForTesting
     public int getPunishmentCounter() {
         return this.punishmentCounter;
     }
 
+    @VisibleForTesting
     public long getTimeLostGoodReputation() {
         return this.timeLostGoodReputation;
     }

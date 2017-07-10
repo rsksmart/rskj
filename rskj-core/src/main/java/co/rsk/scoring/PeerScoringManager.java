@@ -12,7 +12,9 @@ import java.util.Map;
  * Created by ajlopez on 28/06/2017.
  */
 public class PeerScoringManager {
-    private ScoringCalculator calculator = new ScoringCalculator();
+    private ScoringCalculator scoringCalculator = new ScoringCalculator();
+    private PunishmentCalculator punishmentCalculator = new PunishmentCalculator();
+
     private final Object accessLock = new Object();
     private long expirationTime = 0L;
 
@@ -83,9 +85,9 @@ public class PeerScoringManager {
     }
 
     private void reviewReputation(PeerScoring scoring) {
-        boolean reputation = calculator.hasGoodReputation(scoring);
+        boolean reputation = scoringCalculator.hasGoodReputation(scoring);
 
         if (!reputation && scoring.hasGoodReputation())
-            scoring.startPunishment(this.expirationTime);
+            scoring.startPunishment(this.punishmentCalculator.calculate(expirationTime, expirationTime * 10, 10, scoring.getPunishmentCounter()));
     }
 }
