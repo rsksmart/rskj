@@ -250,6 +250,30 @@ public class PeerScoringManagerTest {
         Assert.assertEquals(1, result.getTotalEventCounter());
     }
 
+    @Test
+    public void managesOnlyThreeNodes() {
+        PeerScoringManager manager = new PeerScoringManager(3);
+
+        NodeID node1 = generateNodeID();
+        NodeID node2 = generateNodeID();
+        NodeID node3 = generateNodeID();
+
+        manager.recordEvent(node1, null, EventType.INVALID_BLOCK);
+
+        Assert.assertFalse(manager.getPeerScoring(node1).hasGoodReputation());
+        manager.recordEvent(node2, null, EventType.INVALID_BLOCK);
+        manager.recordEvent(node3, null, EventType.INVALID_BLOCK);
+
+        NodeID node4 = generateNodeID();
+
+        manager.recordEvent(node4, null, EventType.INVALID_BLOCK);
+
+        Assert.assertTrue(manager.getPeerScoring(node1).hasGoodReputation());
+        Assert.assertFalse(manager.getPeerScoring(node2).hasGoodReputation());
+        Assert.assertFalse(manager.getPeerScoring(node3).hasGoodReputation());
+        Assert.assertFalse(manager.getPeerScoring(node4).hasGoodReputation());
+    }
+
     private static NodeID generateNodeID() {
         byte[] bytes = new byte[32];
 

@@ -2,10 +2,13 @@ package co.rsk.scoring;
 
 import co.rsk.net.NodeID;
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.core.Block;
+import org.ethereum.db.ByteArrayWrapper;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -19,11 +22,25 @@ public class PeerScoringManager {
     private long expirationTime = 0L;
 
     @GuardedBy("accessLock")
-    private Map<NodeID, PeerScoring> peersByNodeID = new HashMap<>();
+    private LinkedHashMap<NodeID, PeerScoring> peersByNodeID;
 
     @GuardedBy("accessLock")
-    private Map<InetAddress, PeerScoring> peersByAddress = new HashMap<>();
+    private Map<InetAddress, PeerScoring> peersByAddress;
 
+    public PeerScoringManager() {
+        this(20);
+    }
+
+    public PeerScoringManager(int nodePeersSize) {
+        this.peersByNodeID = new LinkedHashMap<NodeID, PeerScoring>(nodePeersSize) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<NodeID, PeerScoring> eldest) {
+                return size() > nodePeersSize;
+            }
+        };
+
+        this.peersByAddress = new HashMap<>();
+    }
     public void recordEvent(NodeID id, InetAddress address, EventType event) {
         synchronized (accessLock) {
             if (id != null) {
