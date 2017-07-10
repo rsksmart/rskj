@@ -30,7 +30,7 @@ public class PeerScoringManager {
     }
 
     public PeerScoringManager(int nodePeersSize) {
-        this.peersByNodeID = new LinkedHashMap<NodeID, PeerScoring>(nodePeersSize) {
+        this.peersByNodeID = new LinkedHashMap<NodeID, PeerScoring>(nodePeersSize, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<NodeID, PeerScoring> eldest) {
                 return size() > nodePeersSize;
