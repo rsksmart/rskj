@@ -452,7 +452,7 @@ public class MinerServerImpl implements MinerServer {
         BigInteger gasUsed = BigInteger.valueOf(newBlockParent.getGasUsed());
         boolean forceLimit = RskSystemProperties.RSKCONFIG.getForceTargetGasLimit();
         if (forceLimit) {
-            gasUsed = BigInteger.valueOf(RskSystemProperties.RSKCONFIG.getTargetGasLimit());
+            gasUsed = new BigInteger(1, newBlockParent.getGasLimit());
         }
         BigInteger gasLimit = new GasLimitCalculator().calculateBlockGasLimit(parentGasLimit,
                 gasUsed, minGasLimit, targetGasLimit);
