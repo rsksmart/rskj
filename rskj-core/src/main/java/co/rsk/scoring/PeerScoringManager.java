@@ -2,8 +2,6 @@ package co.rsk.scoring;
 
 import co.rsk.net.NodeID;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.Block;
-import org.ethereum.db.ByteArrayWrapper;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.net.InetAddress;
