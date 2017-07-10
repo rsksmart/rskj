@@ -1,5 +1,7 @@
 package co.rsk.scoring;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,7 +12,8 @@ public class PeerScoring {
     private Map<EventType, Integer> counters = new HashMap<>();
     private boolean goodReputation = true;
     private long timeLostGoodReputation;
-    private long expirationTime;
+    private long punishmentTime;
+    private int punishmentCounter;
     private int score;
 
     public void recordEvent(EventType evt) {
@@ -62,7 +65,7 @@ public class PeerScoring {
         if (this.goodReputation)
             return true;
 
-        if (this.expirationTime > 0 && this.timeLostGoodReputation > 0 && this.expirationTime + this.timeLostGoodReputation <= System.currentTimeMillis())
+        if (this.punishmentTime > 0 && this.timeLostGoodReputation > 0 && this.punishmentTime + this.timeLostGoodReputation <= System.currentTimeMillis())
             this.endPunishment();
 
         return this.goodReputation;
@@ -70,7 +73,8 @@ public class PeerScoring {
 
     public void startPunishment(long expirationTime) {
         this.goodReputation = false;
-        this.expirationTime = expirationTime;
+        this.punishmentTime = expirationTime;
+        this.punishmentCounter++;
         this.timeLostGoodReputation = System.currentTimeMillis();
     }
 
@@ -78,6 +82,16 @@ public class PeerScoring {
         this.counters.clear();
         this.goodReputation = true;
         this.timeLostGoodReputation = 0;
+    }
+
+    @VisibleForTesting
+    public long getPunishmentTime() {
+        return this.punishmentTime;
+    }
+
+    @VisibleForTesting
+    public int getPunishmentCounter() {
+        return this.punishmentCounter;
     }
 
     public long getTimeLostGoodReputation() {

@@ -3,6 +3,8 @@ package co.rsk.scoring;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Created by ajlopez on 27/06/2017.
  */
@@ -143,5 +145,24 @@ public class PeerScoringTest {
         scoring2.recordEvent(EventType.VALID_TRANSACTION);
 
         Assert.assertTrue(scoring1.getScore() > scoring2.getScore());
+    }
+
+    @Test
+    public void startPunishment() throws InterruptedException {
+        PeerScoring scoring = new PeerScoring();
+
+        Assert.assertEquals(0, scoring.getPunishmentTime());
+        Assert.assertEquals(0, scoring.getPunishmentCounter());
+
+        scoring.startPunishment(100);
+
+        Assert.assertEquals(1, scoring.getPunishmentCounter());
+        Assert.assertFalse(scoring.hasGoodReputation());
+        Assert.assertEquals(100, scoring.getPunishmentTime());
+        TimeUnit.MILLISECONDS.sleep(10);
+        Assert.assertFalse(scoring.hasGoodReputation());
+        TimeUnit.MILLISECONDS.sleep(200);
+        Assert.assertTrue(scoring.hasGoodReputation());
+        Assert.assertEquals(1, scoring.getPunishmentCounter());
     }
 }
