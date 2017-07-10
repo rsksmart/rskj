@@ -62,32 +62,12 @@ public class PeerScoringManager {
     }
 
     public boolean hasGoodReputation(NodeID id) {
-        synchronized (accessLock) {
-            PeerScoring scoring = this.getPeerScoring(id);
-            boolean goodReputation = scoring.hasGoodReputation();
-
-            if (goodReputation == false && this.expirationTime > 0 && scoring.getTimeLostGoodReputation() + expirationTime <= System.currentTimeMillis()) {
-                this.peersByNodeID.put(id, new PeerScoring());
-                return true;
-            }
-
-            return goodReputation;
-        }
+        return this.getPeerScoring(id).hasGoodReputation();
     }
 
     public boolean hasGoodReputation(InetAddress address)
     {
-        synchronized (accessLock) {
-            PeerScoring scoring = this.getPeerScoring(address);
-            boolean goodReputation = scoring.hasGoodReputation();
-
-            if (goodReputation == false && this.expirationTime > 0 && scoring.getTimeLostGoodReputation() + expirationTime <= System.currentTimeMillis()) {
-                this.peersByAddress.put(address, new PeerScoring());
-                return true;
-            }
-
-            return goodReputation;
-        }
+        return this.getPeerScoring(address).hasGoodReputation();
     }
 
     public void setExpirationTime(long time) {
@@ -102,6 +82,6 @@ public class PeerScoringManager {
         boolean reputation = calculator.hasGoodReputation(scoring);
 
         if (!reputation && scoring.hasGoodReputation())
-            scoring.lostGoodReputation();
+            scoring.startPunishment(this.expirationTime);
     }
 }

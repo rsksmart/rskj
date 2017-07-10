@@ -10,6 +10,7 @@ public class PeerScoring {
     private Map<EventType, Integer> counters = new HashMap<>();
     private boolean goodReputation = true;
     private long timeLostGoodReputation;
+    private long expirationTime;
     private int score;
 
     public void recordEvent(EventType evt) {
@@ -57,11 +58,26 @@ public class PeerScoring {
         return counters.isEmpty();
     }
 
-    public boolean hasGoodReputation() { return this.goodReputation; }
+    public boolean hasGoodReputation() {
+        if (this.goodReputation)
+            return true;
 
-    public void lostGoodReputation() {
+        if (this.expirationTime > 0 && this.timeLostGoodReputation > 0 && this.expirationTime + this.timeLostGoodReputation <= System.currentTimeMillis())
+            this.endPunishment();
+
+        return this.goodReputation;
+    }
+
+    public void startPunishment(long expirationTime) {
         this.goodReputation = false;
+        this.expirationTime = expirationTime;
         this.timeLostGoodReputation = System.currentTimeMillis();
+    }
+
+    public void endPunishment() {
+        this.counters.clear();
+        this.goodReputation = true;
+        this.timeLostGoodReputation = 0;
     }
 
     public long getTimeLostGoodReputation() {
