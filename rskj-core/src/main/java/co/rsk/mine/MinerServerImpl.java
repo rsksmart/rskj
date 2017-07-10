@@ -152,20 +152,26 @@ public class MinerServerImpl implements MinerServer {
         Block newBlock;
         Sha3Hash key = new Sha3Hash(TypeConverter.removeZeroX(blockHashForMergedMining));
         synchronized (LOCK) {
-            newBlock = blocksWaitingforPoW.get(key);
-            if (newBlock == null) {
+            Block workingBlock = blocksWaitingforPoW.get(key);
+
+            if (workingBlock == null) {
                 logger.warn("Cannot publish block, could not find hash " + blockHashForMergedMining + " in the cache");
                 return;
             }
 
             // just in case, remove all references to this block.
-            if (latestBlock == newBlock) {
+            if (latestBlock == workingBlock) {
                 latestBlock = null;
                 latestblockHashWaitingforPoW = null;
                 currentWork = null;
             }
+
+            // clone the block
+            newBlock = new Block(workingBlock.getEncoded());
+
             logger.debug("blocksWaitingforPoW size " + blocksWaitingforPoW.size());
         }
+
         logger.info("Received block {} {}", newBlock.getNumber(), Hex.toHexString(newBlock.getHash()));
 
         newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
@@ -260,7 +266,7 @@ public class MinerServerImpl implements MinerServer {
              * currentWork, regardless of what it is.
              */
             synchronized (LOCK) {
-                if (currentWork != work || currentWork == null) {
+                if (currentWork != work ||  currentWork == null) {
                     return currentWork;
                 }
                 currentWork = new MinerWork(currentWork.getBlockHashForMergedMining(), currentWork.getTarget(),
@@ -269,6 +275,11 @@ public class MinerServerImpl implements MinerServer {
             }
         }
         return work;
+    }
+
+    @VisibleForTesting
+    public void setWork(MinerWork work) {
+        this.currentWork = work;
     }
 
     public MinerWork updateGetWork(@Nonnull final Block block, @Nonnull final boolean notify) {

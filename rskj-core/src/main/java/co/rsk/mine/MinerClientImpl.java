@@ -43,6 +43,7 @@ import java.util.TimerTask;
 
 @Component("MinerClient")
 public class MinerClientImpl implements MinerClient {
+    private long nextNonceToUse = 0;
 
     @Autowired
     private Rsk rsk;
@@ -172,6 +173,8 @@ public class MinerClientImpl implements MinerClient {
      */
     private boolean findNonce(@Nonnull final co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock,
                               @Nonnull final BigInteger target) {
+        bitcoinMergedMiningBlock.setNonce(nextNonceToUse++);
+
         while (!stop && !newBestBlockArrivedFromAnotherNode) {
             // Is our proof of work valid yet?
             BigInteger blockHashBI = bitcoinMergedMiningBlock.getHash().toBigInteger();
@@ -179,7 +182,7 @@ public class MinerClientImpl implements MinerClient {
                 return true;
             }
             // No, so increment the nonce and try again.
-            bitcoinMergedMiningBlock.setNonce(bitcoinMergedMiningBlock.getNonce() + 1);
+            bitcoinMergedMiningBlock.setNonce(nextNonceToUse++);
             if (bitcoinMergedMiningBlock.getNonce() % 100000 == 0) {
                 logger.debug("Solving block. Nonce: " + bitcoinMergedMiningBlock.getNonce());
             }
