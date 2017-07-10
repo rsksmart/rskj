@@ -18,6 +18,10 @@ public class PeerScoring {
             counters.put(evt, new Integer(counters.get(evt).intValue() + 1));
     }
 
+    public int getScore() {
+        return 0;
+    }
+
     public int getEventCounter(EventType evt) {
         if (!counters.containsKey(evt))
             return 0;

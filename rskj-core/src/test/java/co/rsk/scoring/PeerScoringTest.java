@@ -68,4 +68,11 @@ public class PeerScoringTest {
         Assert.assertEquals(2, scoring.getEventCounter(EventType.INVALID_TRANSACTION));
         Assert.assertEquals(5, scoring.getTotalEventCounter());
     }
+
+    @Test
+    public void getZeroScoreWhenEmpty() {
+        PeerScoring scoring = new PeerScoring();
+
+        Assert.assertEquals(0, scoring.getScore());
+    }
 }
