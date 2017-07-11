@@ -194,7 +194,9 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     /*  CALLDATASIZE */
     public DataWord getDataSize() {
 
-        if (msgData == null || msgData.length == 0) return DataWord.ZERO;
+        if (msgData == null || msgData.length == 0) {
+            return DataWord.ZERO;
+        }
         int size = msgData.length;
         return new DataWord(size);
     }
@@ -207,9 +209,15 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
         byte[] data = new byte[length];
 
-        if (msgData == null) return data;
-        if (offset > msgData.length) return data;
-        if (offset + length > msgData.length) length = msgData.length - offset;
+        if (msgData == null) {
+            return data;
+        }
+        if (offset > msgData.length) {
+            return data;
+        }
+        if (offset + length > msgData.length) {
+            length = msgData.length - offset;
+        }
 
         System.arraycopy(msgData, offset, data, 0, length);
 
@@ -283,24 +291,60 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
         ProgramInvokeImpl that = (ProgramInvokeImpl) o;
 
-        if (byTestingSuite != that.byTestingSuite) return false;
-        if (byTransaction != that.byTransaction) return false;
-        if (address != null ? !address.equals(that.address) : that.address != null) return false;
-        if (balance != null ? !balance.equals(that.balance) : that.balance != null) return false;
-        if (callValue != null ? !callValue.equals(that.callValue) : that.callValue != null) return false;
-        if (caller != null ? !caller.equals(that.caller) : that.caller != null) return false;
-        if (coinbase != null ? !coinbase.equals(that.coinbase) : that.coinbase != null) return false;
-        if (difficulty != null ? !difficulty.equals(that.difficulty) : that.difficulty != null) return false;
-        if (gas!=that.gas) return false;
-        if (gasPrice != null ? !gasPrice.equals(that.gasPrice) : that.gasPrice != null) return false;
-        if (gaslimit != null ? !gaslimit.equals(that.gaslimit) : that.gaslimit != null) return false;
-        if (!Arrays.equals(msgData, that.msgData)) return false;
-        if (number != null ? !number.equals(that.number) : that.number != null) return false;
-        if (origin != null ? !origin.equals(that.origin) : that.origin != null) return false;
-        if (prevHash != null ? !prevHash.equals(that.prevHash) : that.prevHash != null) return false;
-        if (repository != null ? !repository.equals(that.repository) : that.repository != null) return false;
-        if (storage != null ? !storage.equals(that.storage) : that.storage != null) return false;
-        if (timestamp != null ? !timestamp.equals(that.timestamp) : that.timestamp != null) return false;
+        if (byTestingSuite != that.byTestingSuite) {
+            return false;
+        }
+        if (byTransaction != that.byTransaction) {
+            return false;
+        }
+        if (address != null ? !address.equals(that.address) : that.address != null) {
+            return false;
+        }
+        if (balance != null ? !balance.equals(that.balance) : that.balance != null) {
+            return false;
+        }
+        if (callValue != null ? !callValue.equals(that.callValue) : that.callValue != null) {
+            return false;
+        }
+        if (caller != null ? !caller.equals(that.caller) : that.caller != null) {
+            return false;
+        }
+        if (coinbase != null ? !coinbase.equals(that.coinbase) : that.coinbase != null) {
+            return false;
+        }
+        if (difficulty != null ? !difficulty.equals(that.difficulty) : that.difficulty != null) {
+            return false;
+        }
+        if (gas!=that.gas) {
+            return false;
+        }
+        if (gasPrice != null ? !gasPrice.equals(that.gasPrice) : that.gasPrice != null) {
+            return false;
+        }
+        if (gaslimit != null ? !gaslimit.equals(that.gaslimit) : that.gaslimit != null) {
+            return false;
+        }
+        if (!Arrays.equals(msgData, that.msgData)) {
+            return false;
+        }
+        if (number != null ? !number.equals(that.number) : that.number != null) {
+            return false;
+        }
+        if (origin != null ? !origin.equals(that.origin) : that.origin != null) {
+            return false;
+        }
+        if (prevHash != null ? !prevHash.equals(that.prevHash) : that.prevHash != null) {
+            return false;
+        }
+        if (repository != null ? !repository.equals(that.repository) : that.repository != null) {
+            return false;
+        }
+        if (storage != null ? !storage.equals(that.storage) : that.storage != null) {
+            return false;
+        }
+        if (timestamp != null ? !timestamp.equals(that.timestamp) : that.timestamp != null) {
+            return false;
+        }
 
         return true;
     }
