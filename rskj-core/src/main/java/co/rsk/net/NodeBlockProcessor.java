@@ -61,10 +61,10 @@ public class NodeBlockProcessor implements BlockProcessor {
     @GuardedBy("statusLock")
     private volatile long lastStatusBestBlock = 0;
 
-    final private BlockStore store;
-    final private Blockchain blockchain;
-    final private ChannelManager channelManager;
-    final private BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
+    private final BlockStore store;
+    private final Blockchain blockchain;
+    private final ChannelManager channelManager;
+    private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
     private long lastKnownBlockNumber = 0;
 
     private Map<ByteArrayWrapper, Integer> unknownBlockHashes = new HashMap<>();
