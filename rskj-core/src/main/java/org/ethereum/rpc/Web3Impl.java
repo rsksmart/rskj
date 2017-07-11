@@ -971,7 +971,7 @@ public class Web3Impl implements Web3 {
     }
 
     static class Filter {
-        static abstract class FilterEvent {
+        abstract static class FilterEvent {
             public abstract Object getJsonEventObject();
         }
 
