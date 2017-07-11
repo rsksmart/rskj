@@ -33,9 +33,9 @@ import java.util.Arrays;
 
 public class Bloom {
 
-    final static int _8STEPS = 8;
-    final static int _3LOW_BITS = 7;
-    final static int ENSURE_BYTE = 255;
+    static final int _8STEPS = 8;
+    static final int _3LOW_BITS = 7;
+    static final int ENSURE_BYTE = 255;
 
     byte[] data = new byte[256];
 
@@ -90,8 +90,13 @@ public class Bloom {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         Bloom bloom = (Bloom) o;
 
