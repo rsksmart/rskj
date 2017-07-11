@@ -55,6 +55,16 @@ public class InetAddressTableTest {
         Assert.assertTrue(table.contains(address));
     }
 
+    @Test
+    public void addAddressMask() throws UnknownHostException {
+        InetAddressTable table = new InetAddressTable();
+        InetAddress address = generateIPAddressV4();
+
+        table.addAddressMask(address, 8);
+
+        Assert.assertTrue(table.contains(address));
+    }
+
     private static InetAddress generateIPAddressV4() throws UnknownHostException {
         byte[] bytes = new byte[4];
 
