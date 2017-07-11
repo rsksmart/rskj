@@ -47,7 +47,9 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
     private void init() {
         if (config.syncVersion() != null) {
             EthVersion eth = fromCode(config.syncVersion());
-            if (eth != null) AllCaps.add(new Capability(RSK, eth.getCode()));
+            if (eth != null) {
+                AllCaps.add(new Capability(RSK, eth.getCode()));
+            }
         } else {
             for (EthVersion v : EthVersion.supported())
                 AllCaps.add(new Capability(RSK, v.getCode()));
