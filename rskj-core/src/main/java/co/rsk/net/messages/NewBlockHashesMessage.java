@@ -81,18 +81,26 @@ public class NewBlockHashesMessage extends Message {
 
     @Override
     public byte[] getEncodedMessage() {
-        if (encoded == null) encode();
+        if (encoded == null) {
+            encode();
+        }
+
         return encoded;
     }
 
     public List<BlockIdentifier> getBlockIdentifiers() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
+
         return blockIdentifiers;
     }
 
     @Override
     public String toString() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
 
         return "[" + getMessageType() + "] (" + blockIdentifiers.size() + ")";
     }
