@@ -17,7 +17,7 @@ public class PeerScoringManager {
     private PunishmentCalculator punishmentCalculator = new PunishmentCalculator();
 
     private final Object accessLock = new Object();
-    private long expirationTime = 0L;
+    private long punishmentDuration = 0L;
 
     @GuardedBy("accessLock")
     private LinkedHashMap<NodeID, PeerScoring> peersByNodeID;
@@ -70,8 +70,8 @@ public class PeerScoringManager {
         return this.getPeerScoring(address).hasGoodReputation();
     }
 
-    public void setExpirationTime(long time) {
-        this.expirationTime = time;
+    public void setPunishmentDuration(long time) {
+        this.punishmentDuration = time;
     }
 
     @VisibleForTesting
@@ -103,6 +103,6 @@ public class PeerScoringManager {
         boolean reputation = scoringCalculator.hasGoodReputation(scoring);
 
         if (!reputation && scoring.hasGoodReputation())
-            scoring.startPunishment(this.punishmentCalculator.calculate(expirationTime, expirationTime * 10, 10, scoring.getPunishmentCounter()));
+            scoring.startPunishment(this.punishmentCalculator.calculate(punishmentDuration, punishmentDuration * 10, 10, scoring.getPunishmentCounter()));
     }
 }
