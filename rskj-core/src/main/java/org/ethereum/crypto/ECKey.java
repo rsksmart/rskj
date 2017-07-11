@@ -122,8 +122,8 @@ public class ECKey implements Serializable {
     protected final ECPoint pub;
 
     // Transient because it's calculated on demand.
-    transient private byte[] pubKeyHash;
-    transient private byte[] nodeId;
+    private transient byte[] pubKeyHash;
+    private transient byte[] nodeId;
 
     /**
      * Generates an entirely new keypair. Point compression is used so the resulting public key will be 33 bytes
@@ -395,7 +395,8 @@ public class ECKey implements Serializable {
         /**
          * The two components of the signature.
          */
-        public final BigInteger r, s;
+        public final BigInteger r;
+        public final BigInteger s;
         public byte v;
 
         /**
@@ -438,13 +439,25 @@ public class ECKey implements Serializable {
 
         public static boolean validateComponents(BigInteger r, BigInteger s, byte v) {
 
-            if (v != 27 && v != 28) return false;
+            if (v != 27 && v != 28) {
+                return false;
+            }
 
-            if (isLessThan(r, BigInteger.ONE)) return false;
-            if (isLessThan(s, BigInteger.ONE)) return false;
+            if (isLessThan(r, BigInteger.ONE)) {
+                return false;
+            }
 
-            if (!isLessThan(r, Constants.getSECP256K1N())) return false;
-            if (!isLessThan(s, Constants.getSECP256K1N())) return false;
+            if (isLessThan(s, BigInteger.ONE)) {
+                return false;
+            }
+
+            if (!isLessThan(r, Constants.getSECP256K1N())) {
+                return false;
+            }
+
+            if (!isLessThan(s, Constants.getSECP256K1N())) {
+                return false;
+            }
 
             return true;
         }
@@ -485,13 +498,23 @@ public class ECKey implements Serializable {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             ECDSASignature signature = (ECDSASignature) o;
 
-            if (!r.equals(signature.r)) return false;
-            if (!s.equals(signature.s)) return false;
+            if (!r.equals(signature.r)) {
+                return false;
+            }
+
+            if (!s.equals(signature.s)) {
+                return false;
+            }
 
             return true;
         }
@@ -825,13 +848,23 @@ public class ECKey implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || !(o instanceof ECKey)) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || !(o instanceof ECKey)) {
+            return false;
+        }
 
         ECKey ecKey = (ECKey) o;
 
-        if (priv != null && !priv.equals(ecKey.priv)) return false;
-        if (pub != null && !pub.equals(ecKey.pub)) return false;
+        if (priv != null && !priv.equals(ecKey.priv)) {
+            return false;
+        }
+
+        if (pub != null && !pub.equals(ecKey.pub)) {
+            return false;
+        }
 
         return true;
     }
@@ -851,7 +884,10 @@ public class ECKey implements Serializable {
     }
 
     private static void check(boolean test, String message) {
-        if (!test) throw new IllegalArgumentException(message);
+        if (!test) {
+            throw new IllegalArgumentException(message);
+        }
+        
     }
 
 }
