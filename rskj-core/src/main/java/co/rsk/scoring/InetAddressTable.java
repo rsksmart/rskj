@@ -19,6 +19,10 @@ public class InetAddressTable {
         this.masks.add(new InetAddressMask(address, nbits));
     }
 
+    public void clearAddressMasks() {
+        this.masks.clear();
+    }
+
     public boolean contains(InetAddress address) {
         if (this.addresses.contains(address))
             return true;

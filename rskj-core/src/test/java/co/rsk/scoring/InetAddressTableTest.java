@@ -59,10 +59,38 @@ public class InetAddressTableTest {
     public void addAddressMask() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
         InetAddress address = generateIPAddressV4();
+        InetAddress address2 = alterByte(address, 3);
+        InetAddress address3 = alterByte(address, 2);
 
         table.addAddressMask(address, 8);
 
         Assert.assertTrue(table.contains(address));
+        Assert.assertTrue(table.contains(address2));
+        Assert.assertFalse(table.contains(address3));
+
+        table.addAddress(address3);
+
+        Assert.assertTrue(table.contains(address3));
+    }
+
+    @Test
+    public void addAddressMaskAndClear() throws UnknownHostException {
+        InetAddressTable table = new InetAddressTable();
+        InetAddress address = generateIPAddressV4();
+        InetAddress address2 = alterByte(address, 3);
+        InetAddress address3 = alterByte(address, 2);
+
+        table.addAddressMask(address, 8);
+
+        Assert.assertTrue(table.contains(address));
+        Assert.assertTrue(table.contains(address2));
+        Assert.assertFalse(table.contains(address3));
+
+        table.clearAddressMasks();
+
+        Assert.assertFalse(table.contains(address));
+        Assert.assertFalse(table.contains(address2));
+        Assert.assertFalse(table.contains(address3));
     }
 
     private static InetAddress generateIPAddressV4() throws UnknownHostException {
@@ -77,6 +105,14 @@ public class InetAddressTableTest {
         byte[] bytes = new byte[16];
 
         random.nextBytes(bytes);
+
+        return InetAddress.getByAddress(bytes);
+    }
+
+    private static InetAddress alterByte(InetAddress address, int nbyte) throws UnknownHostException {
+        byte[] bytes = address.getAddress();
+
+        bytes[nbyte]++;
 
         return InetAddress.getByAddress(bytes);
     }
