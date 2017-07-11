@@ -41,7 +41,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class BlockQueueMem implements BlockQueue {
 
-    private final static Logger logger = LoggerFactory.getLogger("blockqueue");
+    private static final Logger logger = LoggerFactory.getLogger("blockqueue");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private Map<Long, BlockWrapper> blocks = Collections.synchronizedMap(new HashMap<Long, BlockWrapper>());
@@ -110,7 +110,9 @@ public class BlockQueueMem implements BlockQueue {
 
     public void addImpl(BlockWrapper block) {
 
-        if (index.contains(block.getNumber())) return;
+        if (index.contains(block.getNumber())) {
+            return;
+        }
 
         synchronized (mutex) {
             addInner(block);
@@ -242,7 +244,9 @@ public class BlockQueueMem implements BlockQueue {
                 if (!hasSent) {
                     hasSent = b.sentBy(nodeId);
                 }
-                if (hasSent) removed.add(idx);
+                if (hasSent) {
+                    removed.add(idx);
+                }
             }
 
             blocks.keySet().removeAll(removed);
