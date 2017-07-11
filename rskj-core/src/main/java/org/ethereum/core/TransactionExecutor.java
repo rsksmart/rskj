@@ -200,7 +200,9 @@ public class TransactionExecutor {
 
     public void execute() {
 
-        if (!readyToExecute) return;
+        if (!readyToExecute) {
+            return;
+        }
 
         logger.info("Execute transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
 
@@ -230,7 +232,9 @@ public class TransactionExecutor {
     }
 
     private void call() {
-        if (!readyToExecute) return;
+        if (!readyToExecute) {
+            return;
+        }
 
         logger.info("Call transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
 
@@ -304,10 +308,14 @@ public class TransactionExecutor {
     }
 
     public void go() {
-        if (!readyToExecute) return;
+        if (!readyToExecute) {
+            return;
+        }
 
         // TODO: transaction call for pre-compiled  contracts
-        if (vm == null) return;
+        if (vm == null) {
+            return;
+        }
 
         logger.info("Go transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
 
@@ -354,10 +362,14 @@ public class TransactionExecutor {
     }
 
     public void finalization() {
-        if (!readyToExecute) return;
+        if (!readyToExecute) {
+            return;
+        }
 
         // RSK if local call gas balances must not be changed
-        if (localCall) return;
+        if (localCall) {
+            return;
+        }
 
         logger.info("Finalize transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
 
