@@ -103,6 +103,6 @@ public class PeerScoringManager {
         boolean reputation = scoringCalculator.hasGoodReputation(scoring);
 
         if (!reputation && scoring.hasGoodReputation())
-            scoring.startPunishment(this.punishmentCalculator.calculate(punishmentDuration, punishmentDuration * 10, 10, scoring.getPunishmentCounter()));
+            scoring.startPunishment(this.punishmentCalculator.calculate(punishmentDuration, punishmentDuration * 10, 10, scoring.getPunishmentCounter(), scoring.getScore()));
     }
 }
