@@ -31,7 +31,7 @@ public class GetPeersMessage extends P2pMessage {
     /**
      * GetPeers message is always a the same single command payload
      */
-    private final static byte[] FIXED_PAYLOAD = Hex.decode("C104");
+    private static final byte[] FIXED_PAYLOAD = Hex.decode("C104");
 
     @Override
     public byte[] getEncoded() {
