@@ -406,7 +406,10 @@ public class BridgeSupport {
     boolean hasEnoughConfirmations(Sha3Hash rskTxHash) {
         //Search the TransactionInfo using the parent block because execution block may not be in the blockstore yet.
         TransactionInfo info = rskReceiptStore.get(rskTxHash.getBytes(), rskExecutionBlock.getParentHash(), rskBlockStore);
-        if (info == null) return false;
+        if (info == null) {
+            return false;
+        }
+        
         byte[] includedBlockHash = info.getBlockHash();
         org.ethereum.core.Block includedBlock = rskBlockStore.getBlockByHash(includedBlockHash);
 
