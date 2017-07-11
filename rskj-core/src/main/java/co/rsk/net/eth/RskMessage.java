@@ -45,7 +45,9 @@ public class RskMessage extends EthMessage {
     }
 
     public Message getMessage() {
-        if (!this.parsed) parse();
+        if (!this.parsed) {
+            parse();
+        }
 
         return this.message;
     }
@@ -60,7 +62,10 @@ public class RskMessage extends EthMessage {
 
     @Override
     public byte[] getEncoded() {
-        if (encoded == null) encode();
+        if (encoded == null) {
+            encode();
+        }
+
         return encoded;
     }
 
@@ -78,7 +83,10 @@ public class RskMessage extends EthMessage {
 
     @Override
     public String toString() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
+        
         return "[" + this.getCommand().name() +
                 " message=" + this.message +
                 "]";
