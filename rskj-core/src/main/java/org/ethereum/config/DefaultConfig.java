@@ -96,7 +96,9 @@ public class DefaultConfig {
 
         String blocksIndexFile = database + "/blocks/index";
         File dbFile = new File(blocksIndexFile);
-        if (!dbFile.getParentFile().exists()) dbFile.getParentFile().mkdirs();
+        if (!dbFile.getParentFile().exists()) {
+            dbFile.getParentFile().mkdirs();
+        }
 
         DB indexDB = DBMaker.fileDB(dbFile)
                 .closeOnJvmShutdown()
