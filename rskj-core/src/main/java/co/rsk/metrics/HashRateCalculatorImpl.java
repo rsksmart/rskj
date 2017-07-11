@@ -48,19 +48,19 @@ public class HashRateCalculatorImpl implements HashRateCalculator {
 
     @Override
     public BigInteger calculateNodeHashRate(Long periodLenght, TimeUnit periodUnit) {
-        return calculateHashRate((b) -> checkOwnership(b), periodUnit.toSeconds(periodLenght));
+        return calculateHashRate(b -> checkOwnership(b), periodUnit.toSeconds(periodLenght));
     }
 
     @Override
     public BigInteger calculateNetHashRate(Long periodLenght, TimeUnit periodUnit) {
-        return calculateHashRate((b) -> true, periodUnit.toSeconds(periodLenght));
+        return calculateHashRate(b -> true, periodUnit.toSeconds(periodLenght));
     }
 
     private BigInteger calculateHashRate(Predicate<BlockHeaderElement> countCondition, long windowDuration) {
         if (hasBestBlock()) {
             long upto = System.currentTimeMillis() / 1000L;
             long from = upto - windowDuration;
-            return this.hashRate(getHeaderElement(blockStore.getBestBlock().getHash()), countCondition, (b) -> checkBlockTimeRange(b, from, upto));
+            return this.hashRate(getHeaderElement(blockStore.getBestBlock().getHash()), countCondition, b -> checkBlockTimeRange(b, from, upto));
         }
         return BigInteger.ZERO;
     }
