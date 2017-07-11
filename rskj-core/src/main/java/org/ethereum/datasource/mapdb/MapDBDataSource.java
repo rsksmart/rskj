@@ -51,8 +51,9 @@ public class MapDBDataSource implements KeyValueDataSource {
     @Override
     public void init() {
         File dbFile = new File(getProperty("user.dir") + "/" + config.databaseDir() + "/" + name);
-        if (!dbFile.getParentFile().exists()) dbFile.getParentFile().mkdirs();
-
+        if (!dbFile.getParentFile().exists()) {
+            dbFile.getParentFile().mkdirs();
+        }
 
         db = DBMaker.fileDB(dbFile)
                 .transactionDisable()
