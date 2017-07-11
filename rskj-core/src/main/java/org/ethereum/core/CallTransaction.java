@@ -76,7 +76,7 @@ public class CallTransaction {
     /**
      * Generic ABI type
      */
-    public static abstract class Type {
+    public abstract static class Type {
         protected String name;
 
         public Type(String name) {
@@ -98,8 +98,14 @@ public class CallTransaction {
 
         @JsonCreator
         public static Type getType(String typeName) {
-            if ("bool".equals(typeName)) return new BoolType();
-            if (typeName.startsWith("int") || typeName.startsWith("uint")) return new IntType(typeName);
+            if ("bool".equals(typeName)) {
+                return new BoolType();
+            }
+
+            if (typeName.startsWith("int") || typeName.startsWith("uint")) {
+                return new IntType(typeName);
+            }
+
             throw new RuntimeException("Unknown type: " + typeName);
         }
 
@@ -134,8 +140,14 @@ public class CallTransaction {
 
         @Override
         public String getCanonicalName() {
-            if ("int".equals(getName())) return "int256";
-            if ("uint".equals(getName())) return "uint256";
+            if ("int".equals(getName())) {
+                return "int256";
+            }
+
+            if ("uint".equals(getName())) {
+                return "uint256";
+            }
+            
             return super.getCanonicalName();
         }
 
