@@ -81,7 +81,9 @@ public class RepositoryBlockStore implements BtcBlockStore{
     @Override
     public StoredBlock getChainHead() throws BlockStoreException {
         byte[] ba = repository.getStorageBytes(Hex.decode(contractAddress), new DataWord(BLOCK_STORE_CHAIN_HEAD_KEY.getBytes(StandardCharsets.UTF_8)));
-        if (ba==null) return null;
+        if (ba==null) {
+            return null;
+        }
         StoredBlock storedBlock = byteArrayToStoredBlock(ba);
         return storedBlock;
     }
