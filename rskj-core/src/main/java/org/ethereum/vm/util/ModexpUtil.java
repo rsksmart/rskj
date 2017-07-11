@@ -27,7 +27,7 @@ import java.util.Arrays;
 
 public class ModexpUtil {
 
-    private final static String funcJson = "{\n" +
+    private static final String funcJson = "{\n" +
             "   \"constant\":false, \n" +
             "   \"inputs\":[{\"name\":\"b\",\"type\":\"bytes\"}, \n" +
             "               {\"name\":\"e\",\"type\":\"bytes\"}, \n" +
