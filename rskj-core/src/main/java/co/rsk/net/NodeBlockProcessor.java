@@ -151,8 +151,14 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     private boolean hasHeader(@Nonnull final BlockHeader h) {
-        if (hasBlock(h.getHash())) return true;
-        if (store.hasHeader(h.getHash())) return true;
+        if (hasBlock(h.getHash())) {
+            return true;
+        }
+
+        if (store.hasHeader(h.getHash())) {
+            return true;
+        }
+        
         return false;
     }
 
