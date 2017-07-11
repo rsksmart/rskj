@@ -93,7 +93,9 @@ public class StatusMessage extends EthMessage {
 
     @Override
     public byte[] getEncoded() {
-        if (encoded == null) encode();
+        if (encoded == null) {
+            encode();
+        }
         return encoded;
     }
 
@@ -103,17 +105,23 @@ public class StatusMessage extends EthMessage {
     }
 
     public byte getProtocolVersion() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return protocolVersion;
     }
 
     public int getNetworkId() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return networkId;
     }
 
     public byte[] getTotalDifficulty() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return totalDifficulty;
     }
 
@@ -122,12 +130,16 @@ public class StatusMessage extends EthMessage {
     }
 
     public byte[] getBestHash() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return bestHash;
     }
 
     public byte[] getGenesisHash() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return genesisHash;
     }
 
@@ -139,7 +151,9 @@ public class StatusMessage extends EthMessage {
 
     @Override
     public String toString() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return "[" + this.getCommand().name() +
                 " protocolVersion=" + this.protocolVersion +
                 " networkId=" + this.networkId +
