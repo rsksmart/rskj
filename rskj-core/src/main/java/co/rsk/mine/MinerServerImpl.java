@@ -249,7 +249,10 @@ public class MinerServerImpl implements MinerServer {
     @Override
     public MinerWork getWork() {
         MinerWork work = currentWork;
-        if (work == null) return null;
+        if (work == null) {
+            return null;
+        }
+        
         if (work.getNotify()) {
             /**
              * Set currentWork.notify to false for the next time this function is called.
