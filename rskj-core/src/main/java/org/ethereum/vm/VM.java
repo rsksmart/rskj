@@ -89,8 +89,8 @@ public class VM {
     private int vmCounter = 0;
 
     private static VMHook vmHook;
-    private final static boolean vmTrace = CONFIG.vmTrace();
-    private final static long dumpBlock = CONFIG.dumpBlock();
+    private static final boolean vmTrace = CONFIG.vmTrace();
+    private static final long dumpBlock = CONFIG.dumpBlock();
     private boolean computeGas = true; // for performance comp
 
     public VM() {
@@ -1719,7 +1719,9 @@ public class VM {
         try {
 
             for(long s=0;s<steps;s++) {
-                if (program.isStopped()) break;
+                if (program.isStopped()) {
+                    break;
+                }
 
                 if (vmTrace)
                     program.saveOpTrace();
