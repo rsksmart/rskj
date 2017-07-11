@@ -100,7 +100,9 @@ public class MessageQueue {
 
     public void sendMessage(Message msg) {
         if (msg instanceof PingMessage) {
-            if (hasPing) return;
+            if (hasPing) {
+                return;
+            }
             logger.trace("Sending Ping Message to {}", channel);
             hasPing = true;
         }
@@ -130,7 +132,9 @@ public class MessageQueue {
         if (messageRoundtrip != null) {
             Message waitingMessage = messageRoundtrip.getMsg();
 
-            if (waitingMessage instanceof PingMessage) hasPing = false;
+            if (waitingMessage instanceof PingMessage) {
+                hasPing = false;
+            }
 
             if (waitingMessage.getAnswerMessage() != null
                     && msg.getClass() == waitingMessage.getAnswerMessage()) {
