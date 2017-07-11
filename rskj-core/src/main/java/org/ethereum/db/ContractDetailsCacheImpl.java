@@ -76,7 +76,10 @@ public class ContractDetailsCacheImpl implements ContractDetails {
         if (value != null)
             value = value.clone();
         else{
-            if (origContract == null) return null;
+            if (origContract == null) {
+                return null;
+            }
+
             value = origContract.get(key);
             storage.put(key.clone(), value == null ? DataWord.ZERO.clone() : value.clone());
         }
@@ -94,7 +97,10 @@ public class ContractDetailsCacheImpl implements ContractDetails {
         if (value != null)
             value = value.clone();
         else{
-            if (origContract == null) return null;
+            if (origContract == null) {
+                return null;
+            }
+
             value = origContract.getBytes(key);
             bytesStorage.put(key.clone(), value == null ? null : value.clone());
         }
@@ -251,7 +257,9 @@ public class ContractDetailsCacheImpl implements ContractDetails {
 
     @Override
     public Map<DataWord, DataWord> getStorage(Collection<DataWord> keys) {
-        if (keys == null) return getStorage();
+        if (keys == null) {
+            return getStorage();
+        }
 
         Map<DataWord, DataWord> result = new HashMap<>();
         for (DataWord key : keys) {
@@ -300,7 +308,9 @@ public class ContractDetailsCacheImpl implements ContractDetails {
 
     @Override
     public void setAddress(byte[] address) {
-        if (origContract != null) origContract.setAddress(address);
+        if (origContract != null) {
+            origContract.setAddress(address);
+        }
     }
 
     @Override
@@ -327,12 +337,16 @@ public class ContractDetailsCacheImpl implements ContractDetails {
 
     @Override
     public void syncStorage() {
-        if (origContract != null) origContract.syncStorage();
+        if (origContract != null) {
+            origContract.syncStorage();
+        }
     }
 
     public void commit(){
 
-        if (origContract == null) return;
+        if (origContract == null) {
+            return;
+        }
 
         for (DataWord key : storage.keySet()) {
             origContract.put(key, storage.get(key));
