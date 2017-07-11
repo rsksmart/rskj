@@ -39,14 +39,18 @@ public class NodeFilter {
 
     public boolean accept(Node node) {
         for (Entry entry : entries) {
-            if (entry.accept(node)) return true;
+            if (entry.accept(node)) {
+                return true;
+            }
         }
         return false;
     }
 
     public boolean accept(InetAddress nodeAddr) {
         for (Entry entry : entries) {
-            if (entry.accept(nodeAddr)) return true;
+            if (entry.accept(nodeAddr)) {
+                return true;
+            }
         }
         return false;
     }
