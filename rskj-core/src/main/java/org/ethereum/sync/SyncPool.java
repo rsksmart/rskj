@@ -92,7 +92,9 @@ public class SyncPool implements Iterable<Channel> {
     @PostConstruct
     public void init() {
 
-        if (!config.isSyncEnabled()) return;
+        if (!config.isSyncEnabled()) {
+            return;
+        }
 
         updateLowerUsefulDifficulty();
 
@@ -117,12 +119,16 @@ public class SyncPool implements Iterable<Channel> {
 
     public void add(Channel peer) {
 
-        if (!config.isSyncEnabled()) return;
+        if (!config.isSyncEnabled()) {
+            return;
+        }
 
-        if (logger.isTraceEnabled()) logger.trace(
+        if (logger.isTraceEnabled()) {
+            logger.trace(
                 "Peer {}: adding",
                 peer.getPeerIdShort()
-        );
+            );
+        }
 
         synchronized (peers) {
             peers.put(peer.getNodeIdWrapper(), peer);
@@ -161,7 +167,9 @@ public class SyncPool implements Iterable<Channel> {
     public Channel getMasterCandidate() {
         synchronized (activePeers) {
 
-            if (activePeers.isEmpty()) return null;
+            if (activePeers.isEmpty()) {
+                return null;
+            }
             return activePeers.get(0);
         }
     }
@@ -186,7 +194,9 @@ public class SyncPool implements Iterable<Channel> {
 
     public void onDisconnect(Channel peer) {
 
-        if (peer.getNodeId() == null) return;
+        if (peer.getNodeId() == null) {
+            return;
+        }
 
         boolean existed;
         synchronized (peers) {
@@ -198,21 +208,27 @@ public class SyncPool implements Iterable<Channel> {
 
         // do not count disconnects for nodeId
         // if exact peer is not an active one
-        if (!existed) return;
+        if (!existed) {
+            return;
+        }
 
         logger.info("Peer {}: disconnected", peer.getPeerIdShort());
     }
 
     public void connect(Node node) {
-        if (logger.isTraceEnabled()) logger.trace(
+        if (logger.isTraceEnabled()) {
+            logger.trace(
                 "Peer {}: initiate connection",
                 node.getHexIdShort()
-        );
+            );
+        }
         if (isInUse(node.getHexId())) {
-            if (logger.isTraceEnabled()) logger.trace(
+            if (logger.isTraceEnabled()) {
+                logger.trace(
                     "Peer {}: connection already initiated",
                     node.getHexIdShort()
-            );
+                );
+            }
             return;
         }
 
@@ -252,12 +268,16 @@ public class SyncPool implements Iterable<Channel> {
 
     void logActivePeers() {
         synchronized (activePeers) {
-            if (activePeers.isEmpty()) return;
+            if (activePeers.isEmpty()) {
+                return;
+            }
 
             logger.info("\n");
             logger.info("Active peers");
             logger.info("============");
-            for (Channel peer : activePeers) peer.logSyncStats();
+            for (Channel peer : activePeers) {
+                peer.logSyncStats();
+            }
         }
     }
 
@@ -281,7 +301,9 @@ public class SyncPool implements Iterable<Channel> {
 
     private void fillUp() {
         int lackSize = config.maxActivePeers() - peers.size();
-        if(lackSize <= 0) return;
+        if(lackSize <= 0) {
+            return;
+        }
 
         Set<String> nodesInUse = nodesInUse();
 
@@ -301,7 +323,9 @@ public class SyncPool implements Iterable<Channel> {
 
             List<Channel> active = new ArrayList<>(peers.values());
 
-            if (active.isEmpty()) return;
+            if (active.isEmpty()) {
+                return;
+            }
 
             // filtering by 20% from top difficulty
             Collections.sort(active, new Comparator<Channel>() {
