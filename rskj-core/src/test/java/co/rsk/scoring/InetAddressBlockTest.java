@@ -10,13 +10,13 @@ import java.util.Random;
 /**
  * Created by ajlopez on 11/07/2017.
  */
-public class InetAddressMaskTest {
+public class InetAddressBlockTest {
     private static Random random = new Random();
 
     @Test
     public void recognizeIPV4AddressMask8Bits() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
-        InetAddressMask mask = new InetAddressMask(address, 8);
+        InetAddressBlock mask = new InetAddressBlock(address, 8);
 
         Assert.assertTrue(mask.contains(address));
     }
@@ -26,7 +26,7 @@ public class InetAddressMaskTest {
         InetAddress address = generateIPAddressV4();
         InetAddress address2 = alterByte(address, 3);
 
-        InetAddressMask mask = new InetAddressMask(address, 8);
+        InetAddressBlock mask = new InetAddressBlock(address, 8);
 
         Assert.assertTrue(mask.contains(address2));
     }
@@ -36,7 +36,7 @@ public class InetAddressMaskTest {
         InetAddress address = generateIPAddressV4();
         InetAddress address2 = alterByte(address, 2);
 
-        InetAddressMask mask = new InetAddressMask(address, 8);
+        InetAddressBlock mask = new InetAddressBlock(address, 8);
 
         Assert.assertFalse(mask.contains(address2));
     }
@@ -46,7 +46,7 @@ public class InetAddressMaskTest {
         InetAddress address = generateIPAddressV4();
         InetAddress address2 = generateIPAddressV6();
 
-        InetAddressMask mask = new InetAddressMask(address, 8);
+        InetAddressBlock mask = new InetAddressBlock(address, 8);
 
         Assert.assertFalse(mask.contains(address2));
     }
@@ -56,7 +56,7 @@ public class InetAddressMaskTest {
         InetAddress address = generateIPAddressV4();
         InetAddress address2 = alterByte(address, 2);
 
-        InetAddressMask mask = new InetAddressMask(address, 16);
+        InetAddressBlock mask = new InetAddressBlock(address, 16);
 
         Assert.assertTrue(mask.contains(address2));
     }
@@ -70,7 +70,7 @@ public class InetAddressMaskTest {
         bytes[2] ^= 2;
         InetAddress address3 = InetAddress.getByAddress(bytes);
 
-        InetAddressMask mask = new InetAddressMask(address, 9);
+        InetAddressBlock mask = new InetAddressBlock(address, 9);
 
         Assert.assertTrue(mask.contains(address2));
         Assert.assertFalse(mask.contains(address3));
@@ -85,7 +85,7 @@ public class InetAddressMaskTest {
         bytes[14] ^= 2;
         InetAddress address3 = InetAddress.getByAddress(bytes);
 
-        InetAddressMask mask = new InetAddressMask(address, 9);
+        InetAddressBlock mask = new InetAddressBlock(address, 9);
 
         Assert.assertTrue(mask.contains(address2));
         Assert.assertFalse(mask.contains(address3));
@@ -100,7 +100,7 @@ public class InetAddressMaskTest {
         bytes[1] ^= 4;
         InetAddress address3 = InetAddress.getByAddress(bytes);
 
-        InetAddressMask mask = new InetAddressMask(address, 18);
+        InetAddressBlock mask = new InetAddressBlock(address, 18);
 
         Assert.assertTrue(mask.contains(address2));
         Assert.assertFalse(mask.contains(address3));
@@ -115,7 +115,7 @@ public class InetAddressMaskTest {
         bytes[13] ^= 4;
         InetAddress address3 = InetAddress.getByAddress(bytes);
 
-        InetAddressMask mask = new InetAddressMask(address, 18);
+        InetAddressBlock mask = new InetAddressBlock(address, 18);
 
         Assert.assertTrue(mask.contains(address2));
         Assert.assertFalse(mask.contains(address3));
@@ -126,7 +126,7 @@ public class InetAddressMaskTest {
         InetAddress address = generateIPAddressV6();
         InetAddress address2 = generateIPAddressV4();
 
-        InetAddressMask mask = new InetAddressMask(address, 8);
+        InetAddressBlock mask = new InetAddressBlock(address, 8);
 
         Assert.assertFalse(mask.contains(address2));
     }

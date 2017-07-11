@@ -9,25 +9,25 @@ import java.util.Set;
  */
 public class InetAddressTable {
     private Set<InetAddress> addresses = new HashSet<>();
-    private Set<InetAddressMask> masks = new HashSet<>();
+    private Set<InetAddressBlock> blocks = new HashSet<>();
 
     public void addAddress(InetAddress address) {
         this.addresses.add(address);
     }
 
-    public void addAddressMask(InetAddress address, int nbits) {
-        this.masks.add(new InetAddressMask(address, nbits));
+    public void addAddressBlock(InetAddress address, int nbits) {
+        this.blocks.add(new InetAddressBlock(address, nbits));
     }
 
-    public void clearAddressMasks() {
-        this.masks.clear();
+    public void clearAddressBlocks() {
+        this.blocks.clear();
     }
 
     public boolean contains(InetAddress address) {
         if (this.addresses.contains(address))
             return true;
 
-        for (InetAddressMask mask : this.masks)
+        for (InetAddressBlock mask : this.blocks)
             if (mask.contains(address))
                 return true;
 

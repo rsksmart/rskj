@@ -5,12 +5,12 @@ import java.net.InetAddress;
 /**
  * Created by ajlopez on 11/07/2017.
  */
-public class InetAddressMask {
+public class InetAddressBlock {
     private byte[] bytes;
     private int nbytes;
     private byte mask;
 
-    public InetAddressMask(InetAddress address, int bits) {
+    public InetAddressBlock(InetAddress address, int bits) {
         this.bytes = address.getAddress();
         this.nbytes = this.bytes.length - (bits + 7) / 8;
         this.mask = (byte)(0xff << (bits % 8));

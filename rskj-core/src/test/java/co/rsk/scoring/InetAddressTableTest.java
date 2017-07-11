@@ -62,7 +62,7 @@ public class InetAddressTableTest {
         InetAddress address2 = alterByte(address, 3);
         InetAddress address3 = alterByte(address, 2);
 
-        table.addAddressMask(address, 8);
+        table.addAddressBlock(address, 8);
 
         Assert.assertTrue(table.contains(address));
         Assert.assertTrue(table.contains(address2));
@@ -80,13 +80,13 @@ public class InetAddressTableTest {
         InetAddress address2 = alterByte(address, 3);
         InetAddress address3 = alterByte(address, 2);
 
-        table.addAddressMask(address, 8);
+        table.addAddressBlock(address, 8);
 
         Assert.assertTrue(table.contains(address));
         Assert.assertTrue(table.contains(address2));
         Assert.assertFalse(table.contains(address3));
 
-        table.clearAddressMasks();
+        table.clearAddressBlocks();
 
         Assert.assertFalse(table.contains(address));
         Assert.assertFalse(table.contains(address2));
