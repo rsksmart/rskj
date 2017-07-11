@@ -19,7 +19,6 @@
 
 package org.ethereum.net.server;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.net.Metrics;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
