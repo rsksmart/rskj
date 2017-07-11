@@ -37,6 +37,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -71,6 +72,7 @@ public class NodeBlockProcessor implements BlockProcessor {
 
     private long lastStatusTime;
     private long blocksForPeers;
+    private boolean ignoreAdvancedBlocks = true;
 
     /**
      * Creates a new NodeBlockProcessor using the given BlockStore and Blockchain.
@@ -210,7 +212,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         if (blockNumber > this.lastKnownBlockNumber)
             this.lastKnownBlockNumber = blockNumber;
 
-        if (blockNumber >= bestBlockNumber + 1000) {
+        if (ignoreAdvancedBlocks && blockNumber >= bestBlockNumber + 1000) {
             logger.trace("Block too advanced {} {} from {} ", blockNumber, block.getShortHash(), sender != null ? sender.getNodeID().toString() : "N/A");
             return new BlockProcessResult(false, null);
         }
@@ -644,6 +646,12 @@ public class NodeBlockProcessor implements BlockProcessor {
             logger.trace("Sending status best block {} to all", status.getBestBlockNumber());
             this.channelManager.broadcastStatus(status);
         }
+    }
+
+    @Override
+    public void acceptAnyBlock()
+    {
+        this.ignoreAdvancedBlocks = false;
     }
 
     private void sendStatus(MessageSender sender) {

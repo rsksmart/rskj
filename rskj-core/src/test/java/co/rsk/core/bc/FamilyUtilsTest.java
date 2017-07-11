@@ -246,7 +246,7 @@ public class FamilyUtilsTest {
 
     private static BlockStore createBlockStore() {
         IndexedBlockStore blockStore = new IndexedBlockStore();
-        blockStore.init(new HashMap<Long, List<IndexedBlockStore.BlockInfo>>(), new HashMapDB(), null, null);
+        blockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         return blockStore;
     }

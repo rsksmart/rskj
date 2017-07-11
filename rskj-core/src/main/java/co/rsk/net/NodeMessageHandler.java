@@ -49,6 +49,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
     public static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
     public static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
+    public static final long WAIT_TIME_ACCEPT_ADVANCED_BLOCKS = TimeUnit.MINUTES.toMillis(10);
     private final BlockProcessor blockProcessor;
     private final ChannelManager channelManager;
     private final PendingState pendingState;
@@ -61,6 +62,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private LinkedBlockingQueue<MessageTask> queue = new LinkedBlockingQueue<>();
     private Set<ByteArrayWrapper> receivedMessages = Collections.synchronizedSet(new HashSet<ByteArrayWrapper>());
     private long cleanMsgTimestamp = 0;
+    private long lastImportedBestBlock;
 
     private volatile boolean stopped;
 
@@ -76,6 +78,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         PoWRule = new ProofOfWorkRule();
         transactionNodeInformation = new TransactionNodeInformation();
         this.txHandler = txHandler;
+        this.lastImportedBestBlock = System.currentTimeMillis();
     }
 
     @VisibleForTesting
@@ -246,13 +249,27 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         }
 
         long start = System.nanoTime();
+
         BlockProcessResult result = this.blockProcessor.processBlock(sender, block);
 
         long time = System.nanoTime() - start;
-        if(time >= 1000000000)
+
+        if (time >= 1000000000)
             result.logResult(block.getShortHash(), time);
 
         Metrics.processBlockMessage("blockProcessed", block, sender.getNodeID());
+
+        long currentTimeMillis = System.currentTimeMillis();
+
+        if (result.anyImportedBestResult())
+            lastImportedBestBlock = currentTimeMillis;
+
+        if (currentTimeMillis - lastImportedBestBlock > WAIT_TIME_ACCEPT_ADVANCED_BLOCKS)
+        {
+            logger.trace("Removed blocks advanced filter in NodeBlockProcessor");
+            this.blockProcessor.acceptAnyBlock();
+            this.receivedMessages.clear();
+        }
 
         // is new block and it is not orphan, it is in some blockchain
         if (wasOrphan && result.wasBlockAdded(block) && !this.blockProcessor.isSyncingBlocks()) {
