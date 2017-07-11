@@ -40,6 +40,6 @@ public abstract class BlockHeaderRule extends AbstractValidationRule {
      * @param header block header
      * @return true if validation passed, false otherwise
      */
-    abstract public boolean validate(BlockHeader header);
+    public abstract boolean validate(BlockHeader header);
 
 }
