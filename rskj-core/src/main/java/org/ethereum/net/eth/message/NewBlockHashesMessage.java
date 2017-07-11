@@ -72,7 +72,9 @@ public class NewBlockHashesMessage extends EthMessage {
 
     @Override
     public byte[] getEncoded() {
-        if (encoded == null) encode();
+        if (encoded == null) {
+            encode();
+        }
         return encoded;
     }
 
@@ -92,7 +94,9 @@ public class NewBlockHashesMessage extends EthMessage {
 
     @Override
     public String toString() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
 
         return "[" + this.getCommand().name() + "] (" + blockIdentifiers.size() + ")";
     }
