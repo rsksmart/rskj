@@ -39,8 +39,11 @@ public class ProgramInvokeImpl implements ProgramInvoke {
      * TRANSACTION  env **
      */
     private final DataWord address;
-    private final DataWord origin, caller,
-            balance, gasPrice, callValue;
+    private final DataWord origin;
+    private final DataWord caller;
+    private final DataWord balance;
+    private final DataWord gasPrice;
+    private final DataWord callValue;
     private long gas;
 
     byte[] msgData;
@@ -48,8 +51,12 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     /**
      * BLOCK  env **
      */
-    private final DataWord prevHash, coinbase, timestamp,
-            number, difficulty, gaslimit;
+    private final DataWord prevHash;
+    private final DataWord coinbase;
+    private final DataWord timestamp;
+    private final DataWord number;
+    private final DataWord difficulty;
+    private final DataWord gaslimit;
 
     private Map<DataWord, DataWord> storage;
 
@@ -171,7 +178,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     /* NOTE: In the protocol there is no restriction on the maximum message data,
      * However msgData here is a byte[] and this can't hold more than 2^32-1
      */
-    private static BigInteger MAX_MSG_DATA = BigInteger.valueOf(Integer.MAX_VALUE);
+    private static BigInteger maxMsgData = BigInteger.valueOf(Integer.MAX_VALUE);
 
     /*     CALLDATALOAD  op   */
     public DataWord getDataValue(DataWord indexData) {
@@ -181,7 +188,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         int size = 32; // maximum datavalue size
 
         if (msgData == null || index >= msgData.length
-                || tempIndex.compareTo(MAX_MSG_DATA) == 1)
+                || tempIndex.compareTo(maxMsgData) == 1)
             return new DataWord();
         if (index + size > msgData.length)
             size = msgData.length - index;
