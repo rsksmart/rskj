@@ -42,7 +42,15 @@ public class GasLimitCalculator {
 
         // decay = parentGasLimit / 1024
         // current Eth implementation substracts parentGasLimit / 1024 - 1
+<<<<<<< 06bc7206efdb74fd9c4075cc050785b19fab25c5
         BigInteger decay = parentGasLimit.divide(BigInteger.valueOf(constants.getGasLimitBoundDivisor()));
+=======
+        // decay is not the best name, parent - decay or parent + decay are the limits
+        // that should be accepted by consensus rules
+        BigInteger decay = parentGasLimit
+                .divide(BigInteger.valueOf(constants.getGAS_LIMIT_BOUND_DIVISOR()))
+                .subtract(BigInteger.ONE);
+>>>>>>> cross validate gas limit calc and consensus rule
 
         // TODO: we should assert this before reaching this point
         if (targetGasLimit.compareTo(minGasLimit) < 0) {
@@ -79,8 +87,14 @@ public class GasLimitCalculator {
        if (newGasLimit.compareTo(minGasLimit) < 0)
            newGasLimit = minGasLimit;
 
-        if (newGasLimit.compareTo(targetGasLimit) > 0)
-            newGasLimit = targetGasLimit;
+       if (newGasLimit.compareTo(targetGasLimit) > 0)
+           newGasLimit = targetGasLimit;
+
+       // I've never done enough calculations, but neither of these two should ever happen
+       if (newGasLimit.compareTo(parentGasLimit.subtract(decay)) < 0)
+           newGasLimit = parentGasLimit;
+       if (newGasLimit.compareTo(parentGasLimit.add(decay)) > 0)
+           newGasLimit = parentGasLimit;
 
         return newGasLimit;
     }

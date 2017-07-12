@@ -37,10 +37,10 @@ public class ParentGasLimitRule extends DependentBlockHeaderRule {
 
     private static final Logger logger = LoggerFactory.getLogger(ParentGasLimitRule.class);
 
-    private int gasLimitBoundDivisor;
+    private BigInteger gasLimitBoundDivisor;
 
     public ParentGasLimitRule(int gasLimitBoundDivisor) {
-        this.gasLimitBoundDivisor = gasLimitBoundDivisor;
+        this.gasLimitBoundDivisor = BigInteger.valueOf(gasLimitBoundDivisor);
     }
 
 
@@ -49,10 +49,11 @@ public class ParentGasLimitRule extends DependentBlockHeaderRule {
 
         BigInteger headerGasLimit = new BigInteger(1, header.getGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
+        BigInteger limit = parentGasLimit.divide(gasLimitBoundDivisor);
 
-        if (headerGasLimit.compareTo(parentGasLimit.multiply(BigInteger.valueOf(gasLimitBoundDivisor - 1)).divide(BigInteger.valueOf(gasLimitBoundDivisor))) < 0 ||
-            headerGasLimit.compareTo(parentGasLimit.multiply(BigInteger.valueOf(gasLimitBoundDivisor + 1)).divide(BigInteger.valueOf(gasLimitBoundDivisor))) > 0) {
-          logger.error(String.format("#%d: gas limit exceeds parentBlock.getGasLimit() (+-) GAS_LIMIT_BOUND_DIVISOR", header.getNumber()));
+        if (headerGasLimit.compareTo(parentGasLimit.subtract(limit)) <= 0 ||
+                headerGasLimit.compareTo(parentGasLimit.add(limit)) >= 0) {
+            logger.error(String.format("#%d: gas limit exceeds parentBlock.getGasLimit() (+-) GAS_LIMIT_BOUND_DIVISOR", header.getNumber()));
             return false;
         }
         return true;
