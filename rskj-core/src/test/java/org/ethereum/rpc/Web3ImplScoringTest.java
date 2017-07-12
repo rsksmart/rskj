@@ -52,6 +52,23 @@ public class Web3ImplScoringTest {
     }
 
     @Test
+    public void addAndRemoveBannedAddressUsingIPV4() throws UnknownHostException {
+        PeerScoringManager peerScoringManager = createPeerScoringManager();
+        Web3Impl web3 = createWeb3(peerScoringManager);
+        InetAddress address = generateIPAddressV6();
+
+        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+
+        web3.sco_addBannedAddress(address.getHostAddress());
+
+        Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
+
+        web3.sco_removeBannedAddress(address.getHostAddress());
+
+        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+    }
+
+    @Test
     public void addBannedAddressUsingIPV6() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
@@ -62,6 +79,23 @@ public class Web3ImplScoringTest {
         web3.sco_addBannedAddress(address.getHostAddress());
 
         Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
+    }
+
+    @Test
+    public void addAndRemoveBannedAddressUsingIPV6() throws UnknownHostException {
+        PeerScoringManager peerScoringManager = createPeerScoringManager();
+        Web3Impl web3 = createWeb3(peerScoringManager);
+        InetAddress address = generateIPAddressV4();
+
+        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+
+        web3.sco_addBannedAddress(address.getHostAddress());
+
+        Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
+
+        web3.sco_removeBannedAddress(address.getHostAddress());
+
+        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
     }
 
     private static InetAddress generateIPAddressV4() throws UnknownHostException {
