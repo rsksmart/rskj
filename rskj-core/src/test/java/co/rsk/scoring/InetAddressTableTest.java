@@ -78,6 +78,15 @@ public class InetAddressTableTest {
     }
 
     @Test
+    public void removeUnknownAddress() throws UnknownHostException {
+        InetAddressTable table = new InetAddressTable();
+        InetAddress address = generateIPAddressV4();
+
+        table.removeAddress(address);
+        Assert.assertFalse(table.contains(address));
+    }
+
+    @Test
     public void addAddressMask() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
         InetAddress address = generateIPAddressV4();
@@ -109,6 +118,26 @@ public class InetAddressTableTest {
         Assert.assertFalse(table.contains(address3));
 
         table.clearAddressBlocks();
+
+        Assert.assertFalse(table.contains(address));
+        Assert.assertFalse(table.contains(address2));
+        Assert.assertFalse(table.contains(address3));
+    }
+
+    @Test
+    public void addAndRemoveAddressMask() throws UnknownHostException {
+        InetAddressTable table = new InetAddressTable();
+        InetAddress address = generateIPAddressV4();
+        InetAddress address2 = alterByte(address, 3);
+        InetAddress address3 = alterByte(address, 2);
+
+        table.addAddressBlock(address, 8);
+
+        Assert.assertTrue(table.contains(address));
+        Assert.assertTrue(table.contains(address2));
+        Assert.assertFalse(table.contains(address3));
+
+        table.removeAddressBlock(address, 8);
 
         Assert.assertFalse(table.contains(address));
         Assert.assertFalse(table.contains(address2));

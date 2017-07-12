@@ -21,6 +21,10 @@ public class InetAddressTable {
         this.blocks.add(new InetAddressBlock(address, nbits));
     }
 
+    public void removeAddressBlock(InetAddress address, int nbits) {
+        this.blocks.remove(new InetAddressBlock(address, nbits));
+    }
+
     public void clearAddressBlocks() {
         this.blocks.clear();
     }
