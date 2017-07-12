@@ -40,12 +40,12 @@ public class TestNetAfterBridgeSyncConfig extends GenesisConfig {
         }
 
         @Override
-        public int getDURATION_LIMIT() {
+        public int getDurationLimit() {
             return 14;
         }
 
         @Override
-        public BigInteger getDIFFICULTY_BOUND_DIVISOR() {
+        public BigInteger getDifficultyBoundDivisor() {
             return DIFFICULTY_BOUND_DIVISOR;
         }
 
@@ -74,7 +74,7 @@ public class TestNetAfterBridgeSyncConfig extends GenesisConfig {
     public BigInteger calcDifficulty(BlockHeader curBlock, BlockHeader parent) {
         // If more than 10 minutes, reset to original difficulty 0x00100000
         if (curBlock.getTimestamp() >= parent.getTimestamp() + 600)
-            return getConstants().getMINIMUM_DIFFICULTY();
+            return getConstants().getMinimumDifficulty();
 
         return super.calcDifficulty(curBlock, parent);
     }

@@ -314,13 +314,13 @@ public class MinerServerImpl implements MinerServer {
 
         List<BlockHeader> uncles;
         if (blockStore != null) {
-            uncles = FamilyUtils.getUnclesHeaders(blockStore, newBlockParent.getNumber() + 1, newBlockParent.getHash(), this.properties.getBlockchainConfig().getCommonConstants().getUNCLE_GENERATION_LIMIT());
+            uncles = FamilyUtils.getUnclesHeaders(blockStore, newBlockParent.getNumber() + 1, newBlockParent.getHash(), this.properties.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit());
         } else {
             uncles = new ArrayList<>();
         }
 
-        if (uncles.size() > this.properties.getBlockchainConfig().getCommonConstants().getUNCLE_LIST_LIMIT()) {
-            uncles = uncles.subList(0, this.properties.getBlockchainConfig().getCommonConstants().getUNCLE_LIST_LIMIT());
+        if (uncles.size() > this.properties.getBlockchainConfig().getCommonConstants().getUncleListLimit()) {
+            uncles = uncles.subList(0, this.properties.getBlockchainConfig().getCommonConstants().getUncleListLimit());
         }
 
         final List<Transaction> txsToRemove = new ArrayList<>();
@@ -459,8 +459,8 @@ public class MinerServerImpl implements MinerServer {
         final long timestampSeconds = this.getCurrentTimeInSeconds();
 
         // Set gas limit before executing block
-        BigInteger minGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getMIN_GAS_LIMIT());
-        BigInteger targetGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getTARGET_GAS_LIMIT());
+        BigInteger minGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getMinGasLimit());
+        BigInteger targetGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getTargetGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, newBlockParent.getGasLimit());
         BigInteger gasLimit = new GasLimitCalculator().calculateBlockGasLimit(parentGasLimit, BigInteger.valueOf(
                 newBlockParent.getGasUsed()), minGasLimit, targetGasLimit);

@@ -38,12 +38,12 @@ public class RegTestConfig extends GenesisConfig {
         }
 
         @Override
-        public BigInteger getMINIMUM_DIFFICULTY() {
+        public BigInteger getMinimumDifficulty() {
             return MINIMUM_DIFFICULTY;
         }
 
         @Override
-        public int getDURATION_LIMIT() {
+        public int getDurationLimit() {
             return 10;
         }
 
