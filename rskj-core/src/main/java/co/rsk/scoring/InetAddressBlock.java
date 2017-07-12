@@ -1,6 +1,7 @@
 package co.rsk.scoring;
 
 import java.net.InetAddress;
+import java.util.Arrays;
 
 /**
  * Created by ajlopez on 11/07/2017.
@@ -32,5 +33,33 @@ public class InetAddressBlock {
             return (addressBytes[k] & this.mask) == (this.bytes[k] & this.mask);
 
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 0;
+
+        for (int k = 0; k < this.bytes.length; k++) {
+            result *= 17;
+            result += this.bytes[k];
+        }
+
+        result *= 17;
+        result += this.mask;
+
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null)
+            return false;
+
+        if (!(obj instanceof InetAddressBlock))
+            return false;
+
+        InetAddressBlock block = (InetAddressBlock)obj;
+
+        return block.mask == this.mask && Arrays.equals(block.bytes, this.bytes);
     }
 }

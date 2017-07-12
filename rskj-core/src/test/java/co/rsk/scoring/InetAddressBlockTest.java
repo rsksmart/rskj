@@ -131,6 +131,37 @@ public class InetAddressBlockTest {
         Assert.assertFalse(mask.contains(address2));
     }
 
+    @Test
+    public void equals() throws UnknownHostException {
+        InetAddress address1 = generateIPAddressV4();
+        InetAddress address2 = alterByte(address1, 0);
+        InetAddress address3 = generateIPAddressV6();
+
+        InetAddressBlock block1 = new InetAddressBlock(address1, 8);
+        InetAddressBlock block2 = new InetAddressBlock(address2, 9);
+        InetAddressBlock block3 = new InetAddressBlock(address1, 1);
+        InetAddressBlock block4 = new InetAddressBlock(address1, 8);
+        InetAddressBlock block5 = new InetAddressBlock(address3, 8);
+
+        Assert.assertTrue(block1.equals(block1));
+        Assert.assertTrue(block2.equals(block2));
+        Assert.assertTrue(block3.equals(block3));
+        Assert.assertTrue(block4.equals(block4));
+        Assert.assertTrue(block5.equals(block5));
+
+        Assert.assertTrue(block1.equals(block4));
+        Assert.assertTrue(block4.equals(block1));
+
+        Assert.assertFalse(block1.equals(block2));
+        Assert.assertFalse(block1.equals(block3));
+        Assert.assertFalse(block1.equals(block5));
+
+        Assert.assertFalse(block1.equals(null));
+        Assert.assertFalse(block1.equals("block"));
+
+        Assert.assertEquals(block1.hashCode(), block4.hashCode());
+    }
+
     private static InetAddress generateIPAddressV4() throws UnknownHostException {
         byte[] bytes = new byte[4];
 
