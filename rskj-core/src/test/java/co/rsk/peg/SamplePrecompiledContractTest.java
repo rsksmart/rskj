@@ -49,7 +49,7 @@ public class SamplePrecompiledContractTest {
                 "   'inputs':[{'name':'param0','type':'int'}, \n" +
                 "               {'name':'param1','type':'bytes'}, \n" +
                 "               {'name':'param2','type':'int'}], \n" +
-                "    'name':'method1', \n" +
+                "    'name':'Method1', \n" +
                 "   'outputs':[{'name':'output0','type':'int'}], \n" +
                 "    'type':'function' \n" +
                 "}\n";
@@ -79,7 +79,7 @@ public class SamplePrecompiledContractTest {
                 "   'inputs':[{'name':'param0','type':'int'}, \n" +
                 "               {'name':'param1','type':'bytes'}, \n" +
                 "               {'name':'param2','type':'int'}], \n" +
-                "    'name':'method1', \n" +
+                "    'name':'Method1', \n" +
                 "   'outputs':[{'name':'output0','type':'int'}], \n" +
                 "    'type':'function' \n" +
                 "}\n";
@@ -135,7 +135,7 @@ public class SamplePrecompiledContractTest {
                 "   'constant':false, \n" +
                 "   'inputs':[{'name':'param0','type':'int'}, \n" +
                 "               {'name':'param1','type':'string'}], \n" +
-                "    'name':'method1', \n" +
+                "    'name':'Method1', \n" +
                 "   'outputs':[{'name':'output0','type':'int'}], \n" +
                 "    'type':'function' \n" +
                 "}\n";
@@ -162,7 +162,7 @@ public class SamplePrecompiledContractTest {
         String funcJson = "{\n" +
                 "   'constant':false, \n" +
                 "   'inputs':[], \n" +
-                "    'name':'addBalance', \n" +
+                "    'name':'AddBalance', \n" +
                 "   'outputs':[], \n" +
                 "    'type':'function' \n" +
                 "}\n";
@@ -197,7 +197,7 @@ public class SamplePrecompiledContractTest {
         String funcJson = "{\n" +
                 "   'constant':false, \n" +
                 "   'inputs':[], \n" +
-                "    'name':'incrementResult', \n" +
+                "    'name':'IncrementResult', \n" +
                 "   'outputs':[], \n" +
                 "    'type':'function' \n" +
                 "}\n";
@@ -233,7 +233,7 @@ public class SamplePrecompiledContractTest {
         String funcJson = "{\n" +
                 "   'constant':false, \n" +
                 "   'inputs':[], \n" +
-                "    'name':'getBalance', \n" +
+                "    'name':'GetBalance', \n" +
                 "   'outputs':[{'name':'balance','type':'int'}], \n" +
                 "    'type':'function' \n" +
                 "}\n";
@@ -260,7 +260,7 @@ public class SamplePrecompiledContractTest {
         String funcJson = "{\n" +
                 "   'constant':false, \n" +
                 "   'inputs':[], \n" +
-                "    'name':'getResult', \n" +
+                "    'name':'GetResult', \n" +
                 "   'outputs':[{'name':'result','type':'int'}], \n" +
                 "    'type':'function' \n" +
                 "}\n";
