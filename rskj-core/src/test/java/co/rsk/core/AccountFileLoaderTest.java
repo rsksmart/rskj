@@ -27,7 +27,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static org.ethereum.rpc.TypeConverter.StringHexToByteArray;
+import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
 /**
  * Created by mario on 23/11/16.
@@ -63,17 +63,17 @@ public class AccountFileLoaderTest {
         Assert.assertNotNull(data);
         Hex.toHexString(data.getPrivateKey());
         Assert.assertTrue(data.validatePrivateKey(Hex.decode(PRIVATE_KEY_1)));
-        Assert.assertTrue(data.validateAddress(StringHexToByteArray(ADDRESS_1)));
+        Assert.assertTrue(data.validateAddress(stringHexToByteArray(ADDRESS_1)));
 
         data = accounts.get("1");
         Assert.assertNotNull(data);
-        Assert.assertTrue(data.validatePrivateKey(StringHexToByteArray(PRIVATE_KEY_2)));
-        Assert.assertTrue(data.validateAddress(StringHexToByteArray(ADDRESS_2)));
+        Assert.assertTrue(data.validatePrivateKey(stringHexToByteArray(PRIVATE_KEY_2)));
+        Assert.assertTrue(data.validateAddress(stringHexToByteArray(ADDRESS_2)));
 
         data = accounts.get("2");
         Assert.assertNotNull(data);
-        Assert.assertTrue(data.validatePrivateKey(StringHexToByteArray(PRIVATE_KEY_3)));
-        Assert.assertTrue(data.validateAddress(StringHexToByteArray(ADDRESS_3)));
+        Assert.assertTrue(data.validatePrivateKey(stringHexToByteArray(PRIVATE_KEY_3)));
+        Assert.assertTrue(data.validateAddress(stringHexToByteArray(ADDRESS_3)));
 
     }
 

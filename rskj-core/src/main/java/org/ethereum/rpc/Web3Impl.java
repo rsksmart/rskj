@@ -426,14 +426,14 @@ public class Web3Impl implements Web3 {
         if (repository == null)
             throw new NullPointerException();
 
-        byte[] addressAsByteArray = StringHexToByteArray(address);
+        byte[] addressAsByteArray = stringHexToByteArray(address);
         BigInteger balance = repository.getBalance(addressAsByteArray);
 
         return toJsonHex(balance);
     }
 
     public String eth_getBalance(String address) throws Exception {
-        byte[] addressAsByteArray = StringHexToByteArray(address);
+        byte[] addressAsByteArray = stringHexToByteArray(address);
         BigInteger balance = this.repository.getBalance(addressAsByteArray);
 
         return toJsonHex(balance);
@@ -443,12 +443,12 @@ public class Web3Impl implements Web3 {
     public String eth_getStorageAt(String address, String storageIdx, String blockId) throws Exception {
         String s = null;
         try {
-            byte[] addressAsByteArray = StringHexToByteArray(address);
+            byte[] addressAsByteArray = stringHexToByteArray(address);
             Repository repository = getRepoByJsonBlockId(blockId);
             if(repository == null)
                 return null;
             DataWord storageValue = repository.
-                    getStorageValue(addressAsByteArray, new DataWord(StringHexToByteArray(storageIdx)));
+                    getStorageValue(addressAsByteArray, new DataWord(stringHexToByteArray(storageIdx)));
             if (storageValue != null) {
                 return s = TypeConverter.toJsonHex(storageValue.getData());
             } else {
@@ -464,7 +464,7 @@ public class Web3Impl implements Web3 {
     public String eth_getTransactionCount(String address, String blockId) throws Exception {
         String s = null;
         try {
-            byte[] addressAsByteArray = TypeConverter.StringHexToByteArray(address);
+            byte[] addressAsByteArray = TypeConverter.stringHexToByteArray(address);
 
             Repository repository = getRepoByJsonBlockId(blockId);
             if (repository != null) {
@@ -480,7 +480,7 @@ public class Web3Impl implements Web3 {
     }
 
     public Block getBlockByJSonHash(String blockHash) throws Exception {
-        byte[] bhash = StringHexToByteArray(blockHash);
+        byte[] bhash = stringHexToByteArray(blockHash);
         return worldManager.getBlockchain().getBlockByHash(bhash);
     }
 
@@ -555,7 +555,7 @@ public class Web3Impl implements Web3 {
             if(block == null) {
                 return null;
             }
-            byte[] addressAsByteArray = TypeConverter.StringHexToByteArray(address);
+            byte[] addressAsByteArray = TypeConverter.stringHexToByteArray(address);
             Repository repository = getRepoByJsonBlockId(blockId);
             if(repository != null) {
                 byte[] code = repository.getCode(addressAsByteArray);
@@ -583,7 +583,7 @@ public class Web3Impl implements Web3 {
         if (account == null)
             throw new JsonRpcInvalidParamException("Account not found");
 
-        byte[] dataHash = TypeConverter.StringHexToByteArray(data);
+        byte[] dataHash = TypeConverter.stringHexToByteArray(data);
         ECKey.ECDSASignature signature = account.getEcKey().sign(dataHash);
 
         String signatureAsString = signature.r.toString() + signature.s.toString() + signature.v;
@@ -602,18 +602,18 @@ public class Web3Impl implements Web3 {
             if (account == null)
                 throw new JsonRpcInvalidParamException("From address private key could not be found in this node");
 
-            String toAddress = args.to != null ? Hex.toHexString(StringHexToByteArray(args.to)) : null;
+            String toAddress = args.to != null ? Hex.toHexString(stringHexToByteArray(args.to)) : null;
 
-            BigInteger value = args.value != null ? TypeConverter.StringNumberAsBigInt(args.value) : BigInteger.ZERO;
-            BigInteger gasPrice = args.gasPrice != null ? TypeConverter.StringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
-            BigInteger gasLimit = args.gas != null ? TypeConverter.StringNumberAsBigInt(args.gas) : BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
+            BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;
+            BigInteger gasPrice = args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
+            BigInteger gasLimit = args.gas != null ? TypeConverter.stringNumberAsBigInt(args.gas) : BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
 
             if (args.data != null && args.data.startsWith("0x"))
                 args.data = args.data.substring(2);
 
             PendingState pendingState = worldManager.getPendingState();
             synchronized (pendingState) {
-                BigInteger accountNonce = args.nonce != null ? TypeConverter.StringNumberAsBigInt(args.nonce) : (pendingState.getRepository().getNonce(account.getAddress()));
+                BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : (pendingState.getRepository().getNonce(account.getAddress()));
                 Transaction tx = Transaction.create(toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
                 tx.sign(account.getEcKey().getPrivKeyBytes());
                 eth.submitTransaction(tx);
@@ -629,7 +629,7 @@ public class Web3Impl implements Web3 {
     public String eth_sendRawTransaction(String rawData) throws Exception {
         String s = null;
         try {
-            Transaction tx = new Transaction(StringHexToByteArray(rawData));
+            Transaction tx = new Transaction(stringHexToByteArray(rawData));
 
             if (null == tx.getGasLimit()
                     || null == tx.getGasPrice()
@@ -735,7 +735,7 @@ public class Web3Impl implements Web3 {
         long blockNumber;
 
         try {
-            blockNumber = TypeConverter.StringNumberAsBigInt(number).longValue();
+            blockNumber = TypeConverter.stringNumberAsBigInt(number).longValue();
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
             throw new JsonRpcInvalidParamException("invalid blocknumber " + number);
         }
@@ -781,7 +781,7 @@ public class Web3Impl implements Web3 {
         try {
             Blockchain blockchain = worldManager.getBlockchain();
 
-            byte[] txHash = StringHexToByteArray(transactionHash);
+            byte[] txHash = stringHexToByteArray(transactionHash);
             Block block = null;
 
             TransactionInfo txInfo = blockchain.getTransactionInfo(txHash);
@@ -864,7 +864,7 @@ public class Web3Impl implements Web3 {
         logger.trace("eth_getTransactionReceipt(" + transactionHash + ")");
 
         Blockchain blockchain = worldManager.getBlockchain();
-        byte[] hash = StringHexToByteArray(transactionHash);
+        byte[] hash = stringHexToByteArray(transactionHash);
         TransactionInfo txInfo = blockchain.getReceiptStore().getInMainChain(hash, worldManager.getBlockStore());
 
         if (txInfo == null) {
@@ -883,7 +883,7 @@ public class Web3Impl implements Web3 {
     public BlockResult eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) throws Exception {
         BlockResult s = null;
         try {
-            Block block = this.worldManager.getBlockchain().getBlockByHash(StringHexToByteArray(blockHash));
+            Block block = this.worldManager.getBlockchain().getBlockByHash(stringHexToByteArray(blockHash));
             if (block == null) {
                 return null;
             }
@@ -1124,11 +1124,11 @@ public class Web3Impl implements Web3 {
             LogFilter logFilter = new LogFilter();
 
             if (fr.address instanceof String) {
-                logFilter.withContractAddress(StringHexToByteArray((String) fr.address));
+                logFilter.withContractAddress(stringHexToByteArray((String) fr.address));
             } else if (fr.address instanceof String[]) {
                 List<byte[]> addr = new ArrayList<>();
                 for (String s : ((String[]) fr.address)) {
-                    addr.add(StringHexToByteArray(s));
+                    addr.add(stringHexToByteArray(s));
                 }
                 logFilter.withContractAddress(addr.toArray(new byte[0][]));
             }
@@ -1138,11 +1138,11 @@ public class Web3Impl implements Web3 {
                     if (topic == null) {
                         logFilter.withTopic(null);
                     } else if (topic instanceof String) {
-                        logFilter.withTopic(new DataWord(StringHexToByteArray((String) topic)).getData());
+                        logFilter.withTopic(new DataWord(stringHexToByteArray((String) topic)).getData());
                     } else if (topic instanceof String[]) {
                         List<byte[]> t = new ArrayList<>();
                         for (String s : ((String[]) topic)) {
-                            t.add(new DataWord(StringHexToByteArray(s)).getData());
+                            t.add(new DataWord(stringHexToByteArray(s)).getData());
                         }
                         logFilter.withTopic(t.toArray(new byte[0][]));
                     }
@@ -1234,7 +1234,7 @@ public class Web3Impl implements Web3 {
             }
 
             synchronized (filterLock) {
-                return s = installedFilters.remove(StringHexToBigInteger(id).intValue()) != null;
+                return s = installedFilters.remove(stringHexToBigInteger(id).intValue()) != null;
             }
         } finally {
             if (logger.isDebugEnabled()) {
@@ -1248,7 +1248,7 @@ public class Web3Impl implements Web3 {
         Object[] s = null;
         try {
             synchronized (filterLock) {
-                Filter filter = installedFilters.get(StringHexToBigInteger(id).intValue());
+                Filter filter = installedFilters.get(stringHexToBigInteger(id).intValue());
                 if (filter == null) {
                     return null;
                 }
@@ -1327,7 +1327,7 @@ public class Web3Impl implements Web3 {
             throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
         } else {
             try {
-                long blockNumber = StringHexToBigInteger(id).longValue();
+                long blockNumber = stringHexToBigInteger(id).longValue();
                 return worldManager.getBlockchain().getBlockByNumber(blockNumber);
             } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
                 throw new JsonRpcInvalidParamException("invalid blocknumber " + id);
@@ -1451,12 +1451,12 @@ public class Web3Impl implements Web3 {
         if (account == null)
             throw new Exception("From address private key could not be found in this node");
 
-        String toAddress = args.to != null ? Hex.toHexString(StringHexToByteArray(args.to)) : null;
+        String toAddress = args.to != null ? Hex.toHexString(stringHexToByteArray(args.to)) : null;
 
-        BigInteger accountNonce = args.nonce != null ? TypeConverter.StringNumberAsBigInt(args.nonce) : (worldManager.getPendingState().getRepository().getNonce(account.getAddress()));
-        BigInteger value = args.value != null ? TypeConverter.StringNumberAsBigInt(args.value) : BigInteger.ZERO;
-        BigInteger gasPrice = args.gasPrice != null ? TypeConverter.StringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
-        BigInteger gasLimit = args.gas != null ? TypeConverter.StringNumberAsBigInt(args.gas) : BigInteger.valueOf(GasCost.TRANSACTION);
+        BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : (worldManager.getPendingState().getRepository().getNonce(account.getAddress()));
+        BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;
+        BigInteger gasPrice = args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
+        BigInteger gasLimit = args.gas != null ? TypeConverter.stringNumberAsBigInt(args.gas) : BigInteger.valueOf(GasCost.TRANSACTION);
 
         if (args.data != null && args.data.startsWith("0x"))
             args.data = args.data.substring(2);
@@ -1481,7 +1481,7 @@ public class Web3Impl implements Web3 {
             }
         }
 
-        return this.wallet.unlockAccount(StringHexToByteArray(address), passphrase, dur);
+        return this.wallet.unlockAccount(stringHexToByteArray(address), passphrase, dur);
     }
 
     public Map<String, Object> eth_bridgeState() throws Exception {
@@ -1498,7 +1498,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public boolean personal_lockAccount(String address) {
-        return this.wallet.lockAccount(StringHexToByteArray(address));
+        return this.wallet.lockAccount(stringHexToByteArray(address));
     }
 
     private Account getDefaultAccount() {
@@ -1513,19 +1513,19 @@ public class Web3Impl implements Web3 {
 
     @VisibleForTesting
     public Account getAccount(String address) {
-        return this.wallet.getAccount(StringHexToByteArray(address));
+        return this.wallet.getAccount(stringHexToByteArray(address));
     }
 
     @VisibleForTesting
     public Account getAccount(String address, String passphrase) {
-        return this.wallet.getAccount(StringHexToByteArray(address), passphrase);
+        return this.wallet.getAccount(stringHexToByteArray(address), passphrase);
     }
 
     private byte[] getKeyToSign(String address) {
         byte[] privateKey = new byte[32];
 
         Account account;
-        account = (address != null) ? this.wallet.getAccount(StringHexToByteArray(address)) : this.getDefaultAccount();
+        account = (address != null) ? this.wallet.getAccount(stringHexToByteArray(address)) : this.getDefaultAccount();
 
         if (account != null)
             privateKey = account.getEcKey().getPrivKeyBytes();
@@ -1547,7 +1547,7 @@ public class Web3Impl implements Web3 {
     @Override
     public boolean evm_revert(String snapshotId) {
         try {
-            int sid = StringHexToBigInteger(snapshotId).intValue();
+            int sid = stringHexToBigInteger(snapshotId).intValue();
             return snapshotManager.revertToSnapshot(worldManager.getBlockchain(), sid);
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
             throw new JsonRpcInvalidParamException("invalid snapshot id " + snapshotId, e);
@@ -1574,7 +1574,7 @@ public class Web3Impl implements Web3 {
     @Override
     public String evm_increaseTime(String seconds) {
         try {
-            long nseconds = StringHexToBigInteger(seconds).longValue();
+            long nseconds = stringHexToBigInteger(seconds).longValue();
             String result = toJsonHex(worldManager.getMinerServer().increaseTime(nseconds));
             if (logger.isDebugEnabled())
                 logger.debug("evm_increaseTime({}): {}", seconds, result);

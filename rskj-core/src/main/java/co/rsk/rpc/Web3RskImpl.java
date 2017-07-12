@@ -44,8 +44,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.ethereum.rpc.TypeConverter.StringHexToBigInteger;
-
 /**
  * Created by adrian.eidelman on 3/11/2016.
  */
