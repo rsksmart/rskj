@@ -143,7 +143,7 @@ public class MinerHelper {
         BigInteger minGasLimit = BigInteger.valueOf(SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getMIN_GAS_LIMIT());
         BigInteger targetGasLimit = BigInteger.valueOf(SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getTARGET_GAS_LIMIT());
         BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
-        BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit, BigInteger.valueOf(totalGasUsed), minGasLimit, targetGasLimit);
+        BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit, BigInteger.valueOf(totalGasUsed), minGasLimit, targetGasLimit, false);
 
         newBlock.getHeader().setGasLimit(gasLimit.toByteArray());
         newBlock.getHeader().setPaidFees(totalPaidFees);

@@ -38,7 +38,7 @@ public class GasLimitCalculatorTest {
         BigInteger parentGasLimit = minGasLimit.add(BigInteger.valueOf(21000));
         BigInteger targetGasLimit = BigInteger.valueOf(constants.getTARGET_GAS_LIMIT());
 
-        BigInteger newGasLimit = calc.calculateBlockGasLimit(parentGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit);
+        BigInteger newGasLimit = calc.calculateBlockGasLimit(parentGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, false);
 
         BigInteger factor = parentGasLimit.divide(BigInteger.valueOf(constants.getGAS_LIMIT_BOUND_DIVISOR()));
         Assert.assertTrue(newGasLimit.compareTo(parentGasLimit) < 0);
@@ -50,7 +50,7 @@ public class GasLimitCalculatorTest {
         GasLimitCalculator calc = new GasLimitCalculator();
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMIN_GAS_LIMIT());
         BigInteger targetGasLimit = BigInteger.valueOf(constants.getTARGET_GAS_LIMIT());
-        BigInteger newGasLimit = calc.calculateBlockGasLimit(minGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit);
+        BigInteger newGasLimit = calc.calculateBlockGasLimit(minGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, false);
 
         Assert.assertTrue(newGasLimit.compareTo(minGasLimit) == 0);
     }
@@ -62,7 +62,7 @@ public class GasLimitCalculatorTest {
         BigInteger targetGasLimit = BigInteger.valueOf(constants.getTARGET_GAS_LIMIT());
 
         // I used zero as parent gas limit so that there is no decay
-        BigInteger newGasLimit = calc.calculateBlockGasLimit(BigInteger.ZERO, gasUsed, BigInteger.ZERO, targetGasLimit);
+        BigInteger newGasLimit = calc.calculateBlockGasLimit(BigInteger.ZERO, gasUsed, BigInteger.ZERO, targetGasLimit, false);
 
         BigInteger expected = BigInteger.valueOf(14); // parentGasUsed * 3 / 2) / 1024
         Assert.assertTrue(newGasLimit.compareTo(expected) == 0);
@@ -74,7 +74,7 @@ public class GasLimitCalculatorTest {
         BigInteger targetGasLimit = BigInteger.valueOf(constants.getTARGET_GAS_LIMIT());
         BigInteger gasUsed = targetGasLimit;
 
-        BigInteger newGasLimit = calc.calculateBlockGasLimit(targetGasLimit, gasUsed, BigInteger.ZERO, targetGasLimit);
+        BigInteger newGasLimit = calc.calculateBlockGasLimit(targetGasLimit, gasUsed, BigInteger.ZERO, targetGasLimit, false);
 
         Assert.assertTrue(newGasLimit.compareTo(targetGasLimit) == 0);
     }
