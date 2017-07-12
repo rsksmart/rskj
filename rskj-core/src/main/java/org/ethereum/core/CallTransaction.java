@@ -227,10 +227,10 @@ public class CallTransaction {
     }
 
     public enum FunctionType {
-        CONSTRUCTOR,
-        FUNCTION,
-        EVENT,
-        FALLBACK
+        constructor,
+        function,
+        event,
+        fallback
     }
 
     public static class Function {
@@ -380,7 +380,7 @@ public class CallTransaction {
             Function ret = new Function();
             ret.name = funcName;
             ret.constant = false;
-            ret.type = FunctionType.FUNCTION;
+            ret.type = FunctionType.function;
             ret.inputs = new Param[paramTypes.length];
             for (int i = 0; i < paramTypes.length; i++) {
                 ret.inputs[i] = new Param();
@@ -418,7 +418,7 @@ public class CallTransaction {
 
         public Function getConstructor() {
             for (Function function : functions) {
-                if (function.type == FunctionType.CONSTRUCTOR) {
+                if (function.type == FunctionType.constructor) {
                     return function;
                 }
             }
@@ -479,7 +479,7 @@ public class CallTransaction {
         @Override
         public String toString() {
             return "[" + "contract=" + contract +
-                    (function.type == FunctionType.EVENT ? ", event=" : ", function=")
+                    (function.type == FunctionType.event ? ", event=" : ", function=")
                     + function + ", args=" + Arrays.toString(args) + ']';
         }
     }
