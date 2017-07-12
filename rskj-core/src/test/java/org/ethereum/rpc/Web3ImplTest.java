@@ -917,7 +917,7 @@ public class Web3ImplTest {
 
         Ethereum ethMock = Mockito.mock(Ethereum.class);
         ProgramResult res = new ProgramResult();
-        res.setHReturn(TypeConverter.StringHexToByteArray("0x0000000000000000000000000000000000000000000000000000000064617665"));
+        res.setHReturn(TypeConverter.stringHexToByteArray("0x0000000000000000000000000000000000000000000000000000000064617665"));
         Mockito.when(ethMock.callConstantCallTransaction(argThat(new TransactionFromMatcher(tx.getSender())), eq(block1))).thenReturn(res);
         web3.eth = ethMock;
 
@@ -974,7 +974,7 @@ public class Web3ImplTest {
 
         Ethereum ethMock = Mockito.mock(Ethereum.class);
         ProgramResult res = new ProgramResult();
-        res.setHReturn(TypeConverter.StringHexToByteArray("0x0000000000000000000000000000000000000000000000000000000064617665"));
+        res.setHReturn(TypeConverter.stringHexToByteArray("0x0000000000000000000000000000000000000000000000000000000064617665"));
         Mockito.when(ethMock.callConstantCallTransaction(argThat(new TransactionFromMatcher(tx.getSender())), eq(block1))).thenReturn(res);
         web3.eth = ethMock;
 
