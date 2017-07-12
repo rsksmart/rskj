@@ -75,20 +75,20 @@ public class MinerServerImpl implements MinerServer {
 
     private static final int CACHE_SIZE = 20;
 
-    @GuardedBy("LOCK")
+    @GuardedBy("lock")
     private LinkedHashMap<Sha3Hash, Block> blocksWaitingforPoW;
 
-    @GuardedBy("LOCK")
+    @GuardedBy("lock")
     private Sha3Hash latestblockHashWaitingforPoW;
-    @GuardedBy("LOCK")
+    @GuardedBy("lock")
     private Sha3Hash latestParentHash;
-    @GuardedBy("LOCK")
+    @GuardedBy("lock")
     private Block latestBlock;
-    @GuardedBy("LOCK")
+    @GuardedBy("lock")
     private long latestPaidFeesWithNotify;
-    @GuardedBy("LOCK")
+    @GuardedBy("lock")
     private volatile MinerWork currentWork; // This variable can be read at anytime without the lock.
-    private final Object LOCK = new Object();
+    private final Object lock = new Object();
 
     private final byte[] coinbaseAddress;
 
@@ -150,7 +150,7 @@ public class MinerServerImpl implements MinerServer {
 
         Block newBlock;
         Sha3Hash key = new Sha3Hash(TypeConverter.removeZeroX(blockHashForMergedMining));
-        synchronized (LOCK) {
+        synchronized (lock) {
             Block workingBlock = blocksWaitingforPoW.get(key);
 
             if (workingBlock == null) {
@@ -267,7 +267,7 @@ public class MinerServerImpl implements MinerServer {
              * the currentWork got updated when we acquired the lock. In that case, we should just return the new
              * currentWork, regardless of what it is.
              */
-            synchronized (LOCK) {
+            synchronized (lock) {
                 if (currentWork != work ||  currentWork == null) {
                     return currentWork;
                 }
@@ -333,7 +333,7 @@ public class MinerServerImpl implements MinerServer {
         removePendingTransactions(txsToRemove);
         executor.executeAndFill(newBlock, newBlockParent);
 
-        synchronized (LOCK) {
+        synchronized (lock) {
             Sha3Hash parentHash = new Sha3Hash(newBlockParent.getHash());
             boolean notify = this.getNotify(newBlock, parentHash);
 
@@ -364,7 +364,7 @@ public class MinerServerImpl implements MinerServer {
      * @param parentHash block's parent hash.
      * @return true if miners should be notified about this new block to mine.
      */
-    @GuardedBy("LOCK")
+    @GuardedBy("lock")
     private boolean getNotify(Block block, Sha3Hash parentHash) {
         boolean notify;
         long feesPaidToMiner = block.getFeesPaidToMiner();
