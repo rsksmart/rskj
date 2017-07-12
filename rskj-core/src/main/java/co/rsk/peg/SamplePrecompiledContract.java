@@ -97,7 +97,7 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
         }
     }
 
-    public int Method1(Object... args)
+    public int method1(Object... args)
     {
         byte[] addr = Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
         byte[] contractAddr = Hex.decode(contractAddress);
@@ -116,7 +116,7 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
         return result;
     }
 
-    public void AddBalance(Object... args)
+    public void addBalance(Object... args)
     {
         byte[] addr = Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
 
@@ -124,14 +124,14 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
         repository.addBalance(addr, balance);
     }
 
-    public int GetBalance(Object... args)
+    public int getBalance(Object... args)
     {
         byte[] addr = Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
 
         return repository.getBalance(addr).intValue();
     }
 
-    public void IncrementResult(Object... args)
+    public void incrementResult(Object... args)
     {
         byte[] contractAddr = Hex.decode(contractAddress);
 
@@ -142,7 +142,7 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
         repository.addStorageRow(contractAddr, keyWord, valWord);
     }
 
-    public int GetResult(Object... args)
+    public int getResult(Object... args)
     {
         byte[] contractAddr = Hex.decode(contractAddress);
 
@@ -167,7 +167,7 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
                         "   'inputs':[{'name':'param0','type':'int'}, \n" +
                         "               {'name':'param1','type':'bytes'}, \n" +
                         "               {'name':'param2','type':'int'}], \n" +
-                        "    'name':'Method1', \n" +
+                        "    'name':'method1', \n" +
                         "   'outputs':[{'name':'output0','type':'int'}], \n" +
                         "    'type':'function' \n" +
                         "}\n";
@@ -178,7 +178,7 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
                         "   'constant':false, \n" +
                         "   'inputs':[{'name':'param0','type':'int'}, \n" +
                         "               {'name':'param1','type':'string'}], \n" +
-                        "    'name':'Method1', \n" +
+                        "    'name':'method1', \n" +
                         "   'outputs':[{'name':'output0','type':'int'}], \n" +
                         "    'type':'function' \n" +
                         "}\n";
@@ -187,7 +187,7 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
             case ADDBALANCE_SIG:
                 funcJson = "{\n" +
                         "   'constant':false, \n" +
-                        "    'name':'AddBalance', \n" +
+                        "    'name':'addBalance', \n" +
                         "   'inputs':[], \n" +
                         "   'outputs':[], \n" +
                         "    'type':'function' \n" +
@@ -197,7 +197,7 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
             case INCREMENTRESULT_SIG:
                 funcJson = "{\n" +
                         "   'constant':false, \n" +
-                        "    'name':'IncrementResult', \n" +
+                        "    'name':'incrementResult', \n" +
                         "   'inputs':[], \n" +
                         "   'outputs':[], \n" +
                         "    'type':'function' \n" +
@@ -207,7 +207,7 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
             case GETBALANCE_SIG:
                 funcJson = "{\n" +
                         "   'constant':true, \n" +
-                        "    'name':'GetBalance', \n" +
+                        "    'name':'getBalance', \n" +
                         "   'inputs':[], \n" +
                         "   'outputs':[{'name':'balance','type':'int'}], \n" +
                         "    'type':'function' \n" +
@@ -217,7 +217,7 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
             case GETRESULT_SIG:
                 funcJson = "{\n" +
                         "   'constant':true, \n" +
-                        "    'name':'GetResult', \n" +
+                        "    'name':'getResult', \n" +
                         "   'inputs':[], \n" +
                         "   'outputs':[{'name':'result','type':'int'}], \n" +
                         "    'type':'function' \n" +
