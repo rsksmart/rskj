@@ -82,7 +82,7 @@ public class TransactionExecutor {
 
     PrecompiledContracts.PrecompiledContract precompiledContract;
 
-    BigInteger m_endGas = BigInteger.ZERO;
+    BigInteger mEndGas = BigInteger.ZERO;
     long basicTxCost = 0;
     List<LogInfo> logs = null;
 
@@ -252,7 +252,7 @@ public class TransactionExecutor {
                 return;
             } else {
                 long gasUsed = requiredGas + basicTxCost;
-                m_endGas = txGasLimit.subtract(BigInteger.valueOf(requiredGas + basicTxCost));
+                mEndGas = txGasLimit.subtract(BigInteger.valueOf(requiredGas + basicTxCost));
 
                 // FIXME: save return for vm trace
                 try {
@@ -267,7 +267,7 @@ public class TransactionExecutor {
         } else {
             byte[] code = track.getCode(targetAddress);
             if (isEmpty(code)) {
-                m_endGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
+                mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
                 result.spendGas(basicTxCost);
             } else {
                 ProgramInvoke programInvoke =
@@ -287,7 +287,7 @@ public class TransactionExecutor {
     private void create() {
         byte[] newContractAddress = tx.getContractAddress();
         if (isEmpty(tx.getData())) {
-            m_endGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
+            mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
             cacheTrack.createAccount(tx.getContractAddress());
         } else {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, executionBlock, cacheTrack, blockStore);
@@ -328,14 +328,14 @@ public class TransactionExecutor {
                 vm.play(program);
 
             result = program.getResult();
-            m_endGas = toBI(tx.getGasLimit()).subtract(toBI(program.getResult().getGasUsed()));
+            mEndGas = toBI(tx.getGasLimit()).subtract(toBI(program.getResult().getGasUsed()));
 
             if (tx.isContractCreation()) {
 
                 int returnDataGasValue = getLength(program.getResult().getHReturn()) * GasCost.CREATE_DATA;
-                if (m_endGas.compareTo(BigInteger.valueOf(returnDataGasValue)) >= 0) {
+                if (mEndGas.compareTo(BigInteger.valueOf(returnDataGasValue)) >= 0) {
 
-                    m_endGas = m_endGas.subtract(BigInteger.valueOf(returnDataGasValue));
+                    mEndGas = mEndGas.subtract(BigInteger.valueOf(returnDataGasValue));
                     program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
                     cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
                 } else {
@@ -357,7 +357,7 @@ public class TransactionExecutor {
             // TODO: catch whatever they will throw on you !!!
 //            https://github.com/ethereum/cpp-ethereum/blob/develop/libethereum/Executive.cpp#L241
             cacheTrack.rollback();
-            m_endGas = BigInteger.ZERO;
+            mEndGas = BigInteger.ZERO;
         }
     }
 
@@ -384,7 +384,7 @@ public class TransactionExecutor {
         }
 
         TransactionExecutionSummary.Builder summaryBuilder = TransactionExecutionSummary.builderFor(tx)
-                .gasLeftover(m_endGas)
+                .gasLeftover(mEndGas)
                 .logs(notRejectedLogInfos)
                 .result(result.getHReturn());
 
@@ -393,7 +393,7 @@ public class TransactionExecutor {
             result.addFutureRefund(result.getDeleteAccounts().size() * GasCost.SUICIDE_REFUND);
             long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
             byte[] addr = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
-            m_endGas = m_endGas.add(BigInteger.valueOf(gasRefund));
+            mEndGas = mEndGas.add(BigInteger.valueOf(gasRefund));
 
             summaryBuilder
                     .gasUsed(toBI(result.getGasUsed()))
@@ -489,7 +489,7 @@ public class TransactionExecutor {
     }
 
     public long getGasUsed() {
-        return toBI(tx.getGasLimit()).subtract(m_endGas).longValue();
+        return toBI(tx.getGasLimit()).subtract(mEndGas).longValue();
     }
 
     public long getPaidFees() { return paidFees; }
