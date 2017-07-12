@@ -3,9 +3,11 @@ package co.rsk.scoring;
 import co.rsk.net.NodeID;
 import org.junit.Assert;
 import org.junit.Test;
+import org.spongycastle.util.encoders.Hex;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -293,6 +295,80 @@ public class PeerScoringManagerTest {
         Assert.assertFalse(manager.getPeerScoring(node2).hasGoodReputation());
         Assert.assertFalse(manager.getPeerScoring(node3).hasGoodReputation());
         Assert.assertFalse(manager.getPeerScoring(node4).hasGoodReputation());
+    }
+
+    @Test
+    public void getPeersInformationFromEmptyManager() {
+        PeerScoringManager manager = createPeerScoringManager();
+
+        List<PeerScoringInformation> result = manager.getPeersInformation();
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void getPeersInformationFromManagerWithOneEvent() throws UnknownHostException {
+        PeerScoringManager manager = createPeerScoringManager();
+        NodeID node = generateNodeID();
+        InetAddress address = generateIPAddressV4();
+
+        manager.recordEvent(node, address, EventType.VALID_BLOCK);
+
+        List<PeerScoringInformation> result = manager.getPeersInformation();
+
+        Assert.assertNotNull(result);
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(2, result.size());
+
+        PeerScoringInformation info = result.get(0);
+        Assert.assertEquals(Hex.toHexString(node.getID()).substring(0, 8), info.getId());
+        Assert.assertEquals(1, info.getValidBlocks());
+        Assert.assertEquals(0, info.getInvalidBlocks());
+        Assert.assertEquals(0, info.getValidTransactions());
+        Assert.assertEquals(0, info.getInvalidTransactions());
+        Assert.assertTrue(info.getScore() > 0);
+
+        info = result.get(1);
+        Assert.assertEquals(address.getHostAddress(), info.getId());
+        Assert.assertEquals(1, info.getValidBlocks());
+        Assert.assertEquals(0, info.getInvalidBlocks());
+        Assert.assertEquals(0, info.getValidTransactions());
+        Assert.assertEquals(0, info.getInvalidTransactions());
+        Assert.assertTrue(info.getScore() > 0);
+    }
+
+    @Test
+    public void getPeersInformationFromManagerWithThreeEvents() throws UnknownHostException {
+        PeerScoringManager manager = createPeerScoringManager();
+        NodeID node = generateNodeID();
+        InetAddress address = generateIPAddressV4();
+
+        manager.recordEvent(node, address, EventType.VALID_BLOCK);
+        manager.recordEvent(node, address, EventType.VALID_TRANSACTION);
+        manager.recordEvent(node, address, EventType.VALID_BLOCK);
+
+        List<PeerScoringInformation> result = manager.getPeersInformation();
+
+        Assert.assertNotNull(result);
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(2, result.size());
+
+        PeerScoringInformation info = result.get(0);
+        Assert.assertEquals(Hex.toHexString(node.getID()).substring(0, 8), info.getId());
+        Assert.assertEquals(2, info.getValidBlocks());
+        Assert.assertEquals(0, info.getInvalidBlocks());
+        Assert.assertEquals(1, info.getValidTransactions());
+        Assert.assertEquals(0, info.getInvalidTransactions());
+        Assert.assertTrue(info.getScore() > 0);
+
+        info = result.get(1);
+        Assert.assertEquals(address.getHostAddress(), info.getId());
+        Assert.assertEquals(2, info.getValidBlocks());
+        Assert.assertEquals(0, info.getInvalidBlocks());
+        Assert.assertEquals(1, info.getValidTransactions());
+        Assert.assertEquals(0, info.getInvalidTransactions());
+        Assert.assertTrue(info.getScore() > 0);
     }
 
     private static NodeID generateNodeID() {

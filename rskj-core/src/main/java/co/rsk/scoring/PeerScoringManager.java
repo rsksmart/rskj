@@ -2,12 +2,12 @@ package co.rsk.scoring;
 
 import co.rsk.net.NodeID;
 import com.google.common.annotations.VisibleForTesting;
+import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.net.InetAddress;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by ajlopez on 28/06/2017.
@@ -86,6 +86,15 @@ public class PeerScoringManager {
 
     public void removeBannedAddress(InetAddress address) {
         this.addressTable.removeAddress(address);
+    }
+
+    public List<PeerScoringInformation> getPeersInformation() {
+        List<PeerScoringInformation> list = new ArrayList<>(this.peersByNodeID.size() + this.peersByAddress.size());
+
+        list.addAll(this.peersByNodeID.entrySet().stream().map(entry -> new PeerScoringInformation(entry.getValue(), Hex.toHexString(entry.getKey().getID()).substring(0, 8))).collect(Collectors.toList()));
+        list.addAll(this.peersByAddress.entrySet().stream().map(entry -> new PeerScoringInformation(entry.getValue(), entry.getKey().getHostAddress())).collect(Collectors.toList()));
+
+        return list;
     }
 
     @VisibleForTesting
