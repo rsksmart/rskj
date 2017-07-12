@@ -4,6 +4,7 @@ package co.rsk.scoring;
  * Created by ajlopez on 12/07/2017.
  */
 public class PeerScoringInformation {
+    private int successfulHandhshakes;
     private int validBlocks;
     private int validTransactions;
     private int invalidBlocks;
@@ -15,6 +16,7 @@ public class PeerScoringInformation {
 
     public PeerScoringInformation(PeerScoring scoring, String id) {
         this.goodReputation = scoring.hasGoodReputation();
+        this.successfulHandhshakes = scoring.getEventCounter(EventType.SUCCESSFUL_HANDSHAKE);
         this.validBlocks = scoring.getEventCounter(EventType.VALID_BLOCK);
         this.invalidBlocks = scoring.getEventCounter(EventType.INVALID_BLOCK);
         this.validTransactions = scoring.getEventCounter(EventType.VALID_TRANSACTION);
@@ -31,6 +33,8 @@ public class PeerScoringInformation {
     public boolean getGoodReputation() {
         return this.goodReputation;
     }
+
+    public int getSuccessfulHandhshakes() { return this.successfulHandhshakes; }
 
     public int getValidBlocks() {
         return this.validBlocks;
@@ -51,4 +55,6 @@ public class PeerScoringInformation {
     public int getInvalidTransactions() {
         return this.invalidTransactions;
     }
+
+    public int getPunishments() { return this.punishments; }
 }

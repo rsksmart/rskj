@@ -327,6 +327,8 @@ public class PeerScoringManagerTest {
         Assert.assertEquals(0, info.getInvalidBlocks());
         Assert.assertEquals(0, info.getValidTransactions());
         Assert.assertEquals(0, info.getInvalidTransactions());
+        Assert.assertEquals(0, info.getPunishments());
+        Assert.assertEquals(0, info.getSuccessfulHandhshakes());
         Assert.assertTrue(info.getScore() > 0);
 
         info = result.get(1);
@@ -335,6 +337,8 @@ public class PeerScoringManagerTest {
         Assert.assertEquals(0, info.getInvalidBlocks());
         Assert.assertEquals(0, info.getValidTransactions());
         Assert.assertEquals(0, info.getInvalidTransactions());
+        Assert.assertEquals(0, info.getPunishments());
+        Assert.assertEquals(0, info.getSuccessfulHandhshakes());
         Assert.assertTrue(info.getScore() > 0);
     }
 
@@ -360,6 +364,8 @@ public class PeerScoringManagerTest {
         Assert.assertEquals(0, info.getInvalidBlocks());
         Assert.assertEquals(1, info.getValidTransactions());
         Assert.assertEquals(0, info.getInvalidTransactions());
+        Assert.assertEquals(0, info.getPunishments());
+        Assert.assertEquals(0, info.getSuccessfulHandhshakes());
         Assert.assertTrue(info.getScore() > 0);
 
         info = result.get(1);
@@ -368,6 +374,8 @@ public class PeerScoringManagerTest {
         Assert.assertEquals(0, info.getInvalidBlocks());
         Assert.assertEquals(1, info.getValidTransactions());
         Assert.assertEquals(0, info.getInvalidTransactions());
+        Assert.assertEquals(0, info.getPunishments());
+        Assert.assertEquals(0, info.getSuccessfulHandhshakes());
         Assert.assertTrue(info.getScore() > 0);
     }
 
