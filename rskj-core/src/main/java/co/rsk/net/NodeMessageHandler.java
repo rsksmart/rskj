@@ -139,8 +139,10 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             }
             this.queue.offer(new MessageTask(sender, message));
         } else {
+            recordEvent(sender, EventType.REPEATED_MESSAGE);
             logger.trace("Received message already known, not added to the queue");
         }
+
         logger.trace("End post message (queue size {})", this.queue.size());
 
         // There's an obvious race condition here, but fear not.

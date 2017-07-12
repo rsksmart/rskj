@@ -100,6 +100,27 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
+    public void postBlockMessageTwice() throws InterruptedException {
+        MessageSender sender = new SimpleMessageSender();
+        PeerScoringManager scoring = createPeerScoringManager();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, scoring);
+        Block block = new Block(Hex.decode(rlp));
+        Message message = new BlockMessage(block);
+
+        processor.postMessage(sender, message);
+        processor.postMessage(sender, message);
+        processor.postMessage(sender, message);
+
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getNodeID());
+
+        Assert.assertNotNull(pscoring);
+        Assert.assertFalse(pscoring.isEmpty());
+        Assert.assertEquals(1, pscoring.getTotalEventCounter());
+        Assert.assertEquals(1, pscoring.getEventCounter(EventType.REPEATED_MESSAGE));
+    }
+
+    @Test
     public void postBlockMessageUsingProcessor() throws InterruptedException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null);

@@ -5,6 +5,8 @@ package co.rsk.scoring;
  */
 public class PeerScoringInformation {
     private int successfulHandhshakes;
+    private int failedHandhshakes;
+    private int repeatedMessages;
     private int validBlocks;
     private int validTransactions;
     private int invalidBlocks;
@@ -17,6 +19,8 @@ public class PeerScoringInformation {
     public PeerScoringInformation(PeerScoring scoring, String id) {
         this.goodReputation = scoring.hasGoodReputation();
         this.successfulHandhshakes = scoring.getEventCounter(EventType.SUCCESSFUL_HANDSHAKE);
+        this.failedHandhshakes = scoring.getEventCounter(EventType.FAILED_HANDSHAKE);
+        this.repeatedMessages = scoring.getEventCounter(EventType.REPEATED_MESSAGE);
         this.validBlocks = scoring.getEventCounter(EventType.VALID_BLOCK);
         this.invalidBlocks = scoring.getEventCounter(EventType.INVALID_BLOCK);
         this.validTransactions = scoring.getEventCounter(EventType.VALID_TRANSACTION);
@@ -35,6 +39,10 @@ public class PeerScoringInformation {
     }
 
     public int getSuccessfulHandhshakes() { return this.successfulHandhshakes; }
+
+    public int getFailedHandhshakes() { return this.failedHandhshakes; }
+
+    public int getRepeatedMessages() { return this.repeatedMessages; }
 
     public int getValidBlocks() {
         return this.validBlocks;

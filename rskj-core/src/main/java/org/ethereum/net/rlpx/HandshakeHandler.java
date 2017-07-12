@@ -200,6 +200,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
                         loggerNet.info("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), helloMessage);
                     isHandshakeDone = true;
                     this.channel.publicRLPxHandshakeFinished(ctx, frameCodec, helloMessage);
+                    recordSuccessfulHandshake(ctx);
                 } else {
                     DisconnectMessage message = new DisconnectMessage(payload);
                     if (loggerNet.isInfoEnabled())
@@ -296,6 +297,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
                 channel.sendHelloMessage(ctx, frameCodec, Hex.toHexString(nodeId), inboundHelloMessage);
                 isHandshakeDone = true;
                 this.channel.publicRLPxHandshakeFinished(ctx, frameCodec, inboundHelloMessage);
+                recordSuccessfulHandshake(ctx);
             }
         }
         channel.getNodeStatistics().rlpxInHello.add();
@@ -356,6 +358,14 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     }
 
     private void recordFailedHandshake(ChannelHandlerContext ctx) {
+        recordEvent(ctx, EventType.FAILED_HANDSHAKE);
+    }
+
+    private void recordSuccessfulHandshake(ChannelHandlerContext ctx) {
+        recordEvent(ctx, EventType.SUCCESSFUL_HANDSHAKE);
+    }
+
+    private void recordEvent(ChannelHandlerContext ctx, EventType event) {
         SocketAddress socketAddress = ctx.channel().remoteAddress();
 
         if (socketAddress instanceof InetSocketAddress) {
@@ -367,7 +377,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
                 nodeID = new NodeID(nid);
 
             InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
-            this.rsk.getPeerScoringManager().recordEvent(nodeID, address, EventType.FAILED_HANDSHAKE);
+            this.rsk.getPeerScoringManager().recordEvent(nodeID, address, event);
         }
     }
 }

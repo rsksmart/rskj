@@ -36,6 +36,9 @@ public class PeerScoringTest {
         Assert.assertEquals(0, info.getValidTransactions());
         Assert.assertEquals(0, info.getInvalidTransactions());
         Assert.assertEquals(0, info.getScore());
+        Assert.assertEquals(0, info.getSuccessfulHandhshakes());
+        Assert.assertEquals(0, info.getFailedHandhshakes());
+        Assert.assertEquals(0, info.getRepeatedMessages());
         Assert.assertEquals("node", info.getId());
     }
 

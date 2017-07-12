@@ -30,6 +30,12 @@ public class PeerScoring {
                     score = 0;
                 score--;
                 break;
+
+            case FAILED_HANDSHAKE:
+            case SUCCESSFUL_HANDSHAKE:
+            case REPEATED_MESSAGE:
+                break;
+
             default:
                 if (score >= 0)
                     score++;
