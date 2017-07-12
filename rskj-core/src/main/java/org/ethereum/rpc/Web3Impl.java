@@ -18,10 +18,12 @@
 
 package org.ethereum.rpc;
 
+import co.rsk.core.Rsk;
 import co.rsk.core.SnapshotManager;
 import co.rsk.mine.MinerManager;
 import co.rsk.peg.Bridge;
 import co.rsk.rpc.ModuleDescription;
+import co.rsk.scoring.PeerScoringManager;
 import com.google.common.annotations.VisibleForTesting;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.WalletAccount;
@@ -63,6 +65,8 @@ import org.spongycastle.util.encoders.Hex;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -96,6 +100,8 @@ public class Web3Impl implements Web3 {
 
     private SolidityCompiler solidityCompiler;
 
+    private PeerScoringManager peerScoringManager;
+
     public Web3Impl(SolidityCompiler compiler, Wallet wallet) {
         this.solidityCompiler = compiler;
         this.wallet = wallet;
@@ -106,6 +112,9 @@ public class Web3Impl implements Web3 {
         this.worldManager = eth.getWorldManager();
         this.repository = eth.getRepository();
         this.wallet = wallet;
+
+        if (eth instanceof Rsk)
+            this.peerScoringManager = ((Rsk) eth).getPeerScoringManager();
 
         initialBlockNumber = this.worldManager.getBlockchain().getBestBlock().getNumber();
 
@@ -1581,6 +1590,30 @@ public class Web3Impl implements Web3 {
             return result;
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
             throw new JsonRpcInvalidParamException("invalid number of seconds " + seconds, e);
+        }
+    }
+
+    @Override
+    public void sco_addBannedAddress(String address) {
+        try {
+            InetAddress addr = InetAddress.getByName(address);
+
+            if (this.peerScoringManager != null)
+                this.peerScoringManager.addBannedAddress(addr);
+        } catch (UnknownHostException e) {
+            throw new JsonRpcInvalidParamException("invalid banned address " + address, e);
+        }
+    }
+
+    @Override
+    public void sco_removeBannedAddress(String address) {
+        try {
+            InetAddress addr = InetAddress.getByName(address);
+
+            if (this.peerScoringManager != null)
+                this.peerScoringManager.removeBannedAddress(addr);
+        } catch (UnknownHostException e) {
+            throw new JsonRpcInvalidParamException("invalid banned address " + address, e);
         }
     }
 }

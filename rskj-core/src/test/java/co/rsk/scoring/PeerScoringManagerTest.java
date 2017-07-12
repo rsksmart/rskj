@@ -27,6 +27,26 @@ public class PeerScoringManagerTest {
     }
 
     @Test
+    public void addBannedAddress() throws UnknownHostException {
+        InetAddress address = generateIPAddressV4();
+        PeerScoringManager manager = createPeerScoringManager();
+
+        manager.addBannedAddress(address);
+        Assert.assertFalse(manager.hasGoodReputation(address));
+    }
+ 
+    @Test
+    public void addAndRemoveBannedAddress() throws UnknownHostException {
+        InetAddress address = generateIPAddressV4();
+        PeerScoringManager manager = createPeerScoringManager();
+
+        manager.addBannedAddress(address);
+        Assert.assertFalse(manager.hasGoodReputation(address));
+        manager.removeBannedAddress(address);
+        Assert.assertTrue(manager.hasGoodReputation(address));
+    }
+
+    @Test
     public void newNodeHasGoodReputation() {
         NodeID id = generateNodeID();
         PeerScoringManager manager = createPeerScoringManager();

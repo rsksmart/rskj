@@ -205,4 +205,7 @@ public interface Web3 {
     void evm_reset();
     void evm_mine();
     String evm_increaseTime(String seconds);
+
+    void sco_addBannedAddress(String address);
+    void sco_removeBannedAddress(String address);
 }

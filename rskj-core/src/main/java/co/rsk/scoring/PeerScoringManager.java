@@ -80,6 +80,14 @@ public class PeerScoringManager {
         this.punishmentDuration = time;
     }
 
+    public void addBannedAddress(InetAddress address) {
+        this.addressTable.addAddress(address);
+    }
+
+    public void removeBannedAddress(InetAddress address) {
+        this.addressTable.removeAddress(address);
+    }
+
     @VisibleForTesting
     public boolean isEmpty() {
         return this.peersByAddress.isEmpty() && this.peersByNodeID.isEmpty();
