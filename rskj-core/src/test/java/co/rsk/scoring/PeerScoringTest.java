@@ -26,6 +26,90 @@ public class PeerScoringTest {
     }
 
     @Test
+    public void getInformationFromNewScoring() {
+        PeerScoring scoring = new PeerScoring();
+        PeerScoringInformation info = new PeerScoringInformation(scoring, "node");
+
+        Assert.assertTrue(info.getGoodReputation());
+        Assert.assertEquals(0, info.getValidBlocks());
+        Assert.assertEquals(0, info.getInvalidBlocks());
+        Assert.assertEquals(0, info.getValidTransactions());
+        Assert.assertEquals(0, info.getInvalidTransactions());
+        Assert.assertEquals(0, info.getScore());
+        Assert.assertEquals("node", info.getId());
+    }
+
+    @Test
+    public void getInformationFromScoringWithTwoValidBlocks() {
+        PeerScoring scoring = new PeerScoring();
+
+        scoring.recordEvent(EventType.VALID_BLOCK);
+        scoring.recordEvent(EventType.VALID_BLOCK);
+
+        PeerScoringInformation info = new PeerScoringInformation(scoring, "node");
+
+        Assert.assertTrue(info.getGoodReputation());
+        Assert.assertEquals(2, info.getValidBlocks());
+        Assert.assertEquals(0, info.getInvalidBlocks());
+        Assert.assertEquals(0, info.getValidTransactions());
+        Assert.assertEquals(0, info.getInvalidTransactions());
+        Assert.assertTrue(info.getScore() > 0);
+    }
+
+    @Test
+    public void getInformationFromScoringWithThreeInvalidBlocks() {
+        PeerScoring scoring = new PeerScoring();
+
+        scoring.recordEvent(EventType.INVALID_BLOCK);
+        scoring.recordEvent(EventType.INVALID_BLOCK);
+        scoring.recordEvent(EventType.INVALID_BLOCK);
+
+        PeerScoringInformation info = new PeerScoringInformation(scoring, "node");
+
+        Assert.assertTrue(info.getGoodReputation());
+        Assert.assertEquals(0, info.getValidBlocks());
+        Assert.assertEquals(3, info.getInvalidBlocks());
+        Assert.assertEquals(0, info.getValidTransactions());
+        Assert.assertEquals(0, info.getInvalidTransactions());
+        Assert.assertTrue(info.getScore() < 0);
+    }
+
+    @Test
+    public void getInformationFromScoringWithTwoValidTransactions() {
+        PeerScoring scoring = new PeerScoring();
+
+        scoring.recordEvent(EventType.VALID_TRANSACTION);
+        scoring.recordEvent(EventType.VALID_TRANSACTION);
+
+        PeerScoringInformation info = new PeerScoringInformation(scoring, "node");
+
+        Assert.assertTrue(info.getGoodReputation());
+        Assert.assertEquals(0, info.getValidBlocks());
+        Assert.assertEquals(0, info.getInvalidBlocks());
+        Assert.assertEquals(2, info.getValidTransactions());
+        Assert.assertEquals(0, info.getInvalidTransactions());
+        Assert.assertTrue(info.getScore() > 0);
+    }
+
+    @Test
+    public void getInformationFromScoringWithThreeInvalidTransactions() {
+        PeerScoring scoring = new PeerScoring();
+
+        scoring.recordEvent(EventType.INVALID_TRANSACTION);
+        scoring.recordEvent(EventType.INVALID_TRANSACTION);
+        scoring.recordEvent(EventType.INVALID_TRANSACTION);
+
+        PeerScoringInformation info = new PeerScoringInformation(scoring, "node");
+
+        Assert.assertTrue(info.getGoodReputation());
+        Assert.assertEquals(0, info.getValidBlocks());
+        Assert.assertEquals(0, info.getInvalidBlocks());
+        Assert.assertEquals(0, info.getValidTransactions());
+        Assert.assertEquals(3, info.getInvalidTransactions());
+        Assert.assertTrue(info.getScore() < 0);
+    }
+
+    @Test
     public void newStatusHasNoTimeLostGoodReputation() {
         PeerScoring scoring = new PeerScoring();
 
