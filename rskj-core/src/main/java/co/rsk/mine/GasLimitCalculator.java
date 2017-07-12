@@ -35,7 +35,7 @@ public class GasLimitCalculator {
     // is above 2/3 of the block gas limit, and decrease otherwise, by small amounts
     // The idea is to increase the gas limit when there are more transactions on the network while reduce it when
     // there are no or almost no transaction on it
-    public BigInteger calculateBlockGasLimit(BigInteger parentGasLimit, BigInteger parentGasUsed, BigInteger minGasLimit, BigInteger targetGasLimit) {
+    public BigInteger calculateBlockGasLimit(BigInteger parentGasLimit, BigInteger parentGasUsed, BigInteger minGasLimit, BigInteger targetGasLimit, boolean forceTarget) {
         Constants constants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants();
 
         BigInteger newGasLimit = parentGasLimit;
@@ -43,6 +43,24 @@ public class GasLimitCalculator {
         // decay = parentGasLimit / 1024
         // current Eth implementation substracts parentGasLimit / 1024 - 1
         BigInteger decay = parentGasLimit.divide(BigInteger.valueOf(constants.getGAS_LIMIT_BOUND_DIVISOR()));
+
+        // In this case we just try to reach the target gasLimit independently of
+        // the gas used
+        if (forceTarget && targetGasLimit.compareTo(minGasLimit) > 0) {
+            if (targetGasLimit.compareTo(parentGasLimit) < 0) {
+                newGasLimit = newGasLimit.subtract(decay);
+                if (targetGasLimit.compareTo(newGasLimit) > 0) {
+                    newGasLimit = targetGasLimit;
+                }
+                return newGasLimit;
+            } else {
+                newGasLimit = newGasLimit.add(decay);
+                if (targetGasLimit.compareTo(newGasLimit) < 0) {
+                    newGasLimit = targetGasLimit;
+                }
+                return newGasLimit;
+            }
+        }
 
         // contrib = (parentGasUsed * 3 / 2) / 1024
         BigInteger contrib = parentGasUsed.multiply(BigInteger.valueOf(3));
