@@ -20,6 +20,8 @@ public class PeerScoringManager {
     private final Object accessLock = new Object();
     private long punishmentDuration = 0L;
 
+    private InetAddressTable addressTable = new InetAddressTable();
+
     @GuardedBy("accessLock")
     private LinkedHashMap<NodeID, PeerScoring> peersByNodeID;
 
@@ -68,6 +70,9 @@ public class PeerScoringManager {
 
     public boolean hasGoodReputation(InetAddress address)
     {
+        if (this.addressTable.contains(address))
+            return false;
+
         return this.getPeerScoring(address).hasGoodReputation();
     }
 
