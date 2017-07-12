@@ -45,9 +45,9 @@ public class JsonRpcListener {
     }
 
     public void start() throws Exception {
-        logger.info("Starting RPC Server on PORT [{}]", RskSystemProperties.RSKCONFIG.RpcPort());
+        logger.info("Starting RPC Server on PORT [{}]", RskSystemProperties.RSKCONFIG.rpcPort());
 
-        Server server = new Server(RskSystemProperties.RSKCONFIG.RpcPort());
+        Server server = new Server(RskSystemProperties.RSKCONFIG.rpcPort());
         server.setConnectors(buildConnectors(server));
 
         ServletHandler handler = new ServletHandler();
@@ -64,7 +64,7 @@ public class JsonRpcListener {
         connector.setSoLingerTime(RskSystemProperties.RSKCONFIG.soLingerTime());
         connector.setAcceptQueueSize(RskSystemProperties.RSKCONFIG.acceptQueueSize());
         connector.setReuseAddress(Boolean.TRUE);
-        connector.setPort(RskSystemProperties.RSKCONFIG.RpcPort());
+        connector.setPort(RskSystemProperties.RSKCONFIG.rpcPort());
         return new Connector[] {connector};
     }
 }

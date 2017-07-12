@@ -112,7 +112,7 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     // TODO review added method
-    public int RpcPort() {
+    public int rpcPort() {
         return config.hasPath("rpc.port") ?
                 config.getInt("rpc.port") : 4444;
     }
