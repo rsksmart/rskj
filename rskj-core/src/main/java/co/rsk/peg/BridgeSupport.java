@@ -578,7 +578,7 @@ public class BridgeSupport {
      * @return a List of bitcoin block hashes
      */
     public List<Sha256Hash> getBtcBlockchainBlockLocator() throws IOException {
-        final int MAX_HASHES_TO_INFORM = 100;
+        final int maxHashesToInform = 100;
         List<Sha256Hash> blockLocator = new ArrayList<>();
         StoredBlock cursor = btcBlockChain.getChainHead();
         int bestBlockHeight = cursor.getHeight();
@@ -587,7 +587,7 @@ public class BridgeSupport {
             boolean stop = false;
             int i = 0;
             try {
-                while (blockLocator.size() <= MAX_HASHES_TO_INFORM && !stop) {
+                while (blockLocator.size() <= maxHashesToInform && !stop) {
                     int blockHeight = (int) (bestBlockHeight - Math.pow(2, i));
                     if (blockHeight <= this.initialBtcStoredBlock.getHeight()) {
                         blockLocator.add(this.initialBtcStoredBlock.getHeader().getHash());
