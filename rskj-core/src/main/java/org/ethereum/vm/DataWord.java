@@ -339,7 +339,7 @@ public class DataWord implements Comparable<DataWord> {
         }
     }
     // this is 100 times slower than the new not.
-    public void slow_bnot() {
+    public void slowBnot() {
         if (this.isZero()) {
             this.data = ByteUtil.copyToArray(MAX_VALUE);
             return;
