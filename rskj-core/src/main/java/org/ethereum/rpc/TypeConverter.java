@@ -28,23 +28,23 @@ import java.math.BigInteger;
 public class TypeConverter {
     private static byte[] emptyByteArray = new byte[0];
 
-    public static BigInteger stringNumberAsBigInt(String input) {
+    public static BigInteger StringNumberAsBigInt(String input) {
         if (input.startsWith("0x"))
-            return TypeConverter.stringHexToBigInteger(input);
+            return TypeConverter.StringHexToBigInteger(input);
         else
-            return TypeConverter.stringDecimalToBigInteger(input);
+            return TypeConverter.StringDecimalToBigInteger(input);
     }
 
-    public static BigInteger stringHexToBigInteger(String input) {
+    public static BigInteger StringHexToBigInteger(String input) {
         String hexa = input.substring(2);
         return new BigInteger(hexa, 16);
     }
 
-    private static BigInteger stringDecimalToBigInteger(String input) {
+    private static BigInteger StringDecimalToBigInteger(String input) {
         return new BigInteger(input);
     }
 
-    public static byte[] stringHexToByteArray(String x) {
+    public static byte[] StringHexToByteArray(String x) {
         if (x.startsWith("0x")) {
             x = x.substring(2);
         }

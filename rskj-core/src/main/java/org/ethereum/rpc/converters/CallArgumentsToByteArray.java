@@ -20,7 +20,7 @@ package org.ethereum.rpc.converters;
 
 import org.ethereum.rpc.Web3;
 
-import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
+import static org.ethereum.rpc.TypeConverter.StringHexToByteArray;
 
 /**
  * Created by martin.medina on 3/7/17.
@@ -36,7 +36,7 @@ public class CallArgumentsToByteArray {
     public byte[] getGasPrice() {
         byte[] gasPrice = new byte[] {0};
         if (args.gasPrice != null && args.gasPrice.length() != 0)
-            gasPrice = stringHexToByteArray(args.gasPrice);
+            gasPrice = StringHexToByteArray(args.gasPrice);
 
         return gasPrice;
     }
@@ -44,9 +44,9 @@ public class CallArgumentsToByteArray {
     public byte[] getGasLimit() {
         // maxGasLimit value is 100000000000000
         String maxGasLimit = "0x5AF3107A4000";
-        byte[] gasLimit = stringHexToByteArray(maxGasLimit);
+        byte[] gasLimit = StringHexToByteArray(maxGasLimit);
         if (args.gas != null && args.gas.length() != 0)
-            gasLimit = stringHexToByteArray(args.gas);
+            gasLimit = StringHexToByteArray(args.gas);
 
         return gasLimit;
     }
@@ -54,7 +54,7 @@ public class CallArgumentsToByteArray {
     public byte[] getToAddress() {
         byte[] toAddress = null;
         if (args.to != null)
-            toAddress = stringHexToByteArray(args.to);
+            toAddress = StringHexToByteArray(args.to);
 
         return toAddress;
     }
@@ -62,7 +62,7 @@ public class CallArgumentsToByteArray {
     public byte[] getValue() {
         byte[] value = new byte[] { 0 };
         if (args.value != null && args.value.length() != 0)
-            value = stringHexToByteArray(args.value);
+            value = StringHexToByteArray(args.value);
 
         return value;
     }
@@ -71,7 +71,7 @@ public class CallArgumentsToByteArray {
         byte[] data = null;
 
         if (args.data != null && args.data.length() != 0)
-            data = stringHexToByteArray(args.data);
+            data = StringHexToByteArray(args.data);
 
         return data;
     }
