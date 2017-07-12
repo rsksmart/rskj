@@ -37,12 +37,34 @@ public class InetAddressTableTest {
     }
 
     @Test
+    public void addAndRemoveIPV4Address() throws UnknownHostException {
+        InetAddressTable table = new InetAddressTable();
+        InetAddress address = generateIPAddressV4();
+
+        table.addAddress(address);
+        Assert.assertTrue(table.contains(address));
+        table.removeAddress(address);
+        Assert.assertFalse(table.contains(address));
+    }
+
+    @Test
     public void addIPV6Address() throws UnknownHostException {
         InetAddressTable table = new InetAddressTable();
         InetAddress address = generateIPAddressV6();
 
         table.addAddress(address);
         Assert.assertTrue(table.contains(address));
+    }
+
+    @Test
+    public void addAndRemoveIPV6Address() throws UnknownHostException {
+        InetAddressTable table = new InetAddressTable();
+        InetAddress address = generateIPAddressV6();
+
+        table.addAddress(address);
+        Assert.assertTrue(table.contains(address));
+        table.removeAddress(address);
+        Assert.assertFalse(table.contains(address));
     }
 
     @Test

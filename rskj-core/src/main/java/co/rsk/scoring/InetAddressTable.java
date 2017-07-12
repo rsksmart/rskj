@@ -15,6 +15,8 @@ public class InetAddressTable {
         this.addresses.add(address);
     }
 
+    public void removeAddress(InetAddress address) { this.addresses.remove(address); }
+
     public void addAddressBlock(InetAddress address, int nbits) {
         this.blocks.add(new InetAddressBlock(address, nbits));
     }
