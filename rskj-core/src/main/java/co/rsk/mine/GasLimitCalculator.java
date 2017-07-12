@@ -44,9 +44,14 @@ public class GasLimitCalculator {
         // current Eth implementation substracts parentGasLimit / 1024 - 1
         BigInteger decay = parentGasLimit.divide(BigInteger.valueOf(constants.getGAS_LIMIT_BOUND_DIVISOR()));
 
+        // TODO: we should assert this before reaching this point
+        if (targetGasLimit.compareTo(minGasLimit) < 0) {
+            targetGasLimit = minGasLimit;
+        }
+
         // In this case we just try to reach the target gasLimit independently of
         // the gas used
-        if (forceTarget && targetGasLimit.compareTo(minGasLimit) > 0) {
+        if (forceTarget) {
             if (targetGasLimit.compareTo(parentGasLimit) < 0) {
                 newGasLimit = newGasLimit.subtract(decay);
                 if (targetGasLimit.compareTo(newGasLimit) > 0) {
