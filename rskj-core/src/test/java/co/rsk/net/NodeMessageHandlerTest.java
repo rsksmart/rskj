@@ -28,6 +28,7 @@ import co.rsk.net.simples.SimplePendingState;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
+import co.rsk.scoring.PunishmentParameters;
 import co.rsk.test.World;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.SystemProperties;
@@ -76,7 +77,7 @@ public class NodeMessageHandlerTest {
     @Test
     public void processBlockMessageUsingProcessor() {
         MessageSender sender = new SimpleMessageSender();
-        PeerScoringManager scoring = new PeerScoringManager();
+        PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, scoring);
         Block block = new Block(Hex.decode(rlp));
@@ -120,7 +121,7 @@ public class NodeMessageHandlerTest {
     @Test
     public void processInvalidPoWMessageUsingProcessor() {
         MessageSender sender = new SimpleMessageSender();
-        PeerScoringManager scoring = new PeerScoringManager();
+        PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, scoring);
         Block block = new Block(Hex.decode(rlp));
@@ -146,7 +147,7 @@ public class NodeMessageHandlerTest {
     @Test
     public void processMissingPoWBlockMessageUsingProcessor() {
         MessageSender sender = new SimpleMessageSender();
-        PeerScoringManager scoring = new PeerScoringManager();
+        PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, scoring).disablePoWValidation();
         Block block = BlockGenerator.getGenesisBlock();
@@ -641,7 +642,7 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processTransactionsMessage() {
-        PeerScoringManager scoring = new PeerScoringManager();
+        PeerScoringManager scoring = createPeerScoringManager();
         final SimpleChannelManager channelManager = new SimpleChannelManager();
         TxHandler txmock = Mockito.mock(TxHandler.class);
         BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
@@ -694,7 +695,7 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processRejectedTransactionsMessage() {
-        PeerScoringManager scoring = new PeerScoringManager();
+        PeerScoringManager scoring = createPeerScoringManager();
         final SimpleChannelManager channelManager = new SimpleChannelManager();
         TxHandler txmock = Mockito.mock(TxHandler.class);
         BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
@@ -775,6 +776,10 @@ public class NodeMessageHandlerTest {
         handler.processMessage(sender2, message);
 
         Assert.assertNull(channelManager.getLastSkip());
+    }
+
+    private static PeerScoringManager createPeerScoringManager() {
+        return new PeerScoringManager(1000, new PunishmentParameters(600000, 10, 10000000));
     }
 }
 

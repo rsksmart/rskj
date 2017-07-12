@@ -26,6 +26,7 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.NodeMessageHandler;
 import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.scoring.PeerScoringManager;
+import co.rsk.scoring.PunishmentParameters;
 import org.ethereum.facade.EthereumImpl;
 import org.springframework.stereotype.Component;
 
@@ -54,7 +55,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
     @Override
     public PeerScoringManager getPeerScoringManager() {
         if (this.peerScoringManager == null)
-            this.peerScoringManager = new PeerScoringManager();
+            this.peerScoringManager = new PeerScoringManager(100, new PunishmentParameters(600000, 10, 10000000));
 
         return this.peerScoringManager;
     }

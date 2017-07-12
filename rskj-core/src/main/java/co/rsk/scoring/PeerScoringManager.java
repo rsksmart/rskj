@@ -13,8 +13,8 @@ import java.util.Map;
  * Created by ajlopez on 28/06/2017.
  */
 public class PeerScoringManager {
-    private ScoringCalculator scoringCalculator = new ScoringCalculator();
-    private PunishmentCalculator punishmentCalculator = new PunishmentCalculator();
+    private ScoringCalculator scoringCalculator;
+    private PunishmentCalculator punishmentCalculator;
 
     private final Object accessLock = new Object();
     private long punishmentDuration = 0L;
@@ -25,11 +25,10 @@ public class PeerScoringManager {
     @GuardedBy("accessLock")
     private Map<InetAddress, PeerScoring> peersByAddress;
 
-    public PeerScoringManager() {
-        this(20);
-    }
+    public PeerScoringManager(int nodePeersSize, PunishmentParameters parameters) {
+        this.scoringCalculator = new ScoringCalculator();
+        this.punishmentCalculator = new PunishmentCalculator(parameters);
 
-    public PeerScoringManager(int nodePeersSize) {
         this.peersByNodeID = new LinkedHashMap<NodeID, PeerScoring>(nodePeersSize, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<NodeID, PeerScoring> eldest) {
@@ -103,6 +102,6 @@ public class PeerScoringManager {
         boolean reputation = scoringCalculator.hasGoodReputation(scoring);
 
         if (!reputation && scoring.hasGoodReputation())
-            scoring.startPunishment(this.punishmentCalculator.calculate(punishmentDuration, punishmentDuration * 10, 10, scoring.getPunishmentCounter(), scoring.getScore()));
+            scoring.startPunishment(this.punishmentCalculator.calculate(scoring.getPunishmentCounter(), scoring.getScore()));
     }
 }
