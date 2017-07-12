@@ -24,6 +24,10 @@ public class PeerScoringInformation {
         this.id = id;
     }
 
+    public String getId() {
+        return this.id;
+    }
+
     public boolean getGoodReputation() {
         return this.goodReputation;
     }
@@ -46,9 +50,5 @@ public class PeerScoringInformation {
 
     public int getInvalidTransactions() {
         return this.invalidTransactions;
-    }
-
-    public String getId() {
-        return this.id;
     }
 }

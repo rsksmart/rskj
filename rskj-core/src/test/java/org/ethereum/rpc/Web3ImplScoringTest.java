@@ -20,6 +20,9 @@ package org.ethereum.rpc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Wallet;
+import co.rsk.net.NodeID;
+import co.rsk.scoring.EventType;
+import co.rsk.scoring.PeerScoringInformation;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.test.World;
@@ -27,9 +30,11 @@ import org.ethereum.rpc.Simples.SimpleRsk;
 import org.ethereum.rpc.Simples.SimpleWorldManager;
 import org.junit.Assert;
 import org.junit.Test;
+import org.spongycastle.util.encoders.Hex;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -98,6 +103,49 @@ public class Web3ImplScoringTest {
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
     }
 
+    @Test
+    public void getEmptyPeerList() {
+        PeerScoringManager peerScoringManager = createPeerScoringManager();
+
+        Web3Impl web3 = createWeb3(peerScoringManager);
+        PeerScoringInformation[] result = web3.sco_peerList();
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(0, result.length);
+    }
+
+    @Test
+    public void getPeerList() throws UnknownHostException {
+        NodeID node = generateNodeID();
+        InetAddress address = generateIPAddressV4();
+        PeerScoringManager peerScoringManager = createPeerScoringManager();
+        peerScoringManager.recordEvent(node, address, EventType.VALID_BLOCK);
+        peerScoringManager.recordEvent(node, address, EventType.VALID_TRANSACTION);
+        peerScoringManager.recordEvent(node, address, EventType.VALID_BLOCK);
+
+        Web3Impl web3 = createWeb3(peerScoringManager);
+        PeerScoringInformation[] result = web3.sco_peerList();
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(2, result.length);
+
+        PeerScoringInformation info = result[0];
+        Assert.assertEquals(Hex.toHexString(node.getID()).substring(0, 8), info.getId());
+        Assert.assertEquals(2, info.getValidBlocks());
+        Assert.assertEquals(0, info.getInvalidBlocks());
+        Assert.assertEquals(1, info.getValidTransactions());
+        Assert.assertEquals(0, info.getInvalidTransactions());
+        Assert.assertTrue(info.getScore() > 0);
+
+        info = result[1];
+        Assert.assertEquals(address.getHostAddress(), info.getId());
+        Assert.assertEquals(2, info.getValidBlocks());
+        Assert.assertEquals(0, info.getInvalidBlocks());
+        Assert.assertEquals(1, info.getValidTransactions());
+        Assert.assertEquals(0, info.getInvalidTransactions());
+        Assert.assertTrue(info.getScore() > 0);
+    }
+
     private static InetAddress generateIPAddressV4() throws UnknownHostException {
         byte[] bytes = new byte[4];
 
@@ -126,6 +174,14 @@ public class Web3ImplScoringTest {
         Web3Impl web3 = new Web3Impl(rsk, RskSystemProperties.RSKCONFIG, new Wallet());
 
         return web3;
+    }
+
+    private static NodeID generateNodeID() {
+        byte[] bytes = new byte[32];
+
+        random.nextBytes(bytes);
+
+        return new NodeID(bytes);
     }
 
     private static PeerScoringManager createPeerScoringManager() {

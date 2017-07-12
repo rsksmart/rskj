@@ -23,6 +23,7 @@ import co.rsk.core.SnapshotManager;
 import co.rsk.mine.MinerManager;
 import co.rsk.peg.Bridge;
 import co.rsk.rpc.ModuleDescription;
+import co.rsk.scoring.PeerScoringInformation;
 import co.rsk.scoring.PeerScoringManager;
 import com.google.common.annotations.VisibleForTesting;
 import co.rsk.config.RskSystemProperties;
@@ -1615,5 +1616,13 @@ public class Web3Impl implements Web3 {
         } catch (UnknownHostException e) {
             throw new JsonRpcInvalidParamException("invalid banned address " + address, e);
         }
+    }
+
+    @Override
+    public PeerScoringInformation[] sco_peerList() {
+        if (this.peerScoringManager != null)
+            return this.peerScoringManager.getPeersInformation().toArray(new PeerScoringInformation[0]);
+
+        return null;
     }
 }
