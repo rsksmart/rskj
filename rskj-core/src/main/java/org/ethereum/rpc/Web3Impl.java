@@ -1299,7 +1299,7 @@ public class Web3Impl implements Web3 {
         throw new UnsupportedOperationException("Not implemeted yet");
     }
 
-    public boolean eth_submitHashrate(String Hashrate, String ID) {
+    public boolean eth_submitHashrate(String hashrate, String id) {
         throw new UnsupportedOperationException("Not implemeted yet");
     }
 
