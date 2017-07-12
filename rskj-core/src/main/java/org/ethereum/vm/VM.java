@@ -82,15 +82,15 @@ public class VM {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static String logString = "{}    Op: [{}]  Gas: [{}] Deep: [{}]  Hint: [{}]";
 
-    private static long MAX_GAS_LONG =Long.MAX_VALUE;
+    private static long maxGasLong =Long.MAX_VALUE;
 
 
     /* Keeps track of the number of steps performed in this VM */
     private int vmCounter = 0;
 
     private static VMHook vmHook;
-    private static final boolean vmTrace = CONFIG.vmTrace();
-    private static final long dumpBlock = CONFIG.dumpBlock();
+    private static final boolean VM_TRACE = CONFIG.vmTrace();
+    private static final long DUMP_BLOCK = CONFIG.dumpBlock();
     private boolean computeGas = true; // for performance comp
 
     public VM() {
@@ -937,8 +937,8 @@ public class VM {
         spendOpCodeGas();
         // EXECUTION PHASE
         int n = op.val() - OpCode.DUP1.val() + 1;
-        DataWord word_1 = stack.get(stack.size() - n);
-        program.stackPush(program.newDataWord(word_1));
+        DataWord word1 = stack.get(stack.size() - n);
+        program.stackPush(program.newDataWord(word1));
         program.step();
     }
 
@@ -1723,7 +1723,7 @@ public class VM {
                     break;
                 }
 
-                if (vmTrace)
+                if (VM_TRACE)
                     program.saveOpTrace();
 
                 op = OpCode.code(program.getCurrentOp());
@@ -1744,14 +1744,14 @@ public class VM {
 
                 gasCost = op.getTier().asInt();
 
-                if (dumpBlock>=0) {
+                if (DUMP_BLOCK >=0) {
                     gasBefore = program.getRemainingGas();
                     stepBefore = program.getPC();
                     memWords = 0; // parameters for logging
                 }
 
                 // Log debugging line for VM
-                if ((dumpBlock>=0) &&  (program.getNumber().intValue() == dumpBlock))
+                if ((DUMP_BLOCK >=0) &&  (program.getNumber().intValue() == DUMP_BLOCK))
                     this.dumpLine(op, gasBefore, gasCost , memWords, program);
 
                 if (vmHook != null) {
