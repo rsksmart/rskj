@@ -14,7 +14,8 @@ import java.util.Map;
  */
 public class PeerScoringManager {
     private ScoringCalculator scoringCalculator;
-    private PunishmentCalculator punishmentCalculator;
+    private PunishmentCalculator nodePunishmentCalculator;
+    private PunishmentCalculator ipPunishmentCalculator;
 
     private final Object accessLock = new Object();
     private long punishmentDuration = 0L;
@@ -25,9 +26,10 @@ public class PeerScoringManager {
     @GuardedBy("accessLock")
     private Map<InetAddress, PeerScoring> peersByAddress;
 
-    public PeerScoringManager(int nodePeersSize, PunishmentParameters parameters) {
+    public PeerScoringManager(int nodePeersSize, PunishmentParameters nodeParameters, PunishmentParameters ipParameters) {
         this.scoringCalculator = new ScoringCalculator();
-        this.punishmentCalculator = new PunishmentCalculator(parameters);
+        this.nodePunishmentCalculator = new PunishmentCalculator(nodeParameters);
+        this.ipPunishmentCalculator = new PunishmentCalculator(ipParameters);
 
         this.peersByNodeID = new LinkedHashMap<NodeID, PeerScoring>(nodePeersSize, 0.75f, true) {
             @Override
@@ -46,7 +48,7 @@ public class PeerScoringManager {
 
                 PeerScoring scoring = peersByNodeID.get(id);
                 scoring.recordEvent(event);
-                reviewReputation(scoring);
+                reviewReputation(scoring, this.nodePunishmentCalculator);
             }
 
             if (address != null) {
@@ -55,7 +57,7 @@ public class PeerScoringManager {
 
                 PeerScoring scoring = peersByAddress.get(address);
                 scoring.recordEvent(event);
-                reviewReputation(scoring);
+                reviewReputation(scoring, this.ipPunishmentCalculator);
             }
         }
     }
@@ -98,10 +100,10 @@ public class PeerScoringManager {
         }
     }
 
-    private void reviewReputation(PeerScoring scoring) {
+    private void reviewReputation(PeerScoring scoring, PunishmentCalculator calculator) {
         boolean reputation = scoringCalculator.hasGoodReputation(scoring);
 
         if (!reputation && scoring.hasGoodReputation())
-            scoring.startPunishment(this.punishmentCalculator.calculate(scoring.getPunishmentCounter(), scoring.getScore()));
+            scoring.startPunishment(calculator.calculate(scoring.getPunishmentCounter(), scoring.getScore()));
     }
 }

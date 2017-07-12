@@ -779,7 +779,7 @@ public class NodeMessageHandlerTest {
     }
 
     private static PeerScoringManager createPeerScoringManager() {
-        return new PeerScoringManager(1000, new PunishmentParameters(600000, 10, 10000000));
+        return new PeerScoringManager(1000, new PunishmentParameters(600000, 10, 10000000), new PunishmentParameters(600000, 10, 10000000));
     }
 }
 

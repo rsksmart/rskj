@@ -55,7 +55,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
     @Override
     public PeerScoringManager getPeerScoringManager() {
         if (this.peerScoringManager == null)
-            this.peerScoringManager = new PeerScoringManager(100, new PunishmentParameters(600000, 10, 10000000));
+            this.peerScoringManager = new PeerScoringManager(100, new PunishmentParameters(600000, 10, 10000000), new PunishmentParameters(600000, 10, 10000000));
 
         return this.peerScoringManager;
     }
