@@ -34,7 +34,7 @@ public class PeerScoringManagerTest {
         manager.addBannedAddress(address);
         Assert.assertFalse(manager.hasGoodReputation(address));
     }
- 
+
     @Test
     public void addAndRemoveBannedAddress() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
