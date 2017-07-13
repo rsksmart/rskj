@@ -402,7 +402,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         if (sender == null)
             return;
 
-        this.peerScoringManager.recordEvent(sender.getNodeID(), null, event);
+        this.peerScoringManager.recordEvent(sender.getNodeID(), sender.getAddress(), event);
     }
 
     private static class MessageTask {

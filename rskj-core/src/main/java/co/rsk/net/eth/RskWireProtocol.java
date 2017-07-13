@@ -120,6 +120,7 @@ public class RskWireProtocol extends EthHandler {
         }
 
         this.messageSender.setNodeID(channel.getNodeId());
+        this.messageSender.setAddress(channel.getInetSocketAddress().getAddress());
     }
 
     @PostConstruct
@@ -192,7 +193,7 @@ public class RskWireProtocol extends EthHandler {
                     || msg.getProtocolVersion() != version.getCode()) {
                 loggerNet.info("Removing EthHandler for {} due to protocol incompatibility", ctx.channel().remoteAddress());
                 ethState = EthState.STATUS_FAILED;
-                recordEvent(ctx, EventType.INCOMPATIBLE_PROTOCOL);
+                recordEvent(EventType.INCOMPATIBLE_PROTOCOL);
                 disconnect(ReasonCode.INCOMPATIBLE_PROTOCOL);
                 ctx.pipeline().remove(this); // Peer is not compatible for the 'eth' sub-protocol
                 return;
@@ -200,7 +201,7 @@ public class RskWireProtocol extends EthHandler {
 
             if (msg.getNetworkId() != config.networkId()) {
                 ethState = EthState.STATUS_FAILED;
-                recordEvent(ctx, EventType.INVALID_NETWORK);
+                recordEvent(EventType.INVALID_NETWORK);
                 disconnect(ReasonCode.NULL_IDENTITY);
                 return;
             }
@@ -244,20 +245,8 @@ public class RskWireProtocol extends EthHandler {
         return true;
     }
 
-    private void recordEvent(ChannelHandlerContext ctx, EventType event) {
-        SocketAddress socketAddress = ctx.channel().remoteAddress();
-
-        if (socketAddress instanceof InetSocketAddress) {
-            byte[] nid = channel.getNodeId();
-
-            NodeID nodeID = null;
-
-            if (nid != null)
-                nodeID = new NodeID(nid);
-
-            InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
-            this.rsk.getPeerScoringManager().recordEvent(nodeID, address, event);
-        }
+    private void recordEvent(EventType event) {
+        this.rsk.getPeerScoringManager().recordEvent(this.messageSender.getNodeID(), this.messageSender.getAddress(), event);
     }
 
 

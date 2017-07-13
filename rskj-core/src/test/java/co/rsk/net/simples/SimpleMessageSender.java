@@ -25,6 +25,7 @@ import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
 import org.ethereum.db.ByteArrayWrapper;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -37,6 +38,7 @@ public class SimpleMessageSender implements MessageSender {
 
     private List<Message> messages = new ArrayList<>();
     private NodeID nodeID;
+    private InetAddress address;
 
     public SimpleMessageSender() {
         byte[] bytes = new byte[32];
@@ -80,4 +82,10 @@ public class SimpleMessageSender implements MessageSender {
     public void setNodeID(byte[] nodeID) {
         this.nodeID = new NodeID(nodeID);
     }
+
+    @Override
+    public InetAddress getAddress() { return this.address; }
+
+    @Override
+    public void setAddress(InetAddress address) { this.address = address; }
 }

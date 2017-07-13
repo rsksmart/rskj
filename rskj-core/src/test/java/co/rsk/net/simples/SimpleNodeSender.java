@@ -22,6 +22,8 @@ import co.rsk.net.MessageSender;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.Message;
 
+import java.net.InetAddress;
+
 /**
  * Created by ajlopez on 5/14/2016.
  */
@@ -47,4 +49,10 @@ public class SimpleNodeSender implements MessageSender {
     public void setNodeID(byte[] nodeId) {
 
     }
+
+    @Override
+    public void setAddress(InetAddress address) { }
+
+    @Override
+    public InetAddress getAddress() { return null; }
 }
