@@ -26,6 +26,7 @@ import co.rsk.net.messages.MessageType;
 import org.ethereum.db.ByteArrayWrapper;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -40,10 +41,13 @@ public class SimpleMessageSender implements MessageSender {
     private NodeID nodeID;
     private InetAddress address;
 
-    public SimpleMessageSender() {
+    public SimpleMessageSender() throws UnknownHostException {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         this.nodeID = new NodeID(bytes);
+        byte[] addressBytes = new byte[4];
+        random.nextBytes(bytes);
+        this.address = InetAddress.getByAddress(addressBytes);
     }
 
     public void sendMessage(Message message) {
