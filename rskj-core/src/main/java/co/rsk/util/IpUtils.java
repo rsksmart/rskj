@@ -24,6 +24,9 @@ public class IpUtils {
 
 
     public static InetSocketAddress parseAddress(String address) {
+        if(StringUtils.isBlank(address))
+            return null;
+        
         Matcher matcher = ipv6Pattern.matcher(address);
         if(matcher.matches())
             return parseMatch(matcher);
