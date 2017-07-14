@@ -28,6 +28,7 @@ import co.rsk.scoring.PunishmentParameters;
 import co.rsk.test.World;
 import org.ethereum.rpc.Simples.SimpleRsk;
 import org.ethereum.rpc.Simples.SimpleWorldManager;
+import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
@@ -54,6 +55,34 @@ public class Web3ImplScoringTest {
         web3.sco_addBannedAddress(address.getHostAddress());
 
         Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
+    }
+
+    @Test
+    public void addBannedAddressWithInvalidMask() throws UnknownHostException {
+        PeerScoringManager peerScoringManager = createPeerScoringManager();
+        Web3Impl web3 = createWeb3(peerScoringManager);
+
+        try {
+            web3.sco_addBannedAddress("192.168.56.1/a");
+            Assert.fail();
+        }
+        catch (JsonRpcInvalidParamException ex) {
+            Assert.assertEquals("invalid banned address 192.168.56.1/a", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void removeBannedAddressWithInvalidMask() throws UnknownHostException {
+        PeerScoringManager peerScoringManager = createPeerScoringManager();
+        Web3Impl web3 = createWeb3(peerScoringManager);
+
+        try {
+            web3.sco_removeBannedAddress("192.168.56.1/a");
+            Assert.fail();
+        }
+        catch (JsonRpcInvalidParamException ex) {
+            Assert.assertEquals("invalid banned address 192.168.56.1/a", ex.getMessage());
+        }
     }
 
     @Test
@@ -150,7 +179,7 @@ public class Web3ImplScoringTest {
     public void addAndRemoveBannedAddressUsingIPV6AndMask() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
-        InetAddress address = generateIPAddressV4();
+        InetAddress address = generateIPAddressV6();
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
