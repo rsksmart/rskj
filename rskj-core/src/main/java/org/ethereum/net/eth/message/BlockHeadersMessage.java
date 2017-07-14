@@ -73,7 +73,10 @@ public class BlockHeadersMessage extends EthMessage {
 
     @Override
     public byte[] getEncoded() {
-        if (encoded == null) encode();
+        if (encoded == null) {
+            encode();
+        }
+
         return encoded;
     }
 
@@ -83,7 +86,10 @@ public class BlockHeadersMessage extends EthMessage {
     }
 
     public List<BlockHeader> getBlockHeaders() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
+
         return blockHeaders;
     }
 
@@ -94,7 +100,9 @@ public class BlockHeadersMessage extends EthMessage {
 
     @Override
     public String toString() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
 
         StringBuilder payload = new StringBuilder();
 

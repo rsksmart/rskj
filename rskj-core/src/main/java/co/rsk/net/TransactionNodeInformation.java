@@ -33,18 +33,18 @@ import java.util.*;
  */
 public class TransactionNodeInformation {
     private final LinkedHashMap<ByteArrayWrapper, Set<NodeID>> nodesByTransaction;
-    private final int MAX_TRANSACTIONS;
-    private final int MAX_PEERS;
+    private final int maxTransactions;
+    private final int maxPeers;
 
     public TransactionNodeInformation(final int maxTransactions, final int maxPeers) {
-        MAX_TRANSACTIONS = maxTransactions;
-        MAX_PEERS = maxPeers;
+        this.maxTransactions = maxTransactions;
+        this.maxPeers = maxPeers;
 
         // Transactions are evicted in Least-recently-accessed order.
-        nodesByTransaction = new LinkedHashMap<ByteArrayWrapper, Set<NodeID>>(MAX_TRANSACTIONS, 0.75f, true) {
+        nodesByTransaction = new LinkedHashMap<ByteArrayWrapper, Set<NodeID>>(TransactionNodeInformation.this.maxTransactions, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<ByteArrayWrapper, Set<NodeID>> eldest) {
-                return size() > MAX_TRANSACTIONS;
+                return size() > TransactionNodeInformation.this.maxTransactions;
             }
         };
     }

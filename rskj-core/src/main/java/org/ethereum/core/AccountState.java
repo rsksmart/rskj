@@ -34,7 +34,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class AccountState {
     private static final byte[] EMPTY_DATA_HASH = HashUtil.sha3(EMPTY_BYTE_ARRAY);
 
-    final static int accHibernatedMask = 1;
+    static final int ACC_HIBERNATED_MASK = 1;
     private byte[] rlpEncoded;
 
     /* A value equalBytes to the number of transactions sent
@@ -146,14 +146,20 @@ public class AccountState {
     }
 
     public BigInteger addToBalance(BigInteger value) {
-        if (value.signum() != 0) rlpEncoded = null;
+        if (value.signum() != 0) {
+            rlpEncoded = null;
+        }
+
         this.balance = balance.add(value);
         setDirty(true);
         return this.balance;
     }
 
     public void subFromBalance(BigInteger value) {
-        if (value.signum() != 0) rlpEncoded = null;
+        if (value.signum() != 0) {
+            rlpEncoded = null;
+        }
+        
         this.balance = balance.subtract(value);
         setDirty(true);
     }
@@ -212,16 +218,16 @@ public class AccountState {
     }
 
     public Boolean isHibernated() {
-        return ((stateFlags & accHibernatedMask) != 0);
+        return ((stateFlags & ACC_HIBERNATED_MASK) != 0);
     }
 
     public void hibernate() {
-        stateFlags = stateFlags | accHibernatedMask;
+        stateFlags = stateFlags | ACC_HIBERNATED_MASK;
         setDirty(true);
         rlpEncoded = null;
     }
 
     public void wakeUp() {
-        stateFlags = stateFlags & ~accHibernatedMask;
+        stateFlags = stateFlags & ~ACC_HIBERNATED_MASK;
     }
 }

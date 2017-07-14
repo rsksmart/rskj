@@ -31,7 +31,7 @@ import javax.annotation.Nonnull;
  * Created by ajlopez on 5/16/2016.
  */
 public class EthMessageSender implements MessageSender {
-    final private Eth eth;
+    private final Eth eth;
     private NodeID nodeID;
 
     /**

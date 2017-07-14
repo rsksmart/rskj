@@ -166,7 +166,9 @@ public class HandshakeHandler extends ByteToMessageDecoder {
 
                     responsePacket = readEIP8Packet(buffer, responsePacket);
 
-                    if (responsePacket == null) return;
+                    if (responsePacket == null) {
+                        return;
+                    }
 
                     AuthResponseMessageV4 response = handshake.handleAuthResponseV4(myKey, initiatePacket, responsePacket);
                     loggerNet.info("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), response);
@@ -227,7 +229,9 @@ public class HandshakeHandler extends ByteToMessageDecoder {
 
                         authInitPacket = readEIP8Packet(buffer, authInitPacket);
 
-                        if (authInitPacket == null) return;
+                        if (authInitPacket == null) {
+                            return;
+                        }
 
                         AuthInitiateMessageV4 initiateMessage = handshake.decryptAuthInitiateV4(authInitPacket, myKey);
                         loggerNet.info("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), initiateMessage);

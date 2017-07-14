@@ -39,8 +39,11 @@ public class ProgramInvokeImpl implements ProgramInvoke {
      * TRANSACTION  env **
      */
     private final DataWord address;
-    private final DataWord origin, caller,
-            balance, gasPrice, callValue;
+    private final DataWord origin;
+    private final DataWord caller;
+    private final DataWord balance;
+    private final DataWord gasPrice;
+    private final DataWord callValue;
     private long gas;
 
     byte[] msgData;
@@ -48,8 +51,12 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     /**
      * BLOCK  env **
      */
-    private final DataWord prevHash, coinbase, timestamp,
-            number, difficulty, gaslimit;
+    private final DataWord prevHash;
+    private final DataWord coinbase;
+    private final DataWord timestamp;
+    private final DataWord number;
+    private final DataWord difficulty;
+    private final DataWord gaslimit;
 
     private Map<DataWord, DataWord> storage;
 
@@ -171,7 +178,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     /* NOTE: In the protocol there is no restriction on the maximum message data,
      * However msgData here is a byte[] and this can't hold more than 2^32-1
      */
-    private static BigInteger MAX_MSG_DATA = BigInteger.valueOf(Integer.MAX_VALUE);
+    private static BigInteger maxMsgData = BigInteger.valueOf(Integer.MAX_VALUE);
 
     /*     CALLDATALOAD  op   */
     public DataWord getDataValue(DataWord indexData) {
@@ -181,7 +188,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         int size = 32; // maximum datavalue size
 
         if (msgData == null || index >= msgData.length
-                || tempIndex.compareTo(MAX_MSG_DATA) == 1)
+                || tempIndex.compareTo(maxMsgData) == 1)
             return new DataWord();
         if (index + size > msgData.length)
             size = msgData.length - index;
@@ -194,7 +201,9 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     /*  CALLDATASIZE */
     public DataWord getDataSize() {
 
-        if (msgData == null || msgData.length == 0) return DataWord.ZERO;
+        if (msgData == null || msgData.length == 0) {
+            return DataWord.ZERO;
+        }
         int size = msgData.length;
         return new DataWord(size);
     }
@@ -207,9 +216,15 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
         byte[] data = new byte[length];
 
-        if (msgData == null) return data;
-        if (offset > msgData.length) return data;
-        if (offset + length > msgData.length) length = msgData.length - offset;
+        if (msgData == null) {
+            return data;
+        }
+        if (offset > msgData.length) {
+            return data;
+        }
+        if (offset + length > msgData.length) {
+            length = msgData.length - offset;
+        }
 
         System.arraycopy(msgData, offset, data, 0, length);
 
@@ -278,29 +293,69 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ProgramInvokeImpl that = (ProgramInvokeImpl) o;
 
-        if (byTestingSuite != that.byTestingSuite) return false;
-        if (byTransaction != that.byTransaction) return false;
-        if (address != null ? !address.equals(that.address) : that.address != null) return false;
-        if (balance != null ? !balance.equals(that.balance) : that.balance != null) return false;
-        if (callValue != null ? !callValue.equals(that.callValue) : that.callValue != null) return false;
-        if (caller != null ? !caller.equals(that.caller) : that.caller != null) return false;
-        if (coinbase != null ? !coinbase.equals(that.coinbase) : that.coinbase != null) return false;
-        if (difficulty != null ? !difficulty.equals(that.difficulty) : that.difficulty != null) return false;
-        if (gas!=that.gas) return false;
-        if (gasPrice != null ? !gasPrice.equals(that.gasPrice) : that.gasPrice != null) return false;
-        if (gaslimit != null ? !gaslimit.equals(that.gaslimit) : that.gaslimit != null) return false;
-        if (!Arrays.equals(msgData, that.msgData)) return false;
-        if (number != null ? !number.equals(that.number) : that.number != null) return false;
-        if (origin != null ? !origin.equals(that.origin) : that.origin != null) return false;
-        if (prevHash != null ? !prevHash.equals(that.prevHash) : that.prevHash != null) return false;
-        if (repository != null ? !repository.equals(that.repository) : that.repository != null) return false;
-        if (storage != null ? !storage.equals(that.storage) : that.storage != null) return false;
-        if (timestamp != null ? !timestamp.equals(that.timestamp) : that.timestamp != null) return false;
+        if (byTestingSuite != that.byTestingSuite) {
+            return false;
+        }
+        if (byTransaction != that.byTransaction) {
+            return false;
+        }
+        if (address != null ? !address.equals(that.address) : that.address != null) {
+            return false;
+        }
+        if (balance != null ? !balance.equals(that.balance) : that.balance != null) {
+            return false;
+        }
+        if (callValue != null ? !callValue.equals(that.callValue) : that.callValue != null) {
+            return false;
+        }
+        if (caller != null ? !caller.equals(that.caller) : that.caller != null) {
+            return false;
+        }
+        if (coinbase != null ? !coinbase.equals(that.coinbase) : that.coinbase != null) {
+            return false;
+        }
+        if (difficulty != null ? !difficulty.equals(that.difficulty) : that.difficulty != null) {
+            return false;
+        }
+        if (gas!=that.gas) {
+            return false;
+        }
+        if (gasPrice != null ? !gasPrice.equals(that.gasPrice) : that.gasPrice != null) {
+            return false;
+        }
+        if (gaslimit != null ? !gaslimit.equals(that.gaslimit) : that.gaslimit != null) {
+            return false;
+        }
+        if (!Arrays.equals(msgData, that.msgData)) {
+            return false;
+        }
+        if (number != null ? !number.equals(that.number) : that.number != null) {
+            return false;
+        }
+        if (origin != null ? !origin.equals(that.origin) : that.origin != null) {
+            return false;
+        }
+        if (prevHash != null ? !prevHash.equals(that.prevHash) : that.prevHash != null) {
+            return false;
+        }
+        if (repository != null ? !repository.equals(that.repository) : that.repository != null) {
+            return false;
+        }
+        if (storage != null ? !storage.equals(that.storage) : that.storage != null) {
+            return false;
+        }
+        if (timestamp != null ? !timestamp.equals(that.timestamp) : that.timestamp != null) {
+            return false;
+        }
 
         return true;
     }

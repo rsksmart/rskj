@@ -46,7 +46,7 @@ import java.util.List;
  */
 public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage> implements Eth {
 
-    private final static Logger logger = LoggerFactory.getLogger("net");
+    private static final Logger logger = LoggerFactory.getLogger("net");
 
     @Autowired
     protected Blockchain blockchain;

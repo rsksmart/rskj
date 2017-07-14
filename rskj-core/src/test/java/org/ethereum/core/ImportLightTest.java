@@ -50,7 +50,7 @@ public class ImportLightTest {
     public static void setup() {
         SystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig(new GenesisConfig.GenesisConstants() {
             @Override
-            public BigInteger getMINIMUM_DIFFICULTY() {
+            public BigInteger getMinimumDifficulty() {
                 return BigInteger.ONE;
             }
         }));

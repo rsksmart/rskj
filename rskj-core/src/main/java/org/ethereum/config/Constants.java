@@ -32,21 +32,21 @@ import java.math.BigInteger;
  * Created by Anton Nashatyrev on 25.02.2016.
  */
 public class Constants {
-    private int MAXIMUM_EXTRA_DATA_SIZE = 32;
-    private int MIN_GAS_LIMIT = 3000000;
-    private int GAS_LIMIT_BOUND_DIVISOR = 1024;
-    private int TARGET_GAS_LIMIT = 5000000;
+    private int maximumExtraDataSize = 32;
+    private int minGasLimit = 3000000;
+    private int gasLimitBoundDivisor = 1024;
+    private int targetGasLimit = 5000000;
 
-    private BigInteger MINIMUM_DIFFICULTY = BigInteger.valueOf(131072);
-    private BigInteger DIFFICULTY_BOUND_DIVISOR = BigInteger.valueOf(2048);
-    private int EXP_DIFFICULTY_PERIOD = 100000;
+    private BigInteger minimumDifficulty = BigInteger.valueOf(131072);
+    private BigInteger difficultyBoundDivisor = BigInteger.valueOf(2048);
+    private int expDifficultyPeriod = 100000;
 
-    private int UNCLE_GENERATION_LIMIT = 7;
-    private int UNCLE_LIST_LIMIT = 10;
+    private int uncleGenerationLimit = 7;
+    private int uncleListLimit = 10;
 
-    private int BEST_NUMBER_DIFF_LIMIT = 100;
+    private int bestNumberDiffLimit = 100;
 
-    private int NEW_BLOCK_MAX_MIN_IN_THE_FUTURE = 540;
+    private int newBlockMaxMinInTheFuture = 540;
 
     private static final BigInteger SECP256K1N = new BigInteger("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
 
@@ -54,7 +54,7 @@ public class Constants {
 
     private static final byte CHAIN_ID = 30;
 
-    public int getDURATION_LIMIT() {
+    public int getDurationLimit() {
         return 8;
     }
 
@@ -64,40 +64,40 @@ public class Constants {
         return BigInteger.ZERO;
     }
 
-    public int getMAXIMUM_EXTRA_DATA_SIZE() {
-        return MAXIMUM_EXTRA_DATA_SIZE;
+    public int getMaximumExtraDataSize() {
+        return maximumExtraDataSize;
     }
 
-    public int getMIN_GAS_LIMIT() {
-        return MIN_GAS_LIMIT;
+    public int getMinGasLimit() {
+        return minGasLimit;
     }
 
-    public int getGAS_LIMIT_BOUND_DIVISOR() {
-        return GAS_LIMIT_BOUND_DIVISOR;
+    public int getGasLimitBoundDivisor() {
+        return gasLimitBoundDivisor;
     }
 
-    public BigInteger getMINIMUM_DIFFICULTY() {
-        return MINIMUM_DIFFICULTY;
+    public BigInteger getMinimumDifficulty() {
+        return minimumDifficulty;
     }
 
-    public BigInteger getDIFFICULTY_BOUND_DIVISOR() {
-        return DIFFICULTY_BOUND_DIVISOR;
+    public BigInteger getDifficultyBoundDivisor() {
+        return difficultyBoundDivisor;
     }
 
-    public int getEXP_DIFFICULTY_PERIOD() {
-        return EXP_DIFFICULTY_PERIOD;
+    public int getExpDifficultyPeriod() {
+        return expDifficultyPeriod;
     }
 
-    public int getUNCLE_GENERATION_LIMIT() {
-        return UNCLE_GENERATION_LIMIT;
+    public int getUncleGenerationLimit() {
+        return uncleGenerationLimit;
     }
 
-    public int getUNCLE_LIST_LIMIT() {
-        return UNCLE_LIST_LIMIT;
+    public int getUncleListLimit() {
+        return uncleListLimit;
     }
 
-    public int getBEST_NUMBER_DIFF_LIMIT() {
-        return BEST_NUMBER_DIFF_LIMIT;
+    public int getBestNumberDiffLimit() {
+        return bestNumberDiffLimit;
     }
 
     public static BigInteger getSECP256K1N() {
@@ -106,12 +106,12 @@ public class Constants {
 
     public BridgeConstants getBridgeConstants() { return BridgeTestNetConstants.getInstance(); }
 
-    public long getTARGET_GAS_LIMIT() {
-        return TARGET_GAS_LIMIT;
+    public long getTargetGasLimit() {
+        return targetGasLimit;
     }
 
     public int getNewBlockMaxMinInTheFuture() {
-        return this.NEW_BLOCK_MAX_MIN_IN_THE_FUTURE;
+        return this.newBlockMaxMinInTheFuture;
     }
 
     public byte[] getBurnAddress() { return ByteUtils.clone(Constants.BURN_ADDRESS); }

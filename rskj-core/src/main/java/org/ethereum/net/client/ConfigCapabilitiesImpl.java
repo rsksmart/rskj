@@ -41,16 +41,18 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
     @Autowired
     SystemProperties config;
 
-    private SortedSet<Capability> AllCaps = new TreeSet<>();
+    private SortedSet<Capability> allCaps = new TreeSet<>();
 
     @PostConstruct
     private void init() {
         if (config.syncVersion() != null) {
             EthVersion eth = fromCode(config.syncVersion());
-            if (eth != null) AllCaps.add(new Capability(RSK, eth.getCode()));
+            if (eth != null) {
+                allCaps.add(new Capability(RSK, eth.getCode()));
+            }
         } else {
             for (EthVersion v : EthVersion.supported())
-                AllCaps.add(new Capability(RSK, v.getCode()));
+                allCaps.add(new Capability(RSK, v.getCode()));
         }
     }
 
@@ -61,7 +63,7 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
     public List<Capability> getConfigCapabilities() {
         List<Capability> ret = new ArrayList<>();
         List<String> caps = config.peerCapabilities();
-        for (Capability capability : AllCaps) {
+        for (Capability capability : allCaps) {
             if (caps.contains(capability.getName())) {
                 ret.add(capability);
             }

@@ -40,7 +40,7 @@ public class EventDispatchThread {
     private static final Logger logger = LoggerFactory.getLogger("blockchain");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private final static ExecutorService executor = Executors.newSingleThreadExecutor();
+    private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     public static void invokeLater(final Runnable r) {
         executor.submit(new Runnable() {

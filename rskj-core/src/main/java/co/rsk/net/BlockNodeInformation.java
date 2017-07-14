@@ -35,25 +35,25 @@ import java.util.*;
 public class BlockNodeInformation {
     private final Map<NodeID, Set<ByteArrayWrapper>> blocksByNode;
     private final LinkedHashMap<ByteArrayWrapper, Set<NodeID>> nodesByBlock;
-    private final int MAX_BLOCKS;
-    private final int MAX_PEERS;
+    private final int maxBlocks;
+    private final int maxPeers;
 
     public BlockNodeInformation(final int maxBlocks, final int maxPeers) {
-        MAX_BLOCKS = maxBlocks;
-        MAX_PEERS = maxPeers;
+        this.maxBlocks = maxBlocks;
+        this.maxPeers = maxPeers;
 
         // Nodes are evicted in Least-recently-accessed order.
-        blocksByNode = new LinkedHashMap<NodeID, Set<ByteArrayWrapper>>(MAX_PEERS, 0.75f, true) {
+        blocksByNode = new LinkedHashMap<NodeID, Set<ByteArrayWrapper>>(BlockNodeInformation.this.maxPeers, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<NodeID, Set<ByteArrayWrapper>> eldest) {
-                return size() > MAX_PEERS;
+                return size() > BlockNodeInformation.this.maxPeers;
             }
         };
         // Blocks are evicted in Least-recently-accessed order.
-        nodesByBlock = new LinkedHashMap<ByteArrayWrapper, Set<NodeID>>(MAX_BLOCKS, 0.75f, true) {
+        nodesByBlock = new LinkedHashMap<ByteArrayWrapper, Set<NodeID>>(BlockNodeInformation.this.maxBlocks, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<ByteArrayWrapper, Set<NodeID>> eldest) {
-                return size() > MAX_BLOCKS;
+                return size() > BlockNodeInformation.this.maxBlocks;
             }
         };
     }
@@ -76,7 +76,7 @@ public class BlockNodeInformation {
             nodeBlocks = Collections.newSetFromMap(
                     new LinkedHashMap<ByteArrayWrapper, Boolean>() {
                         protected boolean removeEldestEntry(Map.Entry<ByteArrayWrapper, Boolean> eldest) {
-                            return size() > MAX_BLOCKS;
+                            return size() > maxBlocks;
                         }
                     }
             );

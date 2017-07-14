@@ -46,10 +46,10 @@ public class StaticMessages {
     @Autowired
     ConfigCapabilities configCapabilities;
 
-    public final static PingMessage PING_MESSAGE = new PingMessage();
-    public final static PongMessage PONG_MESSAGE = new PongMessage();
-    public final static GetPeersMessage GET_PEERS_MESSAGE = new GetPeersMessage();
-    public final static DisconnectMessage DISCONNECT_MESSAGE = new DisconnectMessage(ReasonCode.REQUESTED);
+    public static final PingMessage PING_MESSAGE = new PingMessage();
+    public static final PongMessage PONG_MESSAGE = new PongMessage();
+    public static final GetPeersMessage GET_PEERS_MESSAGE = new GetPeersMessage();
+    public static final DisconnectMessage DISCONNECT_MESSAGE = new DisconnectMessage(ReasonCode.REQUESTED);
 
     public HelloMessage createHelloMessage(String peerId) {
         return createHelloMessage(peerId, config.listenPort());

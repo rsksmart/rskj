@@ -55,7 +55,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private final PendingState pendingState;
     private long lastStatusSent = 0;
 
-    private ProofOfWorkRule PoWRule;
+    private ProofOfWorkRule powRule;
 
     private TransactionNodeInformation transactionNodeInformation;
 
@@ -75,7 +75,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
         this.pendingState = pendingState;
-        PoWRule = new ProofOfWorkRule();
+        powRule = new ProofOfWorkRule();
         transactionNodeInformation = new TransactionNodeInformation();
         this.txHandler = txHandler;
         this.lastImportedBestBlock = System.currentTimeMillis();
@@ -83,7 +83,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     @VisibleForTesting
     public NodeMessageHandler disablePoWValidation() {
-        this.PoWRule = null;
+        this.powRule = null;
         return this;
     }
 
@@ -214,12 +214,12 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
      * @return true if the block is valid, false otherwise.
      */
     private boolean isValidBlock(@Nonnull final Block block) {
-        if (PoWRule == null)
+        if (powRule == null)
             return true;
 
         try {
 
-            if (!PoWRule.isValid(block))
+            if (!powRule.isValid(block))
                 return false;
 
         } catch (Exception e) {

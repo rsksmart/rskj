@@ -32,7 +32,7 @@ import java.util.List;
  * Created by ajlopez on 01/08/2016.
  */
 public class BlockResult {
-    public final static BlockResult INTERRUPTED_EXECUTION_BLOCK_RESULT = new BlockResult(true);
+    public static final BlockResult INTERRUPTED_EXECUTION_BLOCK_RESULT = new BlockResult(true);
 
     private boolean interruptedExecution;
     private List<Transaction> executedTransactions;

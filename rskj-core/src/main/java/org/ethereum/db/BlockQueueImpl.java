@@ -43,14 +43,14 @@ import static org.ethereum.config.SystemProperties.CONFIG;
  */
 public class BlockQueueImpl implements BlockQueue {
 
-    private final static Logger logger = LoggerFactory.getLogger("blockqueue");
+    private static final Logger logger = LoggerFactory.getLogger("blockqueue");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private static final int READ_HITS_COMMIT_THRESHOLD = 1000;
     private int readHits;
 
-    private final static String STORE_NAME = "blockqueue";
-    private final static String HASH_SET_NAME = "hashset";
+    private static final String STORE_NAME = "blockqueue";
+    private static final String HASH_SET_NAME = "hashset";
     private MapDBFactory mapDBFactory;
 
     private DB db;
@@ -183,7 +183,9 @@ public class BlockQueueImpl implements BlockQueue {
 
         BlockWrapper old = blocks.get(block.getNumber());
 
-        if (block.isEqual(old)) return;
+        if (block.isEqual(old)) {
+            return;
+        }
 
         if (old != null) {
             hashes.remove(new ByteArrayWrapper(old.getHash()));
@@ -330,10 +332,14 @@ public class BlockQueueImpl implements BlockQueue {
         synchronized (index) {
 
             for (Long idx : index) {
-                if (++i > scanLimit) break;
+                if (++i > scanLimit) {
+                    break;
+                }
 
                 BlockWrapper b = blocks.get(idx);
-                if (b.sentBy(nodeId)) removed.add(idx);
+                if (b.sentBy(nodeId)) {
+                    removed.add(idx);
+                }
             }
 
             blocks.keySet().removeAll(removed);

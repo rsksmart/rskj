@@ -103,7 +103,7 @@ public class CommonConfig {
                 new ParentNumberRule(),
                 new DifficultyRule(),
                 new ParentGasLimitRule(RskSystemProperties.CONFIG.getBlockchainConfig().
-                        getCommonConstants().getGAS_LIMIT_BOUND_DIVISOR())));
+                        getCommonConstants().getGasLimitBoundDivisor())));
 
         return new ParentBlockHeaderValidator(rules);
     }

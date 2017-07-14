@@ -42,7 +42,10 @@ public class BridgeUtils {
             return null;
         }
         for (int i = 0; i < (headHeight - height); i++) {
-            if (storedBlock==null) return null;
+            if (storedBlock==null) {
+                return null;
+            }
+            
             Sha256Hash prevBlockHash = storedBlock.getHeader().getPrevBlockHash();
             storedBlock = blockStore.get(prevBlockHash);
         }

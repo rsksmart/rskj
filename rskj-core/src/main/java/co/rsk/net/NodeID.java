@@ -27,8 +27,8 @@ import java.util.Arrays;
  * NodeID is a wrapper over the nodeID byte array used by Ethereum.
  */
 public class NodeID {
-    final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
-    final private byte[] nodeID;
+    protected static final char[] hexArray = "0123456789ABCDEF".toCharArray();
+    private final byte[] nodeID;
 
     public NodeID(@Nonnull final byte[] nodeID) {
         this.nodeID = nodeID;
@@ -36,8 +36,13 @@ public class NodeID {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         NodeID nodeID1 = (NodeID) o;
 

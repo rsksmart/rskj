@@ -122,14 +122,14 @@ public class ConcatKDFBytesGenerator
 
         byte[] dig = new byte[digest.getDigestSize()];
 
-        byte[] C = new byte[4];
-        Pack.intToBigEndian(counterStart, C, 0);
+        byte[] c = new byte[4];
+        Pack.intToBigEndian(counterStart, c, 0);
 
         int counterBase = counterStart & ~0xFF;
 
         for (int i = 0; i < cThreshold; i++)
         {
-            digest.update(C, 0, C.length);
+            digest.update(c, 0, c.length);
             digest.update(shared, 0, shared.length);
 
             if (iv != null)
@@ -150,10 +150,10 @@ public class ConcatKDFBytesGenerator
                 System.arraycopy(dig, 0, out, outOff, len);
             }
 
-            if (++C[3] == 0)
+            if (++c[3] == 0)
             {
                 counterBase += 0x100;
-                Pack.intToBigEndian(counterBase, C, 0);
+                Pack.intToBigEndian(counterBase, c, 0);
             }
         }
 

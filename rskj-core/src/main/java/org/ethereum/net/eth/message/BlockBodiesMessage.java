@@ -69,12 +69,16 @@ public class BlockBodiesMessage extends EthMessage {
 
     @Override
     public byte[] getEncoded() {
-        if (encoded == null) encode();
+        if (encoded == null) {
+            encode();
+        }
         return encoded;
     }
 
     public List<byte[]> getBlockBodies() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return blockBodies;
     }
 
@@ -89,7 +93,9 @@ public class BlockBodiesMessage extends EthMessage {
     }
 
     public String toString() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
 
         StringBuilder payload = new StringBuilder();
 

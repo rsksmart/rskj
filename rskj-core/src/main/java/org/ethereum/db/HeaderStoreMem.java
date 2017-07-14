@@ -113,7 +113,9 @@ public class HeaderStoreMem implements HeaderStore {
         synchronized (mutex) {
             while (headers.size() < qty) {
                 BlockHeaderWrapper header = pollInner();
-                if (header == null) break;
+                if (header == null) {
+                    break;
+                }
                 headers.add(header);
             }
         }
@@ -151,7 +153,9 @@ public class HeaderStoreMem implements HeaderStore {
                 if (!hasSent) {
                     hasSent = h.sentBy(nodeId);
                 }
-                if (hasSent) removed.add(idx);
+                if (hasSent) {
+                    removed.add(idx);
+                }
             }
 
             headers.keySet().removeAll(removed);

@@ -62,7 +62,9 @@ public class DisconnectMessage extends P2pMessage {
 
     @Override
     public byte[] getEncoded() {
-        if (encoded == null) encode();
+        if (encoded == null) {
+            encode();
+        }
         return encoded;
     }
 
@@ -77,12 +79,16 @@ public class DisconnectMessage extends P2pMessage {
     }
 
     public ReasonCode getReason() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return reason;
     }
 
     public String toString() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return "[" + this.getCommand().name() + " reason=" + reason + "]";
     }
 }
