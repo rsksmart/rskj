@@ -1,5 +1,7 @@
 package co.rsk.scoring;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import java.net.InetAddress;
 import java.util.Arrays;
 
@@ -61,5 +63,15 @@ public class InetAddressBlock {
         InetAddressBlock block = (InetAddressBlock)obj;
 
         return block.mask == this.mask && Arrays.equals(block.bytes, this.bytes);
+    }
+
+    @VisibleForTesting
+    public byte[] getBytes() {
+        return this.bytes;
+    }
+
+    @VisibleForTesting
+    public byte getMask() {
+        return this.mask;
     }
 }

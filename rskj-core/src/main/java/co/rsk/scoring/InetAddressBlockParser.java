@@ -1,5 +1,8 @@
 package co.rsk.scoring;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 /**
  * Created by ajlopez on 14/07/2017.
  */
@@ -16,9 +19,12 @@ public class InetAddressBlockParser {
         return true;
     }
 
-    public InetAddressBlock parse(String text) {
+    public InetAddressBlock parse(String text) throws UnknownHostException {
         String[] parts = text.split("/");
 
-        return null;
+        InetAddress address = InetAddress.getByName(parts[0]);
+        int nbits = Integer.parseInt(parts[1]);
+
+        return new InetAddressBlock(address, nbits);
     }
 }
