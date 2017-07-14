@@ -2,6 +2,7 @@ package co.rsk.scoring;
 
 import com.google.common.annotations.VisibleForTesting;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,9 +19,9 @@ public class PeerScoring {
 
     public void recordEvent(EventType evt) {
         if (!counters.containsKey(evt))
-            counters.put(evt, new Integer(1));
+            counters.put(evt, 1);
         else
-            counters.put(evt, new Integer(counters.get(evt).intValue() + 1));
+            counters.put(evt, counters.get(evt).intValue() + 1);
 
         switch (evt) {
             case INVALID_NETWORK:

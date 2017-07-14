@@ -13,8 +13,9 @@ public class PunishmentCalculator {
     public long calculate(int punishmentCounter, int score) {
         long result = this.parameters.getDuration();
         double rate = ((100.0 + this.parameters.getIncrementRate()) / 100);
+        int counter = punishmentCounter;
 
-        while (punishmentCounter-- > 0) {
+        while (counter-- > 0) {
             result = (long)(result * rate);
             if (result > this.parameters.getMaximumDuration())
                 return this.parameters.getMaximumDuration();

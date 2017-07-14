@@ -19,10 +19,17 @@ public class InetAddressBlockParser {
         return true;
     }
 
-    public InetAddressBlock parse(String text) throws InetAddressBlockParserException, UnknownHostException {
+    public InetAddressBlock parse(String text) throws InetAddressBlockParserException {
         String[] parts = text.split("/");
 
-        InetAddress address = InetAddress.getByName(parts[0]);
+        InetAddress address;
+
+        try {
+            address = InetAddress.getByName(parts[0]);
+        }
+        catch (UnknownHostException ex) {
+            throw new InetAddressBlockParserException("Unknown host", ex);
+        }
 
         int nbits;
 

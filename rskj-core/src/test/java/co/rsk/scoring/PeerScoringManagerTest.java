@@ -158,7 +158,6 @@ public class PeerScoringManagerTest {
     public void notGoodReputationByNodeIDExpires() throws UnknownHostException, InterruptedException {
         NodeID id = generateNodeID();
         PeerScoringManager manager = createPeerScoringManager();
-        manager.setPunishmentDuration(10);
 
         manager.recordEvent(id, null, EventType.INVALID_BLOCK);
 
@@ -183,8 +182,6 @@ public class PeerScoringManagerTest {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
 
-        manager.setPunishmentDuration(10);
-
         manager.recordEvent(null, address, EventType.INVALID_BLOCK);
 
         Assert.assertEquals(1, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_BLOCK));
@@ -208,8 +205,6 @@ public class PeerScoringManagerTest {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
 
-        manager.setPunishmentDuration(10);
-
         manager.recordEvent(null, address, EventType.INVALID_BLOCK);
 
         Assert.assertEquals(1, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_BLOCK));
@@ -222,8 +217,6 @@ public class PeerScoringManagerTest {
     public void secondPunishment() throws UnknownHostException, InterruptedException {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
-
-        manager.setPunishmentDuration(10);
 
         manager.recordEvent(null, address, EventType.INVALID_BLOCK);
 

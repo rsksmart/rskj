@@ -18,7 +18,6 @@ public class PeerScoringManager {
     private PunishmentCalculator ipPunishmentCalculator;
 
     private final Object accessLock = new Object();
-    private long punishmentDuration = 0L;
 
     private InetAddressTable addressTable = new InetAddressTable();
 
@@ -74,10 +73,6 @@ public class PeerScoringManager {
             return false;
 
         return this.getPeerScoring(address).hasGoodReputation();
-    }
-
-    public void setPunishmentDuration(long time) {
-        this.punishmentDuration = time;
     }
 
     public void addBannedAddress(InetAddress address) {

@@ -57,14 +57,11 @@ public class RskFactory {
         return context;
     }
 
-
-
     public static Rsk createRsk(Class userSpringConfig) {
         return createRsk(SystemProperties.CONFIG, userSpringConfig);
     }
 
     public static Rsk createRsk(SystemProperties config, Class userSpringConfig) {
-
         logger.info("Running {},  core version: {}-{}", config.genesisInfo(), config.projectVersion(), config.projectVersionModifier());
         BuildInfo.printInfo();
 
@@ -92,8 +89,6 @@ public class RskFactory {
         final Rsk rs = context.getBean(Rsk.class);
 
         rs.getBlockchain().setRsk(true);
-
-        rs.getPeerScoringManager().setPunishmentDuration(RskSystemProperties.RSKCONFIG.getReputationExpirationTime());
 
         if (RskSystemProperties.RSKCONFIG.isBlocksEnabled()) {
             String recorder = RskSystemProperties.RSKCONFIG.blocksRecorder();
