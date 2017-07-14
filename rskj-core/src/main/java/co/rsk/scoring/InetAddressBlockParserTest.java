@@ -19,6 +19,7 @@ public class InetAddressBlockParserTest {
         Assert.assertFalse(parser.hasMask("1234/"));
         Assert.assertFalse(parser.hasMask("/1234"));
         Assert.assertFalse(parser.hasMask("1234/1234/1234"));
+        Assert.assertFalse(parser.hasMask("1234//1234"));
 
         Assert.assertTrue(parser.hasMask("1234/1234"));
     }
@@ -32,5 +33,18 @@ public class InetAddressBlockParserTest {
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(InetAddress.getByName("192.162.12.0").getAddress(), result.getBytes());
         Assert.assertEquals((byte)0xff, result.getMask());
+    }
+
+    @Test
+    public void parseAddressBlockWithInvalidBits() throws UnknownHostException {
+        InetAddressBlockParser parser = new InetAddressBlockParser();
+
+        try {
+            parser.parse("192.162.12.0/a");
+            Assert.fail();
+        }
+        catch (NumberFormatException ex) {
+            Assert.assertEquals("For input string: \"a\"", ex.getMessage());
+        }
     }
 }
