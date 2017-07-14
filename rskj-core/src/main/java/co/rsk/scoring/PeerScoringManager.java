@@ -88,6 +88,14 @@ public class PeerScoringManager {
         this.addressTable.removeAddress(address);
     }
 
+    public void addBannedAddressBlock(InetAddressBlock addressBlock) {
+        this.addressTable.addAddressBlock(addressBlock);
+    }
+
+    public void removeBannedAddressBlock(InetAddressBlock addressBlock) {
+        this.addressTable.removeAddressBlock(addressBlock);
+    }
+
     public List<PeerScoringInformation> getPeersInformation() {
         List<PeerScoringInformation> list = new ArrayList<>(this.peersByNodeID.size() + this.peersByAddress.size());
 

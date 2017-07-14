@@ -17,12 +17,12 @@ public class InetAddressTable {
 
     public void removeAddress(InetAddress address) { this.addresses.remove(address); }
 
-    public void addAddressBlock(InetAddress address, int nbits) {
-        this.blocks.add(new InetAddressBlock(address, nbits));
+    public void addAddressBlock(InetAddressBlock addressBlock) {
+        this.blocks.add(addressBlock);
     }
 
-    public void removeAddressBlock(InetAddress address, int nbits) {
-        this.blocks.remove(new InetAddressBlock(address, nbits));
+    public void removeAddressBlock(InetAddressBlock addressBlock) {
+        this.blocks.remove(addressBlock);
     }
 
     public void clearAddressBlocks() {
