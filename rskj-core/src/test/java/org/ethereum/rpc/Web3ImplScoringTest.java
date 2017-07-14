@@ -47,7 +47,7 @@ public class Web3ImplScoringTest {
     public void addBannedAddressUsingIPV4() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
-        InetAddress address = generateIPAddressV6();
+        InetAddress address = generateIPAddressV4();
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -57,10 +57,23 @@ public class Web3ImplScoringTest {
     }
 
     @Test
+    public void addBannedAddressUsingIPV4AndMask() throws UnknownHostException {
+        PeerScoringManager peerScoringManager = createPeerScoringManager();
+        Web3Impl web3 = createWeb3(peerScoringManager);
+        InetAddress address = generateIPAddressV4();
+
+        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+
+        web3.sco_addBannedAddress(address.getHostAddress() + "/8");
+
+        Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
+    }
+
+    @Test
     public void addAndRemoveBannedAddressUsingIPV4() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
-        InetAddress address = generateIPAddressV6();
+        InetAddress address = generateIPAddressV4();
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -74,14 +87,44 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void addBannedAddressUsingIPV6() throws UnknownHostException {
+    public void addAndRemoveBannedAddressUsingIPV4AndMask() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         InetAddress address = generateIPAddressV4();
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
+        web3.sco_addBannedAddress(address.getHostAddress() + "/8");
+
+        Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
+
+        web3.sco_removeBannedAddress(address.getHostAddress() + "/8");
+
+        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+    }
+
+    @Test
+    public void addBannedAddressUsingIPV6() throws UnknownHostException {
+        PeerScoringManager peerScoringManager = createPeerScoringManager();
+        Web3Impl web3 = createWeb3(peerScoringManager);
+        InetAddress address = generateIPAddressV6();
+
+        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+
         web3.sco_addBannedAddress(address.getHostAddress());
+
+        Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
+    }
+
+    @Test
+    public void addBannedAddressUsingIPV6AndMask() throws UnknownHostException {
+        PeerScoringManager peerScoringManager = createPeerScoringManager();
+        Web3Impl web3 = createWeb3(peerScoringManager);
+        InetAddress address = generateIPAddressV6();
+
+        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+
+        web3.sco_addBannedAddress(address.getHostAddress() + "/64");
 
         Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
     }
@@ -99,6 +142,23 @@ public class Web3ImplScoringTest {
         Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
 
         web3.sco_removeBannedAddress(address.getHostAddress());
+
+        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+    }
+
+    @Test
+    public void addAndRemoveBannedAddressUsingIPV6AndMask() throws UnknownHostException {
+        PeerScoringManager peerScoringManager = createPeerScoringManager();
+        Web3Impl web3 = createWeb3(peerScoringManager);
+        InetAddress address = generateIPAddressV4();
+
+        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+
+        web3.sco_addBannedAddress(address.getHostAddress() + "/64");
+
+        Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
+
+        web3.sco_removeBannedAddress(address.getHostAddress() + "/64");
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
     }
