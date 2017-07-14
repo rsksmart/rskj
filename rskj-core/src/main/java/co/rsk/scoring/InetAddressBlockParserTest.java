@@ -25,7 +25,7 @@ public class InetAddressBlockParserTest {
     }
 
     @Test
-    public void parseAddressBlock() throws UnknownHostException {
+    public void parseAddressBlock() throws UnknownHostException, InetAddressBlockParserException {
         InetAddressBlockParser parser = new InetAddressBlockParser();
 
         InetAddressBlock result = parser.parse("192.162.12.0/8");
@@ -36,15 +36,54 @@ public class InetAddressBlockParserTest {
     }
 
     @Test
-    public void parseAddressBlockWithInvalidBits() throws UnknownHostException {
+    public void parseAddressBlockWithNonNumericBits() throws UnknownHostException {
         InetAddressBlockParser parser = new InetAddressBlockParser();
 
         try {
             parser.parse("192.162.12.0/a");
             Assert.fail();
         }
-        catch (NumberFormatException ex) {
-            Assert.assertEquals("For input string: \"a\"", ex.getMessage());
+        catch (InetAddressBlockParserException ex) {
+            Assert.assertEquals("Invalid mask", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void parseAddressBlockWithNegativeNumberOfBits() throws UnknownHostException {
+        InetAddressBlockParser parser = new InetAddressBlockParser();
+
+        try {
+            parser.parse("192.162.12.0/-10");
+            Assert.fail();
+        }
+        catch (InetAddressBlockParserException ex) {
+            Assert.assertEquals("Invalid mask", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void parseAddressBlockWithZeroBits() throws UnknownHostException {
+        InetAddressBlockParser parser = new InetAddressBlockParser();
+
+        try {
+            parser.parse("192.162.12.0/0");
+            Assert.fail();
+        }
+        catch (InetAddressBlockParserException ex) {
+            Assert.assertEquals("Invalid mask", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void parseAddressBlockWithTooBigNumberOfBits() throws UnknownHostException {
+        InetAddressBlockParser parser = new InetAddressBlockParser();
+
+        try {
+            parser.parse("192.162.12.0/1000");
+            Assert.fail();
+        }
+        catch (InetAddressBlockParserException ex) {
+            Assert.assertEquals("Invalid mask", ex.getMessage());
         }
     }
 }

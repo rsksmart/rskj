@@ -19,11 +19,22 @@ public class InetAddressBlockParser {
         return true;
     }
 
-    public InetAddressBlock parse(String text) throws UnknownHostException {
+    public InetAddressBlock parse(String text) throws InetAddressBlockParserException, UnknownHostException {
         String[] parts = text.split("/");
 
         InetAddress address = InetAddress.getByName(parts[0]);
-        int nbits = Integer.parseInt(parts[1]);
+
+        int nbits;
+
+        try {
+            nbits = Integer.parseInt(parts[1]);
+        }
+        catch (NumberFormatException ex) {
+            throw new InetAddressBlockParserException("Invalid mask", ex);
+        }
+
+        if (nbits <= 0 || nbits > 128)
+            throw new InetAddressBlockParserException("Invalid mask", null);
 
         return new InetAddressBlock(address, nbits);
     }
