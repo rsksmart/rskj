@@ -2,6 +2,7 @@ package co.rsk.scoring;
 
 import com.google.common.annotations.VisibleForTesting;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -36,35 +37,29 @@ public class PeerScoring {
      * @param evt       An event type @see EventType
      */
     public void recordEvent(EventType evt) {
-        try {
-            rwlock.writeLock().lock();
+        if (!counters.containsKey(evt))
+            counters.put(evt, 1);
+        else
+            counters.put(evt, counters.get(evt).intValue() + 1);
 
-            if (!counters.containsKey(evt))
-                counters.put(evt, 1);
-            else
-                counters.put(evt, counters.get(evt).intValue() + 1);
+        switch (evt) {
+            case INVALID_NETWORK:
+            case INVALID_BLOCK:
+            case INVALID_TRANSACTION:
+                if (score > 0)
+                    score = 0;
+                score--;
+                break;
 
-            switch (evt) {
-                case INVALID_NETWORK:
-                case INVALID_BLOCK:
-                case INVALID_TRANSACTION:
-                    if (score > 0)
-                        score = 0;
-                    score--;
-                    break;
+            case FAILED_HANDSHAKE:
+            case SUCCESSFUL_HANDSHAKE:
+            case REPEATED_MESSAGE:
+                break;
 
-                case FAILED_HANDSHAKE:
-                case SUCCESSFUL_HANDSHAKE:
-                case REPEATED_MESSAGE:
-                    break;
-
-                default:
-                    if (score >= 0)
-                        score++;
-                    break;
-            }
-        } finally {
-            rwlock.writeLock().unlock();
+            default:
+                if (score >= 0)
+                    score++;
+                break;
         }
     }
 

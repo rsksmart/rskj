@@ -299,10 +299,4 @@ public class RskSystemProperties extends SystemProperties {
     public boolean getForceTargetGasLimit() {
         return getBooleanProperty("forcegaslimit", false);
     }
-
-    public long getReputationExpirationTime() {
-        long ret = config.hasPath("reputation.expires") ? config.getLong("reputation.expires") * 1000 : 0;
-
-        return (ret > 0) ? ret : 0;
-    }
 }
