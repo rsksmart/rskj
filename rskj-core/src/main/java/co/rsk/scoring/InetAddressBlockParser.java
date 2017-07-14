@@ -33,7 +33,7 @@ public class InetAddressBlockParser {
             throw new InetAddressBlockParserException("Invalid mask", ex);
         }
 
-        if (nbits <= 0 || nbits > 128)
+        if (nbits <= 0 || nbits > address.getAddress().length * 8)
             throw new InetAddressBlockParserException("Invalid mask", null);
 
         return new InetAddressBlock(address, nbits);
