@@ -22,6 +22,7 @@ import co.rsk.net.discovery.message.*;
 import co.rsk.net.discovery.table.NodeDistanceTable;
 import co.rsk.net.discovery.table.OperationResult;
 import co.rsk.net.discovery.table.PeerDiscoveryRequestBuilder;
+import co.rsk.util.IpUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.util.ConcurrentHashSet;
@@ -288,15 +289,7 @@ public class PeerExplorer {
 
     private void loadInitialBootNodes(List<String> nodes) {
         if (CollectionUtils.isNotEmpty(nodes)) {
-            for (String node : nodes) {
-                String[] addressData = StringUtils.split(node, ":");
-                if (addressData != null && addressData.length == 2) {
-                    List<String> dataList = Arrays.asList(addressData);
-                    bootNodes.add(new InetSocketAddress(dataList.get(0), Integer.parseInt(dataList.get(1))));
-                } else {
-                    logger.debug("Invalid bootNode address: {}", node);
-                }
-            }
+            bootNodes.addAll(IpUtils.parseAddresses(nodes));
         }
     }
 
