@@ -103,4 +103,15 @@ public class InetAddressUtilsTest {
             Assert.assertEquals("local address: 'localhost'", ex.getMessage());
         }
     }
+
+    @Test
+    public void getAnyLocalAddress() {
+        try {
+            InetAddressUtils.getAddress("0.0.0.0");
+            Assert.fail();
+        }
+        catch (InvalidInetAddressException ex) {
+            Assert.assertEquals("local address: '0.0.0.0'", ex.getMessage());
+        }
+    }
 }
