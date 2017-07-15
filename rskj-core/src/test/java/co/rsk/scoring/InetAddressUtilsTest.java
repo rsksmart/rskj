@@ -1,5 +1,6 @@
 package co.rsk.scoring;
 
+import com.sun.javaws.exceptions.InvalidArgumentException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -23,7 +24,7 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void getAddressFromIPV4() throws UnknownHostException {
+    public void getAddressFromIPV4() throws InvalidInetAddressException {
         InetAddress address = InetAddressUtils.getAddress("192.168.56.1");
 
         Assert.assertNotNull(address);
@@ -36,7 +37,7 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void getAddressFromIPV6() throws UnknownHostException {
+    public void getAddressFromIPV6() throws InvalidInetAddressException, UnknownHostException {
         InetAddress address = InetAddressUtils.getAddress("fe80::498a:7f0e:e63d:6b98");
         InetAddress expected = InetAddress.getByName("fe80::498a:7f0e:e63d:6b98");
 
@@ -47,5 +48,16 @@ public class InetAddressUtilsTest {
         Assert.assertNotNull(bytes);
         Assert.assertEquals(16, bytes.length);
         Assert.assertArrayEquals(expected.getAddress(), bytes);
+    }
+
+    @Test
+    public void getAddressFromNull() {
+        try {
+            InetAddressUtils.getAddress(null);
+            Assert.fail();
+        }
+        catch (InvalidInetAddressException ex) {
+            Assert.assertEquals("null address", ex.getMessage());
+        }
     }
 }

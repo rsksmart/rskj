@@ -19,8 +19,16 @@ public class InetAddressUtils {
         return true;
     }
 
-    public static InetAddress getAddress(String name) throws UnknownHostException {
-        return InetAddress.getByName(name);
+    public static InetAddress getAddress(String name) throws InvalidInetAddressException {
+        if (name == null)
+            throw new InvalidInetAddressException("null address", null);
+
+        try {
+            return InetAddress.getByName(name);
+        }
+        catch (UnknownHostException ex) {
+            throw new InvalidInetAddressException("unknown host: '" + name + "'", ex);
+        }
     }
 
     private InetAddressUtils() {}
