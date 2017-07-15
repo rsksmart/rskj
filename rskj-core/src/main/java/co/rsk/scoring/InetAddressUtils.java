@@ -1,5 +1,8 @@
 package co.rsk.scoring;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 /**
  * Created by ajlopez on 15/07/2017.
  */
@@ -14,6 +17,10 @@ public class InetAddressUtils {
             return false;
 
         return true;
+    }
+
+    public static InetAddress getAddress(String name) throws UnknownHostException {
+        return InetAddress.getByName(name);
     }
 
     private InetAddressUtils() {}
