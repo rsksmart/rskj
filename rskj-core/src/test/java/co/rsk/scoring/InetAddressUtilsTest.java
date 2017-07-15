@@ -60,4 +60,26 @@ public class InetAddressUtilsTest {
             Assert.assertEquals("null address", ex.getMessage());
         }
     }
+
+    @Test
+    public void getAddressFromEmptyString() {
+        try {
+            InetAddressUtils.getAddress("");
+            Assert.fail();
+        }
+        catch (InvalidInetAddressException ex) {
+            Assert.assertEquals("empty address", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void getAddressFromBlankString() {
+        try {
+            InetAddressUtils.getAddress("   ");
+            Assert.fail();
+        }
+        catch (InvalidInetAddressException ex) {
+            Assert.assertEquals("empty address", ex.getMessage());
+        }
+    }
 }

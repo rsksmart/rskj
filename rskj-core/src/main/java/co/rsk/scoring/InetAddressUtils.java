@@ -23,6 +23,9 @@ public class InetAddressUtils {
         if (name == null)
             throw new InvalidInetAddressException("null address", null);
 
+        if (name.trim().length() == 0)
+            throw new InvalidInetAddressException("empty address", null);
+
         try {
             return InetAddress.getByName(name);
         }
