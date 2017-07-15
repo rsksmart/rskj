@@ -27,7 +27,12 @@ public class InetAddressUtils {
             throw new InvalidInetAddressException("empty address", null);
 
         try {
-            return InetAddress.getByName(name);
+            InetAddress address = InetAddress.getByName(name);
+
+            if (address.isLoopbackAddress() || address.isAnyLocalAddress())
+                throw new InvalidInetAddressException("local address: '" + name + "'", null);
+
+            return address;
         }
         catch (UnknownHostException ex) {
             throw new InvalidInetAddressException("unknown host: '" + name + "'", ex);

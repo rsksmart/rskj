@@ -1,6 +1,5 @@
 package co.rsk.scoring;
 
-import com.sun.javaws.exceptions.InvalidArgumentException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -80,6 +79,28 @@ public class InetAddressUtilsTest {
         }
         catch (InvalidInetAddressException ex) {
             Assert.assertEquals("empty address", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void getLocalAddress() {
+        try {
+            InetAddressUtils.getAddress("127.0.0.1");
+            Assert.fail();
+        }
+        catch (InvalidInetAddressException ex) {
+            Assert.assertEquals("local address: '127.0.0.1'", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void getLocalHost() {
+        try {
+            InetAddressUtils.getAddress("localhost");
+            Assert.fail();
+        }
+        catch (InvalidInetAddressException ex) {
+            Assert.assertEquals("local address: 'localhost'", ex.getMessage());
         }
     }
 }
