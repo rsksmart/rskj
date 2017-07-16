@@ -101,7 +101,6 @@ public class Web3Impl implements Web3 {
     private SolidityCompiler solidityCompiler;
 
     private PeerScoringManager peerScoringManager;
-    private InetAddressBlockParser inetAddressBlockParser = new InetAddressBlockParser();
 
     public Web3Impl(SolidityCompiler compiler, Wallet wallet) {
         this.solidityCompiler = compiler;
@@ -1600,15 +1599,8 @@ public class Web3Impl implements Web3 {
             return;
 
         try {
-            if (this.inetAddressBlockParser.hasMask(address)) {
-                InetAddressBlock block = this.inetAddressBlockParser.parse(address);
-                this.peerScoringManager.addBannedAddressBlock(block);
-            }
-            else {
-                InetAddress addr = InetAddress.getByName(address);
-                this.peerScoringManager.addBannedAddress(addr);
-            }
-        } catch (UnknownHostException | InetAddressBlockParserException e) {
+            this.peerScoringManager.addBannedAddress(address);
+        } catch (InetAddressBlockParserException | InvalidInetAddressException e) {
             throw new JsonRpcInvalidParamException("invalid banned address " + address, e);
         }
     }
@@ -1619,15 +1611,8 @@ public class Web3Impl implements Web3 {
             return;
 
         try {
-            if (this.inetAddressBlockParser.hasMask(address)) {
-                InetAddressBlock block = this.inetAddressBlockParser.parse(address);
-                this.peerScoringManager.removeBannedAddressBlock(block);
-            }
-            else {
-                InetAddress addr = InetAddress.getByName(address);
-                this.peerScoringManager.removeBannedAddress(addr);
-            }
-        } catch (UnknownHostException | InetAddressBlockParserException e) {
+            this.peerScoringManager.removeBannedAddress(address);
+        } catch (InetAddressBlockParserException | InvalidInetAddressException e) {
             throw new JsonRpcInvalidParamException("invalid banned address " + address, e);
         }
     }

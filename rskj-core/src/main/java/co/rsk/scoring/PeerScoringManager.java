@@ -16,6 +16,7 @@ public class PeerScoringManager {
     private ScoringCalculator scoringCalculator;
     private PunishmentCalculator nodePunishmentCalculator;
     private PunishmentCalculator ipPunishmentCalculator;
+    private InetAddressBlockParser inetAddressBlockParser = new InetAddressBlockParser();
 
     private final Object accessLock = new Object();
 
@@ -79,8 +80,22 @@ public class PeerScoringManager {
         this.addressTable.addAddress(address);
     }
 
+    public void addBannedAddress(String address) throws InetAddressBlockParserException, InvalidInetAddressException {
+        if (InetAddressUtils.hasMask(address))
+            this.addBannedAddressBlock(this.inetAddressBlockParser.parse(address));
+        else
+            this.addBannedAddress(InetAddressUtils.getAddress(address));
+    }
+
     public void removeBannedAddress(InetAddress address) {
         this.addressTable.removeAddress(address);
+    }
+
+    public void removeBannedAddress(String address) throws InetAddressBlockParserException, InvalidInetAddressException {
+        if (InetAddressUtils.hasMask(address))
+            this.removeBannedAddressBlock(this.inetAddressBlockParser.parse(address));
+        else
+            this.removeBannedAddress(InetAddressUtils.getAddress(address));
     }
 
     public void addBannedAddressBlock(InetAddressBlock addressBlock) {
