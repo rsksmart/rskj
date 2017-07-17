@@ -42,10 +42,6 @@ public class GasLimitCalculator {
 
         // deltaMax = parentGasLimit / 1024
         // current Eth implementation substracts parentGasLimit / 1024 - 1
-<<<<<<< 2beed0fd1985f6dd8cbb0069021654621e3cc369
-<<<<<<< 06bc7206efdb74fd9c4075cc050785b19fab25c5
-        BigInteger decay = parentGasLimit.divide(BigInteger.valueOf(constants.getGasLimitBoundDivisor()));
-=======
         // decay is not the best name, parent - decay or parent + decay are the limits
         // that should be accepted by consensus rules
         BigInteger decay = parentGasLimit
