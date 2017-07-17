@@ -1,7 +1,9 @@
 package co.rsk.scoring;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -38,5 +40,13 @@ public class InetAddressTable {
                 return true;
 
         return false;
+    }
+
+    public List<InetAddress> getAddressList() {
+        List<InetAddress> list = new ArrayList<>();
+
+        list.addAll(this.addresses);
+
+        return list;
     }
 }

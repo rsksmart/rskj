@@ -245,6 +245,35 @@ public class Web3ImplScoringTest {
         Assert.assertEquals(0, result.length);
     }
 
+    @Test
+    public void getAddressListWithOneElement() {
+        PeerScoringManager peerScoringManager = createPeerScoringManager();
+        Web3Impl web3 = createWeb3(peerScoringManager);
+
+        web3.sco_addBannedAddress("192.168.56.1");
+        String[] result = web3.sco_bannedAddressList();
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(1, result.length);
+        Assert.assertEquals("192.168.56.1", result[0]);
+    }
+
+    @Test
+    public void getAddressListWithTwoElements() {
+        PeerScoringManager peerScoringManager = createPeerScoringManager();
+        Web3Impl web3 = createWeb3(peerScoringManager);
+
+        web3.sco_addBannedAddress("192.168.56.1");
+        web3.sco_addBannedAddress("192.168.56.2");
+        String[] result = web3.sco_bannedAddressList();
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(2, result.length);
+
+        Assert.assertTrue("192.168.56.1".equals(result[0]) || "192.168.56.1".equals(result[1]));
+        Assert.assertTrue("192.168.56.2".equals(result[0]) || "192.168.56.2".equals(result[1]));
+    }
+
     private static InetAddress generateIPAddressV4() throws UnknownHostException {
         byte[] bytes = new byte[4];
 

@@ -114,6 +114,14 @@ public class PeerScoringManager {
         return list;
     }
 
+    public List<String> getBannedAddressList() {
+        List<String> list = new ArrayList<>();
+
+        list.addAll(this.addressTable.getAddressList().stream().map(entry -> entry.getHostAddress()).collect(Collectors.toList()));
+
+        return list;
+    }
+
     @VisibleForTesting
     public boolean isEmpty() {
         return this.peersByAddress.isEmpty() && this.peersByNodeID.isEmpty();
