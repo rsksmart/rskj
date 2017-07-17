@@ -14,14 +14,20 @@ public class PunishmentCalculator {
         long result = this.parameters.getDuration();
         double rate = ((100.0 + this.parameters.getIncrementRate()) / 100);
         int counter = punishmentCounter;
+        long maxDuration = this.parameters.getMaximumDuration();
 
         while (counter-- > 0) {
             result = (long)(result * rate);
-            if (result > this.parameters.getMaximumDuration())
-                return this.parameters.getMaximumDuration();
+            if (maxDuration > 0 && result > maxDuration)
+                return maxDuration;
         }
 
-        long duration = Math.min(this.parameters.getMaximumDuration(), result);
+        long duration;
+
+        if (maxDuration > 0)
+            duration = Math.min(this.parameters.getMaximumDuration(), result);
+        else
+            duration = result;
 
         if (score < 0)
             duration *= -score;

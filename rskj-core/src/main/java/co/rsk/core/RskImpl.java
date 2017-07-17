@@ -62,7 +62,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
 
             long nodePunishmentDuration = config.scoringNodesPunishmentDuration();
             int nodePunishmentIncrement = config.scoringNodesPunishmentIncrement();
-            long nodePunhishmentMaximumDuration = config.scoringAddressesPunishmentMaximumDuration();
+            long nodePunhishmentMaximumDuration = config.scoringNodesPunishmentMaximumDuration();
 
             long addressPunishmentDuration = config.scoringAddressesPunishmentDuration();
             int addressPunishmentIncrement = config.scoringAddressesPunishmentIncrement();

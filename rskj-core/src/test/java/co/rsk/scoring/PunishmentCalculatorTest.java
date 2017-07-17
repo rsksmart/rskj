@@ -48,4 +48,11 @@ public class PunishmentCalculatorTest {
 
         Assert.assertEquals(120, calculator.calculate(2, 0));
     }
+
+    @Test
+    public void calculateUsingNoMaxPunishmentTime() {
+        PunishmentCalculator calculator = new PunishmentCalculator(new PunishmentParameters(100, 10, 0));
+
+        Assert.assertEquals(121, calculator.calculate(2, 0));
+    }
 }

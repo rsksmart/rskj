@@ -7,6 +7,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * PeerScoring records the events associated with a peer
+ * identified by node id or IP address (@see PeerScoringManager)
+ * An integer score value is calculated based on recorded events.
+ * Also, a good reputation flag is calculated.
+ * The number of punishment is recorded, as well the initial punishment time and its duration.
+ * When the punishment expires, the good reputation is restored and most counters are reset to zero
+ * <p>
  * Created by ajlopez on 27/06/2017.
  */
 public class PeerScoring {
@@ -17,6 +24,15 @@ public class PeerScoring {
     private int punishmentCounter;
     private int score;
 
+    /**
+     * Records an event.
+     * Current implementation has a counter by event type.
+     * The score is incremented or decremented, acoording to the kind of the event.
+     * Some negative events alters the score to a negative level, without
+     * taking into account its previous positive value
+     *
+     * @param evt       An event type @see EventType
+     */
     public void recordEvent(EventType evt) {
         if (!counters.containsKey(evt))
             counters.put(evt, 1);
@@ -44,10 +60,24 @@ public class PeerScoring {
         }
     }
 
+    /**
+     * Returns the current computed score.
+     * The score is calculated based on previous event recording.
+     *
+     * @return  An integer number, the level of score. Positive value is associated
+     *          with a good reputation. Negative values indicates a possible punishment.
+     */
     public int getScore() {
         return score;
     }
 
+    /**
+     * Returns the count of events given a event type.
+     *
+     * @param evt       Event Type (@see EventType)
+     *
+     * @return  The count of events.
+     */
     public int getEventCounter(EventType evt) {
         if (!counters.containsKey(evt))
             return 0;
