@@ -131,6 +131,7 @@ public class RskFactory {
             }
         }
 
+        // Sets the duration to be applied to unclosed data sources
         DataSourcePool.setTimeUnused(RskSystemProperties.RSKCONFIG.getDatasourceClose());
 
         return rs;

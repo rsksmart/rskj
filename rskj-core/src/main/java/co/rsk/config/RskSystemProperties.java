@@ -294,6 +294,11 @@ public class RskSystemProperties extends SystemProperties {
 
     }
 
+    /**
+     * Returns the duration to be applied on closing unused opened data sources
+     *
+     * @return  the time in milliseconds
+     */
     public long getDatasourceClose() {
         long ret = config.hasPath("datasource.close") ? config.getLong("datasource.close") * 1000 : 0;
 

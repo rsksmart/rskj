@@ -38,6 +38,9 @@ public class DataSourcePool {
     private static ConcurrentMap<String, DataSourceEx> pool = new ConcurrentHashMap<>();
     private static long timeUnused = 0L;
 
+    private DataSourcePool() {
+    }
+
     public static KeyValueDataSource hashMapDBByName(String name){
         return (KeyValueDataSource) getDataSourceFromPool(name, new HashMapDB());
     }
@@ -88,6 +91,9 @@ public class DataSourcePool {
         logger.debug("Data source '{}' closed and removed from pool.\n", dataSource.getName());
     }
 
+    /**
+     * Closes the opened datasources that were not used in the last timeUnused milliseconds
+     */
     public static synchronized void closeUnusedDataSources() {
         if (timeUnused == 0)
             return;
