@@ -1624,4 +1624,9 @@ public class Web3Impl implements Web3 {
 
         return null;
     }
+
+    @Override
+    public String[] sco_bannedAddressList() {
+        return new String[0];
+    }
 }

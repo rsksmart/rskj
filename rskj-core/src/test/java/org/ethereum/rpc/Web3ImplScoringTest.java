@@ -234,6 +234,17 @@ public class Web3ImplScoringTest {
         Assert.assertTrue(info.getScore() > 0);
     }
 
+    @Test
+    public void getEmptyBannedAddressList() {
+        PeerScoringManager peerScoringManager = createPeerScoringManager();
+        Web3Impl web3 = createWeb3(peerScoringManager);
+
+        String[] result = web3.sco_bannedAddressList();
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(0, result.length);
+    }
+
     private static InetAddress generateIPAddressV4() throws UnknownHostException {
         byte[] bytes = new byte[4];
 

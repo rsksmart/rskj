@@ -210,4 +210,5 @@ public interface Web3 {
     void sco_addBannedAddress(String address);
     void sco_removeBannedAddress(String address);
     PeerScoringInformation[] sco_peerList();
+    String[] sco_bannedAddressList();
 }
