@@ -690,4 +690,32 @@ public class SystemProperties {
         return config.hasPath(PROPERTY_RPC_CORS) ?
                 config.getString(PROPERTY_RPC_CORS) : null;
     }
+
+    public int scoringNumberOfNodes() {
+        return config.hasPath("scoring.nodes.number") ? config.getInt("scoring.nodes.number") : 100;
+    }
+
+    public long scoringNodesPunishmentDuration() {
+        return config.hasPath("scoring.nodes.duration") ? config.getInt("scoring.nodes.duration") * 60000L : 600000L;
+    }
+
+    public int scoringNodesPunishmentIncrement() {
+        return config.hasPath("scoring.nodes.increment") ? config.getInt("scoring.nodes.increment") : 10;
+    }
+
+    public long scoringNodesPunishmentMaximumDuration() {
+        return config.hasPath("scoring.nodes.maximum") ? config.getInt("scoring.nodes.maximum") * 60000L : 12000000L;
+    }
+
+    public long scoringAddressesPunishmentDuration() {
+        return config.hasPath("scoring.addresses.duration") ? config.getInt("scoring.addresses.duration") * 60000L : 600000L;
+    }
+
+    public int scoringAddressesPunishmentIncrement() {
+        return config.hasPath("scoring.addresses.increment") ? config.getInt("scoring.addresses.increment") : 10;
+    }
+
+    public long scoringAddressesPunishmentMaximumDuration() {
+        return config.hasPath("scoring.addresses.maximum") ? config.getInt("scoring.addresses.maximum") * 60000L : 10000000L;
+    }
 }

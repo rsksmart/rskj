@@ -27,6 +27,7 @@ import co.rsk.net.NodeMessageHandler;
 import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
+import org.ethereum.config.SystemProperties;
 import org.ethereum.facade.EthereumImpl;
 import org.springframework.stereotype.Component;
 
@@ -54,8 +55,21 @@ public class RskImpl extends EthereumImpl implements Rsk {
 
     @Override
     public PeerScoringManager getPeerScoringManager() {
-        if (this.peerScoringManager == null)
-            this.peerScoringManager = new PeerScoringManager(100, new PunishmentParameters(600000, 10, 10000000), new PunishmentParameters(600000, 10, 10000000));
+        if (this.peerScoringManager == null) {
+            SystemProperties config = this.getSystemProperties();
+
+            int nnodes = config.scoringNumberOfNodes();
+
+            long nodePunishmentDuration = config.scoringNodesPunishmentDuration();
+            int nodePunishmentIncrement = config.scoringNodesPunishmentIncrement();
+            long nodePunhishmentMaximumDuration = config.scoringAddressesPunishmentMaximumDuration();
+
+            long addressPunishmentDuration = config.scoringAddressesPunishmentDuration();
+            int addressPunishmentIncrement = config.scoringAddressesPunishmentIncrement();
+            long addressPunishmentMaximunDuration = config.scoringAddressesPunishmentMaximumDuration();
+
+            this.peerScoringManager = new PeerScoringManager(nnodes, new PunishmentParameters(nodePunishmentDuration, nodePunishmentIncrement, nodePunhishmentMaximumDuration), new PunishmentParameters(addressPunishmentDuration, addressPunishmentIncrement, addressPunishmentMaximunDuration));
+        }
 
         return this.peerScoringManager;
     }
