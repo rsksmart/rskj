@@ -6,6 +6,9 @@ import java.net.InetAddress;
 import java.util.Arrays;
 
 /**
+ * InetAddressBlock represents a range of InetAddress
+ * it has a number of bits to ignore
+ * <p>
  * Created by ajlopez on 11/07/2017.
  */
 public class InetAddressBlock {
@@ -14,6 +17,12 @@ public class InetAddressBlock {
     private int nbytes;
     private byte mask;
 
+    /**
+     * Creates an InetAddressBlock given an address and the number of bits to ignore
+     *
+     * @param address   the address
+     * @param bits      the numbers of bits to ignore
+     */
     public InetAddressBlock(InetAddress address, int bits) {
         this.description = address.getHostAddress() + "/" + bits;
         this.bytes = address.getAddress();
@@ -21,6 +30,12 @@ public class InetAddressBlock {
         this.mask = (byte)(0xff << (bits % 8));
     }
 
+    /**
+     * Returns if a given address is included or not in the address block
+     *
+     * @param   address     the address to check
+     * @return  <tt>true</tt> if the address belongs to the address range
+     */
     public boolean contains(InetAddress address) {
         byte[] addressBytes = address.getAddress();
 
@@ -39,6 +54,12 @@ public class InetAddressBlock {
         return true;
     }
 
+    /**
+     * Returns the string representation of the address block
+     *
+     * @return  the string description of this block
+     * ie "192.168.51.1/16"
+     */
     public String getDescription() {
         return this.description;
     }
