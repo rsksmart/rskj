@@ -1591,6 +1591,15 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    /**
+     * Adds an address or block to the list of banned addresses
+     * It supports IPV4 and IPV6 addresses with an optional number of bits to ignore
+     *
+     * "192.168.51.1" is a valid address
+     * "192.168.51.1/16" is a valid block
+     *
+     * @param address the address or block to be banned
+     */
     @Override
     public void sco_addBannedAddress(String address) {
         if (this.peerScoringManager == null)
@@ -1603,6 +1612,15 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    /**
+     * Removes an address or block to the list of banned addresses
+     * It supports IPV4 and IPV6 addresses with an optional number of bits to ignore
+     *
+     * "192.168.51.1" is a valid address
+     * "192.168.51.1/16" is a valid block
+     *
+     * @param address the address or block to be removed
+     */
     @Override
     public void sco_removeBannedAddress(String address) {
         if (this.peerScoringManager == null)
@@ -1615,6 +1633,12 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    /**
+     * Returns the collected peer scoring information
+     * since the start of the node start
+     *
+     * @return the list of scoring information, per node id and address
+     */
     @Override
     public PeerScoringInformation[] sco_peerList() {
         if (this.peerScoringManager != null)
@@ -1623,6 +1647,11 @@ public class Web3Impl implements Web3 {
         return null;
     }
 
+    /**
+     * Returns the list of banned addresses and blocks
+     *
+     * @return the list of banned addresses and blocks
+     */
     @Override
     public String[] sco_bannedAddressList() {
         return this.peerScoringManager.getBannedAddressList().toArray(new String[0]);
