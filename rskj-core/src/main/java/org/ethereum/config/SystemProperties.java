@@ -740,7 +740,8 @@ public class SystemProperties {
     }
 
     public long scoringNodesPunishmentMaximumDuration() {
-        return config.hasPath("scoring.nodes.maximum") ? config.getInt("scoring.nodes.maximum") * 60000L : 12000000L;
+        // default value: no maximum duration
+        return config.hasPath("scoring.nodes.maximum") ? config.getInt("scoring.nodes.maximum") * 60000L : 0L;
     }
 
     public long scoringAddressesPunishmentDuration() {
@@ -752,6 +753,7 @@ public class SystemProperties {
     }
 
     public long scoringAddressesPunishmentMaximumDuration() {
-        return config.hasPath("scoring.addresses.maximum") ? config.getInt("scoring.addresses.maximum") * 60000L : 10000000L;
+        // default value: 1 week
+        return config.hasPath("scoring.addresses.maximum") ? config.getInt("scoring.addresses.maximum") * 60000L : 1000L * 60 * 60 * 24 * 7;
     }
 }

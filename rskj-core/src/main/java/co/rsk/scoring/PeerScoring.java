@@ -79,7 +79,7 @@ public class PeerScoring {
      *
      * @param evt       Event Type (@see EventType)
      *
-     * @return  The count of events of the specefied type
+     * @return  The count of events.
      */
     public int getEventCounter(EventType evt) {
         try {
