@@ -79,7 +79,7 @@ public class PeerScoringManager {
         this.addressTable.addAddress(address);
     }
 
-    public void addBannedAddress(String address) throws InetAddressBlockParserException, InvalidInetAddressException {
+    public void addBannedAddress(String address) throws InvalidInetAddressBlockException, InvalidInetAddressException {
         if (InetAddressUtils.hasMask(address))
             this.addBannedAddressBlock(InetAddressUtils.parse(address));
         else
@@ -90,7 +90,7 @@ public class PeerScoringManager {
         this.addressTable.removeAddress(address);
     }
 
-    public void removeBannedAddress(String address) throws InetAddressBlockParserException, InvalidInetAddressException {
+    public void removeBannedAddress(String address) throws InvalidInetAddressBlockException, InvalidInetAddressException {
         if (InetAddressUtils.hasMask(address))
             this.removeBannedAddressBlock(InetAddressUtils.parse(address));
         else

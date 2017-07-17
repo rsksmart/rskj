@@ -116,7 +116,7 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void parseAddressBlock() throws UnknownHostException, InetAddressBlockParserException {
+    public void parseAddressBlock() throws InvalidInetAddressException, InvalidInetAddressBlockException, UnknownHostException {
         InetAddressBlock result = InetAddressUtils.parse("192.162.12.0/8");
 
         Assert.assertNotNull(result);
@@ -125,45 +125,45 @@ public class InetAddressUtilsTest {
     }
 
     @Test
-    public void parseAddressBlockWithNonNumericBits() throws UnknownHostException {
+    public void parseAddressBlockWithNonNumericBits() throws InvalidInetAddressException {
         try {
             InetAddressUtils.parse("192.162.12.0/a");
             Assert.fail();
         }
-        catch (InetAddressBlockParserException ex) {
+        catch (InvalidInetAddressBlockException ex) {
             Assert.assertEquals("Invalid mask", ex.getMessage());
         }
     }
 
     @Test
-    public void parseAddressBlockWithNegativeNumberOfBits() throws UnknownHostException {
+    public void parseAddressBlockWithNegativeNumberOfBits() throws UnknownHostException, InvalidInetAddressException {
         try {
             InetAddressUtils.parse("192.162.12.0/-10");
             Assert.fail();
         }
-        catch (InetAddressBlockParserException ex) {
+        catch (InvalidInetAddressBlockException ex) {
             Assert.assertEquals("Invalid mask", ex.getMessage());
         }
     }
 
     @Test
-    public void parseAddressBlockWithZeroBits() throws UnknownHostException {
+    public void parseAddressBlockWithZeroBits() throws InvalidInetAddressException {
         try {
             InetAddressUtils.parse("192.162.12.0/0");
             Assert.fail();
         }
-        catch (InetAddressBlockParserException ex) {
+        catch (InvalidInetAddressBlockException ex) {
             Assert.assertEquals("Invalid mask", ex.getMessage());
         }
     }
 
     @Test
-    public void parseAddressBlockWithTooBigNumberOfBits() throws UnknownHostException {
+    public void parseAddressBlockWithTooBigNumberOfBits() throws InvalidInetAddressException {
         try {
             InetAddressUtils.parse("192.162.12.0/1000");
             Assert.fail();
         }
-        catch (InetAddressBlockParserException ex) {
+        catch (InvalidInetAddressBlockException ex) {
             Assert.assertEquals("Invalid mask", ex.getMessage());
         }
     }

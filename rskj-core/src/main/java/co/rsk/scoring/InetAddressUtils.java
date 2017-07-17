@@ -4,9 +4,22 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 /**
+ * InetAddressUtils has static methods
+ * to perform operations on InetAddress and InetAddressBlock
+ * given an String representation
+ * <p>
  * Created by ajlopez on 15/07/2017.
  */
 public class InetAddressUtils {
+    /**
+     * Returns <tt>true</tt> if the specified texts represent an address with mask
+     * ie "192.168.51.1/16" has a mask
+     *    "192.168.51.1" has no mask
+     *
+     * @param   text    the address
+     *
+     * @return <tt>true</tt> or <tt>false</tt>
+     */
     public static boolean hasMask(String text) {
         if (text == null)
             return false;
@@ -19,6 +32,14 @@ public class InetAddressUtils {
         return true;
     }
 
+    /**
+     * Convert a text representation to an InetAddress
+     * It supports IPV4 and IPV6 formats
+     *
+     * @param   name    the address
+     *
+     * @return  the text converted to an InetAddress
+     */
     public static InetAddress getAddress(String name) throws InvalidInetAddressException {
         if (name == null)
             throw new InvalidInetAddressException("null address", null);
@@ -39,17 +60,23 @@ public class InetAddressUtils {
         }
     }
 
-    public static InetAddressBlock parse(String text) throws InetAddressBlockParserException {
+    /**
+     * Convert a text representation to an InetAddressBlock
+     * (@see InetAddressBlock)
+     * It supports IPV4 and IPV6 formats
+     * ie "192.168.51.1/16" is a valid text
+     *
+     * @param   text    the address with mask
+     *
+     * @return  the text converted to an InetAddressBlock
+     * @throws  InvalidInetAddressException if the text is invalid
+     */
+    public static InetAddressBlock parse(String text) throws InvalidInetAddressBlockException, InvalidInetAddressException {
         String[] parts = text.split("/");
 
         InetAddress address;
 
-        try {
-            address = InetAddress.getByName(parts[0]);
-        }
-        catch (UnknownHostException ex) {
-            throw new InetAddressBlockParserException("Unknown host", ex);
-        }
+        address = InetAddressUtils.getAddress(parts[0]);
 
         int nbits;
 
@@ -57,11 +84,11 @@ public class InetAddressUtils {
             nbits = Integer.parseInt(parts[1]);
         }
         catch (NumberFormatException ex) {
-            throw new InetAddressBlockParserException("Invalid mask", ex);
+            throw new InvalidInetAddressBlockException("Invalid mask", ex);
         }
 
         if (nbits <= 0 || nbits > address.getAddress().length * 8)
-            throw new InetAddressBlockParserException("Invalid mask", null);
+            throw new InvalidInetAddressBlockException("Invalid mask", null);
 
         return new InetAddressBlock(address, nbits);
     }

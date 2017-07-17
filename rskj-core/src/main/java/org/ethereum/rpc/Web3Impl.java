@@ -65,8 +65,6 @@ import org.spongycastle.util.encoders.Hex;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -1600,7 +1598,7 @@ public class Web3Impl implements Web3 {
 
         try {
             this.peerScoringManager.addBannedAddress(address);
-        } catch (InetAddressBlockParserException | InvalidInetAddressException e) {
+        } catch (InvalidInetAddressBlockException | InvalidInetAddressException e) {
             throw new JsonRpcInvalidParamException("invalid banned address " + address, e);
         }
     }
@@ -1612,7 +1610,7 @@ public class Web3Impl implements Web3 {
 
         try {
             this.peerScoringManager.removeBannedAddress(address);
-        } catch (InetAddressBlockParserException | InvalidInetAddressException e) {
+        } catch (InvalidInetAddressBlockException | InvalidInetAddressException e) {
             throw new JsonRpcInvalidParamException("invalid banned address " + address, e);
         }
     }
