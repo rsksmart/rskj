@@ -76,7 +76,7 @@ public class PeerScoring {
      *
      * @param evt       Event Type (@see EventType)
      *
-     * @return  The count of events.
+     * @return  The count of events of the specefied type
      */
     public int getEventCounter(EventType evt) {
         if (!counters.containsKey(evt))
@@ -85,6 +85,11 @@ public class PeerScoring {
         return counters.get(evt).intValue();
     }
 
+    /**
+     * Returns the count of all events
+     *
+     * @return  The total count of events
+     */
     public int getTotalEventCounter() {
         int counter = 0;
 
@@ -94,10 +99,21 @@ public class PeerScoring {
         return counter;
     }
 
+    /**
+     * Returns <tt>true</tt> if there is no event recorded yet.
+     *
+     * @return <tt>true</tt> if there is no event
+     */
     public boolean isEmpty() {
         return counters.isEmpty();
     }
 
+    /**
+     * Returns <tt>true</tt> if the peer has good reputation.
+     * Returns <tt>false</tt> if not.
+     *
+     * @return <tt>true</tt> or <tt>false</tt>
+     */
     public boolean hasGoodReputation() {
         if (this.goodReputation)
             return true;
@@ -108,6 +124,13 @@ public class PeerScoring {
         return this.goodReputation;
     }
 
+    /**
+     * Starts the punishment, with specified duration
+     * Changes the reputation to not good
+     * Increments the punishment counter
+     *
+     * @param   expirationTime  punishment duration in milliseconds
+     */
     public void startPunishment(long expirationTime) {
         this.goodReputation = false;
         this.punishmentTime = expirationTime;
@@ -115,6 +138,11 @@ public class PeerScoring {
         this.timeLostGoodReputation = System.currentTimeMillis();
     }
 
+    /**
+     * Ends the punishment
+     * Clear the event counters
+     *
+     */
     public void endPunishment() {
         this.counters.clear();
         this.goodReputation = true;
@@ -126,6 +154,11 @@ public class PeerScoring {
         return this.punishmentTime;
     }
 
+    /**
+     * Returns the number of punishment suffered by this peer.
+     *
+     * @return      the counter of punishments
+     */
     public int getPunishmentCounter() {
         return this.punishmentCounter;
     }
