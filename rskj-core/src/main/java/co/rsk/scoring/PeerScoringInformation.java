@@ -1,6 +1,9 @@
 package co.rsk.scoring;
 
 /**
+ * PeerScoringInformation is a simple class to exposte
+ * the recorded scoring information for a peer
+ * <p>
  * Created by ajlopez on 12/07/2017.
  */
 public class PeerScoringInformation {
