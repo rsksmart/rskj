@@ -49,4 +49,12 @@ public class InetAddressTable {
 
         return list;
     }
+
+    public List<InetAddressBlock> getAddressBlockList() {
+        List<InetAddressBlock> list = new ArrayList<>();
+
+        list.addAll(this.blocks);
+
+        return list;
+    }
 }

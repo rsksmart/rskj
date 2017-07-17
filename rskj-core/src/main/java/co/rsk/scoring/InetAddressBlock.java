@@ -9,11 +9,13 @@ import java.util.Arrays;
  * Created by ajlopez on 11/07/2017.
  */
 public class InetAddressBlock {
+    private String description;
     private byte[] bytes;
     private int nbytes;
     private byte mask;
 
     public InetAddressBlock(InetAddress address, int bits) {
+        this.description = address.getHostAddress() + "/" + bits;
         this.bytes = address.getAddress();
         this.nbytes = this.bytes.length - (bits + 7) / 8;
         this.mask = (byte)(0xff << (bits % 8));
@@ -35,6 +37,10 @@ public class InetAddressBlock {
             return (addressBytes[k] & this.mask) == (this.bytes[k] & this.mask);
 
         return true;
+    }
+
+    public String getDescription() {
+        return this.description;
     }
 
     @Override

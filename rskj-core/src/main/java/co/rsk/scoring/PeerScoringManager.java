@@ -118,6 +118,7 @@ public class PeerScoringManager {
         List<String> list = new ArrayList<>();
 
         list.addAll(this.addressTable.getAddressList().stream().map(entry -> entry.getHostAddress()).collect(Collectors.toList()));
+        list.addAll(this.addressTable.getAddressBlockList().stream().map(entry -> entry.getDescription()).collect(Collectors.toList()));
 
         return list;
     }
