@@ -28,6 +28,8 @@ import co.rsk.net.discovery.PeerExplorer;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
+import co.rsk.scoring.PeerScoringManager;
+import co.rsk.scoring.PunishmentParameters;
 import co.rsk.util.AccountUtils;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
@@ -235,5 +237,20 @@ public class DefaultConfig {
     public SolidityCompiler solidityCompiler() {
         RskSystemProperties rskConfig = RskSystemProperties.RSKCONFIG;
         return new SolidityCompiler(rskConfig);
+    }
+
+    @Bean
+    public PeerScoringManager peerScoringManager() {
+        int nnodes = config.scoringNumberOfNodes();
+
+        long nodePunishmentDuration = config.scoringNodesPunishmentDuration();
+        int nodePunishmentIncrement = config.scoringNodesPunishmentIncrement();
+        long nodePunhishmentMaximumDuration = config.scoringNodesPunishmentMaximumDuration();
+
+        long addressPunishmentDuration = config.scoringAddressesPunishmentDuration();
+        int addressPunishmentIncrement = config.scoringAddressesPunishmentIncrement();
+        long addressPunishmentMaximunDuration = config.scoringAddressesPunishmentMaximumDuration();
+
+        return new PeerScoringManager(nnodes, new PunishmentParameters(nodePunishmentDuration, nodePunishmentIncrement, nodePunhishmentMaximumDuration), new PunishmentParameters(addressPunishmentDuration, addressPunishmentIncrement, addressPunishmentMaximunDuration));
     }
 }

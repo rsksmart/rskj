@@ -35,8 +35,6 @@ public interface Rsk extends Ethereum {
 
     MessageHandler getMessageHandler();
 
-    PeerScoringManager getPeerScoringManager();
-
     NodeBlockProcessor getNodeBlockProcessor();
 
     boolean isPlayingBlocks();

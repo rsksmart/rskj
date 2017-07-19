@@ -19,6 +19,7 @@
 
 package org.ethereum.facade;
 
+import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.core.PendingState;
@@ -75,6 +76,9 @@ public class EthereumImpl implements Ethereum {
 
     @Autowired
     PeerServer peerServer;
+
+    @Autowired
+    PeerScoringManager peerScoringManager;
 
     @Autowired
     ApplicationContext ctx;
@@ -324,5 +328,10 @@ public class EthereumImpl implements Ethereum {
     @Override
     public SystemProperties getSystemProperties() {
         return this.config;
+    }
+
+    @Override
+    public PeerScoringManager getPeerScoringManager() {
+        return this.peerScoringManager;
     }
 }

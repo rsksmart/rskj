@@ -111,8 +111,7 @@ public class Web3Impl implements Web3 {
         this.repository = eth.getRepository();
         this.wallet = wallet;
 
-        if (eth instanceof Rsk)
-            this.peerScoringManager = ((Rsk) eth).getPeerScoringManager();
+        this.peerScoringManager = eth.getPeerScoringManager();
 
         initialBlockNumber = this.worldManager.getBlockchain().getBestBlock().getNumber();
 

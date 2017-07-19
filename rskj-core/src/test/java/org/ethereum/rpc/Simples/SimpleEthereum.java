@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc.Simples;
 
+import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
@@ -184,4 +185,7 @@ public class SimpleEthereum implements Ethereum {
     public SystemProperties getSystemProperties() {
         return null;
     }
+
+    @Override
+    public PeerScoringManager getPeerScoringManager() { return null; }
 }

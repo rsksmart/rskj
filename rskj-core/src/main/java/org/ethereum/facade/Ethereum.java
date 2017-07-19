@@ -19,6 +19,7 @@
 
 package org.ethereum.facade;
 
+import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
@@ -156,4 +157,6 @@ public interface Ethereum {
     ProgramResult callConstantCallTransaction(Transaction tx, Block block);
 
     SystemProperties getSystemProperties();
+
+    PeerScoringManager getPeerScoringManager();
 }

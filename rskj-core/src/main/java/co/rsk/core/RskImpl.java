@@ -54,32 +54,6 @@ public class RskImpl extends EthereumImpl implements Rsk {
         return getWorldManager().getMinerServer();
     }
 
-    @Override
-    public PeerScoringManager getPeerScoringManager() {
-        if (this.peerScoringManager == null) {
-            synchronized (PSM_LOCK) {
-                if (this.peerScoringManager == null) {
-                    SystemProperties config = this.getSystemProperties();
-
-                    int nnodes = config.scoringNumberOfNodes();
-
-                    long nodePunishmentDuration = config.scoringNodesPunishmentDuration();
-                    int nodePunishmentIncrement = config.scoringNodesPunishmentIncrement();
-                    long nodePunhishmentMaximumDuration = config.scoringNodesPunishmentMaximumDuration();
-
-                    long addressPunishmentDuration = config.scoringAddressesPunishmentDuration();
-                    int addressPunishmentIncrement = config.scoringAddressesPunishmentIncrement();
-                    long addressPunishmentMaximunDuration = config.scoringAddressesPunishmentMaximumDuration();
-
-                    this.peerScoringManager = new PeerScoringManager(nnodes, new PunishmentParameters(nodePunishmentDuration, nodePunishmentIncrement, nodePunhishmentMaximumDuration), new PunishmentParameters(addressPunishmentDuration, addressPunishmentIncrement, addressPunishmentMaximunDuration));
-                }
-            }
-        }
-
-        return this.peerScoringManager;
-    }
-
-    @Override
     public MessageHandler getMessageHandler() {
         if (this.messageHandler == null) {
             synchronized (NMH_LOCK) {
