@@ -23,6 +23,7 @@ import co.rsk.net.discovery.table.NodeDistanceTable;
 import co.rsk.net.discovery.table.OperationResult;
 import co.rsk.net.discovery.table.PeerDiscoveryRequestBuilder;
 import co.rsk.util.IpUtils;
+import co.rsk.scoring.PeerScoringManager;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.util.ConcurrentHashSet;
@@ -68,10 +69,13 @@ public class PeerExplorer {
 
     private long requestTimeout;
 
-    public PeerExplorer(List<String> initialBootNodes, Node localNode, NodeDistanceTable distanceTable, ECKey key, long reqTimeOut, long refreshPeriod) {
+    private PeerScoringManager peerScoringManager;
+
+    public PeerExplorer(List<String> initialBootNodes, Node localNode, NodeDistanceTable distanceTable, ECKey key, long reqTimeOut, long refreshPeriod, PeerScoringManager peerScoringManager) {
         this.localNode = localNode;
         this.key = key;
         this.distanceTable = distanceTable;
+        this.peerScoringManager = peerScoringManager;
 
         loadInitialBootNodes(initialBootNodes);
 

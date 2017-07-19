@@ -223,7 +223,10 @@ public class DefaultConfig {
                 initialBootNodes.add(address.getHostName() + ":" + address.getPort());
             }
         }
-        return new PeerExplorer(initialBootNodes, localNode, distanceTable, key, msgTimeOut, refreshPeriod);
+
+        PeerScoringManager peerScoringManager = appCtx.getBean(PeerScoringManager.class);
+
+        return new PeerExplorer(initialBootNodes, localNode, distanceTable, key, msgTimeOut, refreshPeriod, peerScoringManager);
     }
 
     @Bean

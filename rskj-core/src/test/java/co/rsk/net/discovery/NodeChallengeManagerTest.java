@@ -62,7 +62,7 @@ public class NodeChallengeManagerTest {
         Node node3 = new Node(key3.getNodeId(), HOST_3, PORT_3);
 
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node1);
-        PeerExplorer peerExplorer = new PeerExplorer(new ArrayList<>(), node1, distanceTable, new ECKey(), TIMEOUT, REFRESH);
+        PeerExplorer peerExplorer = new PeerExplorer(new ArrayList<>(), node1, distanceTable, new ECKey(), TIMEOUT, REFRESH, null);
         peerExplorer.setUDPChannel(Mockito.mock(UDPChannel.class));
 
         NodeChallengeManager manager = new NodeChallengeManager();
