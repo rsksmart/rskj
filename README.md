@@ -1,5 +1,5 @@
 # Welcome to RskJ
-[![CircleCI](https://circleci.com/gh/rsksmart/rskj.svg?style=svg)](https://circleci.com/gh/rsksmart/rskj)
+[![CircleCI](https://circleci.com/gh/rsksmart/rskj/tree/master.svg?style=svg)](https://circleci.com/gh/rsksmart/rskj/tree/master)
 
 
 # About
