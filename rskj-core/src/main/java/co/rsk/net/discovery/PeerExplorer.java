@@ -19,12 +19,10 @@
 package co.rsk.net.discovery;
 
 import co.rsk.net.discovery.message.*;
-import co.rsk.net.discovery.table.DistanceCalculator;
 import co.rsk.net.discovery.table.NodeDistanceTable;
 import co.rsk.net.discovery.table.OperationResult;
 import co.rsk.net.discovery.table.PeerDiscoveryRequestBuilder;
 import co.rsk.util.IpUtils;
-import co.rsk.scoring.PeerScoringManager;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.util.ConcurrentHashSet;
@@ -148,7 +146,8 @@ public class PeerExplorer {
             logger.debug("About to send [{}] neighbors to ip[{}] port[{}] nodeId[{}]", nodesToSend.size(), connectedNode.getHost(), connectedNode.getPort(), connectedNode.getHexIdShort());
             byte[] nodeId = message.getNodeId();
             List<NodeInformation> nodes = new ArrayList<>();
-            nodes.addAll(this.distanceTable.getAllNodes().stream().map(node -> new NodeInformation(node, this.distanceTable.calculateDistance(node.getId(), nodeId), this.scoreCalculator.calculateScore(node))).collect(Collectors.toList()));
+            nodes.addAll(this.distanceTable.getAllNodes().stream().map(node -> new NodeInformation(node, this.distanceTable.calculateDistance(node.getId(), nodeId), this.scoreCalculator == null ? 0 : this.scoreCalculator.calculateScore(node))).collect(Collectors.toList()));
+            Collections.sort(nodes, new NodeDistanceScoreComparator());
             nodes.stream().map(node -> node.getNode()).collect(Collectors.toList());
             this.sendNeighbors(connectedNode.getAddress(), nodes.stream().map(node -> node.getNode()).collect(Collectors.toList()), message.getMessageId());
             this.distanceTable.updateEntry(connectedNode);
