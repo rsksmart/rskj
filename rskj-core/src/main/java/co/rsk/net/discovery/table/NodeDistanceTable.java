@@ -60,6 +60,10 @@ public class NodeDistanceTable {
         return this.buckets.get(distance);
     }
 
+    public int calculateDistance(byte[] from, byte[] to) {
+        return this.distanceCalculator.calculateDistance(from, to);
+    }
+
     public Set<Node> getAllNodes() {
         Set<Node> ret = new HashSet<>();
         for (Bucket bucket : this.buckets.values()) {

@@ -15,4 +15,10 @@ public class NodeInformation {
         this.distance = distance;
         this.score = score;
     }
+
+    public Node getNode() { return this.node; }
+
+    public int getDistance() { return this.distance; }
+
+    public int getScore() { return this.score; }
 }

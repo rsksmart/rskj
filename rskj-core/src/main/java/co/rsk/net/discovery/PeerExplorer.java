@@ -19,6 +19,7 @@
 package co.rsk.net.discovery;
 
 import co.rsk.net.discovery.message.*;
+import co.rsk.net.discovery.table.DistanceCalculator;
 import co.rsk.net.discovery.table.NodeDistanceTable;
 import co.rsk.net.discovery.table.OperationResult;
 import co.rsk.net.discovery.table.PeerDiscoveryRequestBuilder;
@@ -69,13 +70,13 @@ public class PeerExplorer {
 
     private long requestTimeout;
 
-    private PeerScoringManager peerScoringManager;
+    private ScoreCalculator scoreCalculator;
 
-    public PeerExplorer(List<String> initialBootNodes, Node localNode, NodeDistanceTable distanceTable, ECKey key, long reqTimeOut, long refreshPeriod, PeerScoringManager peerScoringManager) {
+    public PeerExplorer(List<String> initialBootNodes, Node localNode, NodeDistanceTable distanceTable, ECKey key, long reqTimeOut, long refreshPeriod, ScoreCalculator scoreCalculator) {
         this.localNode = localNode;
         this.key = key;
         this.distanceTable = distanceTable;
-        this.peerScoringManager = peerScoringManager;
+        this.scoreCalculator = scoreCalculator;
 
         loadInitialBootNodes(initialBootNodes);
 
@@ -144,9 +145,12 @@ public class PeerExplorer {
     public void handleFindNode(FindNodePeerMessage message) {
         Node connectedNode = this.establishedConnections.get(new ByteArrayWrapper(message.getNodeId()));
         if (connectedNode != null) {
-            List<Node> nodesToSend = this.distanceTable.getClosestNodes(message.getNodeId());
             logger.debug("About to send [{}] neighbors to ip[{}] port[{}] nodeId[{}]", nodesToSend.size(), connectedNode.getHost(), connectedNode.getPort(), connectedNode.getHexIdShort());
-            this.sendNeighbors(connectedNode.getAddress(), nodesToSend, message.getMessageId());
+            byte[] nodeId = message.getNodeId();
+            List<NodeInformation> nodes = new ArrayList<>();
+            nodes.addAll(this.distanceTable.getAllNodes().stream().map(node -> new NodeInformation(node, this.distanceTable.calculateDistance(node.getId(), nodeId), this.scoreCalculator.calculateScore(node))).collect(Collectors.toList()));
+            nodes.stream().map(node -> node.getNode()).collect(Collectors.toList());
+            this.sendNeighbors(connectedNode.getAddress(), nodes.stream().map(node -> node.getNode()).collect(Collectors.toList()), message.getMessageId());
             this.distanceTable.updateEntry(connectedNode);
         }
     }

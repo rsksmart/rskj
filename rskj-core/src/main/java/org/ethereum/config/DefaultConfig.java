@@ -25,6 +25,7 @@ import co.rsk.metrics.BlockHeaderElement;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.metrics.HashRateCalculatorImpl;
 import co.rsk.net.discovery.PeerExplorer;
+import co.rsk.net.discovery.ScoreCalculator;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
@@ -190,7 +191,6 @@ public class DefaultConfig {
         return new NetworkStateExporter(repository);
     }
 
-
     @Bean(name = "minerServerBlockValidation")
     public BlockValidationRule minerServerBlockValidationRule() {
         BlockStore blockStore = appCtx.getBean(BlockStore.class);
@@ -225,8 +225,9 @@ public class DefaultConfig {
         }
 
         PeerScoringManager peerScoringManager = appCtx.getBean(PeerScoringManager.class);
+        ScoreCalculator scoreCalculator = new ScoreCalculator(peerScoringManager);
 
-        return new PeerExplorer(initialBootNodes, localNode, distanceTable, key, msgTimeOut, refreshPeriod, peerScoringManager);
+        return new PeerExplorer(initialBootNodes, localNode, distanceTable, key, msgTimeOut, refreshPeriod, scoreCalculator);
     }
 
     @Bean
