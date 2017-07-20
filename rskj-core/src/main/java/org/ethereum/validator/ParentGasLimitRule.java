@@ -49,10 +49,10 @@ public class ParentGasLimitRule extends DependentBlockHeaderRule {
 
         BigInteger headerGasLimit = new BigInteger(1, header.getGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
-        BigInteger limit = parentGasLimit.divide(gasLimitBoundDivisor);
+        BigInteger deltaLimit = parentGasLimit.divide(gasLimitBoundDivisor);
 
-        if (headerGasLimit.compareTo(parentGasLimit.subtract(limit)) <= 0 ||
-                headerGasLimit.compareTo(parentGasLimit.add(limit)) >= 0) {
+        if (headerGasLimit.compareTo(parentGasLimit.subtract(deltaLimit)) < 0 ||
+                headerGasLimit.compareTo(parentGasLimit.add(deltaLimit)) > 0) {
             logger.error(String.format("#%d: gas limit exceeds parentBlock.getGasLimit() (+-) GAS_LIMIT_BOUND_DIVISOR", header.getNumber()));
             return false;
         }

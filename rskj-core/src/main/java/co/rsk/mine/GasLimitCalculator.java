@@ -40,13 +40,12 @@ public class GasLimitCalculator {
 
         BigInteger newGasLimit = parentGasLimit;
 
-        // decay = parentGasLimit / 1024
+        // deltaMax = parentGasLimit / 1024
         // current Eth implementation substracts parentGasLimit / 1024 - 1
-        // decay is not the best name, parent - decay or parent + decay are the limits
+        // parent - deltaMax or parent + deltaMax are the limits
         // that should be accepted by consensus rules
-        BigInteger decay = parentGasLimit
-                .divide(BigInteger.valueOf(constants.getGAS_LIMIT_BOUND_DIVISOR()))
-                .subtract(BigInteger.ONE);
+        BigInteger deltaMax = parentGasLimit
+                .divide(BigInteger.valueOf(constants.getGAS_LIMIT_BOUND_DIVISOR()));
 
         // TODO: we should assert this before reaching this point
         if (targetGasLimit.compareTo(minGasLimit) < 0) {
@@ -57,13 +56,13 @@ public class GasLimitCalculator {
         // the gas used
         if (forceTarget) {
             if (targetGasLimit.compareTo(parentGasLimit) < 0) {
-                newGasLimit = newGasLimit.subtract(decay);
+                newGasLimit = newGasLimit.subtract(deltaMax);
                 if (targetGasLimit.compareTo(newGasLimit) > 0) {
                     newGasLimit = targetGasLimit;
                 }
                 return newGasLimit;
             } else {
-                newGasLimit = newGasLimit.add(decay);
+                newGasLimit = newGasLimit.add(deltaMax);
                 if (targetGasLimit.compareTo(newGasLimit) < 0) {
                     newGasLimit = targetGasLimit;
                 }
@@ -76,7 +75,7 @@ public class GasLimitCalculator {
         contrib = contrib.divide(BigInteger.valueOf(2));
         contrib = contrib.divide(BigInteger.valueOf(constants.getGAS_LIMIT_BOUND_DIVISOR()));
 
-        newGasLimit = newGasLimit.subtract(decay);
+        newGasLimit = newGasLimit.subtract(deltaMax);
         newGasLimit = newGasLimit.add(contrib);
 
         // Gas limit can never be lesser than a certain threshold
@@ -87,9 +86,9 @@ public class GasLimitCalculator {
            newGasLimit = targetGasLimit;
 
        // I've never done enough calculations, but neither of these two should ever happen
-       if (newGasLimit.compareTo(parentGasLimit.subtract(decay)) < 0)
+       if (newGasLimit.compareTo(parentGasLimit.subtract(deltaMax)) < 0)
            newGasLimit = parentGasLimit;
-       if (newGasLimit.compareTo(parentGasLimit.add(decay)) > 0)
+       if (newGasLimit.compareTo(parentGasLimit.add(deltaMax)) > 0)
            newGasLimit = parentGasLimit;
 
         return newGasLimit;

@@ -62,10 +62,10 @@ public class ParentGasLimitRuleTest {
     @Test // no pass rule
     public void parentGasLimitOfBy1Tests() {
         BlockHeader parent = getHeader(2049);
-        BlockHeader headerGGood = getHeader(2050);
-        BlockHeader headerGBad = getHeader(2051);
-        BlockHeader headerLGood = getHeader(2048);
-        BlockHeader headerLBad = getHeader(2047);
+        BlockHeader headerGGood = getHeader(2051);
+        BlockHeader headerGBad = getHeader(2052);
+        BlockHeader headerLGood = getHeader(2047);
+        BlockHeader headerLBad = getHeader(2046);
         assertTrue(rule.validate(headerGGood, parent));
         assertTrue(rule.validate(headerLGood, parent));
         assertFalse(rule.validate(headerGBad, parent));
