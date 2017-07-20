@@ -76,8 +76,12 @@ public class TrackDatabase implements Database {
     public byte[] get(byte[] key) {
         if (trackingChanges) {
             ByteArrayWrapper wKey = new ByteArrayWrapper(key);
-            if (deletes.contains(wKey)) return null;
-            if (changes.get(wKey) != null) return changes.get(wKey);
+            if (deletes.contains(wKey)) {
+                return null;
+            }
+            if (changes.get(wKey) != null) {
+                return changes.get(wKey);
+            }
         }
         return db.get(key);
     }

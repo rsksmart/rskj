@@ -19,7 +19,6 @@
 
 package org.ethereum.net.server;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.net.Metrics;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
@@ -69,7 +68,7 @@ public class ChannelManagerImpl implements ChannelManager {
     // If the inbound peer connection was dropped by us with a reason message
     // then we ban that peer IP on any connections for some time to protect from
     // too active peers
-    private static final int inboundConnectionBanTimeout = 10 * 1000;
+    private static final int INBOUND_CONNECTION_BAN_TIMEOUT = 10 * 1000;
     private final Map<ByteArrayWrapper, Channel> activePeers = Collections.synchronizedMap(new HashMap<ByteArrayWrapper, Channel>());
     @Autowired
     SystemProperties config;
@@ -131,7 +130,7 @@ public class ChannelManagerImpl implements ChannelManager {
     public boolean isRecentlyDisconnected(InetAddress peerAddr) {
         Date disconnectTime = recentlyDisconnected.get(peerAddr);
         if (disconnectTime != null &&
-                System.currentTimeMillis() - disconnectTime.getTime() < inboundConnectionBanTimeout) {
+                System.currentTimeMillis() - disconnectTime.getTime() < INBOUND_CONNECTION_BAN_TIMEOUT) {
             return true;
         } else {
             recentlyDisconnected.remove(peerAddr);

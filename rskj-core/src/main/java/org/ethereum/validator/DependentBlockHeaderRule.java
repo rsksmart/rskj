@@ -42,6 +42,6 @@ public abstract class DependentBlockHeaderRule extends AbstractValidationRule {
      * @param dependency header of the dependency block
      * @return true if validation passed, false otherwise
      */
-    abstract public boolean validate(BlockHeader header, BlockHeader dependency);
+    public abstract boolean validate(BlockHeader header, BlockHeader dependency);
 
 }

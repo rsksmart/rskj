@@ -85,7 +85,9 @@ public class InternalTransaction extends Transaction {
 
     @Override
     public byte[] getEncoded() {
-        if (rlpEncoded != null) return rlpEncoded;
+        if (rlpEncoded != null) {
+            return rlpEncoded;
+        }
 
         byte[] nonce = getNonce();
         if (isEmpty(nonce) || getLength(nonce) == 1 && nonce[0] == 0) {

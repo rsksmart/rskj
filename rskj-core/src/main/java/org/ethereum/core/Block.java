@@ -397,7 +397,9 @@ public class Block {
     }
 
     public String toFlatString() {
-        if (!parsed) parseRLP();
+        if (!parsed) {
+            parseRLP();
+        }
 
         toStringBuff.setLength(0);
         toStringBuff.append("BlockData [");
@@ -479,7 +481,10 @@ public class Block {
     }
 
     public boolean isGenesis() {
-        if (!parsed) parseRLP();
+        if (!parsed) {
+            parseRLP();
+        }
+
         return this.header.isGenesis();
     }
 
@@ -528,7 +533,10 @@ public class Block {
     }
 
     public byte[] getEncodedWithoutNonce() {
-        if (!parsed) parseRLP();
+        if (!parsed) {
+            parseRLP();
+        }
+
         return this.header.getEncodedWithoutNonceMergedMiningFields();
     }
 
@@ -539,7 +547,9 @@ public class Block {
     }
 
     private List<byte[]> getBodyElements() {
-        if (!parsed) parseRLP();
+        if (!parsed) {
+            parseRLP();
+        }
 
         byte[] transactions = getTransactionsEncoded();
         byte[] uncles = getUnclesEncoded();
@@ -552,17 +562,26 @@ public class Block {
     }
 
     public String getShortHash() {
-        if (!parsed) parseRLP();
+        if (!parsed) {
+            parseRLP();
+        }
+
         return Hex.toHexString(getHash()).substring(0, 6);
     }
 
     public String getShortHashForMergedMining() {
-        if (!parsed) parseRLP();
+        if (!parsed) {
+            parseRLP();
+        }
+
         return this.header.getShortHashForMergedMining();
     }
 
     public byte[] getHashForMergedMining() {
-        if (!parsed) parseRLP();
+        if (!parsed) {
+            parseRLP();
+        }
+
         return this.header.getHashForMergedMining();
     }
 
@@ -573,7 +592,10 @@ public class Block {
     }
 
     public byte[] getBitcoinMergedMiningHeader() {
-        if (!parsed) parseRLP();
+        if (!parsed) {
+            parseRLP();
+        }
+
         return this.header.getBitcoinMergedMiningHeader();
     }
 
@@ -583,7 +605,10 @@ public class Block {
     }
 
     public byte[] getBitcoinMergedMiningMerkleProof() {
-        if (!parsed) parseRLP();
+        if (!parsed) {
+            parseRLP();
+        }
+
         return this.header.getBitcoinMergedMiningMerkleProof();
     }
 
@@ -593,7 +618,10 @@ public class Block {
     }
 
     public byte[] getBitcoinMergedMiningCoinbaseTransaction() {
-        if (!parsed) parseRLP();
+        if (!parsed) {
+            parseRLP();
+        }
+        
         return this.header.getBitcoinMergedMiningCoinbaseTransaction();
     }
 

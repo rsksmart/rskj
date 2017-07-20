@@ -46,5 +46,5 @@ public abstract class AbstractValidationRule implements ValidationRule {
             }
     }
 
-    abstract public Class getEntityClass();
+    public abstract Class getEntityClass();
 }

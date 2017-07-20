@@ -53,7 +53,9 @@ public class DataSourcePool {
 
         synchronized (result) {
             result.reserve();
-            if (!result.getDataSource().isAlive()) result.getDataSource().init();
+            if (!result.getDataSource().isAlive()) {
+                result.getDataSource().init();
+            }
         }
 
         return result.getDataSource();

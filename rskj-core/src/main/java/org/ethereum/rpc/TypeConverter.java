@@ -28,27 +28,29 @@ import java.math.BigInteger;
 public class TypeConverter {
     private static byte[] emptyByteArray = new byte[0];
 
-    public static BigInteger StringNumberAsBigInt(String input) {
+    public static BigInteger stringNumberAsBigInt(String input) {
         if (input.startsWith("0x"))
-            return TypeConverter.StringHexToBigInteger(input);
+            return TypeConverter.stringHexToBigInteger(input);
         else
-            return TypeConverter.StringDecimalToBigInteger(input);
+            return TypeConverter.stringDecimalToBigInteger(input);
     }
 
-    public static BigInteger StringHexToBigInteger(String input) {
+    public static BigInteger stringHexToBigInteger(String input) {
         String hexa = input.substring(2);
         return new BigInteger(hexa, 16);
     }
 
-    private static BigInteger StringDecimalToBigInteger(String input) {
+    private static BigInteger stringDecimalToBigInteger(String input) {
         return new BigInteger(input);
     }
 
-    public static byte[] StringHexToByteArray(String x) {
+    public static byte[] stringHexToByteArray(String x) {
         if (x.startsWith("0x")) {
             x = x.substring(2);
         }
-        if (x.length() % 2 != 0) x = "0" + x;
+        if (x.length() % 2 != 0) {
+            x = "0" + x;
+        }
         return Hex.decode(x);
     }
 

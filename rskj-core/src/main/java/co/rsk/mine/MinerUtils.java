@@ -56,7 +56,7 @@ public class MinerUtils {
         SecureRandom random = new SecureRandom();
         byte[] prefix = new byte[random.nextInt(1000)];
         random.nextBytes(prefix);
-        byte[] bytes = Arrays.concatenate(prefix, RskMiningConstants.RSK_TAG, TypeConverter.StringHexToByteArray(work.getBlockHashForMergedMining()));
+        byte[] bytes = Arrays.concatenate(prefix, RskMiningConstants.RSK_TAG, TypeConverter.stringHexToByteArray(work.getBlockHashForMergedMining()));
         co.rsk.bitcoinj.core.TransactionInput ti = new co.rsk.bitcoinj.core.TransactionInput(params, coinbaseTransaction, bytes);
         coinbaseTransaction.addInput(ti);
         ByteArrayOutputStream scriptPubKeyBytes = new ByteArrayOutputStream();

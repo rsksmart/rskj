@@ -199,10 +199,14 @@ public class DataWord implements Comparable<DataWord> {
      * otherwise works as #intValue()
      */
     public int intValueSafe() {
-        if (occupyMoreThan(4)) return Integer.MAX_VALUE;
+        if (occupyMoreThan(4)) {
+            return Integer.MAX_VALUE;
+        }
 
         int intValue = intValue();
-        if (intValue < 0) return Integer.MAX_VALUE;
+        if (intValue < 0) {
+            return Integer.MAX_VALUE;
+        }
         return intValue;
     }
 
@@ -241,10 +245,14 @@ public class DataWord implements Comparable<DataWord> {
      * otherwise works as #longValue()
      */
     public long longValueSafe() {
-        if (occupyMoreThan(8)) return Long.MAX_VALUE;
+        if (occupyMoreThan(8)) {
+            return Long.MAX_VALUE;
+        }
 
         long longValue = longValue();
-        if (longValue < 0) return Long.MAX_VALUE;
+        if (longValue < 0) {
+            return Long.MAX_VALUE;
+        }
         return longValue;
     }
 
@@ -309,7 +317,9 @@ public class DataWord implements Comparable<DataWord> {
 
     public void negate() {
 
-        if (this.isZero()) return;
+        if (this.isZero()) {
+            return;
+        }
 
         for (int i = 0; i < this.data.length; ++i) {
             this.data[i] = (byte) ~this.data[i];
@@ -317,7 +327,9 @@ public class DataWord implements Comparable<DataWord> {
 
         for (int i = this.data.length - 1; i >= 0; --i) {
             this.data[i] = (byte) (1 + this.data[i] & 0xFF);
-            if (this.data[i] != 0) break;
+            if (this.data[i] != 0) {
+                break;
+            }
         }
     }
 
@@ -327,7 +339,7 @@ public class DataWord implements Comparable<DataWord> {
         }
     }
     // this is 100 times slower than the new not.
-    public void slow_bnot() {
+    public void slowBnot() {
         if (this.isZero()) {
             this.data = ByteUtil.copyToArray(MAX_VALUE);
             return;
@@ -452,7 +464,9 @@ public class DataWord implements Comparable<DataWord> {
     public String toPrefixString() {
 
         byte[] pref = getNoLeadZeroesData();
-        if (pref.length == 0) return "";
+        if (pref.length == 0) {
+            return "";
+        }
 
         if (pref.length < 7)
             return Hex.toHexString(pref);
@@ -471,8 +485,12 @@ public class DataWord implements Comparable<DataWord> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         return equalValue((DataWord) o);
     }
 
@@ -488,7 +506,9 @@ public class DataWord implements Comparable<DataWord> {
 
     @Override
     public int compareTo(DataWord o) {
-        if (o == null || o.getData() == null) return -1;
+        if (o == null || o.getData() == null) {
+            return -1;
+        }
         int result = FastByteComparisons.compareTo(
                 data, 0, data.length,
                 o.getData(), 0, o.getData().length);
@@ -497,9 +517,13 @@ public class DataWord implements Comparable<DataWord> {
         // SigNum uses floating point arithmetic. It should be faster
         // to solve it in integer arithmetic
         // return (int) Math.signum(result);
-        if (result<0) return -1;
-        else if (result>0) return 1;
-        else return 0;
+        if (result<0) {
+            return -1;
+        } else if (result>0) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
     public void signExtend(byte k) {
@@ -517,7 +541,9 @@ public class DataWord implements Comparable<DataWord> {
 
     public int bytesOccupied() {
         int firstNonZero = ByteUtil.firstNonZeroByte(data);
-        if (firstNonZero == -1) return 0;
+        if (firstNonZero == -1) {
+            return 0;
+        }
         return 31 - firstNonZero + 1;
     }
 
@@ -527,9 +553,17 @@ public class DataWord implements Comparable<DataWord> {
             return 8;
         int n = 0;
         int v = i;
-        if (v >>> 4 == 0) { n +=  4; v <<=  4; }
-        if (v >>> 6 == 0) { n +=  2; v <<=  2; }
-        if (v >>> 7 == 0) { n +=  1;  }
+        if (v >>> 4 == 0) {
+            n +=  4; 
+            v <<=  4;
+        }
+        if (v >>> 6 == 0) {
+            n +=  2; 
+            v <<=  2; 
+        }
+        if (v >>> 7 == 0) { 
+            n +=  1;  
+        }
 
         return n;
     }
@@ -540,7 +574,9 @@ public class DataWord implements Comparable<DataWord> {
         public static int numberOfTrailingZeros(byte i) {
             // UNTESTED
 
-            if (i == 0) return 8;
+            if (i == 0) {
+                return 8;
+            }
             int y;
             int v = i;
             int n = 7;
@@ -563,7 +599,9 @@ public class DataWord implements Comparable<DataWord> {
 
     public int bitsOccupied() {
         int firstNonZero = ByteUtil.firstNonZeroByte(data);
-        if (firstNonZero == -1) return 0;
+        if (firstNonZero == -1) {
+            return 0;
+        }
         return numberOfTrailingNonZeros(data[firstNonZero]) + (31 - firstNonZero)<<3;
     }
 

@@ -30,5 +30,5 @@ public abstract class EthMessage extends Message {
         super(encoded);
     }
 
-    abstract public EthMessageCodes getCommand();
+    public abstract EthMessageCodes getCommand();
 }

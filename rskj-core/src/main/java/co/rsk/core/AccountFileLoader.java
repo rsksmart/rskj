@@ -32,7 +32,7 @@ import java.nio.file.Path;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static org.ethereum.rpc.TypeConverter.StringHexToByteArray;
+import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
 /**
  * Created by mario on 23/11/16.
@@ -60,7 +60,7 @@ public class AccountFileLoader {
                     JSONObject jobj = (JSONObject) obj;
                     String acc  = (String) jobj.get("account");
                     String add  = (String) jobj.get("address");
-                    accounts.put((String) jobj.get("ip"), new AccountData(StringHexToByteArray(add), StringHexToByteArray(acc)));
+                    accounts.put((String) jobj.get("ip"), new AccountData(stringHexToByteArray(add), stringHexToByteArray(acc)));
                 }
             } catch (ParseException | IOException e) {
                 logger.error("Error reading accounts file", e);

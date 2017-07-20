@@ -80,7 +80,7 @@ public class BlockDifficultyValidationRuleTest {
         BigInteger parentDifficulty = new BigInteger("2048");
         BigInteger blockDifficulty = new BigInteger("2049");
 
-        //blockDifficulty = blockDifficulty.add(AbstractConfig.getConstants().getDIFFICULTY_BOUND_DIVISOR());
+        //blockDifficulty = blockDifficulty.add(AbstractConfig.getConstants().getDifficultyBoundDivisor());
 
         Mockito.when(block.getDifficultyBI())
                 .thenReturn(blockDifficulty);

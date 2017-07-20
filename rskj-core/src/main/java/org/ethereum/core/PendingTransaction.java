@@ -108,8 +108,13 @@ public class PendingTransaction {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof PendingTransaction)) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof PendingTransaction)) {
+            return false;
+        }
 
         PendingTransaction that = (PendingTransaction) o;
 

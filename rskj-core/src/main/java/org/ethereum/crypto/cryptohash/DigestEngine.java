@@ -100,8 +100,11 @@ public abstract class DigestEngine implements Digest {
 	 */
 	protected abstract void doInit();
 
-	private int digestLen, blockLen, inputLen;
-	private byte[] inputBuf, outputBuf;
+	private int digestLen;
+	private int blockLen;
+	private int inputLen;
+	private byte[] inputBuf;
+	byte[] outputBuf;
 	private long blockCount;
 
 	/**

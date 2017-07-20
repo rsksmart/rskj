@@ -45,7 +45,7 @@ public class GasLimitCalculator {
         // parent - deltaMax or parent + deltaMax are the limits
         // that should be accepted by consensus rules
         BigInteger deltaMax = parentGasLimit
-                .divide(BigInteger.valueOf(constants.getGAS_LIMIT_BOUND_DIVISOR()));
+                .divide(BigInteger.valueOf(constants.getGasLimitBoundDivisor()));
 
         // TODO: we should assert this before reaching this point
         if (targetGasLimit.compareTo(minGasLimit) < 0) {
@@ -73,7 +73,7 @@ public class GasLimitCalculator {
         // contrib = (parentGasUsed * 3 / 2) / 1024
         BigInteger contrib = parentGasUsed.multiply(BigInteger.valueOf(3));
         contrib = contrib.divide(BigInteger.valueOf(2));
-        contrib = contrib.divide(BigInteger.valueOf(constants.getGAS_LIMIT_BOUND_DIVISOR()));
+        contrib = contrib.divide(BigInteger.valueOf(constants.getGasLimitBoundDivisor()));
 
         newGasLimit = newGasLimit.subtract(deltaMax);
         newGasLimit = newGasLimit.add(contrib);

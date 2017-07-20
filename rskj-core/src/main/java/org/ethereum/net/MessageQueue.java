@@ -22,7 +22,6 @@ package org.ethereum.net;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import co.rsk.panic.PanicProcessor;
-import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.message.Message;
 import org.ethereum.net.message.ReasonCode;
@@ -31,7 +30,6 @@ import org.ethereum.net.p2p.PingMessage;
 import org.ethereum.net.server.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -102,7 +100,9 @@ public class MessageQueue {
 
     public void sendMessage(Message msg) {
         if (msg instanceof PingMessage) {
-            if (hasPing) return;
+            if (hasPing) {
+                return;
+            }
             logger.trace("Sending Ping Message to {}", channel);
             hasPing = true;
         }
@@ -132,7 +132,9 @@ public class MessageQueue {
         if (messageRoundtrip != null) {
             Message waitingMessage = messageRoundtrip.getMsg();
 
-            if (waitingMessage instanceof PingMessage) hasPing = false;
+            if (waitingMessage instanceof PingMessage) {
+                hasPing = false;
+            }
 
             if (waitingMessage.getAnswerMessage() != null
                     && msg.getClass() == waitingMessage.getAnswerMessage()) {

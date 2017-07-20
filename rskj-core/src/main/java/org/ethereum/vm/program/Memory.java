@@ -47,7 +47,9 @@ public class Memory implements ProgramListenerAware {
     }
 
     public byte[] read(int address, int size) {
-        if (size <= 0) return EMPTY_BYTE_ARRAY;
+        if (size <= 0) {
+            return EMPTY_BYTE_ARRAY;
+        }
 
         extend(address, size);
         byte[] data = new byte[size];
@@ -103,7 +105,9 @@ public class Memory implements ProgramListenerAware {
             start += captured;
         }
 
-        if (traceListener != null) traceListener.onMemoryWrite(address, data, dataSize);
+        if (traceListener != null) {
+            traceListener.onMemoryWrite(address, data, dataSize);
+        }
     }
 
 
@@ -113,7 +117,9 @@ public class Memory implements ProgramListenerAware {
     }
 
     public void extend(int address, int size) {
-        if (size <= 0) return;
+        if (size <= 0) {
+            return;
+        }
 
         final int newSize = address + size;
 
@@ -127,7 +133,9 @@ public class Memory implements ProgramListenerAware {
             toAllocate = (int) ceil((double) toAllocate / WORD_SIZE) * WORD_SIZE;
             softSize += toAllocate;
 
-            if (traceListener != null) traceListener.onMemoryExtend(toAllocate);
+            if (traceListener != null) {
+                traceListener.onMemoryExtend(toAllocate);
+            }
         }
     }
 
@@ -167,7 +175,9 @@ public class Memory implements ProgramListenerAware {
                 memoryData.append("").append(tmp).append(" ");
                 memoryData.append(firstLine).append(" ");
                 memoryData.append(secondLine);
-                if (i + 1 < softSize) memoryData.append("\n");
+                if (i + 1 < softSize) {
+                    memoryData.append("\n");
+                }
                 firstLine.setLength(0);
                 secondLine.setLength(0);
             }

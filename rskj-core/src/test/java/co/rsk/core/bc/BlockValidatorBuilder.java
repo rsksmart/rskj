@@ -87,8 +87,8 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addBlockUnclesValidationRule(BlockStore blockStore, BlockValidationRule validationRule, BlockParentDependantValidationRule parentValidationRule) {
-        int uncleListLimit = RskSystemProperties.RSKCONFIG.getBlockchainConfig().getCommonConstants().getUNCLE_LIST_LIMIT();
-        int uncleGenLimit = RskSystemProperties.RSKCONFIG.getBlockchainConfig().getCommonConstants().getUNCLE_GENERATION_LIMIT();
+        int uncleListLimit = RskSystemProperties.RSKCONFIG.getBlockchainConfig().getCommonConstants().getUncleListLimit();
+        int uncleGenLimit = RskSystemProperties.RSKCONFIG.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
         this.blockUnclesValidationRule = new BlockUnclesValidationRule(blockStore, uncleListLimit, uncleGenLimit, validationRule, parentValidationRule);
         return this;
     }
@@ -115,7 +115,7 @@ public class BlockValidatorBuilder {
 
     public BlockValidatorBuilder addParentGasLimitRule() {
         parentGasLimitRule = new BlockParentGasLimitRule(RskSystemProperties.CONFIG.getBlockchainConfig().
-                        getCommonConstants().getGAS_LIMIT_BOUND_DIVISOR());
+                        getCommonConstants().getGasLimitBoundDivisor());
         return this;
     }
 
