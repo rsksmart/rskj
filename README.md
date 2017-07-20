@@ -1,5 +1,5 @@
 # Welcome to RskJ
-[![Build Status](https://jenkins.rsk.co/buildStatus/icon?job=RSKj-Tests)](https://jenkins.rsk.co/job/RSKj-Tests)
+[![CircleCI](https://circleci.com/gh/rsksmart/rskj.svg?style=svg)](https://circleci.com/gh/rsksmart/rskj)
 
 
 # About
