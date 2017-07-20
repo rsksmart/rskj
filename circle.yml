@@ -1,0 +1,12 @@
+general:
+  branches:
+    only:
+      - master
+machine:
+  java:
+    version: oraclejdk8
+  environment:
+    _JAVA_OPTIONS: "-Xmx3G -Xms2G"
+test:
+  override:
+    - ./gradlew test
