@@ -223,19 +223,21 @@ public class PeerScoringManagerTest {
         Assert.assertEquals(1, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_BLOCK));
         Assert.assertEquals(0, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_TRANSACTION));
         Assert.assertEquals(10, manager.getPeerScoring(address).getPunishmentTime());
+        Assert.assertEquals(-1, manager.getPeerScoring(address).getScore());
         Assert.assertFalse(manager.hasGoodReputation(address));
 
         TimeUnit.MILLISECONDS.sleep(100);
 
         Assert.assertTrue(manager.hasGoodReputation(address));
+        Assert.assertEquals(0, manager.getPeerScoring(address).getScore());
 
         manager.recordEvent(null, address, EventType.INVALID_BLOCK);
 
         Assert.assertEquals(1, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_BLOCK));
         Assert.assertEquals(0, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_TRANSACTION));
         Assert.assertEquals(2, manager.getPeerScoring(address).getPunishmentCounter());
-        Assert.assertEquals(-2, manager.getPeerScoring(address).getScore());
-        Assert.assertEquals(22, manager.getPeerScoring(address).getPunishmentTime());
+        Assert.assertEquals(-1, manager.getPeerScoring(address).getScore());
+        Assert.assertEquals(11, manager.getPeerScoring(address).getPunishmentTime());
         Assert.assertFalse(manager.hasGoodReputation(address));
     }
 

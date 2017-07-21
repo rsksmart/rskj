@@ -177,6 +177,7 @@ public class PeerScoring {
         //Check locks before doing this function public
         this.counters.clear();
         this.goodReputation = true;
+        this.score = 0;
         this.timeLostGoodReputation = 0;
     }
 
