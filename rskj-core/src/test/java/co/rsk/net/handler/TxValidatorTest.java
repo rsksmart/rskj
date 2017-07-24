@@ -132,7 +132,6 @@ public class TxValidatorTest {
         //Bridge Tx
         txs.add(createBridgeTx(1, 0, 1, 0, 0, 6, hashes));
 
-        Map<String, TxTimestamp> times;
         Map<String, TxsPerAccount> txmap;
         Repository repository = Mockito.mock(Repository.class);
         final long blockGasLimit = 100000;
@@ -144,7 +143,6 @@ public class TxValidatorTest {
         Mockito.when(block.getGasLimit()).thenReturn(BigInteger.valueOf(blockGasLimit).toByteArray());
         Mockito.when(block.getMinimumGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
         createAccountState(txs.get(0), repository, 0, 0);
-        times = new HashMap<>();
         txmap = new HashMap<>();
 
         List<Transaction> result = txValidator.filterTxs(txs, repository, worldManager, txmap);
