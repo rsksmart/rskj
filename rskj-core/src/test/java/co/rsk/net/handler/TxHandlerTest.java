@@ -52,12 +52,12 @@ public class TxHandlerTest {
         txsPerAccounts.put(TypeConverter.toJsonHex(tx1.getSender()), tpa);
 
         TxHandlerImpl txHandler = new TxHandlerImpl();
-        txHandler.setKnownTxs(knownTxs);
+        txHandler.setTransactionTimestamps(knownTxs);
         txHandler.setTxsPerAccounts(txsPerAccounts);
 
         txHandler.cleanOldTxs();
 
-        Assert.assertEquals(1, txHandler.getKnownTxs().keySet().size());
+        Assert.assertEquals(1, txHandler.getTransactionTimestamps().keySet().size());
         Assert.assertEquals(1, txHandler.getTxsPerAccounts().entrySet().iterator().next().getValue().getTransactions().size());
     }
 
@@ -79,12 +79,12 @@ public class TxHandlerTest {
         txsPerAccounts.put(TypeConverter.toJsonHex(tx1.getSender()), tpa);
 
         TxHandlerImpl txHandler = new TxHandlerImpl();
-        txHandler.setKnownTxs(knownTxs);
+        txHandler.setTransactionTimestamps(knownTxs);
         txHandler.setTxsPerAccounts(txsPerAccounts);
 
         txHandler.cleanOldTxs();
 
-        Assert.assertTrue(txHandler.getKnownTxs().isEmpty());
+        Assert.assertTrue(txHandler.getTransactionTimestamps().isEmpty());
         Assert.assertTrue(txHandler.getTxsPerAccounts().isEmpty());
     }
 
@@ -118,11 +118,11 @@ public class TxHandlerTest {
 
         TxHandlerImpl txHandler = new TxHandlerImpl();
         txHandler.setTxsPerAccounts(txsPerAccounts);
-        txHandler.setKnownTxs(knownTxs);
+        txHandler.setTransactionTimestamps(knownTxs);
 
         txHandler.onBlock(null, receiptList);
 
-        Assert.assertEquals(1, txHandler.getKnownTxs().keySet().size());
+        Assert.assertEquals(1, txHandler.getTransactionTimestamps().keySet().size());
         Assert.assertEquals(1, txHandler.getTxsPerAccounts().entrySet().iterator().next().getValue().getTransactions().size());
     }
 }

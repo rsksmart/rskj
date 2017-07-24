@@ -54,7 +54,7 @@ class TxValidator {
     /**
      * Where the magic occurs, will filter out invalid txs, but still remember some of them
      */
-    List<Transaction> filterTxs(List<Transaction> txs, Map<String, TxTimestamp> knownTxs,
+    List<Transaction> filterTxs(List<Transaction> txs,
                                 Repository repository, WorldManager worldManager,
                                 Map<String, TxsPerAccount> txsPerAccounts) {
         //FIXME(mmarquez): this method is quite coupled with TxHandlerImpl
@@ -62,19 +62,15 @@ class TxValidator {
         // and related stuff
         List<Transaction> acceptedTxs = new LinkedList<>();
 
-
         for (Transaction tx : txs) {
             String hash = TypeConverter.toJsonHex(tx.getHash());
 
-            if (knownTxs.containsKey(hash)) {
-                continue;
-            }
-            knownTxs.put(hash, new TxTimestamp(tx, System.currentTimeMillis()));
-
             AccountState state = repository.getAccountState(tx.getSender());
+
             if (state == null) {
                 state = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
             }
+
             byte[] blockGasLimit = worldManager.getBlockchain().getBestBlock().getGasLimit();
             byte[] minimumGasPrice = worldManager.getBlockchain().getBestBlock().getMinimumGasPrice();
             long bestBlockNumber = worldManager.getBlockchain().getBestBlock().getNumber();

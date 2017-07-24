@@ -39,8 +39,8 @@ public class TxHandlerImpl implements TxHandler {
 
     private Repository repository;
     private WorldManager worldManager;
-    private Map<String, TxTimestamp> knownTxs = new HashMap<>();
-    private Lock knownTxsLock = new ReentrantLock();
+    private Map<String, TxTimestamp> transactionTimestamps = new HashMap<>();
+    private Lock transactionsLock = new ReentrantLock();
     private Map<String, TxsPerAccount> txsPerAccounts = new HashMap<>();
 
     /**
@@ -71,32 +71,35 @@ public class TxHandlerImpl implements TxHandler {
     @Override
     public List<Transaction> retrieveValidTxs(List<Transaction> txs) {
         try {
-            knownTxsLock.lock();
+            transactionsLock.lock();
+
+            for (Transaction tx : txs)
+                transactionTimestamps.put(TypeConverter.toJsonHex(tx.getHash()), new TxTimestamp(tx, System.currentTimeMillis()));
+
             return new TxValidator().filterTxs( txs,
-                                                knownTxs,
                                                 repository,
                                                 worldManager,
                                                 txsPerAccounts );
         } finally {
-            knownTxsLock.unlock();
+            transactionsLock.unlock();
         }
     }
 
     @VisibleForTesting
     void cleanOldTxs() {
         try {
-            knownTxsLock.lock();
+            transactionsLock.lock();
             cleanTxs();
         } finally {
-            knownTxsLock.unlock();
+            transactionsLock.unlock();
         }
     }
 
     private void cleanTxs() {
         final long oldTxThresholdInMS = (long)1000 * 60 * 5;
-        Map<String, TxTimestamp> newKnownTxs = new HashMap<>();
+        Map<String, TxTimestamp> newTransactionTimestamps = new HashMap<>();
 
-        for (Map.Entry<String, TxTimestamp> entry : knownTxs.entrySet()) {
+        for (Map.Entry<String, TxTimestamp> entry : transactionTimestamps.entrySet()) {
             long time = System.currentTimeMillis();
             TxTimestamp txt = entry.getValue();
 
@@ -114,10 +117,10 @@ public class TxHandlerImpl implements TxHandler {
                 continue;
             }
 
-            newKnownTxs.put(entry.getKey(), entry.getValue());
+            newTransactionTimestamps.put(entry.getKey(), entry.getValue());
         }
 
-        knownTxs = newKnownTxs;
+        transactionTimestamps = newTransactionTimestamps;
     }
 
     private class Listener extends EthereumListenerAdapter {
@@ -125,12 +128,13 @@ public class TxHandlerImpl implements TxHandler {
         @Override
         public void onBlock(Block block, List<TransactionReceipt> receipts) {
             try {
-                knownTxsLock.lock();
+                transactionsLock.lock();
+
                 for (TransactionReceipt txReceipt : receipts) {
                     Transaction tx = txReceipt.getTransaction();
                     String txHash = TypeConverter.toJsonHex(tx.getHash());
 
-                    if (!knownTxs.containsKey(txHash)) {
+                    if (!transactionTimestamps.containsKey(txHash)) {
                         continue;
                     }
 
@@ -140,7 +144,7 @@ public class TxHandlerImpl implements TxHandler {
 
                     if (txsPerAccount == null)
                     {
-                        knownTxs.remove(txHash);
+                        transactionTimestamps.remove(txHash);
                         continue;
                     }
 
@@ -149,18 +153,18 @@ public class TxHandlerImpl implements TxHandler {
                         txsPerAccounts.remove(accountId);
                     }
 
-                    knownTxs.remove(txHash);
+                    transactionTimestamps.remove(txHash);
                 }
             }
             finally {
-                knownTxsLock.unlock();
+                transactionsLock.unlock();
             }
         }
     }
 
-    @VisibleForTesting void setKnownTxs(Map<String, TxTimestamp> knownTxs) { this.knownTxs = knownTxs; }
+    @VisibleForTesting void setTransactionTimestamps(Map<String, TxTimestamp> transactionTimestamps) { this.transactionTimestamps = transactionTimestamps; }
     @VisibleForTesting void setTxsPerAccounts(Map<String, TxsPerAccount> txsPerAccounts) { this.txsPerAccounts = txsPerAccounts; }
-    @VisibleForTesting Map<String, TxTimestamp> getKnownTxs() { return knownTxs; }
+    @VisibleForTesting Map<String, TxTimestamp> getTransactionTimestamps() { return transactionTimestamps; }
     @VisibleForTesting Map<String, TxsPerAccount> getTxsPerAccounts() { return txsPerAccounts; }
     @VisibleForTesting public void onBlock(Block block, List<TransactionReceipt> receiptList) { new Listener().onBlock(block, receiptList); }
 

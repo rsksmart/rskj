@@ -44,7 +44,6 @@ public class TxValidatorTest {
         List<Transaction> txs;
         List<Transaction> result;
         TxValidator txValidator = new TxValidator();
-        Map<String, TxTimestamp> times;
         Map<String, TxsPerAccount> txmap;
         Repository repository = Mockito.mock(Repository.class);
         final long blockGasLimit = 100000;
@@ -55,7 +54,6 @@ public class TxValidatorTest {
         Mockito.when(blockchain.getBestBlock()).thenReturn(block);
         Mockito.when(block.getGasLimit()).thenReturn(BigInteger.valueOf(blockGasLimit).toByteArray());
         Mockito.when(block.getMinimumGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        times = new HashMap<>();
         txmap = new HashMap<>();
 
         List<Transaction> vtxs = new LinkedList<>();
@@ -120,7 +118,7 @@ public class TxValidatorTest {
         txs = new LinkedList<>();
         txs.addAll(vtxs);
         txs.addAll(itxs);
-        result = txValidator.filterTxs(txs, times, repository, worldManager, txmap);
+        result = txValidator.filterTxs(txs, repository, worldManager, txmap);
         Assert.assertEquals(vtxs, result);
     }
 
@@ -149,7 +147,7 @@ public class TxValidatorTest {
         times = new HashMap<>();
         txmap = new HashMap<>();
 
-        List<Transaction> result = txValidator.filterTxs(txs, times, repository, worldManager, txmap);
+        List<Transaction> result = txValidator.filterTxs(txs, repository, worldManager, txmap);
         Assert.assertTrue(result.size() == 1);
 
         SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
