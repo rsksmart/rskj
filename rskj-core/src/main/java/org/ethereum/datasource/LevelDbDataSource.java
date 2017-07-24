@@ -255,7 +255,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
             try (DBIterator iterator = db.iterator()) {
                 Set<byte[]> result = new HashSet<>();
-                Set<byte[]> result = new HashSet<>();
                 iterator.seekToFirst();
                 iterator.forEachRemaining( x -> result.add(x.getKey()) );
                 if (logger.isTraceEnabled()) {
@@ -340,11 +339,4 @@ public class LevelDbDataSource implements KeyValueDataSource {
         }
     }
 
-    public long getLastTimeUsed() {
-        return this.lastTimeUsed;
-    }
-
-    private void updateLastTimeUsed() {
-        this.lastTimeUsed = System.currentTimeMillis();
-    }
 }

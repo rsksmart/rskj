@@ -84,47 +84,4 @@ public class DataSourcePoolTest {
         }
     }
 
-    @Test
-    public void openAndCloseLevelDBDataSource() {
-        KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test5");
-
-        Assert.assertNotNull(dataSource);
-        Assert.assertTrue(dataSource instanceof LevelDbDataSource);
-
-        LevelDbDataSource lds = (LevelDbDataSource)dataSource;
-
-        Assert.assertNotEquals(0, lds.getLastTimeUsed());
-
-        dataSource.close();
-    }
-
-    @Test
-    public void updateTimeOnGetAndPutValue() throws InterruptedException {
-        KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test5");
-
-        Assert.assertNotNull(dataSource);
-        Assert.assertTrue(dataSource instanceof LevelDbDataSource);
-
-        LevelDbDataSource lds = (LevelDbDataSource)dataSource;
-
-        long timeinit = lds.getLastTimeUsed();
-        TimeUnit.MILLISECONDS.sleep(100);
-        Assert.assertEquals(timeinit, lds.getLastTimeUsed());
-
-        lds.put(new byte[] { 0x01, 0x02 }, new byte[] { 0x03 });
-
-        long timeput = lds.getLastTimeUsed();
-        Assert.assertNotEquals(timeinit, timeput);
-        Assert.assertTrue(timeinit < timeput);
-
-        TimeUnit.MILLISECONDS.sleep(100);
-
-        lds.get(new byte[] { 0x01, 0x02 });
-
-        long timeget = lds.getLastTimeUsed();
-        Assert.assertNotEquals(timeput, timeget);
-        Assert.assertTrue(timeput < timeget);
-
-        dataSource.close();
-    }
 }
