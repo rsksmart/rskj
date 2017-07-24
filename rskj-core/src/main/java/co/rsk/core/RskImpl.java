@@ -50,7 +50,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
     }
 
     @Override
-    public MessageHandler getMessageHandler() {
+    public synchronized MessageHandler getMessageHandler() {
         if (this.messageHandler == null) {
             this.nodeBlockProcessor = getNodeBlockProcessor(); // Initialize nodeBlockProcessor if not done already.
             NodeMessageHandler handler = new NodeMessageHandler(this.nodeBlockProcessor, getChannelManager(),
