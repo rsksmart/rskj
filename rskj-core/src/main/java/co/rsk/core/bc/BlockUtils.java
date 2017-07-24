@@ -43,13 +43,7 @@ public class BlockUtils {
         final ByteArrayWrapper key = new ByteArrayWrapper(blockHash);
         final List<BlockInformation> blocks = blockChain.getBlocksInformationByNumber(blockNumber);
 
-        for (final BlockInformation bi : blocks) {
-            if (key.equals(bi.getHash())) {
-                return true;
-            }
-        }
-
-        return false;
+        return blocks.stream().anyMatch(bi -> key.equalsToByteArray(bi.getHash()));
     }
 
     public static Set<ByteArrayWrapper> unknownDirectAncestorsHashes(Block block, Blockchain blockChain, BlockStore store) {
