@@ -179,7 +179,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.get(): {}, key: ",name, Hex.toHexString(key));
+                logger.trace("~> LevelDbDataSource.get(): {}, key: {}", name, Hex.toHexString(key));
             }
 
             try {
