@@ -43,6 +43,7 @@ public class TxValidatorTest {
     public void oneTestToRuleThemAll() {
         List<Transaction> txs;
         List<Transaction> result;
+        Map<String, TxTimestamp> times = new HashMap<>();
         TxValidator txValidator = new TxValidator();
         Map<String, TxsPerAccount> txmap;
         Repository repository = Mockito.mock(Repository.class);
@@ -118,7 +119,7 @@ public class TxValidatorTest {
         txs = new LinkedList<>();
         txs.addAll(vtxs);
         txs.addAll(itxs);
-        result = txValidator.filterTxs(txs, repository, worldManager, txmap);
+        result = txValidator.filterTxs(txs, times, repository, worldManager, txmap);
         Assert.assertEquals(vtxs, result);
     }
 
@@ -144,8 +145,9 @@ public class TxValidatorTest {
         Mockito.when(block.getMinimumGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
         createAccountState(txs.get(0), repository, 0, 0);
         txmap = new HashMap<>();
+        Map<String, TxTimestamp> times = new HashMap<>();
 
-        List<Transaction> result = txValidator.filterTxs(txs, repository, worldManager, txmap);
+        List<Transaction> result = txValidator.filterTxs(txs, times, repository, worldManager, txmap);
         Assert.assertTrue(result.size() == 1);
 
         SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);

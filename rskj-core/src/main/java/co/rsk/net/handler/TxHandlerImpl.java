@@ -39,7 +39,7 @@ public class TxHandlerImpl implements TxHandler {
 
     private Repository repository;
     private WorldManager worldManager;
-    private Map<String, TxTimestamp> transactionTimestamps = new HashMap<>();
+    private Map<String, TxTimestamp> times = new HashMap<>();
     private Lock transactionsLock = new ReentrantLock();
     private Map<String, TxsPerAccount> txsPerAccounts = new HashMap<>();
 
@@ -73,10 +73,8 @@ public class TxHandlerImpl implements TxHandler {
         try {
             transactionsLock.lock();
 
-            for (Transaction tx : txs)
-                transactionTimestamps.put(TypeConverter.toJsonHex(tx.getHash()), new TxTimestamp(tx, System.currentTimeMillis()));
-
             return new TxValidator().filterTxs( txs,
+                                                times,
                                                 repository,
                                                 worldManager,
                                                 txsPerAccounts );
@@ -99,7 +97,7 @@ public class TxHandlerImpl implements TxHandler {
         final long oldTxThresholdInMS = (long)1000 * 60 * 5;
         Map<String, TxTimestamp> newTransactionTimestamps = new HashMap<>();
 
-        for (Map.Entry<String, TxTimestamp> entry : transactionTimestamps.entrySet()) {
+        for (Map.Entry<String, TxTimestamp> entry : times.entrySet()) {
             long time = System.currentTimeMillis();
             TxTimestamp txt = entry.getValue();
 
@@ -120,7 +118,7 @@ public class TxHandlerImpl implements TxHandler {
             newTransactionTimestamps.put(entry.getKey(), entry.getValue());
         }
 
-        transactionTimestamps = newTransactionTimestamps;
+        times = newTransactionTimestamps;
     }
 
     private class Listener extends EthereumListenerAdapter {
@@ -134,7 +132,7 @@ public class TxHandlerImpl implements TxHandler {
                     Transaction tx = txReceipt.getTransaction();
                     String txHash = TypeConverter.toJsonHex(tx.getHash());
 
-                    if (!transactionTimestamps.containsKey(txHash)) {
+                    if (!times.containsKey(txHash)) {
                         continue;
                     }
 
@@ -144,7 +142,7 @@ public class TxHandlerImpl implements TxHandler {
 
                     if (txsPerAccount == null)
                     {
-                        transactionTimestamps.remove(txHash);
+                        times.remove(txHash);
                         continue;
                     }
 
@@ -153,7 +151,7 @@ public class TxHandlerImpl implements TxHandler {
                         txsPerAccounts.remove(accountId);
                     }
 
-                    transactionTimestamps.remove(txHash);
+                    times.remove(txHash);
                 }
             }
             finally {
@@ -162,9 +160,9 @@ public class TxHandlerImpl implements TxHandler {
         }
     }
 
-    @VisibleForTesting void setTransactionTimestamps(Map<String, TxTimestamp> transactionTimestamps) { this.transactionTimestamps = transactionTimestamps; }
+    @VisibleForTesting void setTimes(Map<String, TxTimestamp> times) { this.times = times; }
     @VisibleForTesting void setTxsPerAccounts(Map<String, TxsPerAccount> txsPerAccounts) { this.txsPerAccounts = txsPerAccounts; }
-    @VisibleForTesting Map<String, TxTimestamp> getTransactionTimestamps() { return transactionTimestamps; }
+    @VisibleForTesting Map<String, TxTimestamp> getTimes() { return times; }
     @VisibleForTesting Map<String, TxsPerAccount> getTxsPerAccounts() { return txsPerAccounts; }
     @VisibleForTesting public void onBlock(Block block, List<TransactionReceipt> receiptList) { new Listener().onBlock(block, receiptList); }
 

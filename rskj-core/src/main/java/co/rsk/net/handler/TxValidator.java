@@ -55,6 +55,7 @@ class TxValidator {
      * Where the magic occurs, will filter out invalid txs, but still remember some of them
      */
     List<Transaction> filterTxs(List<Transaction> txs,
+                                Map<String, TxTimestamp> times,
                                 Repository repository, WorldManager worldManager,
                                 Map<String, TxsPerAccount> txsPerAccounts) {
         //FIXME(mmarquez): this method is quite coupled with TxHandlerImpl
@@ -84,6 +85,8 @@ class TxValidator {
             if (!valid) {
                 continue;
             }
+
+            times.put(TypeConverter.toJsonHex(tx.getHash()), new TxTimestamp(tx, System.currentTimeMillis()));
 
             String addr = TypeConverter.toJsonHex(tx.getSender());
 
