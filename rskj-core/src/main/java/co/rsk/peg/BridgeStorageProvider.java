@@ -42,11 +42,11 @@ import java.util.SortedSet;
  * Created by ajlopez on 6/7/2016.
  */
 public class BridgeStorageProvider {
-    private static final String btcUTXOsKey = "btcUTXOs";
-    private static final String btcTxHashesAlreadyProcessedKey = "btcTxHashesAP";
-    private static final String rskTxsWaitingForConfirmationsKey = "rskTxsWaitingFC";
-    private static final String rskTxsWaitingForSignaturesKey = "rskTxsWaitingFS";
-    private static final String rskTxsWaitingForBroadcastingKey = "rskTxsWaitingFB";
+    private static final String BTC_UTXOS_KEY = "btcUTXOs";
+    private static final String BTC_TX_HASHES_ALREADY_PROCESSED_KEY = "btcTxHashesAP";
+    private static final String RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY = "rskTxsWaitingFC";
+    private static final String RSK_TXS_WAITING_FOR_SIGNATURES_KEY = "rskTxsWaitingFS";
+    private static final String RSK_TXS_WAITING_FOR_BROADCASTING_KEY = "rskTxsWaitingFB";
 
     private static final NetworkParameters networkParameters = RskSystemProperties.RSKCONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
@@ -101,7 +101,7 @@ public class BridgeStorageProvider {
         if (btcUTXOs!= null)
             return btcUTXOs;
 
-        DataWord address = new DataWord(btcUTXOsKey.getBytes(StandardCharsets.UTF_8));
+        DataWord address = new DataWord(BTC_UTXOS_KEY.getBytes(StandardCharsets.UTF_8));
 
         byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
 
@@ -116,7 +116,7 @@ public class BridgeStorageProvider {
 
         byte[] data = BridgeSerializationUtils.serializeList(btcUTXOs);
 
-        DataWord address = new DataWord(btcUTXOsKey.getBytes(StandardCharsets.UTF_8));
+        DataWord address = new DataWord(BTC_UTXOS_KEY.getBytes(StandardCharsets.UTF_8));
 
         repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
@@ -125,7 +125,7 @@ public class BridgeStorageProvider {
         if (btcTxHashesAlreadyProcessed != null)
             return btcTxHashesAlreadyProcessed;
 
-        DataWord address = new DataWord(btcTxHashesAlreadyProcessedKey.getBytes(StandardCharsets.UTF_8));
+        DataWord address = new DataWord(BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getBytes(StandardCharsets.UTF_8));
 
         byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
 
@@ -140,7 +140,7 @@ public class BridgeStorageProvider {
 
         byte[] data = BridgeSerializationUtils.serializeSet(btcTxHashesAlreadyProcessed);
 
-        DataWord address = new DataWord(btcTxHashesAlreadyProcessedKey.getBytes(StandardCharsets.UTF_8));
+        DataWord address = new DataWord(BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getBytes(StandardCharsets.UTF_8));
 
         repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
@@ -149,7 +149,7 @@ public class BridgeStorageProvider {
         if (rskTxsWaitingForConfirmations != null)
             return rskTxsWaitingForConfirmations;
 
-        DataWord address = new DataWord(rskTxsWaitingForConfirmationsKey.getBytes(StandardCharsets.UTF_8));
+        DataWord address = new DataWord(RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY.getBytes(StandardCharsets.UTF_8));
 
         byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
 
@@ -164,7 +164,7 @@ public class BridgeStorageProvider {
 
         byte[] data = BridgeSerializationUtils.serializeMap(rskTxsWaitingForConfirmations);
 
-        DataWord address = new DataWord(rskTxsWaitingForConfirmationsKey.getBytes(StandardCharsets.UTF_8));
+        DataWord address = new DataWord(RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY.getBytes(StandardCharsets.UTF_8));
 
         repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
@@ -173,7 +173,7 @@ public class BridgeStorageProvider {
         if (rskTxsWaitingForSignatures != null)
             return rskTxsWaitingForSignatures;
 
-        DataWord address = new DataWord(rskTxsWaitingForSignaturesKey.getBytes(StandardCharsets.UTF_8));
+        DataWord address = new DataWord(RSK_TXS_WAITING_FOR_SIGNATURES_KEY.getBytes(StandardCharsets.UTF_8));
 
         byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
 
@@ -188,7 +188,7 @@ public class BridgeStorageProvider {
 
         byte[] data = BridgeSerializationUtils.serializeMap(rskTxsWaitingForSignatures);
 
-        DataWord address = new DataWord(rskTxsWaitingForSignaturesKey.getBytes(StandardCharsets.UTF_8));
+        DataWord address = new DataWord(RSK_TXS_WAITING_FOR_SIGNATURES_KEY.getBytes(StandardCharsets.UTF_8));
 
         repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
@@ -197,7 +197,7 @@ public class BridgeStorageProvider {
         if (rskTxsWaitingForBroadcasting != null)
             return rskTxsWaitingForBroadcasting;
 
-        DataWord address = new DataWord(rskTxsWaitingForBroadcastingKey.getBytes(StandardCharsets.UTF_8));
+        DataWord address = new DataWord(RSK_TXS_WAITING_FOR_BROADCASTING_KEY.getBytes(StandardCharsets.UTF_8));
 
         byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
 
@@ -212,7 +212,7 @@ public class BridgeStorageProvider {
 
         byte[] data = BridgeSerializationUtils.serializePairMap(rskTxsWaitingForBroadcasting);
 
-        DataWord address = new DataWord(rskTxsWaitingForBroadcastingKey.getBytes(StandardCharsets.UTF_8));
+        DataWord address = new DataWord(RSK_TXS_WAITING_FOR_BROADCASTING_KEY.getBytes(StandardCharsets.UTF_8));
 
         repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }

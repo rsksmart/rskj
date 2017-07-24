@@ -31,7 +31,7 @@ public class PingMessage extends P2pMessage {
     /**
      * Ping message is always a the same single command payload
      */
-    private final static byte[] FIXED_PAYLOAD = Hex.decode("C0");
+    private static final byte[] FIXED_PAYLOAD = Hex.decode("C0");
 
     public byte[] getEncoded() {
         return FIXED_PAYLOAD;

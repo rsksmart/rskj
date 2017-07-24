@@ -69,23 +69,23 @@ public class SystemProperties {
     public static final String DEFAULT_BIND_IP = "0.0.0.0";
     private static Logger logger = LoggerFactory.getLogger("general");
 
-    public final static String PROPERTY_DB_DIR = "database.dir";
-    public final static String PROPERTY_LISTEN_PORT = "peer.listen.port";
-    public final static String PROPERTY_PEER_ACTIVE = "peer.active";
-    public final static String PROPERTY_DB_RESET = "database.reset";
+    public static final String PROPERTY_DB_DIR = "database.dir";
+    public static final String PROPERTY_LISTEN_PORT = "peer.listen.port";
+    public static final String PROPERTY_PEER_ACTIVE = "peer.active";
+    public static final String PROPERTY_DB_RESET = "database.reset";
     // TODO review rpc properties
-    public final static String PROPERTY_RPC_ENABLED = "rpc.enabled";
-    public final static String PROPERTY_RPC_PORT = "rpc.port";
+    public static final String PROPERTY_RPC_ENABLED = "rpc.enabled";
+    public static final String PROPERTY_RPC_PORT = "rpc.port";
     public static final String PROPERTY_RPC_CORS = "rpc.cors";
 
     /* Testing */
-    private final static Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
-    private final static String DEFAULT_BLOCKS_LOADER = "";
+    private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
+    private static final String DEFAULT_BLOCKS_LOADER = "";
 
     private static final String YES = "yes";
     private static final String NO = "no";
 
-    public final static SystemProperties CONFIG = new SystemProperties();
+    public static final SystemProperties CONFIG = new SystemProperties();
 
     /**
      * Marks config accessor methods which need to be called (for value validation)
@@ -166,7 +166,9 @@ public class SystemProperties {
             this.projectVersion = props.getProperty("versionNumber");
             this.projectVersion = this.projectVersion.replaceAll("'", "");
 
-            if (this.projectVersion == null) this.projectVersion = "-.-.-";
+            if (this.projectVersion == null) {
+                this.projectVersion = "-.-.-";
+            }
 
             this.projectVersionModifier = props.getProperty("modifier");
             this.projectVersionModifier = this.projectVersionModifier.replaceAll("\"", "");
@@ -201,7 +203,10 @@ public class SystemProperties {
      * @param keyValuePairs [name] [value] [name] [value] ...
      */
     public void overrideParams(String ... keyValuePairs) {
-        if (keyValuePairs.length % 2 != 0) throw new RuntimeException("Odd argument number");
+        if (keyValuePairs.length % 2 != 0) {
+            throw new RuntimeException("Odd argument number");
+        }
+
         Map<String, String> map = new HashMap<>();
         for (int i = 0; i < keyValuePairs.length; i += 2) {
             map.put(keyValuePairs[i], keyValuePairs[i + 1]);
@@ -234,9 +239,15 @@ public class SystemProperties {
     }
 
     public <T> T getProperty(String propName, T defaultValue) {
-        if (!config.hasPath(propName)) return defaultValue;
+        if (!config.hasPath(propName)) {
+            return defaultValue;
+        }
+
         String string = config.getString(propName);
-        if (string.trim().isEmpty()) return defaultValue;
+        if (string.trim().isEmpty()) {
+            return defaultValue;
+        }
+        
         return (T) config.getAnyRef(propName);
     }
 

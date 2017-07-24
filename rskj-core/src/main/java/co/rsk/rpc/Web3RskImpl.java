@@ -44,8 +44,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.ethereum.rpc.TypeConverter.StringHexToBigInteger;
-
 /**
  * Created by adrian.eidelman on 3/11/2016.
  */
@@ -65,12 +63,18 @@ public class Web3RskImpl extends Web3Impl {
     }
 
     public MinerWork mnr_getWork() {
-        if (logger.isDebugEnabled()) logger.debug("mnr_getWork()");
+        if (logger.isDebugEnabled()) {
+            logger.debug("mnr_getWork()");
+        }
+
         return minerServer.getWork();
     }
 
     public void mnr_submitBitcoinBlock(String bitcoinBlockHex) {
-        if (logger.isDebugEnabled()) logger.debug("mnr_submitBitcoinBlock(): " + bitcoinBlockHex.length());
+        if (logger.isDebugEnabled()) {
+            logger.debug("mnr_submitBitcoinBlock(): " + bitcoinBlockHex.length());
+        }
+        
         co.rsk.bitcoinj.core.NetworkParameters params = co.rsk.bitcoinj.params.RegTestParams.get();
         new co.rsk.bitcoinj.core.Context(params);
         byte[] bitcoinBlockByteArray = Hex.decode(bitcoinBlockHex);

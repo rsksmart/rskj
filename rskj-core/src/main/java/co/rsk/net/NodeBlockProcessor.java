@@ -37,7 +37,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -62,10 +61,10 @@ public class NodeBlockProcessor implements BlockProcessor {
     @GuardedBy("statusLock")
     private volatile long lastStatusBestBlock = 0;
 
-    final private BlockStore store;
-    final private Blockchain blockchain;
-    final private ChannelManager channelManager;
-    final private BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
+    private final BlockStore store;
+    private final Blockchain blockchain;
+    private final ChannelManager channelManager;
+    private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
     private long lastKnownBlockNumber = 0;
 
     private Map<ByteArrayWrapper, Integer> unknownBlockHashes = new HashMap<>();
@@ -153,8 +152,14 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     private boolean hasHeader(@Nonnull final BlockHeader h) {
-        if (hasBlock(h.getHash())) return true;
-        if (store.hasHeader(h.getHash())) return true;
+        if (hasBlock(h.getHash())) {
+            return true;
+        }
+
+        if (store.hasHeader(h.getHash())) {
+            return true;
+        }
+        
         return false;
     }
 

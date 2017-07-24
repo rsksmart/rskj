@@ -57,13 +57,27 @@ public abstract class SolidityType {
 
     @JsonCreator
     public static SolidityType getType(String typeName) {
-        if (typeName.contains("[")) return ArrayType.getType(typeName);
-        if ("bool".equals(typeName)) return new BoolType();
-        if (typeName.startsWith("int") || typeName.startsWith("uint")) return new IntType(typeName);
-        if ("address".equals(typeName)) return new AddressType();
-        if ("string".equals(typeName)) return new StringType();
-        if ("bytes".equals(typeName)) return new BytesType();
-        if (typeName.startsWith("bytes")) return new Bytes32Type(typeName);
+        if (typeName.contains("[")) {
+            return ArrayType.getType(typeName);
+        }
+        if ("bool".equals(typeName)) {
+            return new BoolType();
+        }
+        if (typeName.startsWith("int") || typeName.startsWith("uint")) {
+            return new IntType(typeName);
+        }
+        if ("address".equals(typeName)) {
+            return new AddressType();
+           }
+        if ("string".equals(typeName)) {
+            return new StringType();
+        }
+        if ("bytes".equals(typeName)) {
+            return new BytesType();
+        }
+        if (typeName.startsWith("bytes")) {
+            return new Bytes32Type(typeName);
+        }
         throw new RuntimeException("Unknown type: " + typeName);
     }
 
@@ -98,7 +112,7 @@ public abstract class SolidityType {
     }
 
 
-    public static abstract class ArrayType extends SolidityType {
+    public abstract static class ArrayType extends SolidityType {
         public static ArrayType getType(String typeName) {
             int idx1 = typeName.indexOf("[");
             int idx2 = typeName.indexOf("]", idx1);
@@ -251,7 +265,9 @@ public abstract class SolidityType {
 
         @Override
         public byte[] encode(Object value) {
-            if (!(value instanceof byte[])) throw new RuntimeException("byte[] value expected for type 'bytes'");
+            if (!(value instanceof byte[])) {
+                throw new RuntimeException("byte[] value expected for type 'bytes'");
+            }
             byte[] bb = (byte[]) value;
             byte[] ret = new byte[((bb.length - 1) / 32 + 1) * 32]; // padding 32 bytes
             System.arraycopy(bb, 0, ret, 0, bb.length);
@@ -279,7 +295,9 @@ public abstract class SolidityType {
 
         @Override
         public byte[] encode(Object value) {
-            if (!(value instanceof String)) throw new RuntimeException("String value expected for type 'string'");
+            if (!(value instanceof String)) {
+                throw new RuntimeException("String value expected for type 'string'");
+            }
             return super.encode(((String) value).getBytes(StandardCharsets.UTF_8));
         }
 
@@ -349,8 +367,12 @@ public abstract class SolidityType {
 
         @Override
         public String getCanonicalName() {
-            if (getName().equals("int")) return "int256";
-            if (getName().equals("uint")) return "uint256";
+            if (getName().equals("int")) {
+                return "int256";
+            }
+            if (getName().equals("uint")) {
+                return "uint256";
+            }
             return super.getCanonicalName();
         }
 
@@ -408,7 +430,9 @@ public abstract class SolidityType {
 
         @Override
         public byte[] encode(Object value) {
-            if (!(value instanceof Boolean)) throw new RuntimeException("Wrong value for bool type: " + value);
+            if (!(value instanceof Boolean)) {
+                throw new RuntimeException("Wrong value for bool type: " + value);
+            }
             return super.encode(value == Boolean.TRUE ? 1 : 0);
         }
 

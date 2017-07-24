@@ -91,18 +91,26 @@ public class BlockHeadersMessage extends Message {
 
     @Override
     public byte[] getEncodedMessage() {
-        if (encoded == null) encode();
+        if (encoded == null) {
+            encode();
+        }
+
         return encoded;
     }
 
     public List<BlockHeader> getBlockHeaders() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
+
         return blockHeaders;
     }
 
     @Override
     public String toString() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
 
         StringBuilder payload = new StringBuilder();
 

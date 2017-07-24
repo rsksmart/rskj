@@ -142,32 +142,50 @@ public class GetBlockHeadersMessage extends Message {
     }
 
     public long getBlockNumber() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
+
         return blockNumber;
     }
 
     public byte[] getBlockHash() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
+
         return blockHash;
     }
 
     public BlockIdentifier getBlockIdentifier() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
+
         return new BlockIdentifier(blockHash, blockNumber);
     }
 
     public int getMaxHeaders() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
+
         return maxHeaders;
     }
 
     public int getSkipBlocks() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
+
         return skipBlocks;
     }
 
     public boolean isReverse() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
+
         return reverse;
     }
 
@@ -178,13 +196,19 @@ public class GetBlockHeadersMessage extends Message {
 
     @Override
     public byte[] getEncodedMessage() {
-            if (encoded == null) encode();
+            if (encoded == null) {
+                encode();
+            }
+
             return encoded;
     }
 
     @Override
     public String toString() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
+        
         return "[" + getMessageType() +
                 " blockNumber=" + String.valueOf(blockNumber) +
                 " blockHash=" + ByteUtil.toHexString(blockHash) +

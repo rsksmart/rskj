@@ -72,7 +72,9 @@ public class Storage implements Repository, ProgramListenerAware {
 
     @Override
     public void delete(byte[] addr) {
-        if (canListenTrace(addr)) traceListener.onStorageClear();
+        if (canListenTrace(addr)) {
+            traceListener.onStorageClear();
+        }
         repository.delete(addr);
     }
 
@@ -108,13 +110,17 @@ public class Storage implements Repository, ProgramListenerAware {
 
     @Override
     public void addStorageRow(byte[] addr, DataWord key, DataWord value) {
-        if (canListenTrace(addr)) traceListener.onStoragePut(key, value);
+        if (canListenTrace(addr)) {
+            traceListener.onStoragePut(key, value);
+        }
         repository.addStorageRow(addr, key, value);
     }
 
     @Override
     public void addStorageBytes(byte[] addr, DataWord key, byte[] value) {
-        if (canListenTrace(addr)) traceListener.onStoragePut(key, value);
+        if (canListenTrace(addr)) {
+            traceListener.onStoragePut(key, value);
+        }
         repository.addStorageBytes(addr, key, value);
     }
 
@@ -201,7 +207,9 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public void updateBatch(Map<ByteArrayWrapper, AccountState> accountStates, Map<ByteArrayWrapper, ContractDetails> contractDetails) {
         for (ByteArrayWrapper address : contractDetails.keySet()) {
-            if (!canListenTrace(address.getData())) return;
+            if (!canListenTrace(address.getData())) {
+                return;
+            }
 
             ContractDetails details = contractDetails.get(address);
             if (details.isDeleted()) {

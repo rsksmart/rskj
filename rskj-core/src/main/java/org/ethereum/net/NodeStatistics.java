@@ -43,7 +43,7 @@ import static java.lang.Math.min;
  * Created by Anton Nashatyrev on 16.07.2015.
  */
 public class NodeStatistics {
-    public final static int REPUTATION_PREDEFINED = 1000500;
+    public static final int REPUTATION_PREDEFINED = 1000500;
 
     public class StatHandler {
         AtomicInteger count = new AtomicInteger(0);

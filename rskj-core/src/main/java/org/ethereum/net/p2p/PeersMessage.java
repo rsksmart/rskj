@@ -89,12 +89,16 @@ public class PeersMessage extends P2pMessage {
 
     @Override
     public byte[] getEncoded() {
-        if (encoded == null) encode();
+        if (encoded == null) {
+            encode();
+        }
         return encoded;
     }
 
     public Set<Peer> getPeers() {
-        if (!parsed) this.parse();
+        if (!parsed) {
+            this.parse();
+        }
         return peers;
     }
 
@@ -109,7 +113,9 @@ public class PeersMessage extends P2pMessage {
     }
 
     public String toString() {
-        if (!parsed) this.parse();
+        if (!parsed) {
+            this.parse();
+        }
 
         StringBuilder sb = new StringBuilder();
         for (Peer peerData : peers) {

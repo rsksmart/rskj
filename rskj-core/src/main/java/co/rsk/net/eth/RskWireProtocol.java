@@ -69,8 +69,8 @@ public class RskWireProtocol extends EthHandler {
 
     protected static final int MAX_HASHES_TO_SEND = 65536;
 
-    private final static Logger logger = LoggerFactory.getLogger("sync");
-    private final static Logger loggerNet = LoggerFactory.getLogger("net");
+    private static final Logger logger = LoggerFactory.getLogger("sync");
+    private static final Logger loggerNet = LoggerFactory.getLogger("net");
     /**
      * Header list sent in GET_BLOCK_BODIES message,
      * used to create blocks from headers and bodies
@@ -112,7 +112,9 @@ public class RskWireProtocol extends EthHandler {
     public void setChannel(Channel channel) {
         super.setChannel(channel);
 
-        if (channel == null) return;
+        if (channel == null) {
+            return;
+        }
 
         this.messageSender.setNodeID(channel.getNodeId());
     }

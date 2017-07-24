@@ -81,10 +81,14 @@ public class IndexedBlockStore extends AbstractBlockstore {
     @Override
     public synchronized Block getBestBlock() {
         Long maxLevel = getMaxNumber();
-        if (maxLevel < 0) return null;
+        if (maxLevel < 0) {
+            return null;
+        }
 
         Block bestBlock = getChainBlockByNumber(maxLevel);
-        if (bestBlock != null) return  bestBlock;
+        if (bestBlock != null) {
+            return  bestBlock;
+        }
 
         // That scenario can happen
         // if there is a fork branch that is
@@ -215,7 +219,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
     @Override
     public synchronized BigInteger getTotalDifficultyForHash(byte[] hash){
         Block block = this.getBlockByHash(hash);
-        if (block == null) return ZERO;
+        if (block == null) {
+            return ZERO;
+        }
 
         Long level  =  block.getNumber();
         List<BlockInfo> blockInfos =  index.get(level);
@@ -266,7 +272,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
     public synchronized List<Block> getListBlocksEndWith(byte[] hash, long qty) {
         Block block = getBlockByHash(hash);
 
-        if (block == null) return new ArrayList<>();
+        if (block == null) {
+            return new ArrayList<>();
+        }
 
         List<Block> blocks = new ArrayList<>((int) qty);
 
@@ -274,7 +282,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
             blocks.add(block);
             block = getBlockByHash(hash);
-            if (block == null) break;
+            if (block == null) {
+                break;
+            }
         }
 
         return blocks;
@@ -354,7 +364,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
         int i;
         for (i = 0; i < maxBlocks; ++i) {
             List<BlockInfo> blockInfos =  index.get(number);
-            if (blockInfos == null) break;
+            if (blockInfos == null) {
+                break;
+            }
 
             for (BlockInfo blockInfo : blockInfos)
                if (blockInfo.isMainChain()) {
@@ -457,7 +469,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
             return null;
 
         for (BlockInfo blockInfo : blocks)
-            if (areEqual(hash, blockInfo.getHash())) return blockInfo;
+            if (areEqual(hash, blockInfo.getHash())) {
+                return blockInfo;
+            }
 
         return null;
     }

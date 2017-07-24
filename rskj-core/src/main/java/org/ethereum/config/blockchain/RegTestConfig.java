@@ -29,7 +29,7 @@ public class RegTestConfig extends GenesisConfig {
 
     public static class RegTestConstants extends GenesisConstants {
 
-        private BigInteger MINIMUM_DIFFICULTY = BigInteger.valueOf(1);
+        private BigInteger minimumDifficulty = BigInteger.valueOf(1);
         private static final byte CHAIN_ID = 33;
 
         @Override
@@ -38,12 +38,12 @@ public class RegTestConfig extends GenesisConfig {
         }
 
         @Override
-        public BigInteger getMINIMUM_DIFFICULTY() {
-            return MINIMUM_DIFFICULTY;
+        public BigInteger getMinimumDifficulty() {
+            return minimumDifficulty;
         }
 
         @Override
-        public int getDURATION_LIMIT() {
+        public int getDurationLimit() {
             return 10;
         }
 

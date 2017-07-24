@@ -351,10 +351,16 @@ public class BlockHeader implements SerializableObject {
 
         byte[] stateRoot = RLP.encodeElement(this.stateRoot);
 
-        if (txTrieRoot == null) this.txTrieRoot = EMPTY_TRIE_HASH;
+        if (txTrieRoot == null) {
+            this.txTrieRoot = EMPTY_TRIE_HASH;
+        }
+
         byte[] txTrieRoot = RLP.encodeElement(this.txTrieRoot);
 
-        if (receiptTrieRoot == null) this.receiptTrieRoot = EMPTY_TRIE_HASH;
+        if (receiptTrieRoot == null) {
+            this.receiptTrieRoot = EMPTY_TRIE_HASH;
+        }
+        
         byte[] receiptTrieRoot = RLP.encodeElement(this.receiptTrieRoot);
 
         byte[] logsBloom = RLP.encodeElement(this.logsBloom);

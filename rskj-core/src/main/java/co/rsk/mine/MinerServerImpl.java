@@ -75,20 +75,20 @@ public class MinerServerImpl implements MinerServer {
 
     private static final int CACHE_SIZE = 20;
 
-    @GuardedBy("LOCK")
+    @GuardedBy("lock")
     private LinkedHashMap<Sha3Hash, Block> blocksWaitingforPoW;
 
-    @GuardedBy("LOCK")
+    @GuardedBy("lock")
     private Sha3Hash latestblockHashWaitingforPoW;
-    @GuardedBy("LOCK")
+    @GuardedBy("lock")
     private Sha3Hash latestParentHash;
-    @GuardedBy("LOCK")
+    @GuardedBy("lock")
     private Block latestBlock;
-    @GuardedBy("LOCK")
+    @GuardedBy("lock")
     private long latestPaidFeesWithNotify;
-    @GuardedBy("LOCK")
+    @GuardedBy("lock")
     private volatile MinerWork currentWork; // This variable can be read at anytime without the lock.
-    private final Object LOCK = new Object();
+    private final Object lock = new Object();
 
     private final byte[] coinbaseAddress;
 
@@ -150,21 +150,27 @@ public class MinerServerImpl implements MinerServer {
 
         Block newBlock;
         Sha3Hash key = new Sha3Hash(TypeConverter.removeZeroX(blockHashForMergedMining));
-        synchronized (LOCK) {
-            newBlock = blocksWaitingforPoW.get(key);
-            if (newBlock == null) {
+        synchronized (lock) {
+            Block workingBlock = blocksWaitingforPoW.get(key);
+
+            if (workingBlock == null) {
                 logger.warn("Cannot publish block, could not find hash " + blockHashForMergedMining + " in the cache");
                 return;
             }
 
             // just in case, remove all references to this block.
-            if (latestBlock == newBlock) {
+            if (latestBlock == workingBlock) {
                 latestBlock = null;
                 latestblockHashWaitingforPoW = null;
                 currentWork = null;
             }
+
+            // clone the block
+            newBlock = new Block(workingBlock.getEncoded());
+
             logger.debug("blocksWaitingforPoW size " + blocksWaitingforPoW.size());
         }
+
         logger.info("Received block {} {}", newBlock.getNumber(), Hex.toHexString(newBlock.getHash()));
 
         newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
@@ -249,7 +255,10 @@ public class MinerServerImpl implements MinerServer {
     @Override
     public MinerWork getWork() {
         MinerWork work = currentWork;
-        if (work == null) return null;
+        if (work == null) {
+            return null;
+        }
+        
         if (work.getNotify()) {
             /**
              * Set currentWork.notify to false for the next time this function is called.
@@ -258,8 +267,8 @@ public class MinerServerImpl implements MinerServer {
              * the currentWork got updated when we acquired the lock. In that case, we should just return the new
              * currentWork, regardless of what it is.
              */
-            synchronized (LOCK) {
-                if (currentWork != work || currentWork == null) {
+            synchronized (lock) {
+                if (currentWork != work ||  currentWork == null) {
                     return currentWork;
                 }
                 currentWork = new MinerWork(currentWork.getBlockHashForMergedMining(), currentWork.getTarget(),
@@ -268,6 +277,11 @@ public class MinerServerImpl implements MinerServer {
             }
         }
         return work;
+    }
+
+    @VisibleForTesting
+    public void setWork(MinerWork work) {
+        this.currentWork = work;
     }
 
     public MinerWork updateGetWork(@Nonnull final Block block, @Nonnull final boolean notify) {
@@ -300,13 +314,13 @@ public class MinerServerImpl implements MinerServer {
 
         List<BlockHeader> uncles;
         if (blockStore != null) {
-            uncles = FamilyUtils.getUnclesHeaders(blockStore, newBlockParent.getNumber() + 1, newBlockParent.getHash(), this.properties.getBlockchainConfig().getCommonConstants().getUNCLE_GENERATION_LIMIT());
+            uncles = FamilyUtils.getUnclesHeaders(blockStore, newBlockParent.getNumber() + 1, newBlockParent.getHash(), this.properties.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit());
         } else {
             uncles = new ArrayList<>();
         }
 
-        if (uncles.size() > this.properties.getBlockchainConfig().getCommonConstants().getUNCLE_LIST_LIMIT()) {
-            uncles = uncles.subList(0, this.properties.getBlockchainConfig().getCommonConstants().getUNCLE_LIST_LIMIT());
+        if (uncles.size() > this.properties.getBlockchainConfig().getCommonConstants().getUncleListLimit()) {
+            uncles = uncles.subList(0, this.properties.getBlockchainConfig().getCommonConstants().getUncleListLimit());
         }
 
         final List<Transaction> txsToRemove = new ArrayList<>();
@@ -319,7 +333,7 @@ public class MinerServerImpl implements MinerServer {
         removePendingTransactions(txsToRemove);
         executor.executeAndFill(newBlock, newBlockParent);
 
-        synchronized (LOCK) {
+        synchronized (lock) {
             Sha3Hash parentHash = new Sha3Hash(newBlockParent.getHash());
             boolean notify = this.getNotify(newBlock, parentHash);
 
@@ -350,7 +364,7 @@ public class MinerServerImpl implements MinerServer {
      * @param parentHash block's parent hash.
      * @return true if miners should be notified about this new block to mine.
      */
-    @GuardedBy("LOCK")
+    @GuardedBy("lock")
     private boolean getNotify(Block block, Sha3Hash parentHash) {
         boolean notify;
         long feesPaidToMiner = block.getFeesPaidToMiner();
@@ -445,8 +459,8 @@ public class MinerServerImpl implements MinerServer {
         final long timestampSeconds = this.getCurrentTimeInSeconds();
 
         // Set gas limit before executing block
-        BigInteger minGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getMIN_GAS_LIMIT());
-        BigInteger targetGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getTARGET_GAS_LIMIT());
+        BigInteger minGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getMinGasLimit());
+        BigInteger targetGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getTargetGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, newBlockParent.getGasLimit());
         BigInteger gasLimit = new GasLimitCalculator().calculateBlockGasLimit(parentGasLimit, BigInteger.valueOf(
                 newBlockParent.getGasUsed()), minGasLimit, targetGasLimit);

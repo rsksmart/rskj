@@ -73,13 +73,17 @@ public class TransactionsMessage extends EthMessage {
 
     @Override
     public byte[] getEncoded() {
-        if (encoded == null) encode();
+        if (encoded == null) {
+            encode();
+        }
         return encoded;
     }
 
 
     public List<Transaction> getTransactions() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return transactions;
     }
 
@@ -94,7 +98,9 @@ public class TransactionsMessage extends EthMessage {
     }
 
     public String toString() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         final StringBuilder sb = new StringBuilder();
         if (transactions.size() < 8) {
             for (Transaction transaction : transactions)

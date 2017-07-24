@@ -46,8 +46,14 @@ public class BlockHeaderElement {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        
         BlockHeaderElement that = (BlockHeaderElement) o;
 
         return new EqualsBuilder()

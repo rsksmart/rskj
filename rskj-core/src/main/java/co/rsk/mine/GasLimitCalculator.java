@@ -42,12 +42,12 @@ public class GasLimitCalculator {
 
         // decay = parentGasLimit / 1024
         // current Eth implementation substracts parentGasLimit / 1024 - 1
-        BigInteger decay = parentGasLimit.divide(BigInteger.valueOf(constants.getGAS_LIMIT_BOUND_DIVISOR()));
+        BigInteger decay = parentGasLimit.divide(BigInteger.valueOf(constants.getGasLimitBoundDivisor()));
 
         // contrib = (parentGasUsed * 3 / 2) / 1024
         BigInteger contrib = parentGasUsed.multiply(BigInteger.valueOf(3));
         contrib = contrib.divide(BigInteger.valueOf(2));
-        contrib = contrib.divide(BigInteger.valueOf(constants.getGAS_LIMIT_BOUND_DIVISOR()));
+        contrib = contrib.divide(BigInteger.valueOf(constants.getGasLimitBoundDivisor()));
 
         newGasLimit = newGasLimit.subtract(decay);
         newGasLimit = newGasLimit.add(contrib);

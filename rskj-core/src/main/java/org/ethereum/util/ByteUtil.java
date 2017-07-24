@@ -164,7 +164,9 @@ public class ByteUtil {
      */
     public static byte[] intToBytesNoLeadZeroes(int val){
 
-        if (val == 0) return EMPTY_BYTE_ARRAY;
+        if (val == 0) {
+            return EMPTY_BYTE_ARRAY;
+        }
 
         int lenght = 0;
 
@@ -267,7 +269,9 @@ public class ByteUtil {
 
     public static String oneByteToHexString(byte value) {
         String retVal = Integer.toString(value & 0xFF, 16);
-        if (retVal.length() == 1) retVal = "0" + retVal;
+        if (retVal.length() == 1) {
+            retVal = "0" + retVal;
+        }
         return retVal;
     }
 
@@ -287,7 +291,9 @@ public class ByteUtil {
             bInt = bInt.shiftRight(8);
             ++bytes;
         }
-        if (bytes == 0) ++bytes;
+        if (bytes == 0) {
+            ++bytes;
+        }
         return bytes;
     }
 
@@ -444,7 +450,9 @@ public class ByteUtil {
     }
 
     public static byte[] and(byte[] b1, byte[] b2) {
-        if (b1.length != b2.length) throw new RuntimeException("Array sizes differ");
+        if (b1.length != b2.length) {
+            throw new RuntimeException("Array sizes differ");
+        }
         byte[] ret = new byte[b1.length];
         for (int i = 0; i < ret.length; i++) {
             ret[i] = (byte) (b1[i] & b2[i]);
@@ -453,7 +461,9 @@ public class ByteUtil {
     }
 
     public static byte[] or(byte[] b1, byte[] b2) {
-        if (b1.length != b2.length) throw new RuntimeException("Array sizes differ");
+        if (b1.length != b2.length) {
+            throw new RuntimeException("Array sizes differ");
+        }
         byte[] ret = new byte[b1.length];
         for (int i = 0; i < ret.length; i++) {
             ret[i] = (byte) (b1[i] | b2[i]);
@@ -462,7 +472,9 @@ public class ByteUtil {
     }
 
     public static byte[] xor(byte[] b1, byte[] b2) {
-        if (b1.length != b2.length) throw new RuntimeException("Array sizes differ");
+        if (b1.length != b2.length) {
+            throw new RuntimeException("Array sizes differ");
+        }
         byte[] ret = new byte[b1.length];
         for (int i = 0; i < ret.length; i++) {
             ret[i] = (byte) (b1[i] ^ b2[i]);
@@ -533,7 +545,9 @@ public class ByteUtil {
                     break;
                 }
             }
-            if (!found) result.add(elementA);
+            if (!found) {
+                result.add(elementA);
+            }
         }
 
         return result;

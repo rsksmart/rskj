@@ -98,11 +98,15 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public void init() {
         resetDbLock.writeLock().lock();
         try {
-            updateLastTimeUsed();
-            logger.debug("~> LevelDbDataSource.init(): {}", name);
+            logger.debug("~> LevelDbDataSource.init(): {}",  name);
 
-            if (isAlive()) throw new IllegalStateException("This is already initialised... bug?");
-            if (name == null) throw new NullPointerException("no name set to the db");
+            if (isAlive()) {
+                return;
+            }
+
+            if (name == null) {
+                throw new NullPointerException("no name set to the db");
+            }
 
             Options options = new Options();
             options.createIfMissing(true);
@@ -174,19 +178,31 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public byte[] get(byte[] key) {
         resetDbLock.readLock().lock();
         try {
-            updateLastTimeUsed();
-            if (logger.isTraceEnabled())
-                logger.trace("~> LevelDbDataSource.get(): {}, key: {}", name, Hex.toHexString(key));
+            if (logger.isTraceEnabled()) {
+                logger.trace("~> LevelDbDataSource.get(): {}, key: ",name, Hex.toHexString(key));
+            }
+
             try {
                 byte[] ret = db.get(key);
-                if (logger.isTraceEnabled())
+                if (logger.isTraceEnabled()) {
                     logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, {}", name, Hex.toHexString(key), ret == null ? "null" : ret.length);
+                }
 
                 return ret;
             } catch (DBException e) {
-                logger.error("Couldn't read from LevelDb, very bad.", e);
-                panicProcessor.panic(MY_PANIC_TOPIC, String.format("Couldn't read from LevelDb, very bad. %s", e.getMessage()));
-                throw e;
+                logger.error("Exception. Retrying again...", e);
+                try {
+                    byte[] ret = db.get(key);
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, {}", name, Hex.toHexString(key), ret == null ? "null" : ret.length);
+                    }
+
+                    return ret;
+                } catch (DBException e2) {
+                    logger.error("Exception. Not retrying.", e2);
+                    panicProcessor.panic("leveldb", String.format("Exception. Not retrying. %s", e2.getMessage()));
+                    throw e2;
+                }
             }
         } finally {
             resetDbLock.readLock().unlock();
@@ -197,12 +213,14 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public byte[] put(byte[] key, byte[] value) {
         resetDbLock.readLock().lock();
         try {
-            updateLastTimeUsed();
-            if (logger.isTraceEnabled())
+            if (logger.isTraceEnabled()) {
                 logger.trace("~> LevelDbDataSource.put(): {}, key: {}, {}", name, Hex.toHexString(key), value == null ? "null" : value.length);
+            }
+
             db.put(key, value);
-            if (logger.isTraceEnabled())
+            if (logger.isTraceEnabled()) {
                 logger.trace("<~ LevelDbDataSource.put(): {}, key: {}, {}", name, Hex.toHexString(key), value == null ? "null" : value.length);
+            }
             return value;
         } finally {
             resetDbLock.readLock().unlock();
@@ -213,12 +231,14 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public void delete(byte[] key) {
         resetDbLock.readLock().lock();
         try {
-            updateLastTimeUsed();
-            if (logger.isTraceEnabled())
+            if (logger.isTraceEnabled()) {
                 logger.trace("~> LevelDbDataSource.delete(): {}, key: {}", name, Hex.toHexString(key));
+            }
+
             db.delete(key);
-            if (logger.isTraceEnabled())
+            if (logger.isTraceEnabled()) {
                 logger.trace("<~ LevelDbDataSource.delete(): {}, key: {}", name, Hex.toHexString(key));
+            }
         } finally {
             resetDbLock.readLock().unlock();
         }
@@ -228,14 +248,20 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public Set<byte[]> keys() {
         resetDbLock.readLock().lock();
         try {
-            updateLastTimeUsed();
-            if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.keys(): {}", name);
+            if (logger.isTraceEnabled()) {
+                logger.trace("~> LevelDbDataSource.keys(): " + name);
+            }
             JniDBFactory.pushMemoryPool(LDB_JNI_MEMORY_POOL_SIZE);
+
             try (DBIterator iterator = db.iterator()) {
+                Set<byte[]> result = new HashSet<>();
                 Set<byte[]> result = new HashSet<>();
                 iterator.seekToFirst();
                 iterator.forEachRemaining( x -> result.add(x.getKey()) );
-                if (logger.isTraceEnabled()) logger.trace("<~ LevelDbDataSource.keys(): {}, {} ", name, result.size());
+                if (logger.isTraceEnabled()) {
+                    logger.trace("<~ LevelDbDataSource.keys(): {}, {} ", name, result.size());
+                }
+
                 return result;
             } catch (IOException e) {
                 logger.error("Error retrieving Keys from LevelDBDataSource", e);
@@ -261,17 +287,31 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public void updateBatch(Map<byte[], byte[]> rows) {
         resetDbLock.readLock().lock();
         try {
-            updateLastTimeUsed();
-            if (logger.isTraceEnabled()) logger.trace("~> LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
+            if (logger.isTraceEnabled()) {
+                logger.trace("~> LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
+            }
             JniDBFactory.pushMemoryPool(LDB_JNI_MEMORY_POOL_SIZE);
+
             try {
                 updateBatchInternal(rows);
-                if (logger.isTraceEnabled())
+                if (logger.isTraceEnabled()) {
                     logger.trace("<~ LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
-            } catch (IOException e) {
-                logger.error("Failed to update batch", e);
-                panicProcessor.panic(MY_PANIC_TOPIC, String.format("Failed to update batch with error %s", e.getMessage()));
-                throw new UncheckedIOException(e);
+                }
+
+            } catch (Exception e) {
+                logger.error("Error, retrying one more time...", e);
+                // try one more time
+                try {
+                    updateBatchInternal(rows);
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("<~ LevelDbDataSource.updateBatch(): {}, {}", name, rows.size());
+                    }
+
+                } catch (Exception e1) {
+                    logger.error("Error", e);
+                    panicProcessor.panic("leveldb", String.format("Error %s", e.getMessage()));
+                    throw new RuntimeException(e);
+                }
             }
         } finally {
             JniDBFactory.popMemoryPool();
@@ -283,7 +323,9 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public void close() {
         resetDbLock.writeLock().lock();
         try {
-            if (!isAlive()) return;
+            if (!isAlive()) {
+                return;
+            }
 
             try {
                 logger.debug("Close db: {}", name);

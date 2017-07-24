@@ -18,7 +18,6 @@
 
 package co.rsk.core;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockStore;
