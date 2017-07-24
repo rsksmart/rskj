@@ -71,4 +71,11 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
     public String toString() {
         return Hex.toHexString(data);
     }
+
+    public boolean equalsToByteArray(byte[] bytes) {
+        if (bytes == null) {
+            return false;
+        }
+        return FastByteComparisons.compareTo(data, 0, data.length, bytes, 0, bytes.length) == 0;
+    }
 }

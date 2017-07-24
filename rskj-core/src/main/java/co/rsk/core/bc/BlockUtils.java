@@ -44,7 +44,7 @@ public class BlockUtils {
         final List<BlockInformation> blocks = blockChain.getBlocksInformationByNumber(blockNumber);
 
         for (final BlockInformation bi : blocks) {
-            if (new ByteArrayWrapper(bi.getHash()).equals(key)) {
+            if (key.equals(bi.getHash())) {
                 return true;
             }
         }
