@@ -43,11 +43,11 @@ public class ScoringCalculatorTest {
     }
 
     @Test
-    public void scoringWithOneInvalidTransactionHasBadReputation() {
+    public void scoringWithOneInvalidTransactionHasNoBadReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
         PeerScoring scoring = new PeerScoring();
         scoring.recordEvent(EventType.INVALID_TRANSACTION);
 
-        Assert.assertFalse(calculator.hasGoodReputation(scoring));
+        Assert.assertTrue(calculator.hasGoodReputation(scoring));
     }
 }

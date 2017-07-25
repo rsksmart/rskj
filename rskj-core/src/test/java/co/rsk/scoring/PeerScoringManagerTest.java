@@ -229,10 +229,10 @@ public class PeerScoringManagerTest {
 
         Assert.assertTrue(manager.hasGoodReputation(address));
 
-        manager.recordEvent(null, address, EventType.INVALID_TRANSACTION);
+        manager.recordEvent(null, address, EventType.INVALID_BLOCK);
 
-        Assert.assertEquals(0, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_BLOCK));
-        Assert.assertEquals(1, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_TRANSACTION));
+        Assert.assertEquals(1, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_BLOCK));
+        Assert.assertEquals(0, manager.getPeerScoring(address).getEventCounter(EventType.INVALID_TRANSACTION));
         Assert.assertEquals(2, manager.getPeerScoring(address).getPunishmentCounter());
         Assert.assertEquals(-2, manager.getPeerScoring(address).getScore());
         Assert.assertEquals(22, manager.getPeerScoring(address).getPunishmentTime());
@@ -240,15 +240,14 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void invalidTransactionGivesBadReputationToNode() throws UnknownHostException {
+    public void invalidTransactionGivesNoBadReputationToNode() throws UnknownHostException {
         NodeID id = generateNodeID();
         PeerScoringManager manager = createPeerScoringManager();
 
         manager.recordEvent(id, null, EventType.INVALID_TRANSACTION);
 
-        Assert.assertFalse(manager.hasGoodReputation(id));
-
-        Assert.assertNotEquals(0, manager.getPeerScoring(id).getTimeLostGoodReputation());
+        Assert.assertTrue(manager.hasGoodReputation(id));
+        Assert.assertEquals(0, manager.getPeerScoring(id).getTimeLostGoodReputation());
     }
 
     @Test
@@ -264,15 +263,14 @@ public class PeerScoringManagerTest {
     }
 
     @Test
-    public void invalidTransactionGivesBadReputationToAddress() throws UnknownHostException {
+    public void invalidTransactionGivesNoBadReputationToAddress() throws UnknownHostException {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
 
         manager.recordEvent(null, address, EventType.INVALID_TRANSACTION);
 
-        Assert.assertFalse(manager.hasGoodReputation(address));
-
-        Assert.assertNotEquals(0, manager.getPeerScoring(address).getTimeLostGoodReputation());
+        Assert.assertTrue(manager.hasGoodReputation(address));
+        Assert.assertEquals(0, manager.getPeerScoring(address).getTimeLostGoodReputation());
     }
 
     @Test
