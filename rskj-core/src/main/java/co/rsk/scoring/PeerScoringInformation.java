@@ -19,8 +19,10 @@ public class PeerScoringInformation {
     private int punishments;
     private boolean goodReputation;
     private String id;
+    private String type;
 
-    public PeerScoringInformation(PeerScoring scoring, String id) {
+    public PeerScoringInformation(PeerScoring scoring, String id, String type) {
+        this.type = type;
         this.goodReputation = scoring.hasGoodReputation();
         this.successfulHandhshakes = scoring.getEventCounter(EventType.SUCCESSFUL_HANDSHAKE);
         this.failedHandhshakes = scoring.getEventCounter(EventType.FAILED_HANDSHAKE);
@@ -38,6 +40,8 @@ public class PeerScoringInformation {
     public String getId() {
         return this.id;
     }
+
+    public String getType() { return this.type; }
 
     public boolean getGoodReputation() {
         return this.goodReputation;

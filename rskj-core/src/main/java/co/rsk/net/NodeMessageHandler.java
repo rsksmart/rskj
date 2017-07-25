@@ -353,6 +353,13 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         List<Transaction> txs = message.getTransactions();
         Metrics.processTxsMessage("start", txs, sender.getNodeID());
 
+        for (Transaction tx : txs) {
+            if (tx.getSignature() == null || !tx.acceptTransactionSignature())
+                recordEvent(sender, EventType.INVALID_TRANSACTION);
+            else
+                recordEvent(sender, EventType.VALID_TRANSACTION);
+        }
+
         List<Transaction> acceptedTxs = txHandler.retrieveValidTxs(txs);
 
         Metrics.processTxsMessage("txsValidated", acceptedTxs, sender.getNodeID());
@@ -363,8 +370,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         }
 
         Metrics.processTxsMessage("validTxsAddedToPendingState", acceptedTxs, sender.getNodeID());
-
-        recordEvent(sender, EventType.VALID_TRANSACTION);
 
         if (channelManager != null) {
             /* Relay all transactions to peers that don't have them */

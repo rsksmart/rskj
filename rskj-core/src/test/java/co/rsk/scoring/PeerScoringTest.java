@@ -28,7 +28,7 @@ public class PeerScoringTest {
     @Test
     public void getInformationFromNewScoring() {
         PeerScoring scoring = new PeerScoring();
-        PeerScoringInformation info = new PeerScoringInformation(scoring, "node");
+        PeerScoringInformation info = new PeerScoringInformation(scoring, "nodeid", "node");
 
         Assert.assertTrue(info.getGoodReputation());
         Assert.assertEquals(0, info.getValidBlocks());
@@ -40,7 +40,8 @@ public class PeerScoringTest {
         Assert.assertEquals(0, info.getFailedHandhshakes());
         Assert.assertEquals(0, info.getRepeatedMessages());
         Assert.assertEquals(0, info.getInvalidNetworks());
-        Assert.assertEquals("node", info.getId());
+        Assert.assertEquals("nodeid", info.getId());
+        Assert.assertEquals("node", info.getType());
     }
 
     @Test
@@ -50,7 +51,7 @@ public class PeerScoringTest {
         scoring.recordEvent(EventType.VALID_BLOCK);
         scoring.recordEvent(EventType.VALID_BLOCK);
 
-        PeerScoringInformation info = new PeerScoringInformation(scoring, "node");
+        PeerScoringInformation info = new PeerScoringInformation(scoring, "nodeid", "node");
 
         Assert.assertTrue(info.getGoodReputation());
         Assert.assertEquals(2, info.getValidBlocks());
@@ -68,7 +69,7 @@ public class PeerScoringTest {
         scoring.recordEvent(EventType.INVALID_BLOCK);
         scoring.recordEvent(EventType.INVALID_BLOCK);
 
-        PeerScoringInformation info = new PeerScoringInformation(scoring, "node");
+        PeerScoringInformation info = new PeerScoringInformation(scoring, "node", "nodeid");
 
         Assert.assertTrue(info.getGoodReputation());
         Assert.assertEquals(0, info.getValidBlocks());
@@ -85,7 +86,7 @@ public class PeerScoringTest {
         scoring.recordEvent(EventType.VALID_TRANSACTION);
         scoring.recordEvent(EventType.VALID_TRANSACTION);
 
-        PeerScoringInformation info = new PeerScoringInformation(scoring, "node");
+        PeerScoringInformation info = new PeerScoringInformation(scoring, "nodeid", "node");
 
         Assert.assertTrue(info.getGoodReputation());
         Assert.assertEquals(0, info.getValidBlocks());
@@ -103,7 +104,7 @@ public class PeerScoringTest {
         scoring.recordEvent(EventType.INVALID_TRANSACTION);
         scoring.recordEvent(EventType.INVALID_TRANSACTION);
 
-        PeerScoringInformation info = new PeerScoringInformation(scoring, "node");
+        PeerScoringInformation info = new PeerScoringInformation(scoring, "nodeid", "node");
 
         Assert.assertTrue(info.getGoodReputation());
         Assert.assertEquals(0, info.getValidBlocks());

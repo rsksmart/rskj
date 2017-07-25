@@ -711,15 +711,15 @@ public class NodeMessageHandlerTest {
 
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(1, pscoring.getTotalEventCounter());
-        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
+        Assert.assertEquals(10, pscoring.getTotalEventCounter());
+        Assert.assertEquals(10, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
 
         pscoring = scoring.getPeerScoring(sender2.getNodeID());
 
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(1, pscoring.getTotalEventCounter());
-        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
+        Assert.assertEquals(10, pscoring.getTotalEventCounter());
+        Assert.assertEquals(10, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
     }
 
     @Test
@@ -743,13 +743,13 @@ public class NodeMessageHandlerTest {
         Assert.assertNotNull(channelManager.getTransactions());
         Assert.assertEquals(0, channelManager.getTransactions().size());
 
-        Assert.assertFalse(scoring.isEmpty());
+        Assert.assertTrue(scoring.isEmpty());
 
         PeerScoring pscoring = scoring.getPeerScoring(sender.getNodeID());
 
         Assert.assertNotNull(pscoring);
-        Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(1, pscoring.getTotalEventCounter());
+        Assert.assertTrue(pscoring.isEmpty());
+        Assert.assertEquals(0, pscoring.getTotalEventCounter());
         Assert.assertEquals(0, pscoring.getEventCounter(EventType.INVALID_TRANSACTION));
     }
 
