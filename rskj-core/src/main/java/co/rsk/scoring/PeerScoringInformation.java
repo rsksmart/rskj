@@ -7,8 +7,8 @@ package co.rsk.scoring;
  * Created by ajlopez on 12/07/2017.
  */
 public class PeerScoringInformation {
-    private int successfulHandhshakes;
-    private int failedHandhshakes;
+    private int successfulHandshakes;
+    private int failedHandshakes;
     private int invalidNetworks;
     private int repeatedMessages;
     private int validBlocks;
@@ -24,8 +24,8 @@ public class PeerScoringInformation {
     public PeerScoringInformation(PeerScoring scoring, String id, String type) {
         this.type = type;
         this.goodReputation = scoring.hasGoodReputation();
-        this.successfulHandhshakes = scoring.getEventCounter(EventType.SUCCESSFUL_HANDSHAKE);
-        this.failedHandhshakes = scoring.getEventCounter(EventType.FAILED_HANDSHAKE);
+        this.successfulHandshakes = scoring.getEventCounter(EventType.SUCCESSFUL_HANDSHAKE);
+        this.failedHandshakes = scoring.getEventCounter(EventType.FAILED_HANDSHAKE);
         this.invalidNetworks = scoring.getEventCounter(EventType.INVALID_NETWORK);
         this.repeatedMessages = scoring.getEventCounter(EventType.REPEATED_MESSAGE);
         this.validBlocks = scoring.getEventCounter(EventType.VALID_BLOCK);
@@ -47,9 +47,9 @@ public class PeerScoringInformation {
         return this.goodReputation;
     }
 
-    public int getSuccessfulHandhshakes() { return this.successfulHandhshakes; }
+    public int getSuccessfulHandshakes() { return this.successfulHandshakes; }
 
-    public int getFailedHandhshakes() { return this.failedHandhshakes; }
+    public int getFailedHandshakes() { return this.failedHandshakes; }
 
     public int getInvalidNetworks() { return this.invalidNetworks; }
 
