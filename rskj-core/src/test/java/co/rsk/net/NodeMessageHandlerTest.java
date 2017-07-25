@@ -750,7 +750,7 @@ public class NodeMessageHandlerTest {
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
         Assert.assertEquals(1, pscoring.getTotalEventCounter());
-        Assert.assertEquals(1, pscoring.getEventCounter(EventType.INVALID_TRANSACTION));
+        Assert.assertEquals(0, pscoring.getEventCounter(EventType.INVALID_TRANSACTION));
     }
 
     @Test
