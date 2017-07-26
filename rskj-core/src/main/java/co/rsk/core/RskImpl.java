@@ -38,6 +38,8 @@ public class RskImpl extends EthereumImpl implements Rsk {
     private NodeBlockProcessor nodeBlockProcessor;
 
     private MessageHandler messageHandler;
+    private static final Object NMH_LOCK = new Object();
+
 
     @Override
     public MinerClient getMinerClient() {
@@ -52,11 +54,15 @@ public class RskImpl extends EthereumImpl implements Rsk {
     @Override
     public MessageHandler getMessageHandler() {
         if (this.messageHandler == null) {
-            this.nodeBlockProcessor = getNodeBlockProcessor(); // Initialize nodeBlockProcessor if not done already.
-            NodeMessageHandler handler = new NodeMessageHandler(this.nodeBlockProcessor, getChannelManager(),
-                    getWorldManager().getPendingState(), new TxHandlerImpl(getWorldManager()));
-            handler.start();
-            this.messageHandler = handler;
+            synchronized (NMH_LOCK) {
+                if (this.messageHandler == null) {
+                    this.nodeBlockProcessor = getNodeBlockProcessor(); // Initialize nodeBlockProcessor if not done already.
+                    NodeMessageHandler handler = new NodeMessageHandler(this.nodeBlockProcessor, getChannelManager(),
+                            getWorldManager().getPendingState(), new TxHandlerImpl(getWorldManager()));
+                    handler.start();
+                    this.messageHandler = handler;
+                }
+            }
         }
 
         return this.messageHandler;
