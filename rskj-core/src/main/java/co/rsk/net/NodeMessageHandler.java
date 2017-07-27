@@ -83,6 +83,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         transactionNodeInformation = new TransactionNodeInformation();
         this.txHandler = txHandler;
         this.lastImportedBestBlock = System.currentTimeMillis();
+        this.cleanMsgTimestamp = this.lastImportedBestBlock;
         this.peerScoringManager = peerScoringManager;
     }
 

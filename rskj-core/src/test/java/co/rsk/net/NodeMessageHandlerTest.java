@@ -118,7 +118,6 @@ public class NodeMessageHandlerTest {
 
         processor.postMessage(sender, message);
         processor.postMessage(sender, message);
-        processor.postMessage(sender, message);
 
         PeerScoring pscoring = scoring.getPeerScoring(sender.getNodeID());
 
