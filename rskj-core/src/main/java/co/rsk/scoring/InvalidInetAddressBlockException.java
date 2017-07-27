@@ -6,7 +6,7 @@ package co.rsk.scoring;
  * <p>
  * Created by ajlopez on 14/07/2017.
  */
-public class InvalidInetAddressBlockException extends Exception {
+public class InvalidInetAddressBlockException extends InvalidInetAddressException {
     public InvalidInetAddressBlockException(String message, Throwable ex) {
         super(message, ex);
     }

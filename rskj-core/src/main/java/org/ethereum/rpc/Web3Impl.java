@@ -1607,7 +1607,7 @@ public class Web3Impl implements Web3 {
 
         try {
             this.peerScoringManager.addBannedAddress(address);
-        } catch (InvalidInetAddressBlockException | InvalidInetAddressException e) {
+        } catch (InvalidInetAddressException e) {
             throw new JsonRpcInvalidParamException("invalid banned address " + address, e);
         }
     }
@@ -1628,7 +1628,7 @@ public class Web3Impl implements Web3 {
 
         try {
             this.peerScoringManager.removeBannedAddress(address);
-        } catch (InvalidInetAddressBlockException | InvalidInetAddressException e) {
+        } catch (InvalidInetAddressException e) {
             throw new JsonRpcInvalidParamException("invalid banned address " + address, e);
         }
     }

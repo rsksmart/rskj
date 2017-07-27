@@ -71,7 +71,7 @@ public class InetAddressUtils {
      * @return  the text converted to an InetAddressBlock
      * @throws  InvalidInetAddressException if the text is invalid
      */
-    public static InetAddressBlock parse(String text) throws InvalidInetAddressBlockException, InvalidInetAddressException {
+    public static InetAddressBlock parse(String text) throws InvalidInetAddressException {
         String[] parts = text.split("/");
 
         InetAddress address;

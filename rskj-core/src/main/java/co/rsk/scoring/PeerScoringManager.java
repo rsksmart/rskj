@@ -125,7 +125,7 @@ public class PeerScoringManager {
      *
      * @param address   the address or address block to be banned
      */
-    public void addBannedAddress(String address) throws InvalidInetAddressBlockException, InvalidInetAddressException {
+    public void addBannedAddress(String address) throws InvalidInetAddressException {
         if (InetAddressUtils.hasMask(address))
             this.addBannedAddressBlock(InetAddressUtils.parse(address));
         else
@@ -148,7 +148,7 @@ public class PeerScoringManager {
      *
      * @param address   the address or address block to be removed
      */
-    public void removeBannedAddress(String address) throws InvalidInetAddressBlockException, InvalidInetAddressException {
+    public void removeBannedAddress(String address) throws InvalidInetAddressException {
         if (InetAddressUtils.hasMask(address))
             this.removeBannedAddressBlock(InetAddressUtils.parse(address));
         else
