@@ -19,19 +19,19 @@ import java.util.stream.Collectors;
  * Created by ajlopez on 28/06/2017.
  */
 public class PeerScoringManager {
-    private ScoringCalculator scoringCalculator;
-    private PunishmentCalculator nodePunishmentCalculator;
-    private PunishmentCalculator ipPunishmentCalculator;
+    private final ScoringCalculator scoringCalculator;
+    private final PunishmentCalculator nodePunishmentCalculator;
+    private final PunishmentCalculator ipPunishmentCalculator;
 
     private final Object accessLock = new Object();
 
-    private InetAddressTable addressTable = new InetAddressTable();
+    private final InetAddressTable addressTable = new InetAddressTable();
 
     @GuardedBy("accessLock")
-    private LinkedHashMap<NodeID, PeerScoring> peersByNodeID;
+    private final LinkedHashMap<NodeID, PeerScoring> peersByNodeID;
 
     @GuardedBy("accessLock")
-    private Map<InetAddress, PeerScoring> peersByAddress;
+    private final Map<InetAddress, PeerScoring> peersByAddress;
 
     /**
      * Creates and initialize the scoring manager
