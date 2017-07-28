@@ -86,7 +86,7 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static SortedMap<Sha3Hash, BtcTransaction> deserializeMap(byte[] data, NetworkParameters networkParameters) {
+    public static SortedMap<Sha3Hash, BtcTransaction> deserializeMap(byte[] data, NetworkParameters networkParameters, boolean noInputsTxs) {
         SortedMap<Sha3Hash, BtcTransaction> map = new TreeMap<>();
 
         if (data == null || data.length == 0)
@@ -98,7 +98,14 @@ public class BridgeSerializationUtils {
 
         for (int k = 0; k < ntxs; k++) {
             Sha3Hash hash = new Sha3Hash(rlpList.get(k * 2).getRLPData());
-            BtcTransaction tx = new BtcTransaction(networkParameters, rlpList.get(k * 2 + 1).getRLPData());
+            byte[] payload = rlpList.get(k * 2 + 1).getRLPData();
+            BtcTransaction tx;
+            if (!noInputsTxs) {
+                tx = new BtcTransaction(networkParameters, payload);
+            } else {
+                tx = new BtcTransaction(networkParameters);
+                tx.parseNoInputs(payload);
+            }
             map.put(hash, tx);
         }
 

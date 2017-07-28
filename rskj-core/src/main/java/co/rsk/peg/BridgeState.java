@@ -147,9 +147,9 @@ public class BridgeState {
         byte[] rskTxsWaitingForBroadcastingBytes = rlpList.get(3).getRLPData();
         SortedMap<Sha3Hash, Pair<BtcTransaction, Long>> rskTxsWaitingForBroadcasting = BridgeSerializationUtils.deserializePairMap(rskTxsWaitingForBroadcastingBytes, params);
         byte[] rskTxsWaitingForConfirmationsBytes = rlpList.get(4).getRLPData();
-        SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForConfirmations = BridgeSerializationUtils.deserializeMap(rskTxsWaitingForConfirmationsBytes, params);
+        SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForConfirmations = BridgeSerializationUtils.deserializeMap(rskTxsWaitingForConfirmationsBytes, params, true);
         byte[] rskTxsWaitingForSignaturesBytes = rlpList.get(5).getRLPData();
-        SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(rskTxsWaitingForSignaturesBytes, params);
+        SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(rskTxsWaitingForSignaturesBytes, params, false);
 
         return new BridgeState(btcBlockchainBestChainHeight, btcTxHashesAlreadyProcessed, btcUTXOs, rskTxsWaitingForConfirmations, rskTxsWaitingForSignatures, rskTxsWaitingForBroadcasting);
     }
