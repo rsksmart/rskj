@@ -40,7 +40,7 @@ public class InetAddressUtils {
      *
      * @return  the text converted to an InetAddress
      */
-    public static InetAddress getAddress(String name) throws InvalidInetAddressException {
+    public static InetAddress getAddressForBan(String name) throws InvalidInetAddressException {
         if (name == null)
             throw new InvalidInetAddressException("null address", null);
 
@@ -76,7 +76,7 @@ public class InetAddressUtils {
 
         InetAddress address;
 
-        address = InetAddressUtils.getAddress(parts[0]);
+        address = InetAddressUtils.getAddressForBan(parts[0]);
 
         int nbits;
 

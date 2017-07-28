@@ -36,10 +36,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -351,14 +348,17 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         long start = System.nanoTime();
         loggerMessageProcess.debug("Tx message about to be process: {}", message.getMessageContentInfo());
 
-        List<Transaction> txs = message.getTransactions();
-        Metrics.processTxsMessage("start", txs, sender.getNodeID());
+        List<Transaction> ptxs = message.getTransactions();
+        Metrics.processTxsMessage("start", ptxs, sender.getNodeID());
 
-        for (Transaction tx : txs) {
-            if (tx.getSignature() == null || !tx.acceptTransactionSignature())
+        List<Transaction> txs = new LinkedList();
+        for (Transaction tx : ptxs) {
+            if (tx.getSignature() == null || !tx.acceptTransactionSignature()) {
                 recordEvent(sender, EventType.INVALID_TRANSACTION);
-            else
+            } else {
+                txs.add(tx);
                 recordEvent(sender, EventType.VALID_TRANSACTION);
+            }
         }
 
         List<Transaction> acceptedTxs = txHandler.retrieveValidTxs(txs);
