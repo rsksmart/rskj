@@ -41,7 +41,7 @@ public class ScoreCalculatorTest {
 
         NodeID nodeID = generateNodeID();
         Node node = new Node(nodeID.getID(), "192.168.51.1", 3000);
-        InetAddress address = InetAddressUtils.getAddress("192.168.51.1");
+        InetAddress address = InetAddressUtils.getAddressForBan("192.168.51.1");
 
         peerScoringManager.recordEvent(nodeID, address, EventType.VALID_BLOCK);
         peerScoringManager.recordEvent(nodeID, null, EventType.VALID_BLOCK);
@@ -58,7 +58,7 @@ public class ScoreCalculatorTest {
 
         NodeID nodeID = generateNodeID();
         Node node = new Node(nodeID.getID(), "192.168.51.1", 3000);
-        InetAddress address = InetAddressUtils.getAddress("192.168.51.1");
+        InetAddress address = InetAddressUtils.getAddressForBan("192.168.51.1");
 
         peerScoringManager.recordEvent(null, address, EventType.VALID_BLOCK);
         peerScoringManager.recordEvent(nodeID, null, EventType.INVALID_BLOCK);
@@ -75,7 +75,7 @@ public class ScoreCalculatorTest {
 
         NodeID nodeID = generateNodeID();
         Node node = new Node(nodeID.getID(), "fe80::498a:7f0e:e63d:6b98", 3000);
-        InetAddress address = InetAddressUtils.getAddress("fe80::498a:7f0e:e63d:6b98");
+        InetAddress address = InetAddressUtils.getAddressForBan("fe80::498a:7f0e:e63d:6b98");
 
         peerScoringManager.recordEvent(null, address, EventType.VALID_BLOCK);
         peerScoringManager.recordEvent(nodeID, null, EventType.INVALID_BLOCK);
