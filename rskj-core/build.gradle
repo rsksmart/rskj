@@ -83,7 +83,6 @@ test {
 }
 
 repositories {
-    mavenLocal()
     maven {
         url "https://deps.rsklabs.io"
     }
@@ -116,7 +115,7 @@ ext {
     powermockitoVersion = '1.6.4'
     rskLllVersion = '0.0.2'
     logbackVersion = '1.2.2'
-    bitcoinjVersion = '0.14.4-rsk-2-SNAPSHOT'
+    bitcoinjVersion = '0.14.4-rsk-2'
 }
 
 run {
@@ -187,7 +186,7 @@ dependencyVerification {
         'org.springframework:spring-context:72b862c9a4220064f1b3bb2b4d4e30a4ab6a45b5c90c559dd6d16c645d6e25aa',
         'com.typesafe:config:e6fadfc6108220d3a6b86aa7e4e16c9e7bb857ba58955886308bb13972264af0',
         'org.mapdb:mapdb:1268e9ec22ff770ef7e63d7cc72563406ad239422c791acc8b9ee4fdfba0bb1e',
-        //'co.rsk.bitcoinj:bitcoinj-thin:35ec94be95696c1f50a03371a098a7cedec402888383a24a834fe2f2b5f33dd8',
+        'co.rsk.bitcoinj:bitcoinj-thin:5c73afaa2b9607539379082d1e2eaf090e497bae098acb974ce14339dc22e9ba',
         'org.eclipse.jetty:jetty-server:076fd4115db4bfd19545ada017fd7cc18545b5a521a5b3282a3b2590fb8a9a50',
         'org.eclipse.jetty:jetty-servlet:d34807edd30b144c75867f9cbcdc1d1e5bb52153b720f42382599be79f83d9cd',
         'javax.portlet:portlet-api:c990cb5ece82f97e18847ab07fa1569d1dd5f80f166f27c979a075c60bb361d0',
