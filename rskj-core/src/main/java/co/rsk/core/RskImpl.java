@@ -41,6 +41,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
     private PeerScoringManager peerScoringManager;
     private MessageHandler messageHandler;
     private static final Object NMH_LOCK = new Object();
+    private static final Object PSM_LOCK = new Object();
 
 
     @Override
@@ -56,19 +57,23 @@ public class RskImpl extends EthereumImpl implements Rsk {
     @Override
     public PeerScoringManager getPeerScoringManager() {
         if (this.peerScoringManager == null) {
-            SystemProperties config = this.getSystemProperties();
+            synchronized (PSM_LOCK) {
+                if (this.peerScoringManager == null) {
+                    SystemProperties config = this.getSystemProperties();
 
-            int nnodes = config.scoringNumberOfNodes();
+                    int nnodes = config.scoringNumberOfNodes();
 
-            long nodePunishmentDuration = config.scoringNodesPunishmentDuration();
-            int nodePunishmentIncrement = config.scoringNodesPunishmentIncrement();
-            long nodePunhishmentMaximumDuration = config.scoringNodesPunishmentMaximumDuration();
+                    long nodePunishmentDuration = config.scoringNodesPunishmentDuration();
+                    int nodePunishmentIncrement = config.scoringNodesPunishmentIncrement();
+                    long nodePunhishmentMaximumDuration = config.scoringNodesPunishmentMaximumDuration();
 
-            long addressPunishmentDuration = config.scoringAddressesPunishmentDuration();
-            int addressPunishmentIncrement = config.scoringAddressesPunishmentIncrement();
-            long addressPunishmentMaximunDuration = config.scoringAddressesPunishmentMaximumDuration();
+                    long addressPunishmentDuration = config.scoringAddressesPunishmentDuration();
+                    int addressPunishmentIncrement = config.scoringAddressesPunishmentIncrement();
+                    long addressPunishmentMaximunDuration = config.scoringAddressesPunishmentMaximumDuration();
 
-            this.peerScoringManager = new PeerScoringManager(nnodes, new PunishmentParameters(nodePunishmentDuration, nodePunishmentIncrement, nodePunhishmentMaximumDuration), new PunishmentParameters(addressPunishmentDuration, addressPunishmentIncrement, addressPunishmentMaximunDuration));
+                    this.peerScoringManager = new PeerScoringManager(nnodes, new PunishmentParameters(nodePunishmentDuration, nodePunishmentIncrement, nodePunhishmentMaximumDuration), new PunishmentParameters(addressPunishmentDuration, addressPunishmentIncrement, addressPunishmentMaximunDuration));
+                }
+            }
         }
 
         return this.peerScoringManager;
