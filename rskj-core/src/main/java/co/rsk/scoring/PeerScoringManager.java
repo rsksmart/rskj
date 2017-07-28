@@ -70,8 +70,7 @@ public class PeerScoringManager {
                     peersByNodeID.put(id, new PeerScoring());
 
                 PeerScoring scoring = peersByNodeID.get(id);
-                scoring.recordEvent(event);
-                reviewReputation(scoring, this.nodePunishmentCalculator);
+                recordEvent(scoring, event, this.nodePunishmentCalculator);
             }
 
             if (address != null) {
@@ -79,8 +78,7 @@ public class PeerScoringManager {
                     peersByAddress.put(address, new PeerScoring());
 
                 PeerScoring scoring = peersByAddress.get(address);
-                scoring.recordEvent(event);
-                reviewReputation(scoring, this.ipPunishmentCalculator);
+                recordEvent(scoring, event, this.ipPunishmentCalculator);
             }
         }
     }
@@ -92,7 +90,9 @@ public class PeerScoringManager {
      * @return  <tt>true</tt> if the node has good reputation
      */
     public boolean hasGoodReputation(NodeID id) {
-        return this.getPeerScoring(id).hasGoodReputation();
+        synchronized (accessLock) {
+            return this.getPeerScoring(id).hasGoodReputation();
+        }
     }
 
     /**
@@ -106,7 +106,9 @@ public class PeerScoringManager {
         if (this.addressTable.contains(address))
             return false;
 
-        return this.getPeerScoring(address).hasGoodReputation();
+        synchronized (accessLock) {
+            return this.getPeerScoring(address).hasGoodReputation();
+        }
     }
 
     /**
@@ -180,12 +182,14 @@ public class PeerScoringManager {
      * @return  the list of peer scoring information
      */
     public List<PeerScoringInformation> getPeersInformation() {
-        List<PeerScoringInformation> list = new ArrayList<>(this.peersByNodeID.size() + this.peersByAddress.size());
+        synchronized (accessLock) {
+            List<PeerScoringInformation> list = new ArrayList<>(this.peersByNodeID.size() + this.peersByAddress.size());
 
-        list.addAll(this.peersByNodeID.entrySet().stream().map(entry -> new PeerScoringInformation(entry.getValue(), Hex.toHexString(entry.getKey().getID()).substring(0, 8), "node")).collect(Collectors.toList()));
-        list.addAll(this.peersByAddress.entrySet().stream().map(entry -> new PeerScoringInformation(entry.getValue(), entry.getKey().getHostAddress(), "address")).collect(Collectors.toList()));
+            list.addAll(this.peersByNodeID.entrySet().stream().map(entry -> new PeerScoringInformation(entry.getValue(), Hex.toHexString(entry.getKey().getID()).substring(0, 8), "node")).collect(Collectors.toList()));
+            list.addAll(this.peersByAddress.entrySet().stream().map(entry -> new PeerScoringInformation(entry.getValue(), entry.getKey().getHostAddress(), "address")).collect(Collectors.toList()));
 
-        return list;
+            return list;
+        }
     }
 
     /**
@@ -205,7 +209,9 @@ public class PeerScoringManager {
 
     @VisibleForTesting
     public boolean isEmpty() {
-        return this.peersByAddress.isEmpty() && this.peersByNodeID.isEmpty();
+        synchronized (accessLock) {
+            return this.peersByAddress.isEmpty() && this.peersByNodeID.isEmpty();
+        }
     }
 
     @VisibleForTesting
@@ -235,7 +241,8 @@ public class PeerScoringManager {
      * @param scoring       the peer scoring
      * @param calculator    the calculator to use
      */
-    private void reviewReputation(PeerScoring scoring, PunishmentCalculator calculator) {
+    private void recordEvent(PeerScoring scoring, EventType event, PunishmentCalculator calculator) {
+        scoring.recordEvent(event);
         boolean reputation = scoringCalculator.hasGoodReputation(scoring);
 
         if (!reputation && scoring.hasGoodReputation())
