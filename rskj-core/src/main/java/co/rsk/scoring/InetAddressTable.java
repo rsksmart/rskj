@@ -14,8 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by ajlopez on 10/07/2017.
  */
 public class InetAddressTable {
-    private Set<InetAddress> addresses = ConcurrentHashMap.newKeySet();
-    private Set<InetAddressBlock> blocks = ConcurrentHashMap.newKeySet();
+    private final Set<InetAddress> addresses = ConcurrentHashMap.newKeySet();
+    private final Set<InetAddressBlock> blocks = ConcurrentHashMap.newKeySet();
 
     /**
      * Adds an address into the address set
