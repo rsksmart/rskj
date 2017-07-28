@@ -44,9 +44,11 @@ public class InetAddressUtils {
         if (name == null)
             throw new InvalidInetAddressException("null address", null);
 
-        if (name.trim().length() == 0)
+        name = name.trim();
+        if (name.length() == 0)
             throw new InvalidInetAddressException("empty address", null);
 
+        //TODO(mmarquez): should we validate address format ??
         try {
             InetAddress address = InetAddress.getByName(name);
 
@@ -72,6 +74,7 @@ public class InetAddressUtils {
      * @throws  InvalidInetAddressException if the text is invalid
      */
     public static InetAddressBlock parse(String text) throws InvalidInetAddressException {
+        //TODO(mmarquez): should we validate address format ??
         String[] parts = text.split("/");
 
         InetAddress address;

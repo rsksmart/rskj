@@ -2,9 +2,6 @@ package co.rsk.scoring;
 
 import com.google.common.annotations.VisibleForTesting;
 
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -20,7 +17,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class PeerScoring {
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock();
-    private Map<EventType, Integer> counters = new HashMap<>();
+    private int[] counters = new int[EventType.values().length];
     private boolean goodReputation = true;
     private long timeLostGoodReputation;
     private long punishmentTime;
@@ -37,29 +34,32 @@ public class PeerScoring {
      * @param evt       An event type @see EventType
      */
     public void recordEvent(EventType evt) {
-        if (!counters.containsKey(evt))
-            counters.put(evt, 1);
-        else
-            counters.put(evt, counters.get(evt).intValue() + 1);
+        try {
+            rwlock.writeLock().lock();
 
-        switch (evt) {
-            case INVALID_NETWORK:
-            case INVALID_BLOCK:
-            case INVALID_TRANSACTION:
-                if (score > 0)
-                    score = 0;
-                score--;
-                break;
+            counters[evt.ordinal()]++;
 
-            case FAILED_HANDSHAKE:
-            case SUCCESSFUL_HANDSHAKE:
-            case REPEATED_MESSAGE:
-                break;
+            switch (evt) {
+                case INVALID_NETWORK:
+                case INVALID_BLOCK:
+                case INVALID_TRANSACTION:
+                    if (score > 0)
+                        score = 0;
+                    score--;
+                    break;
 
-            default:
-                if (score >= 0)
-                    score++;
-                break;
+                case FAILED_HANDSHAKE:
+                case SUCCESSFUL_HANDSHAKE:
+                case REPEATED_MESSAGE:
+                    break;
+
+                default:
+                    if (score >= 0)
+                        score++;
+                    break;
+            }
+        } finally {
+            rwlock.writeLock().unlock();
         }
     }
 
@@ -85,10 +85,7 @@ public class PeerScoring {
         try {
             rwlock.readLock().lock();
 
-            if (!counters.containsKey(evt))
-                return 0;
-
-            return counters.get(evt).intValue();
+            return counters[evt.ordinal()];
         } finally {
             rwlock.readLock().unlock();
         }
@@ -104,8 +101,8 @@ public class PeerScoring {
             rwlock.readLock().lock();
             int counter = 0;
 
-            for (Map.Entry<EventType, Integer> entry : counters.entrySet())
-                counter += entry.getValue().intValue();
+            for (int i = 0; i < counters.length; i++)
+                counter += counters[i];
 
             return counter;
         } finally {
@@ -121,7 +118,7 @@ public class PeerScoring {
     public boolean isEmpty() {
         try {
             rwlock.readLock().lock();
-            return counters.isEmpty();
+            return getTotalEventCounter() == 0;
         } finally {
             rwlock.readLock().unlock();
         }
@@ -175,7 +172,8 @@ public class PeerScoring {
      */
     private void endPunishment() {
         //Check locks before doing this function public
-        this.counters.clear();
+        for (int i = 0; i < counters.length; i++)
+            this.counters[i] = 0;
         this.goodReputation = true;
         this.score = 0;
         this.timeLostGoodReputation = 0;
