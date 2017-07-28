@@ -241,11 +241,14 @@ public class RskWireProtocol extends EthHandler {
 
         }
 
-        return true;
+        return true; //TODO(mmarquez): ugly
     }
 
     private void recordEvent(EventType event) {
-        this.rsk.getPeerScoringManager().recordEvent(this.messageSender.getNodeID(), this.messageSender.getAddress(), event);
+        this.rsk.getPeerScoringManager().recordEvent(
+                        this.messageSender.getNodeID(),
+                        this.messageSender.getAddress(),
+                        event);
     }
 
 

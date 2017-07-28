@@ -129,7 +129,7 @@ public class PeerScoringManager {
         if (InetAddressUtils.hasMask(address))
             this.addBannedAddressBlock(InetAddressUtils.parse(address));
         else
-            this.addBannedAddress(InetAddressUtils.getAddress(address));
+            this.addBannedAddress(InetAddressUtils.getAddressForBan(address));
     }
 
     /**
@@ -152,7 +152,7 @@ public class PeerScoringManager {
         if (InetAddressUtils.hasMask(address))
             this.removeBannedAddressBlock(InetAddressUtils.parse(address));
         else
-            this.removeBannedAddress(InetAddressUtils.getAddress(address));
+            this.removeBannedAddress(InetAddressUtils.getAddressForBan(address));
     }
 
     /**

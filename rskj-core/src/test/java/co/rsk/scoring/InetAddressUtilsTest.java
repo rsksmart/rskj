@@ -24,7 +24,7 @@ public class InetAddressUtilsTest {
 
     @Test
     public void getAddressFromIPV4() throws InvalidInetAddressException {
-        InetAddress address = InetAddressUtils.getAddress("192.168.56.1");
+        InetAddress address = InetAddressUtils.getAddressForBan("192.168.56.1");
 
         Assert.assertNotNull(address);
 
@@ -37,7 +37,7 @@ public class InetAddressUtilsTest {
 
     @Test
     public void getAddressFromIPV6() throws InvalidInetAddressException, UnknownHostException {
-        InetAddress address = InetAddressUtils.getAddress("fe80::498a:7f0e:e63d:6b98");
+        InetAddress address = InetAddressUtils.getAddressForBan("fe80::498a:7f0e:e63d:6b98");
         InetAddress expected = InetAddress.getByName("fe80::498a:7f0e:e63d:6b98");
 
         Assert.assertNotNull(address);
@@ -52,7 +52,7 @@ public class InetAddressUtilsTest {
     @Test
     public void getAddressFromNull() {
         try {
-            InetAddressUtils.getAddress(null);
+            InetAddressUtils.getAddressForBan(null);
             Assert.fail();
         }
         catch (InvalidInetAddressException ex) {
@@ -63,7 +63,7 @@ public class InetAddressUtilsTest {
     @Test
     public void getAddressFromEmptyString() {
         try {
-            InetAddressUtils.getAddress("");
+            InetAddressUtils.getAddressForBan("");
             Assert.fail();
         }
         catch (InvalidInetAddressException ex) {
@@ -74,7 +74,7 @@ public class InetAddressUtilsTest {
     @Test
     public void getAddressFromBlankString() {
         try {
-            InetAddressUtils.getAddress("   ");
+            InetAddressUtils.getAddressForBan("   ");
             Assert.fail();
         }
         catch (InvalidInetAddressException ex) {
@@ -85,7 +85,7 @@ public class InetAddressUtilsTest {
     @Test
     public void getLocalAddress() {
         try {
-            InetAddressUtils.getAddress("127.0.0.1");
+            InetAddressUtils.getAddressForBan("127.0.0.1");
             Assert.fail();
         }
         catch (InvalidInetAddressException ex) {
@@ -96,7 +96,7 @@ public class InetAddressUtilsTest {
     @Test
     public void getLocalHost() {
         try {
-            InetAddressUtils.getAddress("localhost");
+            InetAddressUtils.getAddressForBan("localhost");
             Assert.fail();
         }
         catch (InvalidInetAddressException ex) {
@@ -107,7 +107,7 @@ public class InetAddressUtilsTest {
     @Test
     public void getAnyLocalAddress() {
         try {
-            InetAddressUtils.getAddress("0.0.0.0");
+            InetAddressUtils.getAddressForBan("0.0.0.0");
             Assert.fail();
         }
         catch (InvalidInetAddressException ex) {
