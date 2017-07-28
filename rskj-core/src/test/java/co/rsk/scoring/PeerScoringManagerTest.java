@@ -33,7 +33,7 @@ public class PeerScoringManagerTest {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
 
-        manager.addBannedAddress(address);
+        manager.banAddress(address);
         Assert.assertFalse(manager.hasGoodReputation(address));
     }
 
@@ -44,7 +44,7 @@ public class PeerScoringManagerTest {
 
         PeerScoringManager manager = createPeerScoringManager();
 
-        manager.addBannedAddressBlock(addressBlock);
+        manager.banAddressBlock(addressBlock);
         Assert.assertFalse(manager.hasGoodReputation(address));
     }
 
@@ -53,9 +53,9 @@ public class PeerScoringManagerTest {
         InetAddress address = generateIPAddressV4();
         PeerScoringManager manager = createPeerScoringManager();
 
-        manager.addBannedAddress(address);
+        manager.banAddress(address);
         Assert.assertFalse(manager.hasGoodReputation(address));
-        manager.removeBannedAddress(address);
+        manager.unbanAddress(address);
         Assert.assertTrue(manager.hasGoodReputation(address));
     }
 
@@ -66,9 +66,9 @@ public class PeerScoringManagerTest {
 
         PeerScoringManager manager = createPeerScoringManager();
 
-        manager.addBannedAddressBlock(addressBlock);
+        manager.banAddressBlock(addressBlock);
         Assert.assertFalse(manager.hasGoodReputation(address));
-        manager.removeBannedAddressBlock(addressBlock);
+        manager.unbanAddressBlock(addressBlock);
         Assert.assertTrue(manager.hasGoodReputation(address));
     }
 

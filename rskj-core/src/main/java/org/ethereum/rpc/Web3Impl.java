@@ -1601,12 +1601,12 @@ public class Web3Impl implements Web3 {
      * @param address the address or block to be banned
      */
     @Override
-    public void sco_addBannedAddress(String address) {
+    public void sco_banAddress(String address) {
         if (this.peerScoringManager == null)
             return;
 
         try {
-            this.peerScoringManager.addBannedAddress(address);
+            this.peerScoringManager.banAddress(address);
         } catch (InvalidInetAddressException e) {
             throw new JsonRpcInvalidParamException("invalid banned address " + address, e);
         }
@@ -1622,12 +1622,12 @@ public class Web3Impl implements Web3 {
      * @param address the address or block to be removed
      */
     @Override
-    public void sco_removeBannedAddress(String address) {
+    public void sco_unbanAddress(String address) {
         if (this.peerScoringManager == null)
             return;
 
         try {
-            this.peerScoringManager.removeBannedAddress(address);
+            this.peerScoringManager.unbanAddress(address);
         } catch (InvalidInetAddressException e) {
             throw new JsonRpcInvalidParamException("invalid banned address " + address, e);
         }
@@ -1653,7 +1653,7 @@ public class Web3Impl implements Web3 {
      * @return the list of banned addresses and blocks
      */
     @Override
-    public String[] sco_bannedAddressList() {
-        return this.peerScoringManager.getBannedAddressList().toArray(new String[0]);
+    public String[] sco_bannedAddresses() {
+        return this.peerScoringManager.getBannedAddresses().toArray(new String[0]);
     }
 }

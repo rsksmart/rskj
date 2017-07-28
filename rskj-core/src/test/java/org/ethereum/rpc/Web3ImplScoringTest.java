@@ -51,7 +51,7 @@ public class Web3ImplScoringTest {
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
-        web3.sco_addBannedAddress(address.getHostAddress());
+        web3.sco_banAddress(address.getHostAddress());
 
         Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
     }
@@ -62,7 +62,7 @@ public class Web3ImplScoringTest {
         Web3Impl web3 = createWeb3(peerScoringManager);
 
         try {
-            web3.sco_addBannedAddress("192.168.56.1/a");
+            web3.sco_banAddress("192.168.56.1/a");
             Assert.fail();
         }
         catch (JsonRpcInvalidParamException ex) {
@@ -76,7 +76,7 @@ public class Web3ImplScoringTest {
         Web3Impl web3 = createWeb3(peerScoringManager);
 
         try {
-            web3.sco_removeBannedAddress("192.168.56.1/a");
+            web3.sco_unbanAddress("192.168.56.1/a");
             Assert.fail();
         }
         catch (JsonRpcInvalidParamException ex) {
@@ -92,7 +92,7 @@ public class Web3ImplScoringTest {
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
-        web3.sco_addBannedAddress(address.getHostAddress() + "/8");
+        web3.sco_banAddress(address.getHostAddress() + "/8");
 
         Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
     }
@@ -105,11 +105,11 @@ public class Web3ImplScoringTest {
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
-        web3.sco_addBannedAddress(address.getHostAddress());
+        web3.sco_banAddress(address.getHostAddress());
 
         Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
 
-        web3.sco_removeBannedAddress(address.getHostAddress());
+        web3.sco_unbanAddress(address.getHostAddress());
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
     }
@@ -122,11 +122,11 @@ public class Web3ImplScoringTest {
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
-        web3.sco_addBannedAddress(address.getHostAddress() + "/8");
+        web3.sco_banAddress(address.getHostAddress() + "/8");
 
         Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
 
-        web3.sco_removeBannedAddress(address.getHostAddress() + "/8");
+        web3.sco_unbanAddress(address.getHostAddress() + "/8");
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
     }
@@ -139,7 +139,7 @@ public class Web3ImplScoringTest {
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
-        web3.sco_addBannedAddress(address.getHostAddress());
+        web3.sco_banAddress(address.getHostAddress());
 
         Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
     }
@@ -152,7 +152,7 @@ public class Web3ImplScoringTest {
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
-        web3.sco_addBannedAddress(address.getHostAddress() + "/64");
+        web3.sco_banAddress(address.getHostAddress() + "/64");
 
         Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
     }
@@ -165,11 +165,11 @@ public class Web3ImplScoringTest {
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
-        web3.sco_addBannedAddress(address.getHostAddress());
+        web3.sco_banAddress(address.getHostAddress());
 
         Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
 
-        web3.sco_removeBannedAddress(address.getHostAddress());
+        web3.sco_unbanAddress(address.getHostAddress());
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
     }
@@ -182,11 +182,11 @@ public class Web3ImplScoringTest {
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
-        web3.sco_addBannedAddress(address.getHostAddress() + "/64");
+        web3.sco_banAddress(address.getHostAddress() + "/64");
 
         Assert.assertFalse(peerScoringManager.hasGoodReputation(address));
 
-        web3.sco_removeBannedAddress(address.getHostAddress() + "/64");
+        web3.sco_unbanAddress(address.getHostAddress() + "/64");
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
     }
@@ -239,7 +239,7 @@ public class Web3ImplScoringTest {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
-        String[] result = web3.sco_bannedAddressList();
+        String[] result = web3.sco_bannedAddresses();
 
         Assert.assertNotNull(result);
         Assert.assertEquals(0, result.length);
@@ -250,8 +250,8 @@ public class Web3ImplScoringTest {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
-        web3.sco_addBannedAddress("192.168.56.1");
-        String[] result = web3.sco_bannedAddressList();
+        web3.sco_banAddress("192.168.56.1");
+        String[] result = web3.sco_bannedAddresses();
 
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.length);
@@ -263,9 +263,9 @@ public class Web3ImplScoringTest {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
-        web3.sco_addBannedAddress("192.168.56.1");
-        web3.sco_addBannedAddress("192.168.56.2");
-        String[] result = web3.sco_bannedAddressList();
+        web3.sco_banAddress("192.168.56.1");
+        web3.sco_banAddress("192.168.56.2");
+        String[] result = web3.sco_bannedAddresses();
 
         Assert.assertNotNull(result);
         Assert.assertEquals(2, result.length);
@@ -279,8 +279,8 @@ public class Web3ImplScoringTest {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
-        web3.sco_addBannedAddress("192.168.56.1/16");
-        String[] result = web3.sco_bannedAddressList();
+        web3.sco_banAddress("192.168.56.1/16");
+        String[] result = web3.sco_bannedAddresses();
 
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.length);

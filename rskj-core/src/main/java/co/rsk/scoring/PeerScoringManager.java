@@ -116,7 +116,7 @@ public class PeerScoringManager {
      *
      * @param address   the address to be banned
      */
-    public void addBannedAddress(InetAddress address) {
+    public void banAddress(InetAddress address) {
         this.addressTable.addAddress(address);
     }
 
@@ -127,11 +127,11 @@ public class PeerScoringManager {
      *
      * @param address   the address or address block to be banned
      */
-    public void addBannedAddress(String address) throws InvalidInetAddressException {
+    public void banAddress(String address) throws InvalidInetAddressException {
         if (InetAddressUtils.hasMask(address))
-            this.addBannedAddressBlock(InetAddressUtils.parse(address));
+            this.banAddressBlock(InetAddressUtils.parse(address));
         else
-            this.addBannedAddress(InetAddressUtils.getAddressForBan(address));
+            this.banAddress(InetAddressUtils.getAddressForBan(address));
     }
 
     /**
@@ -139,7 +139,7 @@ public class PeerScoringManager {
      *
      * @param address   the address to be removed
      */
-    public void removeBannedAddress(InetAddress address) {
+    public void unbanAddress(InetAddress address) {
         this.addressTable.removeAddress(address);
     }
 
@@ -150,11 +150,11 @@ public class PeerScoringManager {
      *
      * @param address   the address or address block to be removed
      */
-    public void removeBannedAddress(String address) throws InvalidInetAddressException {
+    public void unbanAddress(String address) throws InvalidInetAddressException {
         if (InetAddressUtils.hasMask(address))
-            this.removeBannedAddressBlock(InetAddressUtils.parse(address));
+            this.unbanAddressBlock(InetAddressUtils.parse(address));
         else
-            this.removeBannedAddress(InetAddressUtils.getAddressForBan(address));
+            this.unbanAddress(InetAddressUtils.getAddressForBan(address));
     }
 
     /**
@@ -162,7 +162,7 @@ public class PeerScoringManager {
      *
      * @param addressBlock   the address block to be banned
      */
-    public void addBannedAddressBlock(InetAddressBlock addressBlock) {
+    public void banAddressBlock(InetAddressBlock addressBlock) {
         this.addressTable.addAddressBlock(addressBlock);
     }
 
@@ -171,7 +171,7 @@ public class PeerScoringManager {
      *
      * @param addressBlock   the address block to be removed
      */
-    public void removeBannedAddressBlock(InetAddressBlock addressBlock) {
+    public void unbanAddressBlock(InetAddressBlock addressBlock) {
         this.addressTable.removeAddressBlock(addressBlock);
     }
 
@@ -198,7 +198,7 @@ public class PeerScoringManager {
      *
      * @return a list of strings describing the banned addresses and blocks
      */
-    public List<String> getBannedAddressList() {
+    public List<String> getBannedAddresses() {
         List<String> list = new ArrayList<>();
 
         list.addAll(this.addressTable.getAddressList().stream().map(entry -> entry.getHostAddress()).collect(Collectors.toList()));
