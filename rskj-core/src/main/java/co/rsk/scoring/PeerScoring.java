@@ -2,9 +2,10 @@ package co.rsk.scoring;
 
 import com.google.common.annotations.VisibleForTesting;
 
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * PeerScoring records the events associated with a peer
@@ -17,6 +18,7 @@ import java.util.Map;
  * Created by ajlopez on 27/06/2017.
  */
 public class PeerScoring {
+    private final ReadWriteLock rwlock = new ReentrantReadWriteLock();
     private Map<EventType, Integer> counters = new HashMap<>();
     private boolean goodReputation = true;
     private long timeLostGoodReputation;
@@ -34,29 +36,35 @@ public class PeerScoring {
      * @param evt       An event type @see EventType
      */
     public void recordEvent(EventType evt) {
-        if (!counters.containsKey(evt))
-            counters.put(evt, 1);
-        else
-            counters.put(evt, counters.get(evt).intValue() + 1);
+        try {
+            rwlock.writeLock().lock();
 
-        switch (evt) {
-            case INVALID_NETWORK:
-            case INVALID_BLOCK:
-            case INVALID_TRANSACTION:
-                if (score > 0)
-                    score = 0;
-                score--;
-                break;
+            if (!counters.containsKey(evt))
+                counters.put(evt, 1);
+            else
+                counters.put(evt, counters.get(evt).intValue() + 1);
 
-            case FAILED_HANDSHAKE:
-            case SUCCESSFUL_HANDSHAKE:
-            case REPEATED_MESSAGE:
-                break;
+            switch (evt) {
+                case INVALID_NETWORK:
+                case INVALID_BLOCK:
+                case INVALID_TRANSACTION:
+                    if (score > 0)
+                        score = 0;
+                    score--;
+                    break;
 
-            default:
-                if (score >= 0)
-                    score++;
-                break;
+                case FAILED_HANDSHAKE:
+                case SUCCESSFUL_HANDSHAKE:
+                case REPEATED_MESSAGE:
+                    break;
+
+                default:
+                    if (score >= 0)
+                        score++;
+                    break;
+            }
+        } finally {
+            rwlock.writeLock().unlock();
         }
     }
 
@@ -79,10 +87,16 @@ public class PeerScoring {
      * @return  The count of events of the specefied type
      */
     public int getEventCounter(EventType evt) {
-        if (!counters.containsKey(evt))
-            return 0;
+        try {
+            rwlock.readLock().lock();
 
-        return counters.get(evt).intValue();
+            if (!counters.containsKey(evt))
+                return 0;
+
+            return counters.get(evt).intValue();
+        } finally {
+            rwlock.readLock().unlock();
+        }
     }
 
     /**
@@ -91,12 +105,17 @@ public class PeerScoring {
      * @return  The total count of events
      */
     public int getTotalEventCounter() {
-        int counter = 0;
+        try {
+            rwlock.readLock().lock();
+            int counter = 0;
 
-        for (Map.Entry<EventType, Integer> entry : counters.entrySet())
-            counter += entry.getValue().intValue();
+            for (Map.Entry<EventType, Integer> entry : counters.entrySet())
+                counter += entry.getValue().intValue();
 
-        return counter;
+            return counter;
+        } finally {
+            rwlock.readLock().unlock();
+        }
     }
 
     /**
@@ -105,7 +124,12 @@ public class PeerScoring {
      * @return <tt>true</tt> if there is no event
      */
     public boolean isEmpty() {
-        return counters.isEmpty();
+        try {
+            rwlock.readLock().lock();
+            return counters.isEmpty();
+        } finally {
+            rwlock.readLock().unlock();
+        }
     }
 
     /**
@@ -115,13 +139,18 @@ public class PeerScoring {
      * @return <tt>true</tt> or <tt>false</tt>
      */
     public boolean hasGoodReputation() {
-        if (this.goodReputation)
-            return true;
+        try {
+            rwlock.writeLock().lock();
+            if (this.goodReputation)
+                return true;
 
-        if (this.punishmentTime > 0 && this.timeLostGoodReputation > 0 && this.punishmentTime + this.timeLostGoodReputation <= System.currentTimeMillis())
-            this.endPunishment();
+            if (this.punishmentTime > 0 && this.timeLostGoodReputation > 0 && this.punishmentTime + this.timeLostGoodReputation <= System.currentTimeMillis())
+                this.endPunishment();
 
-        return this.goodReputation;
+            return this.goodReputation;
+        } finally {
+            rwlock.writeLock().unlock();
+        }
     }
 
     /**
@@ -131,11 +160,17 @@ public class PeerScoring {
      *
      * @param   expirationTime  punishment duration in milliseconds
      */
+    @VisibleForTesting
     public void startPunishment(long expirationTime) {
-        this.goodReputation = false;
-        this.punishmentTime = expirationTime;
-        this.punishmentCounter++;
-        this.timeLostGoodReputation = System.currentTimeMillis();
+        try {
+            rwlock.writeLock().lock();
+            this.goodReputation = false;
+            this.punishmentTime = expirationTime;
+            this.punishmentCounter++;
+            this.timeLostGoodReputation = System.currentTimeMillis();
+        } finally {
+            rwlock.writeLock().unlock();
+        }
     }
 
     /**
@@ -143,7 +178,8 @@ public class PeerScoring {
      * Clear the event counters
      *
      */
-    public void endPunishment() {
+    private void endPunishment() {
+        //Check locks before doing this function public
         this.counters.clear();
         this.goodReputation = true;
         this.timeLostGoodReputation = 0;
