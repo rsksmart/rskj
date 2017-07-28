@@ -143,13 +143,13 @@ public class PeerExplorer {
     public void handleFindNode(FindNodePeerMessage message) {
         Node connectedNode = this.establishedConnections.get(new ByteArrayWrapper(message.getNodeId()));
         if (connectedNode != null) {
-            logger.debug("About to send [{}] neighbors to ip[{}] port[{}] nodeId[{}]", nodesToSend.size(), connectedNode.getHost(), connectedNode.getPort(), connectedNode.getHexIdShort());
             byte[] nodeId = message.getNodeId();
             List<NodeInformation> nodes = new ArrayList<>();
             nodes.addAll(this.distanceTable.getAllNodes().stream().map(node -> new NodeInformation(node, this.distanceTable.calculateDistance(node.getId(), nodeId), this.scoreCalculator == null ? 0 : this.scoreCalculator.calculateScore(node))).collect(Collectors.toList()));
             Collections.sort(nodes, new NodeDistanceScoreComparator());
-            nodes.stream().map(node -> node.getNode()).collect(Collectors.toList());
-            this.sendNeighbors(connectedNode.getAddress(), nodes.stream().map(node -> node.getNode()).collect(Collectors.toList()), message.getMessageId());
+            List<Node> nodesToSend = nodes.stream().map(node -> node.getNode()).collect(Collectors.toList());
+            this.sendNeighbors(connectedNode.getAddress(), nodesToSend, message.getMessageId());
+            logger.debug("About to send [{}] neighbors to ip[{}] port[{}] nodeId[{}]", nodesToSend.size(), connectedNode.getHost(), connectedNode.getPort(), connectedNode.getHexIdShort());
             this.distanceTable.updateEntry(connectedNode);
         }
     }
