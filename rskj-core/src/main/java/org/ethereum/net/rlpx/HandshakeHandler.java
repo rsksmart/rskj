@@ -368,15 +368,13 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     private void recordEvent(ChannelHandlerContext ctx, EventType event) {
         SocketAddress socketAddress = ctx.channel().remoteAddress();
 
+        //TODO(mmarquez): what if it is not ??
         if (socketAddress instanceof InetSocketAddress) {
             byte[] nid = channel.getNodeId();
 
-            NodeID nodeID = null;
-
-            if (nid != null)
-                nodeID = new NodeID(nid);
-
+            NodeID nodeID = nid != null ? new NodeID(nid) : null;
             InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
+
             this.rsk.getPeerScoringManager().recordEvent(nodeID, address, event);
         }
     }
