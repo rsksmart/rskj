@@ -7,7 +7,7 @@ package co.rsk.scoring;
  * Created by ajlopez on 10/07/2017.
  */
 public class PunishmentCalculator {
-    private PunishmentParameters parameters;
+    private final PunishmentParameters parameters;
 
     public PunishmentCalculator(PunishmentParameters parameters) {
         this.parameters = parameters;
@@ -40,16 +40,9 @@ public class PunishmentCalculator {
                 return maxDuration;
         }
 
-        long duration;
-
-        if (maxDuration > 0)
-            duration = Math.min(this.parameters.getMaximumDuration(), result);
-        else
-            duration = result;
-
         if (score < 0)
-            duration *= -score;
+            result *= -score;
 
-        return duration;
+        return maxDuration > 0 ? Math.min(maxDuration, result) : result;
     }
 }
