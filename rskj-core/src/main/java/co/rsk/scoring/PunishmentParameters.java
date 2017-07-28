@@ -7,9 +7,9 @@ package co.rsk.scoring;
  * Created by ajlopez on 12/07/2017.
  */
 public class PunishmentParameters {
-    private long duration;
-    private int incrementRate;
-    private long maximumDuration;
+    private final long duration;
+    private final int incrementRate;
+    private final long maximumDuration;
 
     public PunishmentParameters(long duration, int incrementRate, long maximumDuration) {
         this.duration = duration;

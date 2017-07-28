@@ -663,6 +663,44 @@ public class SystemProperties {
         return config.root().render(ConfigRenderOptions.defaults().setComments(false));
     }
 
+    public int scoringNumberOfNodes() {
+        return getInt("scoring.nodes.number", 100);
+    }
+
+    public long scoringNodesPunishmentDuration() {
+        return getLong("scoring.nodes.duration", 10) * 60000L;
+    }
+
+    public int scoringNodesPunishmentIncrement() {
+        return getInt("scoring.nodes.increment", 10);
+    }
+
+    public long scoringNodesPunishmentMaximumDuration() {
+        // default value: no maximum duration
+        return getLong("scoring.nodes.maximum", 0) * 60000L;
+    }
+
+    public long scoringAddressesPunishmentDuration() {
+        return getLong("scoring.addresses.duration", 10) * 60000L;
+    }
+
+    public int scoringAddressesPunishmentIncrement() {
+        return getInt("scoring.addresses.increment", 10);
+    }
+
+    public long scoringAddressesPunishmentMaximumDuration() {
+        // default value: 1 week
+        return getLong("scoring.addresses.maximum", 60 * 24 * 7)  * 60000L;
+    }
+
+    protected int getInt(String path, int val) {
+        return config.hasPath(path) ? config.getInt(path) : val;
+    }
+
+    protected long getLong(String path, long val) {
+        return config.hasPath(path) ? config.getLong(path) : val;
+    }
+
     /*
      *
      * Testing
@@ -689,42 +727,5 @@ public class SystemProperties {
     public String corsDomains() {
         return config.hasPath(PROPERTY_RPC_CORS) ?
                 config.getString(PROPERTY_RPC_CORS) : null;
-    }
-
-    public int scoringNumberOfNodes() {
-        return config.hasPath("scoring.nodes.number") ? config.getInt("scoring.nodes.number") : 100;
-    }
-
-    public long scoringNodesPunishmentDuration() {
-        return config.hasPath("scoring.nodes.duration") ? config.getInt("scoring.nodes.duration") * 60000L : 600000L;
-    }
-
-    public int scoringNodesPunishmentIncrement() {
-        return config.hasPath("scoring.nodes.increment") ? config.getInt("scoring.nodes.increment") : 10;
-    }
-
-    public long scoringNodesPunishmentMaximumDuration() {
-        // default value: no maximum duration
-        return config.hasPath("scoring.nodes.maximum") ? config.getInt("scoring.nodes.maximum") * 60000L : 0L;
-    }
-
-    public long scoringAddressesPunishmentDuration() {
-        return config.hasPath("scoring.addresses.duration") ? config.getInt("scoring.addresses.duration") * 60000L : 600000L;
-    }
-
-    public int scoringAddressesPunishmentIncrement() {
-        return config.hasPath("scoring.addresses.increment") ? config.getInt("scoring.addresses.increment") : 10;
-    }
-
-    public long scoringAddressesPunishmentMaximumDuration() {
-        // default value: 1 week
-        return config.hasPath("scoring.addresses.maximum") ? config.getInt("scoring.addresses.maximum") * 60000L : 1000L * 60 * 60 * 24 * 7;
-    }
-
-    protected long getLongProperty(String propertyName, long defaultValue) {
-        return config.hasPath(propertyName) ? config.getLong(propertyName) : defaultValue;
-    }
-    protected boolean getBooleanProperty(String propertyName, boolean defaultValue) {
-        return config.hasPath(propertyName) ? config.getBoolean(propertyName) : defaultValue;
     }
 }
