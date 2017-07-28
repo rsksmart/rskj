@@ -31,7 +31,6 @@ import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -259,7 +258,7 @@ public class MinerServerImpl implements MinerServer {
         if (work == null) {
             return null;
         }
-        
+
         if (work.getNotify()) {
             /**
              * Set currentWork.notify to false for the next time this function is called.
@@ -460,13 +459,11 @@ public class MinerServerImpl implements MinerServer {
         final long timestampSeconds = this.getCurrentTimeInSeconds();
 
         // Set gas limit before executing block
-        BigInteger minGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getMIN_GAS_LIMIT());
-        BigInteger targetGasLimit = BigInteger.valueOf(RskSystemProperties.RSKCONFIG.getTargetGasLimit());
+        BigInteger minGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getMinGasLimit());
+        BigInteger targetGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getTargetGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, newBlockParent.getGasLimit());
-        BigInteger gasUsed = BigInteger.valueOf(newBlockParent.getGasUsed());
-        boolean forceLimit = RskSystemProperties.RSKCONFIG.getForceTargetGasLimit();
-        BigInteger gasLimit = new GasLimitCalculator().calculateBlockGasLimit(parentGasLimit,
-                gasUsed, minGasLimit, targetGasLimit, forceLimit);
+        BigInteger gasLimit = new GasLimitCalculator().calculateBlockGasLimit(parentGasLimit, BigInteger.valueOf(
+                newBlockParent.getGasUsed()), minGasLimit, targetGasLimit);
 
         final BlockHeader newHeader = new BlockHeader(newBlockParent.getHash(),
                 unclesListHash,
