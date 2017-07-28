@@ -225,21 +225,20 @@ public class RskWireProtocol extends EthHandler {
     private boolean hasGoodReputation(ChannelHandlerContext ctx) {
         SocketAddress socketAddress = ctx.channel().remoteAddress();
 
+        //TODO(mmarquez): and if not ???
         if (socketAddress instanceof InetSocketAddress) {
-            byte[] nid = channel.getNodeId();
-
-            NodeID nodeID = null;
-
-            if (nid != null)
-                nodeID = new NodeID(nid);
 
             InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
 
             if (!this.rsk.getPeerScoringManager().hasGoodReputation(address))
                 return false;
 
+            byte[] nid = channel.getNodeId();
+            NodeID nodeID = nid != null ? new NodeID(nid) : null;
+
             if (nodeID != null && !this.rsk.getPeerScoringManager().hasGoodReputation(nodeID))
                 return false;
+
         }
 
         return true;
