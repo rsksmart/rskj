@@ -7,19 +7,19 @@ package co.rsk.scoring;
  * Created by ajlopez on 12/07/2017.
  */
 public class PeerScoringInformation {
-    private int successfulHandshakes;
-    private int failedHandshakes;
-    private int invalidNetworks;
-    private int repeatedMessages;
-    private int validBlocks;
-    private int validTransactions;
-    private int invalidBlocks;
-    private int invalidTransactions;
-    private int score;
-    private int punishments;
-    private boolean goodReputation;
-    private String id;
-    private String type;
+    private final int successfulHandshakes;
+    private final int failedHandshakes;
+    private final int invalidNetworks;
+    private final int repeatedMessages;
+    private final int validBlocks;
+    private final int validTransactions;
+    private final int invalidBlocks;
+    private final int invalidTransactions;
+    private final int score;
+    private final int punishments;
+    private final boolean goodReputation;
+    private final String id;
+    private final String type;
 
     public PeerScoringInformation(PeerScoring scoring, String id, String type) {
         this.type = type;
