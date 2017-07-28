@@ -65,7 +65,7 @@ public class MinerHelper {
     {
         this.repository = repository;
         this.blockchain = blockchain;
-       // this.blockStore =blockStore;
+        // this.blockStore =blockStore;
         gasLimitCalculator = new GasLimitCalculator();
     }
 
@@ -143,7 +143,7 @@ public class MinerHelper {
         BigInteger minGasLimit = BigInteger.valueOf(SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit());
         BigInteger targetGasLimit = BigInteger.valueOf(SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getTargetGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
-        BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit, BigInteger.valueOf(totalGasUsed), minGasLimit, targetGasLimit, false);
+        BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit, BigInteger.valueOf(totalGasUsed), minGasLimit, targetGasLimit);
 
         newBlock.getHeader().setGasLimit(gasLimit.toByteArray());
         newBlock.getHeader().setPaidFees(totalPaidFees);
