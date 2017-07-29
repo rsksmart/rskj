@@ -153,7 +153,7 @@ public class BridgeStorageProvider {
 
         byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
 
-        rskTxsWaitingForConfirmations = BridgeSerializationUtils.deserializeMap(data, networkParameters);
+        rskTxsWaitingForConfirmations = BridgeSerializationUtils.deserializeMap(data, networkParameters, true);
 
         return rskTxsWaitingForConfirmations;
     }
@@ -177,7 +177,7 @@ public class BridgeStorageProvider {
 
         byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
 
-        rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(data, networkParameters);
+        rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(data, networkParameters, false);
 
         return rskTxsWaitingForSignatures;
     }
