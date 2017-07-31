@@ -207,8 +207,8 @@ public interface Web3 {
     void evm_mine();
     String evm_increaseTime(String seconds);
 
-    void sco_addBannedAddress(String address);
-    void sco_removeBannedAddress(String address);
+    void sco_banAddress(String address);
+    void sco_unbanAddress(String address);
     PeerScoringInformation[] sco_peerList();
-    String[] sco_bannedAddressList();
+    String[] sco_bannedAddresses();
 }
