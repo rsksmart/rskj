@@ -188,6 +188,10 @@ public class Block {
         this.sealed = true;
     }
 
+    public boolean isSealed() {
+        return this.sealed;
+    }
+
     public Block cloneBlock() {
         Block clone = new Block(this.getEncoded());
         clone.sealed = false;
