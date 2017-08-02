@@ -616,7 +616,7 @@ public class Web3Impl implements Web3 {
                 BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : (pendingState.getRepository().getNonce(account.getAddress()));
                 Transaction tx = Transaction.create(toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
                 tx.sign(account.getEcKey().getPrivKeyBytes());
-                eth.submitTransaction(tx);
+                eth.submitTransaction(tx.toImmutableTransaction());
                 s = TypeConverter.toJsonHex(tx.getHash());
             }
             return s;
