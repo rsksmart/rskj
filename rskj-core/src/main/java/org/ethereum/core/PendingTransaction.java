@@ -95,7 +95,7 @@ public class PendingTransaction {
         System.arraycopy(bytes, 1 + numberBytes.length, txBytes, 0, txBytes.length);
 
         this.blockNumber = new BigInteger(1, numberBytes).longValue();
-        this.transaction = new Transaction(txBytes);
+        this.transaction = new ImmutableTransaction(txBytes);
     }
 
     @Override

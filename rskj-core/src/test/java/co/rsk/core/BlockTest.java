@@ -21,6 +21,7 @@ package co.rsk.core;
 
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.peg.PegTestUtils;
+import org.ethereum.core.ImmutableTransaction;
 import org.spongycastle.util.encoders.Hex;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
@@ -89,8 +90,8 @@ public class BlockTest {
         );
 
         Block parsedBlock = new Block(block.getEncoded());
-        Assert.assertEquals(Transaction.class, parsedBlock.getTransactionsList().get(0).getClass());
-        Assert.assertEquals(Transaction.class, parsedBlock.getTransactionsList().get(1).getClass());
+        Assert.assertEquals(ImmutableTransaction.class, parsedBlock.getTransactionsList().get(0).getClass());
+        Assert.assertEquals(ImmutableTransaction.class, parsedBlock.getTransactionsList().get(1).getClass());
         Assert.assertEquals(RemascTransaction.class, parsedBlock.getTransactionsList().get(2).getClass());
     }
 

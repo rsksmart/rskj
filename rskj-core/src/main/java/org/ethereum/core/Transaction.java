@@ -111,7 +111,7 @@ public class Transaction implements SerializableObject {
      * from the RLP-encoded data */
     private boolean parsed = false;
 
-    public Transaction(byte[] rawData) {
+    protected Transaction(byte[] rawData) {
         this.rlpEncoded = rawData;
         parsed = false;
     }
@@ -150,6 +150,10 @@ public class Transaction implements SerializableObject {
         }
 
         parsed = true;
+    }
+
+    public Transaction toImmutableTransaction() {
+        return new ImmutableTransaction(this.getEncoded());
     }
 
     private byte extractChainIdFromV(byte v) {

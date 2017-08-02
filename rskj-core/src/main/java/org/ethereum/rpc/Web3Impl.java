@@ -629,7 +629,7 @@ public class Web3Impl implements Web3 {
     public String eth_sendRawTransaction(String rawData) throws Exception {
         String s = null;
         try {
-            Transaction tx = new Transaction(stringHexToByteArray(rawData));
+            Transaction tx = new ImmutableTransaction(stringHexToByteArray(rawData));
 
             if (null == tx.getGasLimit()
                     || null == tx.getGasPrice()

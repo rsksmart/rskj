@@ -178,7 +178,7 @@ public class TransactionTest {
     @Ignore
     @Test
     public void testTransactionFromSignedRLP() throws Exception {
-        Transaction txSigned = new Transaction(Hex.decode(RLP_ENCODED_SIGNED_TX));
+        Transaction txSigned = new ImmutableTransaction(Hex.decode(RLP_ENCODED_SIGNED_TX));
 
         assertEquals(HASH_TX, Hex.toHexString(txSigned.getHash()));
         assertEquals(RLP_ENCODED_SIGNED_TX, Hex.toHexString(txSigned.getEncoded()));
@@ -197,7 +197,7 @@ public class TransactionTest {
     @Ignore
     @Test
     public void testTransactionFromUnsignedRLP() throws Exception {
-        Transaction txUnsigned = new Transaction(Hex.decode(RLP_ENCODED_UNSIGNED_TX));
+        Transaction txUnsigned = new ImmutableTransaction(Hex.decode(RLP_ENCODED_UNSIGNED_TX));
 
         assertEquals(HASH_TX, Hex.toHexString(txUnsigned.getHash()));
         assertEquals(RLP_ENCODED_UNSIGNED_TX, Hex.toHexString(txUnsigned.getEncoded()));
@@ -294,7 +294,7 @@ public class TransactionTest {
 
 
         System.out.println(Hex.toHexString(payload));
-        Transaction tx2 = new Transaction(payload);
+        Transaction tx2 = new ImmutableTransaction(payload);
 //        tx2.getSender();
 
         String plainTx1 = Hex.toHexString(tx1.getEncodedRaw());
