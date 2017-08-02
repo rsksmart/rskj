@@ -230,6 +230,8 @@ class RemascTestRunner {
         for (Transaction tx : txs) {
             paidFees += BigIntegers.fromUnsignedByteArray(tx.getGasLimit()).longValue() * BigIntegers.fromUnsignedByteArray(tx.getGasPrice()).longValue();
         }
+
+        block.getHeader().unseal();
         block.getHeader().setPaidFees(paidFees);
 
         return block;

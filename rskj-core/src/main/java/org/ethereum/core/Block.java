@@ -70,6 +70,7 @@ public class Block {
 
     private Trie txsState;
 
+    /* Indicates if this block cannot be changed */
     protected boolean sealed;
 
     /* Constructors */
@@ -186,15 +187,20 @@ public class Block {
 
     public void seal() {
         this.sealed = true;
+        this.header.seal();
     }
 
     public boolean isSealed() {
         return this.sealed;
     }
 
+    // Clone this block allowing modifications
     public Block cloneBlock() {
         Block clone = new Block(this.getEncoded());
         clone.sealed = false;
+        clone.parseRLP();;
+        // Allow modifications to header
+        clone.header.unseal();
 
         return clone;
     }
@@ -224,6 +230,7 @@ public class Block {
     }
 
     public void setTransactionsList(List<Transaction> transactionsList) {
+        /* A sealed block is immutable, cannot be changed */
         if (this.sealed)
             throw new RuntimeException("Sealed block: trying to alter transaction list");
 
@@ -268,6 +275,7 @@ public class Block {
     }
 
     public void setStateRoot(byte[] stateRoot) {
+        /* A sealed block is immutable, cannot be changed */
         if (this.sealed)
             throw new RuntimeException("Sealed block: trying to alter state root");
 
@@ -347,7 +355,6 @@ public class Block {
         return this.header.getGasUsed();
     }
 
-
     public byte[] getExtraData() {
         if (!parsed)
             parseRLP();
@@ -355,6 +362,7 @@ public class Block {
     }
 
   public void setExtraData(byte[] data) {
+      /* A sealed block is immutable, cannot be changed */
       if (this.sealed)
           throw new RuntimeException("Sealed block: trying to alter extra data");
 
@@ -442,7 +450,6 @@ public class Block {
     }
 
     private void parseTxs(RLPList txTransactions) {
-
         this.txsState = new TrieImpl();
         int txsStateIndex = 0;
         for (int i = 0; i < txTransactions.size(); i++) {
@@ -629,6 +636,7 @@ public class Block {
     }
 
     public void setBitcoinMergedMiningHeader(byte[] bitcoinMergedMiningHeader) {
+        /* A sealed block is immutable, cannot be changed */
         if (this.sealed)
             throw new RuntimeException("Sealed block: trying to alter bitcoin merged mining header");
 
@@ -645,6 +653,7 @@ public class Block {
     }
 
     public void setBitcoinMergedMiningMerkleProof(byte[] bitcoinMergedMiningMerkleProof) {
+        /* A sealed block is immutable, cannot be changed */
         if (this.sealed)
             throw new RuntimeException("Sealed block: trying to alter bitcoin merged mining Merkle proof");
 
@@ -689,6 +698,7 @@ public class Block {
     }
 
     private byte[] calcTxTrie(List<Transaction> transactions){
+        /* A sealed block is immutable, cannot be changed */
         if (this.sealed)
             throw new RuntimeException("Sealed block: trying to alter transaction root");
 

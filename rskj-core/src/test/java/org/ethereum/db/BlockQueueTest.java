@@ -183,6 +183,7 @@ public class BlockQueueTest {
         Block b1 = blocks.get(0);
         Block b1_ = blocks.get(1);
         BlockHeader header = b1_.getHeader();
+        header.unseal();
         header.setNumber(b1.getNumber());
         b1_ = new Block(header, b1_.getTransactionsList(), b1_.getUncleList());
 
