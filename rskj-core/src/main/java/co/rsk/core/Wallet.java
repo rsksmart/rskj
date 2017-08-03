@@ -32,7 +32,6 @@ import org.ethereum.util.RLPList;
 import org.spongycastle.crypto.params.KeyParameter;
 
 import javax.annotation.concurrent.GuardedBy;
-import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
