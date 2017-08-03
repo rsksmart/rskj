@@ -27,10 +27,11 @@ import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.spongycastle.crypto.params.KeyParameter;
 
 import javax.annotation.concurrent.GuardedBy;
-import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -199,20 +200,15 @@ public class Wallet {
     }
 
     private byte[] decryptAES(byte[] encryptedBytes, byte[] passphrase) {
-        try {
-            ByteArrayInputStream in = new ByteArrayInputStream(encryptedBytes);
-            ObjectInputStream byteStream = new ObjectInputStream(in);
-            KeyCrypterScrypt keyCrypter = new KeyCrypterScrypt();
-            KeyParameter keyParameter = new KeyParameter(Sha256Hash.hash(passphrase));
+        RLPList rlpList = (RLPList)RLP.decode2(encryptedBytes).get(0);
+        byte[] encryptedPrivateBytes = rlpList.get(0).getRLPData();
+        byte[] initializationVector = rlpList.get(1).getRLPData();
+        KeyCrypterScrypt keyCrypter = new KeyCrypterScrypt();
+        KeyParameter keyParameter = new KeyParameter(Sha256Hash.hash(passphrase));
 
-            ArrayList<byte[]> bytes = (ArrayList<byte[]>) byteStream.readObject();
-            EncryptedData data = new EncryptedData(bytes.get(1), bytes.get(0));
+        EncryptedData data = new EncryptedData(initializationVector, encryptedPrivateBytes);
 
-            return keyCrypter.decrypt(data, keyParameter);
-        } catch (IOException | ClassNotFoundException e) {
-            //There are lines of code that should never be executed, this is one of those
-            throw new IllegalStateException(e);
-        }
+        return keyCrypter.decrypt(data, keyParameter);
     }
 
     private byte[] encryptAES(byte[] privateKeyBytes, byte[] passphrase) {
@@ -220,19 +216,9 @@ public class Wallet {
         KeyParameter keyParameter = new KeyParameter(Sha256Hash.hash(passphrase));
         EncryptedData enc = keyCrypter.encrypt(privateKeyBytes, keyParameter);
 
-        try {
-            ByteArrayOutputStream encryptedResult = new ByteArrayOutputStream();
-            ObjectOutputStream byteStream = new ObjectOutputStream(encryptedResult);
+        byte[] encryptedBytes = RLP.encode(enc.encryptedBytes);
+        byte[] initialisationVector = RLP.encode(enc.initialisationVector);
 
-            ArrayList<byte[]> bytes = new ArrayList<>();
-            bytes.add(enc.encryptedBytes);
-            bytes.add(enc.initialisationVector);
-            byteStream.writeObject(bytes);
-
-            return encryptedResult.toByteArray();
-        } catch (IOException e) {
-            //How is this even possible ???
-            throw new IllegalStateException(e);
-        }
+        return RLP.encodeList(encryptedBytes, initialisationVector);
     }
 }
