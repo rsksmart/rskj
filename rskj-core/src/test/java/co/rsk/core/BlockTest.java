@@ -22,6 +22,7 @@ package co.rsk.core;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.peg.PegTestUtils;
+import org.ethereum.core.BlockHeader;
 import org.spongycastle.util.encoders.Hex;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
@@ -115,7 +116,7 @@ public class BlockTest {
             block.addUncle(uncle.getHeader());
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (Block.SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to add uncle", ex.getMessage());
         }
     }
@@ -130,7 +131,7 @@ public class BlockTest {
             block.setStateRoot(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (Block.SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter state root", ex.getMessage());
         }
     }
@@ -145,7 +146,7 @@ public class BlockTest {
             block.setExtraData(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (Block.SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter extra data", ex.getMessage());
         }
     }
@@ -160,7 +161,7 @@ public class BlockTest {
             block.setTransactionsList(null);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (Block.SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter transaction list", ex.getMessage());
         }
     }
@@ -175,7 +176,7 @@ public class BlockTest {
             block.setBitcoinMergedMiningCoinbaseTransaction(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (Block.SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter bitcoin merged mining coinbase transaction", ex.getMessage());
         }
     }
@@ -190,7 +191,7 @@ public class BlockTest {
             block.setBitcoinMergedMiningHeader(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (Block.SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter bitcoin merged mining header", ex.getMessage());
         }
     }
@@ -205,7 +206,7 @@ public class BlockTest {
             block.setBitcoinMergedMiningMerkleProof(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (Block.SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter bitcoin merged mining Merkle proof", ex.getMessage());
         }
     }
@@ -220,7 +221,7 @@ public class BlockTest {
             block.getHeader().setCoinbase(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (BlockHeader.SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter coinbase", ex.getMessage());
         }
     }
@@ -235,7 +236,7 @@ public class BlockTest {
             block.getHeader().setStateRoot(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (BlockHeader.SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter state root", ex.getMessage());
         }
     }
@@ -250,7 +251,7 @@ public class BlockTest {
             block.getHeader().setReceiptsRoot(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (BlockHeader.SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter receipts root", ex.getMessage());
         }
     }
@@ -265,7 +266,7 @@ public class BlockTest {
             block.getHeader().setTransactionsRoot(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (BlockHeader.SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter transactions root", ex.getMessage());
         }
     }
@@ -280,7 +281,7 @@ public class BlockTest {
             block.getHeader().setDifficulty(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (BlockHeader.SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter difficulty", ex.getMessage());
         }
     }
@@ -295,7 +296,7 @@ public class BlockTest {
             block.getHeader().setTimestamp(10);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (BlockHeader.SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter timestamp", ex.getMessage());
         }
     }
@@ -310,7 +311,7 @@ public class BlockTest {
             block.getHeader().setNumber(10);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (BlockHeader.SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter number", ex.getMessage());
         }
     }
@@ -325,7 +326,7 @@ public class BlockTest {
             block.getHeader().setGasLimit(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (BlockHeader.SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter gas limit", ex.getMessage());
         }
     }
@@ -340,7 +341,7 @@ public class BlockTest {
             block.getHeader().setPaidFees(10);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (BlockHeader.SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter paid fees", ex.getMessage());
         }
     }
@@ -355,7 +356,7 @@ public class BlockTest {
             block.getHeader().setGasUsed(10);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (BlockHeader.SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter gas used", ex.getMessage());
         }
     }
@@ -370,7 +371,7 @@ public class BlockTest {
             block.getHeader().setLogsBloom(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (BlockHeader.SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter logs bloom", ex.getMessage());
         }
     }
@@ -385,7 +386,7 @@ public class BlockTest {
             block.getHeader().setExtraData(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (BlockHeader.SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter extra data", ex.getMessage());
         }
     }
@@ -400,7 +401,7 @@ public class BlockTest {
             block.getHeader().setMinimumGasPrice(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (BlockHeader.SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter minimum gas price", ex.getMessage());
         }
     }
@@ -415,7 +416,7 @@ public class BlockTest {
             block.getHeader().setBitcoinMergedMiningHeader(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (BlockHeader.SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter bitcoin merged mining header", ex.getMessage());
         }
     }
@@ -430,7 +431,7 @@ public class BlockTest {
             block.getHeader().setBitcoinMergedMiningMerkleProof(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (BlockHeader.SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter bitcoin merged mining merkle proof", ex.getMessage());
         }
     }
@@ -445,7 +446,7 @@ public class BlockTest {
             block.getHeader().setBitcoinMergedMiningCoinbaseTransaction(new byte[32]);
             Assert.fail();
         }
-        catch (RuntimeException ex) {
+        catch (BlockHeader.SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter bitcoin merged mining coinbase transaction", ex.getMessage());
         }
     }
