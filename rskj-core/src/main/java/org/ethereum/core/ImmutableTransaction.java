@@ -10,10 +10,12 @@ public class ImmutableTransaction extends Transaction {
         super(rawData);
     }
 
+    @Override
     public void sign(byte[] privKeyBytes) {
         throw new ImmutableTransactionException("trying to sign");
     }
 
+    @Override
     public void setGasLimit(byte[] gasLimit) {
         throw new ImmutableTransactionException("trying to set gas limit");
     }

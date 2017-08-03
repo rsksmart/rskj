@@ -1016,6 +1016,7 @@ public class Web3Impl implements Web3 {
             }
         }
 
+        @Override
         public void newBlockReceived(Block b) {
             add(new NewBlockFilterEvent(b));
         }
@@ -1035,6 +1036,7 @@ public class Web3Impl implements Web3 {
             }
         }
 
+        @Override
         public void newPendingTx(Transaction tx) {
             add(new PendingTransactionFilterEvent(tx));
         }
