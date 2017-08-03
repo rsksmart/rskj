@@ -11,10 +11,16 @@ public class ImmutableTransaction extends Transaction {
     }
 
     public void sign(byte[] privKeyBytes) {
-        throw new RuntimeException("immutable transaction");
+        throw new ImmutableTransactionException("trying to sign");
     }
 
     public void setGasLimit(byte[] gasLimit) {
-        throw new RuntimeException("immutable transaction");
+        throw new ImmutableTransactionException("trying to set gas limit");
+    }
+
+    public static class ImmutableTransactionException extends RuntimeException {
+        public ImmutableTransactionException(String message) {
+            super("Immutable transaction: " + message);
+        }
     }
 }
