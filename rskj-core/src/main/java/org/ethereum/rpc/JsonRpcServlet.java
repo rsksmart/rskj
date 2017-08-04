@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc;
 
+import co.rsk.core.Wallet;
 import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.JsonRpcFilterServer;
 import com.googlecode.jsonrpc4j.AnnotationsErrorResolver;
@@ -76,7 +77,10 @@ public class JsonRpcServlet extends HttpServlet {
 
     public void init(ServletConfig config) {
         if (this.service == null) {
-            this.service = new Web3Impl(JsonRpcServlet.eth, RskSystemProperties.RSKCONFIG, WalletFactory.createPersistentWallet());
+            Wallet wallet = WalletFactory.createPersistentWallet();
+            // Clean unlocked account every 10 seconds
+            wallet.start(10);
+            this.service = new Web3Impl(JsonRpcServlet.eth, RskSystemProperties.RSKCONFIG, wallet);
         }
 
         this.jsonRpcServer = this.getJsonRpcServer();
