@@ -92,7 +92,7 @@ public class Wallet {
                 long time = System.currentTimeMillis();
                 if (ending < time) {
                     unlocksTimeouts.remove(key);
-                    accounts.remove(key);
+                    removeAccount(key);
                     return null;
                 }
             }
@@ -148,7 +148,7 @@ public class Wallet {
             if (!accounts.containsKey(key))
                 return false;
 
-            accounts.remove(key);
+            removeAccount(key);
 
             return true;
         }
@@ -176,6 +176,17 @@ public class Wallet {
         saveAccount(account, passphrase);
 
         return account.getAddress();
+    }
+
+    private void removeAccount(ByteArrayWrapper key) {
+        byte[] bytes = this.accounts.get(key);
+
+        if (bytes == null)
+            return;
+
+        Arrays.fill(bytes, (byte)0);
+
+        this.accounts.remove(key);
     }
 
     private Account createAccount(ECKey key) {
