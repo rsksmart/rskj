@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by ajlopez on 15/09/2016.
@@ -118,6 +119,42 @@ public class WalletTest {
 
         Assert.assertNotNull(account);
         Assert.assertArrayEquals(address, account.getAddress());
+    }
+
+    @Test
+    public void unlockAccountWithPassphraseAndDuration() throws InterruptedException {
+        Wallet wallet = new Wallet();
+
+        byte[] address = wallet.addAccount("passphrase");
+
+        Assert.assertNotNull(address);
+
+        List<byte[]> addresses = wallet.getAccountAddresses();
+
+        Assert.assertNotNull(addresses);
+        Assert.assertFalse(addresses.isEmpty());
+        Assert.assertEquals(1, addresses.size());
+
+        byte[] addr = addresses.get(0);
+
+        Assert.assertNotNull(addr);
+        Assert.assertArrayEquals(address, addr);
+
+        Account account0 = wallet.getAccount(address);
+
+        Assert.assertNull(account0);
+
+        Assert.assertTrue(wallet.unlockAccount(address, "passphrase", 500));
+
+        Account account = wallet.getAccount(address);
+
+        Assert.assertNotNull(account);
+        Assert.assertArrayEquals(address, account.getAddress());
+
+        TimeUnit.SECONDS.sleep(1);
+
+        wallet.removeAccountsByTimeout();
+        Assert.assertNull(wallet.getAccount(address));
     }
 
     @Test

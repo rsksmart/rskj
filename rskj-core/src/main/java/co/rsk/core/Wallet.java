@@ -33,6 +33,7 @@ import javax.annotation.concurrent.GuardedBy;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by ajlopez on 15/09/2016.
@@ -96,8 +97,23 @@ public class Wallet {
                     return null;
                 }
             }
+
             return new Account(ECKey.fromPrivate(accounts.get(key)));
         }
+    }
+
+    public void removeAccountsByTimeout() {
+        long time = System.currentTimeMillis();
+
+        List<ByteArrayWrapper> toremove = unlocksTimeouts.entrySet().stream()
+                .filter(entry -> entry.getValue() < time)
+                .map(entry -> entry.getKey())
+                .collect(Collectors.toCollection(() -> new ArrayList<>()));
+
+        toremove.stream().forEach(key -> {
+            unlocksTimeouts.remove(key);
+            removeAccount(key);
+        });
     }
 
     public Account getAccount(byte[] address, String passphrase) {
