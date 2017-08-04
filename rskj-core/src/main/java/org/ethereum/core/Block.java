@@ -71,9 +71,10 @@ public class Block {
     private Trie txsState;
 
     /* Indicates if this block cannot be changed */
-    protected boolean sealed;
-
     /* Constructors */
+
+    /* package private */ volatile boolean sealed;
+
     public Block(byte[] rawData) {
         this.rlpEncoded = rawData;
         this.sealed = true;
