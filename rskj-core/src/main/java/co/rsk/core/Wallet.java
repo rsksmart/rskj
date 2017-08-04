@@ -33,6 +33,9 @@ import javax.annotation.concurrent.GuardedBy;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -47,6 +50,8 @@ public class Wallet {
 
     private final Object accessLock = new Object();
     private Map<ByteArrayWrapper, Long> unlocksTimeouts = new HashMap<>();
+
+    private ScheduledFuture<?> future;
 
     public void setStore(KeyValueDataSource ds) {
         this.keyDS = ds;
@@ -103,17 +108,19 @@ public class Wallet {
     }
 
     public void removeAccountsByTimeout() {
-        long time = System.currentTimeMillis();
+        synchronized (accessLock) {
+            long time = System.currentTimeMillis();
 
-        List<ByteArrayWrapper> toremove = unlocksTimeouts.entrySet().stream()
-                .filter(entry -> entry.getValue() < time)
-                .map(entry -> entry.getKey())
-                .collect(Collectors.toCollection(() -> new ArrayList<>()));
+            List<ByteArrayWrapper> toremove = unlocksTimeouts.entrySet().stream()
+                    .filter(entry -> entry.getValue() < time)
+                    .map(entry -> entry.getKey())
+                    .collect(Collectors.toCollection(() -> new ArrayList<>()));
 
-        toremove.stream().forEach(key -> {
-            unlocksTimeouts.remove(key);
-            removeAccount(key);
-        });
+            toremove.stream().forEach(key -> {
+                unlocksTimeouts.remove(key);
+                removeAccount(key);
+            });
+        }
     }
 
     public Account getAccount(byte[] address, String passphrase) {
@@ -192,6 +199,15 @@ public class Wallet {
         saveAccount(account, passphrase);
 
         return account.getAddress();
+    }
+
+    public void start(int seconds) {
+        // Clean accounts in memory, removing them by timeout
+        this.future = Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(this::removeAccountsByTimeout, seconds, seconds, TimeUnit.SECONDS);
+    }
+
+    public void stop() {
+        this.future.cancel(true);
     }
 
     private void removeAccount(ByteArrayWrapper key) {

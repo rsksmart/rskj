@@ -158,6 +158,39 @@ public class WalletTest {
     }
 
     @Test
+    public void lockAccountByTimeout() throws InterruptedException {
+        Wallet wallet = new Wallet();
+
+        byte[] address = wallet.addAccount("passphrase");
+
+        Assert.assertNotNull(address);
+
+        List<byte[]> addresses = wallet.getAccountAddresses();
+
+        Assert.assertNotNull(addresses);
+        Assert.assertFalse(addresses.isEmpty());
+        Assert.assertEquals(1, addresses.size());
+
+        byte[] addr = addresses.get(0);
+
+        Assert.assertNotNull(addr);
+        Assert.assertArrayEquals(address, addr);
+
+        Account account0 = wallet.getAccount(address);
+
+        Assert.assertNull(account0);
+
+        Assert.assertTrue(wallet.unlockAccount(address, "passphrase", 500));
+
+        wallet.start(1);
+
+        TimeUnit.MILLISECONDS.sleep(1500);
+        Assert.assertNull(wallet.getAccount(address));
+
+        wallet.stop();
+    }
+
+    @Test
     public void unlockNonexistentAccount() {
         Wallet wallet = new Wallet();
 
