@@ -45,7 +45,7 @@ public class WalletTest {
     public void addAccountWithSeed() {
         Wallet wallet = new Wallet();
 
-        byte[] address = wallet.addAccountWithSeed("seed");
+        byte[] address = wallet.addAccountWithSeed("seed", null);
 
         Assert.assertNotNull(address);
 
@@ -84,7 +84,7 @@ public class WalletTest {
         Assert.assertNotNull(addr);
         Assert.assertArrayEquals(address, addr);
 
-        Account account = wallet.getAccount(address, "passphrase");
+        Account account = wallet.getAccountUsingPassphrase(address, "passphrase");
 
         Assert.assertNotNull(account);
         Assert.assertArrayEquals(address, account.getAddress());
@@ -109,13 +109,13 @@ public class WalletTest {
         Assert.assertNotNull(addr);
         Assert.assertArrayEquals(address, addr);
 
-        Account account0 = wallet.getAccount(address);
+        Account account0 = wallet.getAccount(address, null);
 
         Assert.assertNull(account0);
 
-        Assert.assertTrue(wallet.unlockAccount(address, "passphrase"));
+        Assert.assertTrue(wallet.unlockAccount(address, "passphrase", null));
 
-        Account account = wallet.getAccount(address);
+        Account account = wallet.getAccount(address, null);
 
         Assert.assertNotNull(account);
         Assert.assertArrayEquals(address, account.getAddress());
@@ -140,13 +140,13 @@ public class WalletTest {
         Assert.assertNotNull(addr);
         Assert.assertArrayEquals(address, addr);
 
-        Account account0 = wallet.getAccount(address);
+        Account account0 = wallet.getAccount(address, null);
 
         Assert.assertNull(account0);
 
-        Assert.assertTrue(wallet.unlockAccount(address, "passphrase", 500));
+        Assert.assertTrue(wallet.unlockAccount(address, "passphrase", 500, null));
 
-        Account account = wallet.getAccount(address);
+        Account account = wallet.getAccount(address, null);
 
         Assert.assertNotNull(account);
         Assert.assertArrayEquals(address, account.getAddress());
@@ -154,7 +154,7 @@ public class WalletTest {
         TimeUnit.SECONDS.sleep(1);
 
         wallet.removeAccountsWithUnlockDurationExpired();
-        Assert.assertNull(wallet.getAccount(address));
+        Assert.assertNull(wallet.getAccount(address, null));
     }
 
     @Test
@@ -176,16 +176,16 @@ public class WalletTest {
         Assert.assertNotNull(addr);
         Assert.assertArrayEquals(address, addr);
 
-        Account account0 = wallet.getAccount(address);
+        Account account0 = wallet.getAccount(address, null);
 
         Assert.assertNull(account0);
 
-        Assert.assertTrue(wallet.unlockAccount(address, "passphrase", 500));
+        Assert.assertTrue(wallet.unlockAccount(address, "passphrase", 500, null));
 
         wallet.start(1);
 
         TimeUnit.MILLISECONDS.sleep(1500);
-        Assert.assertNull(wallet.getAccount(address));
+        Assert.assertNull(wallet.getAccount(address, null));
 
         wallet.stop();
     }
@@ -194,7 +194,7 @@ public class WalletTest {
     public void unlockNonexistentAccount() {
         Wallet wallet = new Wallet();
 
-        Assert.assertFalse(wallet.unlockAccount(new byte[] { 0x01, 0x02, 0x03 }, "passphrase"));
+        Assert.assertFalse(wallet.unlockAccount(new byte[] { 0x01, 0x02, 0x03 }, "passphrase", null));
     }
 
     @Test
@@ -205,16 +205,16 @@ public class WalletTest {
 
         Assert.assertNotNull(address);
 
-        Assert.assertTrue(wallet.unlockAccount(address, "passphrase"));
+        Assert.assertTrue(wallet.unlockAccount(address, "passphrase", null));
 
-        Account account = wallet.getAccount(address);
+        Account account = wallet.getAccount(address, null);
 
         Assert.assertNotNull(account);
         Assert.assertArrayEquals(address, account.getAddress());
 
-        Assert.assertTrue(wallet.lockAccount(address));
+        Assert.assertTrue(wallet.lockAccount(address, null));
 
-        Account account2 = wallet.getAccount(address);
+        Account account2 = wallet.getAccount(address, null);
 
         Assert.assertNull(account2);
     }
@@ -223,7 +223,7 @@ public class WalletTest {
     public void lockNonexistentAccount() {
         Wallet wallet = new Wallet();
 
-        Assert.assertFalse(wallet.lockAccount(new byte[] { 0x01, 0x02, 0x03 }));
+        Assert.assertFalse(wallet.lockAccount(new byte[] { 0x01, 0x02, 0x03 }, null));
     }
 
     @Test
@@ -234,7 +234,7 @@ public class WalletTest {
 
         Assert.assertNotNull(address);
 
-        Account account = wallet.getAccount(address);
+        Account account = wallet.getAccount(address, null);
 
         Assert.assertNotNull(account);
 
@@ -245,7 +245,7 @@ public class WalletTest {
     public void getUnknownAccount() {
         Wallet wallet = new Wallet();
 
-        Account account = wallet.getAccount(new byte[] { 0x01, 0x02, 0x03 });
+        Account account = wallet.getAccount(new byte[] { 0x01, 0x02, 0x03 }, null);
 
         Assert.assertNull(account);
     }

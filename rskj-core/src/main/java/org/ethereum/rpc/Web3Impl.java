@@ -664,12 +664,12 @@ public class Web3Impl implements Web3 {
         if (!bnOrId.equals("latest"))
             throw new JsonRpcUnimplementedMethodException("Method only supports 'latest' as a parameter so far.");
 
-        ProgramResult res = createCallTxAndExecute(args, this.getKeyToSign(args.from));
+        ProgramResult res = createCallTxAndExecute(args, this.getKeyToSign(args.from, null));
         return toJsonHex(res.getHReturn());
     }
 
     public String eth_estimateGas(CallArguments args) throws Exception {
-        ProgramResult res = createCallTxAndExecute(args, this.getKeyToSign(args.from));
+        ProgramResult res = createCallTxAndExecute(args, this.getKeyToSign(args.from, null));
         return toJsonHex(res.getGasUsed());
     }
 
@@ -1352,7 +1352,7 @@ public class Web3Impl implements Web3 {
     public String personal_newAccountWithSeed(String seed) {
         String s = null;
         try {
-            byte[] address = this.wallet.addAccountWithSeed(seed);
+            byte[] address = this.wallet.addAccountWithSeed(seed, null);
             return s = toJsonHex(address);
         } finally {
             if (logger.isDebugEnabled()) {
@@ -1481,7 +1481,7 @@ public class Web3Impl implements Web3 {
             }
         }
 
-        return this.wallet.unlockAccount(stringHexToByteArray(address), passphrase, dur);
+        return this.wallet.unlockAccount(stringHexToByteArray(address), passphrase, dur, null);
     }
 
     public Map<String, Object> eth_bridgeState() throws Exception {
@@ -1498,14 +1498,14 @@ public class Web3Impl implements Web3 {
 
     @Override
     public boolean personal_lockAccount(String address) {
-        return this.wallet.lockAccount(stringHexToByteArray(address));
+        return this.wallet.lockAccount(stringHexToByteArray(address), null);
     }
 
-    private Account getDefaultAccount() {
+    private Account getDefaultAccount(byte[] secret) {
         List<byte[]> accountAddresses = this.wallet.getAccountAddresses();
 
         if (!CollectionUtils.isEmpty(accountAddresses)) {
-            return this.wallet.getAccount(accountAddresses.get(0));
+            return this.wallet.getAccount(accountAddresses.get(0), secret);
         }
 
         return null;
@@ -1513,19 +1513,20 @@ public class Web3Impl implements Web3 {
 
     @VisibleForTesting
     public Account getAccount(String address) {
-        return this.wallet.getAccount(stringHexToByteArray(address));
+        return this.wallet.getAccount(stringHexToByteArray(address), (byte[])null);
     }
 
     @VisibleForTesting
     public Account getAccount(String address, String passphrase) {
-        return this.wallet.getAccount(stringHexToByteArray(address), passphrase);
+        return this.wallet.getAccountUsingPassphrase(stringHexToByteArray(address), passphrase);
     }
 
-    private byte[] getKeyToSign(String address) {
+    private byte[] getKeyToSign(String address, String secret) {
         byte[] privateKey = new byte[32];
+        byte[] secretBytes = secret == null ? null : stringHexToByteArray(address);
 
         Account account;
-        account = (address != null) ? this.wallet.getAccount(stringHexToByteArray(address)) : this.getDefaultAccount();
+        account = (address != null) ? this.wallet.getAccount(stringHexToByteArray(address), secretBytes) : this.getDefaultAccount(secretBytes);
 
         if (account != null)
             privateKey = account.getEcKey().getPrivKeyBytes();

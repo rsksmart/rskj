@@ -29,6 +29,7 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.ByteArrayWrapper;
 import org.spongycastle.crypto.params.KeyParameter;
+import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.*;
@@ -75,9 +76,10 @@ public class Wallet {
         return addresses;
     }
 
+    @VisibleForTesting
     public byte[] addAccount() {
         Account account = new Account(new ECKey());
-        saveAccountToMemory(account);
+        saveAccountInformationIntoMemory(account, null);
         return account.getAddress();
     }
 
@@ -87,8 +89,8 @@ public class Wallet {
         return account.getAddress();
     }
 
-    public Account getAccount(byte[] address) {
-        ByteArrayWrapper key = new ByteArrayWrapper(address);
+    public Account getAccount(byte[] address, byte[] secret) {
+        ByteArrayWrapper key = getAccountKey(address, secret);
 
         synchronized (accessLock) {
             if (!accounts.containsKey(key))
@@ -129,7 +131,7 @@ public class Wallet {
     }
 
     @VisibleForTesting
-    public Account getAccount(byte[] address, String passphrase) {
+    public Account getAccountUsingPassphrase(byte[] address, String passphrase) {
         synchronized (accessLock) {
             byte[] encrypted = keyDS.get(address);
 
@@ -140,9 +142,9 @@ public class Wallet {
         }
     }
 
-    public boolean unlockAccount(byte[] address, String passphrase, long duration) {
+    public boolean unlockAccount(byte[] address, String passphrase, long duration, byte[] secret) {
         long ending = System.currentTimeMillis() + duration;
-        boolean unlocked = unlockAccount(address, passphrase);
+        boolean unlocked = unlockAccount(address, passphrase, secret);
 
         if (unlocked) {
             synchronized (accessLock) {
@@ -153,7 +155,7 @@ public class Wallet {
         return unlocked;
     }
 
-    public boolean unlockAccount(byte[] address, String passphrase) {
+    public boolean unlockAccount(byte[] address, String passphrase, byte[] secret) {
         Account account;
 
         synchronized (accessLock) {
@@ -165,14 +167,14 @@ public class Wallet {
             account = new Account(ECKey.fromPrivate(decryptAES(encrypted, passphrase.getBytes(StandardCharsets.UTF_8))));
         }
 
-        saveAccountToMemory(account);
+        saveAccountInformationIntoMemory(account, secret);
 
         return true;
     }
 
-    public boolean lockAccount(byte[] address) {
+    public boolean lockAccount(byte[] address, byte[] secret) {
         synchronized (accessLock) {
-            ByteArrayWrapper key = new ByteArrayWrapper(address);
+            ByteArrayWrapper key = getAccountKey(address, secret);
 
             if (!accounts.containsKey(key))
                 return false;
@@ -183,18 +185,19 @@ public class Wallet {
         }
     }
 
-    public byte[] addAccountWithSeed(String seed) {
+    public byte[] addAccountWithSeed(String seed, byte[] secret) {
         Account account = createAccount(ECKey.fromPrivate(SHA3Helper.sha3(seed.getBytes(StandardCharsets.UTF_8))));
 
-        saveAccountToMemory(account);
+        saveAccountInformationIntoMemory(account, secret);
 
         return account.getAddress();
     }
 
+    // To be removed, when removed eth_addAccount
     public byte[] addAccountWithPrivateKey(byte[] privateKeyBytes) {
         Account account = createAccount(ECKey.fromPrivate(privateKeyBytes));
 
-        saveAccountToMemory(account);
+        saveAccountInformationIntoMemory(account, null);
 
         return account.getAddress();
     }
@@ -238,10 +241,17 @@ public class Wallet {
         return new Account(key);
     }
 
-    private void saveAccountToMemory(Account account) {
+    private void saveAccountInformationIntoMemory(Account account, byte[] secret) {
         synchronized (accessLock) {
-            accounts.put(new ByteArrayWrapper(account.getAddress()), account.getEcKey().getPrivKeyBytes());
+            accounts.put(getAccountKey(account.getAddress(), secret), account.getEcKey().getPrivKeyBytes());
         }
+    }
+
+    private static ByteArrayWrapper getAccountKey(byte[] address, byte[] secret) {
+        if (secret == null || secret.length == 0)
+            return new ByteArrayWrapper(address);
+
+        return new ByteArrayWrapper(ByteUtils.concatenate(address, secret));
     }
 
     private void saveAccountToStorage(Account account, String passphrase) {
