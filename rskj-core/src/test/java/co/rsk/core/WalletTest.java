@@ -242,6 +242,13 @@ public class WalletTest {
     }
 
     @Test
+    public void unlockNonexistentAccountUsingSecret() {
+        Wallet wallet = new Wallet();
+
+        Assert.assertFalse(wallet.unlockAccount(new byte[] { 0x01, 0x02, 0x03 }, "passphrase", generateSecret()));
+    }
+
+    @Test
     public void lockAccount() {
         Wallet wallet = new Wallet();
 
@@ -259,6 +266,31 @@ public class WalletTest {
         Assert.assertTrue(wallet.lockAccount(address, null));
 
         Account account2 = wallet.getAccount(address, null);
+
+        Assert.assertNull(account2);
+    }
+
+    @Test
+    public void lockAccountUsingSecret() {
+        byte[] secret = generateSecret();
+        Wallet wallet = new Wallet();
+
+        byte[] address = wallet.addAccount("passphrase");
+
+        Assert.assertNotNull(address);
+
+        Assert.assertTrue(wallet.unlockAccount(address, "passphrase", secret));
+
+        Account account = wallet.getAccount(address, secret);
+
+        Assert.assertNotNull(account);
+        Assert.assertArrayEquals(address, account.getAddress());
+
+        Assert.assertFalse(wallet.lockAccount(address, null));
+        Assert.assertFalse(wallet.lockAccount(address, generateSecret()));
+        Assert.assertTrue(wallet.lockAccount(address, secret));
+
+        Account account2 = wallet.getAccount(address, secret);
 
         Assert.assertNull(account2);
     }
