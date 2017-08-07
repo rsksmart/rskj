@@ -71,12 +71,17 @@ public class Block {
     private Trie txsState;
 
     /* Indicates if this block cannot be changed */
-    protected boolean sealed;
+    private boolean sealed;
 
     /* Constructors */
     public Block(byte[] rawData) {
         this.rlpEncoded = rawData;
         this.sealed = true;
+    }
+
+    protected Block(byte[] rawData, boolean sealed) {
+        this.rlpEncoded = rawData;
+        this.sealed = sealed;
     }
 
     public Block(BlockHeader header) {
@@ -120,7 +125,7 @@ public class Block {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
                 gasUsed, timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot,
-                stateRoot, transactionsList, uncleList, minimumGasPrice);
+                stateRoot, transactionsList, uncleList, minimumGasPrice, 0L);
 
         this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
         this.header.setBitcoinMergedMiningHeader(bitcoinMergedMiningHeader);
@@ -145,11 +150,12 @@ public class Block {
                  long gasUsed, long timestamp, byte[] extraData,
                  byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
-                 List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
+                 List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, long paidFees) {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
                 gasUsed, timestamp, extraData, mixHash, nonce, transactionsList, uncleList, minimumGasPrice);
 
+        this.header.setPaidFees(paidFees);
         this.header.setTransactionsRoot(Block.getTxTrie(transactionsList).getHash());
         if (!Hex.toHexString(transactionsRoot).
                 equals(Hex.toHexString(this.header.getTxTrieRoot()))) {
@@ -196,23 +202,18 @@ public class Block {
 
     // Clone this block allowing modifications
     public Block cloneBlock() {
-        Block clone = new Block(this.getEncoded());
-        clone.sealed = false;
-        clone.parseRLP();;
-        // Allow modifications to header
-        clone.header.unseal();
+        Block clone = new Block(this.getEncoded(), false);
 
         return clone;
     }
 
     private void parseRLP() {
-
         RLPList params = RLP.decode2(rlpEncoded);
         RLPList block = (RLPList) params.get(0);
 
         // Parse Header
         RLPList header = (RLPList) block.get(0);
-        this.header = new BlockHeader(header);
+        this.header = new BlockHeader(header, this.sealed);
 
         // Parse Transactions
         RLPList txTransactions = (RLPList) block.get(1);
@@ -223,7 +224,7 @@ public class Block {
         for (RLPElement rawUncle : uncleBlocks) {
 
             RLPList uncleHeader = (RLPList) rawUncle;
-            BlockHeader blockData = new BlockHeader(uncleHeader);
+            BlockHeader blockData = new BlockHeader(uncleHeader, this.sealed);
             this.uncleList.add(blockData);
         }
         this.parsed = true;

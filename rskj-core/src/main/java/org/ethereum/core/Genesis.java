@@ -55,9 +55,7 @@ public class Genesis extends Block {
     protected static final long NUMBER = 0;
 
     public Genesis(byte[] rawData){
-        super(rawData);
-        this.sealed = false;
-        this.getHeader().unseal();
+        super(rawData, false);
     }
 
     public Genesis(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,

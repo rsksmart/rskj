@@ -176,6 +176,12 @@ class RemascTestRunner {
 
         byte[] diffBytes = BigInteger.valueOf(difficulty).toByteArray();
 
+        long paidFees = 0;
+
+        for (Transaction tx : txs) {
+            paidFees += BigIntegers.fromUnsignedByteArray(tx.getGasLimit()).longValue() * BigIntegers.fromUnsignedByteArray(tx.getGasPrice()).longValue();
+        }
+
         Block block =  new Block(
                 parentBlock.getHash(),          // parent hash
                 EMPTY_LIST_HASH,       // uncle hash
@@ -194,14 +200,15 @@ class RemascTestRunner {
                 genesis.getStateRoot(),         //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list
                 uncles,                          // uncle list
-                BigInteger.TEN.toByteArray()
+                BigInteger.TEN.toByteArray(),
+                paidFees
         ) {
             private BlockHeader harcodedHashHeader;
 
             @Override
             public BlockHeader getHeader() {
                 if (harcodedHashHeader==null) {
-                    harcodedHashHeader = new BlockHeader(super.getHeader().getEncoded()) {
+                    harcodedHashHeader = new BlockHeader(super.getHeader().getEncoded(), false) {
                         @Override
                         public byte[] getHash() {
                             return blockHash.getBytes();
@@ -226,13 +233,6 @@ class RemascTestRunner {
                 harcodedHashHeader = null;
             }
         };
-        long paidFees = 0;
-        for (Transaction tx : txs) {
-            paidFees += BigIntegers.fromUnsignedByteArray(tx.getGasLimit()).longValue() * BigIntegers.fromUnsignedByteArray(tx.getGasPrice()).longValue();
-        }
-
-        block.getHeader().unseal();
-        block.getHeader().setPaidFees(paidFees);
 
         return block;
     }

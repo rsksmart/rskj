@@ -87,7 +87,8 @@ public class BlockTest {
                 HashUtil.EMPTY_TRIE_HASH,    //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list
                 null,  // uncle list
-                BigInteger.TEN.toByteArray()
+                BigInteger.TEN.toByteArray(),
+                0L
         );
 
         Block parsedBlock = new Block(block.getEncoded());

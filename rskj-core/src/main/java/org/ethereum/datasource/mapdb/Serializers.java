@@ -64,7 +64,7 @@ public class Serializers {
         @Override
         public BlockHeader deserialize(DataInput in, int available) throws IOException {
             byte[] bytes = BYTE_ARRAY.deserialize(in, available);
-            return bytes.length > 0 ? new BlockHeader(bytes) : null;
+            return bytes.length > 0 ? new BlockHeader(bytes, true) : null;
         }
     };
 

@@ -68,10 +68,12 @@ public class BlockHeadersMessage extends Message {
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
 
         blockHeaders = new ArrayList<>();
+
         for (int i = 0; i < paramsList.size(); ++i) {
             RLPList rlpData = ((RLPList) paramsList.get(i));
-            blockHeaders.add(new BlockHeader(rlpData));
+            blockHeaders.add(new BlockHeader(rlpData, true));
         }
+
         parsed = true;
     }
 

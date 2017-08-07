@@ -174,7 +174,8 @@ public class BlockGenerator {
                 stateRoot, //EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 null,        // uncle list
-                null
+                null,
+                0L
         );
     }
 
@@ -271,33 +272,8 @@ public class BlockGenerator {
                 EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 null,        // uncle list
-                minimumGasPrice.toByteArray()
-        );
-    }
-
-    public static Block createEmptyGenesisBlock() {
-        Bloom logBloom = new Bloom();
-        Block original = BlockGenerator.getGenesisBlock();
-
-        return new Block(
-                original.getParentHash(), // parent hash
-                EMPTY_LIST_HASH, // uncle hash
-                original.getCoinbase(), // coinbase
-                logBloom.getData(), // logs bloom
-                original.getDifficulty(), // difficulty
-                0,
-                original.getGasLimit(),
-                original.getGasUsed(),
-                original.getTimestamp() + ++count,
-                EMPTY_BYTE_ARRAY,   // extraData
-                EMPTY_BYTE_ARRAY,   // mixHash
-                BigInteger.ZERO.toByteArray(),  // provisory nonce
-                EMPTY_TRIE_HASH,   // receipts root
-                EMPTY_TRIE_HASH,  // transaction receipts
-                EMPTY_TRIE_HASH,   // state root
-                null,       // transaction list
-                null,        // uncle list
-                BigInteger.valueOf(RskSystemProperties.RSKCONFIG.minerMinGasPrice()).toByteArray()
+                minimumGasPrice.toByteArray(),
+                0L
         );
     }
 

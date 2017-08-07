@@ -18,6 +18,7 @@
  */
 package org.ethereum.core;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.crypto.HashUtil;
@@ -99,11 +100,11 @@ public class BlockHeader implements SerializableObject {
     /* Indicates if this block header cannot be changed */
     protected boolean sealed;
 
-    public BlockHeader(byte[] encoded) {
-        this((RLPList) RLP.decode2(encoded).get(0));
+    public BlockHeader(byte[] encoded, boolean sealed) {
+        this((RLPList) RLP.decode2(encoded).get(0), sealed);
     }
 
-    public BlockHeader(RLPList rlpHeader) {
+    public BlockHeader(RLPList rlpHeader, boolean sealed) {
         this.parentHash = rlpHeader.get(0).getRLPData();
         this.unclesHash = rlpHeader.get(1).getRLPData();
         this.coinbase = rlpHeader.get(2).getRLPData();
@@ -138,18 +139,22 @@ public class BlockHeader implements SerializableObject {
         byte[] pfBytes = rlpHeader.get(13).getRLPData();
         this.paidFees = pfBytes == null ? 0 : (new BigInteger(1, pfBytes)).longValue();
         this.minimumGasPrice = rlpHeader.get(14).getRLPData();
+
         int r=15;
+
         if ((rlpHeader.size() == 19) || (rlpHeader.size() == 16)) {
             byte[] ucBytes = rlpHeader.get(r++).getRLPData();
             this.uncleCount = ucBytes == null ? 0 : (new BigInteger(1, ucBytes)).intValue();
         }
+
         if (rlpHeader.size() > r) {
             this.bitcoinMergedMiningHeader = rlpHeader.get(r++).getRLPData();
             this.bitcoinMergedMiningMerkleProof = rlpHeader.get(r++).getRLPData();
             this.bitcoinMergedMiningCoinbaseTransaction = rlpHeader.get(r++).getRLPData();
 
         }
-        this.sealed = true;
+
+        this.sealed = sealed;
     }
 
     public BlockHeader(byte[] parentHash, byte[] unclesHash, byte[] coinbase,
@@ -201,16 +206,17 @@ public class BlockHeader implements SerializableObject {
         this.uncleCount = uncleCount;
     }
 
+    @VisibleForTesting
     public boolean isSealed() {
         return this.sealed;
     }
 
-    public void unseal() {
-        this.sealed = false;
-    }
-
     public void seal() {
         this.sealed = true;
+    }
+
+    public BlockHeader cloneHeader() {
+        return new BlockHeader((RLPList) RLP.decode2(this.getEncoded()).get(0), false);
     }
 
     public boolean isGenesis() {
