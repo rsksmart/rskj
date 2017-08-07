@@ -141,7 +141,7 @@ public class Wallet {
 
         if (unlocked) {
             synchronized (accessLock) {
-                unlocksTimeouts.put(new ByteArrayWrapper(address), ending);
+                unlocksTimeouts.put(getAccountKey(address, secret), ending);
             }
         }
 
