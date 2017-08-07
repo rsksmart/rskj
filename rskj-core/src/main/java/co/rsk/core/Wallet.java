@@ -77,13 +77,13 @@ public class Wallet {
 
     public byte[] addAccount() {
         Account account = new Account(new ECKey());
-        saveAccount(account);
+        saveAccountToMemory(account);
         return account.getAddress();
     }
 
     public byte[] addAccount(String passphrase) {
         Account account = new Account(new ECKey());
-        saveAccount(account, passphrase);
+        saveAccountToStorage(account, passphrase);
         return account.getAddress();
     }
 
@@ -165,7 +165,7 @@ public class Wallet {
             account = new Account(ECKey.fromPrivate(decryptAES(encrypted, passphrase.getBytes(StandardCharsets.UTF_8))));
         }
 
-        saveAccount(account);
+        saveAccountToMemory(account);
 
         return true;
     }
@@ -186,7 +186,7 @@ public class Wallet {
     public byte[] addAccountWithSeed(String seed) {
         Account account = createAccount(ECKey.fromPrivate(SHA3Helper.sha3(seed.getBytes(StandardCharsets.UTF_8))));
 
-        saveAccount(account);
+        saveAccountToMemory(account);
 
         return account.getAddress();
     }
@@ -194,7 +194,7 @@ public class Wallet {
     public byte[] addAccountWithPrivateKey(byte[] privateKeyBytes) {
         Account account = createAccount(ECKey.fromPrivate(privateKeyBytes));
 
-        saveAccount(account);
+        saveAccountToMemory(account);
 
         return account.getAddress();
     }
@@ -202,7 +202,7 @@ public class Wallet {
     public byte[] addAccountWithPrivateKey(byte[] privateKeyBytes, String passphrase) {
         Account account = createAccount(ECKey.fromPrivate(privateKeyBytes));
 
-        saveAccount(account, passphrase);
+        saveAccountToStorage(account, passphrase);
 
         return account.getAddress();
     }
@@ -238,13 +238,13 @@ public class Wallet {
         return new Account(key);
     }
 
-    private void saveAccount(Account account) {
+    private void saveAccountToMemory(Account account) {
         synchronized (accessLock) {
             accounts.put(new ByteArrayWrapper(account.getAddress()), account.getEcKey().getPrivKeyBytes());
         }
     }
 
-    private void saveAccount(Account account, String passphrase) {
+    private void saveAccountToStorage(Account account, String passphrase) {
         byte[] address = account.getAddress();
         byte[] privateKeyBytes = account.getEcKey().getPrivKeyBytes();
         byte[] encrypted = encryptAES(privateKeyBytes, passphrase.getBytes(StandardCharsets.UTF_8));
