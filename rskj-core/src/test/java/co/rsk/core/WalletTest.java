@@ -303,12 +303,43 @@ public class WalletTest {
     }
 
     @Test
+    public void lockNonexistentAccountUsingSecret() {
+        Wallet wallet = new Wallet();
+
+        Assert.assertFalse(wallet.lockAccount(new byte[] { 0x01, 0x02, 0x03 }, generateSecret()));
+    }
+
+    @Test
     public void getUnknownAccount() {
         Wallet wallet = new Wallet();
 
         Account account = wallet.getAccount(new byte[] { 0x01, 0x02, 0x03 }, null);
 
         Assert.assertNull(account);
+    }
+
+    @Test
+    public void getKnownAndUnlockedAccount() {
+        byte[] secret = generateSecret();
+        Wallet wallet = new Wallet();
+
+        byte[] address = wallet.addAccount("passphrase");
+
+        wallet.unlockAccount(address, "passphrase", secret);
+
+        Assert.assertNull(wallet.getAccount(address, null));
+        Assert.assertNull(wallet.getAccount(address, generateSecret()));
+        Assert.assertNotNull(wallet.getAccount(address, secret));
+    }
+
+    @Test
+    public void getKnownButNotNotUnlockedAccount() {
+        Wallet wallet = new Wallet();
+
+        byte[] address = wallet.addAccount("passphrase");
+
+        Assert.assertNull(wallet.getAccount(address, null));
+        Assert.assertNull(wallet.getAccount(address, generateSecret()));
     }
 
     @Test
