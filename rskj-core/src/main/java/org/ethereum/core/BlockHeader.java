@@ -98,7 +98,7 @@ public class BlockHeader implements SerializableObject {
     private int uncleCount;
 
     /* Indicates if this block header cannot be changed */
-    protected boolean sealed;
+    private volatile boolean sealed;
 
     public BlockHeader(byte[] encoded, boolean sealed) {
         this((RLPList) RLP.decode2(encoded).get(0), sealed);
