@@ -21,6 +21,7 @@ package co.rsk.core;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.crypto.EncryptedData;
 import co.rsk.crypto.KeyCrypterScrypt;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.SHA3Helper;
@@ -98,7 +99,7 @@ public class Wallet {
                 long time = System.currentTimeMillis();
                 if (ending < time) {
                     unlocksTimeouts.remove(key);
-                    removeAccount(key);
+                    removeAccountInformationFromMemory(key);
                     return null;
                 }
             }
@@ -107,7 +108,11 @@ public class Wallet {
         }
     }
 
-    public void removeAccountsByTimeout() {
+    /**
+     * Removes the unlocked account from memory
+     * if the unlock duration expired
+     */
+    public void removeAccountsWithUnlockDurationExpired() {
         synchronized (accessLock) {
             long time = System.currentTimeMillis();
 
@@ -118,11 +123,12 @@ public class Wallet {
 
             toremove.stream().forEach(key -> {
                 unlocksTimeouts.remove(key);
-                removeAccount(key);
+                removeAccountInformationFromMemory(key);
             });
         }
     }
 
+    @VisibleForTesting
     public Account getAccount(byte[] address, String passphrase) {
         synchronized (accessLock) {
             byte[] encrypted = keyDS.get(address);
@@ -171,7 +177,7 @@ public class Wallet {
             if (!accounts.containsKey(key))
                 return false;
 
-            removeAccount(key);
+            removeAccountInformationFromMemory(key);
 
             return true;
         }
@@ -201,16 +207,23 @@ public class Wallet {
         return account.getAddress();
     }
 
+    /**
+     * Start an scheduled tasks that removes unlocked accounts
+     * from memory, if their unlock duration expired
+     *
+     * @param seconds
+     */
     public void start(int seconds) {
         // Clean accounts in memory, removing them by timeout
-        this.future = Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(this::removeAccountsByTimeout, seconds, seconds, TimeUnit.SECONDS);
+        this.future = Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(this::removeAccountsWithUnlockDurationExpired, seconds, seconds, TimeUnit.SECONDS);
     }
 
+    @VisibleForTesting
     public void stop() {
         this.future.cancel(true);
     }
 
-    private void removeAccount(ByteArrayWrapper key) {
+    private void removeAccountInformationFromMemory(ByteArrayWrapper key) {
         byte[] bytes = this.accounts.get(key);
 
         if (bytes == null)

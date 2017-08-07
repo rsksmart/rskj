@@ -153,7 +153,7 @@ public class WalletTest {
 
         TimeUnit.SECONDS.sleep(1);
 
-        wallet.removeAccountsByTimeout();
+        wallet.removeAccountsWithUnlockDurationExpired();
         Assert.assertNull(wallet.getAccount(address));
     }
 
