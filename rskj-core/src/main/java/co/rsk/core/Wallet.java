@@ -76,13 +76,6 @@ public class Wallet {
         return addresses;
     }
 
-    @VisibleForTesting
-    public byte[] addAccount() {
-        Account account = new Account(new ECKey());
-        saveAccountInformationIntoMemory(account, null);
-        return account.getAddress();
-    }
-
     public byte[] addAccount(String passphrase) {
         Account account = new Account(new ECKey());
         saveAccountToStorage(account, passphrase);

@@ -25,12 +25,15 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Created by ajlopez on 15/09/2016.
  */
 public class WalletTest {
+    private static Random random = new Random();
+
     @Test
     public void getEmptyAccountList() {
         Wallet wallet = new Wallet();
@@ -158,6 +161,47 @@ public class WalletTest {
     }
 
     @Test
+    public void unlockAccountWithPassphraseDurationAndSecret() throws InterruptedException {
+        byte[] secret = generateSecret();
+
+        Wallet wallet = new Wallet();
+
+        byte[] address = wallet.addAccount("passphrase");
+
+        Assert.assertNotNull(address);
+
+        List<byte[]> addresses = wallet.getAccountAddresses();
+
+        Assert.assertNotNull(addresses);
+        Assert.assertFalse(addresses.isEmpty());
+        Assert.assertEquals(1, addresses.size());
+
+        byte[] addr = addresses.get(0);
+
+        Assert.assertNotNull(addr);
+        Assert.assertArrayEquals(address, addr);
+
+        Account account0 = wallet.getAccount(address, secret);
+
+        Assert.assertNull(account0);
+
+        Assert.assertTrue(wallet.unlockAccount(address, "passphrase", 500, secret));
+
+        Assert.assertNull(wallet.getAccount(address, null));
+        Assert.assertNull(wallet.getAccount(address, generateSecret()));
+
+        Account account = wallet.getAccount(address, secret);
+
+        Assert.assertNotNull(account);
+        Assert.assertArrayEquals(address, account.getAddress());
+
+        TimeUnit.SECONDS.sleep(1);
+
+        wallet.removeAccountsWithUnlockDurationExpired();
+        Assert.assertNull(wallet.getAccount(address, null));
+    }
+
+    @Test
     public void lockAccountByTimeout() throws InterruptedException {
         Wallet wallet = new Wallet();
 
@@ -227,21 +271,6 @@ public class WalletTest {
     }
 
     @Test
-    public void addAccountWithRandomPrivateKey() {
-        Wallet wallet = new Wallet();
-
-        byte[] address = wallet.addAccount();
-
-        Assert.assertNotNull(address);
-
-        Account account = wallet.getAccount(address, null);
-
-        Assert.assertNotNull(account);
-
-        Assert.assertArrayEquals(address, account.getAddress());
-    }
-
-    @Test
     public void getUnknownAccount() {
         Wallet wallet = new Wallet();
 
@@ -273,5 +302,13 @@ public class WalletTest {
 
         Assert.assertNotNull(addr);
         Assert.assertArrayEquals(address, addr);
+    }
+
+    private static byte[] generateSecret() {
+        byte[] bytes = new byte[32];
+
+        random.nextBytes(bytes);
+
+        return bytes;
     }
 }
