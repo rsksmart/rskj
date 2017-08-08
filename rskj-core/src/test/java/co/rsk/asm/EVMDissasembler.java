@@ -45,6 +45,10 @@ public class EVMDissasembler {
     private byte scriptVersion;
     private int startAddr;
     private Set<Integer> jumpdest = new HashSet<>();
+    private boolean findCodeOffset = false;
+    private int codeOffset = -1;
+    private int codeOffsetState = 0;
+    private boolean hexaOffsets =true;
 
     public void stop() {
         stopped = true;
@@ -146,6 +150,14 @@ public class EVMDissasembler {
         }
     }
 
+    public void setHexaOffsets(boolean a ) {
+        hexaOffsets =a;
+    }
+
+    public void setfindCodeOffset(boolean a) {
+        findCodeOffset = a;
+    }
+
     public boolean isStopped() {
         return stopped;
     }
@@ -183,7 +195,8 @@ public class EVMDissasembler {
         return ref;
     }
 
-    void printPush(OpCode op) {
+    BigInteger printPush(OpCode op) {
+        BigInteger bi = null;
         sb.append(' ').append(op.name()).append(' ');
         int nPush = op.val() - OpCode.PUSH1.val() + 1;
         String name = null;
@@ -199,12 +212,13 @@ public class EVMDissasembler {
 
         if ((printOffsets) || (name==null)) {
             byte[] data = Arrays.copyOfRange(code, pc + 1, pc + nPush + 1);
-            BigInteger bi = new BigInteger(1, data);
+            bi = new BigInteger(1, data);
             sb.append("0x").append(bi.toString(16));
             if (bi.bitLength() <= 32) {
                 sb.append(" (").append(new BigInteger(1, data).toString()).append(") ");
             }
         }
+        return bi;
     }
 
     void printCodeSections() {
@@ -233,10 +247,33 @@ public class EVMDissasembler {
         }
     }
 
-    void printOffset() {
-        sb.append(Utils.align("" + Integer.toHexString(pc) + ":", ' ', 8, false));
+    String getOffset(int off) {
+        if (hexaOffsets)
+            return "0x"+Integer.toHexString(off);
+        else
+            return Integer.toString(off);
     }
 
+    void printOffset() {
+        String pcs = getOffset(pc);
+        if (findCodeOffset) {
+            if (codeOffset<0)
+                sb.append(Utils.align("" + pcs + ":", ' ', 12, false));
+            else {
+                String cods = getOffset(pc-codeOffset);
+                sb.append(Utils.align("" + pcs + "  (" + cods+
+                        "):", ' ', 12, false));
+            }
+        }
+        else
+            sb.append(Utils.align("" + pcs + ":", ' ', 8, false));
+    }
+    // The most reliable way to identify the code entry point is by trying to find the first
+    // RETURN. Other patterns, such as, CODECOPY PUSH 0 RETURN STOP, do not always work
+    // Note that the 0 of push 0 is not checked here, but in other place
+    // Note that STOP is assembled as .data 0:
+    // It is not actually an opcode to be executed, because it doesn't have a JUMPPDEST
+    static byte endOfHeader[] = {0x39 ,0x60 ,(byte) 0xf3, 0x00};
     public String dissasembleInternal() {
         ops = nullToEmpty(code);
         precompile();
@@ -250,6 +287,15 @@ public class EVMDissasembler {
 
             printCodeSections();
             byte opCode = getOp(pc);
+            //
+            if (codeOffset<0)
+                if (endOfHeader[codeOffsetState]==opCode) {
+                    codeOffsetState++;
+                    if (codeOffsetState==endOfHeader.length)
+                        codeOffset = pc+1;
+                } else
+                    codeOffsetState=0;
+
             OpCode op = OpCode.code(opCode);
 
             if (op == null) {
@@ -260,7 +306,12 @@ public class EVMDissasembler {
 
 
             if (op.name().startsWith("PUSH")) {
-                printPush(op);
+                BigInteger v =printPush(op);
+                if (codeOffset<0)
+                 if ((v!=null) && (codeOffsetState>0))
+                    if (v.bitCount()!=0)
+                        codeOffsetState=0;
+
                 int nPush = op.val() - OpCode.PUSH1.val() + 1;
                 setPC(pc + nPush + 1);
             } else {

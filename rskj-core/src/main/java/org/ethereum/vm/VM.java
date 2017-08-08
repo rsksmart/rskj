@@ -1764,7 +1764,7 @@ public class VM {
             } // for
         } catch (RuntimeException e) {
                 logger.warn("VM halted: [{}]", e);
-                panicProcessor.panic("vm", String.format("VM halted: [%s]", e.getMessage()));
+                panicProcessor.panic("vm", String.format("VM halted: [%s] at pc [%s]", e.getMessage(),program.getPC()).toString());
                 program.spendAllGas();
                 program.resetFutureRefund();
                 program.stop();

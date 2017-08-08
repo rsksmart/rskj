@@ -245,24 +245,10 @@ public class BlockExecutor {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(txExecutor.getVMLogs());
 
-            // For every log that contains the 0xff..ff logged topic
-            // it must also be logged in the PerContractLog
-            int logN =0;
-            for (LogInfo log : txExecutor.getVMLogs()) {
-                for (DataWord topic : log.getTopics()) {
-                    if (topic.equalValue(DataWord.MAX_DATAWORD_VALUE)) {
-                        ContractLog amap =perContractLog.get(log.getAddress());
-                        if (amap==null)  {
-                            amap = new ContractLog();
-                            perContractLog.put(log.getAddress(),amap);
-                        }
-                        amap.put(i,logN,log);
-                        break;
-                    }
 
-                }
-                logN++;
-            }
+            if (txExecutor.getVMLogs()!=null)
+                AddToPerContractLog(i,perContractLog,txExecutor);
+
             logger.info("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()),
                     Hex.toHexString(lastStateRootHash));
 
@@ -276,5 +262,26 @@ public class BlockExecutor {
         }
 
         return new BlockResult(executedTransactions, receipts, perContractLog,lastStateRootHash, totalGasUsed, totalPaidFees);
+    }
+
+    public void AddToPerContractLog(int i,PerContractLog perContractLog,TransactionExecutor txExecutor ) {
+        // For every log that contains the 0xff..ff logged topic
+        // it must also be logged in the PerContractLog
+        int logN = 0;
+        for (LogInfo log : txExecutor.getVMLogs()) {
+            for (DataWord topic : log.getTopics()) {
+                if (topic.equalValue(DataWord.MAX_DATAWORD_VALUE)) {
+                    ContractLog amap = perContractLog.get(log.getAddress());
+                    if (amap == null) {
+                        amap = new ContractLog();
+                        perContractLog.put(log.getAddress(), amap);
+                    }
+                    amap.put(i, logN, log);
+                    break;
+                }
+
+            }
+            logN++;
+        }
     }
 }

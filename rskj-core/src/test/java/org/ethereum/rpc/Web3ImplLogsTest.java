@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc;
 
+import co.rsk.asm.EVMDissasembler;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
@@ -50,6 +51,39 @@ import java.util.List;
  * Created by ajlopez on 30/11/2016.
  */
 public class Web3ImplLogsTest {
+
+
+    // Events used:
+    // event Incremented(bool indexed odd, uint x);
+    // event Created(uint x);
+    // event Valued(uint x);
+
+
+    /////////////////////////////////////////////////////////////////////////
+    // IMPORTANT INFORMATION WHEN WORKING WITH SOLIDITY GENERATED TOPICS
+    // FROM EVENTS
+    // 1. The event MUST be converted to its normalized form first.
+    // 2. uint is not a normalized type. uint -> uint256
+    // Note the part that "In Solidity: The first topic is the hash of the signature of the event."
+    // Canonical types, such as uint256 have to be used in signatures.
+    // 3. The signature is built by removing all argument names (only types are left)
+    // 4. "indexed"  word must not be present
+    // 5. Case is important: do not change upper/lower case
+    // 6. The topic is the Keccak-256 hash digest of the signature.
+    // 6. web3.sha3() IS NOT SHA3! It's Keccak-256. Solidity signatures use Keccak-256. NOT SHA3.
+    //
+    // Examples:
+    // Incremented(bool indexed odd, uint x) -> Keccak-256("Incremented(bool,uint256)")
+    //
+    String GetValuedEventSignature="1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b";
+
+
+    String IncrementMethodSignature ="371303c0";
+    String GetValueMethodSignature ="20965255";
+
+    //20965255 getValue()
+    //371303c0 inc()
+
     @Test
     public void newFilterInEmptyBlockchain() throws Exception {
         Web3Impl web3 = getWeb3();
@@ -253,7 +287,7 @@ public class Web3ImplLogsTest {
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         fr.topics = new Object[1];
-        fr.topics[0] = "1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b";
+        fr.topics[0] = GetValuedEventSignature;
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
@@ -485,6 +519,7 @@ public class Web3ImplLogsTest {
         return web3;
     }
 
+    String compiledGreeter = "60606040525b33600060006101000a81548173ffffffffffffffffffffffffffffffffffffffff02191690836c010000000000000000000000009081020402179055505b610181806100516000396000f360606040526000357c010000000000000000000000000000000000000000000000000000000090048063ead710c41461003c57610037565b610002565b34610002576100956004808035906020019082018035906020019191908080601f016020809104026020016040519081016040528093929190818152602001838380828437820191505050505050909091905050610103565b60405180806020018281038252838181518152602001915080519060200190808383829060006004602084601f0104600302600f01f150905090810190601f1680156100f55780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b6020604051908101604052806000815260200150600060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614151561017357610002565b81905061017b565b5b91905056";
     private Web3Impl getWeb3WithContractCreationWithoutEvents() {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
@@ -508,7 +543,7 @@ public class Web3ImplLogsTest {
                 .sender(acc1)
                 .gasLimit(BigInteger.valueOf(100000))
                 .gasPrice(BigInteger.ONE)
-                .data("60606040525b33600060006101000a81548173ffffffffffffffffffffffffffffffffffffffff02191690836c010000000000000000000000009081020402179055505b610181806100516000396000f360606040526000357c010000000000000000000000000000000000000000000000000000000090048063ead710c41461003c57610037565b610002565b34610002576100956004808035906020019082018035906020019191908080601f016020809104026020016040519081016040528093929190818152602001838380828437820191505050505050909091905050610103565b60405180806020018281038252838181518152602001915080519060200190808383829060006004602084601f0104600302600f01f150905090810190601f1680156100f55780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b6020604051908101604052806000815260200150600060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614151561017357610002565b81905061017b565b5b91905056")
+                .data(compiledGreeter)
                 .build();
 
         List<Transaction> txs = new ArrayList<>();
@@ -592,6 +627,7 @@ public class Web3ImplLogsTest {
     private Web3Impl getWeb3WithContractCall() {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+        // acc1 Account created address should be 661b05ca9eb621164906671efd2731ce0d7dd8b4
 
         Block genesis = world.getBlockByName("g00");
         Transaction tx;
@@ -604,13 +640,16 @@ public class Web3ImplLogsTest {
 
         byte[] contractAddress = tx.getContractAddress();
 
+        String contractAddressStr = Hex.toHexString(contractAddress);
+
+        // Now create a transaction that invokes Increment()
         Transaction tx2 = getContractTransactionWithInvoke(acc1, contractAddress);
         List<Transaction> tx2s = new ArrayList<>();
         tx2s.add(tx2);
         Block block2 = new BlockBuilder(world).parent(block1).transactions(tx2s).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2));
-
         Transaction tx3 = getContractTransactionWithCall(acc1, contractAddress);
+        // Now we call GetValue
         List<Transaction> tx3s = new ArrayList<>();
         tx3s.add(tx3);
         Block block3 = new BlockBuilder(world).parent(block2).transactions(tx3s).build();
@@ -631,14 +670,23 @@ public class Web3ImplLogsTest {
     }
 
     private Transaction getContractTransaction(Account acc1) {
+        return getContractTransaction(acc1,false);
+
+    }
+    //0.4.11+commit.68ef5810.Emscripten.clang WITH optimizations
+    static final String compiled_0_4_11 = "6060604052341561000c57fe5b5b60466000819055507f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad16000546040518082815260200191505060405180910390a15b5b61014e8061005f6000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632096525514610046578063371303c01461006c575bfe5b341561004e57fe5b61005661007e565b6040518082815260200191505060405180910390f35b341561007457fe5b61007c6100c2565b005b60007f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b6000546040518082815260200191505060405180910390a160005490505b90565b60006000815460010191905081905550600160026000548115156100e257fe5b061415157f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad6000546040518082815260200191505060405180910390a25b5600a165627a7a7230582092c7b2c0483b85227396e18149993b33243059af0f3bd0364f1dc36b8bbbcdae0029";
+    static final String compiled_unknown = "60606040526046600081905560609081527f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad190602090a160aa8060426000396000f3606060405260e060020a60003504632096525581146024578063371303c0146060575b005b60a36000805460609081527f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b90602090a1600060005054905090565b6022600080546001908101918290556060828152600290920614907f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad90602090a2565b5060206060f3";
+
+    private Transaction getContractTransaction(Account acc1,boolean withContractLog) {
     /* contract compiled in data attribute of tx
     contract counter {
         event Incremented(bool indexed odd, uint x);
         event Created(uint x);
+        event Valued(uint x);
 
         function counter() {
             x = 70;
-            Created(x);
+            Created(x); // this is logged in initialization code (not left in contract code afterwards)
         }
 
         function inc() {
@@ -653,12 +701,28 @@ public class Web3ImplLogsTest {
 
         uint x;
     } */
+        // dissasembleThisPlease(compiled_0_4_11);
+
         return new TransactionBuilder()
                 .sender(acc1)
-                .gasLimit(BigInteger.valueOf(100000))
+                .gasLimit(BigInteger.valueOf(1000000))
                 .gasPrice(BigInteger.ONE)
-                .data("60606040526046600081905560609081527f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad190602090a160aa8060426000396000f3606060405260e060020a60003504632096525581146024578063371303c0146060575b005b60a36000805460609081527f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b90602090a1600060005054905090565b6022600080546001908101918290556060828152600290920614907f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad90602090a2565b5060206060f3")
+                //.data(comnpiled_0_4_11 )
+                .data(compiled_0_4_11)
                 .build();
+    }
+
+    public static String getDissasemble(byte[] code) {
+        EVMDissasembler d = new EVMDissasembler();
+        d.setfindCodeOffset(true);
+        d.setHexaOffsets(false);
+        return d.dissasemble(code);
+    }
+
+    public void dissasembleThisPlease(String data) {
+        System.out.println("Dissasembler:");
+        String dis = getDissasemble(Hex.decode(data));
+        System.out.println(dis);
     }
 
     private Transaction getContractTransactionWithInvoke(Account acc1, byte[] receiverAddress) {
@@ -667,7 +731,7 @@ public class Web3ImplLogsTest {
                 .receiverAddress(receiverAddress)
                 .gasLimit(BigInteger.valueOf(100000))
                 .gasPrice(BigInteger.ONE)
-                .data("371303c0")   // invoke incr()
+                .data(IncrementMethodSignature)   // invoke incr()
                 .nonce(1)
                 .build();
     }
@@ -678,11 +742,12 @@ public class Web3ImplLogsTest {
                 .receiverAddress(receiverAddress)
                 .gasLimit(BigInteger.valueOf(100000))
                 .gasPrice(BigInteger.ONE)
-                .data("20965255")   // call getValue()
+                .data(GetValueMethodSignature)   // call getValue()
                 .nonce(2)
                 .build();
     }
 
+    String compiledLogExample ="606060405234610000575b60bd806100186000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063195977a614603c575b6000565b34600057605460048080359060200190919050506056565b005b7ffd99bb34477b313b3e3b452b34d012d8315db36a1d63949d9d8f9d2573b05aff816040518082815260200191505060405180910390a15b505600a165627a7a72305820fb2550735b0655fb2fe03738be375a4c29ef1b6ff51004f869be19de0301f30b0029";
     private Transaction getMainContractTransaction(Account acc1) {
     /* contract compiled in data attribute of tx
 contract main {
@@ -694,11 +759,12 @@ contract main {
 }
 } */
 
+
         return new TransactionBuilder()
                 .sender(acc1)
                 .gasLimit(BigInteger.valueOf(100000))
                 .gasPrice(BigInteger.ONE)
-                .data("606060405234610000575b60bd806100186000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063195977a614603c575b6000565b34600057605460048080359060200190919050506056565b005b7ffd99bb34477b313b3e3b452b34d012d8315db36a1d63949d9d8f9d2573b05aff816040518082815260200191505060405180910390a15b505600a165627a7a72305820fb2550735b0655fb2fe03738be375a4c29ef1b6ff51004f869be19de0301f30b0029")
+                .data(compiledLogExample)
                 .build();
     }
 
@@ -723,11 +789,12 @@ contract caller {
 }
 } */
 
+    String compiledCaller = "606060405234610000576040516020806101f8833981016040528080519060200190919050505b8073ffffffffffffffffffffffffffffffffffffffff1663195977a66130396040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b156100005760325a03f115610000575050507f2012ef02e82e91abf55727cc31c3b6e3375003aa9e879f855db72d9e78822c40607b6040518082815260200191505060405180910390a15b505b610111806100e76000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063e60c2d4414603c575b6000565b34600057606a600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050606c565b005b8073ffffffffffffffffffffffffffffffffffffffff1663195977a661303a6040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b1560005760325a03f1156000575050505b505600a165627a7a72305820f8bc730651ba568de3f84a81088f94a8701c5c41f732d5c7a447077ee40f97a80029";
         return new TransactionBuilder()
                 .sender(acc1)
                 .gasLimit(BigInteger.valueOf(1000000))
                 .gasPrice(BigInteger.ONE)
-                .data("606060405234610000576040516020806101f8833981016040528080519060200190919050505b8073ffffffffffffffffffffffffffffffffffffffff1663195977a66130396040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b156100005760325a03f115610000575050507f2012ef02e82e91abf55727cc31c3b6e3375003aa9e879f855db72d9e78822c40607b6040518082815260200191505060405180910390a15b505b610111806100e76000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063e60c2d4414603c575b6000565b34600057606a600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050606c565b005b8073ffffffffffffffffffffffffffffffffffffffff1663195977a661303a6040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b1560005760325a03f1156000575050505b505600a165627a7a72305820f8bc730651ba568de3f84a81088f94a8701c5c41f732d5c7a447077ee40f97a80029" + address)
+                .data( compiledCaller + address)
                 .nonce(1)
                 .build();
     }
