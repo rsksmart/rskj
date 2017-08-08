@@ -1215,6 +1215,24 @@ public class Web3ImplTest {
         org.junit.Assert.assertNotNull(account);
     }
 
+    @Test
+    public void unlockAccountUsingSecret()
+    {
+        Web3Impl web3 = new Web3Impl(compiler, WalletFactory.createWallet());
+
+        String addr = web3.personal_newAccount("passphrase1");
+
+        Account account0 = web3.getAccount(addr);
+
+        org.junit.Assert.assertNull(account0);
+
+        org.junit.Assert.assertTrue(web3.personal_unlockAccount(addr, "passphrase1", "", "0x1234"));
+
+        Account account = web3.getAccountWithSecret(addr, "0x1234");
+
+        org.junit.Assert.assertNotNull(account);
+    }
+
     @Test(expected = JsonRpcInvalidParamException.class)
     public void unlockAccountInvalidDuration()
     {
@@ -1227,6 +1245,22 @@ public class Web3ImplTest {
         org.junit.Assert.assertNull(account0);
 
         web3.personal_unlockAccount(addr, "passphrase1", "K");
+
+        org.junit.Assert.fail("This should fail");
+    }
+
+    @Test(expected = JsonRpcInvalidParamException.class)
+    public void unlockAccountInvalidDurationUsingSecret()
+    {
+        Web3Impl web3 = new Web3Impl(compiler, WalletFactory.createWallet());
+
+        String addr = web3.personal_newAccount("passphrase1");
+
+        Account account0 = web3.getAccount(addr);
+
+        org.junit.Assert.assertNull(account0);
+
+        web3.personal_unlockAccount(addr, "passphrase1", "K", "0x1234");
 
         org.junit.Assert.fail("This should fail");
     }
@@ -1251,6 +1285,31 @@ public class Web3ImplTest {
         org.junit.Assert.assertTrue(web3.personal_lockAccount(addr));
 
         Account account1 = web3.getAccount(addr);
+
+        org.junit.Assert.assertNull(account1);
+    }
+
+    @Test
+    public void lockAccountUsingSecret()
+    {
+        Web3Impl web3 = new Web3Impl(compiler, WalletFactory.createWallet());
+
+        String addr = web3.personal_newAccount("passphrase1");
+
+        Account account0 = web3.getAccount(addr);
+
+        org.junit.Assert.assertNull(account0);
+
+        org.junit.Assert.assertTrue(web3.personal_unlockAccount(addr, "passphrase1", "", "0x1234"));
+
+        org.junit.Assert.assertNull(web3.getAccount(addr));
+        Account account = web3.getAccountWithSecret(addr, "0x1234");
+
+        org.junit.Assert.assertNotNull(account);
+
+        org.junit.Assert.assertTrue(web3.personal_lockAccount(addr, "0x1234"));
+
+        Account account1 = web3.getAccountWithSecret(addr, "0x1234");
 
         org.junit.Assert.assertNull(account1);
     }

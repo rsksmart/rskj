@@ -1470,20 +1470,6 @@ public class Web3Impl implements Web3 {
         return TypeConverter.toJsonHex(tx.getHash());
     }
 
-    @Override
-    public boolean personal_unlockAccount(String address, String passphrase, String duration) {
-        long dur = (long)1000 * 60 * 30;
-        if (duration != null && duration.length() > 0) {
-            try {
-                dur = JSonHexToLong(duration);
-            } catch (Exception e) {
-                throw new JsonRpcInvalidParamException("Can't parse duration param", e);
-            }
-        }
-
-        return this.wallet.unlockAccount(stringHexToByteArray(address), passphrase, dur, null);
-    }
-
     public Map<String, Object> eth_bridgeState() throws Exception {
         CallArguments arguments = new CallArguments();
         arguments.to = "0x" + PrecompiledContracts.BRIDGE_ADDR;
@@ -1501,6 +1487,39 @@ public class Web3Impl implements Web3 {
         return this.wallet.lockAccount(stringHexToByteArray(address), null);
     }
 
+    @Override
+    public boolean personal_lockAccount(String address, String secret) {
+        return this.wallet.lockAccount(stringHexToByteArray(address), stringHexToByteArray(secret));
+    }
+
+    @Override
+    public boolean personal_unlockAccount(String address, String passphrase, String duration) {
+        long dur = (long)1000 * 60 * 30;
+        if (duration != null && duration.length() > 0) {
+            try {
+                dur = JSonHexToLong(duration);
+            } catch (Exception e) {
+                throw new JsonRpcInvalidParamException("Can't parse duration param", e);
+            }
+        }
+
+        return this.wallet.unlockAccount(stringHexToByteArray(address), passphrase, dur, null);
+    }
+
+    @Override
+    public boolean personal_unlockAccount(String address, String passphrase, String duration, String secret) {
+        long dur = (long)1000 * 60 * 30;
+        if (duration != null && duration.length() > 0) {
+            try {
+                dur = JSonHexToLong(duration);
+            } catch (Exception e) {
+                throw new JsonRpcInvalidParamException("Can't parse duration param", e);
+            }
+        }
+
+        return this.wallet.unlockAccount(stringHexToByteArray(address), passphrase, dur, stringHexToByteArray(secret));
+    }
+
     private Account getDefaultAccount(byte[] secret) {
         List<byte[]> accountAddresses = this.wallet.getAccountAddresses();
 
@@ -1514,6 +1533,11 @@ public class Web3Impl implements Web3 {
     @VisibleForTesting
     public Account getAccount(String address) {
         return this.wallet.getAccount(stringHexToByteArray(address), (byte[])null);
+    }
+
+    @VisibleForTesting
+    public Account getAccountWithSecret(String address, String secret) {
+        return this.wallet.getAccount(stringHexToByteArray(address), stringHexToByteArray(secret));
     }
 
     @VisibleForTesting
