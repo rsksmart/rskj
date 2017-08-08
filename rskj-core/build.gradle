@@ -145,7 +145,9 @@ dependencies {
     compile "org.eclipse.jetty:jetty-server:9.3.16.v20170120"
     compile "org.eclipse.jetty:jetty-servlet:9.3.16.v20170120"
     compile "javax.portlet:portlet-api:2.0"
-    compile "com.github.briandilley.jsonrpc4j:jsonrpc4j:1.2.0"
+    compile ('com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.0') {
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-annotations'
+    }
     compile("com.googlecode.json-simple:json-simple:1.1.1") {
         exclude group: 'junit', module: 'junit'
     }
@@ -190,7 +192,7 @@ dependencyVerification {
         'org.eclipse.jetty:jetty-server:076fd4115db4bfd19545ada017fd7cc18545b5a521a5b3282a3b2590fb8a9a50',
         'org.eclipse.jetty:jetty-servlet:d34807edd30b144c75867f9cbcdc1d1e5bb52153b720f42382599be79f83d9cd',
         'javax.portlet:portlet-api:c990cb5ece82f97e18847ab07fa1569d1dd5f80f166f27c979a075c60bb361d0',
-        'com.github.briandilley.jsonrpc4j:jsonrpc4j:59f592e3a096cef77239c75c9095d7ed01ac19aa41a86015b8cdb688f314838f',
+        'com.github.briandilley.jsonrpc4j:jsonrpc4j:a53a275f6eea85859070086414bdb8913644ff7951b878065a05afd4e155be54',
         'com.googlecode.json-simple:json-simple:4e69696892b88b41c55d49ab2fdcc21eead92bf54acc588c0050596c3b75199c',
         'commons-io:commons-io:a10418348d234968600ccb1d988efcbbd08716e1d96936ccc1880e7d22513474',
         'org.slf4j:jcl-over-slf4j:53c6d81ae92ab7a67abf03439b0a2c3872cfe04bab3bf8db9c58fd03f5e71948',
@@ -210,7 +212,6 @@ dependencyVerification {
         'org.fusesource.hawtjni:hawtjni-runtime:74fe9764e1fb1ef20b159dbca2d29abd6de292082ce3fcf538f81ac912390416',
         'org.apache.logging.log4j:log4j-api:9452e85177f69535ca093cbe2df3e8604344d58f729db70fb9e3009e80684251',
         'org.apache.logging.log4j:log4j-core:4f53e4d52efcccdc446017426c15001bb0fe444c7a6cdc9966f8741cf210d997',
-        'com.fasterxml.jackson.core:jackson-annotations:e61b7343aceeb6ecda291d4ef133cd3e765f178c631c357ffd081abab7f15db8',
         'com.fasterxml.jackson.core:jackson-core:256ff34118ab292d1b4f3ee4d2c3e5e5f0f609d8e07c57e8ad1f51c46d4fbb46',
         'org.springframework:spring-aop:e501581222d2f29e422e45ca862d34d38ee5d7b6f30665ce19415e40b09dc479',
         'org.springframework:spring-beans:ed93f62fc9df76f156181b272f318c34a842ce725211c680faf3bfa3f2912e60',
@@ -225,7 +226,7 @@ dependencyVerification {
         'org.eclipse.jetty:jetty-http:5e2516f104809f7b8d7b4e5c7a71b8e8013272abf491b9b71ff9e667459a59a3',
         'org.eclipse.jetty:jetty-io:be6688927ccb350bc00e4b98987df69c333b726b9d0698e02f1dc3eb14abcd47',
         'org.eclipse.jetty:jetty-security:0143547dd07bdc988b91f7ebc21572c67caf806cd98c256297f7be6f8966a2e6',
-        'net.iharder:base64:bbf41fda22877a538f6bc2d5ad0aa372a7ddf4a756af3386aa09d3d4eea84f7f',
+        'net.iharder:base64:f1a0e359eee29a5939c35e5fdedc574dd7e8ca065b056fc14b2b29e3ed3cd54d',
         'org.powermock:powermock-reflect:14e3b046621ddb6a39113f145c5c129709d3af3d36caad2df7d547778d271c3e',
         'org.javassist:javassist:d7691062fb779c2381640c8f72acba2c23873b01c243866d41c15dc4c8848ea2',
         'org.testng:testng:0811dcf08fe329ef5d4d37d51a6a00032697e7f54ba84c6687bbf7cd39d29fec',
