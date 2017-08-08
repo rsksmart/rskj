@@ -77,6 +77,7 @@ public class SystemProperties {
     public static final String PROPERTY_RPC_ENABLED = "rpc.enabled";
     public static final String PROPERTY_RPC_PORT = "rpc.port";
     public static final String PROPERTY_RPC_CORS = "rpc.cors";
+    public static final String PROPERTY_RPC_SESSION = "rpc.session";
 
     /* Testing */
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
@@ -689,6 +690,11 @@ public class SystemProperties {
     public String corsDomains() {
         return config.hasPath(PROPERTY_RPC_CORS) ?
                 config.getString(PROPERTY_RPC_CORS) : null;
+    }
+
+    public boolean rpcSession() {
+        return config.hasPath(PROPERTY_RPC_SESSION) ?
+                config.getBoolean(PROPERTY_RPC_SESSION) : false;
     }
 
     protected long getLongProperty(String propertyName, long defaultValue) {
