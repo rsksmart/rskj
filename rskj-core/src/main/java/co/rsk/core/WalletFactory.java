@@ -25,9 +25,34 @@ import org.ethereum.datasource.LevelDbDataSource;
  * Created by mario on 06/12/16.
  */
 public class WalletFactory {
+    private static final String oldWalletName = "wallet";
+    private static final String walletName = "walletrlp";
+
+    private WalletFactory() {
+
+    }
+
+    public static boolean existsPersistentWallet() {
+        return existsPersistentWallet(walletName);
+    }
+
+    public static boolean existsPersistentWallet(String storeName) {
+        LevelDbDataSource ds = new LevelDbDataSource(storeName);
+
+        return ds.exists();
+    }
 
     public static Wallet createPersistentWallet() {
-        return createPersistentWallet("wallet");
+        if (existsPersistentWallet(oldWalletName) && !existsPersistentWallet(walletName)) {
+            Wallet wallet = createPersistentWallet(walletName);
+
+            LevelDbDataSource ds = new LevelDbDataSource(oldWalletName);
+            ds.init();
+
+            return wallet;
+        }
+
+        return createPersistentWallet(walletName);
     }
 
     public static Wallet createPersistentWallet(String storeName) {
