@@ -77,6 +77,25 @@ public class LevelDbDataSource implements KeyValueDataSource {
         logger.info("New LevelDbDataSource: " + name);
     }
 
+    public boolean exists() {
+        resetDbLock.writeLock().lock();
+
+        try {
+            logger.debug("~> LevelDbDataSource.exists(): {}", name);
+            Path dbPath;
+
+            if (Paths.get(config.databaseDir()).isAbsolute())
+                dbPath = Paths.get(config.databaseDir(), name);
+            else
+                dbPath = Paths.get(getProperty("user.dir"), config.databaseDir(), name);
+
+            return Files.exists(dbPath);
+        }
+        finally {
+            resetDbLock.writeLock().unlock();
+        }
+    }
+
     @Override
     public void init() {
         resetDbLock.writeLock().lock();

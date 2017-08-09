@@ -19,6 +19,7 @@
 
 package org.ethereum.datasource;
 
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -31,7 +32,6 @@ import static org.junit.Assert.assertNotNull;
 
 @Ignore
 public class LevelDbDataSourceTest {
-
     @Test
     public void testBatchUpdating() {
         LevelDbDataSource dataSource = new LevelDbDataSource("test");
