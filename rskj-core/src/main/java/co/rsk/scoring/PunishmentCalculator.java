@@ -32,7 +32,7 @@ public class PunishmentCalculator {
      */
     public long calculate(int punishmentCounter, int score) {
         long result = this.parameters.getDuration();
-        long rate = 100 + this.parameters.getIncrementRate();
+        long rate = 100L + this.parameters.getIncrementRate();
         int counter = punishmentCounter;
         long maxDuration = this.parameters.getMaximumDuration();
 
