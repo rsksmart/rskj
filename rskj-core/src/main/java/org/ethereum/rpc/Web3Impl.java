@@ -129,7 +129,7 @@ public class Web3Impl implements Web3 {
         List<WalletAccount> accs = properties.walletAccounts();
 
         for (WalletAccount acc : accs)
-            eth_addAccount(acc.getPrivateKey());
+            this.wallet.addAccountWithPrivateKey(Hex.decode(acc.getPrivateKey()));
     }
 
     public EthereumListener setupListener() {
@@ -1370,18 +1370,6 @@ public class Web3Impl implements Web3 {
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("personal_newAccount(*****): " + s);
-            }
-        }
-    }
-
-    public String eth_addAccount(String privKey) {
-        String s = null;
-        try {
-            byte[] address = this.wallet.addAccountWithPrivateKey(Hex.decode(privKey));
-            return s = toJsonHex(address);
-        } finally {
-            if (logger.isDebugEnabled()) {
-                logger.debug("eth_addAccount(*****): " + s);
             }
         }
     }
