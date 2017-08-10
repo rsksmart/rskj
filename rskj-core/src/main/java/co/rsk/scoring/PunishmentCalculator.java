@@ -1,5 +1,7 @@
 package co.rsk.scoring;
 
+import static java.lang.Math.multiplyExact;
+
 /**
  * PunishmentCalculator calculates the punishment duration
  * given the punishment parameters (@see PunishmentParameters)
@@ -30,12 +32,12 @@ public class PunishmentCalculator {
      */
     public long calculate(int punishmentCounter, int score) {
         long result = this.parameters.getDuration();
-        double rate = ((100.0 + this.parameters.getIncrementRate()) / 100);
+        long rate = 100 + this.parameters.getIncrementRate();
         int counter = punishmentCounter;
         long maxDuration = this.parameters.getMaximumDuration();
 
         while (counter-- > 0) {
-            result = (long)(result * rate);
+            result = multiplyExact(result, rate) / 100;
             if (maxDuration > 0 && result > maxDuration)
                 return maxDuration;
         }
