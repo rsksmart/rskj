@@ -590,10 +590,4 @@ public class BlockHeader implements SerializableObject {
     public byte[] getHashForMergedMining() {
         return HashUtil.sha3(getEncoded(false));
     }
-
-    public static class SealedBlockHeaderException extends RuntimeException {
-        public SealedBlockHeaderException(String message) {
-            super("Sealed block header: " + message);
-        }
-    }
 }
