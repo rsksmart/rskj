@@ -70,7 +70,7 @@ public class Block {
 
     private Trie txsState;
 
-    /* Indicates if this block cannot be changed */
+    /* Indicates if this block can or cannot be changed */
     private volatile boolean sealed;
 
     public Block(byte[] rawData) {
