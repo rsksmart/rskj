@@ -1488,7 +1488,7 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public boolean personal_lockAccount(String address, String secret) {
+    public boolean personal_lockAccountWithSecret(String address, String secret) {
         return this.wallet.lockAccount(stringHexToByteArray(address), stringHexToByteArray(secret));
     }
 
@@ -1507,7 +1507,7 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public boolean personal_unlockAccount(String address, String passphrase, String duration, String secret) {
+    public boolean personal_unlockAccountWithSecret(String address, String passphrase, String duration, String secret) {
         long dur = (long)1000 * 60 * 30;
         if (duration != null && duration.length() > 0) {
             try {

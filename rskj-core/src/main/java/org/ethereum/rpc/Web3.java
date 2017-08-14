@@ -193,9 +193,9 @@ public interface Web3 {
     String personal_importRawKey(String key, String passphrase);
     String personal_sendTransaction(CallArguments transactionArgs, String passphrase) throws Exception;
     boolean personal_unlockAccount(String key, String passphrase, String duration);
+    boolean personal_unlockAccountWithSecret(String key, String passphrase, String duration, String secret);
     boolean personal_lockAccount(String key);
-    boolean personal_unlockAccount(String key, String passphrase, String duration, String secret);
-    boolean personal_lockAccount(String key, String secret);
+    boolean personal_lockAccountWithSecret(String key, String secret);
     String personal_dumpRawKey(String address) throws Exception;
 
     String eth_netHashrate();

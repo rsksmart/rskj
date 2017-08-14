@@ -1226,7 +1226,7 @@ public class Web3ImplTest {
 
         org.junit.Assert.assertNull(account0);
 
-        org.junit.Assert.assertTrue(web3.personal_unlockAccount(addr, "passphrase1", "", "0x1234"));
+        org.junit.Assert.assertTrue(web3.personal_unlockAccountWithSecret(addr, "passphrase1", "", "0x1234"));
 
         Account account = web3.getAccountWithSecret(addr, "0x1234");
 
@@ -1260,7 +1260,7 @@ public class Web3ImplTest {
 
         org.junit.Assert.assertNull(account0);
 
-        web3.personal_unlockAccount(addr, "passphrase1", "K", "0x1234");
+        web3.personal_unlockAccountWithSecret(addr, "passphrase1", "K", "0x1234");
 
         org.junit.Assert.fail("This should fail");
     }
@@ -1300,14 +1300,14 @@ public class Web3ImplTest {
 
         org.junit.Assert.assertNull(account0);
 
-        org.junit.Assert.assertTrue(web3.personal_unlockAccount(addr, "passphrase1", "", "0x1234"));
+        org.junit.Assert.assertTrue(web3.personal_unlockAccountWithSecret(addr, "passphrase1", "", "0x1234"));
 
         org.junit.Assert.assertNull(web3.getAccount(addr));
         Account account = web3.getAccountWithSecret(addr, "0x1234");
 
         org.junit.Assert.assertNotNull(account);
 
-        org.junit.Assert.assertTrue(web3.personal_lockAccount(addr, "0x1234"));
+        org.junit.Assert.assertTrue(web3.personal_lockAccountWithSecret(addr, "0x1234"));
 
         Account account1 = web3.getAccountWithSecret(addr, "0x1234");
 
