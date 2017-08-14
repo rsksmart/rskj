@@ -22,12 +22,9 @@ package co.rsk.core;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.peg.PegTestUtils;
-import org.ethereum.core.BlockHeader;
+import org.ethereum.core.*;
 import org.spongycastle.util.encoders.Hex;
 import co.rsk.remasc.RemascTransaction;
-import org.ethereum.core.Block;
-import org.ethereum.core.Bloom;
-import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
@@ -117,7 +114,7 @@ public class BlockTest {
             block.addUncle(uncle.getHeader());
             Assert.fail();
         }
-        catch (Block.SealedBlockException ex) {
+        catch (SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to add uncle", ex.getMessage());
         }
     }
@@ -132,7 +129,7 @@ public class BlockTest {
             block.setStateRoot(new byte[32]);
             Assert.fail();
         }
-        catch (Block.SealedBlockException ex) {
+        catch (SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter state root", ex.getMessage());
         }
     }
@@ -147,7 +144,7 @@ public class BlockTest {
             block.setExtraData(new byte[32]);
             Assert.fail();
         }
-        catch (Block.SealedBlockException ex) {
+        catch (SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter extra data", ex.getMessage());
         }
     }
@@ -162,7 +159,7 @@ public class BlockTest {
             block.setTransactionsList(null);
             Assert.fail();
         }
-        catch (Block.SealedBlockException ex) {
+        catch (SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter transaction list", ex.getMessage());
         }
     }
@@ -177,7 +174,7 @@ public class BlockTest {
             block.setBitcoinMergedMiningCoinbaseTransaction(new byte[32]);
             Assert.fail();
         }
-        catch (Block.SealedBlockException ex) {
+        catch (SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter bitcoin merged mining coinbase transaction", ex.getMessage());
         }
     }
@@ -192,7 +189,7 @@ public class BlockTest {
             block.setBitcoinMergedMiningHeader(new byte[32]);
             Assert.fail();
         }
-        catch (Block.SealedBlockException ex) {
+        catch (SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter bitcoin merged mining header", ex.getMessage());
         }
     }
@@ -207,7 +204,7 @@ public class BlockTest {
             block.setBitcoinMergedMiningMerkleProof(new byte[32]);
             Assert.fail();
         }
-        catch (Block.SealedBlockException ex) {
+        catch (SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter bitcoin merged mining Merkle proof", ex.getMessage());
         }
     }

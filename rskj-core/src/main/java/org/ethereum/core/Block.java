@@ -711,10 +711,4 @@ public class Block {
         this.rlpEncoded = null;
         this.parsed = true;
     }
-
-    public static class SealedBlockException extends RuntimeException {
-        public SealedBlockException(String message) {
-            super("Sealed block: " + message);
-        }
-    }
 }
