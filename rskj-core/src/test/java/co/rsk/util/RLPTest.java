@@ -426,4 +426,13 @@ public class RLPTest {
             Assert.assertEquals(value, result);
         }
     }
+
+    @Test
+    public void encodeDecodeEmptyList() {
+        byte[] encoded = RLP.encodeList();
+
+        Assert.assertNotNull(encoded);
+        Assert.assertEquals(1, encoded.length);
+        Assert.assertEquals((byte)0xc0, encoded[0]);
+    }
 }
