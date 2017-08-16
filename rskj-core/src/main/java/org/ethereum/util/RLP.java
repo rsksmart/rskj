@@ -19,6 +19,7 @@
 
 package org.ethereum.util;
 
+import co.rsk.util.RLPElementInfo;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -172,26 +173,9 @@ public class RLP {
     }
 
     public static BigInteger decodeBigInteger(byte[] data, int index) {
-        final int length;
-        final int newStart;
-        final int firstByte = data[index] & 0xFF;
-
-        if (firstByte < OFFSET_SHORT_ITEM) {
-            length = 1;
-            newStart = index;
-        } else if (firstByte < OFFSET_LONG_ITEM) {
-            length = firstByte - OFFSET_SHORT_ITEM;
-            newStart = index + 1;
-        } else if (firstByte < OFFSET_SHORT_LIST) {
-            int lengthOfLength = data[index] - OFFSET_LONG_ITEM;
-            length = calcLengthRaw(lengthOfLength, data, index);
-            newStart = index + 1 + lengthOfLength;
-        } else {
-            throw new RuntimeException("wrong decode attempt");
-        }
-
-        byte[] valueBytes = new byte[length];
-        System.arraycopy(data, newStart, valueBytes, 0, length);
+        RLPElementInfo info = RLPElementInfo.calculateElementInfo(data, index);
+        byte[] valueBytes = new byte[info.getLength()];
+        System.arraycopy(data, info.getOffset(), valueBytes, 0, info.getLength());
         return new BigInteger(1, valueBytes);
     }
 
