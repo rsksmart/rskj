@@ -4,7 +4,10 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPItem;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 16/08/2017.
@@ -410,5 +413,17 @@ public class RLPTest {
 
         Assert.assertNotNull(decoded);
         Assert.assertArrayEquals(bytes, decoded);
+    }
+
+    @Ignore
+    @Test
+    public void encodeDecodeBigIntegers() {
+        for (int k = 1; k <= 1024; k++) {
+            BigInteger value = BigInteger.valueOf(k);
+            byte[] encoded = RLP.encodeBigInteger(value);
+            BigInteger result =RLP.decodeBigInteger(encoded, 0);
+            Assert.assertNotNull(result);
+            Assert.assertEquals(value, result);
+        }
     }
 }
