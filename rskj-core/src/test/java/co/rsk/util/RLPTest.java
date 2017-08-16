@@ -121,6 +121,28 @@ public class RLPTest {
     }
 
     @Test
+    public void encodeDecodeShortByteArraysUsingEncode() {
+        for (int k = 2; k < 56; k++) {
+            byte[] bytes = new byte[k];
+
+            byte[] encoded = RLP.encode(bytes);
+
+            Assert.assertNotNull(encoded);
+            Assert.assertEquals(1 + k, encoded.length);
+            Assert.assertEquals((byte)(128 + k), encoded[0]);
+
+            RLPElement element = RLP.decode2OneItem(encoded, 0);
+
+            Assert.assertNotNull(element);
+
+            byte[] decoded = element.getRLPData();
+
+            Assert.assertNotNull(decoded);
+            Assert.assertArrayEquals(bytes, decoded);
+        }
+    }
+
+    @Test
     public void encodeDecodeLongByteArrayWithOneByteLength() {
         byte[] bytes = new byte[56];
 
@@ -142,10 +164,53 @@ public class RLPTest {
     }
 
     @Test
+    public void encodeDecodeLongByteArrayWithOneByteLengthUsingEncode() {
+        byte[] bytes = new byte[56];
+
+        byte[] encoded = RLP.encode(bytes);
+
+        Assert.assertNotNull(encoded);
+        Assert.assertEquals(2 + 56, encoded.length);
+        Assert.assertEquals((byte)(183 + 1), encoded[0]);
+        Assert.assertEquals((byte)56, encoded[1]);
+
+        RLPElement element = RLP.decode2OneItem(encoded, 0);
+
+        Assert.assertNotNull(element);
+
+        byte[] decoded = element.getRLPData();
+
+        Assert.assertNotNull(decoded);
+        Assert.assertArrayEquals(bytes, decoded);
+    }
+
+    @Test
     public void encodeDecodeLongByteArrayWithTwoBytesLength() {
         byte[] bytes = new byte[256];
 
         byte[] encoded = RLP.encodeElement(bytes);
+
+        Assert.assertNotNull(encoded);
+        Assert.assertEquals(3 + 256, encoded.length);
+        Assert.assertEquals((byte)(183 + 2), encoded[0]);
+        Assert.assertEquals((byte)1, encoded[1]);
+        Assert.assertEquals((byte)0, encoded[2]);
+
+        RLPElement element = RLP.decode2OneItem(encoded, 0);
+
+        Assert.assertNotNull(element);
+
+        byte[] decoded = element.getRLPData();
+
+        Assert.assertNotNull(decoded);
+        Assert.assertArrayEquals(bytes, decoded);
+    }
+
+    @Test
+    public void encodeDecodeLongByteArrayWithTwoBytesLengthUsingEncode() {
+        byte[] bytes = new byte[256];
+
+        byte[] encoded = RLP.encode(bytes);
 
         Assert.assertNotNull(encoded);
         Assert.assertEquals(3 + 256, encoded.length);
@@ -186,10 +251,55 @@ public class RLPTest {
     }
 
     @Test
+    public void encodeDecodeLongByteArrayWithTwoBytesLengthBorderCaseUsingEncode() {
+        byte[] bytes = new byte[256 * 256 - 1];
+
+        byte[] encoded = RLP.encode(bytes);
+
+        Assert.assertNotNull(encoded);
+        Assert.assertEquals(3 + 256 * 256 - 1, encoded.length);
+        Assert.assertEquals((byte)(183 + 2), encoded[0]);
+        Assert.assertEquals((byte)0xff, encoded[1]);
+        Assert.assertEquals((byte)0xff, encoded[2]);
+
+        RLPElement element = RLP.decode2OneItem(encoded, 0);
+
+        Assert.assertNotNull(element);
+
+        byte[] decoded = element.getRLPData();
+
+        Assert.assertNotNull(decoded);
+        Assert.assertArrayEquals(bytes, decoded);
+    }
+
+    @Test
     public void encodeDecodeLongByteArrayWithThreeBytesLength() {
         byte[] bytes = new byte[256 * 256];
 
         byte[] encoded = RLP.encodeElement(bytes);
+
+        Assert.assertNotNull(encoded);
+        Assert.assertEquals(4 + 256 * 256, encoded.length);
+        Assert.assertEquals((byte)(183 + 3), encoded[0]);
+        Assert.assertEquals((byte)0x01, encoded[1]);
+        Assert.assertEquals((byte)0x00, encoded[2]);
+        Assert.assertEquals((byte)0x00, encoded[3]);
+
+        RLPElement element = RLP.decode2OneItem(encoded, 0);
+
+        Assert.assertNotNull(element);
+
+        byte[] decoded = element.getRLPData();
+
+        Assert.assertNotNull(decoded);
+        Assert.assertArrayEquals(bytes, decoded);
+    }
+
+    @Test
+    public void encodeDecodeLongByteArrayWithThreeBytesLengthUsingEncode() {
+        byte[] bytes = new byte[256 * 256];
+
+        byte[] encoded = RLP.encode(bytes);
 
         Assert.assertNotNull(encoded);
         Assert.assertEquals(4 + 256 * 256, encoded.length);
@@ -232,10 +342,57 @@ public class RLPTest {
     }
 
     @Test
+    public void encodeDecodeLongByteArrayWithThreeBytesLengthBorderCaseUsingEncode() {
+        byte[] bytes = new byte[256 * 256 * 256 - 1];
+
+        byte[] encoded = RLP.encode(bytes);
+
+        Assert.assertNotNull(encoded);
+        Assert.assertEquals(4 + 256 * 256 * 256 - 1, encoded.length);
+        Assert.assertEquals((byte)(183 + 3), encoded[0]);
+        Assert.assertEquals((byte)0xff, encoded[1]);
+        Assert.assertEquals((byte)0xff, encoded[2]);
+        Assert.assertEquals((byte)0xff, encoded[3]);
+
+        RLPElement element = RLP.decode2OneItem(encoded, 0);
+
+        Assert.assertNotNull(element);
+
+        byte[] decoded = element.getRLPData();
+
+        Assert.assertNotNull(decoded);
+        Assert.assertArrayEquals(bytes, decoded);
+    }
+
+    @Test
     public void encodeDecodeLongByteArrayWithFourBytesLength() {
         byte[] bytes = new byte[256 * 256 * 256];
 
         byte[] encoded = RLP.encodeElement(bytes);
+
+        Assert.assertNotNull(encoded);
+        Assert.assertEquals(5 + 256 * 256 * 256, encoded.length);
+        Assert.assertEquals((byte)(183 + 4), encoded[0]);
+        Assert.assertEquals((byte)0x01, encoded[1]);
+        Assert.assertEquals((byte)0x00, encoded[2]);
+        Assert.assertEquals((byte)0x00, encoded[3]);
+        Assert.assertEquals((byte)0x00, encoded[4]);
+
+        RLPElement element = RLP.decode2OneItem(encoded, 0);
+
+        Assert.assertNotNull(element);
+
+        byte[] decoded = element.getRLPData();
+
+        Assert.assertNotNull(decoded);
+        Assert.assertArrayEquals(bytes, decoded);
+    }
+
+    @Test
+    public void encodeDecodeLongByteArrayWithFourBytesLengthUsingEncode() {
+        byte[] bytes = new byte[256 * 256 * 256];
+
+        byte[] encoded = RLP.encode(bytes);
 
         Assert.assertNotNull(encoded);
         Assert.assertEquals(5 + 256 * 256 * 256, encoded.length);
