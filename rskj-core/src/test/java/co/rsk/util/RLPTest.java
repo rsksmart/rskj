@@ -3,6 +3,7 @@ package co.rsk.util;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPItem;
+import org.ethereum.util.RLPList;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -433,6 +434,37 @@ public class RLPTest {
 
         Assert.assertNotNull(encoded);
         Assert.assertEquals(1, encoded.length);
-        Assert.assertEquals((byte)0xc0, encoded[0]);
+        Assert.assertEquals((byte)192, encoded[0]);
+
+        RLPList list = RLP.decode2(encoded);
+
+        Assert.assertNotNull(list);
+        Assert.assertEquals(1, list.size());
+
+        RLPList list2 = (RLPList) list.get(0);
+
+        Assert.assertNotNull(list2);
+        Assert.assertEquals(0, list2.size());
+    }
+
+    @Test
+    public void encodeDecodeShortListWithShortBytes() {
+        byte[] value1 = RLP.encodeElement(new byte[] { 0x01 });
+        byte[] value2 = RLP.encodeElement(new byte[] { 0x02 });
+        byte[] encoded = RLP.encodeList(value1, value2);
+
+        Assert.assertNotNull(encoded);
+        Assert.assertEquals(3, encoded.length);
+        Assert.assertEquals((byte)(192 + 2), encoded[0]);
+
+        RLPList list = RLP.decode2(encoded);
+
+        Assert.assertNotNull(list);
+        Assert.assertEquals(1, list.size());
+
+        RLPList list2 = (RLPList) list.get(0);
+
+        Assert.assertNotNull(list2);
+        Assert.assertEquals(2, list2.size());
     }
 }
