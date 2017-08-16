@@ -609,7 +609,7 @@ public class RLP {
             return concatenate(prefix, output);
         } else {
             byte[] inputAsBytes = toBytes(input);
-            if (inputAsBytes.length == 1 && (inputAsBytes[0] & 0xff) <= 0x80) {
+            if (inputAsBytes.length == 1 && (inputAsBytes[0] & 0xff) < 0x80) {
                 return inputAsBytes;
             } else {
                 byte[] firstByte = encodeLength(inputAsBytes.length, OFFSET_SHORT_ITEM);

@@ -76,6 +76,29 @@ public class RLPTest {
     }
 
     @Test
+    public void encodeDecodeSingleBytesWithHighValueUsingEncode() {
+        for (int k = 128; k < 256; k++) {
+            byte[] bytes = new byte[1];
+            bytes[0] = (byte)k;
+
+            byte[] encoded = RLP.encode(bytes);
+
+            Assert.assertNotNull(encoded);
+            Assert.assertEquals(2, encoded.length);
+            Assert.assertEquals((byte)129, encoded[0]);
+
+            RLPElement element = RLP.decode2OneItem(encoded, 0);
+
+            Assert.assertNotNull(element);
+
+            byte[] decoded = element.getRLPData();
+
+            Assert.assertNotNull(decoded);
+            Assert.assertArrayEquals(bytes, decoded);
+        }
+    }
+
+    @Test
     public void encodeDecodeShortByteArrays() {
         for (int k = 2; k < 56; k++) {
             byte[] bytes = new byte[k];
