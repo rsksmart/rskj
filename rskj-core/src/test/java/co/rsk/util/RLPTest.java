@@ -573,4 +573,86 @@ public class RLPTest {
         Assert.assertArrayEquals(value1, list2.get(0).getRLPData());
         Assert.assertArrayEquals(value2, list2.get(1).getRLPData());
     }
+
+    @Test
+    public void encodeDecodeShortListWithTwoByteArraysWithTwoBytesLength() {
+        byte[] value1 = new byte[126];
+        byte[] value2 = new byte[126];
+        byte[] element1 = RLP.encodeElement(value1);
+        byte[] element2 = RLP.encodeElement(value2);
+        byte[] encoded = RLP.encodeList(element1, element2);
+
+        Assert.assertNotNull(encoded);
+        Assert.assertEquals(1 + 2 + 2 + 126 + 2 + 126, encoded.length);
+        Assert.assertEquals((byte)(247 + 2), encoded[0]);
+        Assert.assertEquals((byte)(1), encoded[1]);
+        Assert.assertEquals((byte)(0), encoded[2]);
+
+        RLPList list = RLP.decode2(encoded);
+
+        Assert.assertNotNull(list);
+        Assert.assertEquals(1, list.size());
+
+        RLPList list2 = (RLPList) list.get(0);
+
+        Assert.assertNotNull(list2);
+        Assert.assertEquals(2, list2.size());
+        Assert.assertArrayEquals(value1, list2.get(0).getRLPData());
+        Assert.assertArrayEquals(value2, list2.get(1).getRLPData());
+    }
+
+    @Test
+    public void encodeDecodeShortListWithTwoByteArraysWithTwoBytesLengthBorderCase() {
+        byte[] value1 = new byte[128 * 256 - 3 - 1];
+        byte[] value2 = new byte[128 * 256 - 3];
+        byte[] element1 = RLP.encodeElement(value1);
+        byte[] element2 = RLP.encodeElement(value2);
+        byte[] encoded = RLP.encodeList(element1, element2);
+
+        Assert.assertNotNull(encoded);
+        Assert.assertEquals(1 + 2 + 3 + (128 * 256 - 3 - 1) + 3 + (128 * 256 - 3), encoded.length);
+        Assert.assertEquals((byte)(247 + 2), encoded[0]);
+        Assert.assertEquals((byte)(255), encoded[1]);
+        Assert.assertEquals((byte)(255), encoded[2]);
+
+        RLPList list = RLP.decode2(encoded);
+
+        Assert.assertNotNull(list);
+        Assert.assertEquals(1, list.size());
+
+        RLPList list2 = (RLPList) list.get(0);
+
+        Assert.assertNotNull(list2);
+        Assert.assertEquals(2, list2.size());
+        Assert.assertArrayEquals(value1, list2.get(0).getRLPData());
+        Assert.assertArrayEquals(value2, list2.get(1).getRLPData());
+    }
+
+    @Test
+    public void encodeDecodeShortListWithTwoByteArraysWithThreeBytesLength() {
+        byte[] value1 = new byte[128 * 256 - 3];
+        byte[] value2 = new byte[128 * 256 - 3];
+        byte[] element1 = RLP.encodeElement(value1);
+        byte[] element2 = RLP.encodeElement(value2);
+        byte[] encoded = RLP.encodeList(element1, element2);
+
+        Assert.assertNotNull(encoded);
+        Assert.assertEquals(1 + 3 + 3 + (128 * 256 - 3) + 3 + (128 * 256 - 3), encoded.length);
+        Assert.assertEquals((byte)(247 + 3), encoded[0]);
+        Assert.assertEquals((byte)(1), encoded[1]);
+        Assert.assertEquals((byte)(0), encoded[2]);
+        Assert.assertEquals((byte)(0), encoded[3]);
+
+        RLPList list = RLP.decode2(encoded);
+
+        Assert.assertNotNull(list);
+        Assert.assertEquals(1, list.size());
+
+        RLPList list2 = (RLPList) list.get(0);
+
+        Assert.assertNotNull(list2);
+        Assert.assertEquals(2, list2.size());
+        Assert.assertArrayEquals(value1, list2.get(0).getRLPData());
+        Assert.assertArrayEquals(value2, list2.get(1).getRLPData());
+    }
 }
