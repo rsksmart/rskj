@@ -172,10 +172,26 @@ public class RLP {
     }
 
     public static BigInteger decodeBigInteger(byte[] data, int index) {
+        final int length;
+        final int newStart;
+        final int firstByte = data[index] & 0xFF;
 
-        final int length = calculateLength(data, index);
+        if (firstByte < OFFSET_SHORT_ITEM) {
+            length = 1;
+            newStart = index;
+        } else if (firstByte < OFFSET_LONG_ITEM) {
+            length = firstByte - OFFSET_SHORT_ITEM;
+            newStart = index + 1;
+        } else if (firstByte < OFFSET_SHORT_LIST) {
+            int lengthOfLength = data[index] - OFFSET_LONG_ITEM;
+            length = calcLengthRaw(lengthOfLength, data, index);
+            newStart = index + 1 + lengthOfLength;
+        } else {
+            throw new RuntimeException("wrong decode attempt");
+        }
+
         byte[] valueBytes = new byte[length];
-        System.arraycopy(data, index, valueBytes, 0, length);
+        System.arraycopy(data, newStart, valueBytes, 0, length);
         return new BigInteger(1, valueBytes);
     }
 
@@ -694,7 +710,7 @@ public class RLP {
             return new byte[]{(byte) OFFSET_SHORT_ITEM};
         else if (isSingleZero(srcData))
             return srcData;
-        else if (srcData.length == 1 && (srcData[0] & 0xFF) < 0x80) {
+        else if (srcData.length == 1 && (srcData[0] & 0xFF) < OFFSET_SHORT_ITEM) {
             return srcData;
         } else if (srcData.length < SIZE_THRESHOLD) {
             // length = 8X
@@ -924,13 +940,15 @@ public class RLP {
 
 
     private static int calculateLength(byte[] data, int index) {
-        if ((data[index] & 0xFF) >= OFFSET_LONG_ITEM
+        if ((data[index] & 0xFF) < OFFSET_SHORT_ITEM) {
+            return 1;
+        } else if ((data[index] & 0xFF) >= OFFSET_LONG_ITEM
                 && (data[index] & 0xFF) < OFFSET_SHORT_LIST) {
 
             byte lengthOfLength = (byte) (data[index] - OFFSET_LONG_ITEM);
             return calcLengthRaw(lengthOfLength, data, index);
 
-        } else if ((data[index] & 0xFF) > OFFSET_SHORT_ITEM
+        } else if ((data[index] & 0xFF) >= OFFSET_SHORT_ITEM
                 && (data[index] & 0xFF) < OFFSET_LONG_ITEM) {
 
             return (byte) (data[index] - OFFSET_SHORT_ITEM);

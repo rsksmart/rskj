@@ -413,13 +413,12 @@ public class RLPTest {
         Assert.assertArrayEquals(bytes, decoded);
     }
 
-    @Ignore
     @Test
     public void encodeDecodeBigIntegers() {
         for (int k = 1; k <= 1024; k++) {
             BigInteger value = BigInteger.valueOf(k);
             byte[] encoded = RLP.encodeBigInteger(value);
-            BigInteger result =RLP.decodeBigInteger(encoded, 0);
+            BigInteger result = RLP.decodeBigInteger(encoded, 0);
             Assert.assertNotNull(result);
             Assert.assertEquals(value, result);
         }
