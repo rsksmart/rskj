@@ -680,4 +680,139 @@ public class RLPTest {
             Assert.assertEquals("Invalid length", ex.getMessage());
         }
     }
+
+    @Ignore
+    @Test
+    public void invalidLengthWithOneByteLengthBorderCase() {
+        byte[] encoded = new byte[256];
+        encoded[0] = (byte)(183 + 1);
+        encoded[1] = (byte)0xff;
+
+        try {
+            RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("Invalid length", ex.getMessage());
+        }
+    }
+
+    @Ignore
+    @Test
+    public void invalidLengthWithTwoByteLength() {
+        byte[] encoded = new byte[] { (byte)(183 + 2), 0x01, 0x00 };
+
+        try {
+            RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("Invalid length", ex.getMessage());
+        }
+    }
+
+    @Ignore
+    @Test
+    public void invalidLengthWithTwoByteLengthBorderCase() {
+        byte[] encoded = new byte[1 + 2 + 256 * 256 - 2];
+        encoded[0] = (byte)(183 + 2);
+        encoded[1] = (byte)0xff;
+        encoded[2] = (byte)0xff;
+
+        try {
+            RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("Invalid length", ex.getMessage());
+        }
+    }
+
+    @Ignore
+    @Test
+    public void invalidLengthWithThreeByteLengthBorderCase() {
+        byte[] encoded = new byte[1 + 3 + 256 * 256 * 256 - 2];
+        encoded[0] = (byte)(183 + 3);
+        encoded[1] = (byte)255;
+        encoded[2] = (byte)255;
+        encoded[3] = (byte)255;
+
+        try {
+            RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("Invalid length", ex.getMessage());
+        }
+    }
+
+    @Ignore
+    @Test
+    public void invalidLengthWithFourByteLength() {
+        byte[] encoded = new byte[] { (byte)(183 + 4), 0x01, 0x00, 0x00, 0x00 };
+
+        try {
+            RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("Invalid length", ex.getMessage());
+        }
+    }
+
+    @Ignore
+    @Test
+    public void invalidOneByteLength() {
+        byte[] encoded = new byte[] { (byte)(183 + 1) };
+
+        try {
+            RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("Invalid length", ex.getMessage());
+        }
+    }
+
+    @Ignore
+    @Test
+    public void invalidTwoByteLength() {
+        byte[] encoded = new byte[] { (byte)(183 + 2), 0x01 };
+
+        try {
+            RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("Invalid length", ex.getMessage());
+        }
+    }
+
+    @Ignore
+    @Test
+    public void invalidThreeByteLength() {
+        byte[] encoded = new byte[] { (byte)(183 + 3), 0x01, 0x02 };
+
+        try {
+            RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("Invalid length", ex.getMessage());
+        }
+    }
+
+    @Ignore
+    @Test
+    public void invalidFourByteLength() {
+        byte[] encoded = new byte[] { (byte)(183 + 4), 0x01, 0x02, 0x03 };
+
+        try {
+            RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("Invalid length", ex.getMessage());
+        }
+    }
 }
