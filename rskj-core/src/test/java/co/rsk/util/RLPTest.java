@@ -1,9 +1,6 @@
 package co.rsk.util;
 
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPItem;
-import org.ethereum.util.RLPList;
+import org.ethereum.util.*;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -654,5 +651,33 @@ public class RLPTest {
         Assert.assertEquals(2, list2.size());
         Assert.assertArrayEquals(value1, list2.get(0).getRLPData());
         Assert.assertArrayEquals(value2, list2.get(1).getRLPData());
+    }
+
+    @Ignore
+    @Test
+    public void invalidLengthWithZeroByteLength() {
+        byte[] encoded = new byte[] { (byte)0x81 };
+
+        try {
+            RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("Invalid length", ex.getMessage());
+        }
+    }
+
+    @Ignore
+    @Test
+    public void invalidLengthWithOneByteLength() {
+        byte[] encoded = new byte[] { (byte)(183 + 1), 0x01 };
+
+        try {
+            RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("Invalid length", ex.getMessage());
+        }
     }
 }
