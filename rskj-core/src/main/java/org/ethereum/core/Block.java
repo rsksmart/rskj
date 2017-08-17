@@ -39,6 +39,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * The block in Ethereum is the collection of relevant pieces of information
@@ -58,11 +59,13 @@ public class Block {
 
     private BlockHeader header;
 
+    // Using concurrent lists
+    // (the add and remove methods copy an internal array,
+    // but the iterator directly use the internal array)
     /* Transactions */
-    private List<Transaction> transactionsList = new ArrayList<>();
-
+    private List<Transaction> transactionsList = new CopyOnWriteArrayList<>();
     /* Uncles */
-    private List<BlockHeader> uncleList = new ArrayList<>();
+    private List<BlockHeader> uncleList = new CopyOnWriteArrayList<>();
 
     /* Private */
     private byte[] rlpEncoded;
@@ -171,12 +174,12 @@ public class Block {
 
         this.transactionsList = transactionsList;
         if (this.transactionsList == null) {
-            this.transactionsList = new ArrayList<>();
+            this.transactionsList = new CopyOnWriteArrayList<>();
         }
 
         this.uncleList = uncleList;
         if (this.uncleList == null) {
-            this.uncleList = new ArrayList<>();
+            this.uncleList = new CopyOnWriteArrayList<>();
         }
 
         this.parsed = true;
