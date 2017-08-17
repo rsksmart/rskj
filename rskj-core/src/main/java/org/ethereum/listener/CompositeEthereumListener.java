@@ -25,6 +25,7 @@ import org.ethereum.net.message.Message;
 import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
+import org.ethereum.vm.trace.ProgramTrace;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -110,7 +111,7 @@ public class CompositeEthereumListener implements EthereumListener {
     }
 
     @Override
-    public void onVMTraceCreated(String transactionHash, String trace) {
+    public void onVMTraceCreated(String transactionHash, ProgramTrace trace) {
         for (EthereumListener listener : listeners) {
             listener.onVMTraceCreated(transactionHash, trace);
         }
