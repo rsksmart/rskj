@@ -38,7 +38,6 @@ import org.spongycastle.util.encoders.Hex;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * The block in Ethereum is the collection of relevant pieces of information
@@ -59,10 +58,10 @@ public class Block {
     private BlockHeader header;
 
     /* Transactions */
-    private List<Transaction> transactionsList = new CopyOnWriteArrayList<>();
+    private List<Transaction> transactionsList;
 
     /* Uncles */
-    private List<BlockHeader> uncleList = new CopyOnWriteArrayList<>();
+    private List<BlockHeader> uncleList;
 
     /* Private */
     private byte[] rlpEncoded;
@@ -171,12 +170,12 @@ public class Block {
 
         this.transactionsList = transactionsList;
         if (this.transactionsList == null) {
-            this.transactionsList = new CopyOnWriteArrayList<>();
+            this.transactionsList = new ArrayList<>();
         }
 
         this.uncleList = uncleList;
         if (this.uncleList == null) {
-            this.uncleList = new CopyOnWriteArrayList<>();
+            this.uncleList = new ArrayList<>();
         }
 
         this.parsed = true;
