@@ -58,10 +58,10 @@ public class Block {
     private BlockHeader header;
 
     /* Transactions */
-    private List<Transaction> transactionsList;
+    private List<Transaction> transactionsList = new ArrayList<>();
 
     /* Uncles */
-    private List<BlockHeader> uncleList;
+    private List<BlockHeader> uncleList = new ArrayList<>();
 
     /* Private */
     private byte[] rlpEncoded;
