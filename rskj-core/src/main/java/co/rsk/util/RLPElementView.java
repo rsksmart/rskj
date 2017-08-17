@@ -112,7 +112,7 @@ public class RLPElementView {
             // the length of the string
             byte lengthOfLength = (byte) (data[index] - OFFSET_LONG_ITEM);
             info.type = RLPElementType.ITEM;
-            info.length = calcLength(lengthOfLength, data, index);
+            info.length = readLengthOfLength(data, index + 1, lengthOfLength);
             info.offset = index + 1 + lengthOfLength;
         } else if (prefix <= OFFSET_LONG_LIST) {
             // It's a list with a payload less than 55 bytes
@@ -125,7 +125,7 @@ public class RLPElementView {
             // for the length of the list
             byte lengthOfLength = (byte) (data[index] - OFFSET_LONG_LIST);
             info.type = RLPElementType.LIST;
-            info.length = calcLength(lengthOfLength, data, index);
+            info.length = readLengthOfLength(data, index + 1, lengthOfLength);
             info.offset = index + lengthOfLength + 1;
         } else {
             throw new RLPException("Only byte values between 0x00 and 0xFF are supported, but got: " + prefix);
@@ -155,13 +155,28 @@ public class RLPElementView {
         }
     }
 
-    private static int calcLength(int lengthOfLength, byte[] msgData, int pos) {
-        byte pow = (byte) (lengthOfLength - 1);
-        int length = 0;
-        for (int i = 1; i <= lengthOfLength; ++i) {
-            length += (msgData[pos + i] & 0xFF) << (8 * pow);
+    private static int readLengthOfLength(byte[] data, int offset, byte lengthOfNumber) {
+        if (data.length < offset + lengthOfNumber) {
+            throw new RLPException("The length of the RLP item length can't possibly fit the data byte array");
+        }
+
+        long length = readBigEndianLong(data, offset, lengthOfNumber);
+
+        if (Long.compareUnsigned(length, Integer.MAX_VALUE) > 0) {
+            throw new RLPException("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have");
+        }
+
+        return (int)length;
+    }
+
+    private static long readBigEndianLong(byte[] data, int offset, byte lengthOfNumber) {
+        byte pow = (byte)(lengthOfNumber - 1);
+        long length = 0;
+        for (int i = offset; i < offset + lengthOfNumber; ++i) {
+            length += (long)(data[i] & 0xff) << (8 * pow);
             pow--;
         }
+
         return length;
     }
 }

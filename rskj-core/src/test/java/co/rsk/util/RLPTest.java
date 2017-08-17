@@ -673,11 +673,10 @@ public class RLPTest {
             Assert.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("Invalid length", ex.getMessage());
+            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
-    @Ignore
     @Test
     public void invalidLengthWithOneByteLengthBorderCase() {
         byte[] encoded = new byte[256];
@@ -689,11 +688,10 @@ public class RLPTest {
             Assert.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("Invalid length", ex.getMessage());
+            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
-    @Ignore
     @Test
     public void invalidLengthWithTwoByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 2), 0x01, 0x00 };
@@ -703,11 +701,10 @@ public class RLPTest {
             Assert.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("Invalid length", ex.getMessage());
+            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
-    @Ignore
     @Test
     public void invalidLengthWithTwoByteLengthBorderCase() {
         byte[] encoded = new byte[1 + 2 + 256 * 256 - 2];
@@ -720,11 +717,10 @@ public class RLPTest {
             Assert.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("Invalid length", ex.getMessage());
+            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
-    @Ignore
     @Test
     public void invalidLengthWithThreeByteLengthBorderCase() {
         byte[] encoded = new byte[1 + 3 + 256 * 256 * 256 - 2];
@@ -738,11 +734,10 @@ public class RLPTest {
             Assert.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("Invalid length", ex.getMessage());
+            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
-    @Ignore
     @Test
     public void invalidLengthWithFourByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 4), 0x01, 0x00, 0x00, 0x00 };
@@ -752,11 +747,10 @@ public class RLPTest {
             Assert.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("Invalid length", ex.getMessage());
+            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
-    @Ignore
     @Test
     public void invalidOneByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 1) };
@@ -766,11 +760,10 @@ public class RLPTest {
             Assert.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("Invalid length", ex.getMessage());
+            Assert.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
         }
     }
 
-    @Ignore
     @Test
     public void invalidTwoByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 2), 0x01 };
@@ -780,11 +773,10 @@ public class RLPTest {
             Assert.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("Invalid length", ex.getMessage());
+            Assert.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
         }
     }
 
-    @Ignore
     @Test
     public void invalidThreeByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 3), 0x01, 0x02 };
@@ -794,11 +786,10 @@ public class RLPTest {
             Assert.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("Invalid length", ex.getMessage());
+            Assert.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
         }
     }
 
-    @Ignore
     @Test
     public void invalidFourByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 4), 0x01, 0x02, 0x03 };
@@ -808,7 +799,33 @@ public class RLPTest {
             Assert.fail();
         }
         catch (RLPException ex) {
+            Assert.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void lengthOfLengthOfMaxIntegerDoesntOverflow() {
+        try {
+            // Integer.MAX_VALUE
+            byte[] encoded = new byte[] { (byte)(183 + 4), (byte)0x7f, (byte)0xff, (byte)0xff, (byte)0xff };
+            RLP.decodeBigInteger(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
             Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void lengthOfLengthGreaterThanMaxIntegerOverflows() {
+        try {
+            // Integer.MAX_VALUE + 1
+            byte[] encoded = new byte[] { (byte)(183 + 4), (byte)0x80, (byte)0xff, (byte)0xff, (byte)0xff };
+            RLP.decodeBigInteger(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have", ex.getMessage());
         }
     }
 }
