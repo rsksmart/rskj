@@ -37,6 +37,7 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -339,13 +340,14 @@ public class Block {
         if (!parsed)
             parseRLP();
 
-        return transactionsList;
+        return Collections.unmodifiableList(this.transactionsList);
     }
 
     public List<BlockHeader> getUncleList() {
         if (!parsed)
             parseRLP();
-        return uncleList;
+
+        return Collections.unmodifiableList(this.uncleList);
     }
 
     public byte[] getMinimumGasPrice() {
