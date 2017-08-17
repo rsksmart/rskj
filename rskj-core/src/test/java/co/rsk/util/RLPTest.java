@@ -2,7 +2,6 @@ package co.rsk.util;
 
 import org.ethereum.util.*;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigInteger;
@@ -652,7 +651,6 @@ public class RLPTest {
         Assert.assertArrayEquals(value2, list2.get(1).getRLPData());
     }
 
-    @Ignore
     @Test
     public void invalidLengthWithZeroByteLength() {
         byte[] encoded = new byte[] { (byte)0x81 };
@@ -662,11 +660,10 @@ public class RLPTest {
             Assert.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("Invalid length", ex.getMessage());
+            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 
-    @Ignore
     @Test
     public void invalidLengthWithOneByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 1), 0x01 };
@@ -811,7 +808,7 @@ public class RLPTest {
             Assert.fail();
         }
         catch (RLPException ex) {
-            Assert.assertEquals("Invalid length", ex.getMessage());
+            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
         }
     }
 }
