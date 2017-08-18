@@ -58,13 +58,14 @@ public class RLPElementView {
 
     private RLPElement lazyElement;
     private byte[] data;
+    private int rlpStart;
     private int length;
     private int offset;
     private RLPElementType type;
 
     public RLPElement getOrCreateElement() {
         if (lazyElement == null) {
-            lazyElement = createElement(type, data, length, offset);
+            lazyElement = createElement(type, data, rlpStart, length, offset);
         }
         return lazyElement;
     }
@@ -87,6 +88,7 @@ public class RLPElementView {
         }
 
         RLPElementView info = new RLPElementView();
+        info.rlpStart = index;
         info.data = data;
         int prefix = data[index] & 0xFF;
         //int prefix = Byte.toUnsignedInt(data[index]);
@@ -141,7 +143,7 @@ public class RLPElementView {
 
     private RLPElementView() {}
 
-    private static RLPElement createElement(RLPElementType type, byte[] data, int length, int offset) {
+    private static RLPElement createElement(RLPElementType type, byte[] data, int rlpStart, int length, int offset) {
         if (type == RLPElementType.NULL_ITEM) {
             byte[] item = ByteUtil.EMPTY_BYTE_ARRAY;
             return new RLPItem(item);
@@ -150,8 +152,10 @@ public class RLPElementView {
             System.arraycopy(data, offset, item, 0, length);
             return new RLPItem(item);
         } else { // list
-            byte[] rlpData = new byte[length];
-            System.arraycopy(data, offset, rlpData, 0, length);
+            // because of how EthJ works, the RLPList has to have the full RLP data
+            int longListLength = length + (offset - rlpStart);
+            byte[] rlpData = new byte[longListLength];
+            System.arraycopy(data, rlpStart, rlpData, 0, longListLength);
 
             RLPList newList = new RLPList();
             newList.setRLPData(rlpData);
