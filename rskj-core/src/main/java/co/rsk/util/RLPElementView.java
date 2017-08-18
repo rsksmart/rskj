@@ -5,6 +5,8 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 
+import java.util.Arrays;
+
 /**
  * Created by martin.coll on 16/08/2017.
  */
@@ -34,7 +36,7 @@ public class RLPElementView {
      * \xb9\x04\x00 followed by the string. The range of the first byte is thus
      * [0xb8, 0xbf].
      */
-    private static final int OFFSET_LONG_ITEM = 0xb7;
+    private static final int OFFSET_LONG_ITEM = 0xb8;
 
     /**
      * [0xc0]
@@ -54,7 +56,7 @@ public class RLPElementView {
      * followed by the concatenation of the RLP encodings of the items. The
      * range of the first byte is thus [0xf8, 0xff].
      */
-    private static final int OFFSET_LONG_LIST = 0xf7;
+    private static final int OFFSET_LONG_LIST = 0xf8;
 
     private RLPElement lazyElement;
     private byte[] data;
@@ -82,6 +84,9 @@ public class RLPElementView {
         return type;
     }
 
+    /**
+     * Decodes that that starts at given index
+     */
     public static RLPElementView calculateElementInfo(byte[] data, int index) {
         if (data.length <= index) {
             throw new RuntimeException("invalid index RLP raw data array");
@@ -91,10 +96,18 @@ public class RLPElementView {
         info.rlpStart = index;
         info.data = data;
         int prefix = data[index] & 0xFF;
-        //int prefix = Byte.toUnsignedInt(data[index]);
-        if (prefix < 0x00 || prefix > 0xFF) {
-            throw new RLPException("Only byte values between 0x00 and 0xFF are supported, but got: " + prefix);
-        } else if (prefix < OFFSET_SHORT_ITEM) {
+
+        // Switch checking what kind of element is encoded
+        // There are 2 kind of objects: elems and lists
+        // There are 4 kind of elems:
+        //   * empty
+        //   * 1 byte long, < 128
+        //   * up to 55 bytes long
+        //   * more than 55 bytes long
+        // There are 2 kind of lists
+        //   * up to 55 bytes long
+        //   * more than 55 bytes long
+        if (prefix < OFFSET_SHORT_ITEM) {
             // single byte item
             info.type = RLPElementType.ITEM;
             info.length = 1;
@@ -104,7 +117,7 @@ public class RLPElementView {
             info.type = RLPElementType.NULL_ITEM;
             info.length = 1;
             info.offset = index;
-        } else if (prefix <= OFFSET_LONG_ITEM) {
+        } else if (prefix < OFFSET_LONG_ITEM) {
             // It's an item less than 55 bytes long,
             // data[0] - 0x80 == length of the item
             info.type = RLPElementType.ITEM;
@@ -114,11 +127,11 @@ public class RLPElementView {
             // It's an item with a payload more than 55 bytes
             // data[0] - 0xB7 = how much next bytes allocated for
             // the length of the string
-            byte lengthOfLength = (byte) (data[index] - OFFSET_LONG_ITEM);
+            byte lengthOfLength = (byte) (data[index] - OFFSET_LONG_ITEM + 1);
             info.type = RLPElementType.ITEM;
             info.length = readLengthOfLength(data, index + 1, lengthOfLength);
             info.offset = index + 1 + lengthOfLength;
-        } else if (prefix <= OFFSET_LONG_LIST) {
+        } else if (prefix < OFFSET_LONG_LIST) {
             // It's a list with a payload less than 55 bytes
             info.type = RLPElementType.SHORT_LIST;
             info.length = (byte) (prefix - OFFSET_SHORT_LIST);
@@ -128,7 +141,7 @@ public class RLPElementView {
             // It's a list with a payload more than 55 bytes
             // data[0] - 0xF7 = how many next bytes allocated
             // for the length of the list
-            byte lengthOfLength = (byte) (data[index] - OFFSET_LONG_LIST);
+            byte lengthOfLength = (byte) (data[index] - OFFSET_LONG_LIST + 1);
             info.type = RLPElementType.LONG_LIST;
             info.length = readLengthOfLength(data, index + 1, lengthOfLength);
             info.offset = index + lengthOfLength + 1;
@@ -148,14 +161,12 @@ public class RLPElementView {
             byte[] item = ByteUtil.EMPTY_BYTE_ARRAY;
             return new RLPItem(item);
         } else if (type == RLPElementType.ITEM) {
-            byte[] item = new byte[length];
-            System.arraycopy(data, offset, item, 0, length);
+            byte[] item = Arrays.copyOfRange(data, offset, offset + length);
             return new RLPItem(item);
         } else { // list
             // because of how EthJ works, the RLPList has to have the full RLP data
             int longListLength = length + (offset - rlpStart);
-            byte[] rlpData = new byte[longListLength];
-            System.arraycopy(data, rlpStart, rlpData, 0, longListLength);
+            byte[] rlpData = Arrays.copyOfRange(data, rlpStart, rlpStart + longListLength);
 
             RLPList newList = new RLPList();
             newList.setRLPData(rlpData);
