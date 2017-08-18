@@ -415,8 +415,8 @@ public class RLP {
                 RLPElementView view = RLPElementView.calculateElementInfo(msgData, pos);
 
                 pos = view.getOffset() + view.getLength();
-                if (view.getType() == RLPElementType.LIST
-                    && view.getLength() > 0) {
+                if (view.getType() == RLPElementType.LONG_LIST
+                        || (view.getType() == RLPElementType.SHORT_LIST && view.getLength() > 0)) {
                     RLPList newLevelList = (RLPList)view.getOrCreateElement();
                     fullTraverse(msgData, level + 1, view.getOffset(), pos, newLevelList);
                 }

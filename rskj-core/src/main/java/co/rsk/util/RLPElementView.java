@@ -89,17 +89,19 @@ public class RLPElementView {
         RLPElementView info = new RLPElementView();
         info.data = data;
         int prefix = data[index] & 0xFF;
-        if (prefix >= 0x00 && prefix < OFFSET_SHORT_ITEM) {
+        //int prefix = Byte.toUnsignedInt(data[index]);
+        if (prefix < 0x00 || prefix > 0xFF) {
+            throw new RLPException("Only byte values between 0x00 and 0xFF are supported, but got: " + prefix);
+        } else if (prefix < OFFSET_SHORT_ITEM) {
             // single byte item
             info.type = RLPElementType.ITEM;
             info.length = 1;
             info.offset = index;
         } else if (prefix == OFFSET_SHORT_ITEM) {
             // null item
-            info.type = RLPElementType.ITEM;
-            info.data = ByteUtil.EMPTY_BYTE_ARRAY;
-            info.length = 0;
-            info.offset = 0;
+            info.type = RLPElementType.NULL_ITEM;
+            info.length = 1;
+            info.offset = index;
         } else if (prefix <= OFFSET_LONG_ITEM) {
             // It's an item less than 55 bytes long,
             // data[0] - 0x80 == length of the item
@@ -116,19 +118,18 @@ public class RLPElementView {
             info.offset = index + 1 + lengthOfLength;
         } else if (prefix <= OFFSET_LONG_LIST) {
             // It's a list with a payload less than 55 bytes
-            info.type = RLPElementType.LIST;
+            info.type = RLPElementType.SHORT_LIST;
             info.length = (byte) (prefix - OFFSET_SHORT_LIST);
+            //info.length = (byte) (((data[index] & 0xFF) - OFFSET_SHORT_LIST) & 0xFF);
             info.offset = index + 1;
-        } else if (prefix <= 0xFF) {
+        } else {
             // It's a list with a payload more than 55 bytes
             // data[0] - 0xF7 = how many next bytes allocated
             // for the length of the list
             byte lengthOfLength = (byte) (data[index] - OFFSET_LONG_LIST);
-            info.type = RLPElementType.LIST;
+            info.type = RLPElementType.LONG_LIST;
             info.length = readLengthOfLength(data, index + 1, lengthOfLength);
             info.offset = index + lengthOfLength + 1;
-        } else {
-            throw new RLPException("Only byte values between 0x00 and 0xFF are supported, but got: " + prefix);
         }
 
         if (data.length - info.offset < info.length) {
@@ -141,7 +142,10 @@ public class RLPElementView {
     private RLPElementView() {}
 
     private static RLPElement createElement(RLPElementType type, byte[] data, int length, int offset) {
-        if (type == RLPElementType.ITEM) {
+        if (type == RLPElementType.NULL_ITEM) {
+            byte[] item = ByteUtil.EMPTY_BYTE_ARRAY;
+            return new RLPItem(item);
+        } else if (type == RLPElementType.ITEM) {
             byte[] item = new byte[length];
             System.arraycopy(data, offset, item, 0, length);
             return new RLPItem(item);
