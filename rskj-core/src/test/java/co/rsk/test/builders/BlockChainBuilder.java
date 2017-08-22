@@ -23,9 +23,11 @@ import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
+import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
@@ -40,18 +42,35 @@ import java.util.HashMap;
  */
 public class BlockChainBuilder {
     private AdminInfo adminInfo = null;
+    private boolean testing;
+    private boolean rsk;
+    Repository repository;
+    BlockStore blockStore;
 
     public BlockChainBuilder adminInfo(AdminInfo adminInfo) {
         this.adminInfo = adminInfo;
         return this;
     }
 
-    public BlockChainImpl build() {
-        TrieStore store = new TrieStoreImpl(new HashMapDB().setClearOnClose(false));
-        Repository repository = new RepositoryImpl(store);
+    public BlockChainBuilder setTesting(boolean value) {
+        this.testing = value;
+        return this;
+    }
 
-        IndexedBlockStore blockStore = new IndexedBlockStore();
-        blockStore.init(new HashMap<>(), new HashMapDB(), null);
+    public BlockChainBuilder setRsk(boolean value) {
+        this.rsk = value;
+        return this;
+    }
+
+    public BlockChainImpl build() {
+        if (repository == null)
+            repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));
+
+        if (blockStore == null) {
+            IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
+            indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
+            blockStore = indexedBlockStore;
+        }
 
         KeyValueDataSource ds = new HashMapDB();
         ds.init();
@@ -67,6 +86,13 @@ public class BlockChainBuilder {
         BlockValidator blockValidator = validatorBuilder.build();
 
         BlockChainImpl blockChain = new BlockChainImpl(repository, blockStore, receiptStore, null, listener, adminInfo, blockValidator);
+
+        if (this.testing && this.rsk) {
+            blockChain.setBlockValidator(new DummyBlockValidator());
+            blockChain.setNoValidation(true);
+        }
+
+        blockChain.setRsk(this.rsk);
 
         PendingStateImpl pendingState = new PendingStateImpl(blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
 
