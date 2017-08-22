@@ -41,19 +41,18 @@ import java.util.List;
  * Created by ajlopez on 8/6/2016.
  */
 public class BlockChainBuilder {
-    private AdminInfo adminInfo = null;
-
     private boolean testing;
     private boolean rsk;
 
     private List<Block> blocks;
     private List<TransactionInfo> txinfos;
 
+    private AdminInfo adminInfo;
     private Repository repository;
     private BlockStore blockStore;
     private Genesis genesis;
 
-    public BlockChainBuilder adminInfo(AdminInfo adminInfo) {
+    public BlockChainBuilder setAdminInfo(AdminInfo adminInfo) {
         this.adminInfo = adminInfo;
         return this;
     }
@@ -115,7 +114,10 @@ public class BlockChainBuilder {
 
         BlockValidator blockValidator = validatorBuilder.build();
 
-        BlockChainImpl blockChain = new BlockChainImpl(repository, blockStore, receiptStore, null, listener, adminInfo, blockValidator);
+        if (this.adminInfo == null)
+            this.adminInfo = new AdminInfo();
+
+        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, null, listener, this.adminInfo, blockValidator);
 
         if (this.testing && this.rsk) {
             blockChain.setBlockValidator(new DummyBlockValidator());
