@@ -117,6 +117,11 @@ public class BlockChainBuilder {
         blockChain.setPendingState(pendingState);
 
         if (this.genesis != null) {
+            for (ByteArrayWrapper key : this.genesis.getPremine().keySet()) {
+                this.repository.createAccount(key.getData());
+                this.repository.addBalance(key.getData(), this.genesis.getPremine().get(key).getAccountState().getBalance());
+            }
+
             this.genesis.setStateRoot(this.repository.getRoot());
             this.genesis.flushRLP();
             blockChain.setBestBlock(this.genesis);

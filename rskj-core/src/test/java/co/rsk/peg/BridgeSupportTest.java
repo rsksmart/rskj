@@ -19,7 +19,6 @@
 package co.rsk.peg;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.blockchain.utils.BlockchainBuilder;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -114,8 +113,6 @@ public class BridgeSupportTest {
         SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
-
-
     @Test
     public void testInitialChainHeadWithBtcCheckpoints() throws Exception {
         BlockchainNetConfig blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
@@ -202,8 +199,6 @@ public class BridgeSupportTest {
         SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
-
-
     private List<BtcBlock> createBtcBlocks(NetworkParameters _networkParameters, BtcBlock parent, int numberOfBlocksToCreate) {
         List<BtcBlock> list = new ArrayList<>();
         for (int i = 0; i < numberOfBlocksToCreate; i++) {
@@ -214,7 +209,6 @@ public class BridgeSupportTest {
         }
         return list;
     }
-
 
     private InputStream getCheckpoints(NetworkParameters _networkParameters, List<BtcBlock> checkpoints) {
         try {
@@ -351,7 +345,7 @@ public class BridgeSupportTest {
         TransactionInfo ti1 = new TransactionInfo(receipt1, blocks.get(1).getHash(), 0);
 
         List<TransactionInfo> tis = Lists.newArrayList(ti1);
-        BlockchainBuilder builder = new BlockchainBuilder();
+        BlockChainBuilder builder = new BlockChainBuilder();
 
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).build();
 
@@ -408,7 +402,7 @@ public class BridgeSupportTest {
         TransactionInfo ti1 = new TransactionInfo(receipt1, blocks.get(1).getHash(), 0);
 
         List<TransactionInfo> tis = Lists.newArrayList(ti1);
-        BlockchainBuilder builder = new BlockchainBuilder();
+        BlockChainBuilder builder = new BlockChainBuilder();
 
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).build();
         blocks.get(1).getTransactionsList().add(rskTx1);
@@ -453,7 +447,7 @@ public class BridgeSupportTest {
         TransactionInfo ti1 = new TransactionInfo(receipt1, blocks.get(1).getHash(), 0);
 
         List<TransactionInfo> tis = Lists.newArrayList(ti1);
-        BlockchainBuilder builder = new BlockchainBuilder();
+        BlockChainBuilder builder = new BlockChainBuilder();
 
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).setGenesis(genesisBlock).build();
         blocks.get(1).getTransactionsList().add(rskTx1);
@@ -532,7 +526,7 @@ public class BridgeSupportTest {
         blocks.get(1).getTransactionsList().add(tx);
         blocks.get(1).flushRLP();
 
-        BlockchainBuilder builder = new BlockchainBuilder();
+        BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).build();
 
         for (int k = 0; k < blocks.size(); k++)
