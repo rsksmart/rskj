@@ -41,7 +41,6 @@ import java.util.List;
  * Created by ajlopez on 5/13/2016.
  */
 public class BlockchainBuilder {
-    private Blockchain blockchain;
     private List<Block> blocks;
     private List<TransactionInfo> txinfos;
     private boolean testing;
@@ -79,6 +78,7 @@ public class BlockchainBuilder {
         this.txinfos = txinfos;
         return this;
     }
+
     public BlockchainBuilder setBlockStore(BlockStore blockStore) {
         this.blockStore = blockStore;
         return this;

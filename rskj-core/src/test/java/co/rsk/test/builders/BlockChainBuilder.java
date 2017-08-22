@@ -73,6 +73,11 @@ public class BlockChainBuilder {
         return this;
     }
 
+    public BlockChainBuilder setBlockStore(BlockStore blockStore) {
+        this.blockStore = blockStore;
+        return this;
+    }
+
     public BlockChainBuilder setTransactionInfos(List<TransactionInfo> txinfos) {
         this.txinfos = txinfos;
         return this;
