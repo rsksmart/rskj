@@ -24,6 +24,7 @@ import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
+import org.ethereum.core.Block;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
@@ -45,11 +46,12 @@ public class BlockChainBuilder {
     private boolean testing;
     private boolean rsk;
 
+    private List<Block> blocks;
     private List<TransactionInfo> txinfos;
 
-    Repository repository;
-    BlockStore blockStore;
-    Genesis genesis;
+    private Repository repository;
+    private BlockStore blockStore;
+    private Genesis genesis;
 
     public BlockChainBuilder adminInfo(AdminInfo adminInfo) {
         this.adminInfo = adminInfo;
@@ -63,6 +65,11 @@ public class BlockChainBuilder {
 
     public BlockChainBuilder setRsk(boolean value) {
         this.rsk = value;
+        return this;
+    }
+
+    public BlockChainBuilder setBlocks(List<Block> blocks) {
+        this.blocks = blocks;
         return this;
     }
 
@@ -126,6 +133,15 @@ public class BlockChainBuilder {
             this.genesis.flushRLP();
             blockChain.setBestBlock(this.genesis);
             blockChain.setTotalDifficulty(this.genesis.getCumulativeDifficulty());
+        }
+
+        if (this.blocks != null) {
+            BlockExecutor blockExecutor = new BlockExecutor(repository, blockChain, blockStore, listener);
+
+            for (Block b : this.blocks) {
+                blockExecutor.executeAndFillAll(b, blockChain.getBestBlock());
+                blockChain.tryToConnect(b);
+            }
         }
 
         return blockChain;
