@@ -35,8 +35,8 @@ public class TxPendingValidator {
 
     public TxPendingValidator() {
         validatorSteps.add(new TxNotNullValidator());
-        validatorSteps.add(new TxValidatorGasLimitValidator());
         validatorSteps.add(new TxValidatorNotRemascTxValidator());
+        validatorSteps.add(new TxValidatorGasLimitValidator());
     }
 
     public boolean isValid(Transaction tx, byte[] gasLimit) {

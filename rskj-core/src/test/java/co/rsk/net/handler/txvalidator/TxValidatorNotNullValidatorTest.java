@@ -18,20 +18,23 @@
 
 package co.rsk.net.handler.txvalidator;
 
-import co.rsk.remasc.RemascTransaction;
-import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
+import org.junit.Assert;
+import org.junit.Test;
+import org.mockito.Mockito;
 
-/**
- * Checks that a transaction is not a Remasc type transaction. Helps to simplify some code.
- *
- * Transaction must not be null
- */
-public class TxValidatorNotRemascTxValidator implements TxValidatorStep {
+import java.math.BigInteger;
 
-    @Override
-    public boolean validate(Transaction tx, AccountState state, byte[] gasLimit, byte[] minimumGasPrice, long bestBlockNumber) {
-        return !(tx instanceof RemascTransaction);
+public class TxValidatorNotNullValidatorTest {
+    @Test
+    public void nullTx() {
+        TxNotNullValidator validator = new TxNotNullValidator();
+        Assert.assertFalse(validator.validate(null, null, null, null, 0));
     }
 
+    @Test
+    public void tx() {
+        TxNotNullValidator validator = new TxNotNullValidator();
+        Assert.assertTrue(validator.validate(Mockito.mock(Transaction.class), null, null, null, 0));
+    }
 }
