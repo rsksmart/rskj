@@ -18,7 +18,6 @@
 
 package co.rsk.net;
 
-import co.rsk.blockchain.utils.BlockchainBuilder;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
