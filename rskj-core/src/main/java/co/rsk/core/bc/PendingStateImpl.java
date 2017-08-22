@@ -18,7 +18,7 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.remasc.RemascTransaction;
+import co.rsk.net.handler.TxPendingValidator;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import com.google.common.annotations.VisibleForTesting;
@@ -82,6 +82,7 @@ public class PendingStateImpl implements PendingState {
     private Block bestBlock;
 
     private Repository pendingStateRepository;
+    private TxPendingValidator validator = new TxPendingValidator();
 
     public PendingStateImpl() {
         // Used by Spring framework
@@ -427,20 +428,9 @@ public class PendingStateImpl implements PendingState {
     }
 
     private boolean shouldAcceptTx(Transaction tx) {
-        if (tx == null)
-            return false;
-
-        if (tx instanceof RemascTransaction)
-            return false;
-
-        // not sure if this can happen
         if (bestBlock == null)
             return true;
-
-        if (tx.getGasLimitAsInteger().compareTo(new BigInteger(1, bestBlock.getGasLimit())) > 0)
-            return false;
-
-        return true;
+        return validator.isValid(tx, bestBlock.getGasLimit());
     }
 
     public static class TransactionSortedSet extends TreeSet<Transaction> {

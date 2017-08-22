@@ -18,21 +18,18 @@
 
 package co.rsk.net.handler.txvalidator;
 
+import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
-import org.spongycastle.util.BigIntegers;
-
-import java.math.BigInteger;
 
 /**
- * Checks that the transaction gas limit is lower than the `block` gas limit,
- * though there's no check that the actual block gas limit is used
+ * Checks that a transaction is not a Remasc type transaction. Helps to simplify some code.
  */
-public class TxValidatorGasLimitValidator implements TxValidatorStep {
+public class TxValidatorNotRemascTxValidator implements TxValidatorStep {
 
     @Override
     public boolean validate(Transaction tx, AccountState state, byte[] gasLimit, byte[] minimumGasPrice, long bestBlockNumber) {
-        BigInteger txGasLimit = BigIntegers.fromUnsignedByteArray(tx.getGasLimit());
-        return  txGasLimit.compareTo(BigIntegers.fromUnsignedByteArray(gasLimit)) <= 0;
+        return !(tx instanceof RemascTransaction);
     }
+
 }
