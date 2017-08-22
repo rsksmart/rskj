@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blockchain.utils.BlockchainBuilder;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.simples.SimpleRskTransaction;
+import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
@@ -296,7 +297,7 @@ public class BridgeSupportTest {
         blocks.get(1).getTransactionsList().add(rskTx3);
         blocks.get(1).flushRLP();
 
-        BlockchainBuilder builder = new BlockchainBuilder();
+        BlockChainBuilder builder = new BlockChainBuilder();
 
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).setGenesis(BlockGenerator.getGenesisBlock()).build();
 

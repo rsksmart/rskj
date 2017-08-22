@@ -24,28 +24,32 @@ import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
+import org.ethereum.core.Genesis;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.IndexedBlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by ajlopez on 8/6/2016.
  */
 public class BlockChainBuilder {
     private AdminInfo adminInfo = null;
+
     private boolean testing;
     private boolean rsk;
+
+    private List<TransactionInfo> txinfos;
+
     Repository repository;
     BlockStore blockStore;
+    Genesis genesis;
 
     public BlockChainBuilder adminInfo(AdminInfo adminInfo) {
         this.adminInfo = adminInfo;
@@ -62,6 +66,16 @@ public class BlockChainBuilder {
         return this;
     }
 
+    public BlockChainBuilder setTransactionInfos(List<TransactionInfo> txinfos) {
+        this.txinfos = txinfos;
+        return this;
+    }
+
+    public BlockChainBuilder setGenesis(Genesis genesis) {
+        this.genesis = genesis;
+        return this;
+    }
+
     public BlockChainImpl build() {
         if (repository == null)
             repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));
@@ -75,6 +89,10 @@ public class BlockChainBuilder {
         KeyValueDataSource ds = new HashMapDB();
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
+
+        if (txinfos != null && !txinfos.isEmpty())
+            for (TransactionInfo txinfo : txinfos)
+                receiptStore.add(txinfo.getBlockHash(), txinfo.getIndex(), txinfo.getReceipt());
 
         EthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
 
@@ -97,6 +115,13 @@ public class BlockChainBuilder {
         PendingStateImpl pendingState = new PendingStateImpl(blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
 
         blockChain.setPendingState(pendingState);
+
+        if (this.genesis != null) {
+            this.genesis.setStateRoot(this.repository.getRoot());
+            this.genesis.flushRLP();
+            blockChain.setBestBlock(this.genesis);
+            blockChain.setTotalDifficulty(this.genesis.getCumulativeDifficulty());
+        }
 
         return blockChain;
     }
