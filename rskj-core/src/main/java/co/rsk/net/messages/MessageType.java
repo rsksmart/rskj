@@ -20,6 +20,7 @@ package co.rsk.net.messages;
 
 import co.rsk.net.Status;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.NotImplementedException;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLPList;
@@ -81,6 +82,12 @@ public enum MessageType {
                 list.stream().filter(element ->  element.getRLPData().length <= 1 << 19 /* 512KB */)
                 .forEach(element -> txs.add(new Transaction(element.getRLPData())));
             return new TransactionsMessage(txs);
+        }
+    },
+    GET_BLOCK_HEADERS_BY_HASH_MESSAGE(9) {
+        @Override
+        public Message createMessage(RLPList list) {
+            throw new RuntimeException();
         }
     };
 
