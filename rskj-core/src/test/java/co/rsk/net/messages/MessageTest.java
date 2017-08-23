@@ -25,6 +25,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.rlpx.Node;
 import org.junit.Assert;
 import org.junit.Test;
@@ -225,5 +226,25 @@ public class MessageTest {
 
             Assert.assertArrayEquals(tx1.getHash(), tx2.getHash());
         }
+    }
+
+    @Test
+    public void encodeDecodeGetBlockHeadersByHashMessage() {
+        byte[] hash = HashUtil.randomHash();
+        GetBlockHeadersByHashMessage message = new GetBlockHeadersByHashMessage(1, hash, 100);
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(encoded);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(encoded, result.getEncoded());
+        Assert.assertEquals(MessageType.GET_BLOCK_HEADERS_BY_HASH_MESSAGE, result.getMessageType());
+
+        GetBlockHeadersByHashMessage newmessage = (GetBlockHeadersByHashMessage) result;
+
+        Assert.assertEquals(1, newmessage.getId());
+        Assert.assertArrayEquals(hash, newmessage.getHash());
+        Assert.assertEquals(100, newmessage.getCount());
     }
 }

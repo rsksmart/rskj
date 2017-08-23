@@ -29,6 +29,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.ethereum.util.ByteUtil.byteArrayToInt;
+
 /**
  * Created by mario on 16/02/17.
  */
@@ -87,7 +89,14 @@ public enum MessageType {
     GET_BLOCK_HEADERS_BY_HASH_MESSAGE(9) {
         @Override
         public Message createMessage(RLPList list) {
-            throw new RuntimeException();
+            byte[] rlpId = list.get(0).getRLPData();
+            byte[] hash = list.get(1).getRLPData();
+            byte[] rlpCount = list.get(2).getRLPData();
+
+            long id = rlpId == null ? 0 : new BigInteger(1, rlpId).longValue();
+            int count = byteArrayToInt(rlpCount);
+
+            return new GetBlockHeadersByHashMessage(id, hash, count);
         }
     };
 
