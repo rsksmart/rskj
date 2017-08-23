@@ -20,6 +20,7 @@ package co.rsk.net.handler.txvalidator;
 
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
+import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 
@@ -28,13 +29,8 @@ import java.math.BigInteger;
  */
 public class TxValidatorMinimuGasPriceValidator implements TxValidatorStep {
     @Override
-    public boolean validate(Transaction tx, AccountState state, byte[] gasLimit, byte[] minimumGasPrice, long bestBlockNumber) {
-        byte[] txGasPrice = tx.getGasPrice();
-        if (txGasPrice == null) {
-            return false;
-        }
-        BigInteger gasPrice = new BigInteger(1, txGasPrice);
-        BigInteger minimum = new BigInteger(1, minimumGasPrice);
-        return minimum.compareTo(gasPrice) <= 0;
+    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber) {
+        BigInteger gasPrice = tx.getGasPriceAsInteger();
+        return gasPrice != null && gasPrice.compareTo(minimumGasPrice) >= 0;
     }
 }

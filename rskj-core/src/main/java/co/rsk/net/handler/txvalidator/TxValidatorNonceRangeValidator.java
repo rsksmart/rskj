@@ -30,8 +30,8 @@ import java.math.BigInteger;
 public class TxValidatorNonceRangeValidator implements  TxValidatorStep {
 
     @Override
-    public boolean validate(Transaction tx, AccountState state, byte[] gasLimit, byte[] minimumGasPrice, long bestBlockNumber) {
-        BigInteger nonce = new BigInteger(1, tx.getNonce());
+    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber) {
+        BigInteger nonce = tx.getNonceAsInteger();
         BigInteger stateNonce = state.getNonce();
         BigInteger maxNumberOfTxsPerAddress = BigInteger.valueOf(4);
         return stateNonce.compareTo(nonce) <= 0 && stateNonce.add(maxNumberOfTxsPerAddress).compareTo(nonce) >= 0;

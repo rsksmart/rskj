@@ -34,8 +34,8 @@ public class TxValidatorNonceRangeValidatorTest {
         Transaction tx2 = Mockito.mock(Transaction.class);
         AccountState as = Mockito.mock(AccountState.class);
 
-        Mockito.when(tx1.getNonce()).thenReturn(BigInteger.valueOf(0).toByteArray());
-        Mockito.when(tx2.getNonce()).thenReturn(BigInteger.valueOf(3).toByteArray());
+        Mockito.when(tx1.getNonceAsInteger()).thenReturn(BigInteger.valueOf(0));
+        Mockito.when(tx2.getNonceAsInteger()).thenReturn(BigInteger.valueOf(3));
         Mockito.when(as.getNonce()).thenReturn(BigInteger.valueOf(0));
 
         TxValidatorNonceRangeValidator tvnrv = new TxValidatorNonceRangeValidator();
@@ -49,8 +49,8 @@ public class TxValidatorNonceRangeValidatorTest {
         Transaction tx2 = Mockito.mock(Transaction.class);
         AccountState as = Mockito.mock(AccountState.class);
 
-        Mockito.when(tx1.getNonce()).thenReturn(BigInteger.valueOf(0).toByteArray());
-        Mockito.when(tx2.getNonce()).thenReturn(BigInteger.valueOf(6).toByteArray());
+        Mockito.when(tx1.getNonceAsInteger()).thenReturn(BigInteger.valueOf(0));
+        Mockito.when(tx2.getNonceAsInteger()).thenReturn(BigInteger.valueOf(6));
         Mockito.when(as.getNonce()).thenReturn(BigInteger.valueOf(1));
 
         TxValidatorNonceRangeValidator tvnrv = new TxValidatorNonceRangeValidator();
