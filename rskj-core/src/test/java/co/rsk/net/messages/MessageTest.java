@@ -76,6 +76,25 @@ public class MessageTest {
     }
 
     @Test
+    public void encodeDecodeGetBodyMessage() {
+        Block block = BlockGenerator.getBlock(1);
+        GetBodyMessage message = new GetBodyMessage(100, block.getHash());
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(encoded);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(encoded, result.getEncoded());
+        Assert.assertEquals(MessageType.GET_BODY_MESSAGE, result.getMessageType());
+
+        GetBodyMessage newmessage = (GetBodyMessage) result;
+
+        Assert.assertEquals(100, newmessage.getId());
+        Assert.assertArrayEquals(block.getHash(), newmessage.getBlockHash());
+    }
+
+    @Test
     public void encodeDecodeGetBlockHeaderMessage() {
         Block block = BlockGenerator.getBlock(1);
         GetBlockHeadersMessage message = new GetBlockHeadersMessage(block.getHash(), 1);
