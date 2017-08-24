@@ -130,7 +130,10 @@ public enum MessageType {
     GET_BLOCK_BY_HASH_MESSAGE(11) {
         @Override
         public Message createMessage(RLPList list) {
-            return null;
+            byte[] rlpId = list.get(0).getRLPData();
+            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            byte[] hash = list.get(1).getRLPData();
+            return new GetBlockByHashMessage(id, hash);
         }
     },
     BLOCK_BY_HASH_MESSAGE(12) {
