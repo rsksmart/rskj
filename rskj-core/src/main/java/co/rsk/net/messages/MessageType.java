@@ -22,7 +22,9 @@ import co.rsk.net.Status;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
+import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.spongycastle.util.BigIntegers;
 
@@ -113,7 +115,16 @@ public enum MessageType {
     BLOCK_HEADERS_BY_HASH_MESSAGE(10) {
         @Override
         public Message createMessage(RLPList list) {
-            return null;
+            byte[] rlpId = list.get(0).getRLPData();
+            RLPList rlpHeaders = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
+            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+
+            List<BlockHeader> headers = new ArrayList<>();
+
+            for (int k = 0; k < rlpHeaders.size(); k++)
+                headers.add(new BlockHeader(rlpHeaders.get(k).getRLPData()));
+
+            return new BlockHeadersByHashMessage(id, headers);
         }
     };
 

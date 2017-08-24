@@ -24,7 +24,13 @@ public class BlockHeadersByHashMessage extends Message {
 
     @Override
     public byte[] getEncodedMessage() {
-        return null;
+        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(this.id));
+        byte[][] rlpHeaders = new byte[this.blockHeaders.size()][];
+
+        for (int k = 0; k < rlpHeaders.length; k++)
+            rlpHeaders[k] = this.blockHeaders.get(k).getEncoded();
+
+        return RLP.encodeList(rlpId, RLP.encodeList(rlpHeaders));
     }
 
     @Override
