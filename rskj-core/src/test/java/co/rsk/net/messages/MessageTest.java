@@ -396,4 +396,24 @@ public class MessageTest {
             Assert.assertArrayEquals(id.getHash(), newId.getHash());
         }
     }
+
+    @Test
+    public void encodeDecodeGetSkeletonMessage() {
+        byte[] hash_start = HashUtil.randomHash();
+        byte[] hash_end = HashUtil.randomHash();
+        GetSkeletonMessage message = new GetSkeletonMessage(hash_start, hash_end);
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(encoded);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(encoded, result.getEncoded());
+        Assert.assertEquals(MessageType.GET_SKELETON_MESSAGE, result.getMessageType());
+
+        GetSkeletonMessage newMessage = (GetSkeletonMessage) result;
+
+        Assert.assertArrayEquals(hash_start, newMessage.getHashStart());
+        Assert.assertArrayEquals(hash_end, newMessage.getHashEnd());
+    }
 }

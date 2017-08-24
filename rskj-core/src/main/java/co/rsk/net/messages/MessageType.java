@@ -178,6 +178,14 @@ public enum MessageType {
         public Message createMessage(RLPList list) {
             return null;
         }
+    },
+    GET_SKELETON_MESSAGE(16) {
+        @Override
+        public Message createMessage(RLPList list) {
+            byte[] hash_start = list.get(0).getRLPData();
+            byte[] hash_end = list.get(1).getRLPData();
+            return new GetSkeletonMessage(hash_start, hash_end);
+        }
     };
 
     private int type;
