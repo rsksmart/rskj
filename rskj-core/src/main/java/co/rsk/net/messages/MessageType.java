@@ -24,6 +24,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLPList;
+import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -40,7 +41,7 @@ public enum MessageType {
         @Override
         public Message createMessage(RLPList list) {
             byte[] rlpdata = list.get(0).getRLPData();
-            long number = rlpdata == null ? 0 : new BigInteger(1, list.get(0).getRLPData()).longValue();
+            long number = rlpdata == null ? 0 : BigIntegers.fromUnsignedByteArray(list.get(0).getRLPData()).longValue();
             byte[] hash = list.get(1).getRLPData();
             return new StatusMessage(new Status(number, hash));
         }
@@ -82,18 +83,28 @@ public enum MessageType {
 
             if (CollectionUtils.isNotEmpty(list))
                 list.stream().filter(element ->  element.getRLPData().length <= 1 << 19 /* 512KB */)
-                .forEach(element -> txs.add(new Transaction(element.getRLPData())));
+                        .forEach(element -> txs.add(new Transaction(element.getRLPData())));
             return new TransactionsMessage(txs);
+        }
+    },
+    GET_BLOCK_HASH_MESSAGE(8) {
+        @Override
+        public Message createMessage(RLPList list) {
+            byte[] rlpId = list.get(0).getRLPData();
+            byte[] rlpHeight = list.get(1).getRLPData();
+            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            long height = rlpHeight == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpHeight).longValue();
+            return new GetBlockHashMessage(id, height);
         }
     },
     GET_BLOCK_HEADERS_BY_HASH_MESSAGE(9) {
         @Override
-        public Message createMessage(RLPList list) {
+        public Message createMessage (RLPList list){
             byte[] rlpId = list.get(0).getRLPData();
             byte[] hash = list.get(1).getRLPData();
             byte[] rlpCount = list.get(2).getRLPData();
 
-            long id = rlpId == null ? 0 : new BigInteger(1, rlpId).longValue();
+            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             int count = byteArrayToInt(rlpCount);
 
             return new GetBlockHeadersByHashMessage(id, hash, count);
