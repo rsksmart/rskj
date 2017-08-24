@@ -167,7 +167,10 @@ public enum MessageType {
     GET_BODY_MESSAGE(14) {
         @Override
         public Message createMessage(RLPList list) {
-            return null;
+            byte[] rlpId = list.get(0).getRLPData();
+            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            byte[] hash = list.get(1).getRLPData();
+            return new GetBodyMessage(id, hash);
         }
     },
     BODY_MESSAGE(15) {
