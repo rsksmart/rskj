@@ -229,6 +229,26 @@ public class MessageTest {
     }
 
     @Test
+    public void encodeDecodeGetBlockHashMessage() {
+        long someId = 42;
+        long someHeight = 99;
+        GetBlockHashMessage message = new GetBlockHashMessage(someId, someHeight);
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(encoded);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(encoded, result.getEncoded());
+        Assert.assertEquals(MessageType.GET_BLOCK_HASH_MESSAGE, result.getMessageType());
+
+        GetBlockHashMessage newMessage = (GetBlockHashMessage) result;
+
+        Assert.assertEquals(someId, newMessage.getId());
+        Assert.assertEquals(someHeight, newMessage.getHeight());
+    }
+
+    @Test
     public void encodeDecodeGetBlockHeadersByHashMessage() {
         byte[] hash = HashUtil.randomHash();
         GetBlockHeadersByHashMessage message = new GetBlockHeadersByHashMessage(1, hash, 100);
