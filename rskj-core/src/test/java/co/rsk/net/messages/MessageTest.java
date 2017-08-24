@@ -30,6 +30,7 @@ import org.ethereum.net.rlpx.Node;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -168,6 +169,38 @@ public class MessageTest {
         Assert.assertEquals(header.getNumber(), newheader.getNumber());
         Assert.assertArrayEquals(header.getHash(), newheader.getHash());
         Assert.assertArrayEquals(header.getEncoded(), newheader.getEncoded());
+    }
+
+    @Test
+    public void encodeDecodeBlockHeadersByHashMessage() {
+        List<BlockHeader> headers = new ArrayList<>();
+
+        for (int k = 1; k <= 4; k++)
+            headers.add(BlockGenerator.getBlock(k).getHeader());
+
+        BlockHeadersByHashMessage message = new BlockHeadersByHashMessage(100, headers);
+
+        byte[] encoded = message.getEncoded();
+
+        Assert.assertNotNull(encoded);
+
+        Message result = Message.create(encoded);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(encoded, result.getEncoded());
+        Assert.assertEquals(MessageType.BLOCK_HEADERS_BY_HASH_MESSAGE, result.getMessageType());
+
+        BlockHeadersByHashMessage newmessage = (BlockHeadersByHashMessage) result;
+
+        Assert.assertEquals(100, newmessage.getId());
+
+        Assert.assertEquals(headers.size(), newmessage.getBlockHeaders().size());
+
+        for (int k = 0; k < headers.size(); k++) {
+            Assert.assertEquals(headers.get(k).getNumber(), newmessage.getBlockHeaders().get(k).getNumber());
+            Assert.assertArrayEquals(headers.get(k).getHash(), newmessage.getBlockHeaders().get(k).getHash());
+            Assert.assertArrayEquals(headers.get(k).getEncoded(), newmessage.getBlockHeaders().get(k).getEncoded());
+        }
     }
 
     @Test
