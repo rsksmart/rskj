@@ -139,7 +139,13 @@ public enum MessageType {
     BLOCK_BY_HASH_MESSAGE(12) {
         @Override
         public Message createMessage(RLPList list) {
-            return null;
+            byte[] rlpId = list.get(0).getRLPData();
+            byte[] rlpBlock = list.get(1).getRLPData();
+
+            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            Block block = new Block(rlpBlock);
+
+            return new BlockByHashMessage(id, block);
         }
     },
     SKELETON_MESSAGE(13) {
