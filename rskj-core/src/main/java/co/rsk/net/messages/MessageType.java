@@ -163,8 +163,19 @@ public enum MessageType {
 
             return new SkeletonMessage(id, blockIdentifiers);
         }
+    },
+    GET_BODY_MESSAGE(14) {
+        @Override
+        public Message createMessage(RLPList list) {
+            return null;
+        }
+    },
+    BODY_MESSAGE(15) {
+        @Override
+        public Message createMessage(RLPList list) {
+            return null;
+        }
     };
-
 
     private int type;
 
