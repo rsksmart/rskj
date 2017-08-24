@@ -98,6 +98,12 @@ public enum MessageType {
 
             return new GetBlockHeadersByHashMessage(id, hash, count);
         }
+    },
+    BLOCK_HEADERS_BY_HASH_MESSAGE(10) {
+        @Override
+        public Message createMessage(RLPList list) {
+            return null;
+        }
     };
 
     private int type;
