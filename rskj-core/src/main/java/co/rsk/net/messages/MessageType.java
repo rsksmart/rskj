@@ -126,7 +126,20 @@ public enum MessageType {
 
             return new BlockHeadersByHashMessage(id, headers);
         }
+    },
+    GET_BLOCK_BY_HASH_MESSAGE(11) {
+        @Override
+        public Message createMessage(RLPList list) {
+            return null;
+        }
+    },
+    BLOCK_BY_HASH_MESSAGE(12) {
+        @Override
+        public Message createMessage(RLPList list) {
+            return null;
+        }
     };
+
 
     private int type;
 
