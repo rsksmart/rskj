@@ -169,6 +169,29 @@ public class MessageTest {
     }
 
     @Test
+    public void encodeDecodeBlockByHashMessage() {
+        Block block = BlockGenerator.getBlock(1);
+        BlockByHashMessage message = new BlockByHashMessage(100, block);
+
+        byte[] encoded = message.getEncoded();
+
+        Assert.assertNotNull(encoded);
+
+        Message result = Message.create(encoded);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(encoded, result.getEncoded());
+        Assert.assertEquals(MessageType.BLOCK_BY_HASH_MESSAGE, result.getMessageType());
+
+        BlockByHashMessage newmessage = (BlockByHashMessage) result;
+
+        Assert.assertEquals(100, newmessage.getId());
+        Assert.assertEquals(block.getNumber(), newmessage.getBlock().getNumber());
+        Assert.assertArrayEquals(block.getHash(), newmessage.getBlock().getHash());
+        Assert.assertArrayEquals(block.getEncoded(), newmessage.getBlock().getEncoded());
+    }
+
+    @Test
     public void encodeDecodeBlockHeaderMessage() {
         BlockHeader header = BlockGenerator.getBlock(1).getHeader();
         BlockHeadersMessage message = new BlockHeadersMessage(header);
