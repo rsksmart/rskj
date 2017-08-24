@@ -20,15 +20,15 @@ package co.rsk.net.messages;
 
 import co.rsk.net.Status;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.NotImplementedException;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.spongycastle.util.BigIntegers;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -140,6 +140,22 @@ public enum MessageType {
         @Override
         public Message createMessage(RLPList list) {
             return null;
+        }
+    },
+    SKELETON_MESSAGE(13) {
+        @Override
+        public Message createMessage(RLPList list) {
+            byte[] rlpId = list.get(0).getRLPData();
+            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+
+            RLPList paramsList = (RLPList) RLP.decode2(list.get(1).getRLPData()).get(0);
+            List<BlockIdentifier> blockIdentifiers = new ArrayList<>();
+            for (RLPElement param : paramsList) {
+                RLPList rlpData = ((RLPList) param);
+                blockIdentifiers.add(new BlockIdentifier(rlpData));
+            }
+
+            return new SkeletonMessage(id, blockIdentifiers);
         }
     };
 

@@ -319,4 +319,39 @@ public class MessageTest {
         Assert.assertArrayEquals(hash, newmessage.getHash());
         Assert.assertEquals(100, newmessage.getCount());
     }
+
+    @Test
+    public void encodeDecodeSkeletonMessage() {
+        long someId = 42;
+        List<Block> blocks = BlockGenerator.getBlockChain(10);
+        Block b1 = blocks.get(5);
+        Block b2 = blocks.get(7);
+
+        List<BlockIdentifier> ids = new LinkedList<>();
+
+        ids.add(new BlockIdentifier(b1.getHash(), b1.getNumber()));
+        ids.add(new BlockIdentifier(b2.getHash(), b2.getNumber()));
+        SkeletonMessage message = new SkeletonMessage(someId, ids);
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(encoded);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(encoded, result.getEncoded());
+        Assert.assertEquals(MessageType.SKELETON_MESSAGE, result.getMessageType());
+
+        SkeletonMessage newMessage = (SkeletonMessage) result;
+
+        Assert.assertEquals(someId, newMessage.getId());
+
+        List<BlockIdentifier> newIds = newMessage.getBlockIdentifiers();
+        for (int i = 0; i < ids.size(); i++) {
+            BlockIdentifier id = ids.get(i);
+            BlockIdentifier newId = newIds.get(i);
+
+            Assert.assertEquals(id.getNumber(), newId.getNumber());
+            Assert.assertArrayEquals(id.getHash(), newId.getHash());
+        }
+    }
 }
