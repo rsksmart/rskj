@@ -18,9 +18,7 @@
 
 package co.rsk.net;
 
-import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.BridgeConstants;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageSender;
@@ -699,7 +697,7 @@ public class NodeMessageHandlerTest {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null);
         Block block = new Block(Hex.decode(rlp));
-        Message message = new GetBlockByHashMessage(100, block.getHash());
+        Message message = new BlockByHashRequestMessage(100, block.getHash());
 
         processor.processMessage(new SimpleMessageSender(), message);
 

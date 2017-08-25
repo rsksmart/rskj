@@ -29,10 +29,10 @@ public class BlockByHashMessageTest {
     @Test
     public void createWithBlockHash() {
         byte[] hash = BlockGenerator.getGenesisBlock().getHash();
-        GetBlockByHashMessage message = new GetBlockByHashMessage(100, hash);
+        BlockByHashRequestMessage message = new BlockByHashRequestMessage(100, hash);
 
         Assert.assertEquals(100, message.getId());
         Assert.assertArrayEquals(hash, message.getBlockHash());
-        Assert.assertEquals(MessageType.GET_BLOCK_BY_HASH_MESSAGE, message.getMessageType());
+        Assert.assertEquals(MessageType.BLOCK_BY_HASH_REQUEST_MESSAGE, message.getMessageType());
     }
 }
