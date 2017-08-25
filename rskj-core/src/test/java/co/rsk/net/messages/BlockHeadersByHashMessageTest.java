@@ -5,7 +5,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +22,7 @@ public class BlockHeadersByHashMessageTest {
             blocks.add(b.getHeader());
         }
 
-        BlockHeadersByHashMessage message = new BlockHeadersByHashMessage(1, blocks);
+        BlockHeadersResponseMessage message = new BlockHeadersResponseMessage(1, blocks);
 
         Assert.assertEquals(1, message.getId());
         List<BlockHeader> mblocks = message.getBlockHeaders();
