@@ -435,7 +435,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeBodyMessage() {
+    public void encodeDecodeBodyResponseMessage() {
         List<Transaction> transactions = new ArrayList<>();
 
         for (int k = 1; k <= 10; k++)
@@ -451,13 +451,17 @@ public class MessageTest {
             parent = block;
         }
 
-        BodyMessage message = new BodyMessage(100, transactions, uncles);
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
 
         byte[] encoded = message.getEncoded();
 
-        Assert.assertNotNull(encoded);
+        Message result = Message.create(encoded);
 
-        BodyMessage newmessage = (BodyMessage)Message.create(encoded);
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(encoded, result.getEncoded());
+        Assert.assertEquals(MessageType.BODY_RESPONSE_MESSAGE, result.getMessageType());
+
+        BodyResponseMessage newmessage = (BodyResponseMessage)result;
 
         Assert.assertNotNull(newmessage);
 

@@ -173,7 +173,7 @@ public enum MessageType {
             return new BodyRequestMessage(id, hash);
         }
     },
-    BODY_MESSAGE(15) {
+    BODY_RESPONSE_MESSAGE(15) {
         @Override
         public Message createMessage(RLPList list) {
             byte[] rlpId = list.get(0).getRLPData();
@@ -190,7 +190,7 @@ public enum MessageType {
             for (int k = 0; k < rlpUncles.size(); k++)
                 uncles.add(new BlockHeader(rlpUncles.get(k).getRLPData()));
 
-            return new BodyMessage(id, transactions, uncles);
+            return new BodyResponseMessage(id, transactions, uncles);
         }
     },
     SKELETON_REQUEST_MESSAGE(16) {

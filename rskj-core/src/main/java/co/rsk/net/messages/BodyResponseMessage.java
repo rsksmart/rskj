@@ -10,12 +10,12 @@ import java.util.List;
 /**
  * Created by ajlopez on 25/08/2017.
  */
-public class BodyMessage extends Message {
+public class BodyResponseMessage extends Message {
     private long id;
     private List<Transaction> transactions;
     private List<BlockHeader> uncles;
 
-    public BodyMessage(long id, List<Transaction> transactions, List<BlockHeader> uncles) {
+    public BodyResponseMessage(long id, List<Transaction> transactions, List<BlockHeader> uncles) {
         this.id = id;
         this.transactions = transactions;
         this.uncles = uncles;
@@ -43,5 +43,5 @@ public class BodyMessage extends Message {
     }
 
     @Override
-    public MessageType getMessageType() { return MessageType.BODY_MESSAGE; }
+    public MessageType getMessageType() { return MessageType.BODY_RESPONSE_MESSAGE; }
 }
