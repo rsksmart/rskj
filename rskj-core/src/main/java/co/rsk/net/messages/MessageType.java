@@ -186,6 +186,13 @@ public enum MessageType {
             byte[] hash_end = list.get(1).getRLPData();
             return new GetSkeletonMessage(hash_start, hash_end);
         }
+    },
+    NEW_BLOCK_HASH_MESSAGE(17) {
+        @Override
+        public Message createMessage(RLPList list) {
+            byte[] hash = list.get(0).getRLPData();
+            return new NewBlockHashMessage(hash);
+        }
     };
 
     private int type;
