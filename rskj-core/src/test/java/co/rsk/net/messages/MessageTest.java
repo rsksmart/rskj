@@ -323,9 +323,9 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeGetBlockHeadersByHashMessage() {
+    public void encodeDecodeBlockHeadersRequestMessage() {
         byte[] hash = HashUtil.randomHash();
-        GetBlockHeadersByHashMessage message = new GetBlockHeadersByHashMessage(1, hash, 100);
+        BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(1, hash, 100);
 
         byte[] encoded = message.getEncoded();
 
@@ -333,9 +333,9 @@ public class MessageTest {
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.GET_BLOCK_HEADERS_BY_HASH_MESSAGE, result.getMessageType());
+        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, result.getMessageType());
 
-        GetBlockHeadersByHashMessage newmessage = (GetBlockHeadersByHashMessage) result;
+        BlockHeadersRequestMessage newmessage = (BlockHeadersRequestMessage) result;
 
         Assert.assertEquals(1, newmessage.getId());
         Assert.assertArrayEquals(hash, newmessage.getHash());
