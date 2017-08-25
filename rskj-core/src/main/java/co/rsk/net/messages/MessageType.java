@@ -148,7 +148,7 @@ public enum MessageType {
             return new BlockByHashMessage(id, block);
         }
     },
-    SKELETON_MESSAGE(13) {
+    SKELETON_RESPONSE_MESSAGE(13) {
         @Override
         public Message createMessage(RLPList list) {
             byte[] rlpId = list.get(0).getRLPData();
@@ -161,7 +161,7 @@ public enum MessageType {
                 blockIdentifiers.add(new BlockIdentifier(rlpData));
             }
 
-            return new SkeletonMessage(id, blockIdentifiers);
+            return new SkeletonResponseMessage(id, blockIdentifiers);
         }
     },
     GET_BODY_MESSAGE(14) {

@@ -343,7 +343,7 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeSkeletonMessage() {
+    public void encodeDecodeSkeletonResponseMessage() {
         long someId = 42;
         List<Block> blocks = BlockGenerator.getBlockChain(10);
         Block b1 = blocks.get(5);
@@ -353,7 +353,7 @@ public class MessageTest {
 
         ids.add(new BlockIdentifier(b1.getHash(), b1.getNumber()));
         ids.add(new BlockIdentifier(b2.getHash(), b2.getNumber()));
-        SkeletonMessage message = new SkeletonMessage(someId, ids);
+        SkeletonResponseMessage message = new SkeletonResponseMessage(someId, ids);
 
         byte[] encoded = message.getEncoded();
 
@@ -361,9 +361,9 @@ public class MessageTest {
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.SKELETON_MESSAGE, result.getMessageType());
+        Assert.assertEquals(MessageType.SKELETON_RESPONSE_MESSAGE, result.getMessageType());
 
-        SkeletonMessage newMessage = (SkeletonMessage) result;
+        SkeletonResponseMessage newMessage = (SkeletonResponseMessage) result;
 
         Assert.assertEquals(someId, newMessage.getId());
 

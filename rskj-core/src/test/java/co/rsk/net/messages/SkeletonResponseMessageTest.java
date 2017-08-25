@@ -20,27 +20,33 @@
 package co.rsk.net.messages;
 
 import org.ethereum.core.BlockIdentifier;
-import org.ethereum.crypto.HashUtil;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.spongycastle.util.encoders.Hex.decode;
 import static org.spongycastle.util.encoders.Hex.toHexString;
 
-public class GetSkeletonMessageTest {
+public class SkeletonResponseMessageTest {
 
     @Test
     public void createMessage() {
-        byte[] hash_start = HashUtil.randomHash();
-        byte[] hash_end = HashUtil.randomHash();
-        GetSkeletonMessage message = new GetSkeletonMessage(hash_start, hash_end);
 
-        assertEquals(MessageType.GET_SKELETON_MESSAGE, message.getMessageType());
-        assertArrayEquals(hash_start, message.getHashStart());
-        assertArrayEquals(hash_end, message.getHashEnd());
+        long someId = 42;
+        List<BlockIdentifier> identifiers = Arrays.asList(
+            new BlockIdentifier(decode("4ee6424d776b3f59affc20bc2de59e67f36e22cc07897ff8df152242c921716b"), 1),
+            new BlockIdentifier(decode("7d2fe4df0dbbc9011da2b3bf177f0c6b7e71a11c509035c5d751efa5cf9b4817"), 2)
+        );
+
+        SkeletonResponseMessage skeletonMessage = new SkeletonResponseMessage(someId, identifiers);
+
+        String expected = "f84e0db84bf8492af846e2a04ee6424d776b3f59affc20bc2de59e67f36e22cc07897ff8df152242c921716b01e2a07d2fe4df0dbbc9011da2b3bf177f0c6b7e71a11c509035c5d751efa5cf9b481702";
+        assertEquals(expected, toHexString(skeletonMessage.getEncoded()));
+
+        assertEquals(MessageType.SKELETON_RESPONSE_MESSAGE, skeletonMessage.getMessageType());
+        assertEquals(42, skeletonMessage.getId());
+        assertEquals(2, skeletonMessage.getBlockIdentifiers().size());
     }
 }
