@@ -25,14 +25,14 @@ import org.junit.Test;
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class GetBlockByHashMessageTest {
+public class BlockByHashRequestMessageTest {
     @Test
     public void createWithBlockHash() {
         byte[] hash = BlockGenerator.getGenesisBlock().getHash();
-        GetBlockByHashMessage message = new GetBlockByHashMessage(100, hash);
+        BlockByHashRequestMessage message = new BlockByHashRequestMessage(100, hash);
 
         Assert.assertEquals(100, message.getId());
         Assert.assertArrayEquals(hash, message.getBlockHash());
-        Assert.assertEquals(MessageType.GET_BLOCK_BY_HASH_MESSAGE, message.getMessageType());
+        Assert.assertEquals(MessageType.BLOCK_BY_HASH_REQUEST_MESSAGE, message.getMessageType());
     }
 }

@@ -56,9 +56,9 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeGetBlockByHashMessage() {
+    public void encodeDecodeBlockByHashRequestMessage() {
         Block block = BlockGenerator.getBlock(1);
-        GetBlockByHashMessage message = new GetBlockByHashMessage(100, block.getHash());
+        BlockByHashRequestMessage message = new BlockByHashRequestMessage(100, block.getHash());
 
         byte[] encoded = message.getEncoded();
 
@@ -66,9 +66,9 @@ public class MessageTest {
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.GET_BLOCK_BY_HASH_MESSAGE, result.getMessageType());
+        Assert.assertEquals(MessageType.BLOCK_BY_HASH_REQUEST_MESSAGE, result.getMessageType());
 
-        GetBlockByHashMessage newmessage = (GetBlockByHashMessage) result;
+        BlockByHashRequestMessage newmessage = (BlockByHashRequestMessage) result;
 
         Assert.assertEquals(100, newmessage.getId());
         Assert.assertArrayEquals(block.getHash(), newmessage.getBlockHash());

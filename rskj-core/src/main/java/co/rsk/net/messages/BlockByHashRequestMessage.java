@@ -7,11 +7,11 @@ import java.math.BigInteger;
 /**
  * Created by ajlopez on 24/08/2017.
  */
-public class GetBlockByHashMessage extends Message {
+public class BlockByHashRequestMessage extends Message {
     private long id;
     private byte[] hash;
 
-    public GetBlockByHashMessage(long id, byte[] hash) {
+    public BlockByHashRequestMessage(long id, byte[] hash) {
         this.id = id;
         this.hash = hash;
     }
@@ -24,7 +24,7 @@ public class GetBlockByHashMessage extends Message {
 
     @Override
     public MessageType getMessageType() {
-        return MessageType.GET_BLOCK_BY_HASH_MESSAGE;
+        return MessageType.BLOCK_BY_HASH_REQUEST_MESSAGE;
     }
 
     @Override

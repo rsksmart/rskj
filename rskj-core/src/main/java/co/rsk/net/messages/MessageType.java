@@ -127,13 +127,13 @@ public enum MessageType {
             return new BlockHeadersByHashMessage(id, headers);
         }
     },
-    GET_BLOCK_BY_HASH_MESSAGE(11) {
+    BLOCK_BY_HASH_REQUEST_MESSAGE(11) {
         @Override
         public Message createMessage(RLPList list) {
             byte[] rlpId = list.get(0).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             byte[] hash = list.get(1).getRLPData();
-            return new GetBlockByHashMessage(id, hash);
+            return new BlockByHashRequestMessage(id, hash);
         }
     },
     BLOCK_BY_HASH_MESSAGE(12) {
