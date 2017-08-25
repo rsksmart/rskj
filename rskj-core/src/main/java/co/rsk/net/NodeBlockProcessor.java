@@ -373,6 +373,25 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     /**
+     * processGetBlockByHash sends a requested block to a peer if the block is available.
+     *
+     * @param sender the sender of the GetBlockByHash message.
+     * @param requestId the id of the request
+     * @param hash   the requested block's hash.
+     */
+    @Override
+    public void processGetBlockByHash(@Nonnull final MessageSender sender, long requestId, @Nullable final byte[] hash) {
+        logger.trace("Processing get block by hash {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getNodeID().toString());
+        final Block block = this.getBlock(hash);
+
+        if (block == null)
+            return;
+
+        nodeInformation.addBlockToNode(new ByteArrayWrapper(hash), sender.getNodeID());
+        sender.sendMessage(new BlockByHashMessage(requestId, block));
+    }
+
+    /**
      * processGetBlock sends a requested block to a peer if the block is available.
      *
      * @param sender the sender of the GetBlock message.
