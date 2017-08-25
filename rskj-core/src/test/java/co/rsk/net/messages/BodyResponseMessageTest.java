@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * Created by usuario on 25/08/2017.
  */
-public class BodyMessageTest {
+public class BodyResponseMessageTest {
     @Test
     public void createMessage() {
         List<Transaction> transactions = new ArrayList<>();
@@ -35,7 +35,7 @@ public class BodyMessageTest {
             parent = block;
         }
 
-        BodyMessage message = new BodyMessage(100, transactions, uncles);
+        BodyResponseMessage message = new BodyResponseMessage(100, transactions, uncles);
 
         Assert.assertEquals(100, message.getId());
 
