@@ -1,21 +1,18 @@
 package co.rsk.net.messages;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.ethereum.util.RLP;
 
 import java.math.BigInteger;
 
-import static org.ethereum.util.ByteUtil.byteArrayToInt;
-
 /**
  * Created by ajlopez on 23/08/2017.
  */
-public class GetBlockHeadersByHashMessage extends Message {
+public class BlockHeadersRequestMessage extends Message {
     private long id;
     private byte[] hash;
     private int count;
 
-    public GetBlockHeadersByHashMessage(long id, byte[] hash, int count) {
+    public BlockHeadersRequestMessage(long id, byte[] hash, int count) {
         this.id = id;
         this.hash = hash;
         this.count = count;
@@ -38,7 +35,7 @@ public class GetBlockHeadersByHashMessage extends Message {
 
     @Override
     public MessageType getMessageType() {
-        return MessageType.GET_BLOCK_HEADERS_BY_HASH_MESSAGE;
+        return MessageType.BLOCK_HEADERS_REQUEST_MESSAGE;
     }
 }
 

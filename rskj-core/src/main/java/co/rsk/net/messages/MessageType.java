@@ -99,7 +99,7 @@ public enum MessageType {
             return new BlockHashRequestMessage(id, height);
         }
     },
-    GET_BLOCK_HEADERS_BY_HASH_MESSAGE(9) {
+    BLOCK_HEADERS_REQUEST_MESSAGE(9) {
         @Override
         public Message createMessage (RLPList list){
             byte[] rlpId = list.get(0).getRLPData();
@@ -109,7 +109,7 @@ public enum MessageType {
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             int count = byteArrayToInt(rlpCount);
 
-            return new GetBlockHeadersByHashMessage(id, hash, count);
+            return new BlockHeadersRequestMessage(id, hash, count);
         }
     },
     BLOCK_HEADERS_BY_HASH_MESSAGE(10) {
