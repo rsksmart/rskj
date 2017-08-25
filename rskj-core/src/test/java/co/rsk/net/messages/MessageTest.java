@@ -416,9 +416,9 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeGetBodyMessage() {
+    public void encodeDecodeBodyRequestMessage() {
         Block block = BlockGenerator.getBlock(1);
-        GetBodyMessage message = new GetBodyMessage(100, block.getHash());
+        BodyRequestMessage message = new BodyRequestMessage(100, block.getHash());
 
         byte[] encoded = message.getEncoded();
 
@@ -426,9 +426,9 @@ public class MessageTest {
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.GET_BODY_MESSAGE, result.getMessageType());
+        Assert.assertEquals(MessageType.BODY_REQUEST_MESSAGE, result.getMessageType());
 
-        GetBodyMessage newmessage = (GetBodyMessage) result;
+        BodyRequestMessage newmessage = (BodyRequestMessage) result;
 
         Assert.assertEquals(100, newmessage.getId());
         Assert.assertArrayEquals(block.getHash(), newmessage.getBlockHash());
