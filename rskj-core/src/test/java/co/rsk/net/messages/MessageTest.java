@@ -21,14 +21,14 @@ package co.rsk.net.messages;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.net.Status;
 import co.rsk.net.utils.TransactionUtils;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.BlockIdentifier;
-import org.ethereum.core.Transaction;
+import co.rsk.test.builders.AccountBuilder;
+import co.rsk.test.builders.TransactionBuilder;
+import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -69,25 +69,6 @@ public class MessageTest {
         Assert.assertEquals(MessageType.GET_BLOCK_BY_HASH_MESSAGE, result.getMessageType());
 
         GetBlockByHashMessage newmessage = (GetBlockByHashMessage) result;
-
-        Assert.assertEquals(100, newmessage.getId());
-        Assert.assertArrayEquals(block.getHash(), newmessage.getBlockHash());
-    }
-
-    @Test
-    public void encodeDecodeGetBodyMessage() {
-        Block block = BlockGenerator.getBlock(1);
-        GetBodyMessage message = new GetBodyMessage(100, block.getHash());
-
-        byte[] encoded = message.getEncoded();
-
-        Message result = Message.create(encoded);
-
-        Assert.assertNotNull(result);
-        Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.GET_BODY_MESSAGE, result.getMessageType());
-
-        GetBodyMessage newmessage = (GetBodyMessage) result;
 
         Assert.assertEquals(100, newmessage.getId());
         Assert.assertArrayEquals(block.getHash(), newmessage.getBlockHash());
@@ -432,5 +413,76 @@ public class MessageTest {
         NewBlockHashMessage newMessage = (NewBlockHashMessage) result;
 
         Assert.assertArrayEquals(hash, newMessage.getBlockHash());
+    }
+
+    @Test
+    public void encodeDecodeGetBodyMessage() {
+        Block block = BlockGenerator.getBlock(1);
+        GetBodyMessage message = new GetBodyMessage(100, block.getHash());
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(encoded);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(encoded, result.getEncoded());
+        Assert.assertEquals(MessageType.GET_BODY_MESSAGE, result.getMessageType());
+
+        GetBodyMessage newmessage = (GetBodyMessage) result;
+
+        Assert.assertEquals(100, newmessage.getId());
+        Assert.assertArrayEquals(block.getHash(), newmessage.getBlockHash());
+    }
+
+    @Test
+    public void encodeDecodeBodyMessage() {
+        List<Transaction> transactions = new ArrayList<>();
+
+        for (int k = 1; k <= 10; k++)
+            transactions.add(createTransaction(k));
+
+        List<BlockHeader> uncles = new ArrayList<>();
+
+        Block parent = BlockGenerator.getGenesisBlock();
+
+        for (int k = 1; k < 10; k++) {
+            Block block = BlockGenerator.createChildBlock(parent);
+            uncles.add(block.getHeader());
+            parent = block;
+        }
+
+        BodyMessage message = new BodyMessage(100, transactions, uncles);
+
+        byte[] encoded = message.getEncoded();
+
+        Assert.assertNotNull(encoded);
+
+        BodyMessage newmessage = (BodyMessage)Message.create(encoded);
+
+        Assert.assertNotNull(newmessage);
+
+        Assert.assertEquals(100, newmessage.getId());
+
+        Assert.assertNotNull(newmessage.getTransactions());
+        Assert.assertEquals(transactions.size(), newmessage.getTransactions().size());
+
+        for (int k = 0; k < transactions.size(); k++)
+            Assert.assertArrayEquals(transactions.get(k).getHash(), newmessage.getTransactions().get(k).getHash());
+
+        Assert.assertNotNull(newmessage.getUncles());
+        Assert.assertEquals(uncles.size(), newmessage.getUncles().size());
+
+        for (int k = 0; k < uncles.size(); k++)
+            Assert.assertArrayEquals(uncles.get(k).getEncoded(), newmessage.getUncles().get(k).getEncoded());
+    }
+
+    private static Transaction createTransaction(int number) {
+        AccountBuilder acbuilder = new AccountBuilder();
+        acbuilder.name("sender" + number);
+        Account sender = acbuilder.build();
+        acbuilder.name("receiver" + number);
+        Account receiver = acbuilder.build();
+        TransactionBuilder txbuilder = new TransactionBuilder();
+        return txbuilder.sender(sender).receiver(receiver).value(BigInteger.valueOf(number * 1000 + 1000)).build();
     }
 }
