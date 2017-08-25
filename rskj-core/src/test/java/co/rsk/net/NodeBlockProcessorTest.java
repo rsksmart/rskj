@@ -617,7 +617,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processGetBlockByHashMessageUsingBlockInStore() {
+    public void processBlockHashRequestMessageUsingBlockInStore() {
         final Block block = BlockGenerator.getBlock(3);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
 
@@ -632,7 +632,7 @@ public class NodeBlockProcessorTest {
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getNodeID()).isEmpty());
 
-        processor.processGetBlockByHash(sender, 100, block.getHash());
+        processor.processBlockHashRequest(sender, 100, block.getHash());
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getNodeID()).contains(blockHash));
 
@@ -650,7 +650,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processGetBlockByHashMessageUsingEmptyStore() {
+    public void processBlockHashRequestMessageUsingEmptyStore() {
         final Block block = BlockGenerator.getBlock(3);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
@@ -663,7 +663,7 @@ public class NodeBlockProcessorTest {
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getNodeID()).isEmpty());
 
-        processor.processGetBlockByHash(sender, 100, block.getHash());
+        processor.processBlockHashRequest(sender, 100, block.getHash());
 
         Assert.assertFalse(nodeInformation.getBlocksByNode(sender.getNodeID()).contains(blockHash));
 
@@ -671,7 +671,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processGetBlockByHashMessageUsingBlockInBlockchain() {
+    public void processBlockHashRequestMessageUsingBlockInBlockchain() {
         final Blockchain blockchain = createBlockchain(10);
         final Block block = blockchain.getBlockByNumber(5);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
@@ -684,7 +684,7 @@ public class NodeBlockProcessorTest {
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getNodeID()).isEmpty());
 
-        processor.processGetBlockByHash(sender, 100, block.getHash());
+        processor.processBlockHashRequest(sender, 100, block.getHash());
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getNodeID()).contains(blockHash));
 
