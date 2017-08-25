@@ -632,7 +632,7 @@ public class NodeBlockProcessorTest {
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getNodeID()).isEmpty());
 
-        processor.processBlockHashRequest(sender, 100, block.getHash());
+        processor.processBlockRequest(sender, 100, block.getHash());
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getNodeID()).contains(blockHash));
 
@@ -663,7 +663,7 @@ public class NodeBlockProcessorTest {
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getNodeID()).isEmpty());
 
-        processor.processBlockHashRequest(sender, 100, block.getHash());
+        processor.processBlockRequest(sender, 100, block.getHash());
 
         Assert.assertFalse(nodeInformation.getBlocksByNode(sender.getNodeID()).contains(blockHash));
 
@@ -684,7 +684,7 @@ public class NodeBlockProcessorTest {
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getNodeID()).isEmpty());
 
-        processor.processBlockHashRequest(sender, 100, block.getHash());
+        processor.processBlockRequest(sender, 100, block.getHash());
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getNodeID()).contains(blockHash));
 
