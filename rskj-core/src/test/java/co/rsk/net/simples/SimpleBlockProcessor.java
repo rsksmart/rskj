@@ -38,7 +38,8 @@ public class SimpleBlockProcessor implements BlockProcessor {
 
     public long lastKnownBlockNumber = 0;
     private List<Block> blocks = new ArrayList<Block>();
-
+    private long requestId;
+    private byte[] hash;
 
     @Override
     public BlockProcessResult processBlock(MessageSender sender, Block block) {
@@ -54,8 +55,9 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public void processBlockHashRequest(MessageSender sender, long requestId, byte[] hash) {
-
+    public void processBlockRequest(MessageSender sender, long requestId, byte[] hash) {
+        this.requestId = requestId;
+        this.hash = hash;
     }
 
     @Override
@@ -127,4 +129,8 @@ public class SimpleBlockProcessor implements BlockProcessor {
 
     @Override
     public void acceptAnyBlock() { }
+
+    public long getRequestId() { return this.requestId; }
+
+    public byte[] getBlockHash() { return this.hash; }
 }

@@ -692,7 +692,6 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    @Ignore
     public void processBlockByHashRequestMessageUsingProcessor() {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null);
@@ -701,9 +700,8 @@ public class NodeMessageHandlerTest {
 
         processor.processMessage(new SimpleMessageSender(), message);
 
-        Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(1, sbp.getBlocks().size());
-        Assert.assertSame(block, sbp.getBlocks().get(0));
+        Assert.assertEquals(100, sbp.getRequestId());
+        Assert.assertArrayEquals(block.getHash(), sbp.getBlockHash());
     }
 }
 
