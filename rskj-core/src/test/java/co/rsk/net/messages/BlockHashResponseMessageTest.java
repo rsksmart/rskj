@@ -35,6 +35,6 @@ public class BlockHashResponseMessageTest {
 
         Assert.assertEquals(id, message.getId());
         Assert.assertArrayEquals(hash, message.getHash());
-        Assert.assertEquals(MessageType.BLOCK_RESPONSE_MESSAGE, message.getMessageType());
+        Assert.assertEquals(MessageType.BLOCK_HASH_RESPONSE_MESSAGE, message.getMessageType());
     }
 }
