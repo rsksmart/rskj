@@ -26,11 +26,11 @@ import java.math.BigInteger;
 /**
  * Created by ajlopez on 5/10/2016.
  */
-public class BlockByHashMessage extends Message {
+public class BlockByHashResponseMessage extends Message {
     private long id;
     private Block block;
 
-    public BlockByHashMessage(long id, Block block) {
+    public BlockByHashResponseMessage(long id, Block block) {
         this.id = id;
         this.block = block;
     }
@@ -45,7 +45,7 @@ public class BlockByHashMessage extends Message {
 
     @Override
     public MessageType getMessageType() {
-        return MessageType.BLOCK_BY_HASH_MESSAGE;
+        return MessageType.BLOCK_BY_HASH_RESPONSE_MESSAGE;
     }
 
     @Override
