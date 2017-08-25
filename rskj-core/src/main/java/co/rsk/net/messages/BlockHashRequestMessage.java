@@ -18,7 +18,6 @@
 
 package co.rsk.net.messages;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.util.RLP;
 
 import java.math.BigInteger;
@@ -26,18 +25,18 @@ import java.math.BigInteger;
 /**
  * Implements encoding and decoding of the GET_BLOCK_HASH message type.
  */
-public class GetBlockHashMessage extends Message {
+public class BlockHashRequestMessage extends Message {
     private final long id;
     private final long height;
 
-    public GetBlockHashMessage(long id, long height) {
+    public BlockHashRequestMessage(long id, long height) {
         this.id = id;
         this.height = height;
     }
 
     @Override
     public MessageType getMessageType() {
-        return MessageType.GET_BLOCK_HASH_MESSAGE;
+        return MessageType.BLOCK_HASH_REQUEST_MESSAGE;
     }
 
     @Override

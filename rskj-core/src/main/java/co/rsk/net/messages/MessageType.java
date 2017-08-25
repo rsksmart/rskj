@@ -89,14 +89,14 @@ public enum MessageType {
             return new TransactionsMessage(txs);
         }
     },
-    GET_BLOCK_HASH_MESSAGE(8) {
+    BLOCK_HASH_REQUEST_MESSAGE(8) {
         @Override
         public Message createMessage(RLPList list) {
             byte[] rlpId = list.get(0).getRLPData();
             byte[] rlpHeight = list.get(1).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             long height = rlpHeight == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpHeight).longValue();
-            return new GetBlockHashMessage(id, height);
+            return new BlockHashRequestMessage(id, height);
         }
     },
     GET_BLOCK_HEADERS_BY_HASH_MESSAGE(9) {

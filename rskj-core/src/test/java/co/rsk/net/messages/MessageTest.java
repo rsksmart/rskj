@@ -303,10 +303,10 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeGetBlockHashMessage() {
+    public void encodeDecodeBlockHashRequestMessage() {
         long someId = 42;
         long someHeight = 99;
-        GetBlockHashMessage message = new GetBlockHashMessage(someId, someHeight);
+        BlockHashRequestMessage message = new BlockHashRequestMessage(someId, someHeight);
 
         byte[] encoded = message.getEncoded();
 
@@ -314,9 +314,9 @@ public class MessageTest {
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.GET_BLOCK_HASH_MESSAGE, result.getMessageType());
+        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, result.getMessageType());
 
-        GetBlockHashMessage newMessage = (GetBlockHashMessage) result;
+        BlockHashRequestMessage newMessage = (BlockHashRequestMessage) result;
 
         Assert.assertEquals(someId, newMessage.getId());
         Assert.assertEquals(someHeight, newMessage.getHeight());
