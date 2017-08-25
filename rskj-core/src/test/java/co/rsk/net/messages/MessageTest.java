@@ -26,7 +26,6 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.net.rlpx.Node;
 import org.junit.Assert;
 import org.junit.Test;
 
