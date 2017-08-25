@@ -19,9 +19,7 @@
 package co.rsk.net.messages;
 
 import org.ethereum.core.BlockIdentifier;
-import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -30,19 +28,19 @@ import java.util.List;
 /**
  * Wrapper around an RSK Skeleton message.
  */
-public class SkeletonMessage extends Message {
+public class SkeletonResponseMessage extends Message {
 
     private long id;
     private List<BlockIdentifier> blockIdentifiers;
 
-    public SkeletonMessage(long id, List<BlockIdentifier> blockIdentifiers) {
+    public SkeletonResponseMessage(long id, List<BlockIdentifier> blockIdentifiers) {
         this.id = id;
         this.blockIdentifiers = blockIdentifiers;
     }
 
     @Override
     public MessageType getMessageType() {
-        return MessageType.SKELETON_MESSAGE;
+        return MessageType.SKELETON_RESPONSE_MESSAGE;
     }
 
     @Override
