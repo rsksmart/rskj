@@ -35,10 +35,7 @@ import org.ethereum.core.*;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.mockito.Mockito;
 import org.spongycastle.util.encoders.Hex;
 
@@ -694,6 +691,21 @@ public class NodeMessageHandlerTest {
         handler.processMessage(sender2, message);
 
         Assert.assertNull(channelManager.getLastSkip());
+    }
+
+    @Test
+    @Ignore
+    public void processGetBlockByHashMessageUsingProcessor() {
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null);
+        Block block = new Block(Hex.decode(rlp));
+        Message message = new GetBlockByHashMessage(100, block.getHash());
+
+        processor.processMessage(new SimpleMessageSender(), message);
+
+        Assert.assertNotNull(sbp.getBlocks());
+        Assert.assertEquals(1, sbp.getBlocks().size());
+        Assert.assertSame(block, sbp.getBlocks().get(0));
     }
 }
 
