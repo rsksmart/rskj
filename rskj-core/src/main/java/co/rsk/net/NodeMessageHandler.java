@@ -114,6 +114,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         if (mType == MessageType.BLOCK_HEADERS_MESSAGE)
             this.processBlockHeadersMessage(sender, (BlockHeadersMessage) message);
 
+        if (mType == MessageType.BLOCK_REQUEST_MESSAGE)
+            this.processBlockRequestMessage(sender, (BlockRequestMessage) message);
+
         if(!blockProcessor.hasBetterBlockToSync()) {
             if (mType == MessageType.NEW_BLOCK_HASHES)
                 this.processNewBlockHashesMessage(sender, (NewBlockHashesMessage) message);
@@ -306,6 +309,15 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         if (this.blockProcessor != null)
             this.blockProcessor.processGetBlock(sender, hash);
+    }
+
+
+    private void processBlockRequestMessage(@Nonnull final MessageSender sender, @Nonnull final BlockRequestMessage message) {
+        final long requestId = message.getId();
+        final byte[] hash = message.getBlockHash();
+
+        if (this.blockProcessor != null)
+            this.blockProcessor.processBlockRequest(sender, requestId, hash);
     }
 
     private void processGetBlockHeadersMessage(@Nonnull final MessageSender sender, @Nonnull final GetBlockHeadersMessage message) {
