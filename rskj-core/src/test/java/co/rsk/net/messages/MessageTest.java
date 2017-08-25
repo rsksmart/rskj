@@ -378,10 +378,10 @@ public class MessageTest {
     }
 
     @Test
-    public void encodeDecodeGetSkeletonMessage() {
+    public void encodeDecodeSkeletonRequestMessage() {
         byte[] hash_start = HashUtil.randomHash();
         byte[] hash_end = HashUtil.randomHash();
-        GetSkeletonMessage message = new GetSkeletonMessage(hash_start, hash_end);
+        SkeletonRequestMessage message = new SkeletonRequestMessage(hash_start, hash_end);
 
         byte[] encoded = message.getEncoded();
 
@@ -389,9 +389,9 @@ public class MessageTest {
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(encoded, result.getEncoded());
-        Assert.assertEquals(MessageType.GET_SKELETON_MESSAGE, result.getMessageType());
+        Assert.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, result.getMessageType());
 
-        GetSkeletonMessage newMessage = (GetSkeletonMessage) result;
+        SkeletonRequestMessage newMessage = (SkeletonRequestMessage) result;
 
         Assert.assertArrayEquals(hash_start, newMessage.getHashStart());
         Assert.assertArrayEquals(hash_end, newMessage.getHashEnd());

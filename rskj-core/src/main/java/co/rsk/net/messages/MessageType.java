@@ -193,12 +193,12 @@ public enum MessageType {
             return new BodyMessage(id, transactions, uncles);
         }
     },
-    GET_SKELETON_MESSAGE(16) {
+    SKELETON_REQUEST_MESSAGE(16) {
         @Override
         public Message createMessage(RLPList list) {
             byte[] hash_start = list.get(0).getRLPData();
             byte[] hash_end = list.get(1).getRLPData();
-            return new GetSkeletonMessage(hash_start, hash_end);
+            return new SkeletonRequestMessage(hash_start, hash_end);
         }
     },
     NEW_BLOCK_HASH_MESSAGE(17) {

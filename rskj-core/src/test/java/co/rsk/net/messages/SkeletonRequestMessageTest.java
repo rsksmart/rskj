@@ -19,27 +19,23 @@
 
 package co.rsk.net.messages;
 
-import org.ethereum.core.BlockIdentifier;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.spongycastle.util.encoders.Hex.decode;
 import static org.spongycastle.util.encoders.Hex.toHexString;
 
-public class GetSkeletonResponseMessageTest {
+public class SkeletonRequestMessageTest {
 
     @Test
     public void createMessage() {
         byte[] hash_start = HashUtil.randomHash();
         byte[] hash_end = HashUtil.randomHash();
-        GetSkeletonMessage message = new GetSkeletonMessage(hash_start, hash_end);
+        SkeletonRequestMessage message = new SkeletonRequestMessage(hash_start, hash_end);
 
-        assertEquals(MessageType.GET_SKELETON_MESSAGE, message.getMessageType());
+        assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, message.getMessageType());
         assertArrayEquals(hash_start, message.getHashStart());
         assertArrayEquals(hash_end, message.getHashEnd());
     }
