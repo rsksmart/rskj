@@ -25,14 +25,14 @@ import org.junit.Test;
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class GetBodyMessageTest {
+public class BodyRequestMessageTest {
     @Test
     public void createWithBlockHash() {
         byte[] hash = BlockGenerator.getGenesisBlock().getHash();
-        GetBodyMessage message = new GetBodyMessage(100, hash);
+        BodyRequestMessage message = new BodyRequestMessage(100, hash);
 
         Assert.assertEquals(100, message.getId());
         Assert.assertArrayEquals(hash, message.getBlockHash());
-        Assert.assertEquals(MessageType.GET_BODY_MESSAGE, message.getMessageType());
+        Assert.assertEquals(MessageType.BODY_REQUEST_MESSAGE, message.getMessageType());
     }
 }

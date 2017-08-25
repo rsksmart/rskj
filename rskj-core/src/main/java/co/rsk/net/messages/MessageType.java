@@ -164,13 +164,13 @@ public enum MessageType {
             return new SkeletonResponseMessage(id, blockIdentifiers);
         }
     },
-    GET_BODY_MESSAGE(14) {
+    BODY_REQUEST_MESSAGE(14) {
         @Override
         public Message createMessage(RLPList list) {
             byte[] rlpId = list.get(0).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             byte[] hash = list.get(1).getRLPData();
-            return new GetBodyMessage(id, hash);
+            return new BodyRequestMessage(id, hash);
         }
     },
     BODY_MESSAGE(15) {
