@@ -616,7 +616,6 @@ public class NodeBlockProcessorTest {
         Assert.assertArrayEquals(block.getHash(), bMessage.getBlock().getHash());
     }
 
-
     @Test
     public void processGetBlockByHashMessageUsingBlockInStore() {
         final Block block = BlockGenerator.getBlock(3);
@@ -626,6 +625,58 @@ public class NodeBlockProcessorTest {
         store.saveBlock(block);
 
         final Blockchain blockchain = createBlockchain(0);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        final BlockNodeInformation nodeInformation = processor.getNodeInformation();
+
+        final SimpleMessageSender sender = new SimpleMessageSender();
+
+        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getNodeID()).isEmpty());
+
+        processor.processGetBlockByHash(sender, 100, block.getHash());
+
+        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getNodeID()).contains(blockHash));
+
+        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(1, sender.getMessages().size());
+
+        final Message message = sender.getMessages().get(0);
+
+        Assert.assertEquals(MessageType.BLOCK_BY_HASH_MESSAGE, message.getMessageType());
+
+        final BlockByHashMessage bMessage = (BlockByHashMessage) message;
+
+        Assert.assertEquals(100, bMessage.getId());
+        Assert.assertArrayEquals(block.getHash(), bMessage.getBlock().getHash());
+    }
+
+    @Test
+    public void processGetBlockByHashMessageUsingEmptyStore() {
+        final Block block = BlockGenerator.getBlock(3);
+        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
+        final BlockStore store = new BlockStore();
+        final Blockchain blockchain = createBlockchain(0);
+
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        final BlockNodeInformation nodeInformation = processor.getNodeInformation();
+
+        final SimpleMessageSender sender = new SimpleMessageSender();
+
+        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getNodeID()).isEmpty());
+
+        processor.processGetBlockByHash(sender, 100, block.getHash());
+
+        Assert.assertFalse(nodeInformation.getBlocksByNode(sender.getNodeID()).contains(blockHash));
+
+        Assert.assertTrue(sender.getMessages().isEmpty());
+    }
+
+    @Test
+    public void processGetBlockByHashMessageUsingBlockInBlockchain() {
+        final Blockchain blockchain = createBlockchain(10);
+        final Block block = blockchain.getBlockByNumber(5);
+        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
+        final BlockStore store = new BlockStore();
+
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
         final BlockNodeInformation nodeInformation = processor.getNodeInformation();
 
