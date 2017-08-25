@@ -416,4 +416,22 @@ public class MessageTest {
         Assert.assertArrayEquals(hash_start, newMessage.getHashStart());
         Assert.assertArrayEquals(hash_end, newMessage.getHashEnd());
     }
+
+    @Test
+    public void encodeDecodeNewBlockHashMessage() {
+        byte[] hash = HashUtil.randomHash();
+        NewBlockHashMessage message = new NewBlockHashMessage(hash);
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(encoded);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(encoded, result.getEncoded());
+        Assert.assertEquals(MessageType.NEW_BLOCK_HASH_MESSAGE, result.getMessageType());
+
+        NewBlockHashMessage newMessage = (NewBlockHashMessage) result;
+
+        Assert.assertArrayEquals(hash, newMessage.getBlockHash());
+    }
 }
