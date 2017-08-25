@@ -32,6 +32,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Created by ajlopez on 5/11/2016.
@@ -320,6 +321,29 @@ public class MessageTest {
 
         Assert.assertEquals(someId, newMessage.getId());
         Assert.assertEquals(someHeight, newMessage.getHeight());
+    }
+
+    @Test
+    public void encodeDecodeBlockHashResponseMessage() {
+        long id = 42;
+        byte[] hash = new byte[32];
+        Random random = new Random();
+        random.nextBytes(hash);
+
+        BlockHashResponseMessage message = new BlockHashResponseMessage(id, hash);
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(encoded);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(encoded, result.getEncoded());
+        Assert.assertEquals(MessageType.BLOCK_HASH_RESPONSE_MESSAGE, result.getMessageType());
+
+        BlockHashResponseMessage newMessage = (BlockHashResponseMessage) result;
+
+        Assert.assertEquals(id, newMessage.getId());
+        Assert.assertArrayEquals(hash, newMessage.getHash());
     }
 
     @Test

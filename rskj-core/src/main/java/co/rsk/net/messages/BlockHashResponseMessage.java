@@ -36,7 +36,7 @@ public class BlockHashResponseMessage extends Message {
 
     @Override
     public MessageType getMessageType() {
-        return MessageType.BLOCK_RESPONSE_MESSAGE;
+        return MessageType.BLOCK_HASH_RESPONSE_MESSAGE;
     }
 
     @Override
