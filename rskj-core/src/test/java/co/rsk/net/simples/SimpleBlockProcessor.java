@@ -54,7 +54,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public void processGetBlockByHash(MessageSender sender, long requestId, byte[] hash) {
+    public void processBlockHashRequest(MessageSender sender, long requestId, byte[] hash) {
 
     }
 
