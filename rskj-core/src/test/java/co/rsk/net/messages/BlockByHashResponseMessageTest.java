@@ -25,7 +25,7 @@ import org.junit.Test;
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class BlockByHashMessageTest {
+public class BlockByHashResponseMessageTest {
     @Test
     public void createWithBlockHash() {
         byte[] hash = BlockGenerator.getGenesisBlock().getHash();

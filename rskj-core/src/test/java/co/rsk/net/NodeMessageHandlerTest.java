@@ -693,7 +693,7 @@ public class NodeMessageHandlerTest {
 
     @Test
     @Ignore
-    public void processGetBlockByHashMessageUsingProcessor() {
+    public void processBlockByHashRequestMessageUsingProcessor() {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null);
         Block block = new Block(Hex.decode(rlp));

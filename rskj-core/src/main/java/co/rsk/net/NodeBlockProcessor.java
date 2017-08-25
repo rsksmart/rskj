@@ -388,7 +388,7 @@ public class NodeBlockProcessor implements BlockProcessor {
             return;
 
         nodeInformation.addBlockToNode(new ByteArrayWrapper(hash), sender.getNodeID());
-        sender.sendMessage(new BlockByHashMessage(requestId, block));
+        sender.sendMessage(new BlockByHashResponseMessage(requestId, block));
     }
 
     /**
