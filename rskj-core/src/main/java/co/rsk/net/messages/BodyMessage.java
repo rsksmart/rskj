@@ -2,7 +2,9 @@ package co.rsk.net.messages;
 
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
+import org.ethereum.util.RLP;
 
+import java.math.BigInteger;
 import java.util.List;
 
 /**
@@ -26,7 +28,19 @@ public class BodyMessage extends Message {
     public List<BlockHeader> getUncles() { return this.uncles; }
 
     @Override
-    public byte[] getEncodedMessage() { return null; }
+    public byte[] getEncodedMessage() {
+        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(this.id));
+        byte[][] rlpTransactions = new byte[this.transactions.size()][];
+        byte[][] rlpUncles = new byte[this.uncles.size()][];
+
+        for (int k = 0; k < this.transactions.size(); k++)
+            rlpTransactions[k] = this.transactions.get(k).getEncoded();
+
+        for (int k = 0; k < this.uncles.size(); k++)
+            rlpUncles[k] = this.uncles.get(k).getEncoded();
+
+        return RLP.encodeList(rlpId, RLP.encodeList(rlpTransactions), RLP.encodeList(rlpUncles));
+    }
 
     @Override
     public MessageType getMessageType() { return MessageType.BODY_MESSAGE; }

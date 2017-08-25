@@ -176,7 +176,21 @@ public enum MessageType {
     BODY_MESSAGE(15) {
         @Override
         public Message createMessage(RLPList list) {
-            return null;
+            byte[] rlpId = list.get(0).getRLPData();
+            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            RLPList rlpTransactions = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
+            RLPList rlpUncles = (RLPList)RLP.decode2(list.get(2).getRLPData()).get(0);
+
+            List<Transaction> transactions = new ArrayList<>();
+            List<BlockHeader> uncles = new ArrayList<>();
+
+            for (int k = 0; k < rlpTransactions.size(); k++)
+                transactions.add(new Transaction(rlpTransactions.get(k).getRLPData()));
+
+            for (int k = 0; k < rlpUncles.size(); k++)
+                uncles.add(new BlockHeader(rlpUncles.get(k).getRLPData()));
+
+            return new BodyMessage(id, transactions, uncles);
         }
     },
     GET_SKELETON_MESSAGE(16) {

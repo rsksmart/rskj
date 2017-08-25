@@ -37,6 +37,8 @@ public class BodyMessageTest {
 
         BodyMessage message = new BodyMessage(100, transactions, uncles);
 
+        Assert.assertEquals(100, message.getId());
+
         Assert.assertNotNull(message.getTransactions());
         Assert.assertEquals(transactions.size(), message.getTransactions().size());
 
