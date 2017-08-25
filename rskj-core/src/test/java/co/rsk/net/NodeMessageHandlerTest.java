@@ -696,7 +696,7 @@ public class NodeMessageHandlerTest {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null);
         Block block = new Block(Hex.decode(rlp));
-        Message message = new BlockByHashRequestMessage(100, block.getHash());
+        Message message = new BlockRequestMessage(100, block.getHash());
 
         processor.processMessage(new SimpleMessageSender(), message);
 

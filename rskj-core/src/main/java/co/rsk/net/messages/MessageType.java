@@ -112,7 +112,7 @@ public enum MessageType {
             return new BlockHeadersRequestMessage(id, hash, count);
         }
     },
-    BLOCK_HEADERS_BY_HASH_MESSAGE(10) {
+    BLOCK_HEADERS_RESPONSE_MESSAGE(10) {
         @Override
         public Message createMessage(RLPList list) {
             byte[] rlpId = list.get(0).getRLPData();
@@ -124,19 +124,19 @@ public enum MessageType {
             for (int k = 0; k < rlpHeaders.size(); k++)
                 headers.add(new BlockHeader(rlpHeaders.get(k).getRLPData()));
 
-            return new BlockHeadersByHashMessage(id, headers);
+            return new BlockHeadersResponseMessage(id, headers);
         }
     },
-    BLOCK_BY_HASH_REQUEST_MESSAGE(11) {
+    BLOCK_REQUEST_MESSAGE(11) {
         @Override
         public Message createMessage(RLPList list) {
             byte[] rlpId = list.get(0).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             byte[] hash = list.get(1).getRLPData();
-            return new BlockByHashRequestMessage(id, hash);
+            return new BlockRequestMessage(id, hash);
         }
     },
-    BLOCK_BY_HASH_RESPONSE_MESSAGE(12) {
+    BLOCK_RESPONSE_MESSAGE(12) {
         @Override
         public Message createMessage(RLPList list) {
             byte[] rlpId = list.get(0).getRLPData();
@@ -145,7 +145,7 @@ public enum MessageType {
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             Block block = new Block(rlpBlock);
 
-            return new BlockByHashResponseMessage(id, block);
+            return new BlockResponseMessage(id, block);
         }
     },
     SKELETON_RESPONSE_MESSAGE(13) {

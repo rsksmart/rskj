@@ -641,9 +641,9 @@ public class NodeBlockProcessorTest {
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_BY_HASH_RESPONSE_MESSAGE, message.getMessageType());
+        Assert.assertEquals(MessageType.BLOCK_RESPONSE_MESSAGE, message.getMessageType());
 
-        final BlockByHashResponseMessage bMessage = (BlockByHashResponseMessage) message;
+        final BlockResponseMessage bMessage = (BlockResponseMessage) message;
 
         Assert.assertEquals(100, bMessage.getId());
         Assert.assertArrayEquals(block.getHash(), bMessage.getBlock().getHash());
@@ -693,9 +693,9 @@ public class NodeBlockProcessorTest {
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_BY_HASH_RESPONSE_MESSAGE, message.getMessageType());
+        Assert.assertEquals(MessageType.BLOCK_RESPONSE_MESSAGE, message.getMessageType());
 
-        final BlockByHashResponseMessage bMessage = (BlockByHashResponseMessage) message;
+        final BlockResponseMessage bMessage = (BlockResponseMessage) message;
 
         Assert.assertEquals(100, bMessage.getId());
         Assert.assertArrayEquals(block.getHash(), bMessage.getBlock().getHash());

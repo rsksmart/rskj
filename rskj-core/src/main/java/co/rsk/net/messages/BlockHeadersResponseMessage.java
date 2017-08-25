@@ -9,11 +9,11 @@ import java.util.List;
 /**
  * Created by ajlopez on 24/08/2017.
  */
-public class BlockHeadersByHashMessage extends Message {
+public class BlockHeadersResponseMessage extends Message {
     private long id;
     private List<BlockHeader> blockHeaders;
 
-    public BlockHeadersByHashMessage(long id, List<BlockHeader> headers) {
+    public BlockHeadersResponseMessage(long id, List<BlockHeader> headers) {
         this.id = id;
         this.blockHeaders = headers;
     }
@@ -35,6 +35,6 @@ public class BlockHeadersByHashMessage extends Message {
 
     @Override
     public MessageType getMessageType() {
-        return MessageType.BLOCK_HEADERS_BY_HASH_MESSAGE;
+        return MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE;
     }
 }
