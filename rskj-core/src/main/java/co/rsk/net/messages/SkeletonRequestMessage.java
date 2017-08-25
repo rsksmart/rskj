@@ -23,18 +23,18 @@ import org.ethereum.util.RLP;
 /**
  * Wrapper around an RSK GetSkeleton message.
  */
-public class GetSkeletonMessage extends Message {
+public class SkeletonRequestMessage extends Message {
     private byte[] hash_start;
     private byte[] hash_end;
 
-    public GetSkeletonMessage(byte[] hash_start, byte[] hash_end) {
+    public SkeletonRequestMessage(byte[] hash_start, byte[] hash_end) {
         this.hash_start = hash_start;
         this.hash_end = hash_end;
     }
 
     @Override
     public MessageType getMessageType() {
-        return MessageType.GET_SKELETON_MESSAGE;
+        return MessageType.SKELETON_REQUEST_MESSAGE;
     }
 
     @Override
