@@ -21,15 +21,15 @@ package co.rsk.net.messages;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class GetBlockHashMessageTest {
+public class BlockHashRequestMessageTest {
     @Test
     public void createMessage() {
         long someId = 42;
         long someHeight = 99;
-        GetBlockHashMessage message = new GetBlockHashMessage(someId, someHeight);
+        BlockHashRequestMessage message = new BlockHashRequestMessage(someId, someHeight);
 
         Assert.assertEquals(someId, message.getId());
         Assert.assertEquals(someHeight, message.getHeight());
-        Assert.assertEquals(MessageType.GET_BLOCK_HASH_MESSAGE, message.getMessageType());
+        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
     }
 }
