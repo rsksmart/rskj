@@ -19,6 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.net.messages.*;
 import org.ethereum.core.Block;
@@ -36,6 +37,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -645,12 +647,18 @@ public class NodeBlockProcessor implements BlockProcessor {
             if (this.channelManager == null)
                 return;
 
-            Block block = this.blockchain.getBestBlock();
+            BlockChainStatus blockChainStatus = this.blockchain.getStatus();
+
+            if (blockChainStatus == null)
+                return;
+
+            Block block = blockChainStatus.getBestBlock();
+            BigInteger totalDifficulty = blockChainStatus.getTotalDifficulty();
 
             if (block == null)
                 return;
 
-            Status status = new Status(block.getNumber(), block.getHash());
+            Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), totalDifficulty);
 
             long currentTime = System.currentTimeMillis();
 
@@ -677,12 +685,18 @@ public class NodeBlockProcessor implements BlockProcessor {
         if (sender == null || this.blockchain == null)
             return;
 
-        Block block = this.blockchain.getBestBlock();
+        BlockChainStatus blockChainStatus = this.blockchain.getStatus();
+
+        if (blockChainStatus == null)
+            return;
+
+        Block block = blockChainStatus.getBestBlock();
+        BigInteger totalDifficulty = blockChainStatus.getTotalDifficulty();
 
         if (block == null)
             return;
 
-        Status status = new Status(block.getNumber(), block.getHash());
+        Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), totalDifficulty);
         logger.trace("Sending status best block {} to {}", status.getBestBlockNumber(), sender.getNodeID().toString());
         StatusMessage msg = new StatusMessage(status);
         sender.sendMessage(msg);
