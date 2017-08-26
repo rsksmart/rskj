@@ -29,6 +29,7 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.spongycastle.util.BigIntegers;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,9 +44,17 @@ public enum MessageType {
         @Override
         public Message createMessage(RLPList list) {
             byte[] rlpdata = list.get(0).getRLPData();
-            long number = rlpdata == null ? 0 : BigIntegers.fromUnsignedByteArray(list.get(0).getRLPData()).longValue();
+            long number = rlpdata == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpdata).longValue();
             byte[] hash = list.get(1).getRLPData();
-            return new StatusMessage(new Status(number, hash));
+
+            if (list.size() == 2)
+                return new StatusMessage(new Status(number, hash));
+
+            byte[] parentHash = list.get(2).getRLPData();
+            byte[] rlpTotalDifficulty = list.get(3).getRLPData();
+            BigInteger totalDifficulty = rlpTotalDifficulty == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(rlpTotalDifficulty);
+
+            return new StatusMessage(new Status(number, hash, parentHash, totalDifficulty));
         }
     },
     BLOCK_MESSAGE(2) {
