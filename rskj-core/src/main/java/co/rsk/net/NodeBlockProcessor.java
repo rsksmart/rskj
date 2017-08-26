@@ -661,7 +661,8 @@ public class NodeBlockProcessor implements BlockProcessor {
 
             lastStatusBestBlock = status.getBestBlockNumber();
 
-            logger.trace("Sending status best block {} to all", status.getBestBlockNumber());
+            logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(), Hex.toHexString(status.getBestBlockHash()).substring(0, 8));
+
             this.channelManager.broadcastStatus(status);
         }
     }
