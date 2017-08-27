@@ -20,6 +20,7 @@ package co.rsk.net.eth;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
+import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.MessageSender;
 import co.rsk.net.Metrics;
@@ -220,16 +221,18 @@ public class RskWireProtocol extends EthHandler {
         byte protocolVersion = version.getCode();
         int networkId = config.networkId();
 
-        BigInteger totalDifficulty = blockchain.getTotalDifficulty();
-        byte[] bestHash = blockchain.getBestBlockHash();
+        BlockChainStatus blockChainStatus = this.blockchain.getStatus();
+        Block bestBlock = blockChainStatus.getBestBlock();
+        BigInteger totalDifficulty = blockChainStatus.getTotalDifficulty();
+
+        // Original status
         Genesis genesis = GenesisLoader.loadGenesis(config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), true);
         org.ethereum.net.eth.message.StatusMessage msg = new org.ethereum.net.eth.message.StatusMessage(protocolVersion, networkId,
-                ByteUtil.bigIntegerToBytes(totalDifficulty), bestHash, genesis.getHash());
+                ByteUtil.bigIntegerToBytes(totalDifficulty), bestBlock.getHash(), genesis.getHash());
         sendMessage(msg);
 
         // RSK new protocol send status
-        Block bestBlock = blockchain.getBestBlock();
-        Status status = new Status(bestBlock.getNumber(), bestBlock.getHash());
+        Status status = new Status(bestBlock.getNumber(), bestBlock.getHash(), bestBlock.getParentHash(), totalDifficulty);
         RskMessage rskmessage = new RskMessage(new StatusMessage(status));
         loggerNet.trace("Sending status best block {} to {}", status.getBestBlockNumber(), this.messageSender.getNodeID().toString());
         sendMessage(rskmessage);
