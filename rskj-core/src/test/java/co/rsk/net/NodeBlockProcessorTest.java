@@ -617,7 +617,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockHashRequestMessageUsingBlockInStore() {
+    public void processBlockRequestMessageUsingBlockInStore() {
         final Block block = BlockGenerator.getBlock(3);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
 
@@ -647,6 +647,31 @@ public class NodeBlockProcessorTest {
 
         Assert.assertEquals(100, bMessage.getId());
         Assert.assertArrayEquals(block.getHash(), bMessage.getBlock().getHash());
+    }
+
+    @Test
+    public void processBodyRequestMessageUsingBlockInBlockchain() {
+        final Blockchain blockchain = createBlockchain(10);
+        final Block block = blockchain.getBlockByNumber(3);
+        final BlockStore store = new BlockStore();
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+
+        final SimpleMessageSender sender = new SimpleMessageSender();
+
+        processor.processBodyRequest(sender, 100, block.getHash());
+
+        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(1, sender.getMessages().size());
+
+        final Message message = sender.getMessages().get(0);
+
+        Assert.assertEquals(MessageType.BODY_RESPONSE_MESSAGE, message.getMessageType());
+
+        final BodyResponseMessage bMessage = (BodyResponseMessage) message;
+
+        Assert.assertEquals(100, bMessage.getId());
+        Assert.assertEquals(block.getTransactionsList(), bMessage.getTransactions());
+        Assert.assertEquals(block.getUncleList(), bMessage.getUncles());
     }
 
     @Test

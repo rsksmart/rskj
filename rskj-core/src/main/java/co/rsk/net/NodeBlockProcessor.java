@@ -377,7 +377,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     /**
      * processBlockRequest sends a requested block to a peer if the block is available.
      *
-     * @param sender the sender of the GetBlockByHash message.
+     * @param sender the sender of the BlockRequest message.
      * @param requestId the id of the request
      * @param hash   the requested block's hash.
      */
@@ -396,7 +396,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     /**
      * processBlockHeadersRequest sends a list of block headers.
      *
-     * @param sender the sender of the GetBlockByHash message.
+     * @param sender the sender of the BlockHeadersRequest message.
      * @param requestId the id of the request
      * @param hash   the hash of the block to be processed
      * @param count  the number of headers to send
@@ -404,6 +404,27 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public void processBlockHeadersRequest(@Nonnull final MessageSender sender, long requestId, @Nullable final byte[] hash, int count) {
         // to implement
+    }
+
+    /**
+     * processBodyRequest sends the requested block body to a peer if it is available.
+     *
+     * @param sender the sender of the BodyRequest message.
+     * @param requestId the id of the request
+     * @param hash   the requested block's hash.
+     */
+    @Override
+    public void processBodyRequest(@Nonnull final MessageSender sender, long requestId, @Nullable final byte[] hash) {
+        logger.trace("Processing body request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getNodeID().toString());
+        final Block block = this.getBlock(hash);
+
+        if (block == null) {
+            // Don't waste time sending an empty response.
+            return;
+        }
+
+        BodyResponseMessage responseMessage = new BodyResponseMessage(requestId, block.getTransactionsList(), block.getUncleList());
+        sender.sendMessage(responseMessage);
     }
 
     /**
