@@ -394,6 +394,19 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     /**
+     * processBlockHeadersRequest sends a list of block headers.
+     *
+     * @param sender the sender of the GetBlockByHash message.
+     * @param requestId the id of the request
+     * @param hash   the hash of the block to be processed
+     * @param count  the number of headers to send
+     */
+    @Override
+    public void processBlockHeadersRequest(@Nonnull final MessageSender sender, long requestId, @Nullable final byte[] hash, int count) {
+        // to implement
+    }
+
+    /**
      * processGetBlock sends a requested block to a peer if the block is available.
      *
      * @param sender the sender of the GetBlock message.
