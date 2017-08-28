@@ -27,6 +27,7 @@ import co.rsk.net.simples.SimpleMessageSender;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Assert;
 import org.junit.Test;
@@ -675,7 +676,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockRequestMessageUsingEmptyStore() {
+    public void processBlockHashRequestMessageUsingEmptyStore() {
         final Block block = BlockGenerator.getBlock(3);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
@@ -696,7 +697,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockRequestMessageUsingBlockInBlockchain() {
+    public void processBlockHashRequestMessageUsingBlockInBlockchain() {
         final Blockchain blockchain = createBlockchain(10);
         final Block block = blockchain.getBlockByNumber(5);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
@@ -727,41 +728,46 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockHashRequestMessageUsingOutOfBoundsHeight() {
-        final Blockchain blockchain = createBlockchain(10);
-        final BlockStore store = new BlockStore();
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
-
-        final SimpleMessageSender sender = new SimpleMessageSender();
-
-        processor.processBlockHashRequest(sender, 100, 99999);
-
-        Assert.assertTrue(sender.getMessages().isEmpty());
-    }
-
-    @Test
-    public void processBlockHashRequestMessageUsingBlockInBlockchain() {
-        final Blockchain blockchain = createBlockchain(10);
-        final Block block = blockchain.getBlockByNumber(5);
+    public void processBlockHeadersRequestMessageUsingBlockInBlockchain() {
+        final Blockchain blockchain = createBlockchain(100);
+        final Block block = blockchain.getBlockByNumber(60);
         final BlockStore store = new BlockStore();
 
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
-        processor.processBlockHashRequest(sender, 100, block.getNumber());
+        processor.processBlockHeadersRequest(sender, 100, block.getHash(), 20);
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_HASH_RESPONSE_MESSAGE, message.getMessageType());
+        Assert.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
 
-        final BlockHashResponseMessage bMessage = (BlockHashResponseMessage) message;
+        final BlockHeadersResponseMessage response = (BlockHeadersResponseMessage) message;
 
-        Assert.assertEquals(100, bMessage.getId());
-        Assert.assertArrayEquals(block.getHash(), bMessage.getHash());
+        Assert.assertEquals(100, response.getId());
+        Assert.assertNotNull(response.getBlockHeaders());
+        Assert.assertEquals(20, response.getBlockHeaders().size());
+
+        for (int k = 0; k < 20; k++)
+            Assert.assertArrayEquals(blockchain.getBlockByNumber(60 - k).getHash(), response.getBlockHeaders().get(k).getHash());
+    }
+
+    @Test
+    public void processBlockHeadersRequestMessageUsingUnknownHash() {
+        final Blockchain blockchain = createBlockchain(100);
+        final BlockStore store = new BlockStore();
+
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+
+        final SimpleMessageSender sender = new SimpleMessageSender();
+
+        processor.processBlockHeadersRequest(sender, 100, HashUtil.randomHash(), 20);
+
+        Assert.assertTrue(sender.getMessages().isEmpty());
     }
 
     private static Blockchain createBlockchain() {
