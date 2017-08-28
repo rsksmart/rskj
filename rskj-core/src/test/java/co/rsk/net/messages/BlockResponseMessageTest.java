@@ -19,6 +19,7 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,11 +29,11 @@ import org.junit.Test;
 public class BlockResponseMessageTest {
     @Test
     public void createWithBlockHash() {
-        byte[] hash = BlockGenerator.getGenesisBlock().getHash();
-        BlockRequestMessage message = new BlockRequestMessage(100, hash);
+        Block block = BlockGenerator.getBlock(1);
+        BlockResponseMessage message = new BlockResponseMessage(100, block);
 
         Assert.assertEquals(100, message.getId());
-        Assert.assertArrayEquals(hash, message.getBlockHash());
-        Assert.assertEquals(MessageType.BLOCK_REQUEST_MESSAGE, message.getMessageType());
+        Assert.assertArrayEquals(block.getHash(), message.getBlock().getHash());
+        Assert.assertEquals(MessageType.BLOCK_RESPONSE_MESSAGE, message.getMessageType());
     }
 }
