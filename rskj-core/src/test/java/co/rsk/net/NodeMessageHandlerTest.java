@@ -30,6 +30,7 @@ import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
@@ -701,7 +702,20 @@ public class NodeMessageHandlerTest {
         processor.processMessage(new SimpleMessageSender(), message);
 
         Assert.assertEquals(100, sbp.getRequestId());
-        Assert.assertArrayEquals(block.getHash(), sbp.getBlockHash());
+        Assert.assertArrayEquals(block.getHash(), sbp.getHash());
+    }
+
+    @Test
+    public void processBlockHeadersRequestMessageUsingProcessor() {
+        byte[] hash = HashUtil.randomHash();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null);
+        Message message = new BlockHeadersRequestMessage(100, hash, 50);
+
+        processor.processMessage(new SimpleMessageSender(), message);
+
+        Assert.assertEquals(100, sbp.getRequestId());
+        Assert.assertArrayEquals(hash, sbp.getHash());
     }
 }
 

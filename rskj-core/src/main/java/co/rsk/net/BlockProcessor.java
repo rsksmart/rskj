@@ -35,8 +35,6 @@ public interface BlockProcessor {
 
     void processGetBlock(MessageSender sender, byte[] hash);
 
-    void processBlockRequest(MessageSender sender, long requestId, byte[] hash);
-
     void processGetBlockHeaders(MessageSender sender, long blockNumber, byte[] hash, int maxHeaders, int skip, boolean reverse);
 
     void processGetBlockHeaders(MessageSender sender, byte[] hash);
@@ -64,4 +62,9 @@ public interface BlockProcessor {
     void sendStatusToAll();
 
     void acceptAnyBlock();
+
+    // New messages
+    void processBlockRequest(MessageSender sender, long requestId, byte[] hash);
+
+    void processBlockHeadersRequest(MessageSender sender, long requestId, byte[] hash, int count);
 }

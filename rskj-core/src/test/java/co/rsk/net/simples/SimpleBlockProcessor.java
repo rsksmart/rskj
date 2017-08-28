@@ -35,11 +35,11 @@ import java.util.Map;
  * Created by ajlopez on 5/11/2016.
  */
 public class SimpleBlockProcessor implements BlockProcessor {
-
     public long lastKnownBlockNumber = 0;
     private List<Block> blocks = new ArrayList<Block>();
     private long requestId;
     private byte[] hash;
+    private int count;
 
     @Override
     public BlockProcessResult processBlock(MessageSender sender, Block block) {
@@ -58,6 +58,13 @@ public class SimpleBlockProcessor implements BlockProcessor {
     public void processBlockRequest(MessageSender sender, long requestId, byte[] hash) {
         this.requestId = requestId;
         this.hash = hash;
+    }
+
+    @Override
+    public void processBlockHeadersRequest(MessageSender sender, long requestId, byte[] hash, int count) {
+        this.requestId = requestId;
+        this.hash = hash;
+        this.count = count;
     }
 
     @Override
@@ -132,5 +139,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
 
     public long getRequestId() { return this.requestId; }
 
-    public byte[] getBlockHash() { return this.hash; }
+    public byte[] getHash() { return this.hash; }
+
+    public int getCount() { return this.count; }
 }
