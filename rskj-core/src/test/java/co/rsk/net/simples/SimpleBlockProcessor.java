@@ -72,6 +72,10 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
+    public void processBlockHashRequest(MessageSender sender, long requestId, long height) {
+    }
+
+    @Override
     public void processGetBlockHeaders(MessageSender sender, long blockNumber, byte[] hash, int maxHeaders, int skip, boolean reverse) {
 
     }
