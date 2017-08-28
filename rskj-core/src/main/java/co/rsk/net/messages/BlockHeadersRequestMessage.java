@@ -8,8 +8,19 @@ import java.math.BigInteger;
  * Created by ajlopez on 23/08/2017.
  */
 public class BlockHeadersRequestMessage extends Message {
+    /**
+     * Id to identify request/response correlation
+     */
     private long id;
+
+    /**
+     * Hash of the first header to retrieve
+     */
     private byte[] hash;
+
+    /**
+     * Count of headers to retrieve
+     */
     private int count;
 
     public BlockHeadersRequestMessage(long id, byte[] hash, int count) {
