@@ -10,7 +10,14 @@ import java.util.List;
  * Created by ajlopez on 24/08/2017.
  */
 public class BlockHeadersResponseMessage extends Message {
+    /**
+     * Id to identify request/response correlation
+     */
     private long id;
+
+    /**
+     * List of block headers from the peer
+     */
     private List<BlockHeader> blockHeaders;
 
     public BlockHeadersResponseMessage(long id, List<BlockHeader> headers) {
