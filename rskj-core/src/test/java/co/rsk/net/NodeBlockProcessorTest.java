@@ -675,7 +675,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockHashRequestMessageUsingEmptyStore() {
+    public void processBlockRequestMessageUsingEmptyStore() {
         final Block block = BlockGenerator.getBlock(3);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
@@ -696,7 +696,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockHashRequestMessageUsingBlockInBlockchain() {
+    public void processBlockRequestMessageUsingBlockInBlockchain() {
         final Blockchain blockchain = createBlockchain(10);
         final Block block = blockchain.getBlockByNumber(5);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
@@ -724,6 +724,44 @@ public class NodeBlockProcessorTest {
 
         Assert.assertEquals(100, bMessage.getId());
         Assert.assertArrayEquals(block.getHash(), bMessage.getBlock().getHash());
+    }
+
+    @Test
+    public void processBlockHashRequestMessageUsingOutOfBoundsHeight() {
+        final Blockchain blockchain = createBlockchain(10);
+        final BlockStore store = new BlockStore();
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+
+        final SimpleMessageSender sender = new SimpleMessageSender();
+
+        processor.processBlockHashRequest(sender, 100, 99999);
+
+        Assert.assertTrue(sender.getMessages().isEmpty());
+    }
+
+    @Test
+    public void processBlockHashRequestMessageUsingBlockInBlockchain() {
+        final Blockchain blockchain = createBlockchain(10);
+        final Block block = blockchain.getBlockByNumber(5);
+        final BlockStore store = new BlockStore();
+
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+
+        final SimpleMessageSender sender = new SimpleMessageSender();
+
+        processor.processBlockHashRequest(sender, 100, block.getNumber());
+
+        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(1, sender.getMessages().size());
+
+        final Message message = sender.getMessages().get(0);
+
+        Assert.assertEquals(MessageType.BLOCK_HASH_RESPONSE_MESSAGE, message.getMessageType());
+
+        final BlockHashResponseMessage bMessage = (BlockHashResponseMessage) message;
+
+        Assert.assertEquals(100, bMessage.getId());
+        Assert.assertArrayEquals(block.getHash(), bMessage.getHash());
     }
 
     private static Blockchain createBlockchain() {

@@ -64,9 +64,12 @@ public interface BlockProcessor {
     void acceptAnyBlock();
 
     // New messages
+
     void processBlockRequest(MessageSender sender, long requestId, byte[] hash);
 
     void processBlockHeadersRequest(MessageSender sender, long requestId, byte[] hash, int count);
 
     void processBodyRequest(MessageSender sender, long requestId, byte[] hash);
+
+    void processBlockHashRequest(MessageSender sender, long requestId, long height);
 }
