@@ -448,6 +448,26 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     /**
+     * processBlockHashRequest sends the requested block body to a peer if it is available.
+     *  @param sender the sender of the BlockHashRequest message.
+     * @param requestId the id of the request
+     * @param height   the requested block's hash.
+     */
+    @Override
+    public void processBlockHashRequest(@Nonnull final MessageSender sender, long requestId, long height) {
+        logger.trace("Processing block hash request {} {} from {}", requestId, height, sender.getNodeID().toString());
+        final Block block = this.getBlockFromBlockchainStore(height);
+
+        if (block == null) {
+            // Don't waste time sending an empty response.
+            return;
+        }
+
+        BlockHashResponseMessage responseMessage = new BlockHashResponseMessage(requestId, block.getHash());
+        sender.sendMessage(responseMessage);
+    }
+
+    /**
      * processGetBlock sends a requested block to a peer if the block is available.
      *
      * @param sender the sender of the GetBlock message.
@@ -594,6 +614,17 @@ public class NodeBlockProcessor implements BlockProcessor {
     @CheckForNull
     private Block getBlockFromBlockchainStore(@Nonnull final byte[] hash) {
         return this.blockchain.getBlockByHash(hash);
+    }
+
+    /**
+     * getBlockFromBlockchainStore retrieves the block with the given height from the blockchain, if available.
+     *
+     * @param height the desired block's height.
+     * @return a Block with the given height if available, null otherwise.
+     */
+    @CheckForNull
+    private Block getBlockFromBlockchainStore(long height) {
+        return this.blockchain.getBlockByNumber(height);
     }
 
     /**
