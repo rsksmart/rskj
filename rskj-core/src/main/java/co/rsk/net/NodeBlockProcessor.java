@@ -403,7 +403,27 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processBlockHeadersRequest(@Nonnull final MessageSender sender, long requestId, @Nullable final byte[] hash, int count) {
-        // to implement
+        Block block = this.getBlock(hash);
+
+        if (block == null)
+            return;
+
+        List<BlockHeader> headers = new ArrayList<>();
+
+        headers.add(block.getHeader());
+
+        for (int k = 1; k < count; k++) {
+            block = getBlock(block.getParentHash());
+
+            if (block == null)
+                break;
+
+            headers.add(block.getHeader());
+        }
+
+        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(requestId, headers);
+
+        sender.sendMessage(response);
     }
 
     /**

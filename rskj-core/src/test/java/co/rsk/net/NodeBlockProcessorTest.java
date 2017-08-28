@@ -27,6 +27,7 @@ import co.rsk.net.simples.SimpleMessageSender;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Assert;
 import org.junit.Test;
@@ -724,6 +725,49 @@ public class NodeBlockProcessorTest {
 
         Assert.assertEquals(100, bMessage.getId());
         Assert.assertArrayEquals(block.getHash(), bMessage.getBlock().getHash());
+    }
+
+    @Test
+    public void processBlockHeadersRequestMessageUsingBlockInBlockchain() {
+        final Blockchain blockchain = createBlockchain(100);
+        final Block block = blockchain.getBlockByNumber(60);
+        final BlockStore store = new BlockStore();
+
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+
+        final SimpleMessageSender sender = new SimpleMessageSender();
+
+        processor.processBlockHeadersRequest(sender, 100, block.getHash(), 20);
+
+        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(1, sender.getMessages().size());
+
+        final Message message = sender.getMessages().get(0);
+
+        Assert.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
+
+        final BlockHeadersResponseMessage response = (BlockHeadersResponseMessage) message;
+
+        Assert.assertEquals(100, response.getId());
+        Assert.assertNotNull(response.getBlockHeaders());
+        Assert.assertEquals(20, response.getBlockHeaders().size());
+
+        for (int k = 0; k < 20; k++)
+            Assert.assertArrayEquals(blockchain.getBlockByNumber(60 - k).getHash(), response.getBlockHeaders().get(k).getHash());
+    }
+
+    @Test
+    public void processBlockHeadersRequestMessageUsingUnknownHash() {
+        final Blockchain blockchain = createBlockchain(100);
+        final BlockStore store = new BlockStore();
+
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+
+        final SimpleMessageSender sender = new SimpleMessageSender();
+
+        processor.processBlockHeadersRequest(sender, 100, HashUtil.randomHash(), 20);
+
+        Assert.assertTrue(sender.getMessages().isEmpty());
     }
 
     private static Blockchain createBlockchain() {
