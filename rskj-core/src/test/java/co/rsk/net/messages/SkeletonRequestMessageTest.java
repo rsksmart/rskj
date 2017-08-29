@@ -31,12 +31,12 @@ public class SkeletonRequestMessageTest {
 
     @Test
     public void createMessage() {
-        byte[] hash_start = HashUtil.randomHash();
-        byte[] hash_end = HashUtil.randomHash();
-        SkeletonRequestMessage message = new SkeletonRequestMessage(hash_start, hash_end);
+        long id = 42;
+        long startNumber = 18;
+        SkeletonRequestMessage message = new SkeletonRequestMessage(id, startNumber);
 
         assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, message.getMessageType());
-        assertArrayEquals(hash_start, message.getHashStart());
-        assertArrayEquals(hash_end, message.getHashEnd());
+        assertEquals(id, message.getId());
+        assertEquals(startNumber, message.getStartNumber());
     }
 }

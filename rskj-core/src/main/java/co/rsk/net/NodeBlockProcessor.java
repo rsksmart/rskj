@@ -22,10 +22,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.net.messages.*;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.ImportResult;
+import org.ethereum.core.*;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
@@ -468,6 +465,40 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     /**
+     * @param sender the sender of the SkeletonRequest message.
+     * @param requestId the id of the request.
+     * @param startNumber the starting block's hash to get the skeleton.
+     */
+    @Override
+    public void processSkeletonRequest(@Nonnull final MessageSender sender, long requestId, long startNumber) {
+        logger.trace("Processing block hash request {} {} {} from {}", requestId, startNumber, sender.getNodeID().toString());
+        // TODO(mc) move this to configuration
+        int skeletonStep = 192;
+        Block blockStart = this.getBlockFromBlockchainStore(startNumber);
+
+        // If we don't have a block with the requested number, we ignore the message
+        if (blockStart == null) {
+            // Don't waste time sending an empty response.
+            return;
+        }
+
+        // We always include the skeleton block immediately before blockStart, even if it's Genesis
+        long skeletonStartHeight = (blockStart.getNumber() / skeletonStep) * skeletonStep;
+        List<BlockIdentifier> blockIdentifiers = new ArrayList<>();
+        for (long skeletonNumber = skeletonStartHeight; skeletonNumber < this.getBestBlockNumber(); skeletonNumber += skeletonStep) {
+            // TODO(mc) get from an in-memory store
+            byte[] skeletonHash = this.getBlockFromBlockchainStore(skeletonNumber).getHash();
+            blockIdentifiers.add(new BlockIdentifier(skeletonHash, skeletonNumber));
+        }
+
+        // We always include the best block as part of the Skeleton response
+        blockIdentifiers.add(new BlockIdentifier(this.getBestBlockHash(), this.getBestBlockNumber()));
+        SkeletonResponseMessage responseMessage = new SkeletonResponseMessage(requestId, blockIdentifiers);
+
+        sender.sendMessage(responseMessage);
+    }
+
+    /**
      * processGetBlock sends a requested block to a peer if the block is available.
      *
      * @param sender the sender of the GetBlock message.
@@ -651,6 +682,15 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     public long getBestBlockNumber() {
         return this.blockchain.getBestBlock().getNumber();
+    }
+
+    /**
+     * getBestBlockHash returns the current blockchain best block's hash.
+     *
+     * @return the blockchain's best block's hash.
+     */
+    public byte[] getBestBlockHash() {
+        return this.blockchain.getBestBlock().getHash();
     }
 
     /**

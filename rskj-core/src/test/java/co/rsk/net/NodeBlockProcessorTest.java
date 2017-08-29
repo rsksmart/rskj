@@ -24,9 +24,7 @@ import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleNodeSender;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.net.simples.SimpleMessageSender;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.ImportResult;
+import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Assert;
@@ -802,6 +800,117 @@ public class NodeBlockProcessorTest {
         processor.processBlockHeadersRequest(sender, 100, HashUtil.randomHash(), 20);
 
         Assert.assertTrue(sender.getMessages().isEmpty());
+    }
+
+    @Test
+    public void processSkeletonRequestWithGenesisPlusBestBlockInSkeleton() {
+        int skeletonStep = 192;
+        final Blockchain blockchain = createBlockchain(skeletonStep / 2);
+        final Block blockStart = blockchain.getBlockByNumber(5);
+        final Block blockEnd = blockchain.getBlockByNumber(skeletonStep / 2);
+        final BlockStore store = new BlockStore();
+
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+
+        final SimpleMessageSender sender = new SimpleMessageSender();
+
+        processor.processSkeletonRequest(sender, 100, 5);
+
+        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(1, sender.getMessages().size());
+
+        final Message message = sender.getMessages().get(0);
+
+        Assert.assertEquals(MessageType.SKELETON_RESPONSE_MESSAGE, message.getMessageType());
+
+        final SkeletonResponseMessage bMessage = (SkeletonResponseMessage) message;
+
+        Assert.assertEquals(100, bMessage.getId());
+
+        Block genesis = blockchain.getBlockByNumber(0);
+        Block bestBlock = blockchain.getBestBlock();
+        BlockIdentifier[] expected = {
+                new BlockIdentifier(genesis.getHash(), genesis.getNumber()),
+                new BlockIdentifier(bestBlock.getHash(), bestBlock.getNumber()),
+        };
+        assertBlockIdentifiers(expected, bMessage.getBlockIdentifiers());
+    }
+
+    @Test
+    public void processSkeletonRequestWithThreeResults() {
+        int skeletonStep = 192;
+        final Blockchain blockchain = createBlockchain(300);
+        final BlockStore store = new BlockStore();
+
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+
+        final SimpleMessageSender sender = new SimpleMessageSender();
+
+        processor.processSkeletonRequest(sender, 100, 5);
+
+        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(1, sender.getMessages().size());
+
+        final Message message = sender.getMessages().get(0);
+
+        Assert.assertEquals(MessageType.SKELETON_RESPONSE_MESSAGE, message.getMessageType());
+
+        final SkeletonResponseMessage bMessage = (SkeletonResponseMessage) message;
+
+        Assert.assertEquals(100, bMessage.getId());
+
+        Block b1 = blockchain.getBlockByNumber(0);
+        Block b2 = blockchain.getBlockByNumber(skeletonStep);
+        Block b3 = blockchain.getBestBlock();
+        BlockIdentifier[] expected = {
+                new BlockIdentifier(b1.getHash(), b1.getNumber()),
+                new BlockIdentifier(b2.getHash(), b2.getNumber()),
+                new BlockIdentifier(b3.getHash(), b3.getNumber()),
+        };
+        assertBlockIdentifiers(expected, bMessage.getBlockIdentifiers());
+    }
+
+    @Test
+    public void processSkeletonRequestNotIncludingGenesis() {
+        int skeletonStep = 192;
+        final Blockchain blockchain = createBlockchain(400);
+        final BlockStore store = new BlockStore();
+
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+
+        final SimpleMessageSender sender = new SimpleMessageSender();
+
+        processor.processSkeletonRequest(sender, 100, skeletonStep + 5);
+
+        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(1, sender.getMessages().size());
+
+        final Message message = sender.getMessages().get(0);
+
+        Assert.assertEquals(MessageType.SKELETON_RESPONSE_MESSAGE, message.getMessageType());
+
+        final SkeletonResponseMessage bMessage = (SkeletonResponseMessage) message;
+
+        Assert.assertEquals(100, bMessage.getId());
+
+        Block b1 = blockchain.getBlockByNumber(skeletonStep);
+        Block b2 = blockchain.getBlockByNumber(2 * skeletonStep);
+        Block b3 = blockchain.getBestBlock();
+        BlockIdentifier[] expected = {
+                new BlockIdentifier(b1.getHash(), b1.getNumber()),
+                new BlockIdentifier(b2.getHash(), b2.getNumber()),
+                new BlockIdentifier(b3.getHash(), b3.getNumber()),
+        };
+        assertBlockIdentifiers(expected, bMessage.getBlockIdentifiers());
+    }
+
+    private static void assertBlockIdentifiers(BlockIdentifier[] expected, List<BlockIdentifier> actual) {
+        Assert.assertEquals(expected.length, actual.size());
+
+        for (int i = 0; i < expected.length; i++) {
+            Assert.assertEquals(expected[i].getNumber(), actual.get(i).getNumber());
+            Assert.assertArrayEquals(expected[i].getHash(), actual.get(i).getHash());
+        }
     }
 
     private static Blockchain createBlockchain() {

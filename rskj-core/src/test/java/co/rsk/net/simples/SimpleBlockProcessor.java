@@ -119,6 +119,11 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
+    public void processSkeletonRequest(final MessageSender sender, long requestId, final long startNumber) {
+
+    }
+
+    @Override
     public boolean hasBlock(byte[] hash) {
         return false;
     }
