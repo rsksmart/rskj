@@ -2,6 +2,7 @@ package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.net.messages.Message;
 import co.rsk.net.messages.StatusMessage;
 import co.rsk.net.simples.SimpleMessageSender;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -10,6 +11,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigInteger;
@@ -58,6 +60,30 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(1, processor.getNoPeers());
         Assert.assertEquals(0, processor.getNoAdvancedPeers());
+    }
+
+    @Test
+    @Ignore
+    // Work in progress
+    public void sendSkeletonRequest() {
+        Blockchain blockchain = createBlockchain(100);
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+        byte[] hash = HashUtil.randomHash();
+        byte[] parentHash = HashUtil.randomHash();
+
+        Status status = new Status(blockchain.getStatus().getBestBlockNumber(), hash, parentHash, blockchain.getStatus().getTotalDifficulty());
+
+        SyncProcessor processor = new SyncProcessor(blockchain);
+        processor.processStatus(sender, status);
+
+        processor.sendSkeletonRequest(0);
+
+        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(1, sender.getMessages().size());
+
+        Message message = sender.getMessages().get(0);
+
+        Assert.assertNotNull(message);
     }
 
     private static Blockchain createBlockchain() {

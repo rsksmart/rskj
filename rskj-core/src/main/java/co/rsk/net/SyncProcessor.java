@@ -41,4 +41,8 @@ public class SyncProcessor {
     public void processStatus(MessageSender sender, Status status) {
         peers.put(sender.getNodeID(), status);
     }
+
+    public void sendSkeletonRequest(long height) {
+        // Work in progress
+    }
 }
