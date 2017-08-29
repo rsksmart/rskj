@@ -35,6 +35,14 @@ public class SimpleMessageSender implements MessageSender {
     private List<Message> messages = new ArrayList<>();
     private NodeID nodeID = new NodeID(new byte[]{});
 
+    public SimpleMessageSender() {
+
+    }
+
+    public SimpleMessageSender(byte[] nodeID) {
+        this.nodeID = new NodeID(nodeID);
+    }
+
     public void sendMessage(Message message) {
         this.messages.add(message);
     }
