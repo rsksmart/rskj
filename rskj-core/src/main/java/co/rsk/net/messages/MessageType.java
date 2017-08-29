@@ -214,9 +214,11 @@ public enum MessageType {
     SKELETON_REQUEST_MESSAGE(16) {
         @Override
         public Message createMessage(RLPList list) {
-            byte[] hash_start = list.get(0).getRLPData();
-            byte[] hash_end = list.get(1).getRLPData();
-            return new SkeletonRequestMessage(hash_start, hash_end);
+            byte[] rlpId = list.get(0).getRLPData();
+            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            byte[] rlpStartNumber = list.get(1).getRLPData();
+            long startNumber = rlpStartNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpStartNumber).longValue();
+            return new SkeletonRequestMessage(id, startNumber);
         }
     },
     NEW_BLOCK_HASH_MESSAGE(17) {

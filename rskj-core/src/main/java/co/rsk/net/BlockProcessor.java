@@ -72,4 +72,6 @@ public interface BlockProcessor {
     void processBodyRequest(MessageSender sender, long requestId, byte[] hash);
 
     void processBlockHashRequest(MessageSender sender, long requestId, long height);
+
+    void processSkeletonRequest(MessageSender sender, long requestId, long startNumber);
 }
