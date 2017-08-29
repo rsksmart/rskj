@@ -64,7 +64,6 @@ public class SyncProcessorTest {
 
     @Test
     @Ignore
-    // Work in progress
     public void sendSkeletonRequest() {
         Blockchain blockchain = createBlockchain(100);
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });

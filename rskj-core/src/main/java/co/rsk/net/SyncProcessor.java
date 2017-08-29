@@ -12,7 +12,7 @@ import java.util.Map;
  */
 public class SyncProcessor {
     private Blockchain blockchain;
-    private Map<NodeID, Status> peers = new HashMap<>();
+    private Map<NodeID, SyncPeerStatus> peers = new HashMap<>();
 
     public SyncProcessor(Blockchain blockchain) {
         this.blockchain = blockchain;
@@ -31,15 +31,15 @@ public class SyncProcessor {
         BigInteger totalDifficulty = chainStatus.getTotalDifficulty();
         int count = 0;
 
-        for (Status peer : this.peers.values())
-            if (peer.getTotalDifficulty().compareTo(totalDifficulty) > 0)
+        for (SyncPeerStatus peer : this.peers.values())
+            if (peer.getStatus().getTotalDifficulty().compareTo(totalDifficulty) > 0)
                 count++;
 
         return count;
     }
 
     public void processStatus(MessageSender sender, Status status) {
-        peers.put(sender.getNodeID(), status);
+        peers.put(sender.getNodeID(), new SyncPeerStatus(sender, status));
     }
 
     public void sendSkeletonRequest(long height) {
