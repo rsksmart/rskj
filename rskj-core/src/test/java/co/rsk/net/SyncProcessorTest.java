@@ -63,7 +63,6 @@ public class SyncProcessorTest {
     }
 
     @Test
-    @Ignore
     public void sendSkeletonRequest() {
         Blockchain blockchain = createBlockchain(100);
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
@@ -75,7 +74,7 @@ public class SyncProcessorTest {
         SyncProcessor processor = new SyncProcessor(blockchain);
         processor.processStatus(sender, status);
 
-        processor.sendSkeletonRequest(0);
+        processor.sendSkeletonRequest(sender, 0);
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());

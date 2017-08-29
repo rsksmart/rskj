@@ -1,6 +1,7 @@
 package co.rsk.net;
 
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.net.messages.SkeletonRequestMessage;
 import org.ethereum.core.Blockchain;
 
 import java.math.BigInteger;
@@ -11,6 +12,7 @@ import java.util.Map;
  * Created by ajlopez on 29/08/2017.
  */
 public class SyncProcessor {
+    private long nextId;
     private Blockchain blockchain;
     private Map<NodeID, SyncPeerStatus> peers = new HashMap<>();
 
@@ -42,7 +44,7 @@ public class SyncProcessor {
         peers.put(sender.getNodeID(), new SyncPeerStatus(sender, status));
     }
 
-    public void sendSkeletonRequest(long height) {
-        // Work in progress
+    public void sendSkeletonRequest(MessageSender sender, long height) {
+        sender.sendMessage(new SkeletonRequestMessage(++nextId, height));
     }
 }
