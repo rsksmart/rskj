@@ -47,4 +47,8 @@ public class SyncProcessor {
     public void sendSkeletonRequest(MessageSender sender, long height) {
         sender.sendMessage(new SkeletonRequestMessage(++nextId, height));
     }
+
+    public void sendSkeletonRequest(MessageSender sender, long height) {
+        sender.sendMessage(new SkeletonRequestMessage(++nextId, height));
+    }
 }
