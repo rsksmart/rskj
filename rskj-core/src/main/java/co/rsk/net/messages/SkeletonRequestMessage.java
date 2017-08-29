@@ -20,16 +20,18 @@ package co.rsk.net.messages;
 
 import org.ethereum.util.RLP;
 
+import java.math.BigInteger;
+
 /**
  * Wrapper around an RSK GetSkeleton message.
  */
 public class SkeletonRequestMessage extends Message {
-    private byte[] hash_start;
-    private byte[] hash_end;
+    private long id;
+    private long startNumber;
 
-    public SkeletonRequestMessage(byte[] hash_start, byte[] hash_end) {
-        this.hash_start = hash_start;
-        this.hash_end = hash_end;
+    public SkeletonRequestMessage(long id, long startNumber) {
+        this.id = id;
+        this.startNumber = startNumber;
     }
 
     @Override
@@ -39,17 +41,15 @@ public class SkeletonRequestMessage extends Message {
 
     @Override
     public byte[] getEncodedMessage() {
-        byte[] hash_start = RLP.encodeElement(this.hash_start);
-        byte[] hash_end = RLP.encodeElement(this.hash_end);
+        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(this.id));
+        byte[] rlpStartNumber = RLP.encodeBigInteger(BigInteger.valueOf(this.startNumber));
 
-        return RLP.encodeList(hash_start, hash_end);
+        return RLP.encodeList(rlpId, rlpStartNumber);
     }
 
-    public byte[] getHashStart() {
-        return this.hash_start;
-    }
+    public long getId() { return this.id; }
 
-    public byte[] getHashEnd() {
-        return this.hash_end;
+    public long getStartNumber() {
+        return this.startNumber;
     }
 }

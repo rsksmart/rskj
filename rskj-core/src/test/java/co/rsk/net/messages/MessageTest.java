@@ -34,6 +34,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Created by ajlopez on 5/11/2016.
  */
@@ -425,9 +427,9 @@ public class MessageTest {
 
     @Test
     public void encodeDecodeSkeletonRequestMessage() {
-        byte[] hash_start = HashUtil.randomHash();
-        byte[] hash_end = HashUtil.randomHash();
-        SkeletonRequestMessage message = new SkeletonRequestMessage(hash_start, hash_end);
+        long someId = 42;
+        long someStartNumber = 99;
+        SkeletonRequestMessage message = new SkeletonRequestMessage(someId, someStartNumber);
 
         byte[] encoded = message.getEncoded();
 
@@ -439,8 +441,8 @@ public class MessageTest {
 
         SkeletonRequestMessage newMessage = (SkeletonRequestMessage) result;
 
-        Assert.assertArrayEquals(hash_start, newMessage.getHashStart());
-        Assert.assertArrayEquals(hash_end, newMessage.getHashEnd());
+        Assert.assertEquals(someId, newMessage.getId());
+        Assert.assertEquals(someStartNumber, newMessage.getStartNumber());
     }
 
     @Test
