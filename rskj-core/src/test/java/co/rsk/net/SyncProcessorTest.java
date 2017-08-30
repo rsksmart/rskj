@@ -159,6 +159,36 @@ public class SyncProcessorTest {
         Assert.assertEquals(25, request.getHeight());
     }
 
+    @Test
+    public void findConnectionPointBlockchainWithGenesisVsBlockchainWith100Blocks() {
+        Blockchain blockchain = createBlockchain();
+        Blockchain advancedBlockchain = createBlockchain(100);
+
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        SyncProcessor processor = new SyncProcessor(blockchain);
+
+        processor.findConnectionPoint(sender, 100);
+
+        long []expectedHeights = new long[] { 50, 25, 12, 6, 3, 1, 0 };
+
+        for (int k = 0; k < expectedHeights.length; k++) {
+            Assert.assertEquals(k + 1, sender.getMessages().size());
+            Message message = sender.getMessages().get(k);
+            Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
+            BlockHashRequestMessage request = (BlockHashRequestMessage)message;
+            long requestId = request.getId();
+            Assert.assertEquals(expectedHeights[k], request.getHeight());
+
+            Block block = advancedBlockchain.getBlockByNumber(expectedHeights[k]);
+
+            processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash()));
+        }
+
+        Assert.assertEquals(expectedHeights.length, sender.getMessages().size());
+    }
+
+
     private static Blockchain createBlockchain() {
         return createBlockchain(0);
     }
