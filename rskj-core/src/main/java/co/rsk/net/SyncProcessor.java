@@ -69,15 +69,13 @@ public class SyncProcessor {
 
         Block block = this.blockchain.getBlockByHash(message.getHash());
 
-        if (block != null) {
+        if (block != null)
             peerStatus.updateFound();
-
-            if (peerStatus.getInterval() == 0) {
-                return;
-            }
-        }
         else
             peerStatus.updateNotFound();
+
+        if (peerStatus.getFound())
+            return;
 
         sendBlockHashRequest(sender, peerStatus.getHeight());
 
@@ -88,7 +86,6 @@ public class SyncProcessor {
         private long height;
         private long interval;
         private boolean found;
-        private boolean near;
 
         public FindPeerStatus(long height, long interval) {
             this.height = height;
@@ -99,29 +96,35 @@ public class SyncProcessor {
 
         public long getInterval() { return this.interval; }
 
+        public boolean getFound() { return this.found; }
+
         public void updateFound() {
-            this.interval = this.interval / 2;
+            if (this.interval == -1) {
+                this.found = true;
+                return;
+            }
+
+            this.interval = Math.abs(this.interval / 2);
 
             if (this.interval == 0)
-                if (this.near)
-                    return;
-                else
-                    this.interval = 1;
+                this.interval = 1;
 
             this.height += this.interval;
-            this.found = true;
         }
 
         public void updateNotFound() {
-            this.interval = this.interval / 2;
-
-            if (this.interval == 0) {
-                this.interval = 1;
-                this.near = true;
+            if (this.interval == 1) {
+                this.found = true;
+                this.height--;
+                return;
             }
 
-            this.height -= this.interval;
-            this.found = false;
+            this.interval = -Math.abs(this.interval / 2);
+
+            if (this.interval == 0)
+                this.interval = -1;
+
+            this.height += this.interval;
         }
     }
 }

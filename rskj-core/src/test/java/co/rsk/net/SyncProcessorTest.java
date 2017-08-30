@@ -200,7 +200,7 @@ public class SyncProcessorTest {
 
         processor.findConnectionPoint(sender, 100);
 
-        long []expectedHeights = new long[] { 50, 25, 25 + 12, 25 + 12 - 6, 25 + 12 - 6 - 3, 25 + 12 - 6 - 3 + 1, 25 + 12 - 6 - 3 + 1 + 1, 25 + 12 - 6 - 3 + 1 + 1 + 1, 25 + 12 - 6 - 3 + 1 + 1 + 1 - 1 };
+        long []expectedHeights = new long[] { 50, 25, 25 + 12, 25 + 12 - 6, 25 + 12 - 6 - 3, 25 + 12 - 6 - 3 + 1, 25 + 12 - 6 - 3 + 1 + 1, 25 + 12 - 6 - 3 + 1 + 1 + 1 };
 
         for (int k = 0; k < expectedHeights.length; k++) {
             Assert.assertEquals(k + 1, sender.getMessages().size());
