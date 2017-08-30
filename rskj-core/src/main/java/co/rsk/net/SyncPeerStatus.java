@@ -10,8 +10,6 @@ public class SyncPeerStatus {
     private long findingHeight;
     private long findingInterval;
 
-    public Status getStatus() { return this.status; }
-
     public void startFindConnectionPoint(long height) {
         this.findingInterval = height / 2;
         this.findingHeight = height - this.findingInterval;
