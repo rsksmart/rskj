@@ -151,6 +151,12 @@ public class SyncProcessorTest {
         Message message2 = sender.getMessages().get(1);
 
         Assert.assertNotNull(message2);
+        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message2.getMessageType());
+
+        BlockHashRequestMessage request = (BlockHashRequestMessage)message2;
+
+        Assert.assertNotEquals(0, request.getId());
+        Assert.assertEquals(25, request.getHeight());
     }
 
     private static Blockchain createBlockchain() {
