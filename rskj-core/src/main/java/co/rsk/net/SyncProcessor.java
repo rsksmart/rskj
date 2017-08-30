@@ -1,14 +1,14 @@
 package co.rsk.net;
 
 import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.net.messages.BlockHashRequestMessage;
-import co.rsk.net.messages.BlockHashResponseMessage;
-import co.rsk.net.messages.SkeletonRequestMessage;
+import co.rsk.net.messages.*;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 
 import java.math.BigInteger;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -125,6 +125,23 @@ public class SyncProcessor {
                 this.interval = -1;
 
             this.height += this.interval;
+        }
+    }
+
+    public void processBlockHeadersResponse(MessageSender sender, BlockHeadersResponseMessage message) {
+        // to validate:
+        // - numbers match my requested number
+        // - PoW
+        // - Parent exists
+        // - consecutive numbers
+        // - consistent difficulty
+
+        // to do: request the body if we don't have it, maybe only when we have validated we have the parent
+        List<BlockHeader> headers = message.getBlockHeaders();
+        for (BlockHeader header : headers) {
+            if (this.blockchain.getBlockByHash(header.getHash()) == null) {
+                sender.sendMessage(new BlockRequestMessage(++nextId, header.getHash()));
+            }
         }
     }
 }

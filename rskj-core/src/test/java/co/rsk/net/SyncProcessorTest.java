@@ -6,6 +6,7 @@ import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageSender;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 import org.ethereum.crypto.HashUtil;
@@ -14,6 +15,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -157,6 +159,20 @@ public class SyncProcessorTest {
 
         Assert.assertNotEquals(0, request.getId());
         Assert.assertEquals(25, request.getHeight());
+    }
+
+    @Test
+    public void processBlockHeadersResponseWithEmptyList() {
+        Blockchain blockchain = createBlockchain();
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        SyncProcessor processor = new SyncProcessor(blockchain);
+
+        List<BlockHeader> headers = new ArrayList<>();
+        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(99, headers);
+
+        processor.processBlockHeadersResponse(sender, response);
+        Assert.assertTrue(sender.getMessages().isEmpty());
     }
 
     @Test
