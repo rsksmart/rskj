@@ -2,6 +2,7 @@ package co.rsk.net;
 
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.messages.BlockHashRequestMessage;
+import co.rsk.net.messages.BlockHashResponseMessage;
 import co.rsk.net.messages.SkeletonRequestMessage;
 import org.ethereum.core.Blockchain;
 
@@ -16,6 +17,7 @@ public class SyncProcessor {
     private long nextId;
     private Blockchain blockchain;
     private Map<NodeID, SyncPeerStatus> peers = new HashMap<>();
+    private Map<NodeID, Long> blockHashes = new HashMap<>();
 
     public SyncProcessor(Blockchain blockchain) {
         this.blockchain = blockchain;
@@ -54,7 +56,15 @@ public class SyncProcessor {
     }
 
     public void findConnectionPoint(MessageSender sender, long height) {
-        this.sendBlockHashRequest(sender, height / 2);
+        long newheight = height / 2;
+        this.sendBlockHashRequest(sender, newheight);
+        blockHashes.put(sender.getNodeID(), newheight);
+    }
+
+    public void processBlockHashResponse(MessageSender sender, BlockHashResponseMessage message) {
+        long height = blockHashes.get(sender.getNodeID());
+
+        sendBlockHashRequest(sender, height / 2);
     }
 }
 
