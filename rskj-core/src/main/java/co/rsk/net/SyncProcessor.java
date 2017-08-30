@@ -17,7 +17,7 @@ import java.util.Map;
 public class SyncProcessor {
     private long nextId;
     private Blockchain blockchain;
-    private Map<NodeID, SyncPeerStatus> peers = new HashMap<>();
+    private Map<NodeID, Status> peers = new HashMap<>();
     private Map<Long, FindPeerStatus> blockHashes = new HashMap<>();
 
     public SyncProcessor(Blockchain blockchain) {
@@ -37,15 +37,15 @@ public class SyncProcessor {
         BigInteger totalDifficulty = chainStatus.getTotalDifficulty();
         int count = 0;
 
-        for (SyncPeerStatus peer : this.peers.values())
-            if (peer.getStatus().getTotalDifficulty().compareTo(totalDifficulty) > 0)
+        for (Status status : this.peers.values())
+            if (status.getTotalDifficulty().compareTo(totalDifficulty) > 0)
                 count++;
 
         return count;
     }
 
     public void processStatus(MessageSender sender, Status status) {
-        peers.put(sender.getNodeID(), new SyncPeerStatus(sender, status));
+        peers.put(sender.getNodeID(), status);
 
         if (status.getTotalDifficulty().compareTo(this.blockchain.getTotalDifficulty()) > 0)
             this.findConnectionPoint(sender, status.getBestBlockNumber());
