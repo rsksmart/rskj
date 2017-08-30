@@ -80,16 +80,11 @@ public class TwoAsyncNodeTest {
         SimpleAsyncNode node1 = createNode(100);
         SimpleAsyncNode node2 = createNode(0);
 
-        // TODO better synchronization
-        Thread.sleep(1000);
-
         node1.sendStatus(node2);
+        node1.waitUntilNTasksWithTimeout(100);
 
-        // TODO better synchronization
-        Thread.sleep(2000);
-
-        node1.stop();
-        node2.stop();
+        node1.joinWithTimeout();
+        node2.joinWithTimeout();
 
         Assert.assertEquals(100, node1.getBestBlock().getNumber());
         Assert.assertEquals(100, node2.getBestBlock().getNumber());
@@ -101,17 +96,13 @@ public class TwoAsyncNodeTest {
         SimpleAsyncNode node1 = createNodeWithUncles(10);
         SimpleAsyncNode node2 = createNode(0);
 
-        // TODO better synchronization
-        Thread.sleep(1000);
-
         node1.sendStatus(node2);
+        node1.waitUntilNTasksWithTimeout(10);
+
         node2.sendStatus(node1);
 
-        // TODO better synchronization
-        Thread.sleep(2000);
-
-        node1.stop();
-        node2.stop();
+        node1.joinWithTimeout();
+        node2.joinWithTimeout();
 
         Assert.assertEquals(10, node1.getBestBlock().getNumber());
         Assert.assertEquals(10, node2.getBestBlock().getNumber());
@@ -128,21 +119,17 @@ public class TwoAsyncNodeTest {
         for (Block block : blocks) {
             BlockMessage message = new BlockMessage(block);
             node1.sendMessage(null, message);
+            node1.waitUntilNTasksWithTimeout(1);
 
             if (block.getNumber() <= 5)
                 node2.sendMessage(null, message);
         }
 
-        // TODO better synchronization
-        Thread.sleep(1000);
-
         node1.sendStatus(node2);
+        node1.waitUntilNTasksWithTimeout(5);
 
-        // TODO better synchronization
-        Thread.sleep(2000);
-
-        node1.stop();
-        node2.stop();
+        node1.joinWithTimeout();
+        node2.joinWithTimeout();
 
         Assert.assertEquals(10, node1.getBestBlock().getNumber());
         Assert.assertEquals(10, node2.getBestBlock().getNumber());

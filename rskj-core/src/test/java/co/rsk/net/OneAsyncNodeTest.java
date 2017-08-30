@@ -60,10 +60,7 @@ public class OneAsyncNodeTest {
         for (Block block : blocks)
             node.sendMessage(null, new BlockMessage(block));
 
-        // TODO better synchronization
-        Thread.sleep(2000);
-
-        node.stop();
+        node.joinWithTimeout();
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
         Assert.assertArrayEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
@@ -83,10 +80,7 @@ public class OneAsyncNodeTest {
         for (Block block : reverse)
             node.sendMessage(null, new BlockMessage(block));
 
-        // TODO better synchronization
-        Thread.sleep(2000);
-
-        node.stop();
+        node.joinWithTimeout();
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
         Assert.assertArrayEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
