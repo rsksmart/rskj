@@ -108,6 +108,29 @@ public class SyncProcessorTest {
         Assert.assertEquals(100, request.getHeight());
     }
 
+    @Test
+    public void findConnectionPointSendingFirstMessage() {
+        Blockchain blockchain = createBlockchain();
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        SyncProcessor processor = new SyncProcessor(blockchain);
+
+        processor.findConnectionPoint(sender, 100);
+
+        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(1, sender.getMessages().size());
+
+        Message message = sender.getMessages().get(0);
+
+        Assert.assertNotNull(message);
+        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
+
+        BlockHashRequestMessage request = (BlockHashRequestMessage)message;
+
+        Assert.assertNotEquals(0, request.getId());
+        Assert.assertEquals(50, request.getHeight());
+    }
+
     private static Blockchain createBlockchain() {
         return createBlockchain(0);
     }
