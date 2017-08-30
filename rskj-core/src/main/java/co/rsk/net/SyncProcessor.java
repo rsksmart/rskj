@@ -74,8 +74,10 @@ public class SyncProcessor {
         else
             peerStatus.updateNotFound();
 
-        if (peerStatus.getFound())
+        if (peerStatus.getFound()) {
+            sendSkeletonRequest(sender, peerStatus.getHeight());
             return;
+        }
 
         sendBlockHashRequest(sender, peerStatus.getHeight());
 
@@ -93,8 +95,6 @@ public class SyncProcessor {
         }
 
         public long getHeight() { return this.height; }
-
-        public long getInterval() { return this.interval; }
 
         public boolean getFound() { return this.found; }
 

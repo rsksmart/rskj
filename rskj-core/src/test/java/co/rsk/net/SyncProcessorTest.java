@@ -185,7 +185,15 @@ public class SyncProcessorTest {
             processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash()));
         }
 
-        Assert.assertEquals(expectedHeights.length, sender.getMessages().size());
+        Assert.assertEquals(expectedHeights.length + 1, sender.getMessages().size());
+
+        Message message = sender.getMessages().get(sender.getMessages().size() - 1);
+
+        Assert.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, message.getMessageType());
+
+        SkeletonRequestMessage request = (SkeletonRequestMessage)message;
+
+        Assert.assertEquals(0, request.getStartNumber());
     }
 
     @Test
@@ -215,7 +223,16 @@ public class SyncProcessorTest {
             processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash()));
         }
 
-        Assert.assertEquals(expectedHeights.length, sender.getMessages().size());
+
+        Assert.assertEquals(expectedHeights.length + 1, sender.getMessages().size());
+
+        Message message = sender.getMessages().get(sender.getMessages().size() - 1);
+
+        Assert.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, message.getMessageType());
+
+        SkeletonRequestMessage request = (SkeletonRequestMessage)message;
+
+        Assert.assertEquals(30, request.getStartNumber());
     }
 
     private static Blockchain createBlockchain() {
