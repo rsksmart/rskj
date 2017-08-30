@@ -69,7 +69,7 @@ public class SyncProcessor {
 
         if (block != null)
             return;
-        
+
         sendBlockHashRequest(sender, height / 2);
     }
 }
