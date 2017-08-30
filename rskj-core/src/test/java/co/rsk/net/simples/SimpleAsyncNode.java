@@ -22,43 +22,47 @@ import co.rsk.net.MessageHandler;
 import co.rsk.net.MessageSender;
 import co.rsk.net.messages.Message;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
 
 /**
  * Created by ajlopez on 5/15/2016.
  */
-public class SimpleAsyncNode extends SimpleNode implements Runnable {
-    private BlockingQueue<MessageTask> messages = new ArrayBlockingQueue<MessageTask>(1000);
-    private volatile boolean stopped = false;
+public class SimpleAsyncNode extends SimpleNode {
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(1000);
 
     public SimpleAsyncNode(MessageHandler handler) {
         super(handler);
-        (new Thread(this)).start();
     }
 
     @Override
     public void processMessage(MessageSender sender, Message message) {
-        if (this.stopped)
-            return;
-
-        this.messages.add(new MessageTask(sender, message));
-    }
-
-    public void stop() {
-        this.stopped = true;
-    }
-
-    public void run() {
-        while (!this.stopped || !this.messages.isEmpty()) {
-            MessageTask task = null;
-            try {
-                task = this.messages.take();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                return;
-            }
+        futures.add(executor.submit(() -> {
+            MessageTask task = new MessageTask(sender, message);
             task.execute(this.getHandler());
+        }));
+    }
+
+    public void joinWithTimeout() {
+        try {
+            executor.shutdown();
+            executor.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
+    }
+
+    public void waitUntilNTasksWithTimeout(int number) {
+        try {
+            for (int i = 0; i < number; i++) {
+                Future task = this.futures.poll(10, TimeUnit.SECONDS);
+                if (task == null) {
+                    throw new RuntimeException("Exceeded waiting time");
+                }
+                task.get();
+            }
+        } catch (InterruptedException | ExecutionException ignored) {
         }
     }
 
