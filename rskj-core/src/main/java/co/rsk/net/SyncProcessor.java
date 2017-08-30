@@ -1,6 +1,7 @@
 package co.rsk.net;
 
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.net.messages.BlockHashRequestMessage;
 import co.rsk.net.messages.SkeletonRequestMessage;
 import org.ethereum.core.Blockchain;
 
@@ -46,5 +47,9 @@ public class SyncProcessor {
 
     public void sendSkeletonRequest(MessageSender sender, long height) {
         sender.sendMessage(new SkeletonRequestMessage(++nextId, height));
+    }
+
+    public void sendBlockHashRequest(MessageSender sender, long height) {
+        sender.sendMessage(new BlockHashRequestMessage(++nextId, height));
     }
 }
