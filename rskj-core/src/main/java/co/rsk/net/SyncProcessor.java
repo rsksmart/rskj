@@ -52,4 +52,9 @@ public class SyncProcessor {
     public void sendBlockHashRequest(MessageSender sender, long height) {
         sender.sendMessage(new BlockHashRequestMessage(++nextId, height));
     }
+
+    public void findConnectionPoint(MessageSender sender, long height) {
+        this.sendBlockHashRequest(sender, height / 2);
+    }
 }
+
