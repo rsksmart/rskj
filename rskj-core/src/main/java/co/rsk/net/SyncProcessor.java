@@ -18,7 +18,7 @@ public class SyncProcessor {
     private long nextId;
     private Blockchain blockchain;
     private Map<NodeID, SyncPeerStatus> peers = new HashMap<>();
-    private Map<Long, Long> blockHashes = new HashMap<>();
+    private Map<Long, FindPeerStatus> blockHashes = new HashMap<>();
 
     public SyncProcessor(Blockchain blockchain) {
         this.blockchain = blockchain;
@@ -53,24 +53,76 @@ public class SyncProcessor {
     }
 
     public void sendBlockHashRequest(MessageSender sender, long height) {
-        blockHashes.put(++nextId, height);
-        sender.sendMessage(new BlockHashRequestMessage(nextId, height));
+        sender.sendMessage(new BlockHashRequestMessage(++nextId, height));
     }
 
     public void findConnectionPoint(MessageSender sender, long height) {
-        long newheight = height / 2;
-        this.sendBlockHashRequest(sender, newheight);
+        FindPeerStatus peerStatus = new FindPeerStatus(height, height);
+        peerStatus.updateNotFound();
+        this.sendBlockHashRequest(sender, peerStatus.getHeight());
+        blockHashes.put(nextId, peerStatus);
     }
 
     public void processBlockHashResponse(MessageSender sender, BlockHashResponseMessage message) {
-        long height = blockHashes.get(message.getId());
+        FindPeerStatus peerStatus = blockHashes.get(message.getId());
+        blockHashes.remove(message.getId());
 
         Block block = this.blockchain.getBlockByHash(message.getHash());
 
-        if (block != null)
-            return;
+        if (block != null) {
+            peerStatus.updateFound();
 
-        sendBlockHashRequest(sender, height / 2);
+            if (peerStatus.getInterval() == 0) {
+                return;
+            }
+        }
+        else
+            peerStatus.updateNotFound();
+
+        sendBlockHashRequest(sender, peerStatus.getHeight());
+
+        blockHashes.put(nextId, peerStatus);
+    }
+
+    private static class FindPeerStatus {
+        private long height;
+        private long interval;
+        private boolean found;
+        private boolean near;
+
+        public FindPeerStatus(long height, long interval) {
+            this.height = height;
+            this.interval = interval;
+        }
+
+        public long getHeight() { return this.height; }
+
+        public long getInterval() { return this.interval; }
+
+        public void updateFound() {
+            this.interval = this.interval / 2;
+
+            if (this.interval == 0)
+                if (this.near)
+                    return;
+                else
+                    this.interval = 1;
+
+            this.height += this.interval;
+            this.found = true;
+        }
+
+        public void updateNotFound() {
+            this.interval = this.interval / 2;
+
+            if (this.interval == 0) {
+                this.interval = 1;
+                this.near = true;
+            }
+
+            this.height -= this.interval;
+            this.found = false;
+        }
     }
 }
 

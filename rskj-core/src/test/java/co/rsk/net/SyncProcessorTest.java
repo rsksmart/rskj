@@ -170,7 +170,7 @@ public class SyncProcessorTest {
 
         processor.findConnectionPoint(sender, 100);
 
-        long []expectedHeights = new long[] { 50, 25, 12, 6, 3, 1, 0 };
+        long []expectedHeights = new long[] { 50, 25, 13, 7, 4, 3, 2, 1, 0 };
 
         for (int k = 0; k < expectedHeights.length; k++) {
             Assert.assertEquals(k + 1, sender.getMessages().size());
@@ -189,7 +189,6 @@ public class SyncProcessorTest {
     }
 
     @Test
-    @Ignore
     public void findConnectionPointBlockchainWith30BlocksVsBlockchainWith100Blocks() {
         Blockchain blockchain = createBlockchain(30);
         Blockchain advancedBlockchain = copyBlockchain(blockchain);
@@ -201,7 +200,7 @@ public class SyncProcessorTest {
 
         processor.findConnectionPoint(sender, 100);
 
-        long []expectedHeights = new long[] { 50, 25, 25 + 12, 25 + 12 - 6, 25 + 12 - 6 - 3, 25 + 12 - 6 - 3 + 1, 25 + 12 - 6 - 3 + 1 + 1 };
+        long []expectedHeights = new long[] { 50, 25, 25 + 12, 25 + 12 - 6, 25 + 12 - 6 - 3, 25 + 12 - 6 - 3 + 1, 25 + 12 - 6 - 3 + 1 + 1, 25 + 12 - 6 - 3 + 1 + 1 + 1, 25 + 12 - 6 - 3 + 1 + 1 + 1 - 1 };
 
         for (int k = 0; k < expectedHeights.length; k++) {
             Assert.assertEquals(k + 1, sender.getMessages().size());
