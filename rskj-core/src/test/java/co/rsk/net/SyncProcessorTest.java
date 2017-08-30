@@ -45,6 +45,17 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(1, processor.getNoPeers());
         Assert.assertEquals(1, processor.getNoAdvancedPeers());
+
+        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(1, sender.getMessages().size());
+
+        Message message = sender.getMessages().get(0);
+
+        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
+
+        BlockHashRequestMessage request = (BlockHashRequestMessage)message;
+
+        Assert.assertEquals(50, request.getHeight());
     }
 
     @Test
@@ -61,6 +72,8 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(1, processor.getNoPeers());
         Assert.assertEquals(0, processor.getNoAdvancedPeers());
+
+        Assert.assertTrue(sender.getMessages().isEmpty());
     }
 
     @Test
