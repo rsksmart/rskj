@@ -46,6 +46,9 @@ public class SyncProcessor {
 
     public void processStatus(MessageSender sender, Status status) {
         peers.put(sender.getNodeID(), new SyncPeerStatus(sender, status));
+
+        if (status.getTotalDifficulty().compareTo(this.blockchain.getTotalDifficulty()) > 0)
+            this.findConnectionPoint(sender, status.getBestBlockNumber());
     }
 
     public void sendSkeletonRequest(MessageSender sender, long height) {
