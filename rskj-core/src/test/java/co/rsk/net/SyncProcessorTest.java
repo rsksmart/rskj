@@ -131,6 +131,24 @@ public class SyncProcessorTest {
         Assert.assertEquals(50, request.getHeight());
     }
 
+    @Test
+    public void processBlockHashResponseWithUnknownHash() {
+        Blockchain blockchain = createBlockchain();
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        SyncProcessor processor = new SyncProcessor(blockchain);
+
+        processor.findConnectionPoint(sender, 100);
+
+        long requestId = ((BlockHashRequestMessage)sender.getMessages().get(0)).getId();
+
+        BlockHashResponseMessage response = new BlockHashResponseMessage(requestId, HashUtil.randomHash());
+
+        processor.processBlockHashResponse(sender, response);
+
+        Assert.assertEquals(2, sender.getMessages().size());
+    }
+
     private static Blockchain createBlockchain() {
         return createBlockchain(0);
     }
