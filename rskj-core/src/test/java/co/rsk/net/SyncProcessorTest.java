@@ -188,6 +188,36 @@ public class SyncProcessorTest {
         Assert.assertEquals(expectedHeights.length, sender.getMessages().size());
     }
 
+    @Test
+    @Ignore
+    public void findConnectionPointBlockchainWith30BlocksVsBlockchainWith100Blocks() {
+        Blockchain blockchain = createBlockchain(30);
+        Blockchain advancedBlockchain = copyBlockchain(blockchain);
+        extendBlockchain(advancedBlockchain, 30, 70);
+
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        SyncProcessor processor = new SyncProcessor(blockchain);
+
+        processor.findConnectionPoint(sender, 100);
+
+        long []expectedHeights = new long[] { 50, 25, 25 + 12, 25 + 12 - 6, 25 + 12 - 6 - 3, 25 + 12 - 6 - 3 + 1, 25 + 12 - 6 - 3 + 1 + 1 };
+
+        for (int k = 0; k < expectedHeights.length; k++) {
+            Assert.assertEquals(k + 1, sender.getMessages().size());
+            Message message = sender.getMessages().get(k);
+            Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
+            BlockHashRequestMessage request = (BlockHashRequestMessage)message;
+            long requestId = request.getId();
+            Assert.assertEquals(expectedHeights[k], request.getHeight());
+
+            Block block = advancedBlockchain.getBlockByNumber(expectedHeights[k]);
+
+            processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash()));
+        }
+
+        Assert.assertEquals(expectedHeights.length, sender.getMessages().size());
+    }
 
     private static Blockchain createBlockchain() {
         return createBlockchain(0);
@@ -211,5 +241,25 @@ public class SyncProcessorTest {
         }
 
         return blockChain;
+    }
+
+    private static Blockchain copyBlockchain(Blockchain original) {
+        BlockChainBuilder builder = new BlockChainBuilder();
+        BlockChainImpl blockChain = builder.build();
+
+        long height = original.getStatus().getBestBlockNumber();
+
+        for (long k = 0; k <= height; k++)
+            blockChain.tryToConnect(original.getBlockByNumber(k));
+
+        return blockChain;
+    }
+
+    private static void extendBlockchain(Blockchain blockChain, long from, int size) {
+        Block initial = blockChain.getBlockByNumber(from);
+        List<Block> blocks = BlockGenerator.getBlockChain(initial, size);
+
+        for (Block block: blocks)
+            blockChain.tryToConnect(block);
     }
 }
