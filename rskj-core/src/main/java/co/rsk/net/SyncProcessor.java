@@ -2,6 +2,7 @@ package co.rsk.net;
 
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.messages.*;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
@@ -20,6 +21,7 @@ public class SyncProcessor {
     private Blockchain blockchain;
     private Map<NodeID, Status> peers = new HashMap<>();
     private Map<Long, FindPeerStatus> blockHashes = new HashMap<>();
+    private Map<Long, NodeID> pendingResponses = new HashMap<>();
 
     public SyncProcessor(Blockchain blockchain) {
         this.blockchain = blockchain;
@@ -102,6 +104,36 @@ public class SyncProcessor {
         blockHashes.put(nextId, peerStatus);
     }
 
+    public void processBlockHeadersResponse(MessageSender sender, BlockHeadersResponseMessage message) {
+        // to validate:
+        // - PoW
+        // - Parent exists
+        // - consecutive numbers
+        // - consistent difficulty
+
+        // to do: decide whether we also want to check the message type
+        NodeID expectedNodeId = pendingResponses.remove(message.getId());
+        if (sender.getNodeID() != expectedNodeId) {
+            // Don't waste time on spam or expired responses.
+            return;
+        }
+
+
+        // to do: decide whether we have to request the body immediately if we don't have it,
+        // or maybe only after we have validated it
+        List<BlockHeader> headers = message.getBlockHeaders();
+        for (BlockHeader header : headers) {
+            if (this.blockchain.getBlockByHash(header.getHash()) == null) {
+                sender.sendMessage(new BlockRequestMessage(++nextId, header.getHash()));
+            }
+        }
+    }
+
+    @VisibleForTesting
+    public void expectMessage(long requestId, NodeID nodeID) {
+        pendingResponses.put(requestId, nodeID);
+    }
+
     private static class FindPeerStatus {
         private long height;
         private long interval;
@@ -143,23 +175,6 @@ public class SyncProcessor {
                 this.interval = -1;
 
             this.height += this.interval;
-        }
-    }
-
-    public void processBlockHeadersResponse(MessageSender sender, BlockHeadersResponseMessage message) {
-        // to validate:
-        // - numbers match my requested number
-        // - PoW
-        // - Parent exists
-        // - consecutive numbers
-        // - consistent difficulty
-
-        // to do: request the body if we don't have it, maybe only when we have validated we have the parent
-        List<BlockHeader> headers = message.getBlockHeaders();
-        for (BlockHeader header : headers) {
-            if (this.blockchain.getBlockByHash(header.getHash()) == null) {
-                sender.sendMessage(new BlockRequestMessage(++nextId, header.getHash()));
-            }
         }
     }
 }
