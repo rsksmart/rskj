@@ -8,9 +8,7 @@ import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
-import org.testng.remote.strprotocol.MessageHelper;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
