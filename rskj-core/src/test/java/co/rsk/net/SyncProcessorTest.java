@@ -180,8 +180,70 @@ public class SyncProcessorTest {
         SyncProcessor processor = new SyncProcessor(blockchain);
 
         List<BlockHeader> headers = new ArrayList<>();
+        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(98, headers);
+
+        processor.expectMessage(98, sender.getNodeID());
+        processor.processBlockHeadersResponse(sender, response);
+        Assert.assertTrue(sender.getMessages().isEmpty());
+    }
+
+    @Test
+    public void processBlockHeadersResponseRejectsNonSolicitedMessages() {
+        Blockchain blockchain = createBlockchain(3);
+        Block block = blockchain.getBlockByNumber(2);
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        SyncProcessor processor = new SyncProcessor(blockchain);
+
+        List<BlockHeader> headers = new ArrayList<>();
+        headers.add(block.getHeader());
+        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(100, headers);
+
+        processor.processBlockHeadersResponse(sender, response);
+        Assert.assertTrue(sender.getMessages().isEmpty());
+    }
+
+    @Test
+    public void processBlockHeadersResponseWithOneHeader() {
+        Blockchain blockchain = createBlockchain(3);
+        Blockchain otherBlockchain = createBlockchain(3);
+        Block block = otherBlockchain.getBlockByNumber(2);
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        SyncProcessor processor = new SyncProcessor(blockchain);
+
+        List<BlockHeader> headers = new ArrayList<>();
+        headers.add(block.getHeader());
         BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(99, headers);
 
+        processor.expectMessage(99, sender.getNodeID());
+        processor.processBlockHeadersResponse(sender, response);
+        Assert.assertEquals(1, sender.getMessages().size());
+
+        Message message = sender.getMessages().get(0);
+
+        Assert.assertNotNull(message);
+        Assert.assertEquals(MessageType.BLOCK_REQUEST_MESSAGE, message.getMessageType());
+
+        BlockRequestMessage request = (BlockRequestMessage) message;
+
+        Assert.assertNotEquals(0, request.getId());
+        Assert.assertArrayEquals(block.getHash(), request.getBlockHash());
+    }
+
+    @Test
+    public void processBlockHeadersResponseWithOneExistingHeader() {
+        Blockchain blockchain = createBlockchain(3);
+        Block block = blockchain.getBlockByNumber(2);
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        SyncProcessor processor = new SyncProcessor(blockchain);
+
+        List<BlockHeader> headers = new ArrayList<>();
+        headers.add(block.getHeader());
+        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(97, headers);
+
+        processor.expectMessage(97, sender.getNodeID());
         processor.processBlockHeadersResponse(sender, response);
         Assert.assertTrue(sender.getMessages().isEmpty());
     }
