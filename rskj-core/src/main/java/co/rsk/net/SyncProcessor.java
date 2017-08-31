@@ -130,49 +130,5 @@ public class SyncProcessor {
     public void expectMessage(long requestId, NodeID nodeID) {
         pendingResponses.put(requestId, nodeID);
     }
-
-    private static class FindPeerStatus {
-        private long height;
-        private long interval;
-        private boolean found;
-
-        public FindPeerStatus(long height, long interval) {
-            this.height = height;
-            this.interval = interval;
-        }
-
-        public long getHeight() { return this.height; }
-
-        public boolean getFound() { return this.found; }
-
-        public void updateFound() {
-            if (this.interval == -1) {
-                this.found = true;
-                return;
-            }
-
-            this.interval = Math.abs(this.interval / 2);
-
-            if (this.interval == 0)
-                this.interval = 1;
-
-            this.height += this.interval;
-        }
-
-        public void updateNotFound() {
-            if (this.interval == 1) {
-                this.found = true;
-                this.height--;
-                return;
-            }
-
-            this.interval = -Math.abs(this.interval / 2);
-
-            if (this.interval == 0)
-                this.interval = -1;
-
-            this.height += this.interval;
-        }
-    }
 }
 
