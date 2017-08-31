@@ -4,6 +4,7 @@ import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.messages.*;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
 
 import java.math.BigInteger;
@@ -53,6 +54,9 @@ public class SyncProcessor {
 
     public void sendSkeletonRequest(MessageSender sender, long height) {
         sender.sendMessage(new SkeletonRequestMessage(++nextId, height));
+    }
+
+    public void processSkeletonResponse(MessageSender sender, SkeletonResponseMessage message) {
     }
 
     public void sendBlockHashRequest(MessageSender sender, long height) {

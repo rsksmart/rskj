@@ -5,10 +5,7 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageSender;
 import co.rsk.test.builders.BlockChainBuilder;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.ImportResult;
+import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -262,6 +259,25 @@ public class SyncProcessorTest {
         SkeletonRequestMessage request = (SkeletonRequestMessage)message;
 
         Assert.assertEquals(30, request.getStartNumber());
+    }
+
+    @Test
+    @Ignore
+    public void processSkeletonResponseWithTenBlockIdentifiers() {
+        Blockchain blockchain = createBlockchain(30);
+
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        SyncProcessor processor = new SyncProcessor(blockchain);
+
+        List<BlockIdentifier> bids = new ArrayList<>();
+
+        for (int k = 0; k < 10; k++)
+            bids.add(new BlockIdentifier(HashUtil.randomHash(), (k + 1) * 10));
+
+        processor.processSkeletonResponse(sender, new SkeletonResponseMessage(1, bids));
+
+        Assert.assertFalse(sender.getMessages().isEmpty());
     }
 
     private static Blockchain createBlockchain() {
