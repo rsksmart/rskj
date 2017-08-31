@@ -22,6 +22,7 @@ public class SyncProcessor {
     private Map<NodeID, Status> peers = new HashMap<>();
     private Map<NodeID, SyncPeerStatus> peerStatuses = new HashMap<>();
     private Map<Long, NodeID> pendingResponses = new HashMap<>();
+    private Map<Long, PendingBodyResponse> pendingBodyResponses = new HashMap<>();
 
     public SyncProcessor(Blockchain blockchain) {
         this.blockchain = blockchain;
@@ -111,13 +112,11 @@ public class SyncProcessor {
         // - consecutive numbers
         // - consistent difficulty
 
-        // to do: decide whether we also want to check the message type
-        NodeID expectedNodeId = pendingResponses.remove(message.getId());
+        NodeID expectedNodeId = pendingResponses.get(message.getId());
         if (sender.getNodeID() != expectedNodeId) {
             // Don't waste time on spam or expired responses.
             return;
         }
-
 
         // to do: decide whether we have to request the body immediately if we don't have it,
         // or maybe only after we have validated it
@@ -127,13 +126,30 @@ public class SyncProcessor {
                 sender.sendMessage(new BlockRequestMessage(++nextId, header.getHash()));
             }
         }
+
+        pendingResponses.remove(message.getId());
+    }
+
+    public void processBodyResponse(MessageSender sender, BodyResponseMessage message) {
+        // TODO(mc):
+        // 1. validate not spam
+        // 2. retrieve header of the body we're expecting
+        // 3. validate transactions and uncles are part of this block (with header)
+        // 4. enqueue block for validation (i.e. we need to have the parent block)
+
+        PendingBodyResponse expected = pendingBodyResponses.get(message.getId());
+        if (expected == null || sender.getNodeID() != expected.nodeID) {
+            // Don't waste time on spam or expired responses.
+            return;
+        }
+
+        // TODO(mc): reuse NodeBlockProcessor.processBlock
+        this.blockchain.tryToConnect(new Block(expected.header, message.getTransactions(), message.getUncles()));
     }
 
     public SyncPeerStatus createPeerStatus(NodeID nodeID) {
         SyncPeerStatus peerStatus = new SyncPeerStatus();
-
         peerStatuses.put(nodeID, peerStatus);
-
         return peerStatus;
     }
 
@@ -147,8 +163,22 @@ public class SyncProcessor {
     }
 
     @VisibleForTesting
-    public void expectMessage(long requestId, NodeID nodeID) {
+    public void expectMessageFrom(long requestId, NodeID nodeID) {
         pendingResponses.put(requestId, nodeID);
     }
-}
 
+    @VisibleForTesting
+    public void expectBodyResponseFor(long requestId, NodeID nodeID, BlockHeader header) {
+        pendingBodyResponses.put(requestId, new PendingBodyResponse(nodeID, header));
+    }
+
+    private static class PendingBodyResponse {
+        private NodeID nodeID;
+        private BlockHeader header;
+
+        PendingBodyResponse(NodeID nodeID, BlockHeader header) {
+            this.nodeID = nodeID;
+            this.header = header;
+        }
+    }
+}
