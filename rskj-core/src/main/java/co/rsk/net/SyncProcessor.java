@@ -57,6 +57,17 @@ public class SyncProcessor {
     }
 
     public void processSkeletonResponse(MessageSender sender, SkeletonResponseMessage message) {
+        long bestNumber = this.blockchain.getStatus().getBestBlockNumber();
+
+        for (BlockIdentifier bi : message.getBlockIdentifiers()) {
+            long height = bi.getNumber();
+
+            if (height > bestNumber) {
+                int count = (int)(height - bestNumber);
+                sender.sendMessage(new BlockHeadersRequestMessage(++nextId, bi.getHash(), count));
+                return;
+            }
+        }
     }
 
     public void sendBlockHashRequest(MessageSender sender, long height) {

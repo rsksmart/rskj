@@ -10,6 +10,7 @@ import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.testng.remote.strprotocol.MessageHelper;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -262,9 +263,8 @@ public class SyncProcessorTest {
     }
 
     @Test
-    @Ignore
     public void processSkeletonResponseWithTenBlockIdentifiers() {
-        Blockchain blockchain = createBlockchain(30);
+        Blockchain blockchain = createBlockchain();
 
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
@@ -278,6 +278,59 @@ public class SyncProcessorTest {
         processor.processSkeletonResponse(sender, new SkeletonResponseMessage(1, bids));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(1, sender.getMessages().size());
+
+        Message message = sender.getMessages().get(0);
+
+        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
+
+        BlockHeadersRequestMessage request = (BlockHeadersRequestMessage)message;
+
+        Assert.assertArrayEquals(bids.get(0).getHash(), request.getHash());
+        Assert.assertEquals(10, request.getCount());
+    }
+
+    @Test
+    public void processSkeletonResponseWithoutBlockIdentifiers() {
+        Blockchain blockchain = createBlockchain();
+
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        SyncProcessor processor = new SyncProcessor(blockchain);
+
+        List<BlockIdentifier> bids = new ArrayList<>();
+
+        processor.processSkeletonResponse(sender, new SkeletonResponseMessage(1, bids));
+
+        Assert.assertTrue(sender.getMessages().isEmpty());
+    }
+
+    @Test
+    public void processSkeletonResponseWithOldBlockIdentifiers() {
+        Blockchain blockchain = createBlockchain(25);
+
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        SyncProcessor processor = new SyncProcessor(blockchain);
+
+        List<BlockIdentifier> bids = new ArrayList<>();
+
+        for (int k = 0; k < 10; k++)
+            bids.add(new BlockIdentifier(HashUtil.randomHash(), (k + 1) * 10));
+
+        processor.processSkeletonResponse(sender, new SkeletonResponseMessage(1, bids));
+
+        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(1, sender.getMessages().size());
+
+        Message message = sender.getMessages().get(0);
+
+        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
+
+        BlockHeadersRequestMessage request = (BlockHeadersRequestMessage)message;
+
+        Assert.assertArrayEquals(bids.get(2).getHash(), request.getHash());
+        Assert.assertEquals(5, request.getCount());
     }
 
     private static Blockchain createBlockchain() {
