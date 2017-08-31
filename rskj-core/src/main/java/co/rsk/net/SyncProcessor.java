@@ -20,7 +20,7 @@ public class SyncProcessor {
     private long nextId;
     private Blockchain blockchain;
     private Map<NodeID, Status> peers = new HashMap<>();
-    private Map<Long, FindPeerStatus> blockHashes = new HashMap<>();
+    private Map<NodeID, SyncPeerStatus> peerStatuses = new HashMap<>();
     private Map<Long, NodeID> pendingResponses = new HashMap<>();
 
     public SyncProcessor(Blockchain blockchain) {
@@ -77,15 +77,14 @@ public class SyncProcessor {
     }
 
     public void findConnectionPoint(MessageSender sender, long height) {
-        FindPeerStatus peerStatus = new FindPeerStatus(height, height);
-        peerStatus.updateNotFound();
-        this.sendBlockHashRequest(sender, peerStatus.getHeight());
-        blockHashes.put(nextId, peerStatus);
+        SyncPeerStatus peerStatus = new SyncPeerStatus();
+        peerStatus.startFindConnectionPoint(height);
+        this.sendBlockHashRequest(sender, peerStatus.getFindingHeight());
+        peerStatuses.put(sender.getNodeID(), peerStatus);
     }
 
     public void processBlockHashResponse(MessageSender sender, BlockHashResponseMessage message) {
-        FindPeerStatus peerStatus = blockHashes.get(message.getId());
-        blockHashes.remove(message.getId());
+        SyncPeerStatus peerStatus = this.peerStatuses.get(sender.getNodeID());
 
         Block block = this.blockchain.getBlockByHash(message.getHash());
 
@@ -94,14 +93,12 @@ public class SyncProcessor {
         else
             peerStatus.updateNotFound();
 
-        if (peerStatus.getFound()) {
-            sendSkeletonRequest(sender, peerStatus.getHeight());
+        if (peerStatus.hasConnectionPoint()) {
+            sendSkeletonRequest(sender, peerStatus.getConnectionPoint());
             return;
         }
 
-        sendBlockHashRequest(sender, peerStatus.getHeight());
-
-        blockHashes.put(nextId, peerStatus);
+        sendBlockHashRequest(sender, peerStatus.getFindingHeight());
     }
 
     public void processBlockHeadersResponse(MessageSender sender, BlockHeadersResponseMessage message) {
