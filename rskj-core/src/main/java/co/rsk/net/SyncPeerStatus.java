@@ -17,8 +17,43 @@ public class SyncPeerStatus {
 
     public boolean hasConnectionPoint() { return this.hasConnectionPoint; }
 
+    public void setConnectionPoint(long height) {
+        this.connectionPoint = height;
+        this.hasConnectionPoint = true;
+    }
+
+    public long getConnectionPoint() {
+        return this.connectionPoint;
+    }
+
     public long getFindingHeight() { return this.findingHeight; }
 
-    public long getFindingInterval() { return this.findingInterval; }
+    public void updateFound() {
+        if (this.findingInterval == -1) {
+            this.setConnectionPoint(this.findingHeight);
+            return;
+        }
+
+        this.findingInterval = Math.abs(this.findingInterval / 2);
+
+        if (this.findingInterval == 0)
+            this.findingInterval = 1;
+
+        this.findingHeight += this.findingInterval;
+    }
+
+    public void updateNotFound() {
+        if (this.findingInterval == 1) {
+            this.setConnectionPoint(this.findingHeight - 1);
+            return;
+        }
+
+        this.findingInterval = -Math.abs(this.findingInterval / 2);
+
+        if (this.findingInterval == 0)
+            this.findingInterval = -1;
+
+        this.findingHeight += this.findingInterval;
+    }
 }
 
