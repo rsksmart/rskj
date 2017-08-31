@@ -1,14 +1,23 @@
 package co.rsk.net;
 
+import org.ethereum.core.BlockIdentifier;
+
+import java.util.List;
+
 /**
  * Created by ajlopez on 29/08/2017.
  */
 public class SyncPeerStatus {
+    // Status used to find connection point
+    private long findingHeight;
+    private long findingInterval;
+
+    // Connection point found or not
     private boolean hasConnectionPoint;
     private long connectionPoint;
 
-    private long findingHeight;
-    private long findingInterval;
+    // Block identifiers retrieved in skeleton
+    private List<BlockIdentifier> blockIdentifiers;
 
     public void startFindConnectionPoint(long height) {
         this.findingInterval = height / 2;
@@ -54,6 +63,18 @@ public class SyncPeerStatus {
             this.findingInterval = -1;
 
         this.findingHeight += this.findingInterval;
+    }
+
+    public boolean hasBlockIdentifiers() {
+        return this.blockIdentifiers != null;
+    }
+
+    public List<BlockIdentifier> getBlockIdentifiers() {
+        return this.blockIdentifiers;
+    }
+
+    public void setBlockIdentifiers(List<BlockIdentifier> blockIdentifiers) {
+        this.blockIdentifiers = blockIdentifiers;
     }
 }
 
