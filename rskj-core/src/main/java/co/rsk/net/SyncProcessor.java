@@ -59,6 +59,10 @@ public class SyncProcessor {
     }
 
     public void processSkeletonResponse(MessageSender sender, SkeletonResponseMessage message) {
+        SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
+
+        peerStatus.setBlockIdentifiers(message.getBlockIdentifiers());
+
         long bestNumber = this.blockchain.getStatus().getBestBlockNumber();
 
         for (BlockIdentifier bi : message.getBlockIdentifiers()) {
@@ -77,14 +81,13 @@ public class SyncProcessor {
     }
 
     public void findConnectionPoint(MessageSender sender, long height) {
-        SyncPeerStatus peerStatus = new SyncPeerStatus();
+        SyncPeerStatus peerStatus = this.createPeerStatus(sender.getNodeID());
         peerStatus.startFindConnectionPoint(height);
         this.sendBlockHashRequest(sender, peerStatus.getFindingHeight());
-        peerStatuses.put(sender.getNodeID(), peerStatus);
     }
 
     public void processBlockHashResponse(MessageSender sender, BlockHashResponseMessage message) {
-        SyncPeerStatus peerStatus = this.peerStatuses.get(sender.getNodeID());
+        SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
 
         Block block = this.blockchain.getBlockByHash(message.getHash());
 
@@ -124,6 +127,23 @@ public class SyncProcessor {
                 sender.sendMessage(new BlockRequestMessage(++nextId, header.getHash()));
             }
         }
+    }
+
+    public SyncPeerStatus createPeerStatus(NodeID nodeID) {
+        SyncPeerStatus peerStatus = new SyncPeerStatus();
+
+        peerStatuses.put(nodeID, peerStatus);
+
+        return peerStatus;
+    }
+
+    public SyncPeerStatus getPeerStatus(NodeID nodeID) {
+        SyncPeerStatus peerStatus = this.peerStatuses.get(nodeID);
+
+        if (peerStatus != null)
+            return peerStatus;
+
+        return this.createPeerStatus(nodeID);
     }
 
     @VisibleForTesting

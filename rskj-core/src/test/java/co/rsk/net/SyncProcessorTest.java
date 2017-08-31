@@ -348,6 +348,12 @@ public class SyncProcessorTest {
 
         Assert.assertArrayEquals(bids.get(0).getHash(), request.getHash());
         Assert.assertEquals(10, request.getCount());
+
+        SyncPeerStatus peerStatus = processor.getPeerStatus(sender.getNodeID());
+
+        Assert.assertNotNull(peerStatus);
+        Assert.assertTrue(peerStatus.hasBlockIdentifiers());
+        Assert.assertEquals(10, peerStatus.getBlockIdentifiers().size());
     }
 
     @Test
