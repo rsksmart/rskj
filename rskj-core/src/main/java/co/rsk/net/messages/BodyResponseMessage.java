@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Created by ajlopez on 25/08/2017.
  */
-public class BodyResponseMessage extends Message {
+public class BodyResponseMessage extends MessageWithId {
     private long id;
     private List<Transaction> transactions;
     private List<BlockHeader> uncles;
@@ -21,6 +21,7 @@ public class BodyResponseMessage extends Message {
         this.uncles = uncles;
     }
 
+    @Override
     public long getId() { return this.id; }
 
     public List<Transaction> getTransactions() { return this.transactions; }
@@ -28,7 +29,7 @@ public class BodyResponseMessage extends Message {
     public List<BlockHeader> getUncles() { return this.uncles; }
 
     @Override
-    public byte[] getEncodedMessage() {
+    protected byte[] getEncodedMessageWithoutId() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(this.id));
         byte[][] rlpTransactions = new byte[this.transactions.size()][];
         byte[][] rlpUncles = new byte[this.uncles.size()][];

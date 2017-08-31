@@ -180,7 +180,7 @@ public class SyncProcessorTest {
         List<BlockHeader> headers = new ArrayList<>();
         BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(98, headers);
 
-        processor.expectMessage(98, sender.getNodeID());
+        processor.expectMessageFrom(98, sender.getNodeID());
         processor.processBlockHeadersResponse(sender, response);
         Assert.assertTrue(sender.getMessages().isEmpty());
     }
@@ -214,7 +214,7 @@ public class SyncProcessorTest {
         headers.add(block.getHeader());
         BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(99, headers);
 
-        processor.expectMessage(99, sender.getNodeID());
+        processor.expectMessageFrom(99, sender.getNodeID());
         processor.processBlockHeadersResponse(sender, response);
         Assert.assertEquals(1, sender.getMessages().size());
 
@@ -241,9 +241,46 @@ public class SyncProcessorTest {
         headers.add(block.getHeader());
         BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(97, headers);
 
-        processor.expectMessage(97, sender.getNodeID());
+        processor.expectMessageFrom(97, sender.getNodeID());
         processor.processBlockHeadersResponse(sender, response);
         Assert.assertTrue(sender.getMessages().isEmpty());
+    }
+
+    @Test
+    public void processBodyResponseRejectsNonSolicitedMessages() {
+        Blockchain blockchain = createBlockchain(3);
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        SyncProcessor processor = new SyncProcessor(blockchain);
+
+        BodyResponseMessage response = new BodyResponseMessage(100, null, null);
+
+        processor.processBodyResponse(sender, response);
+        Assert.assertTrue(sender.getMessages().isEmpty());
+    }
+
+    @Test
+    public void processBodyResponseAddsToBlockchain() {
+        Blockchain blockchain = createBlockchain(10);
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
+
+        Block block = BlockGenerator.createChildBlock(blockchain.getBlockByNumber(10));
+
+        Assert.assertEquals(11, block.getNumber());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+
+        SyncProcessor processor = new SyncProcessor(blockchain);
+        List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
+        List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
+        BodyResponseMessage response = new BodyResponseMessage(96, transactions, uncles);
+
+        processor.expectBodyResponseFor(96, sender.getNodeID(), block.getHeader());
+        processor.processBodyResponse(sender, response);
+
+        Assert.assertEquals(11, blockchain.getBestBlock().getNumber());
+        Assert.assertArrayEquals(block.getHash(), blockchain.getBestBlockHash());
     }
 
     @Test

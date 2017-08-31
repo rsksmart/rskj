@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Created by ajlopez on 24/08/2017.
  */
-public class BlockHeadersResponseMessage extends Message {
+public class BlockHeadersResponseMessage extends MessageWithId {
     /**
      * Id to identify request/response correlation
      */
@@ -25,12 +25,13 @@ public class BlockHeadersResponseMessage extends Message {
         this.blockHeaders = headers;
     }
 
+    @Override
     public long getId() { return this.id; }
 
     public List<BlockHeader> getBlockHeaders() { return this.blockHeaders; }
 
     @Override
-    public byte[] getEncodedMessage() {
+    protected byte[] getEncodedMessageWithoutId() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(this.id));
         byte[][] rlpHeaders = new byte[this.blockHeaders.size()][];
 
