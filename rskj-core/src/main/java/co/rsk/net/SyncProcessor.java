@@ -19,13 +19,15 @@ import java.util.Map;
 public class SyncProcessor {
     private long nextId;
     private Blockchain blockchain;
+    private BlockSyncService blockSyncService;
     private Map<NodeID, Status> peers = new HashMap<>();
     private Map<NodeID, SyncPeerStatus> peerStatuses = new HashMap<>();
     private Map<Long, NodeID> pendingResponses = new HashMap<>();
     private Map<Long, PendingBodyResponse> pendingBodyResponses = new HashMap<>();
 
-    public SyncProcessor(Blockchain blockchain) {
+    public SyncProcessor(Blockchain blockchain, BlockSyncService blockSyncService) {
         this.blockchain = blockchain;
+        this.blockSyncService = blockSyncService;
     }
 
     public int getNoPeers() {
@@ -131,20 +133,14 @@ public class SyncProcessor {
     }
 
     public void processBodyResponse(MessageSender sender, BodyResponseMessage message) {
-        // TODO(mc):
-        // 1. validate not spam
-        // 2. retrieve header of the body we're expecting
-        // 3. validate transactions and uncles are part of this block (with header)
-        // 4. enqueue block for validation (i.e. we need to have the parent block)
-
         PendingBodyResponse expected = pendingBodyResponses.get(message.getId());
         if (expected == null || sender.getNodeID() != expected.nodeID) {
             // Don't waste time on spam or expired responses.
             return;
         }
 
-        // TODO(mc): reuse NodeBlockProcessor.processBlock
-        this.blockchain.tryToConnect(new Block(expected.header, message.getTransactions(), message.getUncles()));
+        // TODO(mc): validate transactions and uncles are part of this block (with header)
+        blockSyncService.processBlock(sender, new Block(expected.header, message.getTransactions(), message.getUncles()));
     }
 
     public SyncPeerStatus createPeerStatus(NodeID nodeID) {

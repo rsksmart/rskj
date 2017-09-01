@@ -18,11 +18,13 @@
 
 package co.rsk.net;
 
+import co.rsk.core.bc.BlockUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.ByteArrayWrapper;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -142,6 +144,21 @@ public class BlockStore {
         List<Block> ls = new ArrayList<Block>(blocks);
 
         return ls;
+    }
+
+    /**
+     * getChildrenOf returns all the children of a list of blocks that are in the BlockStore.
+     *
+     * @param blocks the list of blocks to retrieve the children.
+     * @return A list with all the children of the given list of blocks.
+     */
+    public List<Block> getChildrenOf(List<Block> blocks) {
+        final List<Block> children = new ArrayList<>();
+
+        for (final Block block : blocks)
+            BlockUtils.addBlocksToList(children, getBlocksByParentHash(block.getHash()));
+
+        return children;
     }
 
     public synchronized boolean hasBlock(Block block) {

@@ -143,4 +143,10 @@ public class BlockchainDummy implements Blockchain {
     public List<BlockInformation> getBlocksInformationByNumber(long number) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public boolean hasBlockInSomeBlockchain(byte[] hash) {
+        return false;
+    }
+
 }

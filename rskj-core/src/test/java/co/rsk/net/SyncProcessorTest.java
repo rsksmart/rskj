@@ -20,8 +20,11 @@ import java.util.List;
 public class SyncProcessorTest {
     @Test
     public void noPeers() {
+        final BlockStore store = new BlockStore();
         Blockchain blockchain = createBlockchain();
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService);
 
         Assert.assertEquals(0, processor.getNoPeers());
         Assert.assertEquals(0, processor.getNoAdvancedPeers());
@@ -29,14 +32,18 @@ public class SyncProcessorTest {
 
     @Test
     public void processStatusWithAdvancedPeers() {
+        final BlockStore store = new BlockStore();
         Blockchain blockchain = createBlockchain();
-        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
         byte[] hash = HashUtil.randomHash();
         byte[] parentHash = HashUtil.randomHash();
 
         Status status = new Status(100, hash, parentHash, blockchain.getTotalDifficulty().add(BigInteger.TEN));
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService);
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[]{0x01});
         processor.processStatus(sender, status);
 
         Assert.assertEquals(1, processor.getNoPeers());
@@ -56,6 +63,7 @@ public class SyncProcessorTest {
 
     @Test
     public void processStatusWithPeerWithSameDifficulty() {
+        final BlockStore store = new BlockStore();
         Blockchain blockchain = createBlockchain(100);
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
         byte[] hash = HashUtil.randomHash();
@@ -63,7 +71,9 @@ public class SyncProcessorTest {
 
         Status status = new Status(blockchain.getStatus().getBestBlockNumber(), hash, parentHash, blockchain.getStatus().getTotalDifficulty());
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService);
         processor.processStatus(sender, status);
 
         Assert.assertEquals(1, processor.getNoPeers());
@@ -77,7 +87,7 @@ public class SyncProcessorTest {
         Blockchain blockchain = createBlockchain(100);
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        SyncProcessor processor = new SyncProcessor(blockchain, null);
 
         processor.sendSkeletonRequest(sender, 0);
 
@@ -101,7 +111,7 @@ public class SyncProcessorTest {
         Blockchain blockchain = createBlockchain();
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        SyncProcessor processor = new SyncProcessor(blockchain, null);
 
         processor.sendBlockHashRequest(sender, 100);
 
@@ -124,7 +134,7 @@ public class SyncProcessorTest {
         Blockchain blockchain = createBlockchain();
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        SyncProcessor processor = new SyncProcessor(blockchain, null);
 
         processor.findConnectionPoint(sender, 100);
 
@@ -147,7 +157,7 @@ public class SyncProcessorTest {
         Blockchain blockchain = createBlockchain();
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        SyncProcessor processor = new SyncProcessor(blockchain, null);
 
         processor.findConnectionPoint(sender, 100);
 
@@ -175,7 +185,7 @@ public class SyncProcessorTest {
         Blockchain blockchain = createBlockchain();
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        SyncProcessor processor = new SyncProcessor(blockchain, null);
 
         List<BlockHeader> headers = new ArrayList<>();
         BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(98, headers);
@@ -191,7 +201,7 @@ public class SyncProcessorTest {
         Block block = blockchain.getBlockByNumber(2);
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        SyncProcessor processor = new SyncProcessor(blockchain, null);
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
@@ -208,7 +218,7 @@ public class SyncProcessorTest {
         Block block = otherBlockchain.getBlockByNumber(2);
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        SyncProcessor processor = new SyncProcessor(blockchain, null);
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
@@ -235,7 +245,7 @@ public class SyncProcessorTest {
         Block block = blockchain.getBlockByNumber(2);
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        SyncProcessor processor = new SyncProcessor(blockchain, null);
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
@@ -251,7 +261,7 @@ public class SyncProcessorTest {
         Blockchain blockchain = createBlockchain(3);
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        SyncProcessor processor = new SyncProcessor(blockchain, null);
 
         BodyResponseMessage response = new BodyResponseMessage(100, null, null);
 
@@ -261,6 +271,7 @@ public class SyncProcessorTest {
 
     @Test
     public void processBodyResponseAddsToBlockchain() {
+        final BlockStore store = new BlockStore();
         Blockchain blockchain = createBlockchain(10);
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
@@ -271,7 +282,9 @@ public class SyncProcessorTest {
         Assert.assertEquals(11, block.getNumber());
         Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService);
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
         BodyResponseMessage response = new BodyResponseMessage(96, transactions, uncles);
@@ -290,7 +303,7 @@ public class SyncProcessorTest {
 
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        SyncProcessor processor = new SyncProcessor(blockchain, null);
 
         processor.findConnectionPoint(sender, 100);
 
@@ -328,7 +341,7 @@ public class SyncProcessorTest {
 
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        SyncProcessor processor = new SyncProcessor(blockchain, null);
 
         processor.findConnectionPoint(sender, 100);
 
@@ -365,7 +378,7 @@ public class SyncProcessorTest {
 
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        SyncProcessor processor = new SyncProcessor(blockchain, null);
 
         List<BlockIdentifier> bids = new ArrayList<>();
 
@@ -399,7 +412,7 @@ public class SyncProcessorTest {
 
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        SyncProcessor processor = new SyncProcessor(blockchain, null);
 
         List<BlockIdentifier> bids = new ArrayList<>();
 
@@ -414,7 +427,7 @@ public class SyncProcessorTest {
 
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
-        SyncProcessor processor = new SyncProcessor(blockchain);
+        SyncProcessor processor = new SyncProcessor(blockchain, null);
 
         List<BlockIdentifier> bids = new ArrayList<>();
 

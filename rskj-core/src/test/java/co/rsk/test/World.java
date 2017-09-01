@@ -21,7 +21,9 @@ package co.rsk.test;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockStore;
+import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.*;
@@ -57,7 +59,10 @@ public class World {
         }
         this.saveBlock("g00", genesis);
 
-        this.blockProcessor = new NodeBlockProcessor(new BlockStore(), blockChain);
+        BlockStore store = new BlockStore();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockChain, nodeInformation, null);
+        this.blockProcessor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService);
     }
 
     public NodeBlockProcessor getBlockProcessor() { return this.blockProcessor; }
