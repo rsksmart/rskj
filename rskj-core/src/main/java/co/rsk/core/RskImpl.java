@@ -20,11 +20,9 @@ package co.rsk.core;
 
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
-import co.rsk.net.BlockStore;
-import co.rsk.net.MessageHandler;
-import co.rsk.net.NodeBlockProcessor;
-import co.rsk.net.NodeMessageHandler;
+import co.rsk.net.*;
 import co.rsk.net.handler.TxHandlerImpl;
+import org.ethereum.core.Blockchain;
 import org.ethereum.facade.EthereumImpl;
 import org.springframework.stereotype.Component;
 
@@ -71,7 +69,11 @@ public class RskImpl extends EthereumImpl implements Rsk {
     @Override
     public NodeBlockProcessor getNodeBlockProcessor() {
         if (this.nodeBlockProcessor == null) {
-            this.nodeBlockProcessor = new NodeBlockProcessor(new BlockStore(), this.getWorldManager().getBlockchain(), this.getWorldManager());
+            BlockStore store = new BlockStore();
+            Blockchain blockchain = this.getWorldManager().getBlockchain();
+            BlockNodeInformation nodeInformation = new BlockNodeInformation();
+            BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+            this.nodeBlockProcessor = new NodeBlockProcessor(store, blockchain, this.getWorldManager(), nodeInformation, blockSyncService);
         }
         return this.nodeBlockProcessor;
     }

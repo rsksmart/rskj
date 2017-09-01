@@ -42,7 +42,9 @@ public class BlockIntoBlockchainTest {
         for (int k = 1; k <= storechain.size(); k++) {
             BlockStore store = createBlockStore(storechain, k);
             Blockchain blockchain = createBlockchain(chain);
-            NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+            BlockNodeInformation nodeInformation = new BlockNodeInformation();
+            BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+            final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
             Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
 
             for (int j = k; j > 0; j--)
@@ -68,7 +70,9 @@ public class BlockIntoBlockchainTest {
             bcchain.addAll(commonchain);
             bcchain.addAll(chain);
             Blockchain blockchain = createBlockchain(bcchain);
-            NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+            BlockNodeInformation nodeInformation = new BlockNodeInformation();
+            BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+            final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
             processor.processBlock(null, storechain.get(k - 1));
 

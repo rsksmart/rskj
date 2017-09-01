@@ -46,7 +46,9 @@ public class NodeBlockProcessorTest {
         final Block parent = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock());
         final Block orphan = BlockGenerator.createChildBlock(parent);
 
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         processor.processBlock(sender, orphan);
         Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(orphan.getHash()).size() == 1);
@@ -63,7 +65,9 @@ public class NodeBlockProcessorTest {
         final Blockchain blockchain = createBlockchain(0);
         final Block orphan = BlockGenerator.createBlock(1000, 0);
 
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         processor.processBlock(sender, orphan);
 
@@ -80,7 +84,9 @@ public class NodeBlockProcessorTest {
         final Blockchain blockchain = createBlockchain(0);
         final Block block = BlockGenerator.createBlock(1000, 0);
 
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
         processor.acceptAnyBlock();
 
         processor.processBlock(sender, block);
@@ -104,7 +110,9 @@ public class NodeBlockProcessorTest {
         Assert.assertEquals(11, block.getNumber());
         Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
 
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         processor.processBlock(null, block);
 
@@ -122,7 +130,9 @@ public class NodeBlockProcessorTest {
 
         List<Block> blocks = BlockGenerator.getBlockChain(genesis, 10);
 
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         processor.processBlock(null, genesis);
         Assert.assertEquals(0, store.size());
@@ -142,7 +152,9 @@ public class NodeBlockProcessorTest {
         List<Block> blocks = BlockGenerator.getBlockChain(genesis, 10);
         List<Block> blocks2 = BlockGenerator.getBlockChain(genesis, 20);
 
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         processor.processBlock(null, genesis);
         Assert.assertEquals(0, store.size());
@@ -165,7 +177,9 @@ public class NodeBlockProcessorTest {
         List<Block> blocks = BlockGenerator.getBlockChain(genesis, 10);
         List<Block> blocks2 = BlockGenerator.getBlockChain(blocks.get(4), 20);
 
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         processor.processBlock(null, genesis);
         Assert.assertEquals(0, store.size());
@@ -185,7 +199,9 @@ public class NodeBlockProcessorTest {
         Block genesis = BlockGenerator.getGenesisBlock();
         Blockchain blockchain = createBlockchain();
 
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         Assert.assertFalse(processor.isSyncingBlocks());
     }
@@ -196,7 +212,9 @@ public class NodeBlockProcessorTest {
         Block block = BlockGenerator.createBlock(10, 0);
         Blockchain blockchain = createBlockchain();
 
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         Assert.assertFalse(processor.isSyncingBlocks());
 
@@ -212,7 +230,9 @@ public class NodeBlockProcessorTest {
         Block block = BlockGenerator.createBlock(30, 0);
         Blockchain blockchain = createBlockchain();
 
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         Assert.assertFalse(processor.isSyncingBlocks());
 
@@ -228,7 +248,9 @@ public class NodeBlockProcessorTest {
         Block block = BlockGenerator.createBlock(30, 0);
         Blockchain blockchain = createBlockchain();
 
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         Assert.assertFalse(processor.isSyncingBlocks());
 
@@ -259,7 +281,9 @@ public class NodeBlockProcessorTest {
         Block genesis = blockchain.getBestBlock();
         List<Block> blocks = BlockGenerator.getBlockChain(genesis, 10);
 
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         for (Block b : blocks)
             processor.processBlock(null, b);
@@ -277,7 +301,9 @@ public class NodeBlockProcessorTest {
         Block genesis = blockchain.getBestBlock();
         List<Block> blocks = BlockGenerator.getBlockChain(genesis, 10);
 
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         for (int k = 0; k < 10; k++)
             processor.processBlock(null, blocks.get(9 - k));
@@ -295,7 +321,9 @@ public class NodeBlockProcessorTest {
         Block genesis = blockchain.getBestBlock();
         List<Block> blocks = BlockGenerator.getBlockChain(genesis, 10);
 
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         for (int k = 0; k < 10; k++)
             if (k != 5)
@@ -321,7 +349,9 @@ public class NodeBlockProcessorTest {
         Assert.assertEquals(12, block.getNumber());
         Assert.assertArrayEquals(blockchain.getBestBlockHash(), parent.getParentHash());
 
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         processor.processBlock(null, block);
 
@@ -343,7 +373,9 @@ public class NodeBlockProcessorTest {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = createBlockchain(0);
 
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
         final SimpleMessageSender sender = new SimpleMessageSender();
 
         final Block genesis = BlockGenerator.getGenesisBlock();
@@ -372,7 +404,9 @@ public class NodeBlockProcessorTest {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = createBlockchain(0);
 
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
         final SimpleMessageSender sender = new SimpleMessageSender();
 
         final Block genesis = BlockGenerator.getGenesisBlock();
@@ -399,7 +433,9 @@ public class NodeBlockProcessorTest {
     public void processStatusHavingBestBlockInStore() {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = createBlockchain(0);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
         final SimpleMessageSender sender = new SimpleMessageSender();
 
         final Block genesis = BlockGenerator.getGenesisBlock();
@@ -417,8 +453,9 @@ public class NodeBlockProcessorTest {
     public void processStatusHavingBestBlockAsBestBlockInBlockchain() {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = createBlockchain(2);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
-        final BlockNodeInformation nodeInformation = processor.getNodeInformation();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -439,8 +476,9 @@ public class NodeBlockProcessorTest {
     public void processStatusHavingBestBlockInBlockchainStore() {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = createBlockchain(2);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
-        final BlockNodeInformation nodeInformation = processor.getNodeInformation();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -467,8 +505,9 @@ public class NodeBlockProcessorTest {
         store.saveBlock(block);
 
         final Blockchain blockchain = createBlockchain(0);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
-        final BlockNodeInformation nodeInformation = processor.getNodeInformation();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -492,8 +531,9 @@ public class NodeBlockProcessorTest {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = createBlockchain(0);
 
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
-        final BlockNodeInformation nodeInformation = processor.getNodeInformation();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -513,8 +553,9 @@ public class NodeBlockProcessorTest {
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
 
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
-        final BlockNodeInformation nodeInformation = processor.getNodeInformation();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -541,8 +582,9 @@ public class NodeBlockProcessorTest {
         store.saveBlock(block);
 
         final Blockchain blockchain = createBlockchain(0);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
-        final BlockNodeInformation nodeInformation = processor.getNodeInformation();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -571,8 +613,9 @@ public class NodeBlockProcessorTest {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = createBlockchain(0);
 
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
-        final BlockNodeInformation nodeInformation = processor.getNodeInformation();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -592,8 +635,9 @@ public class NodeBlockProcessorTest {
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
 
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
-        final BlockNodeInformation nodeInformation = processor.getNodeInformation();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -624,8 +668,9 @@ public class NodeBlockProcessorTest {
         store.saveBlock(block);
 
         final Blockchain blockchain = createBlockchain(0);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
-        final BlockNodeInformation nodeInformation = processor.getNodeInformation();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -653,7 +698,9 @@ public class NodeBlockProcessorTest {
         final Blockchain blockchain = createBlockchain(10);
         final Block block = blockchain.getBlockByNumber(3);
         final BlockStore store = new BlockStore();
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -680,8 +727,9 @@ public class NodeBlockProcessorTest {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = createBlockchain(0);
 
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
-        final BlockNodeInformation nodeInformation = processor.getNodeInformation();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -701,8 +749,9 @@ public class NodeBlockProcessorTest {
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
 
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
-        final BlockNodeInformation nodeInformation = processor.getNodeInformation();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -729,7 +778,9 @@ public class NodeBlockProcessorTest {
     public void processBlockHashRequestMessageUsingOutOfBoundsHeight() {
         final Blockchain blockchain = createBlockchain(10);
         final BlockStore store = new BlockStore();
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -744,7 +795,9 @@ public class NodeBlockProcessorTest {
         final Block block = blockchain.getBlockByNumber(5);
         final BlockStore store = new BlockStore();
 
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -768,7 +821,9 @@ public class NodeBlockProcessorTest {
         final Blockchain blockchain = createBlockchain(100);
         final Block block = blockchain.getBlockByNumber(60);
         final BlockStore store = new BlockStore();
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
         processor.processBlockHeadersRequest(sender, 100, block.getHash(), 20);
@@ -794,7 +849,9 @@ public class NodeBlockProcessorTest {
     public void processBlockHeadersRequestMessageUsingUnknownHash() {
         final Blockchain blockchain = createBlockchain(100);
         final BlockStore store = new BlockStore();
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
         final SimpleMessageSender sender = new SimpleMessageSender();
 
         processor.processBlockHeadersRequest(sender, 100, HashUtil.randomHash(), 20);
@@ -810,7 +867,9 @@ public class NodeBlockProcessorTest {
         final Block blockEnd = blockchain.getBlockByNumber(skeletonStep / 2);
         final BlockStore store = new BlockStore();
 
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -842,7 +901,9 @@ public class NodeBlockProcessorTest {
         final Blockchain blockchain = createBlockchain(300);
         final BlockStore store = new BlockStore();
 
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -876,7 +937,9 @@ public class NodeBlockProcessorTest {
         final Blockchain blockchain = createBlockchain(400);
         final BlockStore store = new BlockStore();
 
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 

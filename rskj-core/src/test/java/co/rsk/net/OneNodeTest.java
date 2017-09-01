@@ -39,7 +39,9 @@ public class OneNodeTest {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
 
-        BlockProcessor processor = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
         NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null).disablePoWValidation();
 
         return new SimpleNode(handler);

@@ -143,7 +143,10 @@ public class NodeBlockProcessorUnclesTest {
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
-        NodeBlockProcessor processor = new NodeBlockProcessor(new BlockStore(), blockChain);
+        BlockStore store = new BlockStore();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockChain, nodeInformation, null);
+        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService);
 
         return processor;
     }

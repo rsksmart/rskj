@@ -19,13 +19,10 @@
 package co.rsk.net;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.core.bc.BlockUtils;
 import co.rsk.net.messages.*;
 import org.ethereum.core.*;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.manager.WorldManager;
-import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -33,8 +30,6 @@ import org.spongycastle.util.encoders.Hex;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.concurrent.GuardedBy;
-import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,32 +40,14 @@ import java.util.stream.Collectors;
  * Created by ajlopez on 5/11/2016.
  */
 public class NodeBlockProcessor implements BlockProcessor {
-    private static final int NBLOCKS_TO_SYNC = 30;
-
-    private final Object syncLock = new Object();
-    @GuardedBy("syncLock")
-    private volatile int nsyncs = 0;
-    @GuardedBy("syncLock")
-    private volatile boolean syncing = false;
-
-    private long processedBlocksCounter;
     private static final Logger logger = LoggerFactory.getLogger("blockprocessor");
-
-    private final Object statusLock = new Object();
-    @GuardedBy("statusLock")
-    private volatile long lastStatusBestBlock = 0;
 
     private final BlockStore store;
     private final Blockchain blockchain;
-    private final ChannelManager channelManager;
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
-    private long lastKnownBlockNumber = 0;
+    private final BlockSyncService blockSyncService;
 
-    private Map<ByteArrayWrapper, Integer> unknownBlockHashes = new HashMap<>();
-
-    private long lastStatusTime;
     private long blocksForPeers;
-    private boolean ignoreAdvancedBlocks = true;
 
     /**
      * Creates a new NodeBlockProcessor using the given BlockStore and Blockchain.
@@ -80,13 +57,18 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param worldManager The parent worldManager (used to set the reference)
      */
     // TODO define NodeBlockProcessor as a spring component
-    public NodeBlockProcessor(@Nonnull final BlockStore store, @Nonnull final Blockchain blockchain, @Nonnull WorldManager worldManager) {
+    public NodeBlockProcessor(
+            @Nonnull final BlockStore store,
+            @Nonnull final Blockchain blockchain,
+            @Nonnull WorldManager worldManager,
+            @Nonnull final BlockNodeInformation nodeInformation,
+            @Nonnull final BlockSyncService blockSyncService) {
         this.store = store;
         this.blockchain = blockchain;
-        this.nodeInformation = new BlockNodeInformation();
+        this.nodeInformation = nodeInformation;
         worldManager.setNodeBlockProcessor(this);
-        this.channelManager = worldManager.getChannelManager();
         this.blocksForPeers = RskSystemProperties.RSKCONFIG.getBlocksForPeers();
+        this.blockSyncService = blockSyncService;
     }
 
     /**
@@ -95,11 +77,15 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param store      A BlockStore to store the blocks that are not ready for the Blockchain.
      * @param blockchain The blockchain in which to insert the blocks.
      */
-    public NodeBlockProcessor(@Nonnull final BlockStore store, @Nonnull final Blockchain blockchain) {
+    public NodeBlockProcessor(
+            @Nonnull final BlockStore store,
+            @Nonnull final Blockchain blockchain,
+            @Nonnull final BlockNodeInformation nodeInformation,
+            @Nonnull final BlockSyncService blockSyncService) {
         this.store = store;
         this.blockchain = blockchain;
-        this.nodeInformation = new BlockNodeInformation();
-        this.channelManager = null;
+        this.nodeInformation = nodeInformation;
+        this.blockSyncService = blockSyncService;
         this.blocksForPeers = RskSystemProperties.RSKCONFIG.getBlocksForPeers();
     }
 
@@ -107,11 +93,6 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Nonnull
     public Blockchain getBlockchain() {
         return this.blockchain;
-    }
-
-    @Override
-    public long getLastKnownBlockNumber() {
-        return this.lastKnownBlockNumber;
     }
 
     /**
@@ -169,152 +150,6 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     /**
-     * processBlock processes a block and tries to add it to the blockchain.
-     * It will also add all pending blocks (that depend on this block) into the blockchain.
-     *
-     * @param sender the message sender. If more data is needed, NodeProcessor might send a message to the sender
-     *               requesting that data (for example, a missing parent block).
-     * @param block  the block to process.
-     */
-    @Override
-    public BlockProcessResult processBlock(@Nullable final MessageSender sender, @Nonnull final Block block) {
-        long bestBlockNumber = this.getBestBlockNumber();
-        long blockNumber = block.getNumber();
-
-        if (block == null)  {
-            logger.error("Block not received");
-            return new BlockProcessResult(false, null);
-        }
-
-        if ((++processedBlocksCounter % 200) == 0) {
-            long minimal = store.minimalHeight();
-            long maximum = store.maximumHeight();
-            logger.trace("Blocks in block processor {} from height {} to height {}", this.store.size(), minimal, maximum);
-
-            if (minimal < bestBlockNumber - 1000)
-                store.releaseRange(minimal, minimal + 1000);
-
-            sendStatus(sender);
-        }
-
-        // On incoming block, refresh status if needed
-        if (this.hasBetterBlockToSync())
-            sendStatusToAll();
-
-        this.store.removeHeader(block.getHeader());
-
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
-
-        unknownBlockHashes.remove(blockHash);
-
-        if (blockNumber > this.lastKnownBlockNumber)
-            this.lastKnownBlockNumber = blockNumber;
-
-        if (ignoreAdvancedBlocks && blockNumber >= bestBlockNumber + 1000) {
-            logger.trace("Block too advanced {} {} from {} ", blockNumber, block.getShortHash(), sender != null ? sender.getNodeID().toString() : "N/A");
-            return new BlockProcessResult(false, null);
-        }
-
-        if (sender != null) {
-            nodeInformation.addBlockToNode(blockHash, sender.getNodeID());
-        }
-
-        // already in a blockchain
-        if (BlockUtils.blockInSomeBlockChain(block, blockchain)) {
-            logger.trace("Block already in a chain " + blockNumber + " " + block.getShortHash());
-            return new BlockProcessResult(false, null);
-        }
-
-        final Set<ByteArrayWrapper> unknownHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
-
-        this.processMissingHashes(sender, unknownHashes);
-
-        // We can't add the block if there are missing ancestors or uncles. Request the missing blocks to the sender.
-        if (!unknownHashes.isEmpty()) {
-            logger.trace("Missing hashes for block " + blockNumber + " " + block.getShortHash());
-
-            if (!this.store.hasBlock(block))
-                this.store.saveBlock(block);
-
-            return new BlockProcessResult(false, null);
-        }
-
-        if (!this.store.hasBlock(block))
-            this.store.saveBlock(block);
-
-        logger.trace("Trying to add to blockchain");
-
-        BlockProcessResult result = new BlockProcessResult(true, connectBlocksAndDescendants(sender, BlockUtils.sortBlocksByNumber(getBlocksNotInBlockchain(block))));
-
-        // After adding a long blockchain, refresh status if needed
-        if (this.hasBetterBlockToSync())
-            sendStatusToAll();
-
-        return result;
-    }
-
-    private Map<ByteArrayWrapper, ImportResult> connectBlocksAndDescendants(MessageSender sender, List<Block> blocks) {
-        Map<ByteArrayWrapper, ImportResult> connectionsResult = new HashMap<>();
-        while (!blocks.isEmpty()) {
-            List<Block> connected = new ArrayList<>();
-
-            for (Block block : blocks) {
-                logger.trace("Trying to add block {} {}", block.getNumber(), block.getShortHash());
-
-                Set<ByteArrayWrapper> missingHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
-
-                if (!missingHashes.isEmpty()) {
-                    logger.trace("Missing hashes for block in process " + block.getNumber() + " " + block.getShortHash());
-                    logger.trace("Missing hashes " + missingHashes.size());
-                    this.processMissingHashes(sender, missingHashes);
-                    continue;
-                }
-
-                connectionsResult.put(new ByteArrayWrapper(block.getHash()), blockchain.tryToConnect(block));
-
-                if (BlockUtils.blockInSomeBlockChain(block, blockchain)) {
-                    this.store.removeBlock(block);
-                    BlockUtils.addBlockToList(connected, block);
-                }
-            }
-
-            blocks = this.getChildrenInStore(connected);
-        }
-        return connectionsResult;
-    }
-
-    private void processMissingHashes(MessageSender sender, Set<ByteArrayWrapper> hashes) {
-        logger.trace("Missing blocks to process " + hashes.size());
-
-        for (ByteArrayWrapper hash : hashes)
-            processMissingHash(sender, hash);
-    }
-
-    private void processMissingHash(MessageSender sender, ByteArrayWrapper hash) {
-        if (sender == null)
-            return;
-
-        if (unknownBlockHashes.containsKey(hash)) {
-            int counter = unknownBlockHashes.get(hash).intValue();
-
-            counter++;
-
-            if (counter <= 20) {
-                unknownBlockHashes.put(hash, new Integer(counter));
-                return;
-            }
-        }
-
-        unknownBlockHashes.put(hash, new Integer(1));
-
-        logger.trace("Missing block " + hash.toString().substring(0, 10));
-
-        sender.sendMessage(new GetBlockMessage(hash.getData()));
-
-        return;
-    }
-
-    /**
      * processStatus processes a Status containing another node's status (its bestBlock).
      * If the sender has a better best block, it will be requested.
      * Otherwise, all the blocks that the sender is missing will be sent to it.
@@ -335,8 +170,8 @@ public class NodeBlockProcessor implements BlockProcessor {
         final long bestBlockNumber = this.getBestBlockNumber();
         final long peerBestBlockNumber = status.getBestBlockNumber();
 
-        if (peerBestBlockNumber > this.lastKnownBlockNumber)
-            this.lastKnownBlockNumber = peerBestBlockNumber;
+        if (peerBestBlockNumber > blockSyncService.getLastKnownBlockNumber())
+            blockSyncService.setLastKnownBlockNumber(peerBestBlockNumber);
 
         for (long n = peerBestBlockNumber; n <= bestBlockNumber && n < peerBestBlockNumber + this.blocksForPeers; n++) {
             logger.trace("Trying to send block {}", n);
@@ -361,7 +196,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public void processGetBlock(@Nonnull final MessageSender sender, @Nullable final byte[] hash) {
         logger.trace("Processing get block " + Hex.toHexString(hash).substring(0, 10) + " from " + sender.getNodeID().toString());
-        final Block block = this.getBlock(hash);
+        final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null) {
             return;
@@ -381,7 +216,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public void processBlockRequest(@Nonnull final MessageSender sender, long requestId, @Nullable final byte[] hash) {
         logger.trace("Processing get block by hash {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getNodeID().toString());
-        final Block block = this.getBlock(hash);
+        final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null)
             return;
@@ -400,7 +235,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processBlockHeadersRequest(@Nonnull final MessageSender sender, long requestId, @Nullable final byte[] hash, int count) {
-        Block block = this.getBlock(hash);
+        Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null)
             return;
@@ -410,7 +245,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         headers.add(block.getHeader());
 
         for (int k = 1; k < count; k++) {
-            block = getBlock(block.getParentHash());
+            block = blockSyncService.getBlockFromStoreOrBlockchain(block.getParentHash());
 
             if (block == null)
                 break;
@@ -433,7 +268,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public void processBodyRequest(@Nonnull final MessageSender sender, long requestId, @Nullable final byte[] hash) {
         logger.trace("Processing body request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getNodeID().toString());
-        final Block block = this.getBlock(hash);
+        final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null) {
             // Don't waste time sending an empty response.
@@ -523,7 +358,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         if (hash == null) {
             block = this.getBlockchain().getBlockByNumber(blockNumber);
         } else {
-            block = this.getBlock(hash);
+            block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
         }
 
         List<BlockHeader> result = new LinkedList<>();
@@ -540,7 +375,7 @@ public class NodeBlockProcessor implements BlockProcessor {
             }
 
             hash = block.getParentHash();
-            block = this.getBlock(hash);
+            block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
         }
 
         if (result.isEmpty()) {
@@ -556,7 +391,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         byte[] hash;
         for (int j = 0; j < skip; j++) {
             hash = block.getParentHash();
-            block = this.getBlock(hash);
+            block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
             if (block == null) {
                 break;
             }
@@ -567,84 +402,6 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public BlockNodeInformation getNodeInformation() {
         return nodeInformation;
-    }
-
-    /**
-     * getBlocksNotInBlockchain returns all the ancestors of the block (including the block itself) that are not
-     * on the blockchain.
-     *
-     * @param block the base block.
-     * @return A list with the blocks sorted by ascending block number (the base block would be the last element).
-     */
-    @Nonnull
-    private List<Block> getBlocksNotInBlockchain(@Nullable Block block) {
-        final List<Block> blocks = new ArrayList<>();
-
-        while (block != null && !this.hasBlockInSomeBlockchain(block.getHash())) {
-            BlockUtils.addBlockToList(blocks, block);
-
-            block = this.getBlock(block.getParentHash());
-        }
-
-        return blocks;
-    }
-
-    /**
-     * isBlockInBlockchainIndex returns true if a given block is indexed in the blockchain (it might not be the in the
-     * canonical branch).
-     *
-     * @param block the block to check for.
-     * @return true if there is a block in the blockchain with that hash.
-     */
-    private boolean isBlockInBlockhainIndex(@Nonnull final Block block) {
-        final ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
-        final List<Block> blocks = this.blockchain.getBlocksByNumber(block.getNumber());
-
-        for (final Block b : blocks) {
-            if (new ByteArrayWrapper(b.getHash()).equals(key)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * getChildrenInStore returns all the children of a list of blocks that are in the BlockStore.
-     *
-     * @param blocks the list of blocks to retrieve the children.
-     * @return A list with all the children of the given list of blocks.
-     */
-    @Nonnull
-    private List<Block> getChildrenInStore(@Nonnull final List<Block> blocks) {
-        final List<Block> children = new ArrayList<Block>();
-
-        for (final Block block : blocks)
-            BlockUtils.addBlocksToList(children, this.store.getBlocksByParentHash(block.getHash()));
-
-        return children;
-    }
-
-    /**
-     * getBlockFromStore retrieves the block with the given hash from the BlockStore, if available.
-     *
-     * @param hash the desired block's hash.
-     * @return a Block with the given hash if available, null otherwise.
-     */
-    @CheckForNull
-    private Block getBlockFromStore(@Nonnull final byte[] hash) {
-        return this.store.getBlockByHash(hash);
-    }
-
-    /**
-     * getBlockFromBlockchainStore retrieves the block with the given hash from the blockchain, if available.
-     *
-     * @param hash the desired block's hash.
-     * @return a Block with the given hash if available, null otherwise.
-     */
-    @CheckForNull
-    private Block getBlockFromBlockchainStore(@Nonnull final byte[] hash) {
-        return this.blockchain.getBlockByHash(hash);
     }
 
     /**
@@ -659,29 +416,12 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     /**
-     * getBlock retrieves a block from the store or the blockchain if it's available, in that order.
-     *
-     * @param hash the desired block's hash.
-     * @return a Block with the given hash if available, null otherwise.
-     */
-    @CheckForNull
-    private Block getBlock(@Nonnull final byte[] hash) {
-        final Block block = getBlockFromStore(hash);
-
-        if (block != null) {
-            return block;
-        }
-
-        return getBlockFromBlockchainStore(hash);
-    }
-
-    /**
      * getBestBlockNumber returns the current blockchain best block's number.
      *
      * @return the blockchain's best block's number.
      */
     public long getBestBlockNumber() {
-        return this.blockchain.getBestBlock().getNumber();
+        return blockSyncService.getBestBlockNumber();
     }
 
     /**
@@ -712,118 +452,48 @@ public class NodeBlockProcessor implements BlockProcessor {
         return this.store.hasBlock(hash);
     }
 
+    // Below are methods delegated to BlockSyncService, but should eventually be deleted
+
+    /**
+     * processBlock processes a block and tries to add it to the blockchain.
+     * It will also add all pending blocks (that depend on this block) into the blockchain.
+     *
+     * @param sender the message sender. If more data is needed, NodeProcessor might send a message to the sender
+     *               requesting that data (for example, a missing parent block).
+     * @param block  the block to process.
+     */
+    @Override
+    public BlockProcessResult processBlock(@Nullable final MessageSender sender, @Nonnull final Block block) {
+        return blockSyncService.processBlock(sender, block);
+    }
+
     @Override
     public boolean hasBlockInSomeBlockchain(@Nonnull final byte[] hash) {
-        if (this.blockchain == null)
-            return false;
-
-        final Block block = this.blockchain.getBlockByHash(hash);
-
-        if (block == null) {
-            return false;
-        }
-
-        return this.isBlockInBlockhainIndex(block);
+        return this.blockchain.hasBlockInSomeBlockchain(hash);
     }
 
     @Override
     public boolean hasBetterBlockToSync() {
-        synchronized (syncLock) {
-            long last = this.getLastKnownBlockNumber();
-            long current = this.getBestBlockNumber();
+        return blockSyncService.hasBetterBlockToSync();
+    }
 
-            if (last >= current + NBLOCKS_TO_SYNC)
-                return true;
-
-            return false;
-        }
+    @Override
+    public void sendStatusToAll() {
+        blockSyncService.sendStatusToAll();
     }
 
     @Override
     public boolean isSyncingBlocks() {
-        synchronized (syncLock) {
-            long last = this.getLastKnownBlockNumber();
-            long current = this.getBestBlockNumber();
-
-            if (last >= current + NBLOCKS_TO_SYNC) {
-                if (!syncing)
-                    nsyncs++;
-
-                syncing = true;
-
-                if (nsyncs > 1)
-                    return false;
-
-                return true;
-            }
-
-            syncing = false;
-
-            return false;
-        }
-    }
-
-    // This does not send status to ALL anymore.
-    // Should be renamed to something like sendStatusToSome.
-    // Not renamed yet to avoid merging hell.
-    @Override
-    public void sendStatusToAll() {
-        synchronized (statusLock) {
-            if (this.channelManager == null)
-                return;
-
-            BlockChainStatus blockChainStatus = this.blockchain.getStatus();
-
-            if (blockChainStatus == null)
-                return;
-
-            Block block = blockChainStatus.getBestBlock();
-            BigInteger totalDifficulty = blockChainStatus.getTotalDifficulty();
-
-            if (block == null)
-                return;
-
-            Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), totalDifficulty);
-
-            long currentTime = System.currentTimeMillis();
-
-            if (currentTime - lastStatusTime < 1000)
-                return;
-
-            lastStatusTime = currentTime;
-
-            lastStatusBestBlock = status.getBestBlockNumber();
-
-            logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(), Hex.toHexString(status.getBestBlockHash()).substring(0, 8));
-
-            this.channelManager.broadcastStatus(status);
-        }
+        return blockSyncService.isSyncingBlocks();
     }
 
     @Override
-    public void acceptAnyBlock()
-    {
-        this.ignoreAdvancedBlocks = false;
+    public void acceptAnyBlock() {
+        blockSyncService.acceptAnyBlock();
     }
 
-    private void sendStatus(MessageSender sender) {
-        if (sender == null || this.blockchain == null)
-            return;
-
-        BlockChainStatus blockChainStatus = this.blockchain.getStatus();
-
-        if (blockChainStatus == null)
-            return;
-
-        Block block = blockChainStatus.getBestBlock();
-        BigInteger totalDifficulty = blockChainStatus.getTotalDifficulty();
-
-        if (block == null)
-            return;
-
-        Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), totalDifficulty);
-        logger.trace("Sending status best block {} to {}", status.getBestBlockNumber(), sender.getNodeID().toString());
-        StatusMessage msg = new StatusMessage(status);
-        sender.sendMessage(msg);
+    @Override
+    public long getLastKnownBlockNumber() {
+        return blockSyncService.getLastKnownBlockNumber();
     }
 }

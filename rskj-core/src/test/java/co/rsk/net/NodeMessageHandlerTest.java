@@ -151,9 +151,11 @@ public class NodeMessageHandlerTest {
     @Test
     public void processStatusMessageUsingNodeBlockProcessor() {
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
+        final BlockStore store = new BlockStore();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
         final SimpleMessageSender sender = new SimpleMessageSender();
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
 
@@ -178,10 +180,12 @@ public class NodeMessageHandlerTest {
     @Test
     public void processStatusMessageWithKnownBestBlock() {
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
 
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
         final SimpleMessageSender sender = new SimpleMessageSender();
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
 
@@ -200,12 +204,15 @@ public class NodeMessageHandlerTest {
     public void processGetBlockMessageUsingBlockInStore() {
         final Block block = BlockGenerator.getBlock(3);
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
+
 
         store.saveBlock(block);
 
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
 
@@ -228,15 +235,17 @@ public class NodeMessageHandlerTest {
     @Test
     public void processGetBlockMessageUsingBlockInBlockchain() {
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
 
         List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), 10);
 
         for (Block b: blocks)
             blockchain.tryToConnect(b);
 
-        NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
 
@@ -261,10 +270,12 @@ public class NodeMessageHandlerTest {
         final Block block = BlockGenerator.getBlock(3);
 
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
 
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
         handler.disablePoWValidation();
@@ -281,12 +292,14 @@ public class NodeMessageHandlerTest {
         final Block block = BlockGenerator.getBlock(3);
 
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
 
         store.saveBlock(block);
 
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
 
@@ -309,15 +322,17 @@ public class NodeMessageHandlerTest {
     @Test
     public void processGetBlockHeaderMessageUsingBlockInBlockchain() {
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
 
         List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), 10);
 
         for (Block b: blocks)
             blockchain.tryToConnect(b);
 
-        NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
 
@@ -340,8 +355,8 @@ public class NodeMessageHandlerTest {
     @Test
     public void processNewBlockHashesMessage() {
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
 
         final List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), 15);
         final List<Block> bcBlocks = blocks.subList(0, 10);
@@ -349,7 +364,9 @@ public class NodeMessageHandlerTest {
         for (Block b: bcBlocks)
             blockchain.tryToConnect(b);
 
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
 
         class TestCase {
@@ -472,8 +489,8 @@ public class NodeMessageHandlerTest {
     @Test
     public void processGetBlockHeadersMessage() {
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
 
         final List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), 10);
 
@@ -483,7 +500,9 @@ public class NodeMessageHandlerTest {
         }
 
 
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
 
         int baseBlock = 9;
@@ -585,10 +604,12 @@ public class NodeMessageHandlerTest {
         final Block block = BlockGenerator.getBlock(3);
 
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
 
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
         handler.disablePoWValidation();
