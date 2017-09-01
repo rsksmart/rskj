@@ -553,6 +553,7 @@ public class TransactionTest {
     }
 
     @Test
+    @Ignore
     public void multiSuicideTest() throws IOException, InterruptedException {
         SystemProperties systemProperties = Mockito.mock(SystemProperties.class);
         String solc = System.getProperty("solc");
@@ -633,6 +634,7 @@ public class TransactionTest {
     }
 
     @Test
+    @Ignore
     public void dontLogWhenOutOfGasTest() throws IOException, InterruptedException {
         SystemProperties systemProperties = Mockito.mock(SystemProperties.class);
         String solc = System.getProperty("solc");
