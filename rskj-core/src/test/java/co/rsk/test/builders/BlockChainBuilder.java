@@ -18,11 +18,15 @@
 
 package co.rsk.test.builders;
 
+import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -32,8 +36,10 @@ import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.junit.Assert;
 
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by ajlopez on 8/6/2016.
@@ -71,6 +77,26 @@ public class BlockChainBuilder {
         PendingStateImpl pendingState = new PendingStateImpl(blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
 
         blockChain.setPendingState(pendingState);
+
+        return blockChain;
+    }
+
+    public static Blockchain ofSize(int size) {
+        BlockChainBuilder builder = new BlockChainBuilder();
+        BlockChainImpl blockChain = builder.build();
+
+        Block genesis = BlockGenerator.getGenesisBlock();
+        genesis.setStateRoot(blockChain.getRepository().getRoot());
+        genesis.flushRLP();
+
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
+
+        if (size > 0) {
+            List<Block> blocks = BlockGenerator.getBlockChain(genesis, size);
+
+            for (Block block: blocks)
+                blockChain.tryToConnect(block);
+        }
 
         return blockChain;
     }

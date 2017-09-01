@@ -19,7 +19,6 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleNodeSender;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -42,7 +41,7 @@ public class NodeBlockProcessorTest {
         final BlockStore store = new BlockStore();
         final MessageSender sender = new SimpleMessageSender();
 
-        final Blockchain blockchain = createBlockchain(0);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
         final Block parent = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock());
         final Block orphan = BlockGenerator.createChildBlock(parent);
 
@@ -62,7 +61,7 @@ public class NodeBlockProcessorTest {
         final BlockStore store = new BlockStore();
         final MessageSender sender = new SimpleMessageSender();
 
-        final Blockchain blockchain = createBlockchain(0);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
         final Block orphan = BlockGenerator.createBlock(1000, 0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -81,7 +80,7 @@ public class NodeBlockProcessorTest {
         final BlockStore store = new BlockStore();
         final MessageSender sender = new SimpleMessageSender();
 
-        final Blockchain blockchain = createBlockchain(0);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
         final Block block = BlockGenerator.createBlock(1000, 0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -98,7 +97,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processBlockAddingToBlockchain() {
-        Blockchain blockchain = createBlockchain(10);
+        Blockchain blockchain = BlockChainBuilder.ofSize(10);
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
 
@@ -124,7 +123,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processTenBlocksAddingToBlockchain() {
-        Blockchain blockchain = createBlockchain();
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockStore store = new BlockStore();
         Block genesis = blockchain.getBestBlock();
 
@@ -146,7 +145,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processTwoBlockListsAddingToBlockchain() {
-        Blockchain blockchain = createBlockchain();
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockStore store = new BlockStore();
         Block genesis = blockchain.getBestBlock();
         List<Block> blocks = BlockGenerator.getBlockChain(genesis, 10);
@@ -171,7 +170,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processTwoBlockListsAddingToBlockchainWithFork() {
         BlockStore store = new BlockStore();
-        Blockchain blockchain = createBlockchain();
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
         Block genesis = blockchain.getBestBlock();
 
         List<Block> blocks = BlockGenerator.getBlockChain(genesis, 10);
@@ -197,7 +196,7 @@ public class NodeBlockProcessorTest {
     public void noSyncingWithEmptyBlockchain() {
         BlockStore store = new BlockStore();
         Block genesis = BlockGenerator.getGenesisBlock();
-        Blockchain blockchain = createBlockchain();
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
@@ -210,7 +209,7 @@ public class NodeBlockProcessorTest {
     public void noSyncingWithEmptyBlockchainAndLowBestBlock() {
         BlockStore store = new BlockStore();
         Block block = BlockGenerator.createBlock(10, 0);
-        Blockchain blockchain = createBlockchain();
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
@@ -228,7 +227,7 @@ public class NodeBlockProcessorTest {
     public void syncingWithEmptyBlockchainAndHighBestBlock() {
         BlockStore store = new BlockStore();
         Block block = BlockGenerator.createBlock(30, 0);
-        Blockchain blockchain = createBlockchain();
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
@@ -246,7 +245,7 @@ public class NodeBlockProcessorTest {
     public void syncingThenNoSyncing() {
         BlockStore store = new BlockStore();
         Block block = BlockGenerator.createBlock(30, 0);
-        Blockchain blockchain = createBlockchain();
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
@@ -277,7 +276,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processTenBlocksGenesisAtLastAddingToBlockchain() {
         BlockStore store = new BlockStore();
-        Blockchain blockchain = createBlockchain();
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
         Block genesis = blockchain.getBestBlock();
         List<Block> blocks = BlockGenerator.getBlockChain(genesis, 10);
 
@@ -296,7 +295,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processTenBlocksInverseOrderAddingToBlockchain() {
-        Blockchain blockchain = createBlockchain();
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockStore store = new BlockStore();
         Block genesis = blockchain.getBestBlock();
         List<Block> blocks = BlockGenerator.getBlockChain(genesis, 10);
@@ -316,7 +315,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processTenBlocksWithHoleAddingToBlockchain() {
-        Blockchain blockchain = createBlockchain();
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockStore store = new BlockStore();
         Block genesis = blockchain.getBestBlock();
         List<Block> blocks = BlockGenerator.getBlockChain(genesis, 10);
@@ -341,7 +340,7 @@ public class NodeBlockProcessorTest {
         BlockStore store = new BlockStore();
         Block genesis = BlockGenerator.getGenesisBlock();
         store.saveBlock(genesis);
-        Blockchain blockchain = createBlockchain(10);
+        Blockchain blockchain = BlockChainBuilder.ofSize(10);
         Block parent = BlockGenerator.createChildBlock(blockchain.getBlockByNumber(10));
         Block block = BlockGenerator.createChildBlock(parent);
 
@@ -371,7 +370,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processBlockRetrievingParentUsingSender() {
         final BlockStore store = new BlockStore();
-        final Blockchain blockchain = createBlockchain(0);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
@@ -402,7 +401,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processStatusRetrievingBestBlockUsingSender() {
         final BlockStore store = new BlockStore();
-        final Blockchain blockchain = createBlockchain(0);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
@@ -432,7 +431,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processStatusHavingBestBlockInStore() {
         final BlockStore store = new BlockStore();
-        final Blockchain blockchain = createBlockchain(0);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
@@ -452,7 +451,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processStatusHavingBestBlockAsBestBlockInBlockchain() {
         final BlockStore store = new BlockStore();
-        final Blockchain blockchain = createBlockchain(2);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(2);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
@@ -475,7 +474,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processStatusHavingBestBlockInBlockchainStore() {
         final BlockStore store = new BlockStore();
-        final Blockchain blockchain = createBlockchain(2);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(2);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
@@ -504,7 +503,7 @@ public class NodeBlockProcessorTest {
         final BlockStore store = new BlockStore();
         store.saveBlock(block);
 
-        final Blockchain blockchain = createBlockchain(0);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
@@ -529,7 +528,7 @@ public class NodeBlockProcessorTest {
     public void processGetBlockHeaderMessageUsingEmptyStore() {
         final Block block = BlockGenerator.getBlock(3);
         final BlockStore store = new BlockStore();
-        final Blockchain blockchain = createBlockchain(0);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
@@ -548,7 +547,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processGetBlockHeaderMessageUsingBlockInBlockchain() {
-        final Blockchain blockchain = createBlockchain(10);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
@@ -581,7 +580,7 @@ public class NodeBlockProcessorTest {
         final BlockStore store = new BlockStore();
         store.saveBlock(block);
 
-        final Blockchain blockchain = createBlockchain(0);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
@@ -611,7 +610,7 @@ public class NodeBlockProcessorTest {
         final Block block = BlockGenerator.getBlock(3);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
-        final Blockchain blockchain = createBlockchain(0);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
@@ -630,7 +629,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processGetBlockMessageUsingBlockInBlockchain() {
-        final Blockchain blockchain = createBlockchain(10);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
@@ -667,7 +666,7 @@ public class NodeBlockProcessorTest {
         final BlockStore store = new BlockStore();
         store.saveBlock(block);
 
-        final Blockchain blockchain = createBlockchain(0);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
@@ -695,7 +694,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processBodyRequestMessageUsingBlockInBlockchain() {
-        final Blockchain blockchain = createBlockchain(10);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final Block block = blockchain.getBlockByNumber(3);
         final BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -725,7 +724,7 @@ public class NodeBlockProcessorTest {
         final Block block = BlockGenerator.getBlock(3);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
-        final Blockchain blockchain = createBlockchain(0);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
@@ -744,7 +743,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processBlockRequestMessageUsingBlockInBlockchain() {
-        final Blockchain blockchain = createBlockchain(10);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
@@ -776,7 +775,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processBlockHashRequestMessageUsingOutOfBoundsHeight() {
-        final Blockchain blockchain = createBlockchain(10);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
@@ -791,7 +790,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processBlockHashRequestMessageUsingBlockInBlockchain() {
-        final Blockchain blockchain = createBlockchain(10);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
         final BlockStore store = new BlockStore();
 
@@ -818,7 +817,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processBlockHeadersRequestMessageUsingBlockInBlockchain() {
-        final Blockchain blockchain = createBlockchain(100);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(100);
         final Block block = blockchain.getBlockByNumber(60);
         final BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -847,7 +846,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processBlockHeadersRequestMessageUsingUnknownHash() {
-        final Blockchain blockchain = createBlockchain(100);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(100);
         final BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
@@ -862,7 +861,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processSkeletonRequestWithGenesisPlusBestBlockInSkeleton() {
         int skeletonStep = 192;
-        final Blockchain blockchain = createBlockchain(skeletonStep / 2);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(skeletonStep / 2);
         final Block blockStart = blockchain.getBlockByNumber(5);
         final Block blockEnd = blockchain.getBlockByNumber(skeletonStep / 2);
         final BlockStore store = new BlockStore();
@@ -898,7 +897,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processSkeletonRequestWithThreeResults() {
         int skeletonStep = 192;
-        final Blockchain blockchain = createBlockchain(300);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(300);
         final BlockStore store = new BlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -934,7 +933,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processSkeletonRequestNotIncludingGenesis() {
         int skeletonStep = 192;
-        final Blockchain blockchain = createBlockchain(400);
+        final Blockchain blockchain = BlockChainBuilder.ofSize(400);
         final BlockStore store = new BlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -976,27 +975,4 @@ public class NodeBlockProcessorTest {
         }
     }
 
-    private static Blockchain createBlockchain() {
-        return createBlockchain(0);
-    }
-
-    private static Blockchain createBlockchain(int size) {
-        BlockChainBuilder builder = new BlockChainBuilder();
-        BlockChainImpl blockChain = builder.build();
-
-        Block genesis = BlockGenerator.getGenesisBlock();
-        genesis.setStateRoot(blockChain.getRepository().getRoot());
-        genesis.flushRLP();
-
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
-
-        if (size > 0) {
-            List<Block> blocks = BlockGenerator.getBlockChain(genesis, size);
-
-            for (Block block: blocks)
-                blockChain.tryToConnect(block);
-        }
-
-        return blockChain;
-    }
 }
