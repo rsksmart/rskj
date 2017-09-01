@@ -30,7 +30,6 @@ public class BodyResponseMessage extends MessageWithId {
 
     @Override
     protected byte[] getEncodedMessageWithoutId() {
-        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(this.id));
         byte[][] rlpTransactions = new byte[this.transactions.size()][];
         byte[][] rlpUncles = new byte[this.uncles.size()][];
 
@@ -40,7 +39,7 @@ public class BodyResponseMessage extends MessageWithId {
         for (int k = 0; k < this.uncles.size(); k++)
             rlpUncles[k] = this.uncles.get(k).getEncoded();
 
-        return RLP.encodeList(rlpId, RLP.encodeList(rlpTransactions), RLP.encodeList(rlpUncles));
+        return RLP.encodeList(RLP.encodeList(rlpTransactions), RLP.encodeList(rlpUncles));
     }
 
     @Override

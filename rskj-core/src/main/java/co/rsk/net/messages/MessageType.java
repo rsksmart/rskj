@@ -134,7 +134,8 @@ public enum MessageType {
         @Override
         public Message createMessage(RLPList list) {
             byte[] rlpId = list.get(0).getRLPData();
-            RLPList rlpHeaders = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
+            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
+            RLPList rlpHeaders = (RLPList)RLP.decode2(message.get(0).getRLPData()).get(0);
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
 
             List<BlockHeader> headers = new ArrayList<>();
@@ -195,9 +196,10 @@ public enum MessageType {
         @Override
         public Message createMessage(RLPList list) {
             byte[] rlpId = list.get(0).getRLPData();
+            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            RLPList rlpTransactions = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
-            RLPList rlpUncles = (RLPList)RLP.decode2(list.get(2).getRLPData()).get(0);
+            RLPList rlpTransactions = (RLPList)RLP.decode2(message.get(0).getRLPData()).get(0);
+            RLPList rlpUncles = (RLPList)RLP.decode2(message.get(1).getRLPData()).get(0);
 
             List<Transaction> transactions = new ArrayList<>();
             List<BlockHeader> uncles = new ArrayList<>();
