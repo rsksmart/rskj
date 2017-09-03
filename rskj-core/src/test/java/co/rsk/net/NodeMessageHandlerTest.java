@@ -39,6 +39,7 @@ import org.mockito.Mockito;
 import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -71,7 +72,7 @@ public class NodeMessageHandlerTest {
     @Test
     public void processBlockMessageUsingProcessor() {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null);
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null);
         Block block = new Block(Hex.decode(rlp));
         Message message = new BlockMessage(block);
 
@@ -85,7 +86,7 @@ public class NodeMessageHandlerTest {
     @Test
     public void postBlockMessageUsingProcessor() throws InterruptedException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null);
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null);
         Block block = new Block(Hex.decode(rlp));
         Message message = new BlockMessage(block);
 
@@ -104,7 +105,7 @@ public class NodeMessageHandlerTest {
     @Test
     public void processInvalidPoWMessageUsingProcessor() {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null);
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null);
         Block block = new Block(Hex.decode(rlp));
         byte[] mergedMiningHeader = block.getBitcoinMergedMiningHeader();
         mergedMiningHeader[76] += 3; //change merged mining nonce.
@@ -119,7 +120,7 @@ public class NodeMessageHandlerTest {
     @Test
     public void processMissingPoWBlockMessageUsingProcessor() {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null).disablePoWValidation();
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null).disablePoWValidation();
         Block block = BlockGenerator.getGenesisBlock();
         Message message = new BlockMessage(block);
         processor.processMessage(new SimpleMessageSender(), message);
@@ -138,7 +139,7 @@ public class NodeMessageHandlerTest {
     @Test
     public void processFutureBlockMessageUsingProcessor() {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null);
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null);
         Block block = BlockGenerator.getGenesisBlock();
         Message message = new BlockMessage(block);
         SimpleMessageSender sender = new SimpleMessageSender();
@@ -157,7 +158,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
         final SimpleMessageSender sender = new SimpleMessageSender();
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
 
         final Block block = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock());
         final Status status = new Status(block.getNumber(), block.getHash());
@@ -178,6 +179,36 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
+    public void processStatusMessageUsingSyncProcessor() {
+        final World world = new World();
+        final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final SyncProcessor sp = new SyncProcessor(blockchain, blockSyncService);
+        final SimpleMessageSender sender = new SimpleMessageSender();
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, sp, null, null, null);
+
+        final Block block = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock());
+        final Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), BigInteger.TEN);
+        final Message message = new StatusMessage(status);
+
+        handler.processMessage(sender, message);
+
+        Assert.assertNotNull(sender.getGetBlockMessages());
+        Assert.assertTrue(sender.getGetBlockMessages().isEmpty());
+        Assert.assertNotNull(sender.getMessages());
+        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(1, sender.getMessages().size());
+
+        Message request = sender.getMessages().get(0);
+
+        Assert.assertNotNull(request);
+        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, request.getMessageType());
+    }
+
+    @Test
     public void processStatusMessageWithKnownBestBlock() {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
@@ -187,7 +218,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
         final SimpleMessageSender sender = new SimpleMessageSender();
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
 
         final Block block = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock());
         final Status status = new Status(block.getNumber(), block.getHash());
@@ -214,7 +245,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -247,7 +278,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
-        NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
+        NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
 
         SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -277,7 +308,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
         handler.disablePoWValidation();
 
         final SimpleMessageSender sender = new SimpleMessageSender();
@@ -301,7 +332,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -334,7 +365,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
-        NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
+        NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
 
         SimpleMessageSender sender = new SimpleMessageSender();
 
@@ -367,7 +398,7 @@ public class NodeMessageHandlerTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
 
         class TestCase {
             protected final NewBlockHashesMessage message;
@@ -476,7 +507,7 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, null, txHandler);
+        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, null, null, txHandler);
 
         Message message = Mockito.mock(Message.class);
         Mockito.when(message.getMessageType()).thenReturn(MessageType.NEW_BLOCK_HASHES);
@@ -503,7 +534,7 @@ public class NodeMessageHandlerTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
 
         int baseBlock = 9;
 
@@ -611,7 +642,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null);
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
         handler.disablePoWValidation();
 
         final SimpleMessageSender sender = new SimpleMessageSender();
@@ -628,7 +659,7 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, channelManager, null, txmock);
+        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, null, txmock);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
         sender.setNodeID(new byte[] {1});
@@ -666,7 +697,7 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, channelManager, null, txHandler);
+        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, null, txHandler);
 
         Message message = Mockito.mock(Message.class);
         Mockito.when(message.getMessageType()).thenReturn(MessageType.TRANSACTIONS);
@@ -684,7 +715,7 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, channelManager, pendingState, txmock);
+        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, pendingState, txmock);
 
         final SimpleMessageSender sender = new SimpleMessageSender();
         sender.setNodeID(new byte[] {1});
@@ -716,7 +747,7 @@ public class NodeMessageHandlerTest {
     @Test
     public void processBlockByHashRequestMessageUsingProcessor() {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null);
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null);
         Block block = new Block(Hex.decode(rlp));
         Message message = new BlockRequestMessage(100, block.getHash());
 
@@ -730,7 +761,7 @@ public class NodeMessageHandlerTest {
     public void processBlockHeadersRequestMessageUsingProcessor() {
         byte[] hash = HashUtil.randomHash();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null);
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null);
         Message message = new BlockHeadersRequestMessage(100, hash, 50);
 
         processor.processMessage(new SimpleMessageSender(), message);

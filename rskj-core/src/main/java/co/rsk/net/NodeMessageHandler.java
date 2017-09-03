@@ -51,6 +51,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     public static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
     public static final long WAIT_TIME_ACCEPT_ADVANCED_BLOCKS = TimeUnit.MINUTES.toMillis(10);
     private final BlockProcessor blockProcessor;
+    private final SyncProcessor syncProcessor;
     private final ChannelManager channelManager;
     private final PendingState pendingState;
     private long lastStatusSent = 0;
@@ -69,11 +70,13 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private TxHandler txHandler;
 
     public NodeMessageHandler(@Nonnull final BlockProcessor blockProcessor,
+                              final SyncProcessor syncProcessor,
                               @Nullable final ChannelManager channelManager,
                               @Nullable final PendingState pendingState,
                               final TxHandler txHandler) {
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
+        this.syncProcessor = syncProcessor;
         this.pendingState = pendingState;
         powRule = new ProofOfWorkRule();
         transactionNodeInformation = new TransactionNodeInformation();
@@ -303,7 +306,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         final Status status = message.getStatus();
         logger.trace("Process status {}", status.getBestBlockNumber());
 
-        if (this.blockProcessor != null)
+        if (status.getBestBlockParentHash() != null)
+            this.syncProcessor.processStatus(sender, status);
+        else
             this.blockProcessor.processStatus(sender, status);
     }
 

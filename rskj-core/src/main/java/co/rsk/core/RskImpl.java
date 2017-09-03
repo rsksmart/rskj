@@ -55,7 +55,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
             synchronized (NMH_LOCK) {
                 if (this.messageHandler == null) {
                     this.nodeBlockProcessor = getNodeBlockProcessor(); // Initialize nodeBlockProcessor if not done already.
-                    NodeMessageHandler handler = new NodeMessageHandler(this.nodeBlockProcessor, getChannelManager(),
+                    NodeMessageHandler handler = new NodeMessageHandler(this.nodeBlockProcessor, null, getChannelManager(),
                             getWorldManager().getPendingState(), new TxHandlerImpl(getWorldManager()));
                     handler.start();
                     this.messageHandler = handler;
