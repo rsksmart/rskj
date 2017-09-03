@@ -172,6 +172,10 @@ public class SyncProcessor {
         this.sendNextBlockHeadersRequest(sender, this.getPeerStatus(sender.getNodeID()));
     }
 
+    public void processBlockResponse(MessageSender sender, BlockResponseMessage message) {
+        blockSyncService.processBlock(sender, message.getBlock());
+    }
+
     public SyncPeerStatus createPeerStatus(NodeID nodeID) {
         SyncPeerStatus peerStatus = new SyncPeerStatus();
         peerStatuses.put(nodeID, peerStatus);

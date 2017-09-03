@@ -297,6 +297,30 @@ public class SyncProcessorTest {
     }
 
     @Test
+    public void processBlockResponseAddsToBlockchain() {
+        final BlockStore store = new BlockStore();
+        Blockchain blockchain = BlockChainBuilder.ofSize(10);
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
+
+        Block block = BlockGenerator.createChildBlock(blockchain.getBlockByNumber(10));
+
+        Assert.assertEquals(11, block.getNumber());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService);
+        BlockResponseMessage response = new BlockResponseMessage(96, block);
+
+        processor.processBlockResponse(sender, response);
+
+        Assert.assertEquals(11, blockchain.getBestBlock().getNumber());
+        Assert.assertArrayEquals(block.getHash(), blockchain.getBestBlockHash());
+    }
+
+    @Test
     public void findConnectionPointBlockchainWithGenesisVsBlockchainWith100Blocks() {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
         Blockchain advancedBlockchain = BlockChainBuilder.ofSize(100);
