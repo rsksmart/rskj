@@ -69,8 +69,12 @@ public class SyncProcessor {
         this.sendNextBlockHeadersRequest(sender, peerStatus);
     }
 
-    public void sendNextBlockHeadersRequest(MessageSender sender, SyncPeerStatus peerStatus) {
+    private void sendNextBlockHeadersRequest(MessageSender sender, SyncPeerStatus peerStatus) {
         List<BlockIdentifier> blockIdentifiers = peerStatus.getBlockIdentifiers();
+
+        if (blockIdentifiers == null)
+            return;
+        
         int nbids = blockIdentifiers.size();
         int lastBlockIdentifier = peerStatus.getLastBlockIdentifierRequested();
 
@@ -158,6 +162,8 @@ public class SyncProcessor {
 
         // TODO(mc): validate transactions and uncles are part of this block (with header)
         blockSyncService.processBlock(sender, new Block(expected.header, message.getTransactions(), message.getUncles()));
+
+        this.sendNextBlockHeadersRequest(sender, this.getPeerStatus(sender.getNodeID()));
     }
 
     public SyncPeerStatus createPeerStatus(NodeID nodeID) {
