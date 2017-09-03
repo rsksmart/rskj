@@ -73,7 +73,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
             BlockStore store = new BlockStore();
             Blockchain blockchain = this.getWorldManager().getBlockchain();
             BlockNodeInformation nodeInformation = new BlockNodeInformation();
-            BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+            BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, getChannelManager());
             this.nodeBlockProcessor = new NodeBlockProcessor(store, blockchain, this.getWorldManager(), nodeInformation, blockSyncService);
             this.syncProcessor = new SyncProcessor(blockchain, blockSyncService);
         }
