@@ -129,12 +129,20 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
             node1.sendMessage(null, message);
             node1.waitUntilNTasksWithTimeout(1);
 
-            if (block.getNumber() <= 5)
+            if (block.getNumber() <= 5) {
                 node2.sendMessage(null, message);
+                node2.waitUntilNTasksWithTimeout(1);
+            }
         }
 
+        Assert.assertEquals(10, node1.getBestBlock().getNumber());
+        Assert.assertEquals(5, node2.getBestBlock().getNumber());
+
         node1.sendFullStatus(node2);
-        node1.waitUntilNTasksWithTimeout(5);
+        node1.waitUntilNTasksWithTimeout(100);
+
+        node2.sendFullStatus(node1);
+        node2.waitUntilNTasksWithTimeout(100);
 
         node1.joinWithTimeout();
         node2.joinWithTimeout();
