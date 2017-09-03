@@ -231,9 +231,9 @@ public class SyncProcessorTest {
         Message message = sender.getMessages().get(0);
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(MessageType.BLOCK_REQUEST_MESSAGE, message.getMessageType());
+        Assert.assertEquals(MessageType.BODY_REQUEST_MESSAGE, message.getMessageType());
 
-        BlockRequestMessage request = (BlockRequestMessage) message;
+        BodyRequestMessage request = (BodyRequestMessage) message;
 
         Assert.assertNotEquals(0, request.getId());
         Assert.assertArrayEquals(block.getHash(), request.getBlockHash());

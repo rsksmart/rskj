@@ -105,32 +105,47 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         if (mType == MessageType.GET_BLOCK_MESSAGE)
             this.processGetBlockMessage(sender, (GetBlockMessage) message);
-
-        if (mType == MessageType.GET_BLOCK_HEADERS_MESSAGE)
+        else if (mType == MessageType.GET_BLOCK_HEADERS_MESSAGE)
             this.processGetBlockHeadersMessage(sender, (GetBlockHeadersMessage) message);
-
-        if (mType == MessageType.BLOCK_MESSAGE)
+        else if (mType == MessageType.BLOCK_MESSAGE)
             this.processBlockMessage(sender, (BlockMessage) message);
-
-        if (mType == MessageType.STATUS_MESSAGE)
+        else if (mType == MessageType.STATUS_MESSAGE)
             this.processStatusMessage(sender, (StatusMessage) message);
-
-        if (mType == MessageType.BLOCK_HEADERS_MESSAGE)
+        else if (mType == MessageType.BLOCK_HEADERS_MESSAGE)
             this.processBlockHeadersMessage(sender, (BlockHeadersMessage) message);
-
-        if (mType == MessageType.BLOCK_REQUEST_MESSAGE)
+        else if (mType == MessageType.BLOCK_REQUEST_MESSAGE)
             this.processBlockRequestMessage(sender, (BlockRequestMessage) message);
-
-        if (mType == MessageType.BLOCK_HEADERS_REQUEST_MESSAGE)
+        // TODO: implement process block response
+        /*
+        else if (mType == MessageType.BLOCK_RESPONSE_MESSAGE)
+            this.processBlockResponseMessage(sender, (BlockResponseMessage) message);
+            */
+        else if (mType == MessageType.BODY_REQUEST_MESSAGE)
+            this.processBodyRequestMessage(sender, (BodyRequestMessage) message);
+        else if (mType == MessageType.BODY_RESPONSE_MESSAGE)
+            this.processBodyResponseMessage(sender, (BodyResponseMessage) message);
+        else if (mType == MessageType.BLOCK_HEADERS_REQUEST_MESSAGE)
             this.processBlockHeadersRequestMessage(sender, (BlockHeadersRequestMessage) message);
-
-        if(!blockProcessor.hasBetterBlockToSync()) {
+        else if (mType == MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE)
+            this.processBlockHeadersResponseMessage(sender, (BlockHeadersResponseMessage) message);
+        else if (mType == MessageType.BLOCK_HASH_REQUEST_MESSAGE)
+            this.processBlockHashRequestMessage(sender, (BlockHashRequestMessage) message);
+        else if (mType == MessageType.BLOCK_HASH_RESPONSE_MESSAGE)
+            this.processBlockHashResponseMessage(sender, (BlockHashResponseMessage) message);
+        else if (mType == MessageType.SKELETON_REQUEST_MESSAGE)
+            this.processSkeletonRequestMessage(sender, (SkeletonRequestMessage) message);
+        else if (mType == MessageType.SKELETON_RESPONSE_MESSAGE)
+            this.processSkeletonResponseMessage(sender, (SkeletonResponseMessage) message);
+        else if(!blockProcessor.hasBetterBlockToSync()) {
             if (mType == MessageType.NEW_BLOCK_HASHES)
                 this.processNewBlockHashesMessage(sender, (NewBlockHashesMessage) message);
-
-            if (mType == MessageType.TRANSACTIONS)
+            else if (mType == MessageType.TRANSACTIONS)
                 this.processTransactionsMessage(sender, (TransactionsMessage) message);
         }
+        else
+            loggerMessageProcess.debug("Message[{}] not processed.", message.getMessageType());
+
+
         loggerMessageProcess.debug("Message[{}] processed after [{}] nano.", message.getMessageType(), System.nanoTime() - start);
     }
 
@@ -337,6 +352,14 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             this.blockProcessor.processBlockRequest(sender, requestId, hash);
     }
 
+    private void processSkeletonRequestMessage(@Nonnull final MessageSender sender, @Nonnull final SkeletonRequestMessage message) {
+        final long requestId = message.getId();
+        final long startNumber = message.getStartNumber();
+
+        if (this.blockProcessor != null)
+            this.blockProcessor.processSkeletonRequest(sender, requestId, startNumber);
+    }
+
     private void processBlockHeadersRequestMessage(@Nonnull final MessageSender sender, @Nonnull final BlockHeadersRequestMessage message) {
         final long requestId = message.getId();
         final byte[] hash = message.getHash();
@@ -344,6 +367,42 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         if (this.blockProcessor != null)
             this.blockProcessor.processBlockHeadersRequest(sender, requestId, hash, count);
+    }
+
+    private void processBlockHashRequestMessage(@Nonnull final MessageSender sender, @Nonnull final BlockHashRequestMessage message) {
+        final long requestId = message.getId();
+        final long height = message.getHeight();
+
+        if (this.blockProcessor != null)
+            this.blockProcessor.processBlockHashRequest(sender, requestId, height);
+    }
+
+    private void processBlockHashResponseMessage(@Nonnull final MessageSender sender, @Nonnull final BlockHashResponseMessage message) {
+        if (this.syncProcessor != null)
+            this.syncProcessor.processBlockHashResponse(sender, message);
+    }
+
+    private void processSkeletonResponseMessage(@Nonnull final MessageSender sender, @Nonnull final SkeletonResponseMessage message) {
+        if (this.syncProcessor != null)
+            this.syncProcessor.processSkeletonResponse(sender, message);
+    }
+
+    private void processBlockHeadersResponseMessage(@Nonnull final MessageSender sender, @Nonnull final BlockHeadersResponseMessage message) {
+        if (this.syncProcessor != null)
+            this.syncProcessor.processBlockHeadersResponse(sender, message);
+    }
+
+    private void processBodyRequestMessage(@Nonnull final MessageSender sender, @Nonnull final BodyRequestMessage message) {
+        final long requestId = message.getId();
+        final byte[] hash = message.getBlockHash();
+
+        if (this.blockProcessor != null)
+            this.blockProcessor.processBodyRequest(sender, requestId, hash);
+    }
+
+    private void processBodyResponseMessage(@Nonnull final MessageSender sender, @Nonnull final BodyResponseMessage message) {
+        if (this.syncProcessor != null)
+            this.syncProcessor.processBodyResponse(sender, message);
     }
 
     private void processGetBlockHeadersMessage(@Nonnull final MessageSender sender, @Nonnull final GetBlockHeadersMessage message) {
