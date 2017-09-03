@@ -83,7 +83,6 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    @Ignore
     public void buildBlockchainAndSynchronize() throws InterruptedException {
         SimpleAsyncNode node1 = createNode(100);
         SimpleAsyncNode node2 = createNode(0);

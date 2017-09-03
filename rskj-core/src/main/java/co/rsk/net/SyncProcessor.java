@@ -136,17 +136,23 @@ public class SyncProcessor {
         // - consistent difficulty
 
         NodeID expectedNodeId = pendingResponses.get(message.getId());
-        if (sender.getNodeID() != expectedNodeId) {
+
+        // TODO: review logic, in two nodes sync it returns
+        /*
+        if (!sender.getNodeID().equals(expectedNodeId)) {
             // Don't waste time on spam or expired responses.
             return;
         }
+        */
 
         // to do: decide whether we have to request the body immediately if we don't have it,
         // or maybe only after we have validated it
         List<BlockHeader> headers = message.getBlockHeaders();
-        for (BlockHeader header : headers) {
+        for (int k = headers.size(); k-- > 0;) {
+            BlockHeader header = headers.get(k);
             if (this.blockchain.getBlockByHash(header.getHash()) == null) {
-                sender.sendMessage(new BlockRequestMessage(++nextId, header.getHash()));
+                sender.sendMessage(new BodyRequestMessage(++nextId, header.getHash()));
+                pendingBodyResponses.put(nextId, new PendingBodyResponse(sender.getNodeID(), header));
             }
         }
 
@@ -155,7 +161,7 @@ public class SyncProcessor {
 
     public void processBodyResponse(MessageSender sender, BodyResponseMessage message) {
         PendingBodyResponse expected = pendingBodyResponses.get(message.getId());
-        if (expected == null || sender.getNodeID() != expected.nodeID) {
+        if (expected == null || !sender.getNodeID().equals(expected.nodeID)) {
             // Don't waste time on spam or expired responses.
             return;
         }
