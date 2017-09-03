@@ -18,6 +18,7 @@ public class SyncPeerStatus {
 
     // Block identifiers retrieved in skeleton
     private List<BlockIdentifier> blockIdentifiers;
+    private int lastBlockIdentifierRequested;
 
     public void startFindConnectionPoint(long height) {
         this.findingInterval = height / 2;
@@ -75,6 +76,11 @@ public class SyncPeerStatus {
 
     public void setBlockIdentifiers(List<BlockIdentifier> blockIdentifiers) {
         this.blockIdentifiers = blockIdentifiers;
+        this.lastBlockIdentifierRequested = -1;
     }
+
+    public int getLastBlockIdentifierRequested() { return this.lastBlockIdentifierRequested; }
+
+    public void setLastBlockIdentifierRequested(int index) { this.lastBlockIdentifierRequested = index; }
 }
 
