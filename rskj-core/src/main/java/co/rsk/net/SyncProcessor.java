@@ -74,7 +74,7 @@ public class SyncProcessor {
 
         if (blockIdentifiers == null)
             return;
-        
+
         int nbids = blockIdentifiers.size();
         int lastBlockIdentifier = peerStatus.getLastBlockIdentifierRequested();
 
