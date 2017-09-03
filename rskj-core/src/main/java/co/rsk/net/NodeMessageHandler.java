@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -211,6 +212,14 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     public synchronized Block getBestBlock() {
         if (this.blockProcessor != null)
             return this.blockProcessor.getBlockchain().getBestBlock();
+
+        return null;
+    }
+
+    @CheckForNull
+    public synchronized BigInteger getTotalDifficulty() {
+        if (this.blockProcessor != null)
+            return this.blockProcessor.getBlockchain().getTotalDifficulty();
 
         return null;
     }
