@@ -66,16 +66,33 @@ public class SyncProcessor {
 
         peerStatus.setBlockIdentifiers(message.getBlockIdentifiers());
 
-        long bestNumber = this.blockchain.getStatus().getBestBlockNumber();
+        this.sendNextBlockHeadersRequest(sender, peerStatus);
+    }
 
-        for (BlockIdentifier bi : message.getBlockIdentifiers()) {
-            long height = bi.getNumber();
+    public void sendNextBlockHeadersRequest(MessageSender sender, SyncPeerStatus peerStatus) {
+        List<BlockIdentifier> blockIdentifiers = peerStatus.getBlockIdentifiers();
+        int nbids = blockIdentifiers.size();
+        int lastBlockIdentifier = peerStatus.getLastBlockIdentifierRequested();
 
-            if (height > bestNumber) {
-                int count = (int)(height - bestNumber);
-                sender.sendMessage(new BlockHeadersRequestMessage(++nextId, bi.getHash(), count));
-                return;
-            }
+        for (int k = lastBlockIdentifier + 1; k < nbids; k++) {
+            byte[] hash = blockIdentifiers.get(k).getHash();
+
+            if (this.blockSyncService.getBlockFromStoreOrBlockchain(hash) != null)
+                continue;
+
+            long height = blockIdentifiers.get(k).getNumber();
+
+            long lastHeight = k > 0 ? blockIdentifiers.get(k - 1).getNumber() : peerStatus.getConnectionPoint();
+
+            long previousKnownHeight = Math.max(lastHeight, peerStatus.getConnectionPoint());
+
+            int count = (int)(height - previousKnownHeight);
+
+            sender.sendMessage(new BlockHeadersRequestMessage(++nextId, hash, count));
+
+            peerStatus.setLastBlockIdentifierRequested(k);
+
+            return;
         }
     }
 

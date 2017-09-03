@@ -374,11 +374,14 @@ public class SyncProcessorTest {
 
     @Test
     public void processSkeletonResponseWithTenBlockIdentifiers() {
+        final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
 
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
-        SyncProcessor processor = new SyncProcessor(blockchain, null);
+        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService);
 
         List<BlockIdentifier> bids = new ArrayList<>();
 
@@ -422,17 +425,32 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processSkeletonResponseWithOldBlockIdentifiers() {
+    public void processSkeletonResponseWithConnectionPoint() {
         Blockchain blockchain = BlockChainBuilder.ofSize(25);
 
-        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+        final BlockStore store = new BlockStore();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
 
-        SyncProcessor processor = new SyncProcessor(blockchain, null);
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService);
+        processor.getPeerStatus(sender.getNodeID()).setConnectionPoint(25);
 
         List<BlockIdentifier> bids = new ArrayList<>();
 
-        for (int k = 0; k < 10; k++)
-            bids.add(new BlockIdentifier(HashUtil.randomHash(), (k + 1) * 10));
+        for (int k = 0; k < 10; k++) {
+            int number = (k + 1) * 10;
+            Block block = blockchain.getBlockByNumber(number);
+
+            byte[] hash;
+
+            if (block != null)
+                hash = block.getHash();
+            else
+                hash = HashUtil.randomHash();
+
+            bids.add(new BlockIdentifier(hash, (k + 1) * 10));
+        }
 
         processor.processSkeletonResponse(sender, new SkeletonResponseMessage(1, bids));
 
@@ -445,8 +463,8 @@ public class SyncProcessorTest {
 
         BlockHeadersRequestMessage request = (BlockHeadersRequestMessage)message;
 
-        Assert.assertArrayEquals(bids.get(2).getHash(), request.getHash());
         Assert.assertEquals(5, request.getCount());
+        Assert.assertArrayEquals(bids.get(2).getHash(), request.getHash());
     }
 
     private static Blockchain copyBlockchain(Blockchain original) {
