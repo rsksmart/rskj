@@ -34,6 +34,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
     private boolean isplaying;
 
     private NodeBlockProcessor nodeBlockProcessor;
+    private SyncProcessor syncProcessor;
 
     private MessageHandler messageHandler;
     private static final Object NMH_LOCK = new Object();
@@ -54,8 +55,8 @@ public class RskImpl extends EthereumImpl implements Rsk {
         if (this.messageHandler == null) {
             synchronized (NMH_LOCK) {
                 if (this.messageHandler == null) {
-                    this.nodeBlockProcessor = getNodeBlockProcessor(); // Initialize nodeBlockProcessor if not done already.
-                    NodeMessageHandler handler = new NodeMessageHandler(this.nodeBlockProcessor, null, getChannelManager(),
+                    this.nodeBlockProcessor = this.getNodeBlockProcessor(); // Initialize nodeBlockProcessor if not done already.
+                    NodeMessageHandler handler = new NodeMessageHandler(this.nodeBlockProcessor, this.syncProcessor, getChannelManager(),
                             getWorldManager().getPendingState(), new TxHandlerImpl(getWorldManager()));
                     handler.start();
                     this.messageHandler = handler;
@@ -74,6 +75,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
             BlockNodeInformation nodeInformation = new BlockNodeInformation();
             BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
             this.nodeBlockProcessor = new NodeBlockProcessor(store, blockchain, this.getWorldManager(), nodeInformation, blockSyncService);
+            this.syncProcessor = new SyncProcessor(blockchain, blockSyncService);
         }
         return this.nodeBlockProcessor;
     }
