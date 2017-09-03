@@ -26,6 +26,8 @@ import co.rsk.net.messages.Message;
 import co.rsk.net.messages.StatusMessage;
 import org.ethereum.core.Block;
 
+import java.math.BigInteger;
+
 /**
  * Created by ajlopez on 5/14/2016.
  */
@@ -48,9 +50,19 @@ public class SimpleNode {
         return ((NodeMessageHandler)this.handler).getBestBlock();
     }
 
+    public BigInteger getTotalDifficulty() {
+        return ((NodeMessageHandler)this.handler).getTotalDifficulty();
+    }
+
     public void sendStatus(SimpleNode node) {
         Block block = this.getBestBlock();
         Status status = new Status(block.getNumber(), block.getHash());
+        node.sendMessage(this, new StatusMessage(status));
+    }
+
+    public void sendFullStatus(SimpleNode node) {
+        Block block = this.getBestBlock();
+        Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), this.getTotalDifficulty());
         node.sendMessage(this, new StatusMessage(status));
     }
 
