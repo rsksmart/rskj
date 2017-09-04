@@ -19,6 +19,7 @@
 package co.rsk.net.messages;
 
 import co.rsk.net.Status;
+import co.rsk.remasc.RemascTransaction;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -204,8 +205,15 @@ public enum MessageType {
             List<Transaction> transactions = new ArrayList<>();
             List<BlockHeader> uncles = new ArrayList<>();
 
-            for (int k = 0; k < rlpTransactions.size(); k++)
-                transactions.add(new Transaction(rlpTransactions.get(k).getRLPData()));
+            for (int k = 0; k < rlpTransactions.size(); k++) {
+                byte[] txdata = rlpTransactions.get(k).getRLPData();
+                Transaction tx = new Transaction(txdata);
+
+                if (Block.isRemascTransaction(tx, k, rlpTransactions.size()))
+                    tx = new RemascTransaction(txdata);
+
+                transactions.add(tx);
+            }
 
             for (int k = 0; k < rlpUncles.size(); k++)
                 uncles.add(new BlockHeader(rlpUncles.get(k).getRLPData()));

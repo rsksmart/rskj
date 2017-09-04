@@ -175,8 +175,9 @@ public class SyncProcessor {
     public void processBodyResponse(MessageSender sender, BodyResponseMessage message) {
         SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
 
-        if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
-            return;
+        peerStatus.isExpectedResponse(message.getId(), message.getMessageType());
+        //if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
+            //return;
 
         PendingBodyResponse expected = pendingBodyResponses.get(message.getId());
         if (expected == null || !sender.getNodeID().equals(expected.nodeID)) {

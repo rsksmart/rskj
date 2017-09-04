@@ -433,20 +433,20 @@ public class Block {
         }
     }
 
-    private boolean isRemascTransaction(Transaction tx, int txPosition, int txsSize) {
+    public static boolean isRemascTransaction(Transaction tx, int txPosition, int txsSize) {
 
         return isLastTx(txPosition, txsSize) && checkRemascAddress(tx) && checkRemascTxZeroValues(tx);
     }
 
-    private boolean isLastTx(int txPosition, int txsSize) {
+    private static boolean isLastTx(int txPosition, int txsSize) {
         return txPosition == (txsSize - 1);
     }
 
-    private boolean checkRemascAddress(Transaction tx) {
+    private static boolean checkRemascAddress(Transaction tx) {
         return Arrays.areEqual(Hex.decode(PrecompiledContracts.REMASC_ADDR), tx.getReceiveAddress());
     }
 
-    private boolean checkRemascTxZeroValues(Transaction tx) {
+    private static boolean checkRemascTxZeroValues(Transaction tx) {
         if(null != tx.getData() || null != tx.getSignature()){
             return false;
         }
