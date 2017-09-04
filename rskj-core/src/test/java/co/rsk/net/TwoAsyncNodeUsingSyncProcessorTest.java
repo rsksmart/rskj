@@ -117,7 +117,6 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    @Ignore
     public void buildBlockchainPartialAndSynchronize() throws InterruptedException {
         SimpleAsyncNode node1 = createNode(0);
         SimpleAsyncNode node2 = createNode(0);
@@ -139,10 +138,10 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(5, node2.getBestBlock().getNumber());
 
         node1.sendFullStatus(node2);
-        node1.waitUntilNTasksWithTimeout(100);
+        node1.waitUntilNTasksWithTimeout(10);
 
         node2.sendFullStatus(node1);
-        node2.waitUntilNTasksWithTimeout(100);
+        node2.waitUntilNTasksWithTimeout(10);
 
         node1.joinWithTimeout();
         node2.joinWithTimeout();
