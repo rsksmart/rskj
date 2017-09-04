@@ -1,6 +1,7 @@
 package co.rsk.net;
 
 import co.rsk.net.messages.MessageType;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockIdentifier;
 
 import java.util.HashMap;
@@ -100,6 +101,11 @@ public class SyncPeerStatus {
         this.expectedResponses.remove(responseId);
 
         return true;
+    }
+
+    @VisibleForTesting
+    public Map<Long, MessageType> getExpectedReponses() {
+        return this.expectedResponses;
     }
 }
 
