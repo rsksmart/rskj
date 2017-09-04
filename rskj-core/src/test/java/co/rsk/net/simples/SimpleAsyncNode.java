@@ -20,6 +20,7 @@ package co.rsk.net.simples;
 
 import co.rsk.net.MessageHandler;
 import co.rsk.net.MessageSender;
+import co.rsk.net.SyncProcessor;
 import co.rsk.net.messages.Message;
 
 import java.util.ArrayList;
@@ -32,10 +33,18 @@ import java.util.concurrent.*;
 public class SimpleAsyncNode extends SimpleNode {
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(1000);
+    private SyncProcessor syncProcessor;
 
     public SimpleAsyncNode(MessageHandler handler) {
         super(handler);
     }
+
+    public SimpleAsyncNode(MessageHandler handler, SyncProcessor syncProcessor) {
+        super(handler);
+        this.syncProcessor = syncProcessor;
+    }
+
+    public SyncProcessor getSyncProcessor() { return this.syncProcessor; }
 
     @Override
     public void processMessage(MessageSender sender, Message message) {

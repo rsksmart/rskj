@@ -28,10 +28,17 @@ import co.rsk.net.messages.Message;
 public class SimpleNodeSender implements MessageSender {
     private SimpleNode source;
     private SimpleNode target;
+    private NodeID nodeID = new NodeID(new byte[]{});
 
     public SimpleNodeSender(SimpleNode source, SimpleNode target) {
         this.source = source;
         this.target = target;
+    }
+
+    public SimpleNodeSender(SimpleNode source, SimpleNode target, NodeID nodeID) {
+        this.source = source;
+        this.target = target;
+        this.nodeID = nodeID;
     }
 
     public void sendMessage(Message message) {
@@ -40,7 +47,7 @@ public class SimpleNodeSender implements MessageSender {
     }
 
     public NodeID getNodeID() {
-        return new NodeID(new byte[]{});
+        return this.nodeID;
     }
 
     @Override

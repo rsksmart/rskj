@@ -18,13 +18,11 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.net.MessageHandler;
-import co.rsk.net.MessageSender;
-import co.rsk.net.NodeMessageHandler;
-import co.rsk.net.Status;
+import co.rsk.net.*;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.StatusMessage;
 import org.ethereum.core.Block;
+import org.ethereum.crypto.HashUtil;
 
 import java.math.BigInteger;
 
@@ -33,6 +31,7 @@ import java.math.BigInteger;
  */
 public class SimpleNode {
     private MessageHandler handler;
+    private NodeID nodeID = new NodeID(HashUtil.randomPeerId());
 
     public SimpleNode(MessageHandler handler) {
         this.handler = handler;
@@ -43,7 +42,7 @@ public class SimpleNode {
     }
 
     public void sendMessage(SimpleNode sender, Message message) {
-        this.processMessage(new SimpleNodeSender(this, sender), message);
+        this.processMessage(new SimpleNodeSender(this, sender, nodeID), message);
     }
 
     public Block getBestBlock() {
@@ -69,4 +68,6 @@ public class SimpleNode {
     protected void processMessage(MessageSender sender, Message message) {
         this.handler.processMessage(sender, message);
     }
+
+    public NodeID getNodeID() { return nodeID; }
 }
