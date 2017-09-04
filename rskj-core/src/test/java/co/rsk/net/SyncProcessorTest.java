@@ -141,7 +141,7 @@ public class SyncProcessorTest {
 
         SyncProcessor processor = new SyncProcessor(blockchain, null);
 
-        processor.findConnectionPoint(sender, 100);
+        processor.findConnectionPoint(sender, new Status(100, null));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -166,7 +166,7 @@ public class SyncProcessorTest {
 
         SyncProcessor processor = new SyncProcessor(blockchain, null);
 
-        processor.findConnectionPoint(sender, 100);
+        processor.findConnectionPoint(sender, new Status(100, null));
 
         long requestId = ((BlockHashRequestMessage)sender.getMessages().get(0)).getId();
 
@@ -352,7 +352,7 @@ public class SyncProcessorTest {
 
         SyncProcessor processor = new SyncProcessor(blockchain, null);
 
-        processor.findConnectionPoint(sender, 100);
+        processor.findConnectionPoint(sender, new Status(100, null));
 
         long []expectedHeights = new long[] { 50, 25, 13, 7, 4, 3, 2, 1, 0 };
 
@@ -391,7 +391,7 @@ public class SyncProcessorTest {
 
         SyncProcessor processor = new SyncProcessor(blockchain, null);
 
-        processor.findConnectionPoint(sender, 100);
+        processor.findConnectionPoint(sender, new Status(100, null));
 
         long []expectedHeights = new long[] { 50, 25, 25 + 12, 25 + 12 - 6, 25 + 12 - 6 - 3, 25 + 12 - 6 - 3 + 1, 25 + 12 - 6 - 3 + 1 + 1, 25 + 12 - 6 - 3 + 1 + 1 + 1 };
 

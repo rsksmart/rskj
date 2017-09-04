@@ -12,6 +12,9 @@ import java.util.Map;
  * Created by ajlopez on 29/08/2017.
  */
 public class SyncPeerStatus {
+    // Peer status
+    private Status status;
+
     // Status used to find connection point
     private long findingHeight;
     private long findingInterval;
@@ -26,6 +29,14 @@ public class SyncPeerStatus {
 
     // Expected response
     private Map<Long, MessageType> expectedResponses = new HashMap<>();
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public Status getStatus() {
+        return this.status;
+    }
 
     public void startFindConnectionPoint(long height) {
         this.findingInterval = height / 2;
