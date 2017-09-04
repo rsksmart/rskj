@@ -66,6 +66,9 @@ public class SyncProcessor {
     public void processSkeletonResponse(MessageSender sender, SkeletonResponseMessage message) {
         SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
 
+        if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
+            return;
+
         peerStatus.setBlockIdentifiers(message.getBlockIdentifiers());
 
         this.sendNextBlockHeadersRequest(sender, peerStatus);
@@ -189,6 +192,7 @@ public class SyncProcessor {
         return peerStatus;
     }
 
+    @VisibleForTesting
     public SyncPeerStatus getPeerStatus(NodeID nodeID) {
         SyncPeerStatus peerStatus = this.peerStatuses.get(nodeID);
 
