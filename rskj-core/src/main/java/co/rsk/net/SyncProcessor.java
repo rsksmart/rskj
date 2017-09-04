@@ -17,7 +17,7 @@ import java.util.Map;
  * Created by ajlopez on 29/08/2017.
  */
 public class SyncProcessor {
-    private long nextId;
+    private long lastRequestId;
     private Blockchain blockchain;
     private BlockSyncService blockSyncService;
     private Map<NodeID, Status> peers = new HashMap<>();
@@ -59,8 +59,8 @@ public class SyncProcessor {
 
     public void sendSkeletonRequest(MessageSender sender, long height) {
         SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
-        sender.sendMessage(new SkeletonRequestMessage(++nextId, height));
-        peerStatus.registerExpectedResponse(nextId, MessageType.SKELETON_RESPONSE_MESSAGE);
+        sender.sendMessage(new SkeletonRequestMessage(++lastRequestId, height));
+        peerStatus.registerExpectedResponse(lastRequestId, MessageType.SKELETON_RESPONSE_MESSAGE);
     }
 
     public void processSkeletonResponse(MessageSender sender, SkeletonResponseMessage message) {
@@ -97,8 +97,8 @@ public class SyncProcessor {
 
             int count = (int)(height - previousKnownHeight);
 
-            sender.sendMessage(new BlockHeadersRequestMessage(++nextId, hash, count));
-            peerStatus.registerExpectedResponse(nextId, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
+            sender.sendMessage(new BlockHeadersRequestMessage(++lastRequestId, hash, count));
+            peerStatus.registerExpectedResponse(lastRequestId, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
             peerStatus.setLastBlockIdentifierRequested(k);
 
             return;
@@ -107,8 +107,8 @@ public class SyncProcessor {
 
     public void sendBlockHashRequest(MessageSender sender, long height) {
         SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
-        sender.sendMessage(new BlockHashRequestMessage(++nextId, height));
-        peerStatus.registerExpectedResponse(nextId, MessageType.BLOCK_HASH_RESPONSE_MESSAGE);
+        sender.sendMessage(new BlockHashRequestMessage(++lastRequestId, height));
+        peerStatus.registerExpectedResponse(lastRequestId, MessageType.BLOCK_HASH_RESPONSE_MESSAGE);
     }
 
     public void findConnectionPoint(MessageSender sender, long height) {
@@ -139,6 +139,11 @@ public class SyncProcessor {
     }
 
     public void processBlockHeadersResponse(MessageSender sender, BlockHeadersResponseMessage message) {
+        SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
+
+        if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
+            return;
+
         // to validate:
         // - PoW
         // - Parent exists
@@ -161,8 +166,9 @@ public class SyncProcessor {
         for (int k = headers.size(); k-- > 0;) {
             BlockHeader header = headers.get(k);
             if (this.blockchain.getBlockByHash(header.getHash()) == null) {
-                sender.sendMessage(new BodyRequestMessage(++nextId, header.getHash()));
-                pendingBodyResponses.put(nextId, new PendingBodyResponse(sender.getNodeID(), header));
+                sender.sendMessage(new BodyRequestMessage(++lastRequestId, header.getHash()));
+                peerStatus.registerExpectedResponse(lastRequestId, MessageType.BODY_RESPONSE_MESSAGE);
+                pendingBodyResponses.put(lastRequestId, new PendingBodyResponse(sender.getNodeID(), header));
             }
         }
 
@@ -170,6 +176,11 @@ public class SyncProcessor {
     }
 
     public void processBodyResponse(MessageSender sender, BodyResponseMessage message) {
+        SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
+
+        if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
+            return;
+
         PendingBodyResponse expected = pendingBodyResponses.get(message.getId());
         if (expected == null || !sender.getNodeID().equals(expected.nodeID)) {
             // Don't waste time on spam or expired responses.
@@ -183,10 +194,15 @@ public class SyncProcessor {
     }
 
     public void processBlockResponse(MessageSender sender, BlockResponseMessage message) {
+        SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
+
+        if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
+            return;
+
         blockSyncService.processBlock(sender, message.getBlock());
     }
 
-    public SyncPeerStatus createPeerStatus(NodeID nodeID) {
+    private SyncPeerStatus createPeerStatus(NodeID nodeID) {
         SyncPeerStatus peerStatus = new SyncPeerStatus();
         peerStatuses.put(nodeID, peerStatus);
         return peerStatus;
