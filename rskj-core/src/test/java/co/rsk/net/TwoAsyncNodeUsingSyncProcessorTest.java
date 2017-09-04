@@ -52,7 +52,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         handler.disablePoWValidation();
 
-        return new SimpleAsyncNode(handler);
+        return new SimpleAsyncNode(handler, syncProcessor);
     }
 
     private static SimpleAsyncNode createNodeWithUncles(int size) {
@@ -73,7 +73,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         handler.disablePoWValidation();
 
-        return new SimpleAsyncNode(handler);
+        return new SimpleAsyncNode(handler, syncProcessor);
     }
 
     private static Block getGenesis() {
@@ -96,6 +96,9 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(100, node1.getBestBlock().getNumber());
         Assert.assertEquals(100, node2.getBestBlock().getNumber());
         Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+
+        Assert.assertTrue(node1.getSyncProcessor().getPeerStatus(node1.getNodeID()).getExpectedReponses().isEmpty());
+        Assert.assertTrue(node2.getSyncProcessor().getPeerStatus(node2.getNodeID()).getExpectedReponses().isEmpty());
     }
 
     @Test
@@ -114,6 +117,9 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(10, node1.getBestBlock().getNumber());
         Assert.assertEquals(10, node2.getBestBlock().getNumber());
         Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+
+        Assert.assertTrue(node1.getSyncProcessor().getPeerStatus(node1.getNodeID()).getExpectedReponses().isEmpty());
+        Assert.assertTrue(node2.getSyncProcessor().getPeerStatus(node2.getNodeID()).getExpectedReponses().isEmpty());
     }
 
     @Test
@@ -149,5 +155,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(10, node1.getBestBlock().getNumber());
         Assert.assertEquals(10, node2.getBestBlock().getNumber());
         Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+
+        Assert.assertTrue(node1.getSyncProcessor().getPeerStatus(node1.getNodeID()).getExpectedReponses().isEmpty());
+        Assert.assertTrue(node2.getSyncProcessor().getPeerStatus(node2.getNodeID()).getExpectedReponses().isEmpty());
     }
 }
