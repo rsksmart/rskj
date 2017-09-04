@@ -53,7 +53,7 @@ public class SyncProcessor {
         peers.put(sender.getNodeID(), status);
 
         if (status.getTotalDifficulty().compareTo(this.blockchain.getTotalDifficulty()) > 0)
-            this.findConnectionPoint(sender, status.getBestBlockNumber());
+            this.findConnectionPoint(sender, status);
     }
 
     public void sendSkeletonRequest(MessageSender sender, long height) {
@@ -110,10 +110,18 @@ public class SyncProcessor {
         peerStatus.registerExpectedResponse(lastRequestId, MessageType.BLOCK_HASH_RESPONSE_MESSAGE);
     }
 
-    public void findConnectionPoint(MessageSender sender, long height) {
-        SyncPeerStatus peerStatus = this.createPeerStatus(sender.getNodeID());
-        peerStatus.startFindConnectionPoint(height);
-        this.sendBlockHashRequest(sender, peerStatus.getFindingHeight());
+    public void findConnectionPoint(MessageSender sender, Status status) {
+        SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
+
+        if (peerStatus.getStatus() == null) {
+            peerStatus.setStatus(status);
+            peerStatus.startFindConnectionPoint(status.getBestBlockNumber());
+            this.sendBlockHashRequest(sender, peerStatus.getFindingHeight());
+        }
+        else {
+            this.sendSkeletonRequest(sender, this.blockchain.getStatus().getBestBlockNumber());
+            peerStatus.setStatus(status);
+        }
     }
 
     public void processBlockHashResponse(MessageSender sender, BlockHashResponseMessage message) {
