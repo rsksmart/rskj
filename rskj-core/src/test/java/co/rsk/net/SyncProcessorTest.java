@@ -199,7 +199,6 @@ public class SyncProcessorTest {
         List<BlockHeader> headers = new ArrayList<>();
         BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(98, headers);
 
-        processor.expectMessageFrom(98, sender.getNodeID());
         processor.getPeerStatus(sender.getNodeID()).registerExpectedResponse(98, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
         processor.processBlockHeadersResponse(sender, response);
         Assert.assertTrue(sender.getMessages().isEmpty());
@@ -239,7 +238,6 @@ public class SyncProcessorTest {
         headers.add(block.getHeader());
         BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(99, headers);
 
-        processor.expectMessageFrom(99, sender.getNodeID());
         processor.getPeerStatus(sender.getNodeID()).registerExpectedResponse(99, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
         processor.processBlockHeadersResponse(sender, response);
         Assert.assertEquals(1, sender.getMessages().size());
@@ -269,7 +267,6 @@ public class SyncProcessorTest {
         headers.add(block.getHeader());
         BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(97, headers);
 
-        processor.expectMessageFrom(97, sender.getNodeID());
         processor.getPeerStatus(sender.getNodeID()).registerExpectedResponse(97, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
         processor.processBlockHeadersResponse(sender, response);
         Assert.assertTrue(sender.getMessages().isEmpty());

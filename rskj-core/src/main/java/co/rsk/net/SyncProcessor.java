@@ -22,7 +22,6 @@ public class SyncProcessor {
     private BlockSyncService blockSyncService;
     private Map<NodeID, Status> peers = new HashMap<>();
     private Map<NodeID, SyncPeerStatus> peerStatuses = new HashMap<>();
-    private Map<Long, NodeID> pendingResponses = new HashMap<>();
     private Map<Long, PendingBodyResponse> pendingBodyResponses = new HashMap<>();
 
     public SyncProcessor(Blockchain blockchain, BlockSyncService blockSyncService) {
@@ -150,7 +149,6 @@ public class SyncProcessor {
         // - consecutive numbers
         // - consistent difficulty
 
-        NodeID expectedNodeId = pendingResponses.get(message.getId());
 
         // TODO: review logic, in two nodes sync it returns
         /*
@@ -172,7 +170,6 @@ public class SyncProcessor {
             }
         }
 
-        pendingResponses.remove(message.getId());
     }
 
     public void processBodyResponse(MessageSender sender, BodyResponseMessage message) {
@@ -216,11 +213,6 @@ public class SyncProcessor {
             return peerStatus;
 
         return this.createPeerStatus(nodeID);
-    }
-
-    @VisibleForTesting
-    public void expectMessageFrom(long requestId, NodeID nodeID) {
-        pendingResponses.put(requestId, nodeID);
     }
 
     @VisibleForTesting
