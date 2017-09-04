@@ -1,8 +1,11 @@
 package co.rsk.net;
 
+import co.rsk.net.messages.MessageType;
 import org.ethereum.core.BlockIdentifier;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by ajlopez on 29/08/2017.
@@ -19,6 +22,9 @@ public class SyncPeerStatus {
     // Block identifiers retrieved in skeleton
     private List<BlockIdentifier> blockIdentifiers;
     private int lastBlockIdentifierRequested;
+
+    // Expected response
+    private Map<Long, MessageType> expectedResponses = new HashMap<>();
 
     public void startFindConnectionPoint(long height) {
         this.findingInterval = height / 2;
@@ -82,5 +88,18 @@ public class SyncPeerStatus {
     public int getLastBlockIdentifierRequested() { return this.lastBlockIdentifierRequested; }
 
     public void setLastBlockIdentifierRequested(int index) { this.lastBlockIdentifierRequested = index; }
+
+    public void registerExpectedResponse(long responseId, MessageType type) {
+        this.expectedResponses.put(responseId, type);
+    }
+
+    public boolean isExpectedResponse(long responseId, MessageType type) {
+        if (!this.expectedResponses.containsKey(responseId) || this.expectedResponses.get(responseId) != type)
+            return false;
+
+        this.expectedResponses.remove(responseId);
+
+        return true;
+    }
 }
 

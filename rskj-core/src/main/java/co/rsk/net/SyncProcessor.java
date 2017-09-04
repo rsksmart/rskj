@@ -58,7 +58,9 @@ public class SyncProcessor {
     }
 
     public void sendSkeletonRequest(MessageSender sender, long height) {
+        SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
         sender.sendMessage(new SkeletonRequestMessage(++nextId, height));
+        peerStatus.registerExpectedResponse(nextId, MessageType.SKELETON_RESPONSE_MESSAGE);
     }
 
     public void processSkeletonResponse(MessageSender sender, SkeletonResponseMessage message) {
@@ -93,7 +95,7 @@ public class SyncProcessor {
             int count = (int)(height - previousKnownHeight);
 
             sender.sendMessage(new BlockHeadersRequestMessage(++nextId, hash, count));
-
+            peerStatus.registerExpectedResponse(nextId, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
             peerStatus.setLastBlockIdentifierRequested(k);
 
             return;
