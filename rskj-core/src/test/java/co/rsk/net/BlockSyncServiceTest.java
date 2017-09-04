@@ -30,6 +30,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 public class BlockSyncServiceTest {
@@ -48,6 +50,35 @@ public class BlockSyncServiceTest {
                 Assert.assertEquals(block.getNumber(), blockchain.getBestBlock().getNumber());
                 Assert.assertArrayEquals(block.getHash(), blockchain.getBestBlock().getHash());
             }
+        }
+    }
+
+    @Test
+    public void sendBlockMessagesAndAddThemToBlockchainInReverseOrder() {
+        for (int i = 1; i < 52; i += 5) {
+            Blockchain blockchain = BlockChainBuilder.ofSize(10 * i);
+            BlockStore store = new BlockStore();
+            BlockNodeInformation nodeInformation = new BlockNodeInformation();
+            BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+            Assert.assertEquals(10 * i, blockchain.getBestBlock().getNumber());
+
+            Block initialBestBlock = blockchain.getBestBlock();
+            List<Block> extendedChain = BlockGenerator.getBlockChain(blockchain.getBestBlock(), i);
+            Collections.reverse(extendedChain);
+            for (int j = 0; j < extendedChain.size() - 1; j++) {
+                Block block = extendedChain.get(j);
+                blockSyncService.processBlock(null, block);
+                // we don't have all the parents, so we wait to update the best chain
+                Assert.assertEquals(initialBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
+                Assert.assertArrayEquals(initialBestBlock.getHash(), blockchain.getBestBlock().getHash());
+            }
+
+            // the chain is complete, we have a new best block
+            Block closingBlock = extendedChain.get(extendedChain.size() - 1);
+            Block newBestBlock = extendedChain.get(0);
+            blockSyncService.processBlock(null, closingBlock);
+            Assert.assertEquals(newBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
+            Assert.assertArrayEquals(newBestBlock.getHash(), blockchain.getBestBlock().getHash());
         }
     }
 
