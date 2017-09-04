@@ -103,7 +103,9 @@ public class SyncProcessor {
     }
 
     public void sendBlockHashRequest(MessageSender sender, long height) {
+        SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
         sender.sendMessage(new BlockHashRequestMessage(++nextId, height));
+        peerStatus.registerExpectedResponse(nextId, MessageType.BLOCK_HASH_RESPONSE_MESSAGE);
     }
 
     public void findConnectionPoint(MessageSender sender, long height) {
@@ -114,6 +116,9 @@ public class SyncProcessor {
 
     public void processBlockHashResponse(MessageSender sender, BlockHashResponseMessage message) {
         SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
+
+        if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
+            return;
 
         Block block = this.blockchain.getBlockByHash(message.getHash());
 
