@@ -58,6 +58,8 @@ import static org.ethereum.net.message.StaticMessages.DISCONNECT_MESSAGE;
 @Scope("prototype")
 public class MessageQueue {
 
+    private static final int QUEUE_CAPACITY = 250;
+
     private static final Logger logger = LoggerFactory.getLogger("net");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
@@ -69,8 +71,8 @@ public class MessageQueue {
         }
     });
 
-    private Queue<MessageRoundtrip> requestQueue = new LinkedBlockingQueue<>();
-    private Queue<MessageRoundtrip> respondQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<MessageRoundtrip> requestQueue = new LinkedBlockingQueue<>(QUEUE_CAPACITY);
+    private BlockingQueue<MessageRoundtrip> respondQueue = new LinkedBlockingQueue<>(QUEUE_CAPACITY);
     private ChannelHandlerContext ctx = null;
 
     boolean hasPing = false;
@@ -107,10 +109,15 @@ public class MessageQueue {
             hasPing = true;
         }
 
-        if (msg.getAnswerMessage() != null)
-            requestQueue.add(new MessageRoundtrip(msg));
-        else
-            respondQueue.add(new MessageRoundtrip(msg));
+        BlockingQueue<MessageRoundtrip> queue = msg.getAnswerMessage() != null ? requestQueue : respondQueue;
+
+        if (queue.remainingCapacity() != 0) {
+            queue.add(new MessageRoundtrip(msg));
+        } else {
+            logger.error("Queue is full for message: {} and queue: {}",
+                    msg.getCommand(),
+                    msg.getAnswerMessage() != null ? "requestQueue" : "respondQueue");
+        }
     }
 
     public void disconnect() {
