@@ -310,12 +310,12 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private void relayBlock(@Nonnull MessageSender sender, Block block) {
-        final BlockNodeInformation nodeInformation = this.blockProcessor.getNodeInformation();
-        final Set<NodeID> nodesToSkip = nodeInformation.getNodesByBlock(block.getHash());
-
         // TODO(mvanotti): Remove when channel manager is required.
         if (channelManager == null)
             return;
+
+        final BlockNodeInformation nodeInformation = this.blockProcessor.getNodeInformation();
+        final Set<NodeID> nodesToSkip = nodeInformation.getNodesByBlock(block.getHash());
 
         final Set<NodeID> nodesSent = channelManager.broadcastBlock(block, nodesToSkip);
 

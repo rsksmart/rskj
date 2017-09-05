@@ -12,6 +12,7 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by ajlopez on 29/08/2017.
@@ -27,6 +28,8 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(0, processor.getNoPeers());
         Assert.assertEquals(0, processor.getNoAdvancedPeers());
+
+        Assert.assertTrue(processor.getKnownPeersNodeIDs().isEmpty());
     }
 
     @Test
@@ -46,6 +49,10 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(1, processor.getNoPeers());
         Assert.assertEquals(1, processor.getNoAdvancedPeers());
+
+        Set<NodeID> ids = processor.getKnownPeersNodeIDs();
+        Assert.assertFalse(ids.isEmpty());
+        Assert.assertTrue(ids.contains(sender.getNodeID()));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
