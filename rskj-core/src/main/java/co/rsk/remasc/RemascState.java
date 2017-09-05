@@ -29,6 +29,7 @@ import java.util.*;
 /**
  * DTO to send the contract state.
  * Not production code, just used for debugging.
+ * @author Oscar Guindzberg
  */
 public class RemascState {
     private final BigInteger rewardBalance;
