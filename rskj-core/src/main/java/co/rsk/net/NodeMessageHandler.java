@@ -303,25 +303,28 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         }
 
         // is new block and it is not orphan, it is in some blockchain
-        if (wasOrphan && result.wasBlockAdded(block) && !this.blockProcessor.isSyncingBlocks()) {
-            final BlockNodeInformation nodeInformation = this.blockProcessor.getNodeInformation();
-            final Set<NodeID> nodesToSkip = nodeInformation.getNodesByBlock(block.getHash());
-
-            // TODO(mvanotti): Remove when channel manager is required.
-            if (channelManager == null)
-                return;
-
-            final Set<NodeID> nodesSent = channelManager.broadcastBlock(block, nodesToSkip);
-
-            // These set of nodes now know about this block.
-            for (final NodeID nodeID : nodesSent) {
-                nodeInformation.addBlockToNode(new ByteArrayWrapper(block.getHash()), nodeID);
-            }
-
-            Metrics.processBlockMessage("blockRelayed", block, sender.getNodeID());
-        }
+        if (wasOrphan && result.wasBlockAdded(block) && !this.blockProcessor.isSyncingBlocks())
+            relayBlock(sender, block);
 
         Metrics.processBlockMessage("finish", block, sender.getNodeID());
+    }
+
+    private void relayBlock(@Nonnull MessageSender sender, Block block) {
+        final BlockNodeInformation nodeInformation = this.blockProcessor.getNodeInformation();
+        final Set<NodeID> nodesToSkip = nodeInformation.getNodesByBlock(block.getHash());
+
+        // TODO(mvanotti): Remove when channel manager is required.
+        if (channelManager == null)
+            return;
+
+        final Set<NodeID> nodesSent = channelManager.broadcastBlock(block, nodesToSkip);
+
+        // These set of nodes now know about this block.
+        for (final NodeID nodeID : nodesSent) {
+            nodeInformation.addBlockToNode(new ByteArrayWrapper(block.getHash()), nodeID);
+        }
+
+        Metrics.processBlockMessage("blockRelayed", block, sender.getNodeID());
     }
 
     private void processStatusMessage(@Nonnull final MessageSender sender, @Nonnull final StatusMessage message) {
@@ -341,7 +344,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             this.blockProcessor.processGetBlock(sender, hash);
     }
 
-
     private void processBlockRequestMessage(@Nonnull final MessageSender sender, @Nonnull final BlockRequestMessage message) {
         final long requestId = message.getId();
         final byte[] hash = message.getBlockHash();
@@ -353,6 +355,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private void processBlockResponseMessage(@Nonnull final MessageSender sender, @Nonnull final BlockResponseMessage message) {
         if (this.syncProcessor != null)
             this.syncProcessor.processBlockResponse(sender, message);
+
+        // TODO: in the new protocol, review the relay of blocks
+        relayBlock(sender, message.getBlock());
     }
 
     private void processSkeletonRequestMessage(@Nonnull final MessageSender sender, @Nonnull final SkeletonRequestMessage message) {
