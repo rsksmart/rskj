@@ -25,7 +25,6 @@ import co.rsk.test.World;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -97,8 +96,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(100, node2.getBestBlock().getNumber());
         Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
 
-        Assert.assertTrue(node1.getSyncProcessor().getPeerStatus(node1.getNodeID()).getExpectedReponses().isEmpty());
-        Assert.assertTrue(node2.getSyncProcessor().getPeerStatus(node2.getNodeID()).getExpectedReponses().isEmpty());
+        Assert.assertTrue(node1.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getExpectedResponses().isEmpty());
     }
 
     @Test
@@ -118,8 +117,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(10, node2.getBestBlock().getNumber());
         Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
 
-        Assert.assertTrue(node1.getSyncProcessor().getPeerStatus(node1.getNodeID()).getExpectedReponses().isEmpty());
-        Assert.assertTrue(node2.getSyncProcessor().getPeerStatus(node2.getNodeID()).getExpectedReponses().isEmpty());
+        Assert.assertTrue(node1.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getExpectedResponses().isEmpty());
     }
 
     @Test
@@ -156,7 +155,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(10, node2.getBestBlock().getNumber());
         Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
 
-        Assert.assertTrue(node1.getSyncProcessor().getPeerStatus(node1.getNodeID()).getExpectedReponses().isEmpty());
-        Assert.assertTrue(node2.getSyncProcessor().getPeerStatus(node2.getNodeID()).getExpectedReponses().isEmpty());
+        Assert.assertTrue(node1.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getExpectedResponses().isEmpty());
     }
 }
