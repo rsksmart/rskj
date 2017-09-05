@@ -115,11 +115,8 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             this.processBlockHeadersMessage(sender, (BlockHeadersMessage) message);
         else if (mType == MessageType.BLOCK_REQUEST_MESSAGE)
             this.processBlockRequestMessage(sender, (BlockRequestMessage) message);
-        // TODO: implement process block response
-        /*
         else if (mType == MessageType.BLOCK_RESPONSE_MESSAGE)
             this.processBlockResponseMessage(sender, (BlockResponseMessage) message);
-            */
         else if (mType == MessageType.BODY_REQUEST_MESSAGE)
             this.processBodyRequestMessage(sender, (BodyRequestMessage) message);
         else if (mType == MessageType.BODY_RESPONSE_MESSAGE)
@@ -350,6 +347,11 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         if (this.blockProcessor != null)
             this.blockProcessor.processBlockRequest(sender, requestId, hash);
+    }
+
+    private void processBlockResponseMessage(@Nonnull final MessageSender sender, @Nonnull final BlockResponseMessage message) {
+        if (this.syncProcessor != null)
+            this.syncProcessor.processBlockResponse(sender, message);
     }
 
     private void processSkeletonRequestMessage(@Nonnull final MessageSender sender, @Nonnull final SkeletonRequestMessage message) {
