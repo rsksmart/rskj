@@ -100,4 +100,26 @@ public class BlockChainBuilder {
 
         return blockChain;
     }
+
+    public static Blockchain copy(Blockchain original) {
+        BlockChainBuilder builder = new BlockChainBuilder();
+        BlockChainImpl blockChain = builder.build();
+
+        long height = original.getStatus().getBestBlockNumber();
+
+        for (long k = 0; k <= height; k++)
+            blockChain.tryToConnect(original.getBlockByNumber(k));
+
+        return blockChain;
+    }
+
+    public static Blockchain copyAndExtend(Blockchain original, int size) {
+        Blockchain blockchain = copy(original);
+
+        Block initial = original.getBestBlock();
+        List<Block> blocks = BlockGenerator.getBlockChain(initial, size);
+        for (Block block: blocks)
+            blockchain.tryToConnect(block);
+        return blockchain;
+    }
 }

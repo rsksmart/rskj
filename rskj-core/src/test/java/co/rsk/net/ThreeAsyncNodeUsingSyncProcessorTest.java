@@ -51,7 +51,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    public void buildBlockchainAndSynchronizeInAChain() throws InterruptedException {
+    public void synchronizeNewNodesInAChain() throws InterruptedException {
         SimpleAsyncNode node1 = createNode(100);
         SimpleAsyncNode node2 = createNode(0);
         SimpleAsyncNode node3 = createNode(0);
@@ -96,7 +96,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    public void synchronizeWithBestChain() throws InterruptedException {
+    public void synchronizeNewNodeWithBestChain() throws InterruptedException {
         SimpleAsyncNode node1 = createNode(30);
         SimpleAsyncNode node2 = createNode(50);
         SimpleAsyncNode node3 = createNode(0);

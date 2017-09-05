@@ -1,7 +1,6 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageSender;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -384,8 +383,7 @@ public class SyncProcessorTest {
     @Test
     public void findConnectionPointBlockchainWith30BlocksVsBlockchainWith100Blocks() {
         Blockchain blockchain = BlockChainBuilder.ofSize(30);
-        Blockchain advancedBlockchain = copyBlockchain(blockchain);
-        extendBlockchain(advancedBlockchain, 30, 70);
+        Blockchain advancedBlockchain = BlockChainBuilder.copyAndExtend(blockchain, 70);
 
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
@@ -520,25 +518,5 @@ public class SyncProcessorTest {
         Assert.assertEquals(5, request.getCount());
         Assert.assertArrayEquals(bids.get(2).getHash(), request.getHash());
         Assert.assertEquals(1, processor.getPeerStatus(sender.getNodeID()).getExpectedResponses().size());
-    }
-
-    private static Blockchain copyBlockchain(Blockchain original) {
-        BlockChainBuilder builder = new BlockChainBuilder();
-        BlockChainImpl blockChain = builder.build();
-
-        long height = original.getStatus().getBestBlockNumber();
-
-        for (long k = 0; k <= height; k++)
-            blockChain.tryToConnect(original.getBlockByNumber(k));
-
-        return blockChain;
-    }
-
-    private static void extendBlockchain(Blockchain blockChain, long from, int size) {
-        Block initial = blockChain.getBlockByNumber(from);
-        List<Block> blocks = BlockGenerator.getBlockChain(initial, size);
-
-        for (Block block: blocks)
-            blockChain.tryToConnect(block);
     }
 }
