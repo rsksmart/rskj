@@ -115,7 +115,7 @@ public class SyncPeerStatus {
     }
 
     @VisibleForTesting
-    public Map<Long, MessageType> getExpectedReponses() {
+    public Map<Long, MessageType> getExpectedResponses() {
         return this.expectedResponses;
     }
 }

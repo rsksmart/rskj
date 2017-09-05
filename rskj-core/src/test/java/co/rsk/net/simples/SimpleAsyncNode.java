@@ -22,9 +22,10 @@ import co.rsk.net.MessageHandler;
 import co.rsk.net.MessageSender;
 import co.rsk.net.SyncProcessor;
 import co.rsk.net.messages.Message;
+import co.rsk.net.messages.MessageType;
+import com.google.common.annotations.VisibleForTesting;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 /**
@@ -43,8 +44,6 @@ public class SimpleAsyncNode extends SimpleNode {
         super(handler);
         this.syncProcessor = syncProcessor;
     }
-
-    public SyncProcessor getSyncProcessor() { return this.syncProcessor; }
 
     @Override
     public void processMessage(MessageSender sender, Message message) {
@@ -73,6 +72,11 @@ public class SimpleAsyncNode extends SimpleNode {
             }
         } catch (InterruptedException | ExecutionException ignored) {
         }
+    }
+
+    @VisibleForTesting
+    public Map<Long, MessageType> getExpectedResponses() {
+        return this.syncProcessor.getPeerStatus(this.getNodeID()).getExpectedResponses();
     }
 
     private class MessageTask {
