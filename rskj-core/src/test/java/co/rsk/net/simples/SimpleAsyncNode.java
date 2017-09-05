@@ -66,7 +66,7 @@ public class SimpleAsyncNode extends SimpleNode {
             for (int i = 0; i < number; i++) {
                 Future task = this.futures.poll(10, TimeUnit.SECONDS);
                 if (task == null) {
-                    throw new RuntimeException("Exceeded waiting time");
+                    throw new RuntimeException("Exceeded waiting time. Expected " + (number - i) + " more tasks.");
                 }
                 task.get();
             }
