@@ -208,6 +208,27 @@ public class ChannelManagerImpl implements ChannelManager {
         return res;
     }
 
+    @Nonnull
+    public Set<NodeID> broadcastBlockHash(@Nonnull final byte[] hash, @Nullable final Set<NodeID> targets) {
+        final Set<NodeID> res = new HashSet<>();
+        final EthMessage newBlockHash = new RskMessage(new NewBlockHashesMessage(hash));
+
+        synchronized (activePeers) {
+            activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
+
+            final Vector<Channel> peers = activePeers.values().stream()
+                    .filter(p -> targets == null || targets.contains(new NodeID(p.getNodeId())))
+                    .collect(Collectors.toCollection(() -> new Vector<>()));
+
+            for (Channel peer : peers) {
+                logger.trace("RSK announce hash: {}", peer);
+                peer.sendMessage(newBlockHash);
+            }
+        }
+
+        return res;
+    }
+
     /**
      * broadcastTransaction Propagates a transaction message across active peers with exclusion of
      * the peers with an id belonging to the skip set.

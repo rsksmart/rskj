@@ -60,6 +60,12 @@ public class SimpleChannelManager implements ChannelManager {
 
     @Nonnull
     @Override
+    public Set<NodeID> broadcastBlockHash(@Nonnull byte[] hash, @Nullable Set<NodeID> skip) {
+        return null;
+    }
+
+    @Nonnull
+    @Override
     public Set<NodeID> broadcastTransaction(@Nonnull Transaction transaction, @Nullable Set<NodeID> skip) {
         this.transactions.add(transaction);
         this.lastSkip = skip;

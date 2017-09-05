@@ -315,14 +315,23 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             return;
 
         final BlockNodeInformation nodeInformation = this.blockProcessor.getNodeInformation();
-        final Set<NodeID> nodesToSkip = nodeInformation.getNodesByBlock(block.getHash());
+        final Set<NodeID> nodesWithBlock = nodeInformation.getNodesByBlock(block.getHash());
+
+        final Set<NodeID> nodesToSkip = new HashSet<>();
+        nodesToSkip.addAll(nodesWithBlock);
+
+        if (this.syncProcessor != null) {
+            final Set<NodeID> newNodes = this.syncProcessor.getKnownPeersNodeIDs();
+            nodesToSkip.addAll(newNodes);
+
+            channelManager.broadcastBlockHash(block.getHash(), newNodes);
+        }
 
         final Set<NodeID> nodesSent = channelManager.broadcastBlock(block, nodesToSkip);
 
         // These set of nodes now know about this block.
-        for (final NodeID nodeID : nodesSent) {
+        for (final NodeID nodeID : nodesSent)
             nodeInformation.addBlockToNode(new ByteArrayWrapper(block.getHash()), nodeID);
-        }
 
         Metrics.processBlockMessage("blockRelayed", block, sender.getNodeID());
     }
