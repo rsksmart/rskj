@@ -20,6 +20,7 @@ package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.net.messages.BlockMessage;
+import co.rsk.net.messages.NewBlockHashMessage;
 import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.test.World;
 import org.ethereum.core.Block;
@@ -157,5 +158,22 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         Assert.assertTrue(node1.getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getExpectedResponses().isEmpty());
+    }
+
+    @Test
+    public void sendNewBlock() throws InterruptedException {
+        SimpleAsyncNode node1 = createNode(1);
+        SimpleAsyncNode node2 = createNode(0);
+
+        node2.sendMessage(node1, new NewBlockHashMessage(node1.getBestBlock().getHash()));
+
+        node1.waitUntilNTasksWithTimeout(1);
+
+        node1.joinWithTimeout();
+        node2.joinWithTimeout();
+
+        Assert.assertEquals(1, node1.getBestBlock().getNumber());
+        Assert.assertEquals(1, node2.getBestBlock().getNumber());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
     }
 }
