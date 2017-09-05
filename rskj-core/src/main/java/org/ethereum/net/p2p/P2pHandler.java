@@ -64,11 +64,11 @@ import static org.ethereum.net.message.StaticMessages.PONG_MESSAGE;
 @Scope("prototype")
 public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
 
-    public final static byte VERSION = 4;
+    public static final byte VERSION = 4;
 
-    private final static byte[] SUPPORTED_VERSIONS = {4, 5};
+    private static final byte[] SUPPORTED_VERSIONS = {4, 5};
 
-    private final static Logger logger = LoggerFactory.getLogger("net");
+    private static final Logger logger = LoggerFactory.getLogger("net");
 
     private static ScheduledExecutorService pingTimer =
             Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -259,7 +259,9 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
 
     public static boolean isProtocolVersionSupported(byte ver) {
         for (byte v : SUPPORTED_VERSIONS) {
-            if (v == ver) return true;
+            if (v == ver) {
+                return true;
+            }
         }
         return false;
     }

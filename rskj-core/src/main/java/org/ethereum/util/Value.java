@@ -61,7 +61,9 @@ public class Value {
     public Value(Object obj) {
 
         this.decoded = true;
-        if (obj == null) return;
+        if (obj == null) {
+            return;
+        }
 
         if (obj instanceof Value) {
             this.value = ((Value) obj).asObj();
@@ -231,7 +233,9 @@ public class Value {
         }
 
         for (byte aData : data) {
-            if (aData > 32 && aData < 126) ++readableChars;
+            if (aData > 32 && aData < 126) {
+                ++readableChars;
+            }
         }
 
         return (double) readableChars / (double) data.length > 0.55;
@@ -266,10 +270,18 @@ public class Value {
 
     public boolean isEmpty() {
         decode();
-        if (isNull()) return true;
-        if (isBytes() && asBytes().length == 0) return true;
-        if (isList() && asList().isEmpty()) return true;
-        if (isString() && asString().equals("")) return true;
+        if (isNull()) {
+            return true;
+        }
+        if (isBytes() && asBytes().length == 0) {
+            return true;
+        }
+        if (isList() && asList().isEmpty()) {
+            return true;
+        }
+        if (isString() && asString().equals("")) {
+            return true;
+        }
 
         return false;
     }

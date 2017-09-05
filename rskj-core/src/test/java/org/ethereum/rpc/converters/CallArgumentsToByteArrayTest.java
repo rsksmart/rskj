@@ -54,7 +54,7 @@ public class CallArgumentsToByteArrayTest {
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
         String maxGasLimit = "0x5AF3107A4000";
-        byte[] expectedGasLimit = TypeConverter.StringHexToByteArray(maxGasLimit);
+        byte[] expectedGasLimit = TypeConverter.stringHexToByteArray(maxGasLimit);
         Assert.assertArrayEquals(expectedGasLimit, byteArrayArgs.getGasLimit());
     }
 
@@ -66,7 +66,7 @@ public class CallArgumentsToByteArrayTest {
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
         String maxGasLimit = "0x5AF3107A4000";
-        byte[] expectedGasLimit = TypeConverter.StringHexToByteArray(maxGasLimit);
+        byte[] expectedGasLimit = TypeConverter.stringHexToByteArray(maxGasLimit);
         Assert.assertArrayEquals(expectedGasLimit, byteArrayArgs.getGasLimit());
     }
 

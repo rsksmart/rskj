@@ -24,8 +24,8 @@ package org.ethereum.net.client;
  */
 public class Capability implements Comparable<Capability> {
 
-    public final static String P2P = "p2p";
-    public final static String RSK = "rsk";
+    public static final String P2P = "p2p";
+    public static final String RSK = "rsk";
 
     private String name;
     private byte version;
@@ -49,8 +49,13 @@ public class Capability implements Comparable<Capability> {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof Capability)) return false;
+        if (this == obj) {
+            return true;
+        }
+        
+        if (!(obj instanceof Capability)) {
+            return false;
+        }
 
         Capability other = (Capability) obj;
         if (this.name == null)

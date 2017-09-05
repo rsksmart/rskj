@@ -82,15 +82,15 @@ public class VM {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static String logString = "{}    Op: [{}]  Gas: [{}] Deep: [{}]  Hint: [{}]";
 
-    private static long MAX_GAS_LONG =Long.MAX_VALUE;
+    private static long maxGasLong =Long.MAX_VALUE;
 
 
     /* Keeps track of the number of steps performed in this VM */
     private int vmCounter = 0;
 
     private static VMHook vmHook;
-    private final static boolean vmTrace = CONFIG.vmTrace();
-    private final static long dumpBlock = CONFIG.dumpBlock();
+    private static final boolean VM_TRACE = CONFIG.vmTrace();
+    private static final long DUMP_BLOCK = CONFIG.dumpBlock();
     private boolean computeGas = true; // for performance comp
 
     public VM() {
@@ -937,8 +937,8 @@ public class VM {
         spendOpCodeGas();
         // EXECUTION PHASE
         int n = op.val() - OpCode.DUP1.val() + 1;
-        DataWord word_1 = stack.get(stack.size() - n);
-        program.stackPush(program.newDataWord(word_1));
+        DataWord word1 = stack.get(stack.size() - n);
+        program.stackPush(program.newDataWord(word1));
         program.step();
     }
 
@@ -1485,215 +1485,215 @@ public class VM {
             /**
              * Stop and Arithmetic Operations
              */
-            case OpCodes.opSTOP: doSTOP();
+            case OpCodes.OP_STOP: doSTOP();
             break;
-            case OpCodes.opADD: doADD();
+            case OpCodes.OP_ADD: doADD();
             break;
-            case OpCodes.opMUL: doMUL();
+            case OpCodes.OP_MUL: doMUL();
             break;
-            case OpCodes.opSUB: doSUB();
+            case OpCodes.OP_SUB: doSUB();
             break;
-            case OpCodes.opDIV: doDIV();
+            case OpCodes.OP_DIV: doDIV();
             break;
-            case OpCodes.opSDIV: doSDIV();
+            case OpCodes.OP_SDIV: doSDIV();
             break;
-            case OpCodes.opMOD: doMOD();
+            case OpCodes.OP_MOD: doMOD();
             break;
-            case OpCodes.opSMOD: doSMOD();
+            case OpCodes.OP_SMOD: doSMOD();
             break;
-            case OpCodes.opEXP: doEXP();
+            case OpCodes.OP_EXP: doEXP();
             break;
-            case OpCodes.opSIGNEXTEND: doSIGNEXTEND();
+            case OpCodes.OP_SIGNEXTEND: doSIGNEXTEND();
             break;
-            case OpCodes.opNOT: doNOT();
+            case OpCodes.OP_NOT: doNOT();
             break;
-            case OpCodes.opLT: doLT();
+            case OpCodes.OP_LT: doLT();
             break;
-            case OpCodes.opSLT: doSLT();
+            case OpCodes.OP_SLT: doSLT();
             break;
-            case OpCodes.opSGT: doSGT();
+            case OpCodes.OP_SGT: doSGT();
             break;
-            case OpCodes.opGT: doGT();
+            case OpCodes.OP_GT: doGT();
             break;
-            case OpCodes.opEQ: doEQ();
+            case OpCodes.OP_EQ: doEQ();
             break;
-            case OpCodes.opISZERO: doISZERO();
+            case OpCodes.OP_ISZERO: doISZERO();
             break;
             /**
              * Bitwise Logic Operations
              */
-            case OpCodes.opAND: doAND();
+            case OpCodes.OP_AND: doAND();
             break;
-            case OpCodes.opOR: doOR();
+            case OpCodes.OP_OR: doOR();
             break;
-            case OpCodes.opXOR: doXOR();
+            case OpCodes.OP_XOR: doXOR();
             break;
-            case OpCodes.opBYTE: doBYTE();
+            case OpCodes.OP_BYTE: doBYTE();
             break;
-            case OpCodes.opADDMOD: doADDMOD();
+            case OpCodes.OP_ADDMOD: doADDMOD();
             break;
-            case OpCodes.opMULMOD: doMULMOD();
+            case OpCodes.OP_MULMOD: doMULMOD();
             break;
             /**
              * SHA3
              */
-            case OpCodes.opSHA3: doSHA3();
+            case OpCodes.OP_SHA_3: doSHA3();
             break;
 
             /**
              * Environmental Information
              */
-            case OpCodes.opADDRESS: doADDRESS();
+            case OpCodes.OP_ADDRESS: doADDRESS();
             break;
-            case OpCodes.opBALANCE: doBALANCE();
+            case OpCodes.OP_BALANCE: doBALANCE();
             break;
-            case OpCodes.opORIGIN: doORIGIN();
+            case OpCodes.OP_ORIGIN: doORIGIN();
             break;
-            case OpCodes.opCALLER: doCALLER();
+            case OpCodes.OP_CALLER: doCALLER();
             break;
-            case OpCodes.opCALLVALUE: doCALLVALUE();
+            case OpCodes.OP_CALLVALUE: doCALLVALUE();
             break;
-            case OpCodes.opCALLDATALOAD: doCALLDATALOAD();
+            case OpCodes.OP_CALLDATALOAD: doCALLDATALOAD();
             break;
-            case OpCodes.opCALLDATASIZE: doCALLDATASIZE();
+            case OpCodes.OP_CALLDATASIZE: doCALLDATASIZE();
             break;
-            case OpCodes.opCALLDATACOPY: doCALLDATACOPY();
+            case OpCodes.OP_CALLDATACOPY: doCALLDATACOPY();
             break;
-            case OpCodes.opCODESIZE:
-            case OpCodes.opEXTCODESIZE: doCODESIZE();
+            case OpCodes.OP_CODESIZE:
+            case OpCodes.OP_EXTCODESIZE: doCODESIZE();
                 break;
-            case OpCodes.opCODECOPY:
-            case OpCodes.opEXTCODECOPY: doCODECOPY();
+            case OpCodes.OP_CODECOPY:
+            case OpCodes.OP_EXTCODECOPY: doCODECOPY();
             break;
-            case OpCodes.opGASPRICE: doGASPRICE();
+            case OpCodes.OP_GASPRICE: doGASPRICE();
             break;
 
             /**
              * Block Information
              */
-            case OpCodes.opBLOCKHASH: doBLOCKHASH();
+            case OpCodes.OP_BLOCKHASH: doBLOCKHASH();
             break;
-            case OpCodes.opCOINBASE: doCOINBASE();
+            case OpCodes.OP_COINBASE: doCOINBASE();
             break;
-            case OpCodes.opTIMESTAMP: doTIMESTAMP();
+            case OpCodes.OP_TIMESTAMP: doTIMESTAMP();
             break;
-            case OpCodes.opNUMBER: doNUMBER();
+            case OpCodes.OP_NUMBER: doNUMBER();
             break;
-            case OpCodes.opDIFFICULTY: doDIFFICULTY();
+            case OpCodes.OP_DIFFICULTY: doDIFFICULTY();
             break;
-            case OpCodes.opGASLIMIT: doGASLIMIT();
+            case OpCodes.OP_GASLIMIT: doGASLIMIT();
             break;
-            case OpCodes.opPOP: doPOP();
+            case OpCodes.OP_POP: doPOP();
             break;
-            case OpCodes.opDUP1:
-            case OpCodes.opDUP2:
-            case OpCodes.opDUP3:
-            case OpCodes.opDUP4:
-            case OpCodes.opDUP5:
-            case OpCodes.opDUP6:
-            case OpCodes.opDUP7:
-            case OpCodes.opDUP8:
-            case OpCodes.opDUP9:
-            case OpCodes.opDUP10:
-            case OpCodes.opDUP11:
-            case OpCodes.opDUP12:
-            case OpCodes.opDUP13:
-            case OpCodes.opDUP14:
-            case OpCodes.opDUP15:
-            case OpCodes.opDUP16: doDUP();
+            case OpCodes.OP_DUP_1:
+            case OpCodes.OP_DUP_2:
+            case OpCodes.OP_DUP_3:
+            case OpCodes.OP_DUP_4:
+            case OpCodes.OP_DUP_5:
+            case OpCodes.OP_DUP_6:
+            case OpCodes.OP_DUP_7:
+            case OpCodes.OP_DUP_8:
+            case OpCodes.OP_DUP_9:
+            case OpCodes.OP_DUP_10:
+            case OpCodes.OP_DUP_11:
+            case OpCodes.OP_DUP_12:
+            case OpCodes.OP_DUP_13:
+            case OpCodes.OP_DUP_14:
+            case OpCodes.OP_DUP_15:
+            case OpCodes.OP_DUP_16: doDUP();
             break;
-            case OpCodes.opSWAP1:
-            case OpCodes.opSWAP2:
-            case OpCodes.opSWAP3:
-            case OpCodes.opSWAP4:
-            case OpCodes.opSWAP5:
-            case OpCodes.opSWAP6:
-            case OpCodes.opSWAP7:
-            case OpCodes.opSWAP8:
-            case OpCodes.opSWAP9:
-            case OpCodes.opSWAP10:
-            case OpCodes.opSWAP11:
-            case OpCodes.opSWAP12:
-            case OpCodes.opSWAP13:
-            case OpCodes.opSWAP14:
-            case OpCodes.opSWAP15:
-            case OpCodes.opSWAP16: doSWAP();
+            case OpCodes.OP_SWAP_1:
+            case OpCodes.OP_SWAP_2:
+            case OpCodes.OP_SWAP_3:
+            case OpCodes.OP_SWAP_4:
+            case OpCodes.OP_SWAP_5:
+            case OpCodes.OP_SWAP_6:
+            case OpCodes.OP_SWAP_7:
+            case OpCodes.OP_SWAP_8:
+            case OpCodes.OP_SWAP_9:
+            case OpCodes.OP_SWAP_10:
+            case OpCodes.OP_SWAP_11:
+            case OpCodes.OP_SWAP_12:
+            case OpCodes.OP_SWAP_13:
+            case OpCodes.OP_SWAP_14:
+            case OpCodes.OP_SWAP_15:
+            case OpCodes.OP_SWAP_16: doSWAP();
             break;
-            case OpCodes.opLOG0:
-            case OpCodes.opLOG1:
-            case OpCodes.opLOG2:
-            case OpCodes.opLOG3:
-            case OpCodes.opLOG4: doLOG();
+            case OpCodes.OP_LOG_0:
+            case OpCodes.OP_LOG_1:
+            case OpCodes.OP_LOG_2:
+            case OpCodes.OP_LOG_3:
+            case OpCodes.OP_LOG_4: doLOG();
             break;
-            case OpCodes.opMLOAD: doMLOAD();
+            case OpCodes.OP_MLOAD: doMLOAD();
             break;
-            case OpCodes.opMSTORE: doMSTORE();
+            case OpCodes.OP_MSTORE: doMSTORE();
             break;
-            case OpCodes.opMSTORE8: doMSTORE8();
+            case OpCodes.OP_MSTORE_8: doMSTORE8();
             break;
-            case OpCodes.opSLOAD: doSLOAD();
+            case OpCodes.OP_SLOAD: doSLOAD();
             break;
-            case OpCodes.opSSTORE: doSSTORE();
+            case OpCodes.OP_SSTORE: doSSTORE();
             break;
-            case OpCodes.opJUMP: doJUMP();
+            case OpCodes.OP_JUMP: doJUMP();
             break;
-            case OpCodes.opJUMPI: doJUMPI();
+            case OpCodes.OP_JUMPI: doJUMPI();
                 break;
-            case OpCodes.opPC: doPC();
+            case OpCodes.OP_PC: doPC();
             break;
-            case OpCodes.opMSIZE: doMSIZE();
+            case OpCodes.OP_MSIZE: doMSIZE();
             break;
-            case OpCodes.opGAS: doGAS();
+            case OpCodes.OP_GAS: doGAS();
             break;
 
-            case OpCodes.opPUSH1:
-            case OpCodes.opPUSH2:
-            case OpCodes.opPUSH3:
-            case OpCodes.opPUSH4:
-            case OpCodes.opPUSH5:
-            case OpCodes.opPUSH6:
-            case OpCodes.opPUSH7:
-            case OpCodes.opPUSH8:
-            case OpCodes.opPUSH9:
-            case OpCodes.opPUSH10:
-            case OpCodes.opPUSH11:
-            case OpCodes.opPUSH12:
-            case OpCodes.opPUSH13:
-            case OpCodes.opPUSH14:
-            case OpCodes.opPUSH15:
-            case OpCodes.opPUSH16:
-            case OpCodes.opPUSH17:
-            case OpCodes.opPUSH18:
-            case OpCodes.opPUSH19:
-            case OpCodes.opPUSH20:
-            case OpCodes.opPUSH21:
-            case OpCodes.opPUSH22:
-            case OpCodes.opPUSH23:
-            case OpCodes.opPUSH24:
-            case OpCodes.opPUSH25:
-            case OpCodes.opPUSH26:
-            case OpCodes.opPUSH27:
-            case OpCodes.opPUSH28:
-            case OpCodes.opPUSH29:
-            case OpCodes.opPUSH30:
-            case OpCodes.opPUSH31:
-            case OpCodes.opPUSH32: doPUSH();
+            case OpCodes.OP_PUSH_1:
+            case OpCodes.OP_PUSH_2:
+            case OpCodes.OP_PUSH_3:
+            case OpCodes.OP_PUSH_4:
+            case OpCodes.OP_PUSH_5:
+            case OpCodes.OP_PUSH_6:
+            case OpCodes.OP_PUSH_7:
+            case OpCodes.OP_PUSH_8:
+            case OpCodes.OP_PUSH_9:
+            case OpCodes.OP_PUSH_10:
+            case OpCodes.OP_PUSH_11:
+            case OpCodes.OP_PUSH_12:
+            case OpCodes.OP_PUSH_13:
+            case OpCodes.OP_PUSH_14:
+            case OpCodes.OP_PUSH_15:
+            case OpCodes.OP_PUSH_16:
+            case OpCodes.OP_PUSH_17:
+            case OpCodes.OP_PUSH_18:
+            case OpCodes.OP_PUSH_19:
+            case OpCodes.OP_PUSH_20:
+            case OpCodes.OP_PUSH_21:
+            case OpCodes.OP_PUSH_22:
+            case OpCodes.OP_PUSH_23:
+            case OpCodes.OP_PUSH_24:
+            case OpCodes.OP_PUSH_25:
+            case OpCodes.OP_PUSH_26:
+            case OpCodes.OP_PUSH_27:
+            case OpCodes.OP_PUSH_28:
+            case OpCodes.OP_PUSH_29:
+            case OpCodes.OP_PUSH_30:
+            case OpCodes.OP_PUSH_31:
+            case OpCodes.OP_PUSH_32: doPUSH();
             break;
-            case OpCodes.opJUMPDEST: doJUMPDEST();
+            case OpCodes.OP_JUMPDEST: doJUMPDEST();
             break;
-            case OpCodes.opCREATE: doCREATE();
+            case OpCodes.OP_CREATE: doCREATE();
             break;
-            case OpCodes.opCALL:
-            case OpCodes.opCALLCODE:
-            case OpCodes.opDELEGATECALL: doCALL();
+            case OpCodes.OP_CALL:
+            case OpCodes.OP_CALLCODE:
+            case OpCodes.OP_DELEGATECALL: doCALL();
             break;
-            case OpCodes.opRETURN: doRETURN();
+            case OpCodes.OP_RETURN: doRETURN();
             break;
-            case OpCodes.opSUICIDE: doSUICIDE();
+            case OpCodes.OP_SUICIDE: doSUICIDE();
             break;
-            case OpCodes.opCODEREPLACE: doCODEREPLACE();
+            case OpCodes.OP_CODEREPLACE: doCODEREPLACE();
             break;
-            case OpCodes.opHEADER:
+            case OpCodes.OP_HEADER:
                 //fallthrough to default case until implementation's ready
             default:
                 // It should never execute this line.
@@ -1719,9 +1719,11 @@ public class VM {
         try {
 
             for(long s=0;s<steps;s++) {
-                if (program.isStopped()) break;
+                if (program.isStopped()) {
+                    break;
+                }
 
-                if (vmTrace)
+                if (VM_TRACE)
                     program.saveOpTrace();
 
                 op = OpCode.code(program.getCurrentOp());
@@ -1742,14 +1744,14 @@ public class VM {
 
                 gasCost = op.getTier().asInt();
 
-                if (dumpBlock>=0) {
+                if (DUMP_BLOCK >=0) {
                     gasBefore = program.getRemainingGas();
                     stepBefore = program.getPC();
                     memWords = 0; // parameters for logging
                 }
 
                 // Log debugging line for VM
-                if ((dumpBlock>=0) &&  (program.getNumber().intValue() == dumpBlock))
+                if ((DUMP_BLOCK >=0) &&  (program.getNumber().intValue() == DUMP_BLOCK))
                     this.dumpLine(op, gasBefore, gasCost , memWords, program);
 
                 if (vmHook != null) {

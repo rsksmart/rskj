@@ -55,7 +55,10 @@ public class RskAllowUnconfirmedCoinSelector implements CoinSelector{
         // bit over (excessive value will be change).
         long total = 0;
         for (TransactionOutput output : sortedOutputs) {
-            if (total >= target.value) break;
+            if (total >= target.value) {
+                break;
+            }
+            
             selected.add(output);
             total += output.getValue().value;
         }

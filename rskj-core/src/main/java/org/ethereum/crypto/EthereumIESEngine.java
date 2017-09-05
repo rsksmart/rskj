@@ -36,7 +36,7 @@ import org.spongycastle.util.Pack;
  * Follows the description given in IEEE Std 1363a with a couple of changes
  * specific to Ethereum:
  * - Hash the MAC key before use
- * - Include the encryption IV in the MAC computation
+ * - Include the encryption iv in the MAC computation
  */
 public class EthereumIESEngine
 {
@@ -48,13 +48,15 @@ public class EthereumIESEngine
     byte[] macBuf;
 
     boolean forEncryption;
-    CipherParameters privParam, pubParam;
+    CipherParameters privParam;
+    CipherParameters pubParam;
+
     IESParameters param;
 
-    byte[] V;
+    byte[] v;
     private EphemeralKeyPairGenerator keyPairGenerator;
     private KeyParser keyParser;
-    private byte[] IV;
+    private byte[] iv;
     boolean hashK2 = true;
 
     /**
@@ -90,7 +92,7 @@ public class EthereumIESEngine
      * @param forEncryption whether or not this is encryption/decryption.
      * @param privParam     our private key parameters
      * @param pubParam      the recipient's/sender's public key parameters
-     * @param params        encoding and derivation parameters, may be wrapped to include an IV for an underlying block cipher.
+     * @param params        encoding and derivation parameters, may be wrapped to include an iv for an underlying block cipher.
      */
     public void init(
         boolean forEncryption,
@@ -101,7 +103,7 @@ public class EthereumIESEngine
         this.forEncryption = forEncryption;
         this.privParam = privParam;
         this.pubParam = pubParam;
-        this.V = new byte[0];
+        this.v = new byte[0];
 
         extractParams(params);
     }
@@ -111,7 +113,7 @@ public class EthereumIESEngine
      * Initialise the encryptor.
      *
      * @param publicKey      the recipient's/sender's public key parameters
-     * @param params         encoding and derivation parameters, may be wrapped to include an IV for an underlying block cipher.
+     * @param params         encoding and derivation parameters, may be wrapped to include an iv for an underlying block cipher.
      * @param ephemeralKeyPairGenerator             the ephemeral key pair generator to use.
      */
     public void init(AsymmetricKeyParameter publicKey, CipherParameters params, EphemeralKeyPairGenerator ephemeralKeyPairGenerator)
@@ -127,7 +129,7 @@ public class EthereumIESEngine
      * Initialise the encryptor.
      *
      * @param privateKey      the recipient's private key.
-     * @param params          encoding and derivation parameters, may be wrapped to include an IV for an underlying block cipher.
+     * @param params          encoding and derivation parameters, may be wrapped to include an iv for an underlying block cipher.
      * @param publicKeyParser the parser for reading the ephemeral public key.
      */
     public void init(AsymmetricKeyParameter privateKey, CipherParameters params, KeyParser publicKeyParser)
@@ -143,12 +145,12 @@ public class EthereumIESEngine
     {
         if (params instanceof ParametersWithIV)
         {
-            this.IV = ((ParametersWithIV)params).getIV();
+            this.iv = ((ParametersWithIV)params).getIV();
             this.param = (IESParameters)((ParametersWithIV)params).getParameters();
         }
         else
         {
-            this.IV = null;
+            this.iv = null;
             this.param = (IESParameters)params;
         }
     }
@@ -170,114 +172,122 @@ public class EthereumIESEngine
         byte[] macData)
         throws InvalidCipherTextException
     {
-        byte[] C = null, K = null, K1 = null, K2 = null;
+        byte[] c = null;
+        byte[] k = null;
+        byte[] k1 = null;
+        byte[] k2 = null;
+
         int len;
 
         if (cipher == null)
         {
             // Streaming mode.
-            K1 = new byte[inLen];
-            K2 = new byte[param.getMacKeySize() / 8];
-            K = new byte[K1.length + K2.length];
+            k1 = new byte[inLen];
+            k2 = new byte[param.getMacKeySize() / 8];
+            k = new byte[k1.length + k2.length];
 
-            kdf.generateBytes(K, 0, K.length);
+            kdf.generateBytes(k, 0, k.length);
 
-//            if (V.length != 0)
+//            if (v.length != 0)
 //            {
 //                System.arraycopy(K, 0, K2, 0, K2.length);
 //                System.arraycopy(K, K2.length, K1, 0, K1.length);
 //            }
 //            else
             {
-                System.arraycopy(K, 0, K1, 0, K1.length);
-                System.arraycopy(K, inLen, K2, 0, K2.length);
+                System.arraycopy(k, 0, k1, 0, k1.length);
+                System.arraycopy(k, inLen, k2, 0, k2.length);
             }
 
-            C = new byte[inLen];
+            c = new byte[inLen];
 
             for (int i = 0; i != inLen; i++)
             {
-                C[i] = (byte)(in[inOff + i] ^ K1[i]);
+                c[i] = (byte)(in[inOff + i] ^ k1[i]);
             }
             len = inLen;
         }
         else
         {
             // Block cipher mode.
-            K1 = new byte[((IESWithCipherParameters)param).getCipherKeySize() / 8];
-            K2 = new byte[param.getMacKeySize() / 8];
-            K = new byte[K1.length + K2.length];
+            k1 = new byte[((IESWithCipherParameters)param).getCipherKeySize() / 8];
+            k2 = new byte[param.getMacKeySize() / 8];
+            k = new byte[k1.length + k2.length];
 
-            kdf.generateBytes(K, 0, K.length);
-            System.arraycopy(K, 0, K1, 0, K1.length);
-            System.arraycopy(K, K1.length, K2, 0, K2.length);
+            kdf.generateBytes(k, 0, k.length);
+            System.arraycopy(k, 0, k1, 0, k1.length);
+            System.arraycopy(k, k1.length, k2, 0, k2.length);
 
             // If iv provided use it to initialise the cipher
-            if (IV != null)
+            if (iv != null)
             {
-                cipher.init(true, new ParametersWithIV(new KeyParameter(K1), IV));
+                cipher.init(true, new ParametersWithIV(new KeyParameter(k1), iv));
             }
             else
             {
-                cipher.init(true, new KeyParameter(K1));
+                cipher.init(true, new KeyParameter(k1));
             }
 
-            C = new byte[cipher.getOutputSize(inLen)];
-            len = cipher.processBytes(in, inOff, inLen, C, 0);
-            len += cipher.doFinal(C, len);
+            c = new byte[cipher.getOutputSize(inLen)];
+            len = cipher.processBytes(in, inOff, inLen, c, 0);
+            len += cipher.doFinal(c, len);
         }
 
 
         // Convert the length of the encoding vector into a byte array.
-        byte[] P2 = param.getEncodingV();
+        byte[] p2 = param.getEncodingV();
 
         // Apply the MAC.
-        byte[] T = new byte[mac.getMacSize()];
+        byte[] t = new byte[mac.getMacSize()];
 
-        byte[] K2a;
+        byte[] k2A;
         if (hashK2) {
-            K2a = new byte[hash.getDigestSize()];
+            k2A = new byte[hash.getDigestSize()];
             hash.reset();
-            hash.update(K2, 0, K2.length);
-            hash.doFinal(K2a, 0);
+            hash.update(k2, 0, k2.length);
+            hash.doFinal(k2A, 0);
         } else {
-            K2a = K2;
+            k2A = k2;
         }
-        mac.init(new KeyParameter(K2a));
-        mac.update(IV, 0, IV.length);
-        mac.update(C, 0, C.length);
-        if (P2 != null)
+        mac.init(new KeyParameter(k2A));
+        mac.update(iv, 0, iv.length);
+        mac.update(c, 0, c.length);
+        if (p2 != null)
         {
-            mac.update(P2, 0, P2.length);
+            mac.update(p2, 0, p2.length);
         }
-        if (V.length != 0 && P2 != null) {
-            byte[] L2 = new byte[4];
-            Pack.intToBigEndian(P2.length * 8, L2, 0);
-            mac.update(L2, 0, L2.length);
+        if (v.length != 0 && p2 != null) {
+            byte[] l2 = new byte[4];
+            Pack.intToBigEndian(p2.length * 8, l2, 0);
+            mac.update(l2, 0, l2.length);
         }
 
         if (macData != null) {
             mac.update(macData, 0, macData.length);
         }
 
-        mac.doFinal(T, 0);
+        mac.doFinal(t, 0);
 
-        // Output the triple (V,C,T).
-        byte[] Output = new byte[V.length + len + T.length];
-        System.arraycopy(V, 0, Output, 0, V.length);
-        System.arraycopy(C, 0, Output, V.length, len);
-        System.arraycopy(T, 0, Output, V.length + len, T.length);
-        return Output;
+        // Output the triple (v,C,T).
+        byte[] output = new byte[v.length + len + t.length];
+        System.arraycopy(v, 0, output, 0, v.length);
+        System.arraycopy(c, 0, output, v.length, len);
+        System.arraycopy(t, 0, output, v.length + len, t.length);
+        return output;
     }
 
     private byte[] decryptBlock(
-        byte[] in_enc,
+        byte[] inEnc,
         int inOff,
         int inLen,
         byte[] macData)
         throws InvalidCipherTextException
     {
-        byte[] M = null, K = null, K1 = null, K2 = null;
+        byte[] m = null;
+        byte[] k = null;
+        byte[] k1 = null;
+        byte[] k2 = null;
+
         int len;
 
         // Ensure that the length of the input is greater than the MAC in bytes
@@ -289,105 +299,105 @@ public class EthereumIESEngine
         if (cipher == null)
         {
             // Streaming mode.
-            K1 = new byte[inLen - V.length - mac.getMacSize()];
-            K2 = new byte[param.getMacKeySize() / 8];
-            K = new byte[K1.length + K2.length];
+            k1 = new byte[inLen - v.length - mac.getMacSize()];
+            k2 = new byte[param.getMacKeySize() / 8];
+            k = new byte[k1.length + k2.length];
 
-            kdf.generateBytes(K, 0, K.length);
+            kdf.generateBytes(k, 0, k.length);
 
-//            if (V.length != 0)
+//            if (v.length != 0)
 //            {
 //                System.arraycopy(K, 0, K2, 0, K2.length);
 //                System.arraycopy(K, K2.length, K1, 0, K1.length);
 //            }
 //            else
             {
-                System.arraycopy(K, 0, K1, 0, K1.length);
-                System.arraycopy(K, K1.length, K2, 0, K2.length);
+                System.arraycopy(k, 0, k1, 0, k1.length);
+                System.arraycopy(k, k1.length, k2, 0, k2.length);
             }
 
-            M = new byte[K1.length];
+            m = new byte[k1.length];
 
-            for (int i = 0; i != K1.length; i++)
+            for (int i = 0; i != k1.length; i++)
             {
-                M[i] = (byte)(in_enc[inOff + V.length + i] ^ K1[i]);
+                m[i] = (byte)(inEnc[inOff + v.length + i] ^ k1[i]);
             }
 
-            len = K1.length;
+            len = k1.length;
         }
         else
         {
             // Block cipher mode.
-            K1 = new byte[((IESWithCipherParameters)param).getCipherKeySize() / 8];
-            K2 = new byte[param.getMacKeySize() / 8];
-            K = new byte[K1.length + K2.length];
+            k1 = new byte[((IESWithCipherParameters)param).getCipherKeySize() / 8];
+            k2 = new byte[param.getMacKeySize() / 8];
+            k = new byte[k1.length + k2.length];
 
-            kdf.generateBytes(K, 0, K.length);
-            System.arraycopy(K, 0, K1, 0, K1.length);
-            System.arraycopy(K, K1.length, K2, 0, K2.length);
+            kdf.generateBytes(k, 0, k.length);
+            System.arraycopy(k, 0, k1, 0, k1.length);
+            System.arraycopy(k, k1.length, k2, 0, k2.length);
 
-            // If IV provide use it to initialize the cipher
-            if (IV != null)
+            // If iv provide use it to initialize the cipher
+            if (iv != null)
             {
-                cipher.init(false, new ParametersWithIV(new KeyParameter(K1), IV));
+                cipher.init(false, new ParametersWithIV(new KeyParameter(k1), iv));
             }
             else
             {
-                cipher.init(false, new KeyParameter(K1));
+                cipher.init(false, new KeyParameter(k1));
             }
 
-            M = new byte[cipher.getOutputSize(inLen - V.length - mac.getMacSize())];
-            len = cipher.processBytes(in_enc, inOff + V.length, inLen - V.length - mac.getMacSize(), M, 0);
-            len += cipher.doFinal(M, len);
+            m = new byte[cipher.getOutputSize(inLen - v.length - mac.getMacSize())];
+            len = cipher.processBytes(inEnc, inOff + v.length, inLen - v.length - mac.getMacSize(), m, 0);
+            len += cipher.doFinal(m, len);
         }
 
 
         // Convert the length of the encoding vector into a byte array.
-        byte[] P2 = param.getEncodingV();
+        byte[] p2 = param.getEncodingV();
 
         // Verify the MAC.
         int end = inOff + inLen;
-        byte[] T1 = Arrays.copyOfRange(in_enc, end - mac.getMacSize(), end);
+        byte[] t1 = Arrays.copyOfRange(inEnc, end - mac.getMacSize(), end);
 
-        byte[] T2 = new byte[T1.length];
-        byte[] K2a;
+        byte[] t2 = new byte[t1.length];
+        byte[] k2A;
         if (hashK2) {
-            K2a = new byte[hash.getDigestSize()];
+            k2A = new byte[hash.getDigestSize()];
             hash.reset();
-            hash.update(K2, 0, K2.length);
-            hash.doFinal(K2a, 0);
+            hash.update(k2, 0, k2.length);
+            hash.doFinal(k2A, 0);
         } else {
-            K2a = K2;
+            k2A = k2;
         }
-        mac.init(new KeyParameter(K2a));
-        mac.update(IV, 0, IV.length);
-        mac.update(in_enc, inOff + V.length, inLen - V.length - T2.length);
+        mac.init(new KeyParameter(k2A));
+        mac.update(iv, 0, iv.length);
+        mac.update(inEnc, inOff + v.length, inLen - v.length - t2.length);
 
-        if (P2 != null)
+        if (p2 != null)
         {
-            mac.update(P2, 0, P2.length);
+            mac.update(p2, 0, p2.length);
         }
 
-        if (V.length != 0 && P2 != null) {
-            byte[] L2 = new byte[4];
-            Pack.intToBigEndian(P2.length * 8, L2, 0);
-            mac.update(L2, 0, L2.length);
+        if (v.length != 0 && p2 != null) {
+            byte[] l2 = new byte[4];
+            Pack.intToBigEndian(p2.length * 8, l2, 0);
+            mac.update(l2, 0, l2.length);
         }
 
         if (macData != null) {
             mac.update(macData, 0, macData.length);
         }
 
-        mac.doFinal(T2, 0);
+        mac.doFinal(t2, 0);
 
-        if (!Arrays.constantTimeAreEqual(T1, T2))
+        if (!Arrays.constantTimeAreEqual(t1, t2))
         {
             throw new InvalidCipherTextException("Invalid MAC.");
         }
 
 
         // Output the message.
-        return Arrays.copyOfRange(M, 0, len);
+        return Arrays.copyOfRange(m, 0, len);
     }
 
     public byte[] processBlock(byte[] in, int inOff, int inLen) throws InvalidCipherTextException {
@@ -408,7 +418,7 @@ public class EthereumIESEngine
                 EphemeralKeyPair ephKeyPair = keyPairGenerator.generate();
 
                 this.privParam = ephKeyPair.getKeyPair().getPrivate();
-                this.V = ephKeyPair.getEncodedPublicKey();
+                this.v = ephKeyPair.getEncodedPublicKey();
             }
         }
         else
@@ -427,7 +437,7 @@ public class EthereumIESEngine
                 }
 
                 int encLength = (inLen - bIn.available());
-                this.V = Arrays.copyOfRange(in, inOff, inOff + encLength);
+                this.v = Arrays.copyOfRange(in, inOff, inOff + encLength);
             }
         }
 
@@ -437,24 +447,24 @@ public class EthereumIESEngine
         byte[] Z = BigIntegers.asUnsignedByteArray(agree.getFieldSize(), z);
 
         // Create input to KDF.
-        byte[] VZ;
-//        if (V.length != 0)
+        byte[] vz;
+//        if (v.length != 0)
 //        {
-//            VZ = new byte[V.length + Z.length];
-//            System.arraycopy(V, 0, VZ, 0, V.length);
-//            System.arraycopy(Z, 0, VZ, V.length, Z.length);
+//            VZ = new byte[v.length + Z.length];
+//            System.arraycopy(v, 0, VZ, 0, v.length);
+//            System.arraycopy(Z, 0, VZ, v.length, Z.length);
 //        }
 //        else
         {
-            VZ = Z;
+            vz = Z;
         }
 
         // Initialise the KDF.
         DerivationParameters kdfParam;
         if (kdf instanceof MGF1BytesGeneratorExt) {
-            kdfParam = new MGFParameters(VZ);
+            kdfParam = new MGFParameters(vz);
         } else {
-            kdfParam = new KDFParameters(VZ, param.getDerivationV());
+            kdfParam = new KDFParameters(vz, param.getDerivationV());
         }
         kdf.init(kdfParam);
 

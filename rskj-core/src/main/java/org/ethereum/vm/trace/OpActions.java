@@ -35,14 +35,14 @@ public class OpActions {
     public static class Action {
 
         public enum Name {
-            pop,
-            push,
-            swap,
-            extend,
-            write,
-            put,
-            remove,
-            clear;
+            POP,
+            PUSH,
+            SWAP,
+            EXTEND,
+            WRITE,
+            PUT,
+            REMOVE,
+            CLEAR;
         }
 
         private Name name;
@@ -113,43 +113,43 @@ public class OpActions {
     }
 
     public Action addStackPop() {
-        return addAction(stack, Action.Name.pop);
+        return addAction(stack, Action.Name.POP);
     }
 
     public Action addStackPush(DataWord value) {
-        return addAction(stack, Action.Name.push)
+        return addAction(stack, Action.Name.PUSH)
                 .addParam("value", value);
     }
 
     public Action addStackSwap(int from, int to) {
-        return addAction(stack, Action.Name.swap)
+        return addAction(stack, Action.Name.SWAP)
                 .addParam("from", from)
                 .addParam("to", to);
     }
 
     public Action addMemoryExtend(long delta) {
-        return addAction(memory, Action.Name.extend)
+        return addAction(memory, Action.Name.EXTEND)
                 .addParam("delta", delta);
     }
 
     public Action addMemoryWrite(int address, byte[] data, int size) {
-        return addAction(memory, Action.Name.write)
+        return addAction(memory, Action.Name.WRITE)
                 .addParam("address", address)
                 .addParam("data", toHexString(data).substring(0, size));
     }
 
     public Action addStoragePut(DataWord key, DataWord value) {
-        return addAction(storage, Action.Name.put)
+        return addAction(storage, Action.Name.PUT)
                 .addParam("key", key)
                 .addParam("value", value);
     }
 
     public Action addStorageRemove(DataWord key) {
-        return addAction(storage, Action.Name.remove)
+        return addAction(storage, Action.Name.REMOVE)
                 .addParam("key", key);
     }
 
     public Action addStorageClear() {
-        return addAction(storage, Action.Name.clear);
+        return addAction(storage, Action.Name.CLEAR);
     }
 }

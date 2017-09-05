@@ -330,7 +330,8 @@ public class BridgeSupport {
                 // We create a new Transaction instance because if ExceededMaxTransactionSize is thrown, the tx included in the SendRequest
                 // is altered and then we would try to persist the altered version in the waiting for confirmations collection
                 // Inputs would not be disconnected, so we would have a second problem trying to persist non java serializable objects.
-                BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), entry.getValue().bitcoinSerialize());
+                BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+                btcTx.parseNoInputs(entry.getValue().bitcoinSerialize());
                 try {
                     SendRequest sr = SendRequest.forTx(btcTx);
                     sr.feePerKb = Coin.MILLICOIN;
@@ -407,7 +408,10 @@ public class BridgeSupport {
     boolean hasEnoughConfirmations(Sha3Hash rskTxHash) {
         //Search the TransactionInfo using the parent block because execution block may not be in the blockstore yet.
         TransactionInfo info = rskReceiptStore.get(rskTxHash.getBytes(), rskExecutionBlock.getParentHash(), rskBlockStore);
-        if (info == null) return false;
+        if (info == null) {
+            return false;
+        }
+        
         byte[] includedBlockHash = info.getBlockHash();
         org.ethereum.core.Block includedBlock = rskBlockStore.getBlockByHash(includedBlockHash);
 
@@ -576,7 +580,7 @@ public class BridgeSupport {
      * @return a List of bitcoin block hashes
      */
     public List<Sha256Hash> getBtcBlockchainBlockLocator() throws IOException {
-        final int MAX_HASHES_TO_INFORM = 100;
+        final int maxHashesToInform = 100;
         List<Sha256Hash> blockLocator = new ArrayList<>();
         StoredBlock cursor = btcBlockChain.getChainHead();
         int bestBlockHeight = cursor.getHeight();
@@ -585,7 +589,7 @@ public class BridgeSupport {
             boolean stop = false;
             int i = 0;
             try {
-                while (blockLocator.size() <= MAX_HASHES_TO_INFORM && !stop) {
+                while (blockLocator.size() <= maxHashesToInform && !stop) {
                     int blockHeight = (int) (bestBlockHeight - Math.pow(2, i));
                     if (blockHeight <= this.initialBtcStoredBlock.getHeight()) {
                         blockLocator.add(this.initialBtcStoredBlock.getHeader().getHash());

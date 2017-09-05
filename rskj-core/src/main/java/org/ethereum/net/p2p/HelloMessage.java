@@ -128,32 +128,44 @@ public class HelloMessage extends P2pMessage {
 
     @Override
     public byte[] getEncoded() {
-        if (encoded == null) encode();
+        if (encoded == null) {
+            encode();
+        }
         return encoded;
     }
 
     public byte getP2PVersion() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return p2pVersion;
     }
 
     public String getClientId() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return clientId;
     }
 
     public List<Capability> getCapabilities() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return capabilities;
     }
 
     public int getListenPort() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return listenPort;
     }
 
     public String getPeerId() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return peerId;
     }
 
@@ -176,7 +188,9 @@ public class HelloMessage extends P2pMessage {
     }
 
     public String toString() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return "[" + this.getCommand().name() + " p2pVersion="
                 + this.p2pVersion + " clientId=" + this.clientId
                 + " capabilities=[" + Joiner.on(" ").join(this.capabilities)

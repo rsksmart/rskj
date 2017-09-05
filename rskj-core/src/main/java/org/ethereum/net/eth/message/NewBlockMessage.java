@@ -66,12 +66,16 @@ public class NewBlockMessage extends EthMessage {
     }
 
     public Block getBlock() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return block;
     }
 
     public byte[] getDifficulty() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
         return difficulty;
     }
 
@@ -95,7 +99,9 @@ public class NewBlockMessage extends EthMessage {
     }
 
     public String toString() {
-        if (!parsed) parse();
+        if (!parsed) {
+            parse();
+        }
 
         String hash = this.getBlock().getShortHash();
         long number = this.getBlock().getNumber();

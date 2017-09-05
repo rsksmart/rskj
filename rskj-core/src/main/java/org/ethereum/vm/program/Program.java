@@ -399,7 +399,9 @@ public class Program {
 
         byte[] data = Arrays.copyOfRange(ops, pc, pc + n);
         pc += n;
-        if (pc >= ops.length) stop();
+        if (pc >= ops.length) {
+            stop();
+        }
 
         return data;
     }
@@ -414,7 +416,9 @@ public class Program {
         DataWord dw = getNewDataWordFast();
         dw.assignDataRange(ops, pc, n);
         pc += n;
-        if (pc >= ops.length) stop();
+        if (pc >= ops.length) {
+            stop();
+        }
 
         return dw;
     }
@@ -1089,10 +1093,14 @@ public class Program {
             StringBuilder stackData = new StringBuilder();
             for (int i = 0; i < stack.size(); ++i) {
                 stackData.append(" ").append(stack.get(i));
-                if (i < stack.size() - 1) stackData.append("\n");
+                if (i < stack.size() - 1) {
+                    stackData.append("\n");
+                }
             }
 
-            if (stackData.length() > 0) stackData.insert(0, "\n");
+            if (stackData.length() > 0) {
+                stackData.insert(0, "\n");
+            }
 
             ContractDetails contractDetails = getStorage().
                     getContractDetails(getOwnerAddressLast20Bytes());
@@ -1104,7 +1112,9 @@ public class Program {
                     storageData.append(" ").append(key).append(" -> ").
                             append(contractDetails.getStorage().get(key)).append("\n");
                 }
-                if (storageData.length() > 0) storageData.insert(0, "\n");
+                if (storageData.length() > 0) {
+                    storageData.insert(0, "\n");
+                }
             }
 
             StringBuilder memoryData = new StringBuilder();
@@ -1125,11 +1135,15 @@ public class Program {
                                 Integer.toString(i, 16)).replace(" ", "0");
                         memoryData.append("").append(tmp).append(" ");
                         memoryData.append(oneLine);
-                        if (i < memory.size()) memoryData.append("\n");
+                        if (i < memory.size()) {
+                            memoryData.append("\n");
+                        }
                         oneLine.setLength(0);
                     }
                 }
-            if (memoryData.length() > 0) memoryData.insert(0, "\n");
+            if (memoryData.length() > 0) {
+                memoryData.insert(0, "\n");
+            }
 
             StringBuilder opsString = new StringBuilder();
             for (int i = 0; i < ops.length; ++i) {
@@ -1143,8 +1157,12 @@ public class Program {
                     opsString.append(" >>").append(tmpString).append("");
 
             }
-            if (pc >= ops.length) opsString.append(" >>");
-            if (opsString.length() > 0) opsString.insert(0, "\n ");
+            if (pc >= ops.length) {
+                opsString.append(" >>");
+            }
+            if (opsString.length() > 0) {
+                opsString.insert(0, "\n ");
+            }
 
             logger.trace(" -- OPS --     {}", opsString);
             logger.trace(" -- STACK --   {}", stackData);
@@ -1156,7 +1174,9 @@ public class Program {
                     getRemainingGas());
 
             StringBuilder globalOutput = new StringBuilder("\n");
-            if (stackData.length() > 0) stackData.append("\n");
+            if (stackData.length() > 0) {
+                stackData.append("\n");
+            }
 
             if (pc != 0)
                 globalOutput.append("[Op: ").append(OpCode.code(lastOp).name()).append("]\n");
@@ -1280,14 +1300,18 @@ public class Program {
                 }
                 binData.write(code[index]);
                 index ++;
-                if (index < code.length) continue;
+                if (index < code.length) {
+                    continue;
+                }
             }
 
             if (binDataStartPC != -1) {
                 sb.append(formatBinData(binData.toByteArray(), binDataStartPC));
                 binDataStartPC = -1;
                 binData = new ByteArrayOutputStream();
-                if (index == code.length) continue;
+                if (index == code.length) {
+                    continue;
+                }
             }
 
             sb.append(Utils.align("" + Integer.toHexString(index) + ":", ' ', 8, false));
@@ -1387,7 +1411,9 @@ public class Program {
             }
             if (it.getCurOpcode() == OpCode.JUMP || it.getCurOpcode() == OpCode.RETURN ||
                     it.getCurOpcode() == OpCode.STOP) {
-                if (gotos.isEmpty()) break;
+                if (gotos.isEmpty()) {
+                    break;
+                }
                 it.setPC(gotos.pollFirst());
             }
         } while(it.next());

@@ -31,7 +31,7 @@ public class PongMessage extends P2pMessage {
     /**
      * Pong message is always a the same single command payload
      */
-    private final static byte[] FIXED_PAYLOAD = Hex.decode("C0");
+    private static final byte[] FIXED_PAYLOAD = Hex.decode("C0");
 
     @Override
     public byte[] getEncoded() {

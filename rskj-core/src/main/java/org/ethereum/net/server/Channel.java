@@ -68,7 +68,7 @@ import java.util.concurrent.TimeUnit;
 @Scope("prototype")
 public class Channel {
 
-    private final static Logger logger = LoggerFactory.getLogger("net");
+    private static final Logger logger = LoggerFactory.getLogger("net");
 
     @Autowired
     SystemProperties config;
@@ -359,12 +359,18 @@ public class Channel {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         Channel channel = (Channel) o;
 
-        if (inetSocketAddress != null ? !inetSocketAddress.equals(channel.inetSocketAddress) : channel.inetSocketAddress != null) return false;
+        if (inetSocketAddress != null ? !inetSocketAddress.equals(channel.inetSocketAddress) : channel.inetSocketAddress != null) {
+            return false;
+        }
         return !(node != null ? !node.equals(channel.node) : channel.node != null);
 
     }

@@ -55,7 +55,7 @@ public class MGF1BytesGeneratorExt implements DerivationFunction {
         return this.digest;
     }
 
-    private void ItoOSP(int i, byte[] sp) {
+    private void itoosp(int i, byte[] sp) {
         sp[0] = (byte)(i >>> 24);
         sp[1] = (byte)(i >>> 16);
         sp[2] = (byte)(i >>> 8);
@@ -67,15 +67,15 @@ public class MGF1BytesGeneratorExt implements DerivationFunction {
             throw new DataLengthException("output buffer too small");
         } else {
             byte[] hashBuf = new byte[this.hLen];
-            byte[] C = new byte[4];
+            byte[] c = new byte[4];
             int counter = 0;
             int hashCounter = counterStart;
             this.digest.reset();
             if(len > this.hLen) {
                 do {
-                    this.ItoOSP(hashCounter++, C);
+                    this.itoosp(hashCounter++, c);
                     this.digest.update(this.seed, 0, this.seed.length);
-                    this.digest.update(C, 0, C.length);
+                    this.digest.update(c, 0, c.length);
                     this.digest.doFinal(hashBuf, 0);
                     System.arraycopy(hashBuf, 0, out, outOff + counter * this.hLen, this.hLen);
                     ++counter;
@@ -83,9 +83,9 @@ public class MGF1BytesGeneratorExt implements DerivationFunction {
             }
 
             if(counter * this.hLen < len) {
-                this.ItoOSP(hashCounter, C);
+                this.itoosp(hashCounter, c);
                 this.digest.update(this.seed, 0, this.seed.length);
-                this.digest.update(C, 0, C.length);
+                this.digest.update(c, 0, c.length);
                 this.digest.doFinal(hashBuf, 0);
                 System.arraycopy(hashBuf, 0, out, outOff + counter * this.hLen, len - counter * this.hLen);
             }

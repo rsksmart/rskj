@@ -337,7 +337,7 @@ public class EncryptionHandshake {
         return paddedMessage;
     }
 
-    static public byte recIdFromSignatureV(int v) {
+    public static byte recIdFromSignatureV(int v) {
         if (v >= 31) {
             // compressed
             v -= 4;

@@ -37,19 +37,19 @@ public class GasLimitRuleTests {
 
     @Test // pass rule
     public void gasLimitGreaterThanMinimumGasLimit() {
-        Block block = getBlock(SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getMIN_GAS_LIMIT() + 1);
+        Block block = getBlock(SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit() + 1);
         assertTrue(rule.isValid(block));
     }
 
     @Test // pass rule
     public void gasLimitEqualMinimumGasLimit() {
-        Block block = getBlock(SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getMIN_GAS_LIMIT());
+        Block block = getBlock(SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit());
         assertTrue(rule.isValid(block));
     }
 
     @Test // no pass rule
     public void gasLimitLessThanMinimumGasLimit() {
-        Block block = getBlock(SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getMIN_GAS_LIMIT() - 1);
+        Block block = getBlock(SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit() - 1);
         assertFalse(rule.isValid(block));
     }
 

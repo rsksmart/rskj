@@ -211,7 +211,9 @@ public class HeaderStoreImpl implements HeaderStore {
 
             for (Long idx : index) {
                 BlockHeaderWrapper h = headers.get(idx);
-                if (h.sentBy(nodeId)) removed.add(idx);
+                if (h.sentBy(nodeId)) {
+                    removed.add(idx);
+                }
             }
 
             headers.keySet().removeAll(removed);

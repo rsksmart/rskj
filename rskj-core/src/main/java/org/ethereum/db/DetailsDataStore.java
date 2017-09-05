@@ -51,9 +51,13 @@ public class DetailsDataStore {
 
         if (details == null) {
 
-            if (removes.contains(wrappedKey)) return null;
+            if (removes.contains(wrappedKey)) {
+                return null;
+            }
             byte[] data = db.get(key);
-            if (data == null) return null;
+            if (data == null) {
+                return null;
+            }
 
             details = createContractDetails(data);
             cache.put(wrappedKey, details);

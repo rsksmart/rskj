@@ -334,7 +334,7 @@ public class MinerServerTest {
     }
 
     private void findNonce(MinerWork work, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
-        BigInteger target = new BigInteger(TypeConverter.StringHexToByteArray(work.getTarget()));
+        BigInteger target = new BigInteger(TypeConverter.stringHexToByteArray(work.getTarget()));
 
         while (true) {
             try {

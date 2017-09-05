@@ -119,8 +119,12 @@ public class FrameCodec {
 
         List<byte[]> headerDataElems = new ArrayList<>();
         headerDataElems.add(RLP.encodeInt(0));
-        if (frame.contextId >= 0) headerDataElems.add(RLP.encodeInt(frame.contextId));
-        if (frame.totalFrameSize >= 0) headerDataElems.add(RLP.encodeInt(frame.totalFrameSize));
+        if (frame.contextId >= 0) {
+            headerDataElems.add(RLP.encodeInt(frame.contextId));
+        }
+        if (frame.totalFrameSize >= 0) {
+            headerDataElems.add(RLP.encodeInt(frame.totalFrameSize));
+        }
 
         byte[] headerData = RLP.encodeList(headerDataElems.toArray(new byte[0][]));
         System.arraycopy(headerData, 0, headBuffer, 3, headerData.length);
@@ -137,7 +141,9 @@ public class FrameCodec {
         egressMac.update(buff, 0, ptype.length);
         while (true) {
             int n = frame.payload.read(buff);
-            if (n <= 0) break;
+            if (n <= 0) {
+                break;
+            }
             enc.processBytes(buff, 0, n, buff, 0);
             egressMac.update(buff, 0, n);
             out.write(buff, 0, n);
@@ -186,7 +192,9 @@ public class FrameCodec {
         }
 
         int padding = 16 - (totalBodySize % 16);
-        if (padding == 16) padding = 0;
+        if (padding == 16) {
+            padding = 0;
+        }
         int macSize = 16;
         byte[] buffer = new byte[totalBodySize + padding + macSize];
         try {

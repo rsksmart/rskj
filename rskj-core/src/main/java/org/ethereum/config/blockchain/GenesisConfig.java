@@ -31,7 +31,7 @@ public class GenesisConfig extends AbstractConfig {
 
     public static class GenesisConstants extends Constants {
         @Override
-        public int getDURATION_LIMIT() {
+        public int getDurationLimit() {
             return 13;
         }
     };
@@ -51,7 +51,7 @@ public class GenesisConfig extends AbstractConfig {
     @Override
     protected BigInteger getCalcDifficultyMultiplier(BlockHeader curBlock, BlockHeader parent) {
         return BigInteger.valueOf(curBlock.getTimestamp() >= parent.getTimestamp() +
-                getConstants().getDURATION_LIMIT() ? -1 : 1);
+                getConstants().getDurationLimit() ? -1 : 1);
     }
 
 }

@@ -62,21 +62,37 @@ public class PrecompiledContracts {
 
     public static PrecompiledContract getContractForAddress(DataWord address) {
 
-        if (address == null) return identity;
-        if (address.isHex(ECRECOVER_ADDR)) return ecRecover;
-        if (address.isHex(SHA256_ADDR)) return sha256;
-        if (address.isHex(RIPEMPD160_ADDR)) return ripempd160;
-        if (address.isHex(IDENTITY_ADDR)) return identity;
-        if (address.isHex(SAMPLE_ADDR)) return sample;
-        if (address.isHex(BRIDGE_ADDR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + BRIDGE_ADDR)) return new Bridge(BRIDGE_ADDR);
-        if (address.isHex(MODEXP_ADDR)) return modexp;
+        if (address == null) {
+            return identity;
+        }
+        if (address.isHex(ECRECOVER_ADDR)) {
+            return ecRecover;
+        }
+        if (address.isHex(SHA256_ADDR)) {
+            return sha256;
+        }
+        if (address.isHex(RIPEMPD160_ADDR)) {
+            return ripempd160;
+        }
+        if (address.isHex(IDENTITY_ADDR)) {
+            return identity;
+        }
+        if (address.isHex(SAMPLE_ADDR)) {
+            return sample;
+        }
+        if (address.isHex(BRIDGE_ADDR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + BRIDGE_ADDR)) {
+            return new Bridge(BRIDGE_ADDR);
+        }
+        if (address.isHex(MODEXP_ADDR)) {
+            return modexp;
+        }
         if (address.isHex(REMASC_ADDR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + REMASC_ADDR))
             return new RemascContract(REMASC_ADDR, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(RskSystemProperties.RSKCONFIG.netName()));
 
         return null;
     }
 
-    public static abstract class PrecompiledContract {
+    public abstract static class PrecompiledContract {
         public String contractAddress;
 
         public abstract long getGasForData(byte[] data);
@@ -96,7 +112,9 @@ public class PrecompiledContracts {
 
             // gas charge for the execution:
             // minimum 1 and additional 1 for each 32 bytes word (round  up)
-            if (data == null) return 15;
+            if (data == null) {
+                return 15;
+            }
             return 15 + (data.length + 31) / 32 * 3;
         }
 
@@ -114,14 +132,18 @@ public class PrecompiledContracts {
 
             // gas charge for the execution:
             // minimum 50 and additional 50 for each 32 bytes word (round  up)
-            if (data == null) return 60;
+            if (data == null) {
+                return 60;
+            }
             return 60 + (data.length + 31) / 32 * 12;
         }
 
         @Override
         public byte[] execute(byte[] data) {
 
-            if (data == null) return HashUtil.sha256(ByteUtil.EMPTY_BYTE_ARRAY);
+            if (data == null) {
+                return HashUtil.sha256(ByteUtil.EMPTY_BYTE_ARRAY);
+            }
             return HashUtil.sha256(data);
         }
     }
@@ -136,7 +158,9 @@ public class PrecompiledContracts {
             // TODO Replace magic numbers with constants
             // gas charge for the execution:
             // minimum 50 and additional 50 for each 32 bytes word (round  up)
-            if (data == null) return 600;
+            if (data == null) {
+                return 600;
+            }
             return 600 + (data.length + 31) / 32 * 120;
         }
 
@@ -144,7 +168,9 @@ public class PrecompiledContracts {
         public byte[] execute(byte[] data) {
 
             byte[] result = null;
-            if (data == null) result = HashUtil.ripemd160(ByteUtil.EMPTY_BYTE_ARRAY);
+            if (data == null) {
+                result = HashUtil.ripemd160(ByteUtil.EMPTY_BYTE_ARRAY);
+            }
             else result = HashUtil.ripemd160(data);
 
             return new DataWord(result).getData();

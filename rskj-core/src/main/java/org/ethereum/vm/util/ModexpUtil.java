@@ -27,7 +27,7 @@ import java.util.Arrays;
 
 public class ModexpUtil {
 
-    private final static String funcJson = "{\n" +
+    private static final String FUNC_JSON = "{\n" +
             "   \"constant\":false, \n" +
             "   \"inputs\":[{\"name\":\"b\",\"type\":\"bytes\"}, \n" +
             "               {\"name\":\"e\",\"type\":\"bytes\"}, \n" +
@@ -41,7 +41,7 @@ public class ModexpUtil {
     private static final int EXPONENT = 1;
     private static final int MODULUS = 2;
 
-    private static CallTransaction.Function params = CallTransaction.Function.fromJsonInterface(funcJson);
+    private static CallTransaction.Function params = CallTransaction.Function.fromJsonInterface(FUNC_JSON);
 
     private Object[] decoded;
 

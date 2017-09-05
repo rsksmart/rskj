@@ -121,7 +121,9 @@ public class TransactionReceipt {
     /* [postTxState, cumulativeGas, bloomFilter, logInfoList] */
     public byte[] getEncoded() {
 
-        if (rlpEncoded != null) return rlpEncoded;
+        if (rlpEncoded != null) {
+            return rlpEncoded;
+        }
 
         byte[] postTxStateRLP = RLP.encodeElement(this.postTxState);
         byte[] cumulativeGasRLP = RLP.encodeElement(this.cumulativeGas);
@@ -168,7 +170,10 @@ public class TransactionReceipt {
     }
 
     public void setLogInfoList(List<LogInfo> logInfoList) {
-        if (logInfoList == null) return;
+        if (logInfoList == null) {
+            return;
+        }
+        
         this.rlpEncoded = null;
         this.logInfoList = logInfoList;
 

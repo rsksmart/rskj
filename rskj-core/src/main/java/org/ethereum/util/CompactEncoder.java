@@ -65,8 +65,8 @@ import static org.spongycastle.util.encoders.Hex.encode;
  */
 public class CompactEncoder {
 
-    private final static byte TERMINATOR = 16;
-    private final static Map<Character, Byte> hexMap = new HashMap<>();
+    private static final byte TERMINATOR = 16;
+    private static final Map<Character, Byte> hexMap = new HashMap<>();
 
     static {
         hexMap.put('0', (byte) 0x0);
