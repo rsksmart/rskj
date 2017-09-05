@@ -133,6 +133,8 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             this.processSkeletonRequestMessage(sender, (SkeletonRequestMessage) message);
         else if (mType == MessageType.SKELETON_RESPONSE_MESSAGE)
             this.processSkeletonResponseMessage(sender, (SkeletonResponseMessage) message);
+        else if (mType == MessageType.NEW_BLOCK_HASH_MESSAGE)
+            this.processNewBlockHashMessage(sender, (NewBlockHashMessage) message);
         else if(!blockProcessor.hasBetterBlockToSync()) {
             if (mType == MessageType.NEW_BLOCK_HASHES)
                 this.processNewBlockHashesMessage(sender, (NewBlockHashesMessage) message);
@@ -141,7 +143,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         }
         else
             loggerMessageProcess.debug("Message[{}] not processed.", message.getMessageType());
-
 
         loggerMessageProcess.debug("Message[{}] processed after [{}] nano.", message.getMessageType(), System.nanoTime() - start);
     }
@@ -382,6 +383,11 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private void processBlockHashResponseMessage(@Nonnull final MessageSender sender, @Nonnull final BlockHashResponseMessage message) {
         if (this.syncProcessor != null)
             this.syncProcessor.processBlockHashResponse(sender, message);
+    }
+
+    private void processNewBlockHashMessage(@Nonnull final MessageSender sender, @Nonnull final NewBlockHashMessage message) {
+        if (this.syncProcessor != null)
+            this.syncProcessor.processNewBlockHash(sender, message);
     }
 
     private void processSkeletonResponseMessage(@Nonnull final MessageSender sender, @Nonnull final SkeletonResponseMessage message) {

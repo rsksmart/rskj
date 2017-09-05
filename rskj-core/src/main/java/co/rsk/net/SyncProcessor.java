@@ -207,6 +207,16 @@ public class SyncProcessor {
         blockSyncService.processBlock(sender, message.getBlock());
     }
 
+    public void processNewBlockHash(MessageSender sender, NewBlockHashMessage message) {
+        byte[] hash = message.getBlockHash();
+
+        if (this.blockSyncService.getBlockFromStoreOrBlockchain(hash) != null)
+            return;
+
+        sender.sendMessage(new BlockRequestMessage(++lastRequestId, hash));
+        this.getPeerStatus(sender.getNodeID()).registerExpectedResponse(lastRequestId, MessageType.BLOCK_RESPONSE_MESSAGE);
+    }
+
     private SyncPeerStatus createPeerStatus(NodeID nodeID) {
         SyncPeerStatus peerStatus = new SyncPeerStatus();
         peerStatuses.put(nodeID, peerStatus);
