@@ -9,9 +9,7 @@ import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
 
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by ajlopez on 29/08/2017.
@@ -215,6 +213,14 @@ public class SyncProcessor {
 
         sender.sendMessage(new BlockRequestMessage(++lastRequestId, hash));
         this.getPeerStatus(sender.getNodeID()).registerExpectedResponse(lastRequestId, MessageType.BLOCK_RESPONSE_MESSAGE);
+    }
+
+    public Set<NodeID> getKnownPeersNodeIDs() {
+        Set<NodeID> ids = new HashSet<>();
+
+        ids.addAll(this.peerStatuses.keySet());
+
+        return ids;
     }
 
     private SyncPeerStatus createPeerStatus(NodeID nodeID) {
