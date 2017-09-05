@@ -21,6 +21,7 @@ package co.rsk.net;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.test.World;
+import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
@@ -29,15 +30,8 @@ import org.junit.Test;
 import java.util.List;
 
 public class ThreeAsyncNodeUsingSyncProcessorTest {
-    private static SimpleAsyncNode createNode(int size) {
-        final World world = new World();
+    private static SimpleAsyncNode createNode(Blockchain blockchain) {
         final BlockStore store = new BlockStore();
-        final Blockchain blockchain = world.getBlockChain();
-
-        List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), size);
-
-        for (Block b: blocks)
-            blockchain.tryToConnect(b);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
@@ -48,6 +42,16 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         handler.disablePoWValidation();
 
         return new SimpleAsyncNode(handler, syncProcessor);
+    }
+
+    private static SimpleAsyncNode createNode(int size) {
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
+
+        List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), size);
+
+        for (Block b: blocks)
+            blockchain.tryToConnect(b);
+        return createNode(blockchain);
     }
 
     @Test
@@ -130,6 +134,53 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
         Assert.assertEquals(50, node2.getBestBlock().getNumber());
         Assert.assertEquals(50, node3.getBestBlock().getNumber());
+
+        Assert.assertTrue(node1.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node3.getExpectedResponses().isEmpty());
+
+        node1.joinWithTimeout();
+        node2.joinWithTimeout();
+        node3.joinWithTimeout();
+    }
+
+    @Test
+    public void synchronizeNewNodeWithTwoPeers() throws InterruptedException {
+        Blockchain b1 = BlockChainBuilder.ofSize(30);
+        Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 43);
+        SimpleAsyncNode node1 = createNode(b1);
+        SimpleAsyncNode node2 = createNode(b2);
+        SimpleAsyncNode node3 = createNode(0);
+
+        Assert.assertEquals(30, node1.getBestBlock().getNumber());
+        Assert.assertEquals(73, node2.getBestBlock().getNumber());
+        Assert.assertEquals(0, node3.getBestBlock().getNumber());
+
+        node1.sendFullStatus(node3);
+        // sync setup
+        node3.waitUntilNTasksWithTimeout(11);
+        // synchronize 30 new blocks from node 1
+        node3.waitUntilNTasksWithTimeout(30);
+
+        Assert.assertTrue(node1.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node3.getExpectedResponses().isEmpty());
+
+        Assert.assertEquals(30, node1.getBestBlock().getNumber());
+        Assert.assertEquals(73, node2.getBestBlock().getNumber());
+        Assert.assertEquals(30, node3.getBestBlock().getNumber());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node3.getBestBlock().getHash());
+
+        node2.sendFullStatus(node3);
+        // sync setup
+        node3.waitUntilNTasksWithTimeout(3);
+        // synchronize 43 new blocks from node 2
+        node3.waitUntilNTasksWithTimeout(43);
+
+        Assert.assertArrayEquals(node2.getBestBlock().getHash(), node3.getBestBlock().getHash());
+
+        Assert.assertEquals(30, node1.getBestBlock().getNumber());
+        Assert.assertEquals(73, node2.getBestBlock().getNumber());
+        Assert.assertEquals(73, node3.getBestBlock().getNumber());
 
         Assert.assertTrue(node1.getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getExpectedResponses().isEmpty());
