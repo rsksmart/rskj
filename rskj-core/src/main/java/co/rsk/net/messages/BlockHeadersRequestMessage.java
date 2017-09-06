@@ -24,6 +24,10 @@ public class BlockHeadersRequestMessage extends Message {
     private int count;
 
     public BlockHeadersRequestMessage(long id, byte[] hash, int count) {
+        if (count < 0) {
+            throw new IllegalArgumentException();
+        }
+
         this.id = id;
         this.hash = hash;
         this.count = count;

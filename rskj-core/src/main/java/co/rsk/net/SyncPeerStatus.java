@@ -4,9 +4,11 @@ import co.rsk.net.messages.MessageType;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockIdentifier;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Created by ajlopez on 29/08/2017.
@@ -20,12 +22,11 @@ public class SyncPeerStatus {
     private long findingInterval;
 
     // Connection point found or not
-    private boolean hasConnectionPoint;
-    private long connectionPoint;
+    private Optional<Long> connectionPoint = Optional.empty();
 
     // Block identifiers retrieved in skeleton
-    private List<BlockIdentifier> blockIdentifiers;
-    private int lastBlockIdentifierRequested;
+    private Optional<List<BlockIdentifier>> skeleton = Optional.empty();
+    private Optional<Integer> lastRequestedLinkIndex;
 
     // Expected response
     private Map<Long, MessageType> expectedResponses = new HashMap<>();
@@ -43,14 +44,11 @@ public class SyncPeerStatus {
         this.findingHeight = height - this.findingInterval;
     }
 
-    public boolean hasConnectionPoint() { return this.hasConnectionPoint; }
-
     public void setConnectionPoint(long height) {
-        this.connectionPoint = height;
-        this.hasConnectionPoint = true;
+        this.connectionPoint = Optional.of(height);
     }
 
-    public long getConnectionPoint() {
+    public Optional<Long> getConnectionPoint() {
         return this.connectionPoint;
     }
 
@@ -84,22 +82,23 @@ public class SyncPeerStatus {
         this.findingHeight += this.findingInterval;
     }
 
-    public boolean hasBlockIdentifiers() {
-        return this.blockIdentifiers != null;
+    public boolean hasSkeleton() {
+        return this.skeleton.isPresent();
     }
 
-    public List<BlockIdentifier> getBlockIdentifiers() {
-        return this.blockIdentifiers;
+    @Nonnull
+    public List<BlockIdentifier> getSkeleton() {
+        return this.skeleton.orElseThrow(IllegalStateException::new);
     }
 
-    public void setBlockIdentifiers(List<BlockIdentifier> blockIdentifiers) {
-        this.blockIdentifiers = blockIdentifiers;
-        this.lastBlockIdentifierRequested = -1;
+    public void setSkeleton(@Nonnull List<BlockIdentifier> skeleton) {
+        this.skeleton = Optional.of(skeleton);
+        this.lastRequestedLinkIndex = Optional.empty();
     }
 
-    public int getLastBlockIdentifierRequested() { return this.lastBlockIdentifierRequested; }
+    public Optional<Integer> getLastRequestedLinkIndex() { return this.lastRequestedLinkIndex; }
 
-    public void setLastBlockIdentifierRequested(int index) { this.lastBlockIdentifierRequested = index; }
+    public void setLastRequestedLinkIndex(int index) { this.lastRequestedLinkIndex = Optional.of(index); }
 
     public void registerExpectedResponse(long responseId, MessageType type) {
         this.expectedResponses.put(responseId, type);
