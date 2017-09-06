@@ -31,6 +31,7 @@ import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -413,17 +414,11 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
      * @return true if there is a block in the blockchain with that hash.
      */
     private boolean blockIsInIndex(@Nonnull final Block block) {
-        // TODO: don't unnecessarily wrap the hash for comparison
-        final ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
         final List<Block> blocks = this.getBlocksByNumber(block.getNumber());
 
-        for (final Block b : blocks) {
-            if (new ByteArrayWrapper(b.getHash()).equals(key)) {
-                return true;
-            }
-        }
-
-        return false;
+        return blocks.stream()
+                .map(Block::getHash)
+                .anyMatch(b -> ByteUtil.fastEquals(b, block.getHash()));
     }
 
     @Override

@@ -60,6 +60,7 @@ import static org.ethereum.util.BIUtil.toBI;
 /**
  * The MinerServer provides support to components that perform the actual mining.
  * It builds blocks to mine and publishes blocks once a valid nonce was found by the miner.
+ * @author Oscar Guindzberg
  */
 
 @Component("MinerServer")
@@ -151,6 +152,7 @@ public class MinerServerImpl implements MinerServer {
 
         Block newBlock;
         Sha3Hash key = new Sha3Hash(TypeConverter.removeZeroX(blockHashForMergedMining));
+
         synchronized (lock) {
             Block workingBlock = blocksWaitingforPoW.get(key);
 

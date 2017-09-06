@@ -38,6 +38,7 @@ import java.util.List;
 
 /**
  * Implements the actual Remasc distribution logic
+ * @author Oscar Guindzberg
  */
 public class Remasc {
     private static final Logger logger = LoggerFactory.getLogger(Remasc.class);

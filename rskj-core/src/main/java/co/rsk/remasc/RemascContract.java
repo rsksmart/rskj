@@ -42,6 +42,7 @@ import java.util.*;
  * The Remasc contract which manages the distribution of miner fees.
  * This class just extends PrecompiledContract, checks no wrong data was supplied and delegates to
  * Remasc the actual fee distribution logic
+ * @author Oscar Guindzberg
  */
 public class RemascContract extends PrecompiledContracts.PrecompiledContract {
 

@@ -38,6 +38,7 @@ import java.util.TimerTask;
  * MinerClient mines new blocks.
  * In fact it just performs the proof-of-work needed to find a valid block and uses
  * uses MinerServer to build blocks to mine and publish blocks once a valid nonce was found.
+ * @author Oscar Guindzberg
  */
 
 @Component("MinerClient")

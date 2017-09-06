@@ -155,8 +155,11 @@ public class BlockStore {
     public List<Block> getChildrenOf(List<Block> blocks) {
         final List<Block> children = new ArrayList<>();
 
-        for (final Block block : blocks)
-            BlockUtils.addBlocksToList(children, getBlocksByParentHash(block.getHash()));
+        // TODO(mc) check if we need a better implementation because BlockUtils.addBlocksToList is O(N^2)
+        blocks.stream()
+                .map(Block::getHash)
+                .map(this::getBlocksByParentHash)
+                .forEach(b -> BlockUtils.addBlocksToList(children, b));
 
         return children;
     }
