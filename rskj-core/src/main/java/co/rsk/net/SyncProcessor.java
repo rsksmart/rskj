@@ -7,6 +7,8 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -15,6 +17,8 @@ import java.util.*;
  * Created by ajlopez on 29/08/2017.
  */
 public class SyncProcessor {
+    private static final Logger logger = LoggerFactory.getLogger(SyncProcessor.class);
+
     private long lastRequestId;
     private Blockchain blockchain;
     private BlockSyncService blockSyncService;
@@ -66,37 +70,43 @@ public class SyncProcessor {
         if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
             return;
 
-        peerStatus.setBlockIdentifiers(message.getBlockIdentifiers());
+        peerStatus.setSkeleton(message.getBlockIdentifiers());
 
         this.sendNextBlockHeadersRequest(sender, peerStatus);
     }
 
     private void sendNextBlockHeadersRequest(MessageSender sender, SyncPeerStatus peerStatus) {
-        List<BlockIdentifier> blockIdentifiers = peerStatus.getBlockIdentifiers();
-
-        if (blockIdentifiers == null)
+        if (!peerStatus.hasSkeleton())
             return;
 
-        int nbids = blockIdentifiers.size();
-        int lastBlockIdentifier = peerStatus.getLastBlockIdentifierRequested();
+        List<BlockIdentifier> skeleton = peerStatus.getSkeleton();
 
-        for (int k = lastBlockIdentifier + 1; k < nbids; k++) {
-            byte[] hash = blockIdentifiers.get(k).getHash();
+        if (skeleton.isEmpty())
+            return;
+
+        long connectionPoint = peerStatus.getConnectionPoint().orElseGet(() -> {
+            logger.error("Sending BlockHeaders request to peer {} but the connection point is missing", sender.getNodeID());
+            return 0L;
+        });
+
+        // We use -1 so we start iterarting from the first element
+        int linkIndex = peerStatus.getLastRequestedLinkIndex().orElse(-1) + 1;
+        for (int k = linkIndex; k < skeleton.size(); k++) {
+            byte[] hash = skeleton.get(k).getHash();
 
             if (this.blockSyncService.getBlockFromStoreOrBlockchain(hash) != null)
                 continue;
 
-            long height = blockIdentifiers.get(k).getNumber();
+            long height = skeleton.get(k).getNumber();
 
-            long lastHeight = k > 0 ? blockIdentifiers.get(k - 1).getNumber() : peerStatus.getConnectionPoint();
-
-            long previousKnownHeight = Math.max(lastHeight, peerStatus.getConnectionPoint());
+            long lastHeight = k > 0 ? skeleton.get(k - 1).getNumber() : connectionPoint;
+            long previousKnownHeight = Math.max(lastHeight, connectionPoint);
 
             int count = (int)(height - previousKnownHeight);
 
             sender.sendMessage(new BlockHeadersRequestMessage(++lastRequestId, hash, count));
             peerStatus.registerExpectedResponse(lastRequestId, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
-            peerStatus.setLastBlockIdentifierRequested(k);
+            peerStatus.setLastRequestedLinkIndex(k);
 
             return;
         }
@@ -135,8 +145,9 @@ public class SyncProcessor {
         else
             peerStatus.updateNotFound();
 
-        if (peerStatus.hasConnectionPoint()) {
-            sendSkeletonRequest(sender, peerStatus.getConnectionPoint());
+        Optional<Long> cp = peerStatus.getConnectionPoint();
+        if (cp.isPresent()) {
+            sendSkeletonRequest(sender, cp.get());
             return;
         }
 

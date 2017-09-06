@@ -442,6 +442,7 @@ public class SyncProcessorTest {
         for (int k = 0; k < 10; k++)
             bids.add(new BlockIdentifier(HashUtil.randomHash(), (k + 1) * 10));
 
+        processor.getPeerStatus(sender.getNodeID()).setConnectionPoint(0);
         processor.getPeerStatus(sender.getNodeID()).registerExpectedResponse(1, MessageType.SKELETON_RESPONSE_MESSAGE);
         processor.processSkeletonResponse(sender, new SkeletonResponseMessage(1, bids));
 
@@ -460,8 +461,8 @@ public class SyncProcessorTest {
         SyncPeerStatus peerStatus = processor.getPeerStatus(sender.getNodeID());
 
         Assert.assertNotNull(peerStatus);
-        Assert.assertTrue(peerStatus.hasBlockIdentifiers());
-        Assert.assertEquals(10, peerStatus.getBlockIdentifiers().size());
+        Assert.assertTrue(peerStatus.hasSkeleton());
+        Assert.assertEquals(10, peerStatus.getSkeleton().size());
         Assert.assertEquals(1, processor.getPeerStatus(sender.getNodeID()).getExpectedResponses().size());
     }
 
@@ -507,7 +508,7 @@ public class SyncProcessorTest {
             else
                 hash = HashUtil.randomHash();
 
-            bids.add(new BlockIdentifier(hash, (k + 1) * 10));
+            bids.add(new BlockIdentifier(hash, number));
         }
 
         processor.getPeerStatus(sender.getNodeID()).registerExpectedResponse(1, MessageType.SKELETON_RESPONSE_MESSAGE);
