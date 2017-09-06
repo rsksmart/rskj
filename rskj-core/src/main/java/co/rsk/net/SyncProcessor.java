@@ -89,6 +89,14 @@ public class SyncProcessor {
             return 0L;
         });
 
+        if (peerStatus.getLastRequestedLinkIndex().isPresent()) {
+            int index = peerStatus.getLastRequestedLinkIndex().get();
+            byte[] hash = skeleton.get(index).getHash();
+
+            if (this.blockSyncService.getBlockFromStoreOrBlockchain(hash) == null)
+                return;
+        }
+
         // We use -1 so we start iterarting from the first element
         int linkIndex = peerStatus.getLastRequestedLinkIndex().orElse(-1) + 1;
         for (int k = linkIndex; k < skeleton.size(); k++) {
