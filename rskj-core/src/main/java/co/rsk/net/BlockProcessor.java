@@ -63,7 +63,7 @@ public interface BlockProcessor {
 
     void acceptAnyBlock();
 
-    // New messages
+    // New messages for RSK's sync protocol
 
     void processBlockRequest(MessageSender sender, long requestId, byte[] hash);
 
