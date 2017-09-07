@@ -21,6 +21,7 @@ package org.ethereum.rpc;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Created by Ruben on 19/11/2015.
@@ -52,6 +53,10 @@ public class TypeConverter {
             x = "0" + x;
         }
         return Hex.decode(x);
+    }
+
+    public static byte[] stringToByteArray(String input) {
+        return input.getBytes(StandardCharsets.UTF_8);
     }
 
     public static String toJsonHex(byte[] x) {
