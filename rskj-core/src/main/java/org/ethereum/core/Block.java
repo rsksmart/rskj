@@ -492,6 +492,10 @@ public class Block {
         return Arrays.areEqual(this.getHash(), block.getHash());
     }
 
+    public boolean fastEquals(Block block) {
+        return block != null && ByteUtil.fastEquals(this.getHash(), block.getHash());
+    }
+
     private byte[] getTransactionsEncoded() {
         byte[][] transactionsEncoded = new byte[transactionsList.size()][];
         int i = 0;

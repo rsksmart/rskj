@@ -416,9 +416,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     private boolean blockIsInIndex(@Nonnull final Block block) {
         final List<Block> blocks = this.getBlocksByNumber(block.getNumber());
 
-        return blocks.stream()
-                .map(Block::getHash)
-                .anyMatch(b -> ByteUtil.fastEquals(b, block.getHash()));
+        return blocks.stream().anyMatch(block::fastEquals);
     }
 
     @Override
