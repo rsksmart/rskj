@@ -102,10 +102,12 @@ public enum MessageType {
     BLOCK_HASH_REQUEST_MESSAGE(8) {
         @Override
         public Message createMessage(RLPList list) {
+            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
             byte[] rlpId = list.get(0).getRLPData();
-            byte[] rlpHeight = list.get(1).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            byte[] rlpHeight = RLP.decode2(message.get(0).getRLPData()).get(0).getRLPData();
             long height = rlpHeight == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpHeight).longValue();
+
             return new BlockHashRequestMessage(id, height);
         }
     },
@@ -134,10 +136,10 @@ public enum MessageType {
     BLOCK_HEADERS_RESPONSE_MESSAGE(10) {
         @Override
         public Message createMessage(RLPList list) {
-            byte[] rlpId = list.get(0).getRLPData();
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
-            RLPList rlpHeaders = (RLPList)RLP.decode2(message.get(0).getRLPData()).get(0);
+            byte[] rlpId = list.get(0).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+            RLPList rlpHeaders = (RLPList)RLP.decode2(message.get(0).getRLPData()).get(0);
 
             List<BlockHeader> headers = new ArrayList<>();
 

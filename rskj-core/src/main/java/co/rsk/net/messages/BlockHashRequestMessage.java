@@ -23,9 +23,9 @@ import org.ethereum.util.RLP;
 import java.math.BigInteger;
 
 /**
- * Implements encoding and decoding of the GET_BLOCK_HASH message type.
+ * Implements encoding of the BLOCK_HASH_REQUEST message type.
  */
-public class BlockHashRequestMessage extends Message {
+public class BlockHashRequestMessage extends MessageWithId {
     private final long id;
     private final long height;
 
@@ -40,11 +40,10 @@ public class BlockHashRequestMessage extends Message {
     }
 
     @Override
-    public byte[] getEncodedMessage() {
-        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(this.id));
+    public byte[] getEncodedMessageWithoutId() {
         byte[] rlpHeight = RLP.encodeBigInteger(BigInteger.valueOf(this.height));
 
-        return RLP.encodeList(rlpId, rlpHeight);
+        return RLP.encodeList(rlpHeight);
     }
 
     public long getId() { return this.id; }
