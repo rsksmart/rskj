@@ -21,7 +21,7 @@ plugins {
     id 'application'
     id 'com.github.johnrengelman.shadow' version '1.2.4'
     id "jacoco"
-    id "org.sonarqube" version "2.3"
+    id "org.sonarqube" version "2.5"
 }
 
 apply plugin: 'witness'
