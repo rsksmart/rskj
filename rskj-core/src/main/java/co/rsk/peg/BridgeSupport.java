@@ -23,8 +23,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
@@ -40,6 +38,8 @@ import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
+import org.ethereum.rpc.TypeConverter;
+import org.ethereum.util.RLP;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
@@ -61,6 +61,7 @@ public class BridgeSupport {
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
+    private final String contractAddress;
     private BridgeConstants bridgeConstants;
     private Context btcContext;
 
@@ -110,6 +111,7 @@ public class BridgeSupport {
         this.rskExecutionBlock = rskExecutionBlock;
         this.rskReceiptStore = rskReceiptStore;
         this.rskBlockStore = rskBlockStore;
+        this.contractAddress = contractAddress;
     }
 
     @VisibleForTesting
@@ -131,6 +133,7 @@ public class BridgeSupport {
 
         this.btcBlockStore = btcBlockStore;
         this.btcBlockChain = btcBlockChain;
+        this.contractAddress = contractAddress;
 
         rskRepository = repository;
     }
@@ -509,7 +512,13 @@ public class BridgeSupport {
             logger.info("Tx fully signed {}. Hex: {}", btcTx, Hex.toHexString(btcTx.bitcoinSerialize()));
             removeUsedUTXOs(btcTx);
             provider.getRskTxsWaitingForSignatures().remove(new Sha3Hash(rskTxHash));
-            provider.getRskTxsWaitingForBroadcasting().put(new Sha3Hash(rskTxHash), new ImmutablePair(btcTx, executionBlockNumber));
+            logs.add(
+                new LogInfo(
+                    TypeConverter.stringToByteArray(contractAddress),
+                    Collections.singletonList(Bridge.RELEASE_BTC_TOPIC),
+                    RLP.encodeElement(btcTx.bitcoinSerialize())
+                )
+            );
         } else {
             logger.debug("Tx not yet fully signed {}.", new Sha3Hash(rskTxHash));
         }
