@@ -102,6 +102,26 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
+    public void buildBlockchainAndSynchronize400Blocks() throws InterruptedException {
+        SimpleAsyncNode node1 = createNode(400);
+        SimpleAsyncNode node2 = createNode(0);
+
+        node1.sendFullStatus(node2);
+        node2.waitUntilNTasksWithTimeout(16);
+        node2.waitUntilNTasksWithTimeout(400);
+
+        node1.joinWithTimeout();
+        node2.joinWithTimeout();
+
+        Assert.assertEquals(400, node1.getBestBlock().getNumber());
+        Assert.assertEquals(400, node2.getBestBlock().getNumber());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+
+        Assert.assertTrue(node1.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getExpectedResponses().isEmpty());
+    }
+
+    @Test
     public void buildBlockchainWithUnclesAndSynchronize() throws InterruptedException {
         SimpleAsyncNode node1 = createNodeWithUncles(10);
         SimpleAsyncNode node2 = createNode(0);
