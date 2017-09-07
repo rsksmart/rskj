@@ -207,7 +207,7 @@ public class SyncProcessor {
         }
 
         // TODO(mc): validate transactions and uncles are part of this block (with header)
-        blockSyncService.processBlock(sender, new Block(expected.header, message.getTransactions(), message.getUncles()));
+        blockSyncService.processBlock(sender, Block.fromValidData(expected.header, message.getTransactions(), message.getUncles()));
 
         this.sendNextBlockHeadersRequest(sender, this.getPeerStatus(sender.getNodeID()));
     }

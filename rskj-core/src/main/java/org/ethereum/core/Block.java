@@ -182,6 +182,16 @@ public class Block {
         this.parsed = true;
     }
 
+    public static Block fromValidData(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
+
+        Block block = new Block((byte[])null);
+        block.parsed = true;
+        block.header = header;
+        block.transactionsList = transactionsList;
+        block.uncleList = uncleList;
+        return block;
+    }
+
     private void parseRLP() {
 
         RLPList params = RLP.decode2(rlpEncoded);
