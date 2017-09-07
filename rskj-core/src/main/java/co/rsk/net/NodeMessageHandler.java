@@ -347,18 +347,18 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private void processGetBlockMessage(@Nonnull final MessageSender sender, @Nonnull final GetBlockMessage message) {
-        final byte[] hash = message.getBlockHash();
-
-        if (this.blockProcessor != null)
+        if (this.blockProcessor != null) {
+            final byte[] hash = message.getBlockHash();
             this.blockProcessor.processGetBlock(sender, hash);
+        }
     }
 
     private void processBlockRequestMessage(@Nonnull final MessageSender sender, @Nonnull final BlockRequestMessage message) {
-        final long requestId = message.getId();
-        final byte[] hash = message.getBlockHash();
-
-        if (this.blockProcessor != null)
+        if (this.blockProcessor != null) {
+            final long requestId = message.getId();
+            final byte[] hash = message.getBlockHash();
             this.blockProcessor.processBlockRequest(sender, requestId, hash);
+        }
     }
 
     private void processBlockResponseMessage(@Nonnull final MessageSender sender, @Nonnull final BlockResponseMessage message) {
@@ -370,28 +370,28 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private void processSkeletonRequestMessage(@Nonnull final MessageSender sender, @Nonnull final SkeletonRequestMessage message) {
-        final long requestId = message.getId();
-        final long startNumber = message.getStartNumber();
-
-        if (this.blockProcessor != null)
+        if (this.blockProcessor != null) {
+            final long requestId = message.getId();
+            final long startNumber = message.getStartNumber();
             this.blockProcessor.processSkeletonRequest(sender, requestId, startNumber);
+        }
     }
 
     private void processBlockHeadersRequestMessage(@Nonnull final MessageSender sender, @Nonnull final BlockHeadersRequestMessage message) {
-        final long requestId = message.getId();
-        final byte[] hash = message.getHash();
-        final int count = message.getCount();
-
-        if (this.blockProcessor != null)
+        if (this.blockProcessor != null) {
+            final long requestId = message.getId();
+            final byte[] hash = message.getHash();
+            final int count = message.getCount();
             this.blockProcessor.processBlockHeadersRequest(sender, requestId, hash, count);
+        }
     }
 
     private void processBlockHashRequestMessage(@Nonnull final MessageSender sender, @Nonnull final BlockHashRequestMessage message) {
-        final long requestId = message.getId();
-        final long height = message.getHeight();
-
-        if (this.blockProcessor != null)
+        if (this.blockProcessor != null) {
+            final long requestId = message.getId();
+            final long height = message.getHeight();
             this.blockProcessor.processBlockHashRequest(sender, requestId, height);
+        }
     }
 
     private void processBlockHashResponseMessage(@Nonnull final MessageSender sender, @Nonnull final BlockHashResponseMessage message) {
@@ -415,11 +415,11 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private void processBodyRequestMessage(@Nonnull final MessageSender sender, @Nonnull final BodyRequestMessage message) {
-        final long requestId = message.getId();
-        final byte[] hash = message.getBlockHash();
-
-        if (this.blockProcessor != null)
+        if (this.blockProcessor != null) {
+            final long requestId = message.getId();
+            final byte[] hash = message.getBlockHash();
             this.blockProcessor.processBodyRequest(sender, requestId, hash);
+        }
     }
 
     private void processBodyResponseMessage(@Nonnull final MessageSender sender, @Nonnull final BodyResponseMessage message) {

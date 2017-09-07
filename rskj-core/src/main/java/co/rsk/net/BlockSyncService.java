@@ -56,7 +56,7 @@ public class BlockSyncService {
 
     private final Object statusLock = new Object();
 
-    private static final Logger logger = LoggerFactory.getLogger("BlockSyncService");
+    private static final Logger logger = LoggerFactory.getLogger(BlockSyncService.class);
     private final BlockStore store;
     private final Blockchain blockchain;
     private final ChannelManager channelManager;
