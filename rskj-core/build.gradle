@@ -27,6 +27,7 @@ plugins {
 apply plugin: 'witness'
 apply plugin: 'propdeps'
 apply plugin: 'propdeps-idea'
+apply plugin: 'maven'
 
 sonarqube {
     properties {
@@ -286,6 +287,25 @@ task reproducible(dependsOn: 'shadowJar') {
     // -- Rename reproducible Jar -- //
         newJar.renameTo(shadowJar.archivePath)
     }
+}
+
+
+task generatePom << {
+    pom {
+        project {
+            groupId project.group
+            artifactId project.name
+            version project.version
+
+            licenses {
+                license {
+                    name 'GNU General Public License (GPL) version 3.0'
+                    url 'http://www.gnu.org/licenses/gpl-3.0.txt'
+                    distribution 'repo'
+                }
+            }
+        }
+    }.writeTo("$libsDir/pom.xml")
 }
 
 void compareJars(File original, File copy, long ts) {
