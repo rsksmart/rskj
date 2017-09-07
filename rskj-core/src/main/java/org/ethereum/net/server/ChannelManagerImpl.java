@@ -216,14 +216,12 @@ public class ChannelManagerImpl implements ChannelManager {
         synchronized (activePeers) {
             activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
 
-            final Vector<Channel> peers = activePeers.values().stream()
+            activePeers.values().stream()
                     .filter(p -> targets == null || targets.contains(new NodeID(p.getNodeId())))
-                    .collect(Collectors.toCollection(() -> new Vector<>()));
-
-            for (Channel peer : peers) {
-                logger.trace("RSK announce hash: {}", peer);
-                peer.sendMessage(newBlockHash);
-            }
+                    .forEach(peer -> {
+                        logger.trace("RSK announce hash: {}", peer);
+                        peer.sendMessage(newBlockHash);
+                    });
         }
 
         return res;
