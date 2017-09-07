@@ -32,10 +32,9 @@ public class BlockHeadersResponseMessage extends MessageWithId {
 
     @Override
     protected byte[] getEncodedMessageWithoutId() {
-        byte[][] rlpHeaders = new byte[this.blockHeaders.size()][];
-
-        for (int k = 0; k < rlpHeaders.length; k++)
-            rlpHeaders[k] = this.blockHeaders.get(k).getEncoded();
+        byte[][] rlpHeaders = this.blockHeaders.stream()
+                .map(BlockHeader::getEncoded)
+                .toArray(byte[][]::new);
 
         return RLP.encodeList(RLP.encodeList(rlpHeaders));
     }

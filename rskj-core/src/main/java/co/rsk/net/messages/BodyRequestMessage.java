@@ -7,7 +7,7 @@ import java.math.BigInteger;
 /**
  * Created by ajlopez on 24/08/2017.
  */
-public class BodyRequestMessage extends Message {
+public class BodyRequestMessage extends MessageWithId {
     private long id;
     private byte[] hash;
 
@@ -30,10 +30,8 @@ public class BodyRequestMessage extends Message {
     }
 
     @Override
-    public byte[] getEncodedMessage() {
-        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(this.id));
+    public byte[] getEncodedMessageWithoutId() {
         byte[] rlpHash = RLP.encodeElement(this.hash);
-
-        return RLP.encodeList(rlpId, rlpHash);
+        return RLP.encodeList(rlpHash);
     }
 }

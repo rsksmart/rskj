@@ -33,6 +33,7 @@ import org.spongycastle.util.BigIntegers;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.ethereum.util.ByteUtil.byteArrayToInt;
 
@@ -91,11 +92,11 @@ public enum MessageType {
     TRANSACTIONS(7) {
         @Override
         public Message createMessage(RLPList list) {
-            List<Transaction> txs = new ArrayList<>();
-
-            if (CollectionUtils.isNotEmpty(list))
-                list.stream().filter(element ->  element.getRLPData().length <= 1 << 19 /* 512KB */)
-                        .forEach(element -> txs.add(new Transaction(element.getRLPData())));
+            List<Transaction> txs = list.stream()
+                    .map(RLPElement::getRLPData)
+                    .filter(MessageType::validTransactionLength)
+                    .map(Transaction::new)
+                    .collect(Collectors.toList());
             return new TransactionsMessage(txs);
         }
     },
@@ -114,18 +115,21 @@ public enum MessageType {
     BLOCK_HASH_RESPONSE_MESSAGE(18) {
         @Override
         public Message createMessage(RLPList list) {
+            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
             byte[] rlpId = list.get(0).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            byte[] hash = list.get(1).getRLPData();
+            byte[] hash = message.get(0).getRLPData();
+
             return new BlockHashResponseMessage(id, hash);
         }
     },
     BLOCK_HEADERS_REQUEST_MESSAGE(9) {
         @Override
         public Message createMessage (RLPList list){
+            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
             byte[] rlpId = list.get(0).getRLPData();
-            byte[] hash = list.get(1).getRLPData();
-            byte[] rlpCount = list.get(2).getRLPData();
+            byte[] hash = message.get(0).getRLPData();
+            byte[] rlpCount = message.get(1).getRLPData();
 
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             int count = byteArrayToInt(rlpCount);
@@ -138,13 +142,13 @@ public enum MessageType {
         public Message createMessage(RLPList list) {
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
             byte[] rlpId = list.get(0).getRLPData();
-            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             RLPList rlpHeaders = (RLPList)RLP.decode2(message.get(0).getRLPData()).get(0);
+            long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
 
-            List<BlockHeader> headers = new ArrayList<>();
-
-            for (int k = 0; k < rlpHeaders.size(); k++)
-                headers.add(new BlockHeader(rlpHeaders.get(k).getRLPData()));
+            List<BlockHeader> headers = rlpHeaders.stream()
+                    .map(RLPElement::getRLPData)
+                    .map(BlockHeader::new)
+                    .collect(Collectors.toList());
 
             return new BlockHeadersResponseMessage(id, headers);
         }
@@ -152,17 +156,19 @@ public enum MessageType {
     BLOCK_REQUEST_MESSAGE(11) {
         @Override
         public Message createMessage(RLPList list) {
+            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
             byte[] rlpId = list.get(0).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            byte[] hash = list.get(1).getRLPData();
+            byte[] hash = message.get(0).getRLPData();
             return new BlockRequestMessage(id, hash);
         }
     },
     BLOCK_RESPONSE_MESSAGE(12) {
         @Override
         public Message createMessage(RLPList list) {
+            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
             byte[] rlpId = list.get(0).getRLPData();
-            byte[] rlpBlock = list.get(1).getRLPData();
+            byte[] rlpBlock = message.get(0).getRLPData();
 
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             Block block = new Block(rlpBlock);
@@ -173,15 +179,14 @@ public enum MessageType {
     SKELETON_RESPONSE_MESSAGE(13) {
         @Override
         public Message createMessage(RLPList list) {
+            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
             byte[] rlpId = list.get(0).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
 
-            RLPList paramsList = (RLPList) RLP.decode2(list.get(1).getRLPData()).get(0);
-            List<BlockIdentifier> blockIdentifiers = new ArrayList<>();
-            for (RLPElement param : paramsList) {
-                RLPList rlpData = ((RLPList) param);
-                blockIdentifiers.add(new BlockIdentifier(rlpData));
-            }
+            RLPList paramsList = (RLPList)RLP.decode2(message.get(0).getRLPData()).get(0);
+            List<BlockIdentifier> blockIdentifiers = paramsList.stream()
+                    .map(param -> new BlockIdentifier((RLPList)param))
+                    .collect(Collectors.toList());
 
             return new SkeletonResponseMessage(id, blockIdentifiers);
         }
@@ -189,24 +194,24 @@ public enum MessageType {
     BODY_REQUEST_MESSAGE(14) {
         @Override
         public Message createMessage(RLPList list) {
+            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
             byte[] rlpId = list.get(0).getRLPData();
+            byte[] hash = message.get(0).getRLPData();
+
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            byte[] hash = list.get(1).getRLPData();
             return new BodyRequestMessage(id, hash);
         }
     },
     BODY_RESPONSE_MESSAGE(15) {
         @Override
         public Message createMessage(RLPList list) {
-            byte[] rlpId = list.get(0).getRLPData();
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
+            byte[] rlpId = list.get(0).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             RLPList rlpTransactions = (RLPList)RLP.decode2(message.get(0).getRLPData()).get(0);
             RLPList rlpUncles = (RLPList)RLP.decode2(message.get(1).getRLPData()).get(0);
 
             List<Transaction> transactions = new ArrayList<>();
-            List<BlockHeader> uncles = new ArrayList<>();
-
             for (int k = 0; k < rlpTransactions.size(); k++) {
                 byte[] txdata = rlpTransactions.get(k).getRLPData();
                 Transaction tx = new Transaction(txdata);
@@ -217,8 +222,10 @@ public enum MessageType {
                 transactions.add(tx);
             }
 
-            for (int k = 0; k < rlpUncles.size(); k++)
-                uncles.add(new BlockHeader(rlpUncles.get(k).getRLPData()));
+            List<BlockHeader> uncles = rlpUncles.stream()
+                    .map(RLPElement::getRLPData)
+                    .map(BlockHeader::new)
+                    .collect(Collectors.toList());
 
             return new BodyResponseMessage(id, transactions, uncles);
         }
@@ -226,9 +233,10 @@ public enum MessageType {
     SKELETON_REQUEST_MESSAGE(16) {
         @Override
         public Message createMessage(RLPList list) {
+            RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
             byte[] rlpId = list.get(0).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            byte[] rlpStartNumber = list.get(1).getRLPData();
+            byte[] rlpStartNumber = message.get(0).getRLPData();
             long startNumber = rlpStartNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpStartNumber).longValue();
             return new SkeletonRequestMessage(id, startNumber);
         }
@@ -259,5 +267,9 @@ public enum MessageType {
                 return mt;
         }
         throw new IllegalArgumentException(String.format("Invalid Message Type: %d", type));
+    }
+
+    private static boolean validTransactionLength(byte[] data) {
+        return data.length <= 1 << 19;  /* 512KB */
     }
 }

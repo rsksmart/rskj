@@ -25,7 +25,7 @@ import java.math.BigInteger;
 /**
  * Wrapper around an RSK GetSkeleton message.
  */
-public class SkeletonRequestMessage extends Message {
+public class SkeletonRequestMessage extends MessageWithId {
     private long id;
     private long startNumber;
 
@@ -40,11 +40,9 @@ public class SkeletonRequestMessage extends Message {
     }
 
     @Override
-    public byte[] getEncodedMessage() {
-        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(this.id));
+    public byte[] getEncodedMessageWithoutId() {
         byte[] rlpStartNumber = RLP.encodeBigInteger(BigInteger.valueOf(this.startNumber));
-
-        return RLP.encodeList(rlpId, rlpStartNumber);
+        return RLP.encodeList(rlpStartNumber);
     }
 
     public long getId() { return this.id; }

@@ -26,7 +26,7 @@ import java.math.BigInteger;
 /**
  * Created by ajlopez on 5/10/2016.
  */
-public class BlockResponseMessage extends Message {
+public class BlockResponseMessage extends MessageWithId {
     private long id;
     private Block block;
 
@@ -49,10 +49,9 @@ public class BlockResponseMessage extends Message {
     }
 
     @Override
-    public byte[] getEncodedMessage() {
-        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(this.id));
+    public byte[] getEncodedMessageWithoutId() {
         byte[] rlpBlock = RLP.encode(this.block.getEncoded());
 
-        return RLP.encodeList(rlpId, rlpBlock);
+        return RLP.encodeList(rlpBlock);
     }
 }

@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * Wrapper around an RSK Skeleton message.
  */
-public class SkeletonResponseMessage extends Message {
+public class SkeletonResponseMessage extends MessageWithId {
 
     private long id;
     private List<BlockIdentifier> blockIdentifiers;
@@ -44,13 +44,11 @@ public class SkeletonResponseMessage extends Message {
     }
 
     @Override
-    public byte[] getEncodedMessage() {
-        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(this.id));
-        List<byte[]> encodedElements = new ArrayList<>();
-        for (BlockIdentifier identifier : blockIdentifiers)
-            encodedElements.add(identifier.getEncoded());
-        byte[][] encodedElementArray = encodedElements.toArray(new byte[encodedElements.size()][]);
-        return RLP.encodeList(rlpId, RLP.encodeList(encodedElementArray));
+    public byte[] getEncodedMessageWithoutId() {
+        byte[][] encodedElementArray = blockIdentifiers.stream()
+                .map(BlockIdentifier::getEncoded)
+                .toArray(byte[][]::new);
+        return RLP.encodeList(RLP.encodeList(encodedElementArray));
     }
 
     public long getId() {

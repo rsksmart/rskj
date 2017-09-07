@@ -7,7 +7,7 @@ import java.math.BigInteger;
 /**
  * Created by ajlopez on 23/08/2017.
  */
-public class BlockHeadersRequestMessage extends Message {
+public class BlockHeadersRequestMessage extends MessageWithId {
     /**
      * Id to identify request/response correlation
      */
@@ -40,12 +40,11 @@ public class BlockHeadersRequestMessage extends Message {
     public int getCount() { return this.count; }
 
     @Override
-    public byte[] getEncodedMessage() {
-        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(this.id));
+    public byte[] getEncodedMessageWithoutId() {
         byte[] rlpHash = RLP.encodeElement(this.hash);
         byte[] rlpCount = RLP.encodeInt(this.count);
 
-        return RLP.encodeList(rlpId, rlpHash, rlpCount);
+        return RLP.encodeList(rlpHash, rlpCount);
     }
 
     @Override
