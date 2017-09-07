@@ -3,6 +3,7 @@ package co.rsk.net;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.messages.*;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Sets;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
@@ -10,7 +11,6 @@ import org.ethereum.core.Blockchain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -41,20 +41,17 @@ public class SyncProcessor {
         if (chainStatus == null)
             return this.peers.size();
 
-        BigInteger totalDifficulty = chainStatus.getTotalDifficulty();
-        int count = 0;
+        long count = this.peers.values().stream()
+                .filter(chainStatus::hasLowerDifficulty)
+                .count();
 
-        for (Status status : this.peers.values())
-            if (status.getTotalDifficulty().compareTo(totalDifficulty) > 0)
-                count++;
-
-        return count;
+        return Math.toIntExact(count);
     }
 
     public void processStatus(MessageSender sender, Status status) {
         peers.put(sender.getNodeID(), status);
 
-        if (status.getTotalDifficulty().compareTo(this.blockchain.getTotalDifficulty()) > 0)
+        if (this.blockchain.getStatus().hasLowerDifficulty(status))
             this.findConnectionPoint(sender, status);
     }
 
@@ -235,11 +232,7 @@ public class SyncProcessor {
     }
 
     public Set<NodeID> getKnownPeersNodeIDs() {
-        Set<NodeID> ids = new HashSet<>();
-
-        ids.addAll(this.peerStatuses.keySet());
-
-        return ids;
+        return this.peerStatuses.keySet();
     }
 
     private SyncPeerStatus createPeerStatus(NodeID nodeID) {
