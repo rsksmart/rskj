@@ -1,13 +1,17 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.blockchain.utils.BlockchainBuilder;
+import co.rsk.core.bc.BlockExecutor;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageSender;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.*;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -324,6 +328,56 @@ public class SyncProcessorTest {
     }
 
     @Test
+    public void processBodyResponseWithTransactionAddsToBlockchain() {
+        Account senderAccount = createAccount("sender");
+        Account receiverAccount = createAccount("receiver");
+
+        final BlockStore store = new BlockStore();
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        Block genesis = blockchain.getBestBlock();
+        Repository repository = blockchain.getRepository();
+        repository.createAccount(senderAccount.getAddress());
+        repository.addBalance(senderAccount.getAddress(), BigInteger.valueOf(20000000));
+        genesis.setStateRoot(repository.getRoot());
+        genesis.flushRLP();
+        blockchain.getBlockStore().saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+
+        Transaction tx = createTransaction(senderAccount, receiverAccount, BigInteger.valueOf(1000000), BigInteger.ZERO);
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+
+        Block block = BlockGenerator.createChildBlock(genesis, txs, blockchain.getRepository().getRoot());
+
+        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
+        Assert.assertEquals(1, block.getTransactionsList().size());
+        blockExecutor.executeAndFillAll(block, genesis);
+        Assert.assertEquals(21000, block.getFeesPaidToMiner());
+        Assert.assertEquals(1, block.getTransactionsList().size());
+
+        Assert.assertEquals(1, block.getNumber());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService);
+        List<Transaction> transactions = block.getTransactionsList();
+        List<BlockHeader> uncles = block.getUncleList();
+        BodyResponseMessage response = new BodyResponseMessage(96, transactions, uncles);
+
+        processor.getPeerStatus(sender.getNodeID()).registerExpectedResponse(96, MessageType.BODY_RESPONSE_MESSAGE);
+        processor.expectBodyResponseFor(96, sender.getNodeID(), block.getHeader());
+        processor.processBodyResponse(sender, response);
+
+        Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
+        Assert.assertArrayEquals(block.getHash(), blockchain.getBestBlockHash());
+        Assert.assertTrue(processor.getPeerStatus(sender.getNodeID()).getExpectedResponses().isEmpty());
+    }
+
+    @Test
     public void processBlockResponseAddsToBlockchain() {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(10);
@@ -526,5 +580,20 @@ public class SyncProcessorTest {
         Assert.assertEquals(5, request.getCount());
         Assert.assertArrayEquals(bids.get(2).getHash(), request.getHash());
         Assert.assertEquals(1, processor.getPeerStatus(sender.getNodeID()).getExpectedResponses().size());
+    }
+
+    private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
+        String toAddress = Hex.toHexString(receiver.getAddress());
+        byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
+        Transaction tx = Transaction.create(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000));
+        tx.sign(privateKeyBytes);
+        return tx;
+    }
+
+    public static Account createAccount(String seed) {
+        byte[] privateKeyBytes = HashUtil.sha3(seed.getBytes());
+        ECKey key = ECKey.fromPrivate(privateKeyBytes);
+        Account account = new Account(key);
+        return account;
     }
 }
