@@ -379,14 +379,6 @@ public class BridgeSupport {
                 provider.getRskTxsWaitingForSignatures().put(rskTxHash, btcTx);
             }
         }
-
-        Iterator<Map.Entry<Sha3Hash, Pair<BtcTransaction, Long>>> iter2 = provider.getRskTxsWaitingForBroadcasting().entrySet().iterator();
-        while (iter2.hasNext()) {
-            Map.Entry<Sha3Hash, Pair<BtcTransaction, Long>> entry = iter2.next();
-            if (hadEnoughTimeToBroadcast(entry.getKey())) {
-                iter2.remove();
-            }
-        }
     }
 
     /**
@@ -431,15 +423,6 @@ public class BridgeSupport {
             return false;
 
         return (rskExecutionBlock.getNumber() - includedBlock.getNumber() + 1) >= bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations();
-    }
-
-    /**
-     * Return true if enough blocks has passed, so federators had for sure enough time to broadcast it to the btc network
-     */
-    private boolean hadEnoughTimeToBroadcast(Sha3Hash rskTxHash) throws IOException {
-        long bestBlockNumber = rskExecutionBlock.getNumber();
-        long broadcastingInclusionBlock = provider.getRskTxsWaitingForBroadcasting().get(rskTxHash).getRight();
-        return (bestBlockNumber - broadcastingInclusionBlock) > bridgeConstants.getBtcBroadcastingMinimumAcceptableBlocks();
     }
 
     /**
@@ -572,7 +555,7 @@ public class BridgeSupport {
      * @return a StateForFederator serialized in RLP
      */
     public byte[] getStateForBtcReleaseClient() throws IOException {
-        StateForFederator stateForFederator = new StateForFederator(provider.getRskTxsWaitingForSignatures(), provider.getRskTxsWaitingForBroadcasting());
+        StateForFederator stateForFederator = new StateForFederator(provider.getRskTxsWaitingForSignatures());
         return stateForFederator.getEncoded();
     }
 
