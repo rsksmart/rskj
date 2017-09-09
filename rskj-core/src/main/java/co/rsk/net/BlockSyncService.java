@@ -300,17 +300,6 @@ public class BlockSyncService {
         if (sender == null)
             return;
 
-        if (unknownBlockHashes.containsKey(hash)) {
-            int counter = unknownBlockHashes.get(hash);
-
-            counter++;
-
-            if (counter <= 20) {
-                unknownBlockHashes.put(hash, counter);
-                return;
-            }
-        }
-
         unknownBlockHashes.put(hash, 1);
 
         logger.trace("Missing block " + hash.toString().substring(0, 10));

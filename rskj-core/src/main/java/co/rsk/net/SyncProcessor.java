@@ -21,7 +21,6 @@ public class SyncProcessor {
     private long lastRequestId;
     private Blockchain blockchain;
     private BlockSyncService blockSyncService;
-    private Map<NodeID, Status> peers = new HashMap<>();
     private Map<NodeID, SyncPeerStatus> peerStatuses = new HashMap<>();
     private Map<Long, PendingBodyResponse> pendingBodyResponses = new HashMap<>();
 
@@ -31,16 +30,18 @@ public class SyncProcessor {
     }
 
     public int getNoPeers() {
-        return this.peers.size();
+        return this.peerStatuses.size();
     }
 
     public int getNoAdvancedPeers() {
         BlockChainStatus chainStatus = this.blockchain.getStatus();
 
         if (chainStatus == null)
-            return this.peers.size();
+            return this.peerStatuses.size();
 
-        long count = this.peers.values().stream()
+        long count = this.peerStatuses.values().stream()
+                .filter(s -> s.getStatus() != null)
+                .map(s -> s.getStatus())
                 .filter(chainStatus::hasLowerDifficulty)
                 .count();
 
@@ -48,10 +49,14 @@ public class SyncProcessor {
     }
 
     public void processStatus(MessageSender sender, Status status) {
-        peers.put(sender.getNodeID(), status);
-
         if (this.blockchain.getStatus().hasLowerDifficulty(status))
             this.findConnectionPoint(sender, status);
+        else {
+            SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
+
+            if (peerStatus.getStatus() == null || peerStatus.getStatus().getTotalDifficulty().compareTo(status.getTotalDifficulty()) < 0)
+                peerStatus.setStatus(status);
+        }
     }
 
     public void sendSkeletonRequest(MessageSender sender, long height) {
@@ -130,7 +135,7 @@ public class SyncProcessor {
             peerStatus.startFindConnectionPoint(status.getBestBlockNumber());
             this.sendBlockHashRequest(sender, peerStatus.getFindingHeight());
         }
-        else {
+        else if (peerStatus.getStatus().getTotalDifficulty().compareTo(status.getTotalDifficulty()) < 0 && status.getBestBlockNumber() > peerStatus.getStatus().getBestBlockNumber() + 10) {
             this.sendSkeletonRequest(sender, this.blockchain.getStatus().getBestBlockNumber());
             peerStatus.setStatus(status);
         }
