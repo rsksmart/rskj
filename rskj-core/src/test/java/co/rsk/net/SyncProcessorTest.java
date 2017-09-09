@@ -504,7 +504,7 @@ public class SyncProcessorTest {
 
         processor.findConnectionPoint(sender, new Status(100, null));
 
-        long []expectedHeights = new long[] { 50, 25, 25 + 12, 25 + 12 - 6, 25 + 12 - 6 - 3, 25 + 12 - 6 - 3 + 1, 25 + 12 - 6 - 3 + 1 + 1, 25 + 12 - 6 - 3 + 1 + 1 + 1 };
+        long []expectedHeights = new long[] { 50, 25, 25 + 12, 25 + 12 - 6, 25 + 12 - 6 - 3, 25 + 12 - 6 - 3 + 2, 25 + 12 - 6 - 3 + 2 + 2, 25 + 12 - 6 - 3 + 2 + 2 - 1, 25 + 12 - 6 - 3 + 2 + 2 - 1 - 1 };
 
         for (int k = 0; k < expectedHeights.length; k++) {
             Assert.assertEquals(k + 1, sender.getMessages().size());
@@ -518,7 +518,6 @@ public class SyncProcessorTest {
 
             processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash()));
         }
-
 
         Assert.assertEquals(expectedHeights.length + 1, sender.getMessages().size());
 

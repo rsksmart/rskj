@@ -350,7 +350,7 @@ public class MessageTest {
     @Test
     public void encodeDecodeBlockHashRequestMessageWithHighHeight() {
         long someId = 42;
-        long someHeight = 1000;
+        long someHeight = 200000;
         BlockHashRequestMessage message = new BlockHashRequestMessage(someId, someHeight);
 
         byte[] encoded = message.getEncoded();

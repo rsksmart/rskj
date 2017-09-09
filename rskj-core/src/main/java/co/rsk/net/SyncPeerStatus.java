@@ -62,8 +62,8 @@ public class SyncPeerStatus {
 
         this.findingInterval = Math.abs(this.findingInterval / 2);
 
-        if (this.findingInterval == 0)
-            this.findingInterval = 1;
+        if (this.findingInterval <= 1)
+            this.findingInterval = 2;
 
         this.findingHeight += this.findingInterval;
     }
