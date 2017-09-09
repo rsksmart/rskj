@@ -329,7 +329,6 @@ public class SyncProcessorTest {
         Assert.assertTrue(processor.getPeerStatus(sender.getNodeID()).getExpectedResponses().isEmpty());
     }
 
-
     @Test
     public void processBodyResponseAddsToBlockchainAndRequestHeaders() {
         final BlockStore store = new BlockStore();

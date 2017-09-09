@@ -348,6 +348,26 @@ public class MessageTest {
     }
 
     @Test
+    public void encodeDecodeBlockHashRequestMessageWithHighHeight() {
+        long someId = 42;
+        long someHeight = 1000;
+        BlockHashRequestMessage message = new BlockHashRequestMessage(someId, someHeight);
+
+        byte[] encoded = message.getEncoded();
+
+        Message result = Message.create(encoded);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(encoded, result.getEncoded());
+        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, result.getMessageType());
+
+        BlockHashRequestMessage newMessage = (BlockHashRequestMessage) result;
+
+        Assert.assertEquals(someId, newMessage.getId());
+        Assert.assertEquals(someHeight, newMessage.getHeight());
+    }
+
+    @Test
     public void encodeDecodeBlockHashResponseMessage() {
         long id = 42;
         byte[] hash = new byte[32];
