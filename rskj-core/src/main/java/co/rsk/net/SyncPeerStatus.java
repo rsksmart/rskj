@@ -20,6 +20,7 @@ public class SyncPeerStatus {
     // Status used to find connection point
     private long findingHeight;
     private long findingInterval;
+    private boolean finding;
 
     // Connection point found or not
     private Optional<Long> connectionPoint = Optional.empty();
@@ -42,11 +43,15 @@ public class SyncPeerStatus {
     public void startFindConnectionPoint(long height) {
         this.findingInterval = height / 2;
         this.findingHeight = height - this.findingInterval;
+        this.finding = true;
     }
 
     public void setConnectionPoint(long height) {
         this.connectionPoint = Optional.of(height);
+        this.finding = false;
     }
+
+    public boolean isFindingConnectionPoint() { return this.finding; }
 
     public Optional<Long> getConnectionPoint() {
         return this.connectionPoint;

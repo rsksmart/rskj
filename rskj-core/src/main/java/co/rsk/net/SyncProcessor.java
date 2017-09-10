@@ -49,14 +49,29 @@ public class SyncProcessor {
     }
 
     public void processStatus(MessageSender sender, Status status) {
-        if (this.blockchain.getStatus().hasLowerDifficulty(status))
-            this.findConnectionPoint(sender, status);
-        else {
-            SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
+        SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
 
-            if (peerStatus.getStatus() == null || peerStatus.getStatus().getTotalDifficulty().compareTo(status.getTotalDifficulty()) < 0)
-                peerStatus.setStatus(status);
+        peerStatus.setStatus(status);
+
+        if (!this.blockchain.getStatus().hasLowerDifficulty(status))
+            return;
+
+        if (!peerStatus.getConnectionPoint().isPresent() && !peerStatus.isFindingConnectionPoint()) {
+            this.findConnectionPoint(sender, status);
+            return;
         }
+
+        if (!peerStatus.hasSkeleton()) {
+            this.sendSkeletonRequest(sender, this.blockchain.getStatus().getBestBlockNumber());
+            return;
+        }
+
+        List<BlockIdentifier> skeleton = peerStatus.getSkeleton();
+
+        if (skeleton.isEmpty() || status.getBestBlockNumber() > skeleton.get(skeleton.size() - 1).getNumber())
+            skeleton.add(new BlockIdentifier(status.getBestBlockHash(), status.getBestBlockNumber()));
+
+        this.sendNextBlockHeadersRequest(sender, peerStatus);
     }
 
     public void sendSkeletonRequest(MessageSender sender, long height) {
@@ -130,15 +145,14 @@ public class SyncProcessor {
     public void findConnectionPoint(MessageSender sender, Status status) {
         SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
 
-        if (peerStatus.getStatus() == null) {
-            peerStatus.setStatus(status);
-            peerStatus.startFindConnectionPoint(status.getBestBlockNumber());
-            this.sendBlockHashRequest(sender, peerStatus.getFindingHeight());
-        }
+        peerStatus.startFindConnectionPoint(status.getBestBlockNumber());
+        this.sendBlockHashRequest(sender, peerStatus.getFindingHeight());
+        /*
         else if (peerStatus.getStatus().getTotalDifficulty().compareTo(status.getTotalDifficulty()) < 0 && status.getBestBlockNumber() > peerStatus.getStatus().getBestBlockNumber() + 10) {
             this.sendSkeletonRequest(sender, this.blockchain.getStatus().getBestBlockNumber());
             peerStatus.setStatus(status);
         }
+        */
     }
 
     public void processBlockHashResponse(MessageSender sender, BlockHashResponseMessage message) {
