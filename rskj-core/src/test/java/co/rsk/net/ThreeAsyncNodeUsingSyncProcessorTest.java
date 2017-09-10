@@ -125,9 +125,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node2.sendFullStatus(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(3);
+        node3.waitUntilNTasksWithTimeout(300);
         // synchronize 50 new blocks from node 2
-        node3.waitUntilNTasksWithTimeout(50);
+        node3.waitUntilNTasksWithTimeout(100);
 
         Assert.assertArrayEquals(node2.getBestBlock().getHash(), node3.getBestBlock().getHash());
 
@@ -174,7 +174,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         // sync setup
         node3.waitUntilNTasksWithTimeout(3);
         // synchronize 43 new blocks from node 2
-        node3.waitUntilNTasksWithTimeout(43);
+        node3.waitUntilNTasksWithTimeout(42);
 
         Assert.assertArrayEquals(node2.getBestBlock().getHash(), node3.getBestBlock().getHash());
 
