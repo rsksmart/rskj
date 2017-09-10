@@ -129,11 +129,11 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         // synchronize 50 new blocks from node 2
         node3.waitUntilNTasksWithTimeout(100);
 
-        Assert.assertArrayEquals(node2.getBestBlock().getHash(), node3.getBestBlock().getHash());
-
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
         Assert.assertEquals(50, node2.getBestBlock().getNumber());
         Assert.assertEquals(50, node3.getBestBlock().getNumber());
+
+        Assert.assertArrayEquals(node2.getBestBlock().getHash(), node3.getBestBlock().getHash());
 
         Assert.assertTrue(node1.getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getExpectedResponses().isEmpty());

@@ -5,10 +5,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Created by ajlopez on 29/08/2017.
@@ -99,6 +96,16 @@ public class SyncPeerStatus {
     public void setSkeleton(@Nonnull List<BlockIdentifier> skeleton) {
         this.skeleton = Optional.of(skeleton);
         this.lastRequestedLinkIndex = Optional.empty();
+    }
+
+    public void removeSkeletonItems(int index) {
+        List<BlockIdentifier> bis = new ArrayList<>();
+
+        int size = this.skeleton.get().size();
+        for (int k = index + 1; k < size; k++)
+            bis.add(this.skeleton.get().get(k));
+
+        this.skeleton = Optional.of(bis);
     }
 
     public Optional<Integer> getLastRequestedLinkIndex() { return this.lastRequestedLinkIndex; }

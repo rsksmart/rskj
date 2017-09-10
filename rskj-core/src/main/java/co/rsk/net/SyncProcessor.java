@@ -115,6 +115,7 @@ public class SyncProcessor {
 
         // We use -1 so we start iterarting from the first element
         int linkIndex = peerStatus.getLastRequestedLinkIndex().orElse(-1) + 1;
+
         for (int k = linkIndex; k < skeleton.size(); k++) {
             byte[] hash = skeleton.get(k).getHash();
 
@@ -130,7 +131,8 @@ public class SyncProcessor {
 
             sender.sendMessage(new BlockHeadersRequestMessage(++lastRequestId, hash, count));
             peerStatus.registerExpectedResponse(lastRequestId, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
-            peerStatus.setLastRequestedLinkIndex(k);
+            peerStatus.removeSkeletonItems(k - 1);
+            peerStatus.setLastRequestedLinkIndex(0);
 
             return;
         }
