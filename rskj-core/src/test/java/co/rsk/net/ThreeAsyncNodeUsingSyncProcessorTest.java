@@ -188,7 +188,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         // sync setup
         node3.waitUntilNTasksWithTimeout(3);
         // synchronize 43 new blocks from node 2
-        node3.waitUntilNTasksWithTimeout(42);
+        node3.waitUntilNTasksWithTimeout(43);
 
         Assert.assertArrayEquals(node2.getBestBlock().getHash(), node3.getBestBlock().getHash());
 
