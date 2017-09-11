@@ -187,7 +187,6 @@ public class SyncProcessor {
                 pendingBodyResponses.put(lastRequestId, new PendingBodyResponse(sender.getNodeID(), header));
             }
         }
-
     }
 
     public void processBodyResponse(MessageSender sender, BodyResponseMessage message) {
@@ -197,6 +196,7 @@ public class SyncProcessor {
             return;
 
         PendingBodyResponse expected = pendingBodyResponses.get(message.getId());
+
         if (expected == null || !sender.getNodeID().equals(expected.nodeID)) {
             // Don't waste time on spam or expired responses.
             return;

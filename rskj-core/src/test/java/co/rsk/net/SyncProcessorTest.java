@@ -91,6 +91,7 @@ public class SyncProcessorTest {
         Assert.assertTrue(sender.getMessages().isEmpty());
 
         Assert.assertTrue(processor.getPeerStatus(sender.getNodeID()).getExpectedResponses().isEmpty());
+        Assert.assertFalse(processor.getPeerStatus(sender.getNodeID()).isSyncing());
     }
 
     @Test
@@ -142,6 +143,7 @@ public class SyncProcessorTest {
         Assert.assertEquals(100, request.getHeight());
 
         Assert.assertEquals(1, processor.getPeerStatus(sender.getNodeID()).getExpectedResponses().size());
+        Assert.assertFalse(processor.getPeerStatus(sender.getNodeID()).isSyncing());
     }
 
     @Test
@@ -167,6 +169,7 @@ public class SyncProcessorTest {
         Assert.assertEquals(50, request.getHeight());
 
         Assert.assertEquals(1, processor.getPeerStatus(sender.getNodeID()).getExpectedResponses().size());
+        Assert.assertTrue(processor.getPeerStatus(sender.getNodeID()).isSyncing());
     }
 
     @Test
@@ -197,6 +200,7 @@ public class SyncProcessorTest {
         Assert.assertEquals(25, request.getHeight());
 
         Assert.assertEquals(1, processor.getPeerStatus(sender.getNodeID()).getExpectedResponses().size());
+        Assert.assertTrue(processor.getPeerStatus(sender.getNodeID()).isSyncing());
     }
 
     @Test
