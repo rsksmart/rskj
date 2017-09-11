@@ -40,9 +40,7 @@ public class SyncProcessor {
             return this.peerStatuses.size();
 
         long count = this.peerStatuses.values().stream()
-                .filter(s -> s.getStatus() != null)
-                .map(s -> s.getStatus())
-                .filter(chainStatus::hasLowerDifficulty)
+                .filter(s -> s.isSyncing())
                 .count();
 
         return Math.toIntExact(count);
