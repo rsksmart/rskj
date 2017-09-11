@@ -140,12 +140,6 @@ public class SyncProcessor {
 
         peerStatus.startFindConnectionPoint(status.getBestBlockNumber());
         this.sendBlockHashRequest(sender, peerStatus.getFindingHeight());
-        /*
-        else if (peerStatus.getStatus().getTotalDifficulty().compareTo(status.getTotalDifficulty()) < 0 && status.getBestBlockNumber() > peerStatus.getStatus().getBestBlockNumber() + 10) {
-            this.sendSkeletonRequest(sender, this.blockchain.getStatus().getBestBlockNumber());
-            peerStatus.setStatus(status);
-        }
-        */
     }
 
     public void processBlockHashResponse(MessageSender sender, BlockHashResponseMessage message) {
@@ -181,15 +175,6 @@ public class SyncProcessor {
         // - Parent exists
         // - consecutive numbers
         // - consistent difficulty
-
-
-        // TODO: review logic, in two nodes sync it returns
-        /*
-        if (!sender.getNodeID().equals(expectedNodeId)) {
-            // Don't waste time on spam or expired responses.
-            return;
-        }
-        */
 
         // to do: decide whether we have to request the body immediately if we don't have it,
         // or maybe only after we have validated it
