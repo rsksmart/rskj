@@ -14,6 +14,9 @@ public class SyncPeerStatus {
     // Peer status
     private Status status;
 
+    // Is syncinc
+    private boolean syncing;
+
     // Status used to find connection point
     private long findingHeight;
     private long findingInterval;
@@ -37,7 +40,14 @@ public class SyncPeerStatus {
         return this.status;
     }
 
+    public boolean isSyncing() { return this.syncing; }
+
+    public void startSyncing() { this.syncing = true; }
+
+    public void stopSyncing() { this.syncing = false; }
+
     public void startFindConnectionPoint(long height) {
+        this.startSyncing();
         this.findingInterval = height / 2;
         this.findingHeight = height - this.findingInterval;
         this.finding = true;

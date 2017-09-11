@@ -53,14 +53,18 @@ public class SyncProcessor {
 
         peerStatus.setStatus(status);
 
-        if (!this.blockchain.getStatus().hasLowerDifficulty(status))
-            return;
+        if (!this.blockchain.getStatus().hasLowerDifficulty(status)) {
+            if (peerStatus.isSyncing())
+                peerStatus.stopSyncing();
 
-        if (!peerStatus.getConnectionPoint().isPresent() && !peerStatus.isFindingConnectionPoint()) {
-            this.findConnectionPoint(sender, status);
             return;
         }
 
+        if (!peerStatus.isSyncing() || !peerStatus.getConnectionPoint().isPresent() && !peerStatus.isFindingConnectionPoint()) {
+            this.findConnectionPoint(sender, status);
+            return;
+        }
+/*
         if (!peerStatus.hasSkeleton()) {
             this.sendSkeletonRequest(sender, this.blockchain.getStatus().getBestBlockNumber());
             return;
@@ -72,6 +76,7 @@ public class SyncProcessor {
             skeleton.add(new BlockIdentifier(status.getBestBlockHash(), status.getBestBlockNumber()));
 
         this.sendNextBlockHeadersRequest(sender, peerStatus);
+        */
     }
 
     public void sendSkeletonRequest(MessageSender sender, long height) {
@@ -131,11 +136,12 @@ public class SyncProcessor {
 
             sender.sendMessage(new BlockHeadersRequestMessage(++lastRequestId, hash, count));
             peerStatus.registerExpectedResponse(lastRequestId, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
-            peerStatus.removeSkeletonItems(k - 1);
-            peerStatus.setLastRequestedLinkIndex(0);
+            peerStatus.setLastRequestedLinkIndex(k);
 
             return;
         }
+
+        peerStatus.stopSyncing();
     }
 
     public void sendBlockHashRequest(MessageSender sender, long height) {

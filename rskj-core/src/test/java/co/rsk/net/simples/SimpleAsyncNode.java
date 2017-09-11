@@ -79,6 +79,11 @@ public class SimpleAsyncNode extends SimpleNode {
         return this.syncProcessor.getPeerStatus(this.getNodeID()).getExpectedResponses();
     }
 
+    @VisibleForTesting
+    public SyncProcessor getSyncProcessor() {
+        return this.syncProcessor;
+    }
+
     private class MessageTask {
         private MessageSender sender;
         private Message message;

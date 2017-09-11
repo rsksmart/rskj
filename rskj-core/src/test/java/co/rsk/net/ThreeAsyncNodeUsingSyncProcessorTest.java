@@ -97,6 +97,13 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node1.joinWithTimeout();
         node2.joinWithTimeout();
         node3.joinWithTimeout();
+
+        Assert.assertFalse(node1.getSyncProcessor().getPeerStatus(node2.getNodeID()).isSyncing());
+        Assert.assertFalse(node1.getSyncProcessor().getPeerStatus(node3.getNodeID()).isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().getPeerStatus(node1.getNodeID()).isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().getPeerStatus(node3.getNodeID()).isSyncing());
+        Assert.assertFalse(node3.getSyncProcessor().getPeerStatus(node1.getNodeID()).isSyncing());
+        Assert.assertFalse(node3.getSyncProcessor().getPeerStatus(node2.getNodeID()).isSyncing());
     }
 
     @Test
@@ -125,9 +132,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node2.sendFullStatus(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(300);
+        node3.waitUntilNTasksWithTimeout(4);
         // synchronize 50 new blocks from node 2
-        node3.waitUntilNTasksWithTimeout(100);
+        node3.waitUntilNTasksWithTimeout(50);
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
         Assert.assertEquals(50, node2.getBestBlock().getNumber());
@@ -142,6 +149,13 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node1.joinWithTimeout();
         node2.joinWithTimeout();
         node3.joinWithTimeout();
+
+        Assert.assertFalse(node1.getSyncProcessor().getPeerStatus(node2.getNodeID()).isSyncing());
+        Assert.assertFalse(node1.getSyncProcessor().getPeerStatus(node3.getNodeID()).isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().getPeerStatus(node1.getNodeID()).isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().getPeerStatus(node3.getNodeID()).isSyncing());
+        Assert.assertFalse(node3.getSyncProcessor().getPeerStatus(node1.getNodeID()).isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().getPeerStatus(node2.getNodeID()).isSyncing());
     }
 
     @Test
@@ -189,5 +203,12 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node1.joinWithTimeout();
         node2.joinWithTimeout();
         node3.joinWithTimeout();
+
+        Assert.assertFalse(node1.getSyncProcessor().getPeerStatus(node2.getNodeID()).isSyncing());
+        Assert.assertFalse(node1.getSyncProcessor().getPeerStatus(node3.getNodeID()).isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().getPeerStatus(node1.getNodeID()).isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().getPeerStatus(node3.getNodeID()).isSyncing());
+        Assert.assertFalse(node3.getSyncProcessor().getPeerStatus(node1.getNodeID()).isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().getPeerStatus(node2.getNodeID()).isSyncing());
     }
 }

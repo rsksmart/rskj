@@ -71,60 +71,6 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processStatusWithAdvancedPeersTwice() {
-        final BlockStore store = new BlockStore();
-        Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        byte[] hash = HashUtil.randomHash();
-        byte[] parentHash = HashUtil.randomHash();
-
-        Status status = new Status(100, hash, parentHash, blockchain.getTotalDifficulty().add(BigInteger.TEN));
-
-        BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService);
-        SimpleMessageSender sender = new SimpleMessageSender(new byte[]{0x01});
-        processor.processStatus(sender, status);
-
-        Assert.assertEquals(1, processor.getNoPeers());
-        Assert.assertEquals(1, processor.getNoAdvancedPeers());
-
-        Set<NodeID> ids = processor.getKnownPeersNodeIDs();
-        Assert.assertFalse(ids.isEmpty());
-        Assert.assertTrue(ids.contains(sender.getNodeID()));
-
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
-
-        Message message = sender.getMessages().get(0);
-
-        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
-
-        BlockHashRequestMessage request = (BlockHashRequestMessage)message;
-
-        Assert.assertEquals(50, request.getHeight());
-
-        status = new Status(200, hash, parentHash, blockchain.getTotalDifficulty().add(BigInteger.valueOf(30)));
-        processor.processStatus(sender, status);
-
-        Assert.assertEquals(1, processor.getNoPeers());
-        Assert.assertEquals(1, processor.getNoAdvancedPeers());
-
-        Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(2, sender.getMessages().size());
-
-        message = sender.getMessages().get(1);
-
-        Assert.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, message.getMessageType());
-
-        SkeletonRequestMessage sqrequest = (SkeletonRequestMessage)message;
-
-        Assert.assertNotEquals(0, sqrequest.getId());
-        Assert.assertEquals(0, sqrequest.getStartNumber());
-
-        Assert.assertEquals(2, processor.getPeerStatus(sender.getNodeID()).getExpectedResponses().size());
-    }
-
-    @Test
     public void processStatusWithPeerWithSameDifficulty() {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(100);
