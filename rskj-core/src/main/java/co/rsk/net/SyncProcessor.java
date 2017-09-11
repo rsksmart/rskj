@@ -62,19 +62,6 @@ public class SyncProcessor {
             this.findConnectionPoint(sender, status);
             return;
         }
-/*
-        if (!peerStatus.hasSkeleton()) {
-            this.sendSkeletonRequest(sender, this.blockchain.getStatus().getBestBlockNumber());
-            return;
-        }
-
-        List<BlockIdentifier> skeleton = peerStatus.getSkeleton();
-
-        if (skeleton.isEmpty() || status.getBestBlockNumber() > skeleton.get(skeleton.size() - 1).getNumber())
-            skeleton.add(new BlockIdentifier(status.getBestBlockHash(), status.getBestBlockNumber()));
-
-        this.sendNextBlockHeadersRequest(sender, peerStatus);
-        */
     }
 
     public void sendSkeletonRequest(MessageSender sender, long height) {
