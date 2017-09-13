@@ -270,6 +270,38 @@ public class SyncProcessorTest {
     }
 
     @Test
+    public void processBlockHeadersResponseWithManyHeaders() {
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        Blockchain otherBlockchain = BlockChainBuilder.ofSize(10);
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        SyncProcessor processor = new SyncProcessor(blockchain, null);
+
+        List<BlockHeader> headers = new ArrayList<>();
+
+        for (int k = 10; k >= 1; k--)
+            headers.add(otherBlockchain.getBlockByNumber(k).getHeader());
+
+        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(99, headers);
+
+        processor.getPeerStatus(sender.getNodeID()).registerExpectedResponse(99, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
+        processor.processBlockHeadersResponse(sender, response);
+        Assert.assertEquals(10, sender.getMessages().size());
+
+        for (int k = 0; k < 10; k++) {
+            Message message = sender.getMessages().get(k);
+
+            Assert.assertEquals(MessageType.BODY_REQUEST_MESSAGE, message.getMessageType());
+
+            BodyRequestMessage request = (BodyRequestMessage)message;
+
+            Assert.assertArrayEquals(otherBlockchain.getBlockByNumber(k + 1).getHash(), request.getBlockHash());
+        }
+
+        Assert.assertEquals(10, processor.getPeerStatus(sender.getNodeID()).getExpectedResponses().size());
+    }
+
+    @Test
     public void processBlockHeadersResponseWithOneExistingHeader() {
         Blockchain blockchain = BlockChainBuilder.ofSize(3);
         Block block = blockchain.getBlockByNumber(2);
