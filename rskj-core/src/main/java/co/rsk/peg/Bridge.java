@@ -252,8 +252,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     private BridgeSupport setup() throws Exception {
-        BridgeSupport bridgeSupport = new BridgeSupport(repository, contractAddress, rskExecutionBlock, rskReceiptStore, rskBlockStore);
-        return bridgeSupport;
+        return new BridgeSupport(repository, contractAddress, rskExecutionBlock, rskReceiptStore, rskBlockStore, logs);
     }
 
     private void teardown() throws IOException {
