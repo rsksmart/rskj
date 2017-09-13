@@ -34,10 +34,13 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
+import org.ethereum.core.Block;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
+import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +68,7 @@ public class BridgeSupport {
     private BtcBlockChain btcBlockChain;
 
     private BridgeStorageProvider provider;
+    private List<LogInfo> logs;
 
     private Repository rskRepository;
 
@@ -75,13 +79,13 @@ public class BridgeSupport {
     private StoredBlock initialBtcStoredBlock;
 
     // Used by bridge
-    public BridgeSupport(Repository repository, String contractAddress, org.ethereum.core.Block rskExecutionBlock, ReceiptStore rskReceiptStore, org.ethereum.db.BlockStore rskBlockStore) throws IOException, BlockStoreException {
-        this(repository, contractAddress, new BridgeStorageProvider(repository, contractAddress), rskExecutionBlock, rskReceiptStore, rskBlockStore);
+    public BridgeSupport(Repository repository, String contractAddress, Block rskExecutionBlock, ReceiptStore rskReceiptStore, BlockStore rskBlockStore, List<LogInfo> logs) throws IOException, BlockStoreException {
+        this(repository, contractAddress, new BridgeStorageProvider(repository, contractAddress), rskExecutionBlock, rskReceiptStore, rskBlockStore, logs);
     }
 
 
     // Used by unit tests
-    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, org.ethereum.core.Block rskExecutionBlock, ReceiptStore rskReceiptStore, org.ethereum.db.BlockStore rskBlockStore) throws IOException, BlockStoreException {
+    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, Block rskExecutionBlock, ReceiptStore rskReceiptStore, BlockStore rskBlockStore, List<LogInfo> logs) throws IOException, BlockStoreException {
         this.provider = provider;
 
         bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
@@ -102,7 +106,7 @@ public class BridgeSupport {
         rskRepository = repository;
 
         this.initialBtcStoredBlock = this.getLowestBlock();
-
+        this.logs = logs;
         this.rskExecutionBlock = rskExecutionBlock;
         this.rskReceiptStore = rskReceiptStore;
         this.rskBlockStore = rskBlockStore;
