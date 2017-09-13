@@ -180,18 +180,25 @@ public class SyncProcessor {
         // or maybe only after we have validated it
         List<BlockHeader> headers = message.getBlockHeaders();
         byte[] parentHash = null;
+        long parentNumber = -1;
 
         for (int k = headers.size(); k-- > 0;) {
             BlockHeader header = headers.get(k);
 
             if (parentHash == null) {
-                if (this.blockchain.getBlockByHash(header.getParentHash()) == null)
+                Block parent = this.blockchain.getBlockByHash(header.getParentHash());
+
+                if (parent == null)
+                    continue;
+
+                if (parent.getNumber() + 1 != header.getNumber())
                     continue;
             }
-            else if (!Arrays.equals(parentHash, header.getParentHash()))
+            else if (!Arrays.equals(parentHash, header.getParentHash()) || parentNumber + 1 != header.getNumber())
                 continue;
 
             parentHash = header.getHash();
+            parentNumber = header.getNumber();
 
             if (this.blockchain.getBlockByHash(header.getHash()) == null) {
                 sender.sendMessage(new BodyRequestMessage(++lastRequestId, header.getHash()));
