@@ -2,6 +2,7 @@ package co.rsk.net;
 
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.messages.*;
+import co.rsk.validators.BlockDifficultyRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -179,32 +180,38 @@ public class SyncProcessor {
         // to do: decide whether we have to request the body immediately if we don't have it,
         // or maybe only after we have validated it
         List<BlockHeader> headers = message.getBlockHeaders();
-        byte[] parentHash = null;
-        long parentNumber = -1;
+        Block parent = null;
 
         for (int k = headers.size(); k-- > 0;) {
             BlockHeader header = headers.get(k);
 
-            if (parentHash == null) {
-                Block parent = this.blockchain.getBlockByHash(header.getParentHash());
+            if (this.blockchain.getBlockByHash(header.getHash()) != null)
+                continue;
+
+            if (parent == null) {
+                parent = this.blockchain.getBlockByHash(header.getParentHash());
 
                 if (parent == null)
                     continue;
-
-                if (parent.getNumber() + 1 != header.getNumber())
-                    continue;
             }
-            else if (!Arrays.equals(parentHash, header.getParentHash()) || parentNumber + 1 != header.getNumber())
+
+            if (!Arrays.equals(parent.getHash(), header.getParentHash()))
                 continue;
 
-            parentHash = header.getHash();
-            parentNumber = header.getNumber();
+            if (parent.getNumber() + 1 != header.getNumber())
+                continue;
 
-            if (this.blockchain.getBlockByHash(header.getHash()) == null) {
-                sender.sendMessage(new BodyRequestMessage(++lastRequestId, header.getHash()));
-                peerStatus.registerExpectedResponse(lastRequestId, MessageType.BODY_RESPONSE_MESSAGE);
-                pendingBodyResponses.put(lastRequestId, new PendingBodyResponse(sender.getNodeID(), header));
-            }
+            BlockDifficultyRule diffRule = new BlockDifficultyRule();
+            Block block = Block.fromValidData(header, null, null);
+
+            if (!diffRule.isValid(block, parent))
+                continue;
+
+            parent = block;
+
+            sender.sendMessage(new BodyRequestMessage(++lastRequestId, header.getHash()));
+            peerStatus.registerExpectedResponse(lastRequestId, MessageType.BODY_RESPONSE_MESSAGE);
+            pendingBodyResponses.put(lastRequestId, new PendingBodyResponse(sender.getNodeID(), header));
         }
     }
 

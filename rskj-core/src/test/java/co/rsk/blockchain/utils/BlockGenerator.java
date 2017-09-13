@@ -357,7 +357,7 @@ public class BlockGenerator {
             for (int ntx = 0; ntx < ntxs; ntx++)
                 txs.add(new SimpleRskTransaction(null));
 
-            Block newblock = BlockGenerator.createChildBlock(parent, txs, uncles, ByteUtil.bytesToBigInteger(parent.getDifficulty()).longValue(), null);
+            Block newblock = BlockGenerator.createChildBlock(parent, txs, uncles, 0, null);
             chain.add(newblock);
 
             if (withUncles) {
