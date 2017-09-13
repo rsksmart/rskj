@@ -179,8 +179,20 @@ public class SyncProcessor {
         // to do: decide whether we have to request the body immediately if we don't have it,
         // or maybe only after we have validated it
         List<BlockHeader> headers = message.getBlockHeaders();
+        byte[] parentHash = null;
+
         for (int k = headers.size(); k-- > 0;) {
             BlockHeader header = headers.get(k);
+
+            if (parentHash == null) {
+                if (this.blockchain.getBlockByHash(header.getParentHash()) == null)
+                    continue;
+            }
+            else if (!Arrays.equals(parentHash, header.getParentHash()))
+                continue;
+
+            parentHash = header.getHash();
+
             if (this.blockchain.getBlockByHash(header.getHash()) == null) {
                 sender.sendMessage(new BodyRequestMessage(++lastRequestId, header.getHash()));
                 peerStatus.registerExpectedResponse(lastRequestId, MessageType.BODY_RESPONSE_MESSAGE);

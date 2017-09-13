@@ -241,9 +241,9 @@ public class SyncProcessorTest {
 
     @Test
     public void processBlockHeadersResponseWithOneHeader() {
-        Blockchain blockchain = BlockChainBuilder.ofSize(3);
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
         Blockchain otherBlockchain = BlockChainBuilder.ofSize(3);
-        Block block = otherBlockchain.getBlockByNumber(2);
+        Block block = otherBlockchain.getBlockByNumber(1);
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
         SyncProcessor processor = new SyncProcessor(blockchain, null);
@@ -299,6 +299,27 @@ public class SyncProcessorTest {
         }
 
         Assert.assertEquals(10, processor.getPeerStatus(sender.getNodeID()).getExpectedResponses().size());
+    }
+
+    @Test
+    public void processBlockHeadersResponseWithManyHeadersMissingFirstParent() {
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        Blockchain otherBlockchain = BlockChainBuilder.ofSize(10);
+        SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
+
+        SyncProcessor processor = new SyncProcessor(blockchain, null);
+
+        List<BlockHeader> headers = new ArrayList<>();
+
+        for (int k = 10; k >= 2; k--)
+            headers.add(otherBlockchain.getBlockByNumber(k).getHeader());
+
+        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(99, headers);
+
+        processor.getPeerStatus(sender.getNodeID()).registerExpectedResponse(99, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
+        processor.processBlockHeadersResponse(sender, response);
+        Assert.assertEquals(0, sender.getMessages().size());
+        Assert.assertEquals(0, processor.getPeerStatus(sender.getNodeID()).getExpectedResponses().size());
     }
 
     @Test
