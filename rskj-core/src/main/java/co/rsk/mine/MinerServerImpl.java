@@ -200,7 +200,7 @@ public class MinerServerImpl implements MinerServer {
         return true;
     }
 
-    private byte[] compressCoinbase(byte[] bitcoinMergedMiningCoinbaseTransactionSerialized) {
+    public static byte[] compressCoinbase(byte[] bitcoinMergedMiningCoinbaseTransactionSerialized) {
         int rskTagPosition = Collections.lastIndexOfSubList(java.util.Arrays.asList(ArrayUtils.toObject(bitcoinMergedMiningCoinbaseTransactionSerialized)),
                 java.util.Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG)));
         int remainingByteCount = bitcoinMergedMiningCoinbaseTransactionSerialized.length - rskTagPosition - RskMiningConstants.RSK_TAG.length - RskMiningConstants.BLOCK_HEADER_HASH_SIZE;
@@ -226,7 +226,7 @@ public class MinerServerImpl implements MinerServer {
      * @param bitcoinMergedMiningBlock the bitcoin block that includes all the txs.
      * @return A Partial Merkle Branch in which you can validate the coinbase tx.
      */
-    private co.rsk.bitcoinj.core.PartialMerkleTree getBitcoinMergedMerkleBranch(co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
+    public static co.rsk.bitcoinj.core.PartialMerkleTree getBitcoinMergedMerkleBranch(co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
         List<co.rsk.bitcoinj.core.BtcTransaction> txs = bitcoinMergedMiningBlock.getTransactions();
         List<co.rsk.bitcoinj.core.Sha256Hash> txHashes = new ArrayList<>(txs.size());
         for (co.rsk.bitcoinj.core.BtcTransaction tx : txs) {

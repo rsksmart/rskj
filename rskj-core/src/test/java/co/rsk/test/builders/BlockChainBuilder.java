@@ -19,6 +19,7 @@
 package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStore;
@@ -82,6 +83,10 @@ public class BlockChainBuilder {
     }
 
     public static Blockchain ofSize(int size) {
+        return ofSize(size, false);
+    }
+
+    public static Blockchain ofSize(int size, boolean mining) {
         BlockChainBuilder builder = new BlockChainBuilder();
         BlockChainImpl blockChain = builder.build();
 
@@ -94,8 +99,12 @@ public class BlockChainBuilder {
         if (size > 0) {
             List<Block> blocks = BlockGenerator.getBlockChain(genesis, size);
 
-            for (Block block: blocks)
+            for (Block block: blocks) {
+                if (mining)
+                    block = BlockMiner.mineBlock(block);
+
                 blockChain.tryToConnect(block);
+            }
         }
 
         return blockChain;

@@ -614,6 +614,9 @@ public class Block {
     }
 
     public void setBitcoinMergedMiningHeader(byte[] bitcoinMergedMiningHeader) {
+        if (!parsed)
+            parseRLP();
+
         this.header.setBitcoinMergedMiningHeader(bitcoinMergedMiningHeader);
         rlpEncoded = null;
     }

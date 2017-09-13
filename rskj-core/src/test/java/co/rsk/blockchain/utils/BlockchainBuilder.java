@@ -79,10 +79,12 @@ public class BlockchainBuilder {
         this.txinfos = txinfos;
         return this;
     }
+
     public BlockchainBuilder setBlockStore(BlockStore blockStore) {
         this.blockStore = blockStore;
         return this;
     }
+
     public BlockchainBuilder setRepository(Repository repository) {
         this.repository = repository;
         return this;

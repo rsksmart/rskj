@@ -279,6 +279,8 @@ public class SyncProcessorTest {
 
         List<BlockHeader> headers = new ArrayList<>();
 
+        Assert.assertEquals(10, otherBlockchain.getStatus().getBestBlockNumber());
+
         for (int k = 10; k >= 1; k--)
             headers.add(otherBlockchain.getBlockByNumber(k).getHeader());
 
