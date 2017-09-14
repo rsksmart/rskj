@@ -21,6 +21,7 @@ package co.rsk.net.handler;
 import co.rsk.net.handler.txvalidator.*;
 import org.ethereum.core.Transaction;
 
+import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -39,7 +40,7 @@ public class TxPendingValidator {
         validatorSteps.add(new TxValidatorGasLimitValidator());
     }
 
-    public boolean isValid(Transaction tx, byte[] gasLimit) {
+    public boolean isValid(Transaction tx, BigInteger gasLimit) {
         return validatorSteps.stream()
                 .allMatch(v -> v.validate(tx, null, gasLimit, null, 0));
     }

@@ -701,6 +701,10 @@ public class Block {
         return (this.getMinimumGasPrice() == null) ? null : new BigInteger(1, this.getMinimumGasPrice());
     }
 
+    public BigInteger getGasLimitAsInteger() {
+        return (this.getGasLimit() == null) ? null : new BigInteger(1, this.getGasLimit());
+    }
+
     private byte[] calcTxTrie(List<Transaction> transactions){
         /* A sealed block is immutable, cannot be changed */
         if (this.sealed)

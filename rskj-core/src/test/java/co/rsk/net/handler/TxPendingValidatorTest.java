@@ -51,7 +51,7 @@ public class TxPendingValidatorTest {
     public void invalidGas() {
         TxPendingValidator validator = new TxPendingValidator();
         Transaction tx = createTransaction(0, 1000, 0, 0, 0, 0);
-        byte[] gasLimit = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(999));
+        BigInteger gasLimit = BigInteger.valueOf(999);
         Assert.assertFalse(validator.isValid(tx, gasLimit));
     }
 
@@ -59,7 +59,7 @@ public class TxPendingValidatorTest {
     public void validGas() {
         TxPendingValidator validator = new TxPendingValidator();
         Transaction tx = createTransaction(0, 1000, 0, 0, 0, 0);
-        byte[] gasLimit = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(1000));
+        BigInteger gasLimit = BigInteger.valueOf(1000);
         Assert.assertTrue(validator.isValid(tx, gasLimit));
     }
 

@@ -22,6 +22,8 @@ import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 
+import java.math.BigInteger;
+
 /**
  * Checks that a transaction is not a Remasc type transaction. Helps to simplify some code.
  *
@@ -30,7 +32,7 @@ import org.ethereum.core.Transaction;
 public class TxValidatorNotRemascTxValidator implements TxValidatorStep {
 
     @Override
-    public boolean validate(Transaction tx, AccountState state, byte[] gasLimit, byte[] minimumGasPrice, long bestBlockNumber) {
+    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber) {
         return !(tx instanceof RemascTransaction);
     }
 

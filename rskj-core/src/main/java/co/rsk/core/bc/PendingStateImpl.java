@@ -430,7 +430,7 @@ public class PendingStateImpl implements PendingState {
     private boolean shouldAcceptTx(Transaction tx) {
         if (bestBlock == null)
             return true;
-        return validator.isValid(tx, bestBlock.getGasLimit());
+        return validator.isValid(tx, bestBlock.getGasLimitAsInteger());
     }
 
     public static class TransactionSortedSet extends TreeSet<Transaction> {
