@@ -18,8 +18,8 @@
 
 package co.rsk.net;
 
-import co.rsk.blockchain.utils.BlockchainBuilder;
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
@@ -88,6 +88,6 @@ public class BlockIntoBlockchainTest {
     }
 
     private static Blockchain createBlockchain(List<Block> blocks) {
-        return new BlockchainBuilder().setTesting(true).setRsk(true).setBlocks(blocks).build();
+        return new BlockChainBuilder().setTesting(true).setRsk(true).setBlocks(blocks).build();
     }
 }
