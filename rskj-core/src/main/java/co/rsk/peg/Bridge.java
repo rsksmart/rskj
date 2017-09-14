@@ -29,6 +29,7 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -329,6 +330,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         try {
             bridgeSupport.releaseBtc(rskTx);
+        } catch (Program.OutOfGasException e) {
+            throw e;
         } catch (Exception e) {
             logger.warn("Exception in releaseBtc", e);
             throw new RuntimeException("Exception in releaseBtc", e);

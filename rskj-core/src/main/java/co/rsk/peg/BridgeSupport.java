@@ -39,6 +39,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -290,9 +291,10 @@ public class BridgeSupport {
     public void releaseBtc(org.ethereum.core.Transaction rskTx) throws IOException {
         byte[] senderCode = rskRepository.getCode(rskTx.getSender());
 
+        //as we can't send btc from contracts we want to send them back to the sender
         if (senderCode != null && senderCode.length > 0) {
-            logger.warn("Contract {} tried to release funds. Release is just allowed from standard accounts.", Hex.toHexString(rskTx.getSender()));
-            return;
+            logger.trace("Contract {} tried to release funds. Release is just allowed from standard accounts.", Hex.toHexString(rskTx.getSender()));
+            throw new Program.OutOfGasException("Contract calling releaseBTC");
         }
 
         Context.propagate(btcContext);
