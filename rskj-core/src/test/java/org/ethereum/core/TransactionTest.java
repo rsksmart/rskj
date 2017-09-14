@@ -339,7 +339,6 @@ public class TransactionTest {
     }
 
     @Test
-    @Ignore // This test fails after update StateTestRunner using BlockChainImpl
     public void constantCallConflictTest() throws Exception {
         /*
           0x095e7baea6a6c7c4c2dfeb977efac326af552d87 contract is the following Solidity code:
