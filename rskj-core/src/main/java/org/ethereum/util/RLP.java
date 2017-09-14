@@ -19,20 +19,22 @@
 
 package org.ethereum.util;
 
-import co.rsk.util.RLPElementType;
+import co.rsk.util.ByteBufferUtil;
 import co.rsk.util.RLPElementView;
 import co.rsk.util.RLPException;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.BigIntegers;
-import org.spongycastle.util.encoders.Hex;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import static java.util.Arrays.copyOfRange;
 import static org.ethereum.util.ByteUtil.*;
 import static org.spongycastle.util.Arrays.concatenate;
 import static org.spongycastle.util.BigIntegers.asUnsignedByteArray;
@@ -176,7 +178,7 @@ public class RLP {
     }
 
     public static BigInteger decodeBigInteger(byte[] data, int index) {
-        RLPElementView info = RLPElementView.calculateElementInfo(data, index);
+        RLPElementView info = RLPElementView.calculateFirstElementInfo(ByteBuffer.wrap(data, index, data.length - index));
         return BigIntegers.fromUnsignedByteArray(info.getOrCreateElement().getRLPData());
     }
 
@@ -388,48 +390,45 @@ public class RLP {
      * @return rlpList
      * - outcome of recursive RLP structure
      */
-    public static RLPList decode2(byte[] msgData) {
-        RLPList rlpList = new RLPList();
-        fullTraverse(msgData, 0, 0, msgData.length, rlpList);
+    @Nonnull
+    public static ArrayList<RLPElement> decode2(@CheckForNull byte[] msgData) {
+        if (msgData == null)
+            return new ArrayList<>();
+        return decode(ByteBuffer.wrap(msgData));
+    }
+
+    @Nullable
+    public static RLPElement decode2OneItem(@CheckForNull byte[] msgData, int startPos) {
+        if (msgData == null)
+            return null;
+        return RLPElementView.calculateFirstElementInfo(ByteBuffer.wrap(msgData, startPos, msgData.length - startPos))
+                .getOrCreateElement();
+    }
+
+    @Nonnull
+    private static ArrayList<RLPElement> decode(@Nonnull ByteBuffer msgData) {
+        ArrayList<RLPElement> rlpList = new ArrayList<>();
+        fullTraverse(msgData, rlpList);
         return rlpList;
     }
 
-    public static RLPElement decode2OneItem(byte[] msgData, int startPos) {
-        RLPList rlpList = new RLPList();
-        fullTraverse(msgData, 0, startPos, startPos + 1, rlpList);
-        return rlpList.get(0);
-    }
     /**
      * Get exactly one message payload
      */
-    private static void fullTraverse(byte[] msgData, int level, int startPos,
-                                     int endPos, RLPList rlpList) {
+    private static void fullTraverse(@Nonnull ByteBuffer msgData, @Nonnull ArrayList<RLPElement> rlpList) {
 
         try {
-            if (msgData == null || msgData.length == 0)
-                return;
-            int pos = startPos;
-
-            while (pos < endPos) {
-
-                logger.debug("fullTraverse: level: " + level + " startPos: " + pos + " endPos: " + endPos);
-                RLPElementView view = RLPElementView.calculateElementInfo(msgData, pos);
-
-                pos = view.getOffset() + view.getLength();
-                if (view.getType() == RLPElementType.LONG_LIST
-                        || (view.getType() == RLPElementType.SHORT_LIST && view.getLength() > 0)) {
-                    RLPList newLevelList = (RLPList)view.getOrCreateElement();
-                    fullTraverse(msgData, level + 1, view.getOffset(), pos, newLevelList);
-                }
-
-                rlpList.add(view.getOrCreateElement());
-            }
+            RLPElementView.forEachRlp(msgData, view -> {
+                // getOrCreateElement will recursively populate lists and sublists
+                RLPElement element = view.getOrCreateElement();
+                rlpList.add(element);
+            });
         } catch (RLPException ex) {
             throw ex;
         } catch (OutOfMemoryError e) {
-            throw new RuntimeException("Invalid RLP (excessive mem allocation while parsing) (" + Hex.toHexString(msgData, startPos, endPos - startPos) + ")", e);
+            throw new RuntimeException("Invalid RLP (excessive mem allocation while parsing) (" + ByteBufferUtil.toHexString(msgData) + ")", e);
         } catch (Exception e) {
-            throw new RuntimeException("RLP wrong encoding (" + Hex.toHexString(msgData, startPos, endPos - startPos) + ")", e);
+            throw new RuntimeException("RLP wrong encoding (" + ByteBufferUtil.toHexString(msgData) + ")", e);
         }
     }
 

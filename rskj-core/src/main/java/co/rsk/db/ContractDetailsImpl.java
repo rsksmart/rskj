@@ -173,7 +173,7 @@ public class ContractDetailsImpl implements ContractDetails {
 
     @Override
     public final void decode(byte[] rlpBytes) {
-        RLPList rlpData = RLP.decode2(rlpBytes);
+        ArrayList<RLPElement> rlpData = RLP.decode2(rlpBytes);
         RLPList rlpList = (RLPList) rlpData.get(0);
 
         RLPItem rlpAddress = (RLPItem) rlpList.get(0);

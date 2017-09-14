@@ -23,7 +23,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
+
+import java.util.ArrayList;
 
 import static org.spongycastle.util.encoders.Hex.decode;
 
@@ -137,7 +140,7 @@ public class EthashTestCase {
     }
 
     public BlockHeader getBlockHeader() {
-        RLPList rlp = RLP.decode2(decode(header));
+        ArrayList<RLPElement> rlp = RLP.decode2(decode(header));
         return new BlockHeader((RLPList) rlp.get(0), true);
     }
 

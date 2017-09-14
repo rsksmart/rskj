@@ -1,10 +1,13 @@
 package co.rsk.util;
 
-import org.ethereum.util.*;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPList;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 
 /**
  * Created by ajlopez on 16/08/2017.
@@ -431,7 +434,7 @@ public class RLPTest {
         Assert.assertEquals(1, encoded.length);
         Assert.assertEquals((byte)192, encoded[0]);
 
-        RLPList list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decode2(encoded);
 
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
@@ -454,7 +457,7 @@ public class RLPTest {
         Assert.assertEquals(3, encoded.length);
         Assert.assertEquals((byte)(192 + 2), encoded[0]);
 
-        RLPList list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decode2(encoded);
 
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
@@ -479,7 +482,7 @@ public class RLPTest {
         Assert.assertEquals(1 + 3 + 3, encoded.length);
         Assert.assertEquals((byte)(192 + 3 + 3), encoded[0]);
 
-        RLPList list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decode2(encoded);
 
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
@@ -504,7 +507,7 @@ public class RLPTest {
         Assert.assertEquals(1 + 1 + 25 + 1 + 28, encoded.length);
         Assert.assertEquals((byte)(192 + 55), encoded[0]);
 
-        RLPList list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decode2(encoded);
 
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
@@ -530,7 +533,7 @@ public class RLPTest {
         Assert.assertEquals((byte)(247 + 1), encoded[0]);
         Assert.assertEquals((byte)(56), encoded[1]);
 
-        RLPList list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decode2(encoded);
 
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
@@ -556,7 +559,7 @@ public class RLPTest {
         Assert.assertEquals((byte)(247 + 1), encoded[0]);
         Assert.assertEquals((byte)(255), encoded[1]);
 
-        RLPList list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decode2(encoded);
 
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
@@ -583,7 +586,7 @@ public class RLPTest {
         Assert.assertEquals((byte)(1), encoded[1]);
         Assert.assertEquals((byte)(0), encoded[2]);
 
-        RLPList list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decode2(encoded);
 
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
@@ -610,7 +613,7 @@ public class RLPTest {
         Assert.assertEquals((byte)(255), encoded[1]);
         Assert.assertEquals((byte)(255), encoded[2]);
 
-        RLPList list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decode2(encoded);
 
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
@@ -638,7 +641,7 @@ public class RLPTest {
         Assert.assertEquals((byte)(0), encoded[2]);
         Assert.assertEquals((byte)(0), encoded[3]);
 
-        RLPList list = RLP.decode2(encoded);
+        ArrayList<RLPElement> list = RLP.decode2(encoded);
 
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());

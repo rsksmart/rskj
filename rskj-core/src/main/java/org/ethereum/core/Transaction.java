@@ -32,6 +32,7 @@ import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
@@ -42,6 +43,7 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.security.SignatureException;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -188,8 +190,7 @@ public class Transaction implements SerializableObject {
 
     public void rlpParse() {
 
-        RLPList decodedTxList = RLP.decode2(rlpEncoded);
-        RLPList transaction = (RLPList) decodedTxList.get(0);
+        ArrayList<RLPElement> transaction = (RLPList)RLP.decode2(rlpEncoded).get(0);
 
         this.nonce = transaction.get(0).getRLPData();
         this.gasPrice = transaction.get(1).getRLPData();
