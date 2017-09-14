@@ -47,10 +47,11 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
     private static SimpleAsyncNode createNode(int size) {
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
-        List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), size);
+        List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), size, 0, false, true);
 
         for (Block b: blocks)
             blockchain.tryToConnect(b);
+
         return createNode(blockchain);
     }
 
@@ -160,8 +161,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void synchronizeNewNodeWithTwoPeers() throws InterruptedException {
-        Blockchain b1 = BlockChainBuilder.ofSize(30);
-        Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 43);
+        Blockchain b1 = BlockChainBuilder.ofSize(30, true);
+        Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 43, true);
+
         SimpleAsyncNode node1 = createNode(b1);
         SimpleAsyncNode node2 = createNode(b2);
         SimpleAsyncNode node3 = createNode(0);

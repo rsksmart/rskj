@@ -338,15 +338,23 @@ public class BlockGenerator {
         return getBlockChain(parent, size, 0);
     }
 
+    public static List<Block> getMinedBlockChain(Block parent, int size) {
+        return getBlockChain(parent, size, 0, false, true);
+    }
+
     public static List<Block> getSimpleBlockChain(Block parent, int size) {
         return getSimpleBlockChain(parent, size, 0);
     }
 
     public static List<Block> getBlockChain(Block parent, int size, int ntxs) {
-        return getBlockChain(parent, size, ntxs, false);
+        return getBlockChain(parent, size, ntxs, false, false);
     }
 
     public static List<Block> getBlockChain(Block parent, int size, int ntxs, boolean withUncles) {
+        return getBlockChain(parent, size, ntxs, withUncles, false);
+    }
+
+    public static List<Block> getBlockChain(Block parent, int size, int ntxs, boolean withUncles, boolean withMining) {
         List<Block> chain = new ArrayList<Block>();
         List<BlockHeader> uncles = new ArrayList<>();
         int chainSize = 0;
@@ -358,6 +366,10 @@ public class BlockGenerator {
                 txs.add(new SimpleRskTransaction(null));
 
             Block newblock = BlockGenerator.createChildBlock(parent, txs, uncles, 0, null);
+
+            if (withMining)
+                newblock = BlockMiner.mineBlock(newblock);
+
             chain.add(newblock);
 
             if (withUncles) {

@@ -8,6 +8,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
+import org.ethereum.validator.ProofOfWorkRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -205,6 +206,11 @@ public class SyncProcessor {
             Block block = Block.fromValidData(header, null, null);
 
             if (!diffRule.isValid(block, parent))
+                continue;
+
+            ProofOfWorkRule powRule = new ProofOfWorkRule();
+
+            if (!powRule.isValid(block))
                 continue;
 
             parent = block;

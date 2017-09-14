@@ -242,7 +242,7 @@ public class SyncProcessorTest {
     @Test
     public void processBlockHeadersResponseWithOneHeader() {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        Blockchain otherBlockchain = BlockChainBuilder.ofSize(3);
+        Blockchain otherBlockchain = BlockChainBuilder.ofSize(3, true);
         Block block = otherBlockchain.getBlockByNumber(1);
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
@@ -272,7 +272,7 @@ public class SyncProcessorTest {
     @Test
     public void processBlockHeadersResponseWithManyHeaders() {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        Blockchain otherBlockchain = BlockChainBuilder.ofSize(10);
+        Blockchain otherBlockchain = BlockChainBuilder.ofSize(10, true);
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
         SyncProcessor processor = new SyncProcessor(blockchain, null);
@@ -306,7 +306,7 @@ public class SyncProcessorTest {
     @Test
     public void processBlockHeadersResponseWithManyHeadersMissingFirstParent() {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        Blockchain otherBlockchain = BlockChainBuilder.ofSize(10);
+        Blockchain otherBlockchain = BlockChainBuilder.ofSize(10, true);
         SimpleMessageSender sender = new SimpleMessageSender(new byte[] { 0x01 });
 
         SyncProcessor processor = new SyncProcessor(blockchain, null);

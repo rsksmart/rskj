@@ -97,14 +97,10 @@ public class BlockChainBuilder {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
         if (size > 0) {
-            List<Block> blocks = BlockGenerator.getBlockChain(genesis, size);
+            List<Block> blocks = mining ? BlockGenerator.getMinedBlockChain(genesis, size) : BlockGenerator.getBlockChain(genesis, size);
 
-            for (Block block: blocks) {
-                if (mining)
-                    block = BlockMiner.mineBlock(block);
-
+            for (Block block: blocks)
                 blockChain.tryToConnect(block);
-            }
         }
 
         return blockChain;
@@ -123,12 +119,18 @@ public class BlockChainBuilder {
     }
 
     public static Blockchain copyAndExtend(Blockchain original, int size) {
+        return copyAndExtend(original, size, false);
+    }
+
+    public static Blockchain copyAndExtend(Blockchain original, int size, boolean mining) {
         Blockchain blockchain = copy(original);
 
         Block initial = original.getBestBlock();
-        List<Block> blocks = BlockGenerator.getBlockChain(initial, size);
+        List<Block> blocks = BlockGenerator.getBlockChain(initial, size, 0, false, mining);
+
         for (Block block: blocks)
             blockchain.tryToConnect(block);
+
         return blockchain;
     }
 }
