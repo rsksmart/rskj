@@ -37,6 +37,7 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -58,9 +59,11 @@ public class Block {
 
     private BlockHeader header;
 
+    // Using concurrent lists
+    // (the add and remove methods copy an internal array,
+    // but the iterator directly use the internal array)
     /* Transactions */
     private List<Transaction> transactionsList = new CopyOnWriteArrayList<>();
-
     /* Uncles */
     private List<BlockHeader> uncleList = new CopyOnWriteArrayList<>();
 
@@ -340,13 +343,14 @@ public class Block {
         if (!parsed)
             parseRLP();
 
-        return transactionsList;
+        return Collections.unmodifiableList(this.transactionsList);
     }
 
     public List<BlockHeader> getUncleList() {
         if (!parsed)
             parseRLP();
-        return uncleList;
+
+        return Collections.unmodifiableList(this.uncleList);
     }
 
     public byte[] getMinimumGasPrice() {
