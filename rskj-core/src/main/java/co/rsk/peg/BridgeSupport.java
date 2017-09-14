@@ -52,6 +52,7 @@ import static org.ethereum.util.BIUtil.transfer;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
+ * @author Oscar Guindzberg
  */
 public class BridgeSupport {
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");

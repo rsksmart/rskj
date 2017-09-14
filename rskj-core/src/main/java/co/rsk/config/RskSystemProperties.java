@@ -297,6 +297,6 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public boolean getForceTargetGasLimit() {
-        return getBooleanProperty("forcegaslimit", false);
+        return getBooleanProperty("forcegaslimit", true);
     }
 }

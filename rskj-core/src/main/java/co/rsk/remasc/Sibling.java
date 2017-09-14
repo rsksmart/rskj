@@ -28,6 +28,7 @@ import java.math.BigInteger;
 /**
  * Siblings are part of the remasc contract state
  * Sibling information is added to contract state as blocks are processed and removed when no longer needed.
+ * @author Oscar Guindzberg
  */
 class Sibling {
 

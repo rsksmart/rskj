@@ -31,8 +31,8 @@ import java.math.BigInteger;
 public class TxValidatorGasLimitValidator implements TxValidatorStep {
 
     @Override
-    public boolean validate(Transaction tx, AccountState state, byte[] gasLimit, byte[] minimumGasPrice, long bestBlockNumber) {
-        BigInteger txGasLimit = BigIntegers.fromUnsignedByteArray(tx.getGasLimit());
-        return  txGasLimit.compareTo(BigIntegers.fromUnsignedByteArray(gasLimit)) <= 0;
+    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber) {
+        BigInteger txGasLimit = tx.getGasLimitAsInteger();
+        return  txGasLimit.compareTo(gasLimit) <= 0;
     }
 }

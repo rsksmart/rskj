@@ -185,8 +185,6 @@ public interface Web3 {
     void db_putHex();
     void db_getHex();
 
-    String eth_addAccount(String privKey);
-
     String personal_newAccountWithSeed(String seed);
     String personal_newAccount(String passphrase);
     String[] personal_listAccounts();

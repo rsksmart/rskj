@@ -820,7 +820,7 @@ public class BlockChainImplTest {
     }
 
     public static BlockChainImpl createBlockChain() {
-        return new BlockChainBuilder().adminInfo(new SimpleAdminInfo()).build();
+        return new BlockChainBuilder().setAdminInfo(new SimpleAdminInfo()).build();
     }
 
     public static BlockChainImpl createBlockChain(Repository repository) {

@@ -21,13 +21,15 @@ package co.rsk.net.handler.txvalidator;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 
+import java.math.BigInteger;
+
 /**
  * Simple check if the account can be used
  */
 public class TxValidatorAccountStateValidator implements TxValidatorStep {
 
     @Override
-    public boolean validate(Transaction tx, AccountState state, byte[] gasLimit, byte[] minimumGasPrice, long bestBlockNumber) {
+    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber) {
         return !state.isDeleted();
     }
 
