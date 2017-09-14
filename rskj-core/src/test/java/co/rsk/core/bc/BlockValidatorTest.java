@@ -297,6 +297,32 @@ public class BlockValidatorTest {
         List<BlockHeader> uncles1 = new ArrayList<>();
         uncles1.add(uncle1a.getHeader());
         uncles1.add(uncle1b.getHeader());
+        Block block1 = BlockGenerator.createChildBlock(genesis);
+        Block block2 = BlockGenerator.createChildBlock(block1, null, uncles1, 1, null);
+
+        blockChain.tryToConnect(genesis);
+        blockChain.tryToConnect(block1);
+        store.saveBlock(uncle1a, BigInteger.ONE, false);
+        store.saveBlock(uncle1b, BigInteger.ONE, false);
+        blockChain.tryToConnect(block2);
+
+        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(store).blockStore(store).build();
+
+        Assert.assertTrue(validator.isValid(block1));
+    }
+
+    @Test
+    public void invalidSiblingUncles() {
+        BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
+        BlockStore store = blockChain.getBlockStore();
+
+        Block genesis = BlockGenerator.getGenesisBlock();
+
+        Block uncle1a = BlockGenerator.createChildBlock(genesis);
+        Block uncle1b = BlockGenerator.createChildBlock(genesis);
+        List<BlockHeader> uncles1 = new ArrayList<>();
+        uncles1.add(uncle1a.getHeader());
+        uncles1.add(uncle1b.getHeader());
         Block block1 = BlockGenerator.createChildBlock(genesis, null, uncles1, 1, null);
 
         blockChain.tryToConnect(genesis);
@@ -306,7 +332,7 @@ public class BlockValidatorTest {
 
         BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(store).blockStore(store).build();
 
-        Assert.assertTrue(validator.isValid(block1));
+        Assert.assertFalse(validator.isValid(block1));
     }
 
     @Test
