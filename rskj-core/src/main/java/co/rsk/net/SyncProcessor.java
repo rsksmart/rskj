@@ -192,7 +192,10 @@ public class SyncProcessor {
             BlockHeader header = headers.get(k);
             Block block = Block.fromValidData(header, null, null);
 
-            if (!validateBlockWithHeader(block, parent))
+            if (parent == null)
+                parent = this.blockchain.getBlockByHash(header.getParentHash());
+
+            if (parent == null || !validateBlockWithHeader(block, parent))
                 continue;
 
             sender.sendMessage(new BodyRequestMessage(++lastRequestId, header.getHash()));
@@ -206,13 +209,6 @@ public class SyncProcessor {
     private boolean validateBlockWithHeader(Block block, Block parent) {
         if (this.blockchain.getBlockByHash(block.getHash()) != null)
             return false;
-
-        if (parent == null) {
-            parent = this.blockchain.getBlockByHash(block.getParentHash());
-
-            if (parent == null)
-                return false;
-        }
 
         if (!Arrays.equals(parent.getHash(), block.getParentHash()))
             return false;
