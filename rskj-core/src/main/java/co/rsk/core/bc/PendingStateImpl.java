@@ -18,7 +18,7 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.remasc.RemascTransaction;
+import co.rsk.net.handler.TxPendingValidator;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import com.google.common.annotations.VisibleForTesting;
@@ -82,6 +82,7 @@ public class PendingStateImpl implements PendingState {
     private Block bestBlock;
 
     private Repository pendingStateRepository;
+    private TxPendingValidator validator = new TxPendingValidator();
 
     public PendingStateImpl() {
         // Used by Spring framework
@@ -167,7 +168,7 @@ public class PendingStateImpl implements PendingState {
         logger.info("Trying add {} wire transactions using block {} {}", transactions.size(), bnumber, getBestBlock().getShortHash());
 
         for (Transaction tx : transactions) {
-            if (tx instanceof RemascTransaction)
+            if (!shouldAcceptTx(tx))
                 continue;
 
             logger.info("Trying add wire transaction nonce {} hash {}", tx.getHash(), toBI(tx.getNonce()));
@@ -217,7 +218,7 @@ public class PendingStateImpl implements PendingState {
 
     @Override
     public synchronized void addPendingTransaction(final Transaction tx) {
-        if (tx instanceof RemascTransaction)
+        if (!shouldAcceptTx(tx))
             return;
 
         logger.trace("add pending transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
@@ -424,6 +425,12 @@ public class PendingStateImpl implements PendingState {
                             Collections.<Transaction>emptyList(), // tx list
                             Collections.<BlockHeader>emptyList(), // uncle list
                             ByteUtil.bigIntegerToBytes(BigInteger.ZERO)); //minimum gas price
+    }
+
+    private boolean shouldAcceptTx(Transaction tx) {
+        if (bestBlock == null)
+            return true;
+        return validator.isValid(tx, bestBlock.getGasLimitAsInteger());
     }
 
     public static class TransactionSortedSet extends TreeSet<Transaction> {

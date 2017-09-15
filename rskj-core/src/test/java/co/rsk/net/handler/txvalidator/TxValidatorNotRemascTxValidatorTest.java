@@ -18,21 +18,23 @@
 
 package co.rsk.net.handler.txvalidator;
 
-import org.ethereum.core.AccountState;
+import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Transaction;
-import org.spongycastle.util.BigIntegers;
+import org.junit.Assert;
+import org.junit.Test;
+import org.mockito.Mockito;
 
-import java.math.BigInteger;
+public class TxValidatorNotRemascTxValidatorTest {
 
-/**
- * Checks that the transaction gas limit is lower than the `block` gas limit,
- * though there's no check that the actual block gas limit is used
- */
-public class TxValidatorGasLimitValidator implements TxValidatorStep {
+    @Test
+    public void remascTx() {
+        TxValidatorNotRemascTxValidator validator = new TxValidatorNotRemascTxValidator();
+        Assert.assertFalse(validator.validate(Mockito.mock(RemascTransaction.class), null, null, null, 0));
+    }
 
-    @Override
-    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber) {
-        BigInteger txGasLimit = tx.getGasLimitAsInteger();
-        return  txGasLimit.compareTo(gasLimit) <= 0;
+    @Test
+    public void commonTx() {
+        TxValidatorNotRemascTxValidator validator = new TxValidatorNotRemascTxValidator();
+        Assert.assertTrue(validator.validate(Mockito.mock(Transaction.class), null, null, null, 0));
     }
 }

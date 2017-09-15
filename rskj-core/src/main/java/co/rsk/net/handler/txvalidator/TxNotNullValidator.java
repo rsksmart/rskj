@@ -20,19 +20,18 @@ package co.rsk.net.handler.txvalidator;
 
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
-import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 
 /**
- * Checks that the transaction gas limit is lower than the `block` gas limit,
- * though there's no check that the actual block gas limit is used
+ * Simple check that a tx is not null.
+ *
+ * Looks a little overhead, but simplifies a little bit the code in other places
  */
-public class TxValidatorGasLimitValidator implements TxValidatorStep {
+public class TxNotNullValidator implements  TxValidatorStep {
 
     @Override
     public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber) {
-        BigInteger txGasLimit = tx.getGasLimitAsInteger();
-        return  txGasLimit.compareTo(gasLimit) <= 0;
+        return tx != null;
     }
 }
