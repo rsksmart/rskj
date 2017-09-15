@@ -50,6 +50,7 @@ public class SyncPeerStatus {
         this.startSyncing();
         this.findingInterval = height / 2;
         this.findingHeight = height - this.findingInterval;
+        this.connectionPoint = Optional.empty();
         this.finding = true;
     }
 

@@ -42,7 +42,7 @@ public class SimpleNode {
     }
 
     public void sendMessage(SimpleNode sender, Message message) {
-        this.processMessage(new SimpleNodeSender(this, sender, nodeID), message);
+        this.processMessage(new SimpleNodeSender(this, sender), message);
     }
 
     public Block getBestBlock() {
