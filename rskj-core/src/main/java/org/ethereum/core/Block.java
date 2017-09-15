@@ -33,6 +33,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.Arrays;
+import org.spongycastle.util.BigIntegers;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
@@ -698,11 +699,11 @@ public class Block {
     }
 
     public BigInteger getMinGasPriceAsInteger() {
-        return (this.getMinimumGasPrice() == null) ? null : new BigInteger(1, this.getMinimumGasPrice());
+        return (this.getMinimumGasPrice() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getMinimumGasPrice());
     }
 
     public BigInteger getGasLimitAsInteger() {
-        return (this.getGasLimit() == null) ? null : new BigInteger(1, this.getGasLimit());
+        return (this.getGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getGasLimit());
     }
 
     private byte[] calcTxTrie(List<Transaction> transactions){
