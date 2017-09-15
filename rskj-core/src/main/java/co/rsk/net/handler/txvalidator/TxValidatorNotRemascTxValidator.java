@@ -18,17 +18,22 @@
 
 package co.rsk.net.handler.txvalidator;
 
+import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 
 import java.math.BigInteger;
 
 /**
- * When checking if a transaction is valid before relaying, each check
- * should be added here or as a TxFilter
+ * Checks that a transaction is not a Remasc type transaction. Helps to simplify some code.
+ *
+ * Transaction must not be null
  */
-public interface TxValidatorStep {
+public class TxValidatorNotRemascTxValidator implements TxValidatorStep {
 
-    boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber);
+    @Override
+    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber) {
+        return !(tx instanceof RemascTransaction);
+    }
 
 }

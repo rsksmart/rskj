@@ -16,19 +16,32 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net.handler.txvalidator;
+package co.rsk.net.handler;
 
-import org.ethereum.core.AccountState;
+import co.rsk.net.handler.txvalidator.*;
 import org.ethereum.core.Transaction;
 
 import java.math.BigInteger;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
- * When checking if a transaction is valid before relaying, each check
- * should be added here or as a TxFilter
+ * Validator for using in pending state.
+ *
+ * Add/remove checks here.
  */
-public interface TxValidatorStep {
+public class TxPendingValidator {
 
-    boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber);
+    private List<TxValidatorStep> validatorSteps = new LinkedList<>();
 
+    public TxPendingValidator() {
+        validatorSteps.add(new TxNotNullValidator());
+        validatorSteps.add(new TxValidatorNotRemascTxValidator());
+        validatorSteps.add(new TxValidatorGasLimitValidator());
+    }
+
+    public boolean isValid(Transaction tx, BigInteger gasLimit) {
+        return validatorSteps.stream()
+                .allMatch(v -> v.validate(tx, null, gasLimit, null, 0));
+    }
 }

@@ -40,6 +40,7 @@ import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
@@ -1309,6 +1310,7 @@ public class Web3ImplTest {
     }
 
     @Test
+    @Ignore
     public void eth_compileSolidity() throws Exception {
         SystemProperties systemProperties = Mockito.mock(SystemProperties.class);
         String solc = System.getProperty("solc");

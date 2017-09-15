@@ -18,17 +18,23 @@
 
 package co.rsk.net.handler.txvalidator;
 
-import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
+import org.junit.Assert;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.math.BigInteger;
 
-/**
- * When checking if a transaction is valid before relaying, each check
- * should be added here or as a TxFilter
- */
-public interface TxValidatorStep {
+public class TxValidatorNotNullValidatorTest {
+    @Test
+    public void nullTx() {
+        TxNotNullValidator validator = new TxNotNullValidator();
+        Assert.assertFalse(validator.validate(null, null, null, null, 0));
+    }
 
-    boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber);
-
+    @Test
+    public void tx() {
+        TxNotNullValidator validator = new TxNotNullValidator();
+        Assert.assertTrue(validator.validate(Mockito.mock(Transaction.class), null, null, null, 0));
+    }
 }

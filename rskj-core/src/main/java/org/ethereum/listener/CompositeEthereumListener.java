@@ -37,6 +37,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Component(value = "EthereumListener")
 public class CompositeEthereumListener implements EthereumListener {
 
+    // Using a concurrent list
+    // (the add and remove methods copy an internal array,
+    // but the iterator directly use the internal array)
     List<EthereumListener> listeners = new CopyOnWriteArrayList<>();
 
     public void addListener(EthereumListener listener) {

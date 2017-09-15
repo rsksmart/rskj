@@ -26,6 +26,7 @@ import java.util.List;
 
 /**
  * Support class for the bridge btc wallet
+ * @author Oscar Guindzberg
  */
 public class RskUTXOProvider implements UTXOProvider {
 

@@ -31,10 +31,10 @@ public class TxValidatorGasLimitValidatorTest {
         Transaction tx1 = Mockito.mock(Transaction.class);
         Transaction tx2 = Mockito.mock(Transaction.class);
 
-        Mockito.when(tx1.getGasLimit()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx2.getGasLimit()).thenReturn(BigInteger.valueOf(6).toByteArray());
+        Mockito.when(tx1.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(1));
+        Mockito.when(tx2.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(6));
 
-        byte[] gl = BigInteger.valueOf(6).toByteArray();
+        BigInteger gl = BigInteger.valueOf(6);
 
         TxValidatorGasLimitValidator tvglv = new TxValidatorGasLimitValidator();
 
@@ -47,9 +47,9 @@ public class TxValidatorGasLimitValidatorTest {
 
         Transaction tx1 = Mockito.mock(Transaction.class);
 
-        Mockito.when(tx1.getGasLimit()).thenReturn(BigInteger.valueOf(6).toByteArray());
+        Mockito.when(tx1.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(6));
 
-        byte[] gl = BigInteger.valueOf(3).toByteArray();
+        BigInteger gl = BigInteger.valueOf(3);
 
         TxValidatorGasLimitValidator tvglv = new TxValidatorGasLimitValidator();
 
