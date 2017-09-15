@@ -109,16 +109,6 @@ public class SyncPeerStatus {
         this.lastRequestedLinkIndex = Optional.empty();
     }
 
-    public void removeSkeletonItems(int index) {
-        List<BlockIdentifier> bis = new ArrayList<>();
-
-        int size = this.skeleton.get().size();
-        for (int k = index + 1; k < size; k++)
-            bis.add(this.skeleton.get().get(k));
-
-        this.skeleton = Optional.of(bis);
-    }
-
     public Optional<Integer> getLastRequestedLinkIndex() { return this.lastRequestedLinkIndex; }
 
     public void setLastRequestedLinkIndex(int index) { this.lastRequestedLinkIndex = Optional.of(index); }
