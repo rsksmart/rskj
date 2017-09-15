@@ -2,6 +2,7 @@ package co.rsk.net;
 
 import co.rsk.net.messages.MessageType;
 import com.google.common.annotations.VisibleForTesting;
+import org.eclipse.jetty.util.SocketAddressResolver;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
@@ -32,7 +33,19 @@ public class SyncPeerStatus {
     // Expected response
     private Map<Long, MessageType> expectedResponses = new HashMap<>();
 
+    // Time of last activity (in milliseconds)
+    private long lastActivity;
+
+    public SyncPeerStatus() {
+        this.updateActivity();
+    }
+
+    private void updateActivity() {
+        this.lastActivity = System.currentTimeMillis();
+    }
+
     public void setStatus(Status status) {
+        this.updateActivity();
         this.status = status;
     }
 
@@ -47,6 +60,7 @@ public class SyncPeerStatus {
     public void stopSyncing() { this.syncing = false; }
 
     public void startFindConnectionPoint(long height) {
+        this.updateActivity();
         this.startSyncing();
         this.findingInterval = height / 2;
         this.findingHeight = height - this.findingInterval;
@@ -118,6 +132,8 @@ public class SyncPeerStatus {
     }
 
     public boolean isExpectedResponse(long responseId, MessageType type) {
+        this.updateActivity();
+
         if (!this.expectedResponses.containsKey(responseId) || this.expectedResponses.get(responseId) != type)
             return false;
 
