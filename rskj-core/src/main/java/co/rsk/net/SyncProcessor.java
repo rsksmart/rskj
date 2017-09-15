@@ -190,37 +190,43 @@ public class SyncProcessor {
 
         for (int k = headers.size(); k-- > 0;) {
             BlockHeader header = headers.get(k);
-
-            if (this.blockchain.getBlockByHash(header.getHash()) != null)
-                continue;
-
-            if (parent == null) {
-                parent = this.blockchain.getBlockByHash(header.getParentHash());
-
-                if (parent == null)
-                    continue;
-            }
-
-            if (!Arrays.equals(parent.getHash(), header.getParentHash()))
-                continue;
-
-            if (parent.getNumber() + 1 != header.getNumber())
-                continue;
-
             Block block = Block.fromValidData(header, null, null);
 
-            if (!blockParentValidationRule.isValid(block, parent))
+            if (!validateBlockWithHeader(block, parent))
                 continue;
-
-            if (!blockValidationRule.isValid(block))
-                continue;
-
-            parent = block;
 
             sender.sendMessage(new BodyRequestMessage(++lastRequestId, header.getHash()));
             peerStatus.registerExpectedResponse(lastRequestId, MessageType.BODY_RESPONSE_MESSAGE);
             pendingBodyResponses.put(lastRequestId, new PendingBodyResponse(sender.getNodeID(), header));
+
+            parent = block;
         }
+    }
+
+    private boolean validateBlockWithHeader(Block block, Block parent) {
+        if (this.blockchain.getBlockByHash(block.getHash()) != null)
+            return false;
+
+        if (parent == null) {
+            parent = this.blockchain.getBlockByHash(block.getParentHash());
+
+            if (parent == null)
+                return false;
+        }
+
+        if (!Arrays.equals(parent.getHash(), block.getParentHash()))
+            return false;
+
+        if (parent.getNumber() + 1 != block.getNumber())
+            return false;
+
+        if (!blockParentValidationRule.isValid(block, parent))
+            return false;
+
+        if (!blockValidationRule.isValid(block))
+            return false;
+
+        return true;
     }
 
     public void processBodyResponse(MessageSender sender, BodyResponseMessage message) {
