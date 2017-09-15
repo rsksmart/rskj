@@ -3,6 +3,8 @@ package co.rsk.net;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.messages.*;
 import co.rsk.validators.BlockDifficultyRule;
+import co.rsk.validators.BlockParentDependantValidationRule;
+import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -19,6 +21,9 @@ import java.util.*;
  */
 public class SyncProcessor {
     private static final Logger logger = LoggerFactory.getLogger(SyncProcessor.class);
+
+    private static BlockValidationRule blockValidationRule = new ProofOfWorkRule();
+    private static BlockParentDependantValidationRule blockParentValidationRule = new BlockDifficultyRule();
 
     private long lastRequestId;
     private Blockchain blockchain;
@@ -202,15 +207,12 @@ public class SyncProcessor {
             if (parent.getNumber() + 1 != header.getNumber())
                 continue;
 
-            BlockDifficultyRule diffRule = new BlockDifficultyRule();
             Block block = Block.fromValidData(header, null, null);
 
-            if (!diffRule.isValid(block, parent))
+            if (!blockParentValidationRule.isValid(block, parent))
                 continue;
 
-            ProofOfWorkRule powRule = new ProofOfWorkRule();
-
-            if (!powRule.isValid(block))
+            if (!blockValidationRule.isValid(block))
                 continue;
 
             parent = block;
