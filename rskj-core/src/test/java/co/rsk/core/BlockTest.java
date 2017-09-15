@@ -22,7 +22,7 @@ package co.rsk.core;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.peg.PegTestUtils;
-import org.ethereum.core.ImmutableTransaction;
+import org.ethereum.core.*;
 import org.spongycastle.util.encoders.Hex;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.crypto.ECKey;
