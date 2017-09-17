@@ -146,5 +146,9 @@ public class SyncPeerStatus {
     public Map<Long, MessageType> getExpectedResponses() {
         return this.expectedResponses;
     }
+
+    public boolean isExpired(long timeout) {
+        return false;
+    }
 }
 
