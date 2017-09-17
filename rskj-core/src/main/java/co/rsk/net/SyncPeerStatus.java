@@ -147,8 +147,15 @@ public class SyncPeerStatus {
         return this.expectedResponses;
     }
 
+    /**
+     * It returns true or false depending on the comparison of last activity time
+     * plus timeout and current time
+     *
+     * @param timeout time in milliseconds
+     * @return true if the time since last activity plus timeout is less than current time in milliseconds
+     */
     public boolean isExpired(long timeout) {
-        return false;
+        return this.lastActivity + timeout < System.currentTimeMillis();
     }
 }
 
