@@ -15,12 +15,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by ajlopez on 29/08/2017.
  */
 public class SyncProcessor {
     private static final Logger logger = LoggerFactory.getLogger(SyncProcessor.class);
+
+    private static final long peerTimeout = TimeUnit.MINUTES.toMillis(10);
 
     private static BlockValidationRule blockValidationRule = new ProofOfWorkRule();
     private static BlockParentDependantValidationRule blockParentValidationRule = new BlockDifficultyRule();
@@ -277,7 +280,7 @@ public class SyncProcessor {
     public SyncPeerStatus getPeerStatus(NodeID nodeID) {
         SyncPeerStatus peerStatus = this.peerStatuses.get(nodeID);
 
-        if (peerStatus != null)
+        if (peerStatus != null && !peerStatus.isExpired(peerTimeout))
             return peerStatus;
 
         return this.createPeerStatus(nodeID);
