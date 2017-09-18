@@ -13,6 +13,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.validator.ProofOfWorkRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -21,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  * Created by ajlopez on 29/08/2017.
  */
 public class SyncProcessor {
-    private static final Logger logger = LoggerFactory.getLogger(SyncProcessor.class);
+    private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
     private static final long peerTimeout = TimeUnit.MINUTES.toMillis(10);
 
@@ -57,6 +58,7 @@ public class SyncProcessor {
     }
 
     public void processStatus(MessageSender sender, Status status) {
+        logger.trace("Receiving status from node {} block {} {}", sender.getNodeID(), status.getBestBlockNumber(), Hex.toHexString(status.getBestBlockHash()).substring(0, 6), status.getBestBlockHash());
         SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
 
         peerStatus.setStatus(status);
@@ -75,12 +77,14 @@ public class SyncProcessor {
     }
 
     public void sendSkeletonRequest(MessageSender sender, long height) {
+        logger.trace("Send skeleton request to node {} height {}", sender.getNodeID(), height);
         SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
         sender.sendMessage(new SkeletonRequestMessage(++lastRequestId, height));
         peerStatus.registerExpectedResponse(lastRequestId, MessageType.SKELETON_RESPONSE_MESSAGE);
     }
 
     public void processSkeletonResponse(MessageSender sender, SkeletonResponseMessage message) {
+        logger.trace("Process skeleton response from node {}", sender.getNodeID());
         SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
 
         if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
@@ -129,6 +133,7 @@ public class SyncProcessor {
 
             int count = (int)(height - previousKnownHeight);
 
+            logger.trace("Send headers request to node {}", sender.getNodeID());
             sender.sendMessage(new BlockHeadersRequestMessage(++lastRequestId, hash, count));
             peerStatus.registerExpectedResponse(lastRequestId, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
             peerStatus.setLastRequestedLinkIndex(k);
@@ -140,12 +145,14 @@ public class SyncProcessor {
     }
 
     public void sendBlockHashRequest(MessageSender sender, long height) {
+        logger.trace("Send hash request to node {} height {}", sender.getNodeID(), height);
         SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
         sender.sendMessage(new BlockHashRequestMessage(++lastRequestId, height));
         peerStatus.registerExpectedResponse(lastRequestId, MessageType.BLOCK_HASH_RESPONSE_MESSAGE);
     }
 
     public void findConnectionPoint(MessageSender sender, Status status) {
+        logger.trace("Find connection point with node {}", sender.getNodeID());
         SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
 
         peerStatus.startFindConnectionPoint(status.getBestBlockNumber());
@@ -153,6 +160,7 @@ public class SyncProcessor {
     }
 
     public void processBlockHashResponse(MessageSender sender, BlockHashResponseMessage message) {
+        logger.trace("Process block hash response from node {} hash {}", sender.getNodeID(), Hex.toHexString(message.getHash()).substring(0, 6));
         SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
 
         if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
@@ -175,6 +183,7 @@ public class SyncProcessor {
     }
 
     public void processBlockHeadersResponse(MessageSender sender, BlockHeadersResponseMessage message) {
+        logger.trace("Process block headers response from node {}", sender.getNodeID());
         SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
 
         if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
@@ -201,6 +210,7 @@ public class SyncProcessor {
             if (parent == null || !validateBlockWithHeader(block, parent))
                 continue;
 
+            logger.trace("Send body request to node {} hash {}", sender.getNodeID(), Hex.toHexString(header.getHash()).substring(0, 6));
             sender.sendMessage(new BodyRequestMessage(++lastRequestId, header.getHash()));
             peerStatus.registerExpectedResponse(lastRequestId, MessageType.BODY_RESPONSE_MESSAGE);
             pendingBodyResponses.put(lastRequestId, new PendingBodyResponse(sender.getNodeID(), header));
@@ -229,6 +239,7 @@ public class SyncProcessor {
     }
 
     public void processBodyResponse(MessageSender sender, BodyResponseMessage message) {
+        logger.trace("Process body response from node {}", sender.getNodeID());
         SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
 
         if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
@@ -248,6 +259,7 @@ public class SyncProcessor {
     }
 
     public void processBlockResponse(MessageSender sender, BlockResponseMessage message) {
+        logger.trace("Process block response from node {} block {} {}", sender.getNodeID(), message.getBlock().getNumber(), message.getBlock().getShortHash());
         SyncPeerStatus peerStatus = this.getPeerStatus(sender.getNodeID());
 
         if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
@@ -257,6 +269,7 @@ public class SyncProcessor {
     }
 
     public void processNewBlockHash(MessageSender sender, NewBlockHashMessage message) {
+        logger.trace("Process new block hash from node {} hash {}", sender.getNodeID(), Hex.toHexString(message.getBlockHash()).substring(0, 6));
         byte[] hash = message.getBlockHash();
 
         if (this.blockSyncService.getBlockFromStoreOrBlockchain(hash) != null)
