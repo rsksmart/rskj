@@ -28,6 +28,7 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.simples.SimpleBlockChain;
 import co.rsk.peg.simples.SimpleBridgeStorageProvider;
 import co.rsk.peg.simples.SimpleWallet;
+import org.ethereum.vm.program.Program;
 import org.spongycastle.util.encoders.Hex;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.core.BtcTransaction;
@@ -780,7 +781,6 @@ public class BridgeSupportTest {
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
-        Sha3Hash hash = PegTestUtils.createHash3();
         org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
 
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
@@ -806,7 +806,6 @@ public class BridgeSupportTest {
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
-        Sha3Hash hash = PegTestUtils.createHash3();
         org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
 
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
@@ -827,7 +826,25 @@ public class BridgeSupportTest {
         Assert.assertTrue(provider.getRskTxsWaitingForBroadcasting().isEmpty());
     }
 
+    @Test
+    public void releaseBtcFromContract() throws BlockStoreException, AddressFormatException, IOException {
+        Repository repository = new RepositoryImpl();
+        Repository track = repository.startTracking();
 
+        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
+
+        tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
+        track.saveCode(tx.getSender(), new byte[] {0x1});
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null);
+
+        try {
+            bridgeSupport.releaseBtc(tx);
+        } catch (Program.OutOfGasException e) {
+            return;
+        }
+        Assert.fail();
+    }
 
     @Test
     public void registerBtcTransactionOfAlreadyProcessedTransaction() throws BlockStoreException, AddressFormatException, IOException {
