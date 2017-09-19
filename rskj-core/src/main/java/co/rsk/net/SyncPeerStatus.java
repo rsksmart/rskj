@@ -2,11 +2,16 @@ package co.rsk.net;
 
 import co.rsk.net.messages.MessageType;
 import com.google.common.annotations.VisibleForTesting;
-import org.eclipse.jetty.util.SocketAddressResolver;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Created by ajlopez on 29/08/2017.
@@ -33,15 +38,15 @@ public class SyncPeerStatus {
     // Expected response
     private Map<Long, MessageType> expectedResponses = new HashMap<>();
 
-    // Time of last activity (in milliseconds)
-    private long lastActivity;
+    private final Clock clock = Clock.systemUTC();
+    private Instant lastActivity;
 
     public SyncPeerStatus() {
         this.updateActivity();
     }
 
     private void updateActivity() {
-        this.lastActivity = System.currentTimeMillis();
+        this.lastActivity = clock.instant();
     }
 
     public void setStatus(Status status) {
@@ -154,8 +159,8 @@ public class SyncPeerStatus {
      * @param timeout time in milliseconds
      * @return true if the time since last activity plus timeout is less than current time in milliseconds
      */
-    public boolean isExpired(long timeout) {
-        return this.lastActivity + timeout < System.currentTimeMillis();
+    public boolean isExpired(Duration timeout) {
+        return clock.instant().isAfter(this.lastActivity.plus(timeout));
     }
 }
 

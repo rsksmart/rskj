@@ -41,8 +41,9 @@ public class SimpleNode {
         return this.handler;
     }
 
-    public void receiveMessageFrom(SimpleNode sender, Message message) {
-        this.processMessage(new SimpleNodeSender(this, sender), message);
+    public void receiveMessageFrom(SimpleNode peer, Message message) {
+        SimpleNodeSender senderToPeer = new SimpleNodeSender(this, peer);
+        this.handler.processMessage(senderToPeer, message);
     }
 
     public Block getBestBlock() {
@@ -53,20 +54,16 @@ public class SimpleNode {
         return ((NodeMessageHandler)this.handler).getTotalDifficulty();
     }
 
-    public void sendStatusTo(SimpleNode node) {
+    public void sendStatusTo(SimpleNode peer) {
         Block block = this.getBestBlock();
         Status status = new Status(block.getNumber(), block.getHash());
-        node.receiveMessageFrom(this, new StatusMessage(status));
+        peer.receiveMessageFrom(this, new StatusMessage(status));
     }
 
-    public void sendFullStatusTo(SimpleNode node) {
+    public void sendFullStatusTo(SimpleNode peer) {
         Block block = this.getBestBlock();
         Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), this.getTotalDifficulty());
-        node.receiveMessageFrom(this, new StatusMessage(status));
-    }
-
-    protected void processMessage(MessageSender sender, Message message) {
-        this.handler.processMessage(sender, message);
+        peer.receiveMessageFrom(this, new StatusMessage(status));
     }
 
     public NodeID getNodeID() { return nodeID; }

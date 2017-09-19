@@ -88,7 +88,10 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         SimpleAsyncNode node2 = createNode(0);
 
         node1.sendFullStatusTo(node2);
-        node1.waitUntilNTasksWithTimeout(111);
+        // find connection point
+        node1.waitUntilNTasksWithTimeout(11);
+        // get blocks
+        node1.waitExactlyNTasksWithTimeout(100);
 
         node1.joinWithTimeout();
         node2.joinWithTimeout();
@@ -110,8 +113,10 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         SimpleAsyncNode node2 = createNode(0);
 
         node1.sendFullStatusTo(node2);
+        // find connection point
         node2.waitUntilNTasksWithTimeout(16);
-        node2.waitUntilNTasksWithTimeout(400);
+        // get blocks
+        node2.waitExactlyNTasksWithTimeout(400);
 
         node1.joinWithTimeout();
         node2.joinWithTimeout();
@@ -133,7 +138,10 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         SimpleAsyncNode node2 = createNode(0);
 
         node1.sendFullStatusTo(node2);
-        node1.waitUntilNTasksWithTimeout(10);
+        // find connection point
+        node2.waitUntilNTasksWithTimeout(8);
+        // get blocks
+        node2.waitExactlyNTasksWithTimeout(10);
 
         node2.sendFullStatusTo(node1);
 
@@ -161,11 +169,11 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         for (Block block : blocks) {
             BlockMessage message = new BlockMessage(block);
             node1.receiveMessageFrom(null, message);
-            node1.waitUntilNTasksWithTimeout(1);
+            node1.waitExactlyNTasksWithTimeout(1);
 
             if (block.getNumber() <= 5) {
                 node2.receiveMessageFrom(null, message);
-                node2.waitUntilNTasksWithTimeout(1);
+                node2.waitExactlyNTasksWithTimeout(1);
             }
         }
 
@@ -173,10 +181,16 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(5, node2.getBestBlock().getNumber());
 
         node1.sendFullStatusTo(node2);
-        node1.waitUntilNTasksWithTimeout(10);
+        // find connection point
+        node2.waitUntilNTasksWithTimeout(7);
+        // get blocks
+        node2.waitExactlyNTasksWithTimeout(5);
+        // drain node 1 for next test
+        node1.waitExactlyNTasksWithTimeout(11);
 
         node2.sendFullStatusTo(node1);
-        node2.waitUntilNTasksWithTimeout(10);
+        // receive status, do nothing
+        node1.waitExactlyNTasksWithTimeout(1);
 
         node1.joinWithTimeout();
         node2.joinWithTimeout();
@@ -199,7 +213,12 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         node2.receiveMessageFrom(node1, new NewBlockHashMessage(node1.getBestBlock().getHash()));
 
-        node1.waitUntilNTasksWithTimeout(1);
+        // send hash
+        node2.waitUntilNTasksWithTimeout(1);
+        // request header
+        node1.waitExactlyNTasksWithTimeout(1);
+        // respond header
+        node2.waitExactlyNTasksWithTimeout(1);
 
         node1.joinWithTimeout();
         node2.joinWithTimeout();

@@ -1,12 +1,11 @@
 package co.rsk.net.sync;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 public class WaitingForPeersSyncStatus implements SyncStatus {
     private int peers;
-
-    private long secondsPassed;
+    private Duration timeElapsed = Duration.ZERO;
 
     @Nonnull
     @Override
@@ -16,20 +15,22 @@ public class WaitingForPeersSyncStatus implements SyncStatus {
 
     @Nonnull
     @Override
-    public SyncStatus newPeerFound(Object peer) {
-        peers++;
-        if (peers == 5) {
-            return new DecidingSyncStatus();
-        }
-
-        return this;
+    public SyncStatus newPeerFound() {
+        // TODO(mc) enforce policy
+//        peers++;
+//        if (peers == 5) {
+//            return new DecidingSyncStatus();
+//        }
+//
+//        return this;
+        return new FindingConnectionPointSyncStatus();
     }
 
     @Nonnull
     @Override
-    public SyncStatus tick(int amount, TimeUnit unit) {
-        secondsPassed += unit.toSeconds(amount);
-        if (peers > 0 && secondsPassed >= TimeUnit.MINUTES.toSeconds(2)) {
+    public SyncStatus tick(Duration duration) {
+        timeElapsed = timeElapsed.plus(duration);
+        if (peers > 0 && timeElapsed.toMinutes() >= 2) {
             return new DecidingSyncStatus();
         }
 

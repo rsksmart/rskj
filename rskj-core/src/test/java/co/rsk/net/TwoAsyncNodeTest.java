@@ -85,7 +85,10 @@ public class TwoAsyncNodeTest {
         SimpleAsyncNode node2 = createNode(0);
 
         node1.sendStatusTo(node2);
-        node1.waitUntilNTasksWithTimeout(100);
+        // status
+        node2.waitUntilNTasksWithTimeout(1);
+        // get blocks
+        node2.waitExactlyNTasksWithTimeout(100);
 
         node1.joinWithTimeout();
         node2.joinWithTimeout();
@@ -101,9 +104,16 @@ public class TwoAsyncNodeTest {
         SimpleAsyncNode node2 = createNode(0);
 
         node1.sendStatusTo(node2);
-        node1.waitUntilNTasksWithTimeout(10);
+        // status
+        node2.waitUntilNTasksWithTimeout(1);
+        // get blocks
+        node2.waitExactlyNTasksWithTimeout(10);
 
         node2.sendStatusTo(node1);
+        // status
+        node1.waitUntilNTasksWithTimeout(1);
+        // get blocks
+        node1.waitExactlyNTasksWithTimeout(10);
 
         node1.joinWithTimeout();
         node2.joinWithTimeout();
@@ -123,14 +133,17 @@ public class TwoAsyncNodeTest {
         for (Block block : blocks) {
             BlockMessage message = new BlockMessage(block);
             node1.receiveMessageFrom(null, message);
-            node1.waitUntilNTasksWithTimeout(1);
+            node1.waitExactlyNTasksWithTimeout(1);
 
-            if (block.getNumber() <= 5)
+            if (block.getNumber() <= 5) {
                 node2.receiveMessageFrom(null, message);
+                node2.waitExactlyNTasksWithTimeout(1);
+            }
         }
 
         node1.sendStatusTo(node2);
-        node1.waitUntilNTasksWithTimeout(5);
+        node2.waitUntilNTasksWithTimeout(1);
+        node1.waitExactlyNTasksWithTimeout(5);
 
         node1.joinWithTimeout();
         node2.joinWithTimeout();

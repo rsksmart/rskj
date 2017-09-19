@@ -6,7 +6,7 @@ import org.junit.Test;
 public class SyncStatusHandlerTest {
     @Test
     public void startsAsWaitingForPeers() {
-        SyncStatusHandler status = new SyncStatusHandler();
+        SyncStatusHandler status = new SyncStatusHandler(new PeersInformation());
         Assert.assertEquals(SyncStatuses.WAITING_FOR_PEERS, status.getStatus());
     }
 }

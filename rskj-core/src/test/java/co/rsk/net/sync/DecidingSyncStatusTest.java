@@ -7,7 +7,7 @@ public class DecidingSyncStatusTest {
     @Test
     public void itDoesntChangeStatusWithANewPeer() {
         SyncStatus status = new DecidingSyncStatus();
-        status = status.newPeerFound(null);
+        status = status.newPeerFound();
         Assert.assertEquals(SyncStatuses.DECIDING, status.getStatus());
     }
 }

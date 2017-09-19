@@ -62,6 +62,7 @@ public class OneAsyncNodeTest {
         for (Block block : blocks)
             node.receiveMessageFrom(null, new BlockMessage(block));
 
+        node.waitExactlyNTasksWithTimeout(10);
         node.joinWithTimeout();
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
@@ -82,6 +83,7 @@ public class OneAsyncNodeTest {
         for (Block block : reverse)
             node.receiveMessageFrom(null, new BlockMessage(block));
 
+        node.waitExactlyNTasksWithTimeout(10);
         node.joinWithTimeout();
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());

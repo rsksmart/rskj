@@ -19,7 +19,6 @@
 package co.rsk.net.simples;
 
 import co.rsk.net.MessageHandler;
-import co.rsk.net.MessageSender;
 import co.rsk.net.SyncProcessor;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
@@ -46,11 +45,10 @@ public class SimpleAsyncNode extends SimpleNode {
     }
 
     @Override
-    public void processMessage(MessageSender sender, Message message) {
-        futures.add(executor.submit(() -> {
-            MessageTask task = new MessageTask(sender, message);
-            task.execute(this.getHandler());
-        }));
+    public void receiveMessageFrom(SimpleNode peer, Message message) {
+        SimpleNodeSender senderToPeer = new SimpleNodeSender(this, peer);
+        futures.add(
+                executor.submit(() -> this.getHandler().processMessage(senderToPeer, message)));
     }
 
     public void joinWithTimeout() {
@@ -58,6 +56,7 @@ public class SimpleAsyncNode extends SimpleNode {
             executor.shutdown();
             executor.awaitTermination(10, TimeUnit.SECONDS);
         } catch (InterruptedException ignored) {
+            throw new RuntimeException("Join operation timed out. Remaining tasks: " + this.futures.size() + " .");
         }
     }
 
@@ -74,6 +73,13 @@ public class SimpleAsyncNode extends SimpleNode {
         }
     }
 
+    public void waitExactlyNTasksWithTimeout(int number) {
+        waitUntilNTasksWithTimeout(number);
+        int remaining = this.futures.size();
+        if (remaining > 0)
+            throw new RuntimeException("Too many tasks. Expected " + number + " but got " + (number + remaining));
+    }
+
     @VisibleForTesting
     public Map<Long, MessageType> getExpectedResponses() {
         return this.syncProcessor.getPeerStatus(this.getNodeID()).getExpectedResponses();
@@ -82,19 +88,5 @@ public class SimpleAsyncNode extends SimpleNode {
     @VisibleForTesting
     public SyncProcessor getSyncProcessor() {
         return this.syncProcessor;
-    }
-
-    private class MessageTask {
-        private MessageSender sender;
-        private Message message;
-
-        public MessageTask(MessageSender sender, Message message) {
-            this.sender = sender;
-            this.message = message;
-        }
-
-        public void execute(MessageHandler handler) {
-            handler.processMessage(sender, message);
-        }
     }
 }

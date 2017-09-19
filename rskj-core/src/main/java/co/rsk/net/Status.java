@@ -18,6 +18,7 @@
 
 package co.rsk.net;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 
 /**
@@ -49,7 +50,9 @@ public class Status {
         return this.bestBlockHash;
     }
 
+    @Nullable
     public byte[] getBestBlockParentHash() { return this.bestBlockParentHash; }
 
+    @Nullable
     public BigInteger getTotalDifficulty() { return this.totalDifficulty; }
 }
