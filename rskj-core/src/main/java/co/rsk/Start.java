@@ -25,10 +25,12 @@ import co.rsk.mine.TxBuilder;
 import co.rsk.mine.TxBuilderEx;
 import co.rsk.net.Metrics;
 import co.rsk.net.discovery.UDPServer;
+import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.Web3RskImpl;
 import org.ethereum.cli.CLIInterface;
 import org.ethereum.config.DefaultConfig;
-import org.ethereum.rpc.JsonRpcListener;
+import org.ethereum.rpc.JsonRpcNettyServer;
+import org.ethereum.rpc.JsonRpcWeb3ServerHandler;
 import org.ethereum.rpc.Web3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,7 +111,14 @@ public class Start {
         if (RskSystemProperties.RSKCONFIG.isRpcEnabled()) {
             logger.info("RPC enabled");
             Web3 web3Service = new Web3RskImpl(rsk);
-            new JsonRpcListener(rsk, web3Service).start();
+            JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, RskSystemProperties.RSKCONFIG.getRpcModules());
+            new JsonRpcNettyServer(
+                RskSystemProperties.RSKCONFIG.rpcPort(),
+                RskSystemProperties.RSKCONFIG.soLingerTime(),
+                Boolean.TRUE,
+                new CorsConfiguration(),
+                serverHandler
+            ).start();
         }
         else {
             logger.info("RPC disabled");
