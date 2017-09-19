@@ -71,7 +71,7 @@ public class Node implements Serializable {
         byte[] portB = nodeRLP.get(1).getRLPData();
         byte[] idB;
 
-
+        //Check getRLP()
         if (nodeRLP.size() > 3) {
             idB = nodeRLP.get(3).getRLPData();
         } else {

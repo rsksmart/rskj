@@ -663,6 +663,44 @@ public class SystemProperties {
         return config.root().render(ConfigRenderOptions.defaults().setComments(false));
     }
 
+    public int scoringNumberOfNodes() {
+        return getInt("scoring.nodes.number", 100);
+    }
+
+    public long scoringNodesPunishmentDuration() {
+        return getLong("scoring.nodes.duration", 10) * 60000L;
+    }
+
+    public int scoringNodesPunishmentIncrement() {
+        return getInt("scoring.nodes.increment", 10);
+    }
+
+    public long scoringNodesPunishmentMaximumDuration() {
+        // default value: no maximum duration
+        return getLong("scoring.nodes.maximum", 0) * 60000L;
+    }
+
+    public long scoringAddressesPunishmentDuration() {
+        return getLong("scoring.addresses.duration", 10) * 60000L;
+    }
+
+    public int scoringAddressesPunishmentIncrement() {
+        return getInt("scoring.addresses.increment", 10);
+    }
+
+    public long scoringAddressesPunishmentMaximumDuration() {
+        // default value: 1 week
+        return getLong("scoring.addresses.maximum", 60 * 24 * 7)  * 60000L;
+    }
+
+    protected int getInt(String path, int val) {
+        return config.hasPath(path) ? config.getInt(path) : val;
+    }
+
+    protected long getLong(String path, long val) {
+        return config.hasPath(path) ? config.getLong(path) : val;
+    }
+
     /*
      *
      * Testing

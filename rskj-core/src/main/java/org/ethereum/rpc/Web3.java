@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc;
 
+import co.rsk.scoring.PeerScoringInformation;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
@@ -203,4 +204,9 @@ public interface Web3 {
     void evm_reset();
     void evm_mine();
     String evm_increaseTime(String seconds);
+
+    void sco_banAddress(String address);
+    void sco_unbanAddress(String address);
+    PeerScoringInformation[] sco_peerList();
+    String[] sco_bannedAddresses();
 }
