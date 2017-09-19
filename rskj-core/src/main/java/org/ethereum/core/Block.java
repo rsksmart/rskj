@@ -459,7 +459,7 @@ public class Block {
         int txsStateIndex = 0;
         for (int i = 0; i < txTransactions.size(); i++) {
             RLPElement transactionRaw = txTransactions.get(i);
-            Transaction tx = new Transaction(transactionRaw.getRLPData());
+            Transaction tx = new ImmutableTransaction(transactionRaw.getRLPData());
 
             if (isRemascTransaction(tx, i, txTransactions.size())) {
                 // It is the remasc transaction
