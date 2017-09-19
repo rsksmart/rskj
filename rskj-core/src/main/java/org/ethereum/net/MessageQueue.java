@@ -19,10 +19,12 @@
 
 package org.ethereum.net;
 
+import co.rsk.net.eth.RskMessage;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.net.eth.message.EthMessage;
+import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.net.message.Message;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.p2p.DisconnectMessage;
@@ -115,7 +117,9 @@ public class MessageQueue {
             queue.add(new MessageRoundtrip(msg));
         } else {
             logger.error("Queue is full for message: {} and queue: {}",
-                    msg.getCommand(),
+                    (msg.getCommand() == EthMessageCodes.RSK_MESSAGE) ?
+                            ((RskMessage) msg).getMessage().getMessageType() :
+                            msg.getCommand(),
                     msg.getAnswerMessage() != null ? "requestQueue" : "respondQueue");
         }
     }
