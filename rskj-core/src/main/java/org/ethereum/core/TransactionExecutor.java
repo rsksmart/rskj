@@ -31,10 +31,12 @@ import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+import org.ethereum.vm.trace.ProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +49,6 @@ import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.util.ByteUtil.toHexString;
 import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
-import static org.ethereum.vm.VMUtils.zipAndEncode;
 
 /**
  * @author Roman Mandeleil
@@ -450,21 +451,18 @@ public class TransactionExecutor {
         logger.info("tx listener done");
 
         if (CONFIG.vmTrace() && program != null && result != null) {
-            String trace = program.getTrace()
-                    .result(result.getHReturn())
-                    .error(result.getException())
-                    .toString();
-
-
-            if (CONFIG.vmTraceCompressed()) {
-                trace = zipAndEncode(trace);
-            }
-
+            ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException());
             String txHash = toHexString(tx.getHash());
-            saveProgramTraceFile(txHash, trace);
-
-            if (listener != null)
-                listener.onVMTraceCreated(txHash, trace);
+            try {
+                saveProgramTraceFile(txHash, CONFIG.vmTraceCompressed(), trace);
+                if (listener != null) {
+                    listener.onVMTraceCreated(txHash, trace);
+                }
+            } catch (IOException e) {
+                String errorMessage = "Cannot write trace to file";
+                panicProcessor.panic("executor", errorMessage + ": " + e.toString());
+                logger.error(errorMessage, e);
+            }
         }
 
         logger.info("tx finalization done");

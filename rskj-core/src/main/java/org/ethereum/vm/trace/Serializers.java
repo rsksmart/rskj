@@ -33,7 +33,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 public final class Serializers {
 
@@ -66,16 +69,21 @@ public final class Serializers {
 
 
     public static String serializeFieldsOnly(Object value, boolean pretty) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
-            ObjectMapper mapper = createMapper(pretty);
-            mapper.setVisibility(fieldsOnlyVisibilityChecker(mapper));
-
-            return mapper.writeValueAsString(value);
-        } catch (Exception e) {
+            serializeFieldsOnly(value, pretty, baos);
+            return baos.toString(StandardCharsets.UTF_8.name());
+        } catch (IOException e) {
             LOGGER.error("JSON serialization error: ", e);
             panicProcessor.panic("serialization", "JSON serialization error: " + e.toString());
             return "{}";
         }
+    }
+
+    public static void serializeFieldsOnly(Object value, boolean pretty, OutputStream out) throws IOException {
+        ObjectMapper mapper = createMapper(pretty);
+        mapper.setVisibility(fieldsOnlyVisibilityChecker(mapper));
+        mapper.writeValue(out, value);
     }
 
     private static VisibilityChecker<?> fieldsOnlyVisibilityChecker(ObjectMapper mapper) {
