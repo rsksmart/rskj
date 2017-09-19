@@ -24,6 +24,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.rpc.TypeConverter;
+import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 import java.util.LinkedList;
@@ -75,8 +76,8 @@ class TxValidator {
             if (state == null) {
                 state = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
             }
-            byte[] blockGasLimit = worldManager.getBlockchain().getBestBlock().getGasLimit();
-            byte[] minimumGasPrice = worldManager.getBlockchain().getBestBlock().getMinimumGasPrice();
+            BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(worldManager.getBlockchain().getBestBlock().getGasLimit());
+            BigInteger minimumGasPrice = BigIntegers.fromUnsignedByteArray(worldManager.getBlockchain().getBestBlock().getMinimumGasPrice());
             long bestBlockNumber = worldManager.getBlockchain().getBestBlock().getNumber();
 
             boolean valid = true;

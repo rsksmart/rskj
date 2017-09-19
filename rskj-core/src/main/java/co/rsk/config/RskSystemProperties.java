@@ -288,9 +288,15 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public long getBlocksForPeers() {
-        long ret = config.hasPath("blocksforpeers") ? config.getLong("blocksforpeers") : 0;
+        return getLongProperty("blocksforpeers", BLOCKS_FOR_PEERS_DEFAULT);
+    }
 
-        return (ret > 0) ? ret : BLOCKS_FOR_PEERS_DEFAULT;
+    public long getTargetGasLimit() {
+        return getLongProperty("targetgaslimit",
+                getBlockchainConfig().getCommonConstants().getTargetGasLimit());
+    }
 
+    public boolean getForceTargetGasLimit() {
+        return getBooleanProperty("forcegaslimit", true);
     }
 }

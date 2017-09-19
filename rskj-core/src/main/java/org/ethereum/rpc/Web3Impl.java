@@ -136,7 +136,7 @@ public class Web3Impl implements Web3 {
         List<WalletAccount> accs = properties.walletAccounts();
 
         for (WalletAccount acc : accs)
-            eth_addAccount(acc.getPrivateKey());
+            this.wallet.addAccountWithPrivateKey(Hex.decode(acc.getPrivateKey()));
     }
 
     public EthereumListener setupListener() {
@@ -623,7 +623,7 @@ public class Web3Impl implements Web3 {
                 BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : (pendingState.getRepository().getNonce(account.getAddress()));
                 Transaction tx = Transaction.create(toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
                 tx.sign(account.getEcKey().getPrivKeyBytes());
-                eth.submitTransaction(tx);
+                eth.submitTransaction(tx.toImmutableTransaction());
                 s = TypeConverter.toJsonHex(tx.getHash());
             }
             return s;
@@ -636,7 +636,7 @@ public class Web3Impl implements Web3 {
     public String eth_sendRawTransaction(String rawData) throws Exception {
         String s = null;
         try {
-            Transaction tx = new Transaction(stringHexToByteArray(rawData));
+            Transaction tx = new ImmutableTransaction(stringHexToByteArray(rawData));
 
             if (null == tx.getGasLimit()
                     || null == tx.getGasPrice()
@@ -1023,6 +1023,7 @@ public class Web3Impl implements Web3 {
             }
         }
 
+        @Override
         public void newBlockReceived(Block b) {
             add(new NewBlockFilterEvent(b));
         }
@@ -1042,6 +1043,7 @@ public class Web3Impl implements Web3 {
             }
         }
 
+        @Override
         public void newPendingTx(Transaction tx) {
             add(new PendingTransactionFilterEvent(tx));
         }
@@ -1377,18 +1379,6 @@ public class Web3Impl implements Web3 {
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("personal_newAccount(*****): " + s);
-            }
-        }
-    }
-
-    public String eth_addAccount(String privKey) {
-        String s = null;
-        try {
-            byte[] address = this.wallet.addAccountWithPrivateKey(Hex.decode(privKey));
-            return s = toJsonHex(address);
-        } finally {
-            if (logger.isDebugEnabled()) {
-                logger.debug("eth_addAccount(*****): " + s);
             }
         }
     }

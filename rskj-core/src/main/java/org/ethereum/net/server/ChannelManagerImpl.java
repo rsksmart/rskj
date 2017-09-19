@@ -74,7 +74,12 @@ public class ChannelManagerImpl implements ChannelManager {
     SystemProperties config;
     @Autowired
     SyncPool syncPool;
+
+    // Using a concurrent list
+    // (the add and remove methods copy an internal array,
+    // but the iterator directly use the internal array)
     private List<Channel> newPeers = new CopyOnWriteArrayList<>();
+
     private ScheduledExecutorService mainWorker = Executors.newSingleThreadScheduledExecutor();
     private int maxActivePeers;
     private Map<InetAddress, Date> recentlyDisconnected = Collections.synchronizedMap(new LRUMap<InetAddress, Date>(500));

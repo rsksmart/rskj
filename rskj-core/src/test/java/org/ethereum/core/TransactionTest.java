@@ -178,7 +178,7 @@ public class TransactionTest {
     @Ignore
     @Test
     public void testTransactionFromSignedRLP() throws Exception {
-        Transaction txSigned = new Transaction(Hex.decode(RLP_ENCODED_SIGNED_TX));
+        Transaction txSigned = new ImmutableTransaction(Hex.decode(RLP_ENCODED_SIGNED_TX));
 
         assertEquals(HASH_TX, Hex.toHexString(txSigned.getHash()));
         assertEquals(RLP_ENCODED_SIGNED_TX, Hex.toHexString(txSigned.getEncoded()));
@@ -197,7 +197,7 @@ public class TransactionTest {
     @Ignore
     @Test
     public void testTransactionFromUnsignedRLP() throws Exception {
-        Transaction txUnsigned = new Transaction(Hex.decode(RLP_ENCODED_UNSIGNED_TX));
+        Transaction txUnsigned = new ImmutableTransaction(Hex.decode(RLP_ENCODED_UNSIGNED_TX));
 
         assertEquals(HASH_TX, Hex.toHexString(txUnsigned.getHash()));
         assertEquals(RLP_ENCODED_UNSIGNED_TX, Hex.toHexString(txUnsigned.getEncoded()));
@@ -294,7 +294,7 @@ public class TransactionTest {
 
 
         System.out.println(Hex.toHexString(payload));
-        Transaction tx2 = new Transaction(payload);
+        Transaction tx2 = new ImmutableTransaction(payload);
 //        tx2.getSender();
 
         String plainTx1 = Hex.toHexString(tx1.getEncodedRaw());
@@ -339,7 +339,6 @@ public class TransactionTest {
     }
 
     @Test
-    @Ignore // This test fails after update StateTestRunner using BlockChainImpl
     public void constantCallConflictTest() throws Exception {
         /*
           0x095e7baea6a6c7c4c2dfeb977efac326af552d87 contract is the following Solidity code:
@@ -553,6 +552,7 @@ public class TransactionTest {
     }
 
     @Test
+    @Ignore
     public void multiSuicideTest() throws IOException, InterruptedException {
         SystemProperties systemProperties = Mockito.mock(SystemProperties.class);
         String solc = System.getProperty("solc");
@@ -633,6 +633,7 @@ public class TransactionTest {
     }
 
     @Test
+    @Ignore
     public void dontLogWhenOutOfGasTest() throws IOException, InterruptedException {
         SystemProperties systemProperties = Mockito.mock(SystemProperties.class);
         String solc = System.getProperty("solc");

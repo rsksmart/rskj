@@ -39,7 +39,8 @@ import java.util.SortedSet;
 /**
  * Provides an object oriented facade of the bridge contract memory.
  * @see co.rsk.remasc.RemascStorageProvider
- * Created by ajlopez on 6/7/2016.
+ * @author ajlopez
+ * @author Oscar Guindzberg
  */
 public class BridgeStorageProvider {
     private static final String BTC_UTXOS_KEY = "btcUTXOs";
@@ -153,7 +154,7 @@ public class BridgeStorageProvider {
 
         byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
 
-        rskTxsWaitingForConfirmations = BridgeSerializationUtils.deserializeMap(data, networkParameters);
+        rskTxsWaitingForConfirmations = BridgeSerializationUtils.deserializeMap(data, networkParameters, true);
 
         return rskTxsWaitingForConfirmations;
     }
@@ -177,7 +178,7 @@ public class BridgeStorageProvider {
 
         byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
 
-        rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(data, networkParameters);
+        rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(data, networkParameters, false);
 
         return rskTxsWaitingForSignatures;
     }

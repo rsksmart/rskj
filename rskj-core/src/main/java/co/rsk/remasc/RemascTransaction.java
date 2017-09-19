@@ -26,6 +26,7 @@ import org.spongycastle.util.encoders.Hex;
 
 /**
  * Tx that invokes Remasc's processMinersFees method.
+ * @author Oscar Guindzberg
  */
 public class RemascTransaction extends Transaction {
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};

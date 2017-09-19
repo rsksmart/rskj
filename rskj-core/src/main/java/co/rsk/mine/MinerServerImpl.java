@@ -31,6 +31,7 @@ import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -59,6 +60,7 @@ import static org.ethereum.util.BIUtil.toBI;
 /**
  * The MinerServer provides support to components that perform the actual mining.
  * It builds blocks to mine and publishes blocks once a valid nonce was found by the miner.
+ * @author Oscar Guindzberg
  */
 
 @Component("MinerServer")
@@ -150,6 +152,7 @@ public class MinerServerImpl implements MinerServer {
 
         Block newBlock;
         Sha3Hash key = new Sha3Hash(TypeConverter.removeZeroX(blockHashForMergedMining));
+
         synchronized (lock) {
             Block workingBlock = blocksWaitingforPoW.get(key);
 
@@ -166,7 +169,7 @@ public class MinerServerImpl implements MinerServer {
             }
 
             // clone the block
-            newBlock = new Block(workingBlock.getEncoded());
+            newBlock = workingBlock.cloneBlock();
 
             logger.debug("blocksWaitingforPoW size " + blocksWaitingforPoW.size());
         }
@@ -176,6 +179,7 @@ public class MinerServerImpl implements MinerServer {
         newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
         newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(bitcoinMergedMiningCoinbaseTransaction.bitcoinSerialize()));
         newBlock.setBitcoinMergedMiningMerkleProof(bitcoinMergedMiningMerkleBranch.bitcoinSerialize());
+        newBlock.seal();
 
         if (!isValid(newBlock)) {
             logger.error("Invalid block supplied by miner " + " : " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber() + ". Hash: " + newBlock.getShortHash());
@@ -462,8 +466,10 @@ public class MinerServerImpl implements MinerServer {
         BigInteger minGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getMinGasLimit());
         BigInteger targetGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getTargetGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, newBlockParent.getGasLimit());
-        BigInteger gasLimit = new GasLimitCalculator().calculateBlockGasLimit(parentGasLimit, BigInteger.valueOf(
-                newBlockParent.getGasUsed()), minGasLimit, targetGasLimit);
+        BigInteger gasUsed = BigInteger.valueOf(newBlockParent.getGasUsed());
+        boolean forceLimit = RskSystemProperties.RSKCONFIG.getForceTargetGasLimit();
+        BigInteger gasLimit = new GasLimitCalculator().calculateBlockGasLimit(parentGasLimit,
+                gasUsed, minGasLimit, targetGasLimit, forceLimit);
 
         final BlockHeader newHeader = new BlockHeader(newBlockParent.getHash(),
                 unclesListHash,

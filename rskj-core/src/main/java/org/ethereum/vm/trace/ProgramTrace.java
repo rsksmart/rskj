@@ -29,8 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +43,7 @@ public class ProgramTrace {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("vm");
 
-    private List<Op> ops = new ArrayList<>();
+    private List<Op> ops = new LinkedList<>();
     private String result;
     private String error;
     private Map<String, String> initStorage = new HashMap<>();

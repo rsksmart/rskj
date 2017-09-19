@@ -20,6 +20,7 @@ package co.rsk.net.handler.txvalidator;
 
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
+import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 
@@ -30,8 +31,8 @@ import java.math.BigInteger;
 public class TxValidatorGasLimitValidator implements TxValidatorStep {
 
     @Override
-    public boolean validate(Transaction tx, AccountState state, byte[] gasLimit, byte[] minimumGasPrice, long bestBlockNumber) {
-        BigInteger txGasLimit = new BigInteger(1, tx.getGasLimit());
-        return  txGasLimit.compareTo(new BigInteger(1, gasLimit)) <= 0;
+    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber) {
+        BigInteger txGasLimit = tx.getGasLimitAsInteger();
+        return  txGasLimit.compareTo(gasLimit) <= 0;
     }
 }

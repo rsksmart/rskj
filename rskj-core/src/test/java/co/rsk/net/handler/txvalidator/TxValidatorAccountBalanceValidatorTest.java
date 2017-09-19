@@ -35,12 +35,12 @@ public class TxValidatorAccountBalanceValidatorTest {
         Transaction tx3 = Mockito.mock(Transaction.class);
         AccountState as = Mockito.mock(AccountState.class);
 
-        Mockito.when(tx1.getGasLimit()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx2.getGasLimit()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx3.getGasLimit()).thenReturn(BigInteger.valueOf(2).toByteArray());
-        Mockito.when(tx1.getGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx2.getGasPrice()).thenReturn(BigInteger.valueOf(10000).toByteArray());
-        Mockito.when(tx3.getGasPrice()).thenReturn(BigInteger.valueOf(5000).toByteArray());
+        Mockito.when(tx1.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(1));
+        Mockito.when(tx2.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(1));
+        Mockito.when(tx3.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(2));
+        Mockito.when(tx1.getGasPriceAsInteger()).thenReturn(BigInteger.valueOf(1));
+        Mockito.when(tx2.getGasPriceAsInteger()).thenReturn(BigInteger.valueOf(10000));
+        Mockito.when(tx3.getGasPriceAsInteger()).thenReturn(BigInteger.valueOf(5000));
         Mockito.when(as.getBalance()).thenReturn(BigInteger.valueOf(10000));
 
         TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator();
@@ -56,10 +56,10 @@ public class TxValidatorAccountBalanceValidatorTest {
         Transaction tx2 = Mockito.mock(Transaction.class);
         AccountState as = Mockito.mock(AccountState.class);
 
-        Mockito.when(tx1.getGasLimit()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx2.getGasLimit()).thenReturn(BigInteger.valueOf(2).toByteArray());
-        Mockito.when(tx1.getGasPrice()).thenReturn(BigInteger.valueOf(20).toByteArray());
-        Mockito.when(tx2.getGasPrice()).thenReturn(BigInteger.valueOf(10).toByteArray());
+        Mockito.when(tx1.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(1));
+        Mockito.when(tx2.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(2));
+        Mockito.when(tx1.getGasPriceAsInteger()).thenReturn(BigInteger.valueOf(20));
+        Mockito.when(tx2.getGasPriceAsInteger()).thenReturn(BigInteger.valueOf(10));
         Mockito.when(as.getBalance()).thenReturn(BigInteger.valueOf(19));
 
         TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator();

@@ -52,6 +52,7 @@ import static org.ethereum.util.BIUtil.transfer;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
+ * @author Oscar Guindzberg
  */
 public class BridgeSupport {
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
@@ -329,7 +330,8 @@ public class BridgeSupport {
                 // We create a new Transaction instance because if ExceededMaxTransactionSize is thrown, the tx included in the SendRequest
                 // is altered and then we would try to persist the altered version in the waiting for confirmations collection
                 // Inputs would not be disconnected, so we would have a second problem trying to persist non java serializable objects.
-                BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), entry.getValue().bitcoinSerialize());
+                BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+                btcTx.parseNoInputs(entry.getValue().bitcoinSerialize());
                 try {
                     SendRequest sr = SendRequest.forTx(btcTx);
                     sr.feePerKb = Coin.MILLICOIN;

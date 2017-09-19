@@ -38,10 +38,11 @@ public class Tx {
         Mockito.when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(gaslimit).toByteArray());
         Mockito.when(transaction.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(gaslimit));
         Mockito.when(transaction.getGasPrice()).thenReturn(BigInteger.valueOf(gasprice).toByteArray());
+        Mockito.when(transaction.getGasPriceAsInteger()).thenReturn(BigInteger.valueOf(gasprice));
         Mockito.when(transaction.getNonce()).thenReturn(BigInteger.valueOf(nonce).toByteArray());
+        Mockito.when(transaction.getNonceAsInteger()).thenReturn(BigInteger.valueOf(nonce));
         Mockito.when(transaction.getSender()).thenReturn(BigInteger.valueOf(r.nextLong()).toByteArray());
         Mockito.when(transaction.getHash()).thenReturn(BigInteger.valueOf(hashes.nextLong()).toByteArray());
-        Mockito.when(transaction.getGasPriceAsInteger()).thenReturn(BigInteger.valueOf(gasprice));
         Mockito.when(transaction.acceptTransactionSignature()).thenReturn(Boolean.TRUE);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(BigInteger.valueOf(r.nextLong()).toByteArray());
         ArrayList<Byte> bytes = new ArrayList();

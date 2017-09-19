@@ -729,4 +729,10 @@ public class SystemProperties {
                 config.getString(PROPERTY_RPC_CORS) : null;
     }
 
+    protected long getLongProperty(String propertyName, long defaultValue) {
+        return config.hasPath(propertyName) ? config.getLong(propertyName) : defaultValue;
+    }
+    protected boolean getBooleanProperty(String propertyName, boolean defaultValue) {
+        return config.hasPath(propertyName) ? config.getBoolean(propertyName) : defaultValue;
+    }
 }
