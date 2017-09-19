@@ -20,7 +20,6 @@ package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.net.simples.SimpleAsyncNode;
-import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -65,7 +64,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(0, node2.getBestBlock().getNumber());
         Assert.assertEquals(0, node3.getBestBlock().getNumber());
 
-        node1.sendFullStatus(node2);
+        node1.sendFullStatusTo(node2);
         // sync setup
         node2.waitUntilNTasksWithTimeout(12);
         // synchronize 100 new blocks from node 1
@@ -78,7 +77,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(100, node2.getBestBlock().getNumber());
         Assert.assertEquals(0, node3.getBestBlock().getNumber());
 
-        node2.sendFullStatus(node3);
+        node2.sendFullStatusTo(node3);
         // sync setup
         node3.waitUntilNTasksWithTimeout(12);
         // synchronize 100 new blocks from node 2
@@ -117,7 +116,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(50, node2.getBestBlock().getNumber());
         Assert.assertEquals(0, node3.getBestBlock().getNumber());
 
-        node1.sendFullStatus(node3);
+        node1.sendFullStatusTo(node3);
         // sync setup
         node3.waitUntilNTasksWithTimeout(11);
         // synchronize 30 new blocks from node 1
@@ -131,7 +130,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(30, node3.getBestBlock().getNumber());
         Assert.assertArrayEquals(node1.getBestBlock().getHash(), node3.getBestBlock().getHash());
 
-        node2.sendFullStatus(node3);
+        node2.sendFullStatusTo(node3);
         // sync setup
         node3.waitUntilNTasksWithTimeout(11);
         // synchronize 50 new blocks from node 2
@@ -172,7 +171,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(73, node2.getBestBlock().getNumber());
         Assert.assertEquals(0, node3.getBestBlock().getNumber());
 
-        node1.sendFullStatus(node3);
+        node1.sendFullStatusTo(node3);
         // sync setup
         node3.waitUntilNTasksWithTimeout(11);
         // synchronize 30 new blocks from node 1
@@ -186,7 +185,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(30, node3.getBestBlock().getNumber());
         Assert.assertArrayEquals(node1.getBestBlock().getHash(), node3.getBestBlock().getHash());
 
-        node2.sendFullStatus(node3);
+        node2.sendFullStatusTo(node3);
         // sync setup
         node3.waitUntilNTasksWithTimeout(11);
         // synchronize 43 new blocks from node 2

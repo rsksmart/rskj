@@ -26,21 +26,21 @@ import co.rsk.net.messages.Message;
  * Created by ajlopez on 5/14/2016.
  */
 public class SimpleNodeSender implements MessageSender {
-    private SimpleNode source;
-    private SimpleNode target;
+    private SimpleNode sender;
+    private SimpleNode receiver;
     private NodeID nodeID = new NodeID(new byte[]{});
 
-    public SimpleNodeSender(SimpleNode source, SimpleNode target) {
-        this.source = source;
-        this.target = target;
+    public SimpleNodeSender(SimpleNode sender, SimpleNode receiver) {
+        this.sender = sender;
+        this.receiver = receiver;
 
-        if (source != null)
-            this.nodeID = source.getNodeID();
+        if (sender != null)
+            this.nodeID = sender.getNodeID();
     }
 
     public void sendMessage(Message message) {
-        if (this.target != null)
-            this.target.sendMessage(this.source, message);
+        if (this.receiver != null)
+            this.receiver.receiveMessageFrom(this.sender, message);
     }
 
     public NodeID getNodeID() {

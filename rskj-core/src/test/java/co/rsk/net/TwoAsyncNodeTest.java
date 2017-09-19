@@ -20,7 +20,6 @@ package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.net.messages.BlockMessage;
-import co.rsk.net.messages.NewBlockHashMessage;
 import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.test.World;
 import org.ethereum.core.Block;
@@ -85,7 +84,7 @@ public class TwoAsyncNodeTest {
         SimpleAsyncNode node1 = createNode(100);
         SimpleAsyncNode node2 = createNode(0);
 
-        node1.sendStatus(node2);
+        node1.sendStatusTo(node2);
         node1.waitUntilNTasksWithTimeout(100);
 
         node1.joinWithTimeout();
@@ -101,10 +100,10 @@ public class TwoAsyncNodeTest {
         SimpleAsyncNode node1 = createNodeWithUncles(10);
         SimpleAsyncNode node2 = createNode(0);
 
-        node1.sendStatus(node2);
+        node1.sendStatusTo(node2);
         node1.waitUntilNTasksWithTimeout(10);
 
-        node2.sendStatus(node1);
+        node2.sendStatusTo(node1);
 
         node1.joinWithTimeout();
         node2.joinWithTimeout();
@@ -123,14 +122,14 @@ public class TwoAsyncNodeTest {
 
         for (Block block : blocks) {
             BlockMessage message = new BlockMessage(block);
-            node1.sendMessage(null, message);
+            node1.receiveMessageFrom(null, message);
             node1.waitUntilNTasksWithTimeout(1);
 
             if (block.getNumber() <= 5)
-                node2.sendMessage(null, message);
+                node2.receiveMessageFrom(null, message);
         }
 
-        node1.sendStatus(node2);
+        node1.sendStatusTo(node2);
         node1.waitUntilNTasksWithTimeout(5);
 
         node1.joinWithTimeout();

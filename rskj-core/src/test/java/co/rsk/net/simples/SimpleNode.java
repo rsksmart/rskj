@@ -41,7 +41,7 @@ public class SimpleNode {
         return this.handler;
     }
 
-    public void sendMessage(SimpleNode sender, Message message) {
+    public void receiveMessageFrom(SimpleNode sender, Message message) {
         this.processMessage(new SimpleNodeSender(this, sender), message);
     }
 
@@ -53,16 +53,16 @@ public class SimpleNode {
         return ((NodeMessageHandler)this.handler).getTotalDifficulty();
     }
 
-    public void sendStatus(SimpleNode node) {
+    public void sendStatusTo(SimpleNode node) {
         Block block = this.getBestBlock();
         Status status = new Status(block.getNumber(), block.getHash());
-        node.sendMessage(this, new StatusMessage(status));
+        node.receiveMessageFrom(this, new StatusMessage(status));
     }
 
-    public void sendFullStatus(SimpleNode node) {
+    public void sendFullStatusTo(SimpleNode node) {
         Block block = this.getBestBlock();
         Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), this.getTotalDifficulty());
-        node.sendMessage(this, new StatusMessage(status));
+        node.receiveMessageFrom(this, new StatusMessage(status));
     }
 
     protected void processMessage(MessageSender sender, Message message) {

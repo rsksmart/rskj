@@ -60,7 +60,7 @@ public class OneAsyncNodeTest {
         List<Block> blocks = BlockGenerator.getBlockChain(getGenesis(), 10);
 
         for (Block block : blocks)
-            node.sendMessage(null, new BlockMessage(block));
+            node.receiveMessageFrom(null, new BlockMessage(block));
 
         node.joinWithTimeout();
 
@@ -80,7 +80,7 @@ public class OneAsyncNodeTest {
             reverse.add(0, block);
 
         for (Block block : reverse)
-            node.sendMessage(null, new BlockMessage(block));
+            node.receiveMessageFrom(null, new BlockMessage(block));
 
         node.joinWithTimeout();
 
