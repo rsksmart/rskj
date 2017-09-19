@@ -60,7 +60,7 @@ public class OneNodeTest {
         List<Block> blocks = BlockGenerator.getBlockChain(getGenesis(), 10);
 
         for (Block block : blocks)
-            node.sendMessage(null, new BlockMessage(block));
+            node.receiveMessageFrom(null, new BlockMessage(block));
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
         Assert.assertArrayEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
@@ -77,7 +77,7 @@ public class OneNodeTest {
             reverse.add(0, block);
 
         for (Block block : reverse)
-            node.sendMessage(null, new BlockMessage(block));
+            node.receiveMessageFrom(null, new BlockMessage(block));
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
         Assert.assertArrayEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());

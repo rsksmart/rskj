@@ -87,7 +87,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         SimpleAsyncNode node1 = createNode(100);
         SimpleAsyncNode node2 = createNode(0);
 
-        node1.sendFullStatus(node2);
+        node1.sendFullStatusTo(node2);
         node1.waitUntilNTasksWithTimeout(111);
 
         node1.joinWithTimeout();
@@ -109,7 +109,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         SimpleAsyncNode node1 = createNode(400);
         SimpleAsyncNode node2 = createNode(0);
 
-        node1.sendFullStatus(node2);
+        node1.sendFullStatusTo(node2);
         node2.waitUntilNTasksWithTimeout(16);
         node2.waitUntilNTasksWithTimeout(400);
 
@@ -132,10 +132,10 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         SimpleAsyncNode node1 = createNodeWithUncles(10);
         SimpleAsyncNode node2 = createNode(0);
 
-        node1.sendFullStatus(node2);
+        node1.sendFullStatusTo(node2);
         node1.waitUntilNTasksWithTimeout(10);
 
-        node2.sendFullStatus(node1);
+        node2.sendFullStatusTo(node1);
 
         node1.joinWithTimeout();
         node2.joinWithTimeout();
@@ -160,11 +160,11 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         for (Block block : blocks) {
             BlockMessage message = new BlockMessage(block);
-            node1.sendMessage(null, message);
+            node1.receiveMessageFrom(null, message);
             node1.waitUntilNTasksWithTimeout(1);
 
             if (block.getNumber() <= 5) {
-                node2.sendMessage(null, message);
+                node2.receiveMessageFrom(null, message);
                 node2.waitUntilNTasksWithTimeout(1);
             }
         }
@@ -172,10 +172,10 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(10, node1.getBestBlock().getNumber());
         Assert.assertEquals(5, node2.getBestBlock().getNumber());
 
-        node1.sendFullStatus(node2);
+        node1.sendFullStatusTo(node2);
         node1.waitUntilNTasksWithTimeout(10);
 
-        node2.sendFullStatus(node1);
+        node2.sendFullStatusTo(node1);
         node2.waitUntilNTasksWithTimeout(10);
 
         node1.joinWithTimeout();
@@ -197,7 +197,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         SimpleAsyncNode node1 = createNode(1);
         SimpleAsyncNode node2 = createNode(0);
 
-        node2.sendMessage(node1, new NewBlockHashMessage(node1.getBestBlock().getHash()));
+        node2.receiveMessageFrom(node1, new NewBlockHashMessage(node1.getBestBlock().getHash()));
 
         node1.waitUntilNTasksWithTimeout(1);
 
