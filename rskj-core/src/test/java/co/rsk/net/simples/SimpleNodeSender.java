@@ -34,8 +34,8 @@ public class SimpleNodeSender implements MessageSender {
         this.source = source;
         this.target = target;
 
-        if (source != null)
-            this.nodeID = source.getNodeID();
+        if (target != null)
+            this.nodeID = target.getNodeID();
     }
 
     public void sendMessage(Message message) {
