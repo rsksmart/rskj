@@ -42,7 +42,7 @@ public class SimpleNode {
     }
 
     public void receiveMessageFrom(SimpleNode peer, Message message) {
-        SimpleNodeSender senderToPeer = new SimpleNodeSender(this, peer);
+        SimpleNodeChannel senderToPeer = new SimpleNodeChannel(this, peer);
         this.handler.processMessage(senderToPeer, message);
     }
 

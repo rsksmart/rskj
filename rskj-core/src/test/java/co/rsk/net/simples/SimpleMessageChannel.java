@@ -18,7 +18,7 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.net.MessageSender;
+import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
@@ -31,15 +31,15 @@ import java.util.List;
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class SimpleMessageSender implements MessageSender {
+public class SimpleMessageChannel implements MessageChannel {
     private List<Message> messages = new ArrayList<>();
     private NodeID nodeID = new NodeID(new byte[]{});
 
-    public SimpleMessageSender() {
+    public SimpleMessageChannel() {
 
     }
 
-    public SimpleMessageSender(byte[] nodeID) {
+    public SimpleMessageChannel(byte[] nodeID) {
         this.nodeID = new NodeID(nodeID);
     }
 
@@ -71,12 +71,12 @@ public class SimpleMessageSender implements MessageSender {
         return result;
     }
 
-    public NodeID getNodeID() {
+    public NodeID getPeerNodeID() {
         return nodeID;
     }
 
     @Override
-    public void setNodeID(byte[] nodeID) {
-        this.nodeID = new NodeID(nodeID);
+    public void setPeerNodeID(byte[] peerNodeId) {
+        this.nodeID = new NodeID(peerNodeId);
     }
 }

@@ -103,7 +103,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param message A message containing a list of block hashes.
      */
     @Override
-    public void processNewBlockHashesMessage(@Nonnull final MessageSender sender, @Nonnull final NewBlockHashesMessage message) {
+    public void processNewBlockHashesMessage(@Nonnull final MessageChannel sender, @Nonnull final NewBlockHashesMessage message) {
         // TODO(mvanotti): Implement retrieval via GetBlockHeaders and GetBlockBodies.
         message.getBlockIdentifiers().stream()
                 .map(bi -> new ByteArrayWrapper(bi.getHash()))
@@ -113,14 +113,14 @@ public class NodeBlockProcessor implements BlockProcessor {
                 .forEach(
                         b -> {
                             sender.sendMessage(new GetBlockMessage(b.getData()));
-                            nodeInformation.addBlockToNode(b, sender.getNodeID());
+                            nodeInformation.addBlockToNode(b, sender.getPeerNodeID());
                         }
                 );
     }
 
 
     @Override
-    public void processBlockHeaders(@Nonnull final MessageSender sender, @Nonnull final List<BlockHeader> blockHeaders) {
+    public void processBlockHeaders(@Nonnull final MessageChannel sender, @Nonnull final List<BlockHeader> blockHeaders) {
         // TODO(mvanotti): Implement missing functionality.
 
         // sort block headers in ascending order, so we can process them in that order.
@@ -143,7 +143,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         return false;
     }
 
-    private void processBlockHeader(@Nonnull final MessageSender sender, @Nonnull final BlockHeader header) {
+    private void processBlockHeader(@Nonnull final MessageChannel sender, @Nonnull final BlockHeader header) {
         sender.sendMessage(new GetBlockMessage(header.getHash()));
 
         this.store.saveHeader(header);
@@ -158,11 +158,11 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param status The status message containing the other node's best block.
      */
     @Override
-    public void processStatus(@Nonnull final MessageSender sender, @Nonnull final Status status) {
-        logger.trace("Processing status " + status.getBestBlockNumber() + " " + Hex.toHexString(status.getBestBlockHash()).substring(0, 10) + " from " + sender.getNodeID().toString());
+    public void processStatus(@Nonnull final MessageChannel sender, @Nonnull final Status status) {
+        logger.trace("Processing status " + status.getBestBlockNumber() + " " + Hex.toHexString(status.getBestBlockHash()).substring(0, 10) + " from " + sender.getPeerNodeID().toString());
 
         final byte[] hash = status.getBestBlockHash();
-        nodeInformation.addBlockToNode(new ByteArrayWrapper(hash), sender.getNodeID());
+        nodeInformation.addBlockToNode(new ByteArrayWrapper(hash), sender.getPeerNodeID());
 
         if (!this.hasBlock(hash))
             sender.sendMessage(new GetBlockMessage(hash));
@@ -181,7 +181,7 @@ public class NodeBlockProcessor implements BlockProcessor {
             if (b == null)
                 continue;
 
-            nodeInformation.addBlockToNode(new ByteArrayWrapper(b.getHash()), sender.getNodeID());
+            nodeInformation.addBlockToNode(new ByteArrayWrapper(b.getHash()), sender.getPeerNodeID());
             logger.trace("Sending block {} {}", b.getNumber(), b.getShortHash());
             sender.sendMessage(new BlockMessage(b));
         }
@@ -194,15 +194,15 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param hash   the requested block's hash.
      */
     @Override
-    public void processGetBlock(@Nonnull final MessageSender sender, @Nullable final byte[] hash) {
-        logger.trace("Processing get block " + Hex.toHexString(hash).substring(0, 10) + " from " + sender.getNodeID().toString());
+    public void processGetBlock(@Nonnull final MessageChannel sender, @Nullable final byte[] hash) {
+        logger.trace("Processing get block " + Hex.toHexString(hash).substring(0, 10) + " from " + sender.getPeerNodeID().toString());
         final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null) {
             return;
         }
 
-        nodeInformation.addBlockToNode(new ByteArrayWrapper(hash), sender.getNodeID());
+        nodeInformation.addBlockToNode(new ByteArrayWrapper(hash), sender.getPeerNodeID());
         sender.sendMessage(new BlockMessage(block));
     }
 
@@ -214,14 +214,14 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param hash   the requested block's hash.
      */
     @Override
-    public void processBlockRequest(@Nonnull final MessageSender sender, long requestId, @Nullable final byte[] hash) {
-        logger.trace("Processing get block by hash {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getNodeID().toString());
+    public void processBlockRequest(@Nonnull final MessageChannel sender, long requestId, @Nullable final byte[] hash) {
+        logger.trace("Processing get block by hash {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID().toString());
         final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null)
             return;
 
-        nodeInformation.addBlockToNode(new ByteArrayWrapper(hash), sender.getNodeID());
+        nodeInformation.addBlockToNode(new ByteArrayWrapper(hash), sender.getPeerNodeID());
         sender.sendMessage(new BlockResponseMessage(requestId, block));
     }
 
@@ -234,7 +234,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param count  the number of headers to send
      */
     @Override
-    public void processBlockHeadersRequest(@Nonnull final MessageSender sender, long requestId, @Nullable final byte[] hash, int count) {
+    public void processBlockHeadersRequest(@Nonnull final MessageChannel sender, long requestId, @Nullable final byte[] hash, int count) {
         Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null)
@@ -266,8 +266,8 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param hash   the requested block's hash.
      */
     @Override
-    public void processBodyRequest(@Nonnull final MessageSender sender, long requestId, @Nullable final byte[] hash) {
-        logger.trace("Processing body request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getNodeID().toString());
+    public void processBodyRequest(@Nonnull final MessageChannel sender, long requestId, @Nullable final byte[] hash) {
+        logger.trace("Processing body request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID().toString());
         final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null) {
@@ -286,8 +286,8 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param height   the requested block's hash.
      */
     @Override
-    public void processBlockHashRequest(@Nonnull final MessageSender sender, long requestId, long height) {
-        logger.trace("Processing block hash request {} {} from {}", requestId, height, sender.getNodeID().toString());
+    public void processBlockHashRequest(@Nonnull final MessageChannel sender, long requestId, long height) {
+        logger.trace("Processing block hash request {} {} from {}", requestId, height, sender.getPeerNodeID().toString());
         final Block block = this.getBlockFromBlockchainStore(height);
 
         if (block == null) {
@@ -305,8 +305,8 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param startNumber the starting block's hash to get the skeleton.
      */
     @Override
-    public void processSkeletonRequest(@Nonnull final MessageSender sender, long requestId, long startNumber) {
-        logger.trace("Processing block hash request {} {} {} from {}", requestId, startNumber, sender.getNodeID().toString());
+    public void processSkeletonRequest(@Nonnull final MessageChannel sender, long requestId, long startNumber) {
+        logger.trace("Processing block hash request {} {} {} from {}", requestId, startNumber, sender.getPeerNodeID().toString());
         // TODO(mc) move this to configuration
         int skeletonStep = 192;
         Block blockStart = this.getBlockFromBlockchainStore(startNumber);
@@ -340,14 +340,14 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param hash   the requested block's hash.
      */
     @Override
-    public void processGetBlockHeaders(@Nonnull final MessageSender sender,
+    public void processGetBlockHeaders(@Nonnull final MessageChannel sender,
                                        @Nonnull final byte[] hash) {
         processGetBlockHeaders(sender, 0, hash, 1, 0, false);
     }
 
 
     @Override
-    public void processGetBlockHeaders(@Nonnull final MessageSender sender,
+    public void processGetBlockHeaders(@Nonnull final MessageChannel sender,
                                        final long blockNumber,
                                        @Nullable byte[] hash,
                                        final int maxHeaders,
@@ -463,7 +463,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param block  the block to process.
      */
     @Override
-    public BlockProcessResult processBlock(@Nullable final MessageSender sender, @Nonnull final Block block) {
+    public BlockProcessResult processBlock(@Nullable final MessageChannel sender, @Nonnull final Block block) {
         return blockSyncService.processBlock(sender, block);
     }
 

@@ -75,7 +75,7 @@ public class BlockSyncService {
         this.nodeInformation = nodeInformation;
     }
 
-    public BlockProcessResult processBlock(MessageSender sender, Block block) {
+    public BlockProcessResult processBlock(MessageChannel sender, Block block) {
         long bestBlockNumber = this.getBestBlockNumber();
         long blockNumber = block.getNumber();
 
@@ -109,12 +109,12 @@ public class BlockSyncService {
             this.lastKnownBlockNumber = blockNumber;
 
         if (ignoreAdvancedBlocks && blockNumber >= bestBlockNumber + 1000) {
-            logger.trace("Block too advanced {} {} from {} ", blockNumber, block.getShortHash(), sender != null ? sender.getNodeID().toString() : "N/A");
+            logger.trace("Block too advanced {} {} from {} ", blockNumber, block.getShortHash(), sender != null ? sender.getPeerNodeID().toString() : "N/A");
             return new BlockProcessResult(false, null);
         }
 
         if (sender != null) {
-            nodeInformation.addBlockToNode(blockHash, sender.getNodeID());
+            nodeInformation.addBlockToNode(blockHash, sender.getPeerNodeID());
         }
 
         // already in a blockchain
@@ -237,7 +237,7 @@ public class BlockSyncService {
         this.ignoreAdvancedBlocks = false;
     }
 
-    private static void sendStatus(Blockchain blockchain, MessageSender sender) {
+    private static void sendStatus(Blockchain blockchain, MessageChannel sender) {
         if (sender == null || blockchain == null)
             return;
 
@@ -253,12 +253,12 @@ public class BlockSyncService {
             return;
 
         Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), totalDifficulty);
-        logger.trace("Sending status best block {} to {}", status.getBestBlockNumber(), sender.getNodeID().toString());
+        logger.trace("Sending status best block {} to {}", status.getBestBlockNumber(), sender.getPeerNodeID().toString());
         StatusMessage msg = new StatusMessage(status);
         sender.sendMessage(msg);
     }
 
-    private Map<ByteArrayWrapper, ImportResult> connectBlocksAndDescendants(MessageSender sender, List<Block> blocks) {
+    private Map<ByteArrayWrapper, ImportResult> connectBlocksAndDescendants(MessageChannel sender, List<Block> blocks) {
         Map<ByteArrayWrapper, ImportResult> connectionsResult = new HashMap<>();
         while (!blocks.isEmpty()) {
             List<Block> connected = new ArrayList<>();
@@ -289,14 +289,14 @@ public class BlockSyncService {
         return connectionsResult;
     }
 
-    private void processMissingHashes(MessageSender sender, Set<ByteArrayWrapper> hashes) {
+    private void processMissingHashes(MessageChannel sender, Set<ByteArrayWrapper> hashes) {
         logger.trace("Missing blocks to process " + hashes.size());
 
         for (ByteArrayWrapper hash : hashes)
             this.processMissingHash(sender, hash);
     }
 
-    private void processMissingHash(MessageSender sender, ByteArrayWrapper hash) {
+    private void processMissingHash(MessageChannel sender, ByteArrayWrapper hash) {
         if (sender == null)
             return;
 

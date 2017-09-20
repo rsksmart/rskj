@@ -1,6 +1,6 @@
 package co.rsk.net.sync;
 
-import co.rsk.net.MessageSender;
+import co.rsk.net.MessageChannel;
 import co.rsk.net.Status;
 import co.rsk.net.SyncPeerStatus;
 
@@ -22,7 +22,7 @@ public class SyncStatusHandler {
         return status.getStatus();
     }
 
-    public void newPeerStatus(MessageSender sender, Status status) {
+    public void newPeerStatus(MessageChannel sender, Status status) {
         boolean knownSender = this.peerStatuses.isKnownSender(sender);
         SyncPeerStatus peerStatus = peerStatuses.getOrCreateWithSender(sender);
         peerStatus.setStatus(status);
@@ -38,7 +38,7 @@ public class SyncStatusHandler {
 //        }
     }
 
-    public void newPeerFound(MessageSender sender) {
+    public void newPeerFound(MessageChannel sender) {
         // TODO(mc) this should be part of WaitingForPeersSyncStatus, but the problem is that
         // we want to update the current status first.
         SyncStatus oldStatus = status;

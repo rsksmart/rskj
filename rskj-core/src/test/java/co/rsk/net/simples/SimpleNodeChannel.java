@@ -18,19 +18,19 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.net.MessageSender;
+import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.Message;
 
 /**
  * Created by ajlopez on 5/14/2016.
  */
-public class SimpleNodeSender implements MessageSender {
+public class SimpleNodeChannel implements MessageChannel {
     private SimpleNode sender;
     private SimpleNode receiver;
     private NodeID nodeID = new NodeID(new byte[]{});
 
-    public SimpleNodeSender(SimpleNode sender, SimpleNode receiver) {
+    public SimpleNodeChannel(SimpleNode sender, SimpleNode receiver) {
         this.sender = sender;
         this.receiver = receiver;
 
@@ -43,12 +43,12 @@ public class SimpleNodeSender implements MessageSender {
             this.receiver.receiveMessageFrom(this.sender, message);
     }
 
-    public NodeID getNodeID() {
+    public NodeID getPeerNodeID() {
         return this.nodeID;
     }
 
     @Override
-    public void setNodeID(byte[] nodeId) {
+    public void setPeerNodeID(byte[] peerNodeId) {
 
     }
 }

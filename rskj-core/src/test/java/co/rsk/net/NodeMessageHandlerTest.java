@@ -21,7 +21,7 @@ package co.rsk.net;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
-import co.rsk.net.simples.SimpleMessageSender;
+import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.net.simples.SimpleBlockProcessor;
 import co.rsk.net.simples.SimplePendingState;
@@ -76,7 +76,7 @@ public class NodeMessageHandlerTest {
         Block block = new Block(Hex.decode(rlp));
         Message message = new BlockMessage(block);
 
-        processor.processMessage(new SimpleMessageSender(), message);
+        processor.processMessage(new SimpleMessageChannel(), message);
 
         Assert.assertNotNull(sbp.getBlocks());
         Assert.assertEquals(1, sbp.getBlocks().size());
@@ -91,7 +91,7 @@ public class NodeMessageHandlerTest {
         Message message = new BlockMessage(block);
 
         processor.start();
-        processor.postMessage(new SimpleMessageSender(), message);
+        processor.postMessage(new SimpleMessageChannel(), message);
 
         Thread.sleep(1000);
 
@@ -111,7 +111,7 @@ public class NodeMessageHandlerTest {
         mergedMiningHeader[76] += 3; //change merged mining nonce.
         Message message = new BlockMessage(block);
 
-        processor.processMessage(new SimpleMessageSender(), message);
+        processor.processMessage(new SimpleMessageChannel(), message);
 
         Assert.assertNotNull(sbp.getBlocks());
         Assert.assertEquals(0, sbp.getBlocks().size());
@@ -123,14 +123,14 @@ public class NodeMessageHandlerTest {
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null).disablePoWValidation();
         Block block = BlockGenerator.getGenesisBlock();
         Message message = new BlockMessage(block);
-        processor.processMessage(new SimpleMessageSender(), message);
+        processor.processMessage(new SimpleMessageChannel(), message);
 
         for (int i = 0; i < 50; i++) {
             block = BlockGenerator.createChildBlock(block);
         }
 
         message = new BlockMessage(block);
-        processor.processMessage(new SimpleMessageSender(), message);
+        processor.processMessage(new SimpleMessageChannel(), message);
 
         Assert.assertNotNull(sbp.getBlocks());
         Assert.assertEquals(2, sbp.getBlocks().size());
@@ -142,7 +142,7 @@ public class NodeMessageHandlerTest {
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null);
         Block block = BlockGenerator.getGenesisBlock();
         Message message = new BlockMessage(block);
-        SimpleMessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
         processor.processMessage(sender, message);
 
         Assert.assertNotNull(sbp.getBlocks());
@@ -157,7 +157,7 @@ public class NodeMessageHandlerTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
-        final SimpleMessageSender sender = new SimpleMessageSender();
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
 
         final Block block = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock());
@@ -187,7 +187,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
         final SyncProcessor sp = new SyncProcessor(blockchain, blockSyncService);
-        final SimpleMessageSender sender = new SimpleMessageSender();
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
         final NodeMessageHandler handler = new NodeMessageHandler(bp, sp, null, null, null);
 
         final Block block = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock());
@@ -217,7 +217,7 @@ public class NodeMessageHandlerTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
-        final SimpleMessageSender sender = new SimpleMessageSender();
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
 
         final Block block = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock());
@@ -247,7 +247,7 @@ public class NodeMessageHandlerTest {
 
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
 
-        final SimpleMessageSender sender = new SimpleMessageSender();
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         handler.processMessage(sender, new GetBlockMessage(block.getHash()));
 
@@ -280,7 +280,7 @@ public class NodeMessageHandlerTest {
 
         NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
 
-        SimpleMessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
 
         handler.processMessage(sender, new GetBlockMessage(blocks.get(4).getHash()));
 
@@ -311,7 +311,7 @@ public class NodeMessageHandlerTest {
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
         handler.disablePoWValidation();
 
-        final SimpleMessageSender sender = new SimpleMessageSender();
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         handler.processMessage(sender, new GetBlockMessage(block.getHash()));
 
@@ -334,7 +334,7 @@ public class NodeMessageHandlerTest {
 
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
 
-        final SimpleMessageSender sender = new SimpleMessageSender();
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         handler.processMessage(sender, new GetBlockHeadersMessage(block.getHash(), 1));
 
@@ -367,7 +367,7 @@ public class NodeMessageHandlerTest {
 
         NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
 
-        SimpleMessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
 
         handler.processMessage(sender, new GetBlockHeadersMessage(blocks.get(4).getHash(), 1));
 
@@ -462,7 +462,7 @@ public class NodeMessageHandlerTest {
 
         for (int i = 0; i < testCases.length; i += 1) {
             final TestCase testCase = testCases[i];
-            final SimpleMessageSender sender = new SimpleMessageSender();
+            final SimpleMessageChannel sender = new SimpleMessageChannel();
 
             handler.processMessage(sender, testCase.message);
 
@@ -603,7 +603,7 @@ public class NodeMessageHandlerTest {
 
         for (int i = 0; i < testCases.length; i += 1) {
             final TestCase testCase = testCases[i];
-            final SimpleMessageSender sender = new SimpleMessageSender();
+            final SimpleMessageChannel sender = new SimpleMessageChannel();
 
             handler.processMessage(sender, testCase.gbhMessage);
 
@@ -645,7 +645,7 @@ public class NodeMessageHandlerTest {
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
         handler.disablePoWValidation();
 
-        final SimpleMessageSender sender = new SimpleMessageSender();
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         handler.processMessage(sender, new GetBlockHeadersMessage(block.getHash(), 1));
 
@@ -661,10 +661,10 @@ public class NodeMessageHandlerTest {
 
         final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, null, txmock);
 
-        final SimpleMessageSender sender = new SimpleMessageSender();
-        sender.setNodeID(new byte[] {1});
-        final SimpleMessageSender sender2 = new SimpleMessageSender();
-        sender2.setNodeID(new byte[] {2});
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        sender.setPeerNodeID(new byte[] {1});
+        final SimpleMessageChannel sender2 = new SimpleMessageChannel();
+        sender2.setPeerNodeID(new byte[] {2});
 
         final List<Transaction> txs = TransactionUtils.getTransactions(10);
         Mockito.when(txmock.retrieveValidTxs(any(List.class))).thenReturn(txs);
@@ -680,14 +680,14 @@ public class NodeMessageHandlerTest {
 
         Assert.assertNotNull(channelManager.getLastSkip());
         Assert.assertEquals(1, channelManager.getLastSkip().size());
-        Assert.assertTrue(channelManager.getLastSkip().contains(sender.getNodeID()));
+        Assert.assertTrue(channelManager.getLastSkip().contains(sender.getPeerNodeID()));
 
         handler.processMessage(sender2, message);
 
         Assert.assertNotNull(channelManager.getLastSkip());
         Assert.assertEquals(2, channelManager.getLastSkip().size());
-        Assert.assertTrue(channelManager.getLastSkip().contains(sender.getNodeID()));
-        Assert.assertTrue(channelManager.getLastSkip().contains(sender2.getNodeID()));
+        Assert.assertTrue(channelManager.getLastSkip().contains(sender.getPeerNodeID()));
+        Assert.assertTrue(channelManager.getLastSkip().contains(sender2.getPeerNodeID()));
     }
 
     @Test
@@ -717,10 +717,10 @@ public class NodeMessageHandlerTest {
 
         final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, pendingState, txmock);
 
-        final SimpleMessageSender sender = new SimpleMessageSender();
-        sender.setNodeID(new byte[] {1});
-        final SimpleMessageSender sender2 = new SimpleMessageSender();
-        sender2.setNodeID(new byte[] {2});
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        sender.setPeerNodeID(new byte[] {1});
+        final SimpleMessageChannel sender2 = new SimpleMessageChannel();
+        sender2.setPeerNodeID(new byte[] {2});
 
         final List<Transaction> txs = TransactionUtils.getTransactions(10);
         Mockito.when(txmock.retrieveValidTxs(any(List.class))).thenReturn(txs);
@@ -736,7 +736,7 @@ public class NodeMessageHandlerTest {
 
         Assert.assertNotNull(channelManager.getLastSkip());
         Assert.assertEquals(1, channelManager.getLastSkip().size());
-        Assert.assertTrue(channelManager.getLastSkip().contains(sender.getNodeID()));
+        Assert.assertTrue(channelManager.getLastSkip().contains(sender.getPeerNodeID()));
 
         channelManager.setLastSkip(null);
         handler.processMessage(sender2, message);
@@ -751,7 +751,7 @@ public class NodeMessageHandlerTest {
         Block block = new Block(Hex.decode(rlp));
         Message message = new BlockRequestMessage(100, block.getHash());
 
-        processor.processMessage(new SimpleMessageSender(), message);
+        processor.processMessage(new SimpleMessageChannel(), message);
 
         Assert.assertEquals(100, sbp.getRequestId());
         Assert.assertArrayEquals(block.getHash(), sbp.getHash());
@@ -764,7 +764,7 @@ public class NodeMessageHandlerTest {
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null);
         Message message = new BlockHeadersRequestMessage(100, hash, 50);
 
-        processor.processMessage(new SimpleMessageSender(), message);
+        processor.processMessage(new SimpleMessageChannel(), message);
 
         Assert.assertEquals(100, sbp.getRequestId());
         Assert.assertArrayEquals(hash, sbp.getHash());

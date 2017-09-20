@@ -18,9 +18,9 @@
 
 package co.rsk.net;
 
+import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.net.simples.SimpleMessageSender;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -71,7 +71,7 @@ public class NodeBlockProcessorUnclesTest {
         processor.processBlock(null, uncle1);
         processor.processBlock(null, uncle2);
 
-        SimpleMessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
 
         processor.processBlock(sender, block2);
 
@@ -98,7 +98,7 @@ public class NodeBlockProcessorUnclesTest {
 
         processor.processBlock(null, block1);
 
-        SimpleMessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
 
         processor.processBlock(sender, block2);
 
@@ -124,7 +124,7 @@ public class NodeBlockProcessorUnclesTest {
 
         Block block2 = new BlockBuilder().parent(block1).uncles(uncles).build();
 
-        SimpleMessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
 
         processor.processBlock(sender, block2);
 

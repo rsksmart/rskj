@@ -20,10 +20,10 @@ package co.rsk.net;
 
 import co.rsk.net.messages.Message;
 
-public interface MessageSender {
+public interface MessageChannel {
     void sendMessage(Message message);
 
-    NodeID getNodeID();
+    NodeID getPeerNodeID();
 
-    void setNodeID(byte[] nodeId);
+    void setPeerNodeID(byte[] peerNodeId);
 }
