@@ -19,12 +19,15 @@
 
 package org.ethereum.util;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 
 /**
  * @author Roman Mandeleil
  * @since 21.04.14
  */
+// TODO(mc) extending ArrayList without syncing the rlpData makes this hard to understand.
+// Also, saving both the elements and the raw RLP data is a waste of space
 public class RLPList extends ArrayList<RLPElement> implements RLPElement {
 
     byte[] rlpData;
@@ -52,5 +55,12 @@ public class RLPList extends ArrayList<RLPElement> implements RLPElement {
             String hex = ByteUtil.toHexString(element.getRLPData());
             System.out.print(hex + ", ");
         }
+    }
+
+    public static void recursivePrint(@Nonnull ArrayList<RLPElement> list) {
+        System.out.print("[");
+        for (RLPElement singleElement : list)
+            recursivePrint(singleElement);
+        System.out.print("]");
     }
 }

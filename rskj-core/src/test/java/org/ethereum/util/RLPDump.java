@@ -23,6 +23,8 @@ import org.ethereum.crypto.ECKey;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
+import java.util.ArrayList;
+
 /**
  * Created by Anton Nashatyrev on 29.09.2015.
  */
@@ -40,14 +42,19 @@ public class RLPDump {
         System.out.println(dump(RLP.decode2(Hex.decode(hexRlp)), 0));
     }
 
+    public static String dump(ArrayList<RLPElement> el, int indent) {
+        String ret = Utils.repeat("  ", indent) + "[\n";
+        for (RLPElement element : el) {
+            ret += dump(element, indent + 1);
+        }
+        ret += Utils.repeat("  ", indent) + "]\n";
+        return ret;
+    }
+
     public static String dump(RLPElement el, int indent) {
         String ret = "";
-        if (el instanceof RLPList) {
-            ret = Utils.repeat("  ", indent) + "[\n";
-            for (RLPElement element : ((RLPList) el)) {
-                ret += dump(element, indent + 1);
-            }
-            ret += Utils.repeat("  ", indent) + "]\n";
+        if (el instanceof ArrayList) {
+            ret += dump((ArrayList<RLPElement>) el, indent);
         } else {
             ret += Utils.repeat("  ", indent) +
                     (el.getRLPData() == null ? "<null>" : Hex.toHexString(el.getRLPData())) + "\n";

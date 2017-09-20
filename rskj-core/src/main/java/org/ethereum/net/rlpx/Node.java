@@ -20,6 +20,7 @@
 package org.ethereum.net.rlpx;
 
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.ethereum.util.Utils;
 import org.spongycastle.util.encoders.Hex;
@@ -31,6 +32,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.ethereum.util.ByteUtil.byteArrayToInt;
@@ -64,7 +66,7 @@ public class Node implements Serializable {
 
     public Node(byte[] rlp) {
 
-        RLPList nodeRLP = RLP.decode2(rlp);
+        ArrayList<RLPElement> nodeRLP = RLP.decode2(rlp);
         nodeRLP = (RLPList) nodeRLP.get(0);
 
         byte[] hostB = nodeRLP.get(0).getRLPData();
