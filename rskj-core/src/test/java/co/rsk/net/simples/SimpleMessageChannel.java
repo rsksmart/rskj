@@ -23,17 +23,19 @@ import co.rsk.net.NodeID;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by ajlopez on 5/11/2016.
  */
 public class SimpleMessageChannel implements MessageChannel {
     private List<Message> messages = new ArrayList<>();
-    private NodeID nodeID = new NodeID(new byte[]{});
+    private NodeID nodeID = new NodeID(HashUtil.randomPeerId());
 
     public SimpleMessageChannel() {
 
@@ -52,23 +54,16 @@ public class SimpleMessageChannel implements MessageChannel {
     }
 
     public List<Message> getGetBlockMessages() {
-        List<Message> result = new ArrayList<>();
-
-        for (Message message : this.messages)
-            if (message.getMessageType() == MessageType.GET_BLOCK_MESSAGE)
-                result.add(message);
-
-        return result;
+        return this.messages.stream()
+                .filter(message -> message.getMessageType() == MessageType.GET_BLOCK_MESSAGE)
+                .collect(Collectors.toList());
     }
 
     public List<ByteArrayWrapper> getGetBlockMessagesHashes() {
-        List<ByteArrayWrapper> result = new ArrayList<>();
-
-        for (Message message : this.messages)
-            if (message.getMessageType() == MessageType.GET_BLOCK_MESSAGE)
-                result.add(new ByteArrayWrapper(((GetBlockMessage)message).getBlockHash()));
-
-        return result;
+        return this.messages.stream()
+                .filter(message -> message.getMessageType() == MessageType.GET_BLOCK_MESSAGE)
+                .map(message -> new ByteArrayWrapper(((GetBlockMessage) message).getBlockHash()))
+                .collect(Collectors.toList());
     }
 
     public NodeID getPeerNodeID() {

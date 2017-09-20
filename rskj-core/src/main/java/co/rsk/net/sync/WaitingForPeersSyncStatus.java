@@ -1,11 +1,20 @@
 package co.rsk.net.sync;
 
+import co.rsk.net.NodeID;
+import co.rsk.net.Status;
+
 import javax.annotation.Nonnull;
 import java.time.Duration;
+import java.util.Set;
 
 public class WaitingForPeersSyncStatus implements SyncStatus {
     private int peers;
     private Duration timeElapsed = Duration.ZERO;
+    private PeersInformation knownPeers;
+
+    public WaitingForPeersSyncStatus(PeersInformation knownPeers) {
+        this.knownPeers = knownPeers;
+    }
 
     @Nonnull
     @Override
@@ -15,7 +24,7 @@ public class WaitingForPeersSyncStatus implements SyncStatus {
 
     @Nonnull
     @Override
-    public SyncStatus newPeerFound() {
+    public SyncStatus newPeerStatus(NodeID peerID, Status status, Set<Runnable> finishedWaitingForPeersCallbacks) {
         // TODO(mc) enforce policy
 //        peers++;
 //        if (peers == 5) {
@@ -23,6 +32,14 @@ public class WaitingForPeersSyncStatus implements SyncStatus {
 //        }
 //
 //        return this;
+
+
+        if (knownPeers.isKnownPeer(peerID)) {
+            return this;
+        }
+
+        knownPeers.registerPeer(peerID).setStatus(status);
+        finishedWaitingForPeersCallbacks.forEach(Runnable::run);
         return new FindingConnectionPointSyncStatus();
     }
 

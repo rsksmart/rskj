@@ -21,10 +21,11 @@ package co.rsk.net;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
-import co.rsk.net.simples.SimpleMessageChannel;
-import co.rsk.net.utils.TransactionUtils;
+import co.rsk.net.simples.NodeMessageHandlerUtil;
 import co.rsk.net.simples.SimpleBlockProcessor;
+import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.simples.SimplePendingState;
+import co.rsk.net.utils.TransactionUtils;
 import co.rsk.test.World;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.SystemProperties;
@@ -34,7 +35,10 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.mockito.Mockito;
 import org.spongycastle.util.encoders.Hex;
 
@@ -180,15 +184,8 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processStatusMessageUsingSyncProcessor() {
-        final World world = new World();
-        final Blockchain blockchain = world.getBlockChain();
-        final BlockStore store = new BlockStore();
-        BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
-        final SyncProcessor sp = new SyncProcessor(blockchain, blockSyncService);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, sp, null, null, null);
+        final NodeMessageHandler handler = NodeMessageHandlerUtil.createHandlerWithSyncProcessor();
 
         final Block block = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock());
         final Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), BigInteger.TEN);

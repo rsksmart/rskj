@@ -23,7 +23,6 @@ import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.simples.SimpleNode;
 import co.rsk.test.World;
 import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -34,18 +33,6 @@ import java.util.List;
  * Created by ajlopez on 5/14/2016.
  */
 public class OneNodeTest {
-    private static SimpleNode createNode() {
-        final World world = new World();
-        final BlockStore store = new BlockStore();
-        final Blockchain blockchain = world.getBlockChain();
-
-        BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null, null).disablePoWValidation();
-
-        return new SimpleNode(handler);
-    }
 
     private static Block getGenesis() {
         final World world = new World();
@@ -55,7 +42,7 @@ public class OneNodeTest {
 
     @Test
     public void buildBlockchain() {
-        SimpleNode node = createNode();
+        SimpleNode node = SimpleNode.createNode();
 
         List<Block> blocks = BlockGenerator.getBlockChain(getGenesis(), 10);
 
@@ -68,7 +55,7 @@ public class OneNodeTest {
 
     @Test
     public void buildBlockchainInReverse() {
-        SimpleNode node = createNode();
+        SimpleNode node = SimpleNode.createNode();
 
         List<Block> blocks = BlockGenerator.getBlockChain(getGenesis(), 10);
         List<Block> reverse = new ArrayList<>();

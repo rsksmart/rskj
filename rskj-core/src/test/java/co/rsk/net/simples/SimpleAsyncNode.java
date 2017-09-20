@@ -82,7 +82,7 @@ public class SimpleAsyncNode extends SimpleNode {
 
     @VisibleForTesting
     public Map<Long, MessageType> getExpectedResponses() {
-        return this.syncProcessor.getPeerStatus(this.getNodeID()).getExpectedResponses();
+        return this.syncProcessor.getPeerStatusAndSaveSender(this.getMessageChannel(null)).getExpectedResponses();
     }
 
     @VisibleForTesting

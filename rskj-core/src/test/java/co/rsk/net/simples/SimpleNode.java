@@ -18,7 +18,10 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.net.*;
+import co.rsk.net.MessageHandler;
+import co.rsk.net.NodeID;
+import co.rsk.net.NodeMessageHandler;
+import co.rsk.net.Status;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.StatusMessage;
 import org.ethereum.core.Block;
@@ -42,7 +45,7 @@ public class SimpleNode {
     }
 
     public void receiveMessageFrom(SimpleNode peer, Message message) {
-        SimpleNodeChannel senderToPeer = new SimpleNodeChannel(this, peer);
+        SimpleNodeChannel senderToPeer = getMessageChannel(peer);
         this.handler.processMessage(senderToPeer, message);
     }
 
@@ -61,10 +64,24 @@ public class SimpleNode {
     }
 
     public void sendFullStatusTo(SimpleNode peer) {
-        Block block = this.getBestBlock();
-        Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), this.getTotalDifficulty());
+        Status status = getFullStatus();
         peer.receiveMessageFrom(this, new StatusMessage(status));
     }
 
+    public Status getFullStatus() {
+        Block block = this.getBestBlock();
+        return new Status(block.getNumber(), block.getHash(), block.getParentHash(), this.getTotalDifficulty());
+    }
+
+    public SimpleNodeChannel getMessageChannel(SimpleNode peer) {
+        return new SimpleNodeChannel(this, peer);
+    }
+
     public NodeID getNodeID() { return nodeID; }
+
+    public static SimpleNode createNode() {
+        NodeMessageHandler handler = NodeMessageHandlerUtil.createHandler();
+        handler.disablePoWValidation();
+        return new SimpleNode(handler);
+    }
 }

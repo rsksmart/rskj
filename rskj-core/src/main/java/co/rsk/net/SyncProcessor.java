@@ -21,6 +21,7 @@ import java.util.*;
 
 /**
  * Created by ajlopez on 29/08/2017.
+ * This class' methods are executed one at a time because NodeMessageHandler is synchronized.
  */
 public class SyncProcessor {
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
@@ -34,6 +35,7 @@ public class SyncProcessor {
     private PeersInformation peerStatuses = new PeersInformation();
     private Map<Long, PendingBodyResponse> pendingBodyResponses = new HashMap<>();
 
+    private Map<NodeID, MessageChannel> senders = new HashMap<>();
     private SyncStatusHandler statusHandler = new SyncStatusHandler(peerStatuses);
 
     public SyncProcessor(Blockchain blockchain, BlockSyncService blockSyncService) {
@@ -45,35 +47,23 @@ public class SyncProcessor {
 
     public void processStatus(MessageChannel sender, Status status) {
         logger.trace("Receiving status from node {} block {} {}", sender.getPeerNodeID(), status.getBestBlockNumber(), Hex.toHexString(status.getBestBlockHash()).substring(0, 6), status.getBestBlockHash());
-        statusHandler.newPeerStatus(sender, status);
-//        SyncPeerStatus peerStatus = this.getPeerStatusAndUpdateSender(sender);
-//
-//        peerStatus.setStatus(status);
-//
-//        if (!this.blockchain.getStatus().hasLowerDifficulty(status)) {
-//            if (peerStatus.isSyncing())
-//                peerStatus.stopSyncing();
-//
-//            return;
-//        }
-//
-//        if (!peerStatus.isSyncing() || !peerStatus.getConnectionPoint().isPresent() && !peerStatus.isFindingConnectionPoint()) {
-//            this.findConnectionPoint(sender, status);
-//            return;
-//        }
+
+        // save sender because we can be called back to findConnectionPointOfBestPeer
+        senders.put(sender.getPeerNodeID(), sender);
+        statusHandler.newPeerStatus(sender.getPeerNodeID(), status);
     }
 
 
     public void sendSkeletonRequestTo(MessageChannel peer, long height) {
         logger.trace("Send skeleton request to node {} height {}", peer.getPeerNodeID(), height);
-        SyncPeerStatus peerStatus = this.getPeerStatusAndUpdateSender(peer);
+        SyncPeerStatus peerStatus = this.getPeerStatusAndSaveSender(peer);
         peer.sendMessage(new SkeletonRequestMessage(++lastRequestId, height));
         peerStatus.registerExpectedResponse(lastRequestId, MessageType.SKELETON_RESPONSE_MESSAGE);
     }
 
     public void processSkeletonResponse(MessageChannel sender, SkeletonResponseMessage message) {
         logger.trace("Process skeleton response from node {}", sender.getPeerNodeID());
-        SyncPeerStatus peerStatus = this.getPeerStatusAndUpdateSender(sender);
+        SyncPeerStatus peerStatus = this.getPeerStatusAndSaveSender(sender);
 
         if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
             return;
@@ -99,10 +89,11 @@ public class SyncProcessor {
     }
 
     private void findConnectionPointOfBestPeer() {
-        Optional<MessageChannel> senderOptional = this.peerStatuses.getBestPeerSender();
+        Optional<NodeID> bestPeerIDOptional = this.peerStatuses.getBestPeerID();
+        Optional<MessageChannel> bestPeerOptional = bestPeerIDOptional.map(senders::get);
 
-        senderOptional.ifPresent(bestPeer -> {
-            SyncPeerStatus peerStatus = getPeerStatusAndUpdateSender(bestPeer);
+        bestPeerOptional.ifPresent(bestPeer -> {
+            SyncPeerStatus peerStatus = getPeerStatusAndSaveSender(bestPeer);
             Status status = peerStatus.getStatus();
             if (!this.blockchain.getStatus().hasLowerDifficulty(status)) {
                 if (peerStatus.isSyncing())
@@ -168,14 +159,14 @@ public class SyncProcessor {
 
     public void sendBlockHashRequestTo(MessageChannel peer, long height) {
         logger.trace("Send hash request to node {} height {}", peer.getPeerNodeID(), height);
-        SyncPeerStatus peerStatus = this.getPeerStatusAndUpdateSender(peer);
+        SyncPeerStatus peerStatus = this.getPeerStatusAndSaveSender(peer);
         peer.sendMessage(new BlockHashRequestMessage(++lastRequestId, height));
         peerStatus.registerExpectedResponse(lastRequestId, MessageType.BLOCK_HASH_RESPONSE_MESSAGE);
     }
 
     public void findConnectionPointOf(MessageChannel peer, Status status) {
         logger.trace("Find connection point with node {}", peer.getPeerNodeID());
-        SyncPeerStatus peerStatus = this.getPeerStatusAndUpdateSender(peer);
+        SyncPeerStatus peerStatus = this.getPeerStatusAndSaveSender(peer);
 
         peerStatus.startFindConnectionPoint(status.getBestBlockNumber());
         this.sendBlockHashRequestTo(peer, peerStatus.getFindingHeight());
@@ -183,7 +174,7 @@ public class SyncProcessor {
 
     public void processBlockHashResponse(MessageChannel sender, BlockHashResponseMessage message) {
         logger.trace("Process block hash response from node {} hash {}", sender.getPeerNodeID(), Hex.toHexString(message.getHash()).substring(0, 6));
-        SyncPeerStatus peerStatus = this.getPeerStatusAndUpdateSender(sender);
+        SyncPeerStatus peerStatus = this.getPeerStatusAndSaveSender(sender);
 
         if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
             return;
@@ -206,7 +197,7 @@ public class SyncProcessor {
 
     public void processBlockHeadersResponse(MessageChannel sender, BlockHeadersResponseMessage message) {
         logger.trace("Process block headers response from node {}", sender.getPeerNodeID());
-        SyncPeerStatus peerStatus = this.getPeerStatusAndUpdateSender(sender);
+        SyncPeerStatus peerStatus = this.getPeerStatusAndSaveSender(sender);
 
         if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
             return;
@@ -262,7 +253,7 @@ public class SyncProcessor {
 
     public void processBodyResponse(MessageChannel sender, BodyResponseMessage message) {
         logger.trace("Process body response from node {}", sender.getPeerNodeID());
-        SyncPeerStatus peerStatus = this.getPeerStatusAndUpdateSender(sender);
+        SyncPeerStatus peerStatus = this.getPeerStatusAndSaveSender(sender);
 
         if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
             return;
@@ -277,12 +268,12 @@ public class SyncProcessor {
         // TODO(mc): validate transactions and uncles are part of this block (with header)
         blockSyncService.processBlock(sender, Block.fromValidData(expected.header, message.getTransactions(), message.getUncles()));
 
-        this.sendNextBlockHeadersRequestTo(sender, this.getPeerStatusAndUpdateSender(sender));
+        this.sendNextBlockHeadersRequestTo(sender, this.getPeerStatusAndSaveSender(sender));
     }
 
     public void processBlockResponse(MessageChannel sender, BlockResponseMessage message) {
         logger.trace("Process block response from node {} block {} {}", sender.getPeerNodeID(), message.getBlock().getNumber(), message.getBlock().getShortHash());
-        SyncPeerStatus peerStatus = this.getPeerStatusAndUpdateSender(sender);
+        SyncPeerStatus peerStatus = this.getPeerStatusAndSaveSender(sender);
 
         if (!peerStatus.isExpectedResponse(message.getId(), message.getMessageType()))
             return;
@@ -298,7 +289,7 @@ public class SyncProcessor {
             return;
 
         sender.sendMessage(new BlockRequestMessage(++lastRequestId, hash));
-        this.getPeerStatusAndUpdateSender(sender).registerExpectedResponse(lastRequestId, MessageType.BLOCK_RESPONSE_MESSAGE);
+        this.getPeerStatusAndSaveSender(sender).registerExpectedResponse(lastRequestId, MessageType.BLOCK_RESPONSE_MESSAGE);
     }
 
     public Set<NodeID> getKnownPeersNodeIDs() {
@@ -306,11 +297,13 @@ public class SyncProcessor {
     }
 
     public SyncPeerStatus getPeerStatus(NodeID nodeID) {
-        return this.peerStatuses.getOrCreate(nodeID);
+        return this.peerStatuses.getPeer(nodeID);
     }
 
-    public SyncPeerStatus getPeerStatusAndUpdateSender(MessageChannel sender) {
-        return this.peerStatuses.getOrCreateWithSender(sender);
+    public SyncPeerStatus getPeerStatusAndSaveSender(MessageChannel sender) {
+        SyncPeerStatus peerStatus = peerStatuses.getOrRegisterPeer(sender.getPeerNodeID());
+        senders.put(sender.getPeerNodeID(), sender);
+        return peerStatus;
     }
 
     @VisibleForTesting

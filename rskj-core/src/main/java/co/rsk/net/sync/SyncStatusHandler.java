@@ -1,53 +1,30 @@
 package co.rsk.net.sync;
 
-import co.rsk.net.MessageChannel;
+import co.rsk.net.NodeID;
 import co.rsk.net.Status;
-import co.rsk.net.SyncPeerStatus;
 
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * This only runs inside a SyncProcessor instance.
+ * Messages are synchronized by NodeMessageHandler, therefore this code effectively runs in one thread and we don't need syncing.
+ */
 public class SyncStatusHandler {
     private Set<Runnable> finishedWaitingForPeersCallbacks = new HashSet<>();
     private SyncStatus status;
-    private PeersInformation peerStatuses;
 
     public SyncStatusHandler(PeersInformation peerStatuses) {
-        this.peerStatuses = peerStatuses;
-        status = new WaitingForPeersSyncStatus();
+        status = new WaitingForPeersSyncStatus(peerStatuses);
     }
 
     public SyncStatuses getStatus() {
         return status.getStatus();
     }
 
-    public void newPeerStatus(MessageChannel sender, Status status) {
-        boolean knownSender = this.peerStatuses.isKnownSender(sender);
-        SyncPeerStatus peerStatus = peerStatuses.getOrCreateWithSender(sender);
-        peerStatus.setStatus(status);
-        if (!knownSender) {
-            newPeerFound(sender);
-        }
-
-//        // TODO(mc) this should be part of WaitingForPeersSyncStatus, but the problem is that
-//        // we want to update the current status first.
-//        SyncStatus oldStatus = this.status;
-//        if (this.status.getStatus() != oldStatus.getStatus() && oldStatus.getStatus() == SyncStatuses.WAITING_FOR_PEERS) {
-//            finishedWaitingForPeersCallbacks.forEach(Runnable::run);
-//        }
-    }
-
-    public void newPeerFound(MessageChannel sender) {
-        // TODO(mc) this should be part of WaitingForPeersSyncStatus, but the problem is that
-        // we want to update the current status first.
-        SyncStatus oldStatus = status;
-        status = status.newPeerFound();
-        finishedWaitingForPeersCallbacks.forEach(Runnable::run);
-//        if (oldStatus.getStatus() == SyncStatuses.WAITING_FOR_PEERS
-//                && status.getStatus() == SyncStatuses.FINDING_CONNECTION_POINT) {
-//            finishedWaitingForPeersCallbacks.forEach(Runnable::run);
-//        }
+    public void newPeerStatus(NodeID peerID, Status status) {
+        this.status = this.status.newPeerStatus(peerID, status, finishedWaitingForPeersCallbacks);
     }
 
     public void tick(Duration duration) {
