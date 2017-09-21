@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 import java.nio.charset.StandardCharsets;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 
@@ -45,41 +46,24 @@ public class BridgeRegTestConstants extends BridgeConstants {
     BridgeRegTestConstants() {
         btcParamsString = NetworkParameters.ID_REGTEST;
 
-        BtcECKey federator0PrivateKey = BtcECKey.fromPrivate(HashUtil.sha3("federator1".getBytes(StandardCharsets.UTF_8)));
-        BtcECKey federator1PrivateKey = BtcECKey.fromPrivate(HashUtil.sha3("federator2".getBytes(StandardCharsets.UTF_8)));
-        BtcECKey federator2PrivateKey = BtcECKey.fromPrivate(HashUtil.sha3("federator3".getBytes(StandardCharsets.UTF_8)));
+        BtcECKey federator0PrivateKey = BtcECKey.fromPrivate(Hex.decode("d4b5aa0e4926aff7ba7fcb8b904328323243c5bc9af4c1781de8d4db4cc014a7"));
+        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(federator0PrivateKey.getPubKey());
 
-        federatorPrivateKeys = Lists.newArrayList(federator0PrivateKey, federator1PrivateKey, federator2PrivateKey);
+        federatorPrivateKeys = Lists.newArrayList(federator0PrivateKey);
+        federatorPublicKeys = Lists.newArrayList(federator0PublicKey);
 
-        // To recalculate federator private keys
-        // Hex.toHexString(ECKey.fromPrivate(HashUtil.sha3("federator1".getBytes())).getPubKey())
-        // Current federator secrets: federator1, federator2, federator3
-        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0362634ab57dae9cb373a5d536e66a8c4f67468bbcfb063809bab643072d78a124"));
-        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03c5946b3fbae03a654237da863c9ed534e0878657175b132b8ca630f245df04db"));
-        BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02cd53fc53a07f211641a677d250f6de99caf620e8e77071e811a28b3bcddf0be1"));
-
-        federatorPublicKeys = Lists.newArrayList(federator0PublicKey, federator1PublicKey, federator2PublicKey);
-
-        federatorsRequiredToSign = 2;
+        federatorsRequiredToSign = 1;
 
         Script redeemScript = ScriptBuilder.createRedeemScript(federatorsRequiredToSign, federatorPublicKeys);
         federationPubScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
 //      To recalculate federationAddress
-//      federationAddress = Address.fromP2SHScript(btcParams, federationPubScript);
-        try {
-            federationAddress = Address.fromBase58(getBtcParams(), "2N5muMepJizJE1gR7FbHJU6CD18V3BpNF9p");
-        } catch (AddressFormatException e) {
-            logger.error("Federation address format is invalid");
-            throw new RskConfigurationException(e.getMessage(), e);
-        }
+        federationAddress = Address.fromP2SHScript(getBtcParams(), federationPubScript);
 
         // To recreate the value use
-        // federationAddressCreationTime = new GregorianCalendar(2016,0,1).getTimeInMillis();
-        // Currently set to:
-        // Jan 1 2016 00:00 GMT-3
-        federationAddressCreationTime = 1451617200;
+        federationAddressCreationTime = new GregorianCalendar(2016,0,1).getTimeInMillis();
 
         btc2RskMinimumAcceptableConfirmations = 3;
+        btc2RskMinimumAcceptableConfirmationsOnRsk = 5;
         rsk2BtcMinimumAcceptableConfirmations = 3;
         btcBroadcastingMinimumAcceptableBlocks = 3;
 

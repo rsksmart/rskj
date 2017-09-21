@@ -35,6 +35,7 @@ public class BridgeConstants {
     protected long federationAddressCreationTime;
 
     protected int btc2RskMinimumAcceptableConfirmations;
+    protected int btc2RskMinimumAcceptableConfirmationsOnRsk;
     protected int rsk2BtcMinimumAcceptableConfirmations;
     protected int btcBroadcastingMinimumAcceptableBlocks;
 
@@ -73,6 +74,10 @@ public class BridgeConstants {
 
     public int getBtc2RskMinimumAcceptableConfirmations() {
         return btc2RskMinimumAcceptableConfirmations;
+    }
+
+    public int getBtc2RskMinimumAcceptableConfirmationsOnRsk() {
+        return btc2RskMinimumAcceptableConfirmationsOnRsk;
     }
 
     public int getRsk2BtcMinimumAcceptableConfirmations() {
