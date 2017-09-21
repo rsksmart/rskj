@@ -169,10 +169,11 @@ public class BridgeSupport {
         Context.propagate(btcContext);
 
         // Check the tx was not already processed
-        if (provider.getBtcTxHashesAlreadyProcessed().contains(btcTx.getHash())) {
+        if (provider.getBtcTxHashesAlreadyProcessed().keySet().contains(btcTx.getHash())) {
             logger.warn("Supplied tx was already processed");
             return;
         }
+
         // Check the tx is in the partial merkle tree
         List<Sha256Hash> hashesInPmt = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashesInPmt);
@@ -181,6 +182,7 @@ public class BridgeSupport {
             panicProcessor.panic("btclock", "Supplied tx is not in the supplied partial merkle tree");
             return;
         }
+
         if (height < 0) {
             logger.warn("Height is " + height + " but should be greater than 0");
             panicProcessor.panic("btclock", "Height is " + height + " but should be greater than 0");
@@ -193,6 +195,7 @@ public class BridgeSupport {
             logger.warn("At least " + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations() + " confirmations are required, but there are only " + (headHeight - height) + " confirmations");
             return;
         }
+
         // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
         BtcBlock blockHeader = BridgeUtils.getStoredBlockAtHeight(btcBlockStore, height).getHeader();
         if (!blockHeader.getMerkleRoot().equals(merkleRoot)) {
@@ -200,6 +203,7 @@ public class BridgeSupport {
             panicProcessor.panic("btclock", "Supplied merkle root " + merkleRoot + "does not match block's merkle root " + blockHeader.getMerkleRoot());
             return;
         }
+
         // Checks the transaction contents for sanity
         btcTx.verify();
         if (btcTx.getInputs().isEmpty()) {
@@ -207,6 +211,7 @@ public class BridgeSupport {
             panicProcessor.panic("btclock", "Tx has no inputs " + btcTx);
             return;
         }
+
         // Specific code for lock/release/none txs
         if (BridgeUtils.isLockTx(btcTx, provider.getWallet(), bridgeConstants)) {
             logger.debug("This is a lock tx {}", btcTx);
@@ -243,8 +248,8 @@ public class BridgeSupport {
 
         Sha256Hash btcTxHash = btcTx.getHash();
 
-        // Mark tx as processed
-        provider.getBtcTxHashesAlreadyProcessed().add(btcTxHash);
+        // Mark tx as processed on this block
+        provider.getBtcTxHashesAlreadyProcessed().put(btcTxHash, rskExecutionBlock.getNumber());
 
         saveNewUTXOs(btcTx);
         logger.info("BTC Tx {} processed in RSK", btcTxHash);
@@ -626,12 +631,34 @@ public class BridgeSupport {
     }
 
     /**
-     * Returns an set of btc txs hashes the bridge already knows about.
-     * @return a Set of tx hashes.
+     * Returns whether a given btc transaction hash has already
+     * been processed by the bridge.
+     * @param btcTxHash the btc tx hash to check.
+     * @return a Boolean indicating whether the given btc tx hash was
+     * already processed by the bridge.
      * @throws IOException
      */
-    public Set<Sha256Hash> getBtcTxHashesAlreadyProcessed() throws IOException {
-        return provider.getBtcTxHashesAlreadyProcessed();
+    public Boolean isBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) throws IOException {
+        return provider.getBtcTxHashesAlreadyProcessed().containsKey(btcTxHash);
+    }
+
+    /**
+     * Returns the RSK blockchain height a given btc transaction hash
+     * was processed at by the bridge.
+     * @param btcTxHash the btc tx hash for which to retrieve the height.
+     * @return a Long with the processed height. If the hash was not processed
+     * -1 is returned.
+     * @throws IOException
+     */
+    public Long getBtcTxHashProcessedHeight(Sha256Hash btcTxHash) throws IOException {
+        Map<Sha256Hash, Long> btcTxHashes = provider.getBtcTxHashesAlreadyProcessed();
+
+        // Return -1 if the transaction hasn't been processed
+        if (!btcTxHashes.containsKey(btcTxHash)) {
+            return -1L;
+        }
+
+        return btcTxHashes.get(btcTxHash);
     }
 
     /**
