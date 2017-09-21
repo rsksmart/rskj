@@ -20,6 +20,8 @@ package co.rsk.net;
 
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
+import co.rsk.scoring.EventType;
+import co.rsk.scoring.PeerScoringManager;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.PendingState;
@@ -34,10 +36,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -53,6 +52,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private final BlockProcessor blockProcessor;
     private final ChannelManager channelManager;
     private final PendingState pendingState;
+    private final PeerScoringManager peerScoringManager;
     private long lastStatusSent = 0;
 
     private ProofOfWorkRule powRule;
@@ -71,7 +71,8 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     public NodeMessageHandler(@Nonnull final BlockProcessor blockProcessor,
                               @Nullable final ChannelManager channelManager,
                               @Nullable final PendingState pendingState,
-                              final TxHandler txHandler) {
+                              final TxHandler txHandler,
+                              @Nullable final PeerScoringManager peerScoringManager) {
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
         this.pendingState = pendingState;
@@ -79,6 +80,8 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         transactionNodeInformation = new TransactionNodeInformation();
         this.txHandler = txHandler;
         this.lastImportedBestBlock = System.currentTimeMillis();
+        this.cleanMsgTimestamp = this.lastImportedBestBlock;
+        this.peerScoringManager = peerScoringManager;
     }
 
     @VisibleForTesting
@@ -134,8 +137,10 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             }
             this.queue.offer(new MessageTask(sender, message));
         } else {
+            recordEvent(sender, EventType.REPEATED_MESSAGE);
             logger.trace("Received message already known, not added to the queue");
         }
+
         logger.trace("End post message (queue size {})", this.queue.size());
 
         // There's an obvious race condition here, but fear not.
@@ -245,6 +250,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         if (!isValidBlock(block)) {
             logger.trace("Invalid block {} {}", block.getNumber(), block.getShortHash());
+            recordEvent(sender, EventType.INVALID_BLOCK);
             return;
         }
 
@@ -258,6 +264,8 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             result.logResult(block.getShortHash(), time);
 
         Metrics.processBlockMessage("blockProcessed", block, sender.getNodeID());
+
+        recordEvent(sender, EventType.VALID_BLOCK);
 
         long currentTimeMillis = System.currentTimeMillis();
 
@@ -340,8 +348,18 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         long start = System.nanoTime();
         loggerMessageProcess.debug("Tx message about to be process: {}", message.getMessageContentInfo());
 
-        List<Transaction> txs = message.getTransactions();
-        Metrics.processTxsMessage("start", txs, sender.getNodeID());
+        List<Transaction> ptxs = message.getTransactions();
+        Metrics.processTxsMessage("start", ptxs, sender.getNodeID());
+
+        List<Transaction> txs = new LinkedList();
+        for (Transaction tx : ptxs) {
+            if (tx.getSignature() == null || !tx.acceptTransactionSignature()) {
+                recordEvent(sender, EventType.INVALID_TRANSACTION);
+            } else {
+                txs.add(tx);
+                recordEvent(sender, EventType.VALID_TRANSACTION);
+            }
+        }
 
         List<Transaction> acceptedTxs = txHandler.retrieveValidTxs(txs);
 
@@ -376,7 +394,18 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         Metrics.processTxsMessage("txToNodeInfoUpdated", acceptedTxs, sender.getNodeID());
         Metrics.processTxsMessage("finish", acceptedTxs, sender.getNodeID());
+
         loggerMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
+    }
+
+    private void recordEvent(MessageSender sender, EventType event) {
+        if (this.peerScoringManager == null)
+            return;
+
+        if (sender == null)
+            return;
+
+        this.peerScoringManager.recordEvent(sender.getNodeID(), sender.getAddress(), event);
     }
 
     private static class MessageTask {

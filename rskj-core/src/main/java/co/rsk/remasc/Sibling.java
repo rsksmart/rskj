@@ -20,10 +20,12 @@ package co.rsk.remasc;
 
 import org.ethereum.core.BlockHeader;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 
 /**
  * Siblings are part of the remasc contract state
@@ -91,7 +93,7 @@ class Sibling {
     }
 
     public static Sibling create(byte[] data) {
-        RLPList params = RLP.decode2(data);
+        ArrayList<RLPElement> params = RLP.decode2(data);
         RLPList sibling = (RLPList) params.get(0);
 
         byte[] hash = sibling.get(0).getRLPData();

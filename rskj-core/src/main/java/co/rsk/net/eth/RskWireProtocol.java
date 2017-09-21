@@ -20,14 +20,14 @@ package co.rsk.net.eth;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
-import co.rsk.net.MessageHandler;
-import co.rsk.net.MessageSender;
-import co.rsk.net.Metrics;
-import co.rsk.net.Status;
+import co.rsk.net.*;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.StatusMessage;
+import co.rsk.scoring.EventType;
+import io.netty.channel.ChannelConfig;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -51,6 +51,9 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -117,6 +120,7 @@ public class RskWireProtocol extends EthHandler {
         }
 
         this.messageSender.setNodeID(channel.getNodeId());
+        this.messageSender.setAddress(channel.getInetSocketAddress().getAddress());
     }
 
     @PostConstruct
@@ -138,7 +142,13 @@ public class RskWireProtocol extends EthHandler {
         if (this.messageRecorder != null)
             this.messageRecorder.recordMessage(messageSender.getNodeID(), msg);
 
+        if (!hasGoodReputation(ctx)) {
+            ctx.disconnect();
+            return;
+        }
+
         Metrics.messageBytes(messageSender.getNodeID(), msg.getEncoded().length);
+
         switch (msg.getCommand()) {
             case STATUS:
                 processStatus((org.ethereum.net.eth.message.StatusMessage) msg, ctx);
@@ -183,6 +193,7 @@ public class RskWireProtocol extends EthHandler {
                     || msg.getProtocolVersion() != version.getCode()) {
                 loggerNet.info("Removing EthHandler for {} due to protocol incompatibility", ctx.channel().remoteAddress());
                 ethState = EthState.STATUS_FAILED;
+                recordEvent(EventType.INCOMPATIBLE_PROTOCOL);
                 disconnect(ReasonCode.INCOMPATIBLE_PROTOCOL);
                 ctx.pipeline().remove(this); // Peer is not compatible for the 'eth' sub-protocol
                 return;
@@ -190,6 +201,7 @@ public class RskWireProtocol extends EthHandler {
 
             if (msg.getNetworkId() != config.networkId()) {
                 ethState = EthState.STATUS_FAILED;
+                recordEvent(EventType.INVALID_NETWORK);
                 disconnect(ReasonCode.NULL_IDENTITY);
                 return;
             }
@@ -208,6 +220,35 @@ public class RskWireProtocol extends EthHandler {
         } catch (NoSuchElementException e) {
             loggerNet.debug("EthHandler already removed");
         }
+    }
+
+    private boolean hasGoodReputation(ChannelHandlerContext ctx) {
+        SocketAddress socketAddress = ctx.channel().remoteAddress();
+
+        //TODO(mmarquez): and if not ???
+        if (socketAddress instanceof InetSocketAddress) {
+
+            InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
+
+            if (!this.rsk.getPeerScoringManager().hasGoodReputation(address))
+                return false;
+
+            byte[] nid = channel.getNodeId();
+            NodeID nodeID = nid != null ? new NodeID(nid) : null;
+
+            if (nodeID != null && !this.rsk.getPeerScoringManager().hasGoodReputation(nodeID))
+                return false;
+
+        }
+
+        return true; //TODO(mmarquez): ugly
+    }
+
+    private void recordEvent(EventType event) {
+        this.rsk.getPeerScoringManager().recordEvent(
+                        this.messageSender.getNodeID(),
+                        this.messageSender.getAddress(),
+                        event);
     }
 
 

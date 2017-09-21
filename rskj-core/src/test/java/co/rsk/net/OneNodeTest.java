@@ -40,7 +40,7 @@ public class OneNodeTest {
         final Blockchain blockchain = world.getBlockChain();
 
         BlockProcessor processor = new NodeBlockProcessor(store, blockchain);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null).disablePoWValidation();
+        NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null, null).disablePoWValidation();
 
         return new SimpleNode(handler);
     }

@@ -18,11 +18,11 @@
 
 package co.rsk.remasc;
 
-import co.rsk.blockchain.utils.BlockchainBuilder;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -54,11 +54,11 @@ class RemascTestRunner {
 
     private Blockchain blockchain;
 
-    private BlockchainBuilder builder;
+    private BlockChainBuilder builder;
 
     private Block genesis;
 
-    public RemascTestRunner(BlockchainBuilder blockchainBuilder, Block genesis) {
+    public RemascTestRunner(BlockChainBuilder blockchainBuilder, Block genesis) {
         this.builder = blockchainBuilder;
         this.genesis = genesis;
     }
@@ -176,6 +176,12 @@ class RemascTestRunner {
 
         byte[] diffBytes = BigInteger.valueOf(difficulty).toByteArray();
 
+        long paidFees = 0;
+
+        for (Transaction tx : txs) {
+            paidFees += BigIntegers.fromUnsignedByteArray(tx.getGasLimit()).longValue() * BigIntegers.fromUnsignedByteArray(tx.getGasPrice()).longValue();
+        }
+
         Block block =  new Block(
                 parentBlock.getHash(),          // parent hash
                 EMPTY_LIST_HASH,       // uncle hash
@@ -194,14 +200,15 @@ class RemascTestRunner {
                 genesis.getStateRoot(),         //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list
                 uncles,                          // uncle list
-                BigInteger.TEN.toByteArray()
+                BigInteger.TEN.toByteArray(),
+                paidFees
         ) {
             private BlockHeader harcodedHashHeader;
 
             @Override
             public BlockHeader getHeader() {
                 if (harcodedHashHeader==null) {
-                    harcodedHashHeader = new BlockHeader(super.getHeader().getEncoded()) {
+                    harcodedHashHeader = new BlockHeader(super.getHeader().getEncoded(), false) {
                         @Override
                         public byte[] getHash() {
                             return blockHash.getBytes();
@@ -226,11 +233,6 @@ class RemascTestRunner {
                 harcodedHashHeader = null;
             }
         };
-        long paidFees = 0;
-        for (Transaction tx : txs) {
-            paidFees += BigIntegers.fromUnsignedByteArray(tx.getGasLimit()).longValue() * BigIntegers.fromUnsignedByteArray(tx.getGasPrice()).longValue();
-        }
-        block.getHeader().setPaidFees(paidFees);
 
         return block;
     }

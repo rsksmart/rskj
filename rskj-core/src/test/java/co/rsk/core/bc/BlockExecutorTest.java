@@ -36,6 +36,7 @@ import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
 import org.ethereum.util.RLP;
+import org.ethereum.vm.trace.ProgramTrace;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.BigIntegers;
@@ -542,9 +543,9 @@ public class BlockExecutorTest {
         }
 
         @Override
-        public void onVMTraceCreated(String transactionHash, String trace) {
+        public void onVMTraceCreated(String transactionHash, ProgramTrace trace) {
             latestTransactionHash = transactionHash;
-            latestTrace = trace;
+            latestTrace = trace.toString();
         }
 
         @Override

@@ -145,7 +145,7 @@ public class ContractDetailsCacheImpl implements ContractDetails {
 
     @Override
     public void decode(byte[] rlpCode) {
-        RLPList data = RLP.decode2(rlpCode);
+        ArrayList<RLPElement> data = RLP.decode2(rlpCode);
         RLPList rlpList = (RLPList) data.get(0);
 
         RLPList keys = (RLPList) rlpList.get(0);

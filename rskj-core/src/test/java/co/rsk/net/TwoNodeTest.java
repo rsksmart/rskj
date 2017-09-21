@@ -45,7 +45,7 @@ public class TwoNodeTest {
             blockchain.tryToConnect(b);
 
         BlockProcessor processor = new NodeBlockProcessor(store, blockchain);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null).disablePoWValidation();
+        NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null, null).disablePoWValidation();
 
         return new SimpleNode(handler);
     }

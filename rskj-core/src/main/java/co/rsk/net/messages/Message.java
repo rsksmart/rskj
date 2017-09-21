@@ -18,8 +18,12 @@
 
 package co.rsk.net.messages;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
+
+import java.util.ArrayList;
 
 /**
  * Created by ajlopez on 5/10/2016.
@@ -36,8 +40,12 @@ public abstract class Message {
         return RLP.encodeList(type, body);
     }
 
-    public static Message create(byte[] encoded) {
-        RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
+    @VisibleForTesting
+    static Message create(byte[] encoded) {
+        return create((RLPList) RLP.decode2(encoded).get(0));
+    }
+
+    public static Message create(ArrayList<RLPElement> paramsList) {
         byte[] body = paramsList.get(1).getRLPData();
 
         if (body != null) {
