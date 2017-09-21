@@ -46,6 +46,28 @@ public class BlockUtils {
         return blocks.stream().anyMatch(bi -> key.equalsToByteArray(bi.getHash()));
     }
 
+    public static boolean blockIsAncestorOf(Block blockA, Block blockB, Blockchain blockChain) {
+        if (blockA.getNumber() >= blockB.getNumber()) {
+            return false;
+        }
+
+        if (!blockInSomeBlockChain(blockA, blockChain) || !blockInSomeBlockChain(blockB, blockChain)) {
+            return false;
+        }
+
+        // Climb the blockchain up to A's number
+        Block currentBlock = blockB;
+        while (currentBlock != null && currentBlock.getNumber() > blockA.getNumber()) {
+            currentBlock = blockChain.getBlockByHash(currentBlock.getParentHash());
+        }
+
+        if (currentBlock == null) {
+            return false;
+        }
+
+        return Arrays.equals(blockA.getHash(), currentBlock.getHash());
+    }
+
     public static Set<ByteArrayWrapper> unknownDirectAncestorsHashes(Block block, Blockchain blockChain, BlockStore store) {
         Set<ByteArrayWrapper> hashes = new HashSet<>();
 

@@ -826,7 +826,7 @@ public class BridgeSupportTest {
         BtcTransaction tx = createTransaction();
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        provider.getBtcTxHashesAlreadyProcessed().add(tx.getHash());
+        provider.getBtcTxHashesAlreadyProcessed().put(tx.getHash(), 1L);
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null);
 
