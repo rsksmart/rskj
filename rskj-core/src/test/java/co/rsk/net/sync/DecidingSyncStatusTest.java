@@ -10,8 +10,7 @@ import java.util.Collections;
 public class DecidingSyncStatusTest {
     @Test
     public void switchesToDecidingWith5Peers() {
-        PeersInformation peersInformation = new PeersInformation();
-        SyncStatus status = new DecidingSyncStatus(peersInformation, SyncConfiguration.DEFAULT);
+        SyncStatus status = new DecidingSyncStatus(SyncConfiguration.DEFAULT);
         for (int i = 0; i < 5; i++) {
             Assert.assertEquals(SyncStatuses.DECIDING, status.getStatus());
             SimpleNode peer = SimpleNode.createNode();
@@ -23,8 +22,7 @@ public class DecidingSyncStatusTest {
 
     @Test
     public void switchesToDecidingWith5NonRepeatedPeers() {
-        PeersInformation peersInformation = new PeersInformation();
-        SyncStatus status = new DecidingSyncStatus(peersInformation, SyncConfiguration.DEFAULT);
+        SyncStatus status = new DecidingSyncStatus(SyncConfiguration.DEFAULT);
         SimpleNode peerToRepeat = SimpleNode.createNode();
         for (int i = 0; i < 10; i++) {
             Assert.assertEquals(SyncStatuses.DECIDING, status.getStatus());
@@ -42,8 +40,7 @@ public class DecidingSyncStatusTest {
 
     @Test
     public void doesntSwitchWithNoPeersAfter2Minutes() {
-        PeersInformation peersInformation = new PeersInformation();
-        SyncStatus status = new DecidingSyncStatus(peersInformation, SyncConfiguration.DEFAULT);
+        SyncStatus status = new DecidingSyncStatus(SyncConfiguration.DEFAULT);
         Assert.assertEquals(SyncStatuses.DECIDING, status.getStatus());
 
         status = status.tick(Duration.ofMinutes(2));
@@ -52,8 +49,7 @@ public class DecidingSyncStatusTest {
 
     @Test
     public void switchesToDecidingWith1PeerAfter2Minutes() {
-        PeersInformation peersInformation = new PeersInformation();
-        SyncStatus status = new DecidingSyncStatus(peersInformation, SyncConfiguration.DEFAULT);
+        SyncStatus status = new DecidingSyncStatus(SyncConfiguration.DEFAULT);
         Assert.assertEquals(SyncStatuses.DECIDING, status.getStatus());
 
         SimpleNode peer = SimpleNode.createNode();
@@ -64,8 +60,7 @@ public class DecidingSyncStatusTest {
 
     @Test
     public void doesntSwitchToDecidingWith1PeerAfter119Seconds() {
-        PeersInformation peersInformation = new PeersInformation();
-        SyncStatus status = new DecidingSyncStatus(peersInformation, SyncConfiguration.DEFAULT);
+        SyncStatus status = new DecidingSyncStatus(SyncConfiguration.DEFAULT);
         Assert.assertEquals(SyncStatuses.DECIDING, status.getStatus());
 
         SimpleNode peer = SimpleNode.createNode();

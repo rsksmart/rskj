@@ -5,16 +5,16 @@ import co.rsk.net.Status;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.Set;
 
 public class DecidingSyncStatus implements SyncStatus {
     private int peers;
     private Duration timeElapsed = Duration.ZERO;
-    private PeersInformation knownPeers;
+    private Set<NodeID> knownPeers = new HashSet<>();
     private SyncConfiguration syncConfiguration;
 
-    public DecidingSyncStatus(PeersInformation knownPeers, SyncConfiguration syncConfiguration) {
-        this.knownPeers = knownPeers;
+    public DecidingSyncStatus(SyncConfiguration syncConfiguration) {
         this.syncConfiguration = syncConfiguration;
     }
 
@@ -27,11 +27,11 @@ public class DecidingSyncStatus implements SyncStatus {
     @Nonnull
     @Override
     public SyncStatus newPeerStatus(NodeID peerID, Status status, Set<Runnable> finishedWaitingForPeersCallbacks) {
-        if (knownPeers.isKnownPeer(peerID)) {
+        if (knownPeers.contains(peerID)) {
             return this;
         }
 
-        knownPeers.registerPeer(peerID).setStatus(status);
+        knownPeers.add(peerID);
 
         peers++;
         if (peers == syncConfiguration.getMinimumPeers()) {

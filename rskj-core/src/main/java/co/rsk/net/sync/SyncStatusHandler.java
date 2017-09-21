@@ -20,7 +20,7 @@ public class SyncStatusHandler {
     public SyncStatusHandler(PeersInformation peerStatuses, SyncConfiguration syncConfiguration) {
         this.peerStatuses = peerStatuses;
         this.syncConfiguration = syncConfiguration;
-        status = new DecidingSyncStatus(this.peerStatuses, this.syncConfiguration);
+        status = new DecidingSyncStatus(this.syncConfiguration);
     }
 
     public SyncStatuses getStatus() {
@@ -28,6 +28,7 @@ public class SyncStatusHandler {
     }
 
     public void newPeerStatus(NodeID peerID, Status status) {
+        this.peerStatuses.getOrRegisterPeer(peerID).setStatus(status);
         this.status = this.status.newPeerStatus(peerID, status, finishedWaitingForPeersCallbacks);
     }
 
@@ -44,6 +45,6 @@ public class SyncStatusHandler {
     }
 
     public void finishedDownloadingBlocks() {
-        status = new DecidingSyncStatus(this.peerStatuses, this.syncConfiguration);
+        status = new DecidingSyncStatus(this.syncConfiguration);
     }
 }
