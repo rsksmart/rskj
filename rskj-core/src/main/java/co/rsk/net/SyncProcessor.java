@@ -307,8 +307,23 @@ public class SyncProcessor {
     }
 
     @VisibleForTesting
+    public boolean peerIsSyncing(NodeID nodeID) {
+        return this.peerStatuses.isKnownPeer(nodeID) && getPeerStatus(nodeID).isSyncing();
+    }
+
+    @VisibleForTesting
     public void expectBodyResponseFor(long requestId, NodeID nodeID, BlockHeader header) {
         pendingBodyResponses.put(requestId, new PendingBodyResponse(nodeID, header));
+    }
+
+    @VisibleForTesting
+    public Map<Long, MessageType> getExpectedBodyResponses() {
+        Map<Long, MessageType> map = new HashMap<>();
+        for (NodeID peerID : peerStatuses.knownNodeIds()) {
+            SyncPeerStatus peer = peerStatuses.getPeer(peerID);
+            map.putAll(peer.getExpectedResponses());
+        }
+        return map;
     }
 
     private static class PendingBodyResponse {

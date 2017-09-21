@@ -40,7 +40,7 @@ public class WaitingForPeersSyncStatus implements SyncStatus {
 
         knownPeers.registerPeer(peerID).setStatus(status);
         finishedWaitingForPeersCallbacks.forEach(Runnable::run);
-        return new FindingConnectionPointSyncStatus();
+        return this;
     }
 
     @Nonnull
