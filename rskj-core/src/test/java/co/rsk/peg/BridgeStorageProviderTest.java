@@ -36,9 +36,7 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.List;
-import java.util.SortedMap;
-import java.util.SortedSet;
+import java.util.*;
 
 /**
  * Created by ajlopez on 6/7/2016.
@@ -52,7 +50,7 @@ public class BridgeStorageProviderTest {
         Repository repository = new RepositoryImpl();
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        SortedSet<Sha256Hash> processed = provider.getBtcTxHashesAlreadyProcessed();
+        Map<Sha256Hash, Long> processed = provider.getBtcTxHashesAlreadyProcessed();
 
         Assert.assertNotNull(processed);
         Assert.assertTrue(processed.isEmpty());
@@ -110,7 +108,7 @@ public class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        SortedSet<Sha256Hash> processed = provider.getBtcTxHashesAlreadyProcessed();
+        Map<Sha256Hash, Long> processed = provider.getBtcTxHashesAlreadyProcessed();
 
         Assert.assertNotNull(processed);
         Assert.assertTrue(processed.isEmpty());
@@ -150,8 +148,8 @@ public class BridgeStorageProviderTest {
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
-        provider0.getBtcTxHashesAlreadyProcessed().add(hash1);
-        provider0.getBtcTxHashesAlreadyProcessed().add(hash2);
+        provider0.getBtcTxHashesAlreadyProcessed().put(hash1, 1L);
+        provider0.getBtcTxHashesAlreadyProcessed().put(hash2, 1L);
         provider0.save();
         track.commit();
 
@@ -159,10 +157,11 @@ public class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        SortedSet<Sha256Hash> processed = provider.getBtcTxHashesAlreadyProcessed();
+        Map<Sha256Hash, Long> processed = provider.getBtcTxHashesAlreadyProcessed();
+        Set<Sha256Hash> processedHashes = processed.keySet();
 
-        Assert.assertTrue(processed.contains(hash1));
-        Assert.assertTrue(processed.contains(hash2));
+        Assert.assertTrue(processedHashes.contains(hash1));
+        Assert.assertTrue(processedHashes.contains(hash2));
     }
 
     @Test

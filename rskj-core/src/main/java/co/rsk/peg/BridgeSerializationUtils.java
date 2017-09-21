@@ -180,4 +180,40 @@ public class BridgeSerializationUtils {
 
         return set;
     }
+
+    public static byte[] serializeMapOfHashesToLong(Map<Sha256Hash, Long> map) {
+        byte[][] bytes = new byte[map.size() * 2][];
+        int n = 0;
+
+        for (Map.Entry<Sha256Hash, Long> entry : map.entrySet()) {
+            bytes[n++] = RLP.encodeElement(entry.getKey().getBytes());
+            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getValue()));
+        }
+
+        return RLP.encodeList(bytes);
+    }
+
+    public static Map<Sha256Hash, Long> deserializeMapOfHashesToLong(byte[] data) {
+        Map<Sha256Hash, Long> map = new HashMap<>();
+
+        if (data == null || data.length == 0)
+            return map;
+
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+
+        // List size must be even - key, value pairs expected in sequence
+        if (rlpList.size() % 2 != 0) {
+            return map;
+        }
+
+        int numEntries = rlpList.size() / 2;
+
+        for (int k = 0; k < numEntries; k++) {
+            Sha256Hash hash = Sha256Hash.wrap(rlpList.get(k*2).getRLPData());
+            Long number = new BigInteger(rlpList.get(k*2 + 1).getRLPData()).longValue();
+            map.put(hash, number);
+        }
+
+        return map;
+    }
 }

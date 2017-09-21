@@ -30,10 +30,9 @@ import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.SortedMap;
-import java.util.SortedSet;
+import java.util.*;
 
 /**
  * Provides an object oriented facade of the bridge contract memory.
@@ -53,7 +52,7 @@ public class BridgeStorageProvider {
     private Repository repository;
     private String contractAddress;
 
-    private SortedSet<Sha256Hash> btcTxHashesAlreadyProcessed;
+    private Map<Sha256Hash, Long> btcTxHashesAlreadyProcessed;
     // RSK release txs follow these steps: First, they are waiting for RSK confirmations, then they are waiting for federators' signatures,
     // then they are waiting for broadcasting in the bitcoin network (a tx is kept in this state for a while, even if already broadcasted, giving the chance to federators to rebroadcast it just in case),
     // then they are removed from contract's memory.
@@ -121,7 +120,7 @@ public class BridgeStorageProvider {
         repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
 
-    public SortedSet<Sha256Hash> getBtcTxHashesAlreadyProcessed() throws IOException {
+    public Map<Sha256Hash, Long> getBtcTxHashesAlreadyProcessed() throws IOException {
         if (btcTxHashesAlreadyProcessed != null)
             return btcTxHashesAlreadyProcessed;
 
@@ -129,7 +128,7 @@ public class BridgeStorageProvider {
 
         byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
 
-        btcTxHashesAlreadyProcessed = BridgeSerializationUtils.deserializeSet(data);
+        btcTxHashesAlreadyProcessed = BridgeSerializationUtils.deserializeMapOfHashesToLong(data);
 
         return btcTxHashesAlreadyProcessed;
     }
@@ -138,7 +137,7 @@ public class BridgeStorageProvider {
         if (btcTxHashesAlreadyProcessed == null)
             return;
 
-        byte[] data = BridgeSerializationUtils.serializeSet(btcTxHashesAlreadyProcessed);
+        byte[] data = BridgeSerializationUtils.serializeMapOfHashesToLong(btcTxHashesAlreadyProcessed);
 
         DataWord address = new DataWord(BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getBytes(StandardCharsets.UTF_8));
 
