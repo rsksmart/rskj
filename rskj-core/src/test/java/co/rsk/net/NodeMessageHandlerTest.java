@@ -21,7 +21,6 @@ package co.rsk.net;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
-import co.rsk.net.simples.NodeMessageHandlerUtil;
 import co.rsk.net.simples.SimpleBlockProcessor;
 import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.simples.SimplePendingState;

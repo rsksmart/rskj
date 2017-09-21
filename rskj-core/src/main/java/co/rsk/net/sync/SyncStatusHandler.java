@@ -12,11 +12,15 @@ import java.util.Set;
  * Messages are synchronized by NodeMessageHandler, therefore this code effectively runs in one thread and we don't need syncing.
  */
 public class SyncStatusHandler {
+    private final PeersInformation peerStatuses;
+    private final SyncConfiguration syncConfiguration;
     private Set<Runnable> finishedWaitingForPeersCallbacks = new HashSet<>();
     private SyncStatus status;
 
-    public SyncStatusHandler(PeersInformation peerStatuses) {
-        status = new WaitingForPeersSyncStatus(peerStatuses);
+    public SyncStatusHandler(PeersInformation peerStatuses, SyncConfiguration syncConfiguration) {
+        this.peerStatuses = peerStatuses;
+        this.syncConfiguration = syncConfiguration;
+        status = new DecidingSyncStatus(this.peerStatuses, this.syncConfiguration);
     }
 
     public SyncStatuses getStatus() {
@@ -31,7 +35,15 @@ public class SyncStatusHandler {
         status = status.tick(duration);
     }
 
+    /**
+     * This event is raised when we transition from Waiting For Peers to Finding Connection Point.
+     * @param callback a callback to be executed.
+     */
     public void onFinishedWaitingForPeers(Runnable callback) {
         this.finishedWaitingForPeersCallbacks.add(callback);
+    }
+
+    public void finishedDownloadingBlocks() {
+        status = new DecidingSyncStatus(this.peerStatuses, this.syncConfiguration);
     }
 }

@@ -19,7 +19,6 @@
 package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStore;
@@ -124,13 +123,15 @@ public class BlockChainBuilder {
 
     public static Blockchain copyAndExtend(Blockchain original, int size, boolean mining) {
         Blockchain blockchain = copy(original);
+        extend(blockchain, size, false, mining);
+        return blockchain;
+    }
 
-        Block initial = original.getBestBlock();
-        List<Block> blocks = BlockGenerator.getBlockChain(initial, size, 0, false, mining);
+    public static void extend(Blockchain blockchain, int size, boolean withUncles, boolean mining) {
+        Block initial = blockchain.getBestBlock();
+        List<Block> blocks = BlockGenerator.getBlockChain(initial, size, 0, withUncles, mining);
 
         for (Block block: blocks)
             blockchain.tryToConnect(block);
-
-        return blockchain;
     }
 }

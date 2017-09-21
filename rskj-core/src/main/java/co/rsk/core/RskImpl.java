@@ -22,6 +22,7 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.*;
 import co.rsk.net.handler.TxHandlerImpl;
+import co.rsk.net.sync.SyncConfiguration;
 import org.ethereum.core.Blockchain;
 import org.ethereum.facade.EthereumImpl;
 import org.springframework.stereotype.Component;
@@ -75,7 +76,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
             BlockNodeInformation nodeInformation = new BlockNodeInformation();
             BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, getChannelManager());
             this.nodeBlockProcessor = new NodeBlockProcessor(store, blockchain, this.getWorldManager(), nodeInformation, blockSyncService);
-            this.syncProcessor = new SyncProcessor(blockchain, blockSyncService);
+            this.syncProcessor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.DEFAULT);
         }
         return this.nodeBlockProcessor;
     }

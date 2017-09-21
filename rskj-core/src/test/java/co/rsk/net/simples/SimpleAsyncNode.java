@@ -18,11 +18,13 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.net.MessageHandler;
-import co.rsk.net.SyncProcessor;
+import co.rsk.net.*;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
-import com.google.common.annotations.VisibleForTesting;
+import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.test.World;
+import co.rsk.test.builders.BlockChainBuilder;
+import org.ethereum.core.Blockchain;
 
 import java.util.Map;
 import java.util.concurrent.*;
@@ -80,13 +82,38 @@ public class SimpleAsyncNode extends SimpleNode {
             throw new RuntimeException("Too many tasks. Expected " + number + " but got " + (number + remaining));
     }
 
-    @VisibleForTesting
     public Map<Long, MessageType> getExpectedResponses() {
         return this.syncProcessor.getExpectedBodyResponses();
     }
 
-    @VisibleForTesting
     public SyncProcessor getSyncProcessor() {
         return this.syncProcessor;
+    }
+
+    public static SimpleAsyncNode createNode(Blockchain blockchain) {
+        final BlockStore store = new BlockStore();
+
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, null, null, null);
+        handler.disablePoWValidation();
+        return new SimpleAsyncNode(handler, syncProcessor);
+    }
+
+    // TODO(mc) find out why the following two work differently
+
+    public static SimpleAsyncNode createNodeWithBlockChainBuilder(int size) {
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        BlockChainBuilder.extend(blockchain, size, false, true);
+        return createNode(blockchain);
+    }
+
+    public static SimpleAsyncNode createNodeWithWorldBlockChain(int size, boolean withUncles) {
+        final World world = new World();
+        final Blockchain blockchain = world.getBlockChain();
+        BlockChainBuilder.extend(blockchain, size, withUncles, true);
+        return createNode(blockchain);
     }
 }

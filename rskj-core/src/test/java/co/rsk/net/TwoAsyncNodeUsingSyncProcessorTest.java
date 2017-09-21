@@ -24,7 +24,6 @@ import co.rsk.net.messages.NewBlockHashMessage;
 import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.test.World;
 import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -34,47 +33,6 @@ import java.util.List;
  * Created by ajlopez on 9/3/2017.
  */
 public class TwoAsyncNodeUsingSyncProcessorTest {
-    private static SimpleAsyncNode createNode(int size) {
-        final World world = new World();
-        final BlockStore store = new BlockStore();
-        final Blockchain blockchain = world.getBlockChain();
-
-        List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), size, 0, false, true);
-
-        for (Block b: blocks)
-            blockchain.tryToConnect(b);
-
-        BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
-        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, null, null, null).disablePoWValidation();
-
-        handler.disablePoWValidation();
-
-        return new SimpleAsyncNode(handler, syncProcessor);
-    }
-
-    private static SimpleAsyncNode createNodeWithUncles(int size) {
-        final World world = new World();
-        final BlockStore store = new BlockStore();
-        final Blockchain blockchain = world.getBlockChain();
-
-        List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), size, 0, true, true);
-
-        for (Block b: blocks)
-            blockchain.tryToConnect(b);
-
-        BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
-        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, null, null, null).disablePoWValidation();
-
-        handler.disablePoWValidation();
-
-        return new SimpleAsyncNode(handler, syncProcessor);
-    }
 
     private static Block getGenesis() {
         final World world = new World();
@@ -84,8 +42,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void buildBlockchainAndSynchronize() throws InterruptedException {
-        SimpleAsyncNode node1 = createNode(100);
-        SimpleAsyncNode node2 = createNode(0);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(100, false);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false);
 
         node1.sendFullStatusTo(node2);
         // find connection point
@@ -109,8 +67,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void buildBlockchainAndSynchronize400Blocks() throws InterruptedException {
-        SimpleAsyncNode node1 = createNode(400);
-        SimpleAsyncNode node2 = createNode(0);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(400, false);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false);
 
         node1.sendFullStatusTo(node2);
         // find connection point
@@ -134,8 +92,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void buildBlockchainWithUnclesAndSynchronize() throws InterruptedException {
-        SimpleAsyncNode node1 = createNodeWithUncles(10);
-        SimpleAsyncNode node2 = createNode(0);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(10, true);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false);
 
         node1.sendFullStatusTo(node2);
         // find connection point
@@ -161,8 +119,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void buildBlockchainPartialAndSynchronize() throws InterruptedException {
-        SimpleAsyncNode node1 = createNode(0);
-        SimpleAsyncNode node2 = createNode(0);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false);
 
         List<Block> blocks = BlockGenerator.getBlockChain(getGenesis(), 10, 0, false, true);
 
@@ -208,8 +166,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void sendNewBlock() throws InterruptedException {
-        SimpleAsyncNode node1 = createNode(1);
-        SimpleAsyncNode node2 = createNode(0);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(1, false);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false);
 
         node2.receiveMessageFrom(node1, new NewBlockHashMessage(node1.getBestBlock().getHash()));
 

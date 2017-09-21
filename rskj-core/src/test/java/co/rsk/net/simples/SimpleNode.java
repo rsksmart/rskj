@@ -18,10 +18,7 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.net.MessageHandler;
-import co.rsk.net.NodeID;
-import co.rsk.net.NodeMessageHandler;
-import co.rsk.net.Status;
+import co.rsk.net.*;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.StatusMessage;
 import org.ethereum.core.Block;

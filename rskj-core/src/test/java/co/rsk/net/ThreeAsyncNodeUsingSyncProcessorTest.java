@@ -18,47 +18,19 @@
 
 package co.rsk.net;
 
-import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.test.builders.BlockChainBuilder;
-import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.List;
-
 public class ThreeAsyncNodeUsingSyncProcessorTest {
-    private static SimpleAsyncNode createNode(Blockchain blockchain) {
-        final BlockStore store = new BlockStore();
-
-        BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
-        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, null, null, null).disablePoWValidation();
-
-        handler.disablePoWValidation();
-
-        return new SimpleAsyncNode(handler, syncProcessor);
-    }
-
-    private static SimpleAsyncNode createNode(int size) {
-        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
-
-        List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), size, 0, false, true);
-
-        for (Block b: blocks)
-            blockchain.tryToConnect(b);
-
-        return createNode(blockchain);
-    }
 
     @Test
     public void synchronizeNewNodesInAChain() throws InterruptedException {
-        SimpleAsyncNode node1 = createNode(100);
-        SimpleAsyncNode node2 = createNode(0);
-        SimpleAsyncNode node3 = createNode(0);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithBlockChainBuilder(100);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithBlockChainBuilder(0);
+        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithBlockChainBuilder(0);
 
         Assert.assertEquals(100, node1.getBestBlock().getNumber());
         Assert.assertEquals(0, node2.getBestBlock().getNumber());
@@ -108,9 +80,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void synchronizeNewNodeWithBestChain() throws InterruptedException {
-        SimpleAsyncNode node1 = createNode(30);
-        SimpleAsyncNode node2 = createNode(50);
-        SimpleAsyncNode node3 = createNode(0);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithBlockChainBuilder(30);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithBlockChainBuilder(50);
+        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithBlockChainBuilder(0);
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
         Assert.assertEquals(50, node2.getBestBlock().getNumber());
@@ -163,9 +135,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Blockchain b1 = BlockChainBuilder.ofSize(30, true);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 43, true);
 
-        SimpleAsyncNode node1 = createNode(b1);
-        SimpleAsyncNode node2 = createNode(b2);
-        SimpleAsyncNode node3 = createNode(0);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2);
+        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithBlockChainBuilder(0);
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
         Assert.assertEquals(73, node2.getBestBlock().getNumber());
@@ -215,9 +187,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void dontSynchronizeNodeWithShorterChain() throws InterruptedException {
-        SimpleAsyncNode node1 = createNode(50);
-        SimpleAsyncNode node2 = createNode(30);
-        SimpleAsyncNode node3 = createNode(0);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithBlockChainBuilder(50);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithBlockChainBuilder(30);
+        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithBlockChainBuilder(0);
 
         Assert.assertEquals(50, node1.getBestBlock().getNumber());
         Assert.assertEquals(30, node2.getBestBlock().getNumber());

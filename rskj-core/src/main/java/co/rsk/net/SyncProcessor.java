@@ -3,6 +3,7 @@ package co.rsk.net;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.PeersInformation;
+import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.sync.SyncStatusHandler;
 import co.rsk.validators.BlockDifficultyRule;
 import co.rsk.validators.BlockParentDependantValidationRule;
@@ -36,12 +37,13 @@ public class SyncProcessor {
     private Map<Long, PendingBodyResponse> pendingBodyResponses = new HashMap<>();
 
     private Map<NodeID, MessageChannel> senders = new HashMap<>();
-    private SyncStatusHandler statusHandler = new SyncStatusHandler(peerStatuses);
+    private SyncStatusHandler statusHandler;
 
-    public SyncProcessor(Blockchain blockchain, BlockSyncService blockSyncService) {
+    public SyncProcessor(Blockchain blockchain, BlockSyncService blockSyncService, SyncConfiguration syncConfiguration) {
         this.blockchain = blockchain;
         this.blockSyncService = blockSyncService;
         // TODO(mc) implement FollowBestChain
+        this.statusHandler = new SyncStatusHandler(peerStatuses, syncConfiguration);
         this.statusHandler.onFinishedWaitingForPeers(this::findConnectionPointOfBestPeer);
     }
 
@@ -85,7 +87,7 @@ public class SyncProcessor {
         if (chainStatus == null)
             return this.peerStatuses.count();
 
-        return this.peerStatuses.countSyncing();
+        return this.peerStatuses.countIf(s -> chainStatus.hasLowerDifficulty(s.getStatus()));
     }
 
     private void findConnectionPointOfBestPeer() {
@@ -154,6 +156,8 @@ public class SyncProcessor {
             return;
         }
 
+        logger.trace("Finished syncing with node {}", peer.getPeerNodeID());
+        statusHandler.finishedDownloadingBlocks();
         peerStatus.stopSyncing();
     }
 

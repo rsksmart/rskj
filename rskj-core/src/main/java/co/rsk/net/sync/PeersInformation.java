@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * This is mostly a workaround because SyncProcessor needs to access MessageChannel instances.
@@ -22,9 +23,9 @@ public class PeersInformation {
         return peerStatuses.size();
     }
 
-    public int countSyncing() {
+    public int countIf(Predicate<SyncPeerStatus> predicate) {
         long count = peerStatuses.values().stream()
-                .filter(SyncPeerStatus::isSyncing)
+                .filter(predicate)
                 .count();
         return Math.toIntExact(count);
     }
