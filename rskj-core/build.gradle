@@ -140,7 +140,6 @@ dependencies {
     compile "org.apache.commons:commons-lang3:3.5"
     compile ("org.springframework:spring-context:${springVersion}") {
         exclude group: 'commons-logging', module: 'commons-logging'
-        exclude group: 'org.springframework', module: 'spring-expression'
     }
     compile "com.typesafe:config:1.3.1"
     compile "org.mapdb:mapdb:2.0-beta13"
@@ -229,6 +228,7 @@ dependencyVerification {
         'org.springframework:spring-beans:ed93f62fc9df76f156181b272f318c34a842ce725211c680faf3bfa3f2912e60',
         'org.springframework:spring-context:72b862c9a4220064f1b3bb2b4d4e30a4ab6a45b5c90c559dd6d16c645d6e25aa',
         'org.springframework:spring-core:bda8947716100a3fc3e6017e16a9592a0216b14fed83ee63dc9a015444e88b0d',
+        'org.springframework:spring-expression:0c471def6efa20b66c9ef182182747ba41ec9f02b519b0b301caf5c0c9e49641',
         'org.springframework:spring-jdbc:b2f2c988c22744441f422ddfd7880bbe6d6d73148b9df76835921f533ca9e430',
         'org.springframework:spring-orm:32557ae0c762d842097bc1383f9b98d9264870f047f67618ac6a195c88e2a831',
         'org.springframework:spring-test:5659b135bd6f32e11ea00ae5411a206fd6ae7754bc0a749da9e4722cf354f018',
@@ -272,7 +272,7 @@ task reproducible(dependsOn: 'shadowJar') {
         }
         zos.finish()
         jf.close()
-    // -- Enable this line to debug -- // 
+    // -- Enable this line to debug -- //
         //compareJars(archivePath, newJar, fixDateJar)
     // -- Remove old Jar -- //
         Files.deleteIfExists(Paths.get(shadowJar.archivePath.getAbsolutePath()));
