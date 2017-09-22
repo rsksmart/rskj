@@ -113,14 +113,17 @@ public class MessageQueue {
 
         BlockingQueue<MessageRoundtrip> queue = msg.getAnswerMessage() != null ? requestQueue : respondQueue;
 
-        if (queue.remainingCapacity() != 0) {
-            queue.add(new MessageRoundtrip(msg));
-        } else {
-            logger.error("Queue is full for message: {} and queue: {}",
+        if (queue.remainingCapacity() < 50) {
+            logger.error("Queue is has capacity for {} extra message, trying to add {} on queue {} to peer {}",
+                    queue.remainingCapacity(),
                     (msg.getCommand() == EthMessageCodes.RSK_MESSAGE) ?
                             ((RskMessage) msg).getMessage().getMessageType() :
                             msg.getCommand(),
-                    msg.getAnswerMessage() != null ? "requestQueue" : "respondQueue");
+                    msg.getAnswerMessage() != null ? "requestQueue" : "respondQueue",
+                    channel.getPeerIdShort());
+        }
+        if (queue.remainingCapacity() != 0) {
+            queue.add(new MessageRoundtrip(msg));
         }
     }
 
