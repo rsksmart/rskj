@@ -20,37 +20,33 @@ public class DecidingSyncStatus implements SyncStatus {
 
     @Nonnull
     @Override
-    public SyncStatuses getStatus() {
-        return SyncStatuses.DECIDING;
+    public SyncStatusIds getId() {
+        return SyncStatusIds.DECIDING;
     }
 
-    @Nonnull
     @Override
-    public SyncStatus newPeerStatus(NodeID peerID, Status status, Set<Runnable> finishedWaitingForPeersCallbacks) {
+    public void newPeerStatus(SyncStatusSetter statusSetter, NodeID peerID, Status status, Set<Runnable> finishedWaitingForPeersCallbacks) {
         if (knownPeers.contains(peerID)) {
-            return this;
+            return;
         }
 
         knownPeers.add(peerID);
 
         peers++;
         if (peers == syncConfiguration.getMinimumPeers()) {
+            statusSetter.setStatus(new FindingConnectionPointSyncStatus());
             finishedWaitingForPeersCallbacks.forEach(Runnable::run);
-            return new FindingConnectionPointSyncStatus();
         }
-
-        return this;
     }
 
-    @Nonnull
     @Override
-    public SyncStatus tick(Duration duration) {
+    public void tick(SyncStatusSetter statusSetter, Duration duration) {
         timeElapsed = timeElapsed.plus(duration);
         if (peers <= 0 ||
                 timeElapsed.toMinutes() < syncConfiguration.getTimeoutWaitingPeers()) {
-            return this;
+            return;
         }
 
-        return new FindingConnectionPointSyncStatus();
+        statusSetter.setStatus(new FindingConnectionPointSyncStatus());
     }
 }

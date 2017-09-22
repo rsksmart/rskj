@@ -1,6 +1,6 @@
 package co.rsk.net.sync;
 
-public enum SyncStatuses {
+public enum SyncStatusIds {
     DECIDING,
     FINDING_CONNECTION_POINT,
 }

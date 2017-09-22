@@ -97,15 +97,11 @@ public class SyncProcessor {
         bestPeerOptional.ifPresent(bestPeer -> {
             SyncPeerStatus peerStatus = getPeerStatusAndSaveSender(bestPeer);
             Status status = peerStatus.getStatus();
-            if (!this.blockchain.getStatus().hasLowerDifficulty(status)) {
-                if (peerStatus.isSyncing())
-                    peerStatus.stopSyncing();
-
-                return;
-            }
-
-            if (!peerStatus.isSyncing() || !peerStatus.getConnectionPoint().isPresent() && !peerStatus.isFindingConnectionPoint()) {
+            if (this.blockchain.getStatus().hasLowerDifficulty(status)) {
                 this.findConnectionPointOf(bestPeer, status);
+            }
+            else {
+                statusHandler.finishedDownloadingBlocks();
             }
         });
     }
@@ -157,8 +153,8 @@ public class SyncProcessor {
         }
 
         logger.trace("Finished syncing with node {}", peer.getPeerNodeID());
-        statusHandler.finishedDownloadingBlocks();
         peerStatus.stopSyncing();
+        statusHandler.finishedDownloadingBlocks();
     }
 
     public void sendBlockHashRequestTo(MessageChannel peer, long height) {

@@ -5,7 +5,7 @@ import javax.annotation.Nonnull;
 public class FindingConnectionPointSyncStatus implements SyncStatus {
     @Nonnull
     @Override
-    public SyncStatuses getStatus() {
-        return SyncStatuses.FINDING_CONNECTION_POINT;
+    public SyncStatusIds getId() {
+        return SyncStatusIds.FINDING_CONNECTION_POINT;
     }
 }

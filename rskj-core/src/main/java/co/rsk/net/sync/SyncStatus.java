@@ -9,15 +9,11 @@ import java.util.Set;
 
 public interface SyncStatus {
     @Nonnull
-    SyncStatuses getStatus();
+    SyncStatusIds getId();
 
-    @Nonnull
-    default SyncStatus newPeerStatus(NodeID peerID, Status status, Set<Runnable> finishedWaitingForPeersCallbacks) {
-        return this;
+    default void newPeerStatus(SyncStatusSetter statusSetter, NodeID peerID, Status status, Set<Runnable> finishedWaitingForPeersCallbacks) {
     }
 
-    @Nonnull
-    default SyncStatus tick(Duration duration) {
-        return this;
+    default void tick(SyncStatusSetter statusSetter, Duration duration) {
     }
 }

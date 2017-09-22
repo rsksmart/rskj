@@ -11,7 +11,7 @@ import java.util.Set;
  * This only runs inside a SyncProcessor instance.
  * Messages are synchronized by NodeMessageHandler, therefore this code effectively runs in one thread and we don't need syncing.
  */
-public class SyncStatusHandler {
+public class SyncStatusHandler implements SyncStatusSetter {
     private final PeersInformation peerStatuses;
     private final SyncConfiguration syncConfiguration;
     private Set<Runnable> finishedWaitingForPeersCallbacks = new HashSet<>();
@@ -23,17 +23,17 @@ public class SyncStatusHandler {
         status = new DecidingSyncStatus(this.syncConfiguration);
     }
 
-    public SyncStatuses getStatus() {
-        return status.getStatus();
+    public SyncStatusIds getStatus() {
+        return status.getId();
     }
 
     public void newPeerStatus(NodeID peerID, Status status) {
         this.peerStatuses.getOrRegisterPeer(peerID).setStatus(status);
-        this.status = this.status.newPeerStatus(peerID, status, finishedWaitingForPeersCallbacks);
+        this.status.newPeerStatus(this, peerID, status, finishedWaitingForPeersCallbacks);
     }
 
     public void tick(Duration duration) {
-        status = status.tick(duration);
+        status.tick(this, duration);
     }
 
     /**
@@ -45,6 +45,10 @@ public class SyncStatusHandler {
     }
 
     public void finishedDownloadingBlocks() {
-        status = new DecidingSyncStatus(this.syncConfiguration);
+        setStatus(new DecidingSyncStatus(this.syncConfiguration));
+    }
+
+    public void setStatus(SyncStatus status) {
+        this.status = status;
     }
 }

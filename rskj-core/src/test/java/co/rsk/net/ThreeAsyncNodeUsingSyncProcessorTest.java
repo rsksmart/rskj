@@ -232,4 +232,56 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node3.getSyncProcessor().peerIsSyncing(node1.getNodeID()));
         Assert.assertFalse(node2.getSyncProcessor().peerIsSyncing(node2.getNodeID()));
     }
+
+    @Test
+    public void dontSynchronizeNodeWithShorterChainAndThenSynchronizeWithNewPeer() throws InterruptedException {
+        Blockchain b1 = BlockChainBuilder.ofSize(30, true);
+        Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 43, true);
+        Blockchain b3 = BlockChainBuilder.copyAndExtend(b2, 7, true);
+
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2);
+        SimpleAsyncNode node3 = SimpleAsyncNode.createNode(b3);
+
+        Assert.assertEquals(30, node1.getBestBlock().getNumber());
+        Assert.assertEquals(73, node2.getBestBlock().getNumber());
+        Assert.assertEquals(80, node3.getBestBlock().getNumber());
+
+        node1.sendFullStatusTo(node2);
+        // receive status, do nothing
+        node2.waitExactlyNTasksWithTimeout(1);
+
+        Assert.assertTrue(node1.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getExpectedResponses().isEmpty());
+
+        Assert.assertEquals(30, node1.getBestBlock().getNumber());
+        Assert.assertEquals(73, node2.getBestBlock().getNumber());
+        Assert.assertEquals(80, node3.getBestBlock().getNumber());
+
+        node3.sendFullStatusTo(node2);
+        // sync setup
+        node2.waitUntilNTasksWithTimeout(11);
+        // synchronize 7 new blocks from node 3
+        node2.waitExactlyNTasksWithTimeout(7);
+
+        Assert.assertEquals(30, node1.getBestBlock().getNumber());
+        Assert.assertEquals(80, node2.getBestBlock().getNumber());
+        Assert.assertEquals(80, node3.getBestBlock().getNumber());
+        Assert.assertArrayEquals(node2.getBestBlock().getHash(), node3.getBestBlock().getHash());
+
+        Assert.assertTrue(node1.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node3.getExpectedResponses().isEmpty());
+
+        node1.joinWithTimeout();
+        node2.joinWithTimeout();
+        node3.joinWithTimeout();
+
+        Assert.assertFalse(node1.getSyncProcessor().peerIsSyncing(node2.getNodeID()));
+        Assert.assertFalse(node1.getSyncProcessor().peerIsSyncing(node3.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().peerIsSyncing(node1.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().peerIsSyncing(node3.getNodeID()));
+        Assert.assertFalse(node3.getSyncProcessor().peerIsSyncing(node1.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().peerIsSyncing(node2.getNodeID()));
+    }
 }
