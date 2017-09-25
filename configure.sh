@@ -43,9 +43,7 @@ function platform() {
 		PLATFORM='linux'
 	elif [[ "$unamestr" == 'Darwin' ]]; then
 		PLATFORM='mac'
-	elif [[ "$unamestr" == 'MINGW32_NT-10.0-WOW' ]]; then
-		PLATFORM='windows'
-	elif [[ "$unamestr" == 'MINGW64_NT-10.0' ]]; then
+	elif [[ "$unamestr" =~ 'MINGW' ]]; then
 		PLATFORM='windows'
 	fi
 }
