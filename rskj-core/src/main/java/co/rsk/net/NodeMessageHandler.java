@@ -56,7 +56,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private final ChannelManager channelManager;
     private final PendingState pendingState;
     private final PeerScoringManager peerScoringManager;
-    private long lastStatusSent = 0;
+    private long lastStatusSent = System.currentTimeMillis();
 
     private ProofOfWorkRule powRule;
 
