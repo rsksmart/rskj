@@ -18,10 +18,12 @@
 
 package org.ethereum.rpc;
 
+import co.rsk.core.Rsk;
 import co.rsk.core.SnapshotManager;
 import co.rsk.mine.MinerManager;
 import co.rsk.peg.Bridge;
 import co.rsk.rpc.ModuleDescription;
+import co.rsk.scoring.*;
 import com.google.common.annotations.VisibleForTesting;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.WalletAccount;
@@ -96,6 +98,8 @@ public class Web3Impl implements Web3 {
 
     private SolidityCompiler solidityCompiler;
 
+    private PeerScoringManager peerScoringManager;
+
     public Web3Impl(SolidityCompiler compiler, Wallet wallet) {
         this.solidityCompiler = compiler;
         this.wallet = wallet;
@@ -106,6 +110,9 @@ public class Web3Impl implements Web3 {
         this.worldManager = eth.getWorldManager();
         this.repository = eth.getRepository();
         this.wallet = wallet;
+
+        if (eth instanceof Rsk)
+            this.peerScoringManager = ((Rsk) eth).getPeerScoringManager();
 
         initialBlockNumber = this.worldManager.getBlockchain().getBestBlock().getNumber();
 
@@ -129,7 +136,7 @@ public class Web3Impl implements Web3 {
         List<WalletAccount> accs = properties.walletAccounts();
 
         for (WalletAccount acc : accs)
-            eth_addAccount(acc.getPrivateKey());
+            this.wallet.addAccountWithPrivateKey(Hex.decode(acc.getPrivateKey()));
     }
 
     public EthereumListener setupListener() {
@@ -616,7 +623,7 @@ public class Web3Impl implements Web3 {
                 BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : (pendingState.getRepository().getNonce(account.getAddress()));
                 Transaction tx = Transaction.create(toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
                 tx.sign(account.getEcKey().getPrivKeyBytes());
-                eth.submitTransaction(tx);
+                eth.submitTransaction(tx.toImmutableTransaction());
                 s = TypeConverter.toJsonHex(tx.getHash());
             }
             return s;
@@ -629,7 +636,7 @@ public class Web3Impl implements Web3 {
     public String eth_sendRawTransaction(String rawData) throws Exception {
         String s = null;
         try {
-            Transaction tx = new Transaction(stringHexToByteArray(rawData));
+            Transaction tx = new ImmutableTransaction(stringHexToByteArray(rawData));
 
             if (null == tx.getGasLimit()
                     || null == tx.getGasPrice()
@@ -1016,6 +1023,7 @@ public class Web3Impl implements Web3 {
             }
         }
 
+        @Override
         public void newBlockReceived(Block b) {
             add(new NewBlockFilterEvent(b));
         }
@@ -1035,6 +1043,7 @@ public class Web3Impl implements Web3 {
             }
         }
 
+        @Override
         public void newPendingTx(Transaction tx) {
             add(new PendingTransactionFilterEvent(tx));
         }
@@ -1374,18 +1383,6 @@ public class Web3Impl implements Web3 {
         }
     }
 
-    public String eth_addAccount(String privKey) {
-        String s = null;
-        try {
-            byte[] address = this.wallet.addAccountWithPrivateKey(Hex.decode(privKey));
-            return s = toJsonHex(address);
-        } finally {
-            if (logger.isDebugEnabled()) {
-                logger.debug("eth_addAccount(*****): " + s);
-            }
-        }
-    }
-
     @Override
     public String personal_importRawKey(String key, String passphrase) {
         String s = null;
@@ -1582,5 +1579,71 @@ public class Web3Impl implements Web3 {
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
             throw new JsonRpcInvalidParamException("invalid number of seconds " + seconds, e);
         }
+    }
+
+    /**
+     * Adds an address or block to the list of banned addresses
+     * It supports IPV4 and IPV6 addresses with an optional number of bits to ignore
+     *
+     * "192.168.51.1" is a valid address
+     * "192.168.51.1/16" is a valid block
+     *
+     * @param address the address or block to be banned
+     */
+    @Override
+    public void sco_banAddress(String address) {
+        if (this.peerScoringManager == null)
+            return;
+
+        try {
+            this.peerScoringManager.banAddress(address);
+        } catch (InvalidInetAddressException e) {
+            throw new JsonRpcInvalidParamException("invalid banned address " + address, e);
+        }
+    }
+
+    /**
+     * Removes an address or block to the list of banned addresses
+     * It supports IPV4 and IPV6 addresses with an optional number of bits to ignore
+     *
+     * "192.168.51.1" is a valid address
+     * "192.168.51.1/16" is a valid block
+     *
+     * @param address the address or block to be removed
+     */
+    @Override
+    public void sco_unbanAddress(String address) {
+        if (this.peerScoringManager == null)
+            return;
+
+        try {
+            this.peerScoringManager.unbanAddress(address);
+        } catch (InvalidInetAddressException e) {
+            throw new JsonRpcInvalidParamException("invalid banned address " + address, e);
+        }
+    }
+
+    /**
+     * Returns the collected peer scoring information
+     * since the start of the node start
+     *
+     * @return the list of scoring information, per node id and address
+     */
+    @Override
+    public PeerScoringInformation[] sco_peerList() {
+        if (this.peerScoringManager != null)
+            return this.peerScoringManager.getPeersInformation().toArray(new PeerScoringInformation[0]);
+
+        return null;
+    }
+
+    /**
+     * Returns the list of banned addresses and blocks
+     *
+     * @return the list of banned addresses and blocks
+     */
+    @Override
+    public String[] sco_bannedAddresses() {
+        return this.peerScoringManager.getBannedAddresses().toArray(new String[0]);
     }
 }

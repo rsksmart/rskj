@@ -21,7 +21,7 @@ package co.rsk.rpc;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.lang.reflect.InvocationTargetException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +37,7 @@ public class JsonRpcFilterServerTest {
             server.checkMethod("evm_snapshot");
             server.checkMethod("evm_revert");
         }
-        catch (InvocationTargetException ex) {
+        catch (IOException ex) {
             Assert.fail();
         }
 
@@ -45,21 +45,21 @@ public class JsonRpcFilterServerTest {
             server.checkMethod("evm_reset");
             Assert.fail();
         }
-        catch (InvocationTargetException ex) {
+        catch (IOException ex) {
         }
 
         try {
             server.checkMethod("evm_increaseTime");
             Assert.fail();
         }
-        catch (InvocationTargetException ex) {
+        catch (IOException ex) {
         }
 
         try {
             server.checkMethod("eth_getBlock");
             Assert.fail();
         }
-        catch (InvocationTargetException ex) {
+        catch (IOException ex) {
         }
     }
 

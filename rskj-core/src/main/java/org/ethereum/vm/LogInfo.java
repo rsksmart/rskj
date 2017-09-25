@@ -47,7 +47,7 @@ public class LogInfo {
 
     public LogInfo(byte[] rlp) {
 
-        RLPList params = RLP.decode2(rlp);
+        ArrayList<RLPElement> params = RLP.decode2(rlp);
         RLPList logInfo = (RLPList) params.get(0);
 
         RLPItem address = (RLPItem) logInfo.get(0);

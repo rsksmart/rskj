@@ -15,7 +15,7 @@ public class NodeMessageHandlerUtil {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
 
-        return new NodeMessageHandler(processor, null, null, null, null);
+        return new NodeMessageHandler(processor, null, null, null, null, null);
     }
 
     public static NodeMessageHandler createHandlerWithSyncProcessor() {
@@ -35,6 +35,6 @@ public class NodeMessageHandlerUtil {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
         SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, syncConfiguration);
-        return new NodeMessageHandler(processor, syncProcessor, null, null, null);
+        return new NodeMessageHandler(processor, syncProcessor, null, null, null, null);
     }
 }

@@ -57,14 +57,11 @@ public class RskFactory {
         return context;
     }
 
-
-
     public static Rsk createRsk(Class userSpringConfig) {
         return createRsk(SystemProperties.CONFIG, userSpringConfig);
     }
 
     public static Rsk createRsk(SystemProperties config, Class userSpringConfig) {
-
         logger.info("Running {},  core version: {}-{}", config.genesisInfo(), config.projectVersion(), config.projectVersionModifier());
         BuildInfo.printInfo();
 

@@ -138,6 +138,14 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
     }
 
     private boolean validateParentNumber(BlockHeader uncle, long blockNumber) {
+        boolean isSiblingOrDescendant = uncle.getNumber() >= blockNumber;
+
+        if (isSiblingOrDescendant) {
+            logger.error("Uncle is sibling or descendant");
+            panicProcessor.panic("invaliduncle", "Uncle is sibling or descendant");
+            return false;
+        }
+
         // if uncle's parent's number is not less than currentBlock - UNCLE_GEN_LIMIT, mark invalid
         boolean isValid = !(uncle.getNumber() - 1 < (blockNumber - uncleGenerationLimit));
 
@@ -146,6 +154,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
             panicProcessor.panic("invaliduncle", "Uncle too old: generationGap must be under UNCLE_GENERATION_LIMIT");
             return false;
         }
+
         return true;
     }
 

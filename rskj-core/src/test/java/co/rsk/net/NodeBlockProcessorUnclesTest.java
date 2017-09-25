@@ -30,6 +30,7 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,7 +53,7 @@ public class NodeBlockProcessorUnclesTest {
     }
 
     @Test
-    public void addBlockWithTwoKnownUncles() {
+    public void addBlockWithTwoKnownUncles() throws UnknownHostException {
         NodeBlockProcessor processor = createNodeBlockProcessor();
 
         Block genesis = processor.getBlockchain().getBestBlock();
@@ -81,7 +82,7 @@ public class NodeBlockProcessorUnclesTest {
     }
 
     @Test
-    public void addBlockWithTwoUnknownUncles() {
+    public void addBlockWithTwoUnknownUncles() throws UnknownHostException {
         NodeBlockProcessor processor = createNodeBlockProcessor();
 
         Block genesis = processor.getBlockchain().getBestBlock();
@@ -109,7 +110,7 @@ public class NodeBlockProcessorUnclesTest {
     }
 
     @Test
-    public void rejectBlockWithTwoUnknownUnclesAndUnknownParent() {
+    public void rejectBlockWithTwoUnknownUnclesAndUnknownParent() throws UnknownHostException {
         NodeBlockProcessor processor = createNodeBlockProcessor();
 
         Block genesis = processor.getBlockchain().getBestBlock();

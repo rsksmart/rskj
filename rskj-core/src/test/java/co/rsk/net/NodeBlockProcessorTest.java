@@ -30,6 +30,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.net.UnknownHostException;
 import java.util.List;
 
 /**
@@ -37,7 +38,7 @@ import java.util.List;
  */
 public class NodeBlockProcessorTest {
     @Test
-    public void processBlockSavingInStore() {
+    public void processBlockSavingInStore() throws UnknownHostException {
         final BlockStore store = new BlockStore();
         final MessageChannel sender = new SimpleMessageChannel();
 
@@ -57,7 +58,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockWithTooMuchHeight() {
+    public void processBlockWithTooMuchHeight() throws UnknownHostException {
         final BlockStore store = new BlockStore();
         final MessageChannel sender = new SimpleMessageChannel();
 
@@ -76,7 +77,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockWithTooMuchHeightAfterFilterIsRemoved() {
+    public void processBlockWithTooMuchHeightAfterFilterIsRemoved() throws UnknownHostException {
         final BlockStore store = new BlockStore();
         final MessageChannel sender = new SimpleMessageChannel();
 
@@ -195,7 +196,6 @@ public class NodeBlockProcessorTest {
     @Test
     public void noSyncingWithEmptyBlockchain() {
         BlockStore store = new BlockStore();
-        Block genesis = BlockGenerator.getGenesisBlock();
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -368,7 +368,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockRetrievingParentUsingSender() {
+    public void processBlockRetrievingParentUsingSender() throws UnknownHostException {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
@@ -399,7 +399,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processStatusRetrievingBestBlockUsingSender() {
+    public void processStatusRetrievingBestBlockUsingSender() throws UnknownHostException {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
@@ -429,7 +429,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processStatusHavingBestBlockInStore() {
+    public void processStatusHavingBestBlockInStore() throws UnknownHostException {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -449,7 +449,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processStatusHavingBestBlockAsBestBlockInBlockchain() {
+    public void processStatusHavingBestBlockAsBestBlockInBlockchain() throws UnknownHostException {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(2);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -472,7 +472,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processStatusHavingBestBlockInBlockchainStore() {
+    public void processStatusHavingBestBlockInBlockchainStore() throws UnknownHostException {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(2);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -496,9 +496,8 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processGetBlockHeaderMessageUsingBlockInStore() {
+    public void processGetBlockHeaderMessageUsingBlockInStore() throws UnknownHostException {
         final Block block = BlockGenerator.getBlock(3);
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
 
         final BlockStore store = new BlockStore();
         store.saveBlock(block);
@@ -525,7 +524,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processGetBlockHeaderMessageUsingEmptyStore() {
+    public void processGetBlockHeaderMessageUsingEmptyStore() throws UnknownHostException {
         final Block block = BlockGenerator.getBlock(3);
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
@@ -546,10 +545,9 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processGetBlockHeaderMessageUsingBlockInBlockchain() {
+    public void processGetBlockHeaderMessageUsingBlockInBlockchain() throws UnknownHostException {
         final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -573,7 +571,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processGetBlockMessageUsingBlockInStore() {
+    public void processGetBlockMessageUsingBlockInStore() throws UnknownHostException {
         final Block block = BlockGenerator.getBlock(3);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
 
@@ -606,9 +604,8 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processGetBlockMessageUsingEmptyStore() {
+    public void processGetBlockMessageUsingEmptyStore() throws UnknownHostException {
         final Block block = BlockGenerator.getBlock(3);
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
@@ -628,7 +625,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processGetBlockMessageUsingBlockInBlockchain() {
+    public void processGetBlockMessageUsingBlockInBlockchain() throws UnknownHostException {
         final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
@@ -659,7 +656,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockRequestMessageUsingBlockInStore() {
+    public void processBlockRequestMessageUsingBlockInStore() throws UnknownHostException {
         final Block block = BlockGenerator.getBlock(3);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
 
@@ -693,7 +690,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBodyRequestMessageUsingBlockInBlockchain() {
+    public void processBodyRequestMessageUsingBlockInBlockchain() throws UnknownHostException {
         final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final Block block = blockchain.getBlockByNumber(3);
         final BlockStore store = new BlockStore();
@@ -720,7 +717,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockHashRequestMessageUsingEmptyStore() {
+    public void processBlockHashRequestMessageUsingEmptyStore() throws UnknownHostException {
         final Block block = BlockGenerator.getBlock(3);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
@@ -742,7 +739,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockHashRequestMessageUsingBlockInBlockchain() {
+    public void processBlockHashRequestMessageUsingBlockInBlockchain() throws UnknownHostException {
         final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
@@ -774,7 +771,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockHashRequestMessageUsingOutOfBoundsHeight() {
+    public void processBlockHashRequestMessageUsingOutOfBoundsHeight() throws UnknownHostException {
         final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -789,7 +786,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockHeadersRequestMessageUsingBlockInBlockchain() {
+    public void processBlockHeadersRequestMessageUsingBlockInBlockchain() throws UnknownHostException {
         final Blockchain blockchain = BlockChainBuilder.ofSize(100);
         final Block block = blockchain.getBlockByNumber(60);
         final BlockStore store = new BlockStore();
@@ -820,7 +817,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processBlockHeadersRequestMessageUsingUnknownHash() {
+    public void processBlockHeadersRequestMessageUsingUnknownHash() throws UnknownHostException {
         final Blockchain blockchain = BlockChainBuilder.ofSize(100);
         final BlockStore store = new BlockStore();
 
@@ -836,7 +833,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processSkeletonRequestWithGenesisPlusBestBlockInSkeleton() {
+    public void processSkeletonRequestWithGenesisPlusBestBlockInSkeleton() throws UnknownHostException {
         int skeletonStep = 192;
         final Blockchain blockchain = BlockChainBuilder.ofSize(skeletonStep / 2);
         final Block blockStart = blockchain.getBlockByNumber(5);
@@ -872,7 +869,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processSkeletonRequestWithThreeResults() {
+    public void processSkeletonRequestWithThreeResults() throws UnknownHostException {
         int skeletonStep = 192;
         final Blockchain blockchain = BlockChainBuilder.ofSize(300);
         final BlockStore store = new BlockStore();
@@ -908,7 +905,7 @@ public class NodeBlockProcessorTest {
     }
 
     @Test
-    public void processSkeletonRequestNotIncludingGenesis() {
+    public void processSkeletonRequestNotIncludingGenesis() throws UnknownHostException {
         int skeletonStep = 192;
         final Blockchain blockchain = BlockChainBuilder.ofSize(400);
         final BlockStore store = new BlockStore();

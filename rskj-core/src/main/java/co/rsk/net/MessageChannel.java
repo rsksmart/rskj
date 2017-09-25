@@ -20,10 +20,16 @@ package co.rsk.net;
 
 import co.rsk.net.messages.Message;
 
+import java.net.InetAddress;
+
 public interface MessageChannel {
     void sendMessage(Message message);
 
     NodeID getPeerNodeID();
 
     void setPeerNodeID(byte[] peerNodeId);
+
+    InetAddress getAddress();
+
+    void setAddress(InetAddress address);
 }

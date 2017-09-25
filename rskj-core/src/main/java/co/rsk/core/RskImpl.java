@@ -24,6 +24,9 @@ import co.rsk.net.*;
 import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.net.sync.SyncConfiguration;
 import org.ethereum.core.Blockchain;
+import co.rsk.scoring.PeerScoringManager;
+import co.rsk.scoring.PunishmentParameters;
+import org.ethereum.config.SystemProperties;
 import org.ethereum.facade.EthereumImpl;
 import org.springframework.stereotype.Component;
 
@@ -33,12 +36,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class RskImpl extends EthereumImpl implements Rsk {
     private boolean isplaying;
-
     private NodeBlockProcessor nodeBlockProcessor;
     private SyncProcessor syncProcessor;
 
+    private PeerScoringManager peerScoringManager;
     private MessageHandler messageHandler;
     private static final Object NMH_LOCK = new Object();
+    private static final Object PSM_LOCK = new Object();
 
 
     @Override
@@ -52,13 +56,38 @@ public class RskImpl extends EthereumImpl implements Rsk {
     }
 
     @Override
+    public PeerScoringManager getPeerScoringManager() {
+        if (this.peerScoringManager == null) {
+            synchronized (PSM_LOCK) {
+                if (this.peerScoringManager == null) {
+                    SystemProperties config = this.getSystemProperties();
+
+                    int nnodes = config.scoringNumberOfNodes();
+
+                    long nodePunishmentDuration = config.scoringNodesPunishmentDuration();
+                    int nodePunishmentIncrement = config.scoringNodesPunishmentIncrement();
+                    long nodePunhishmentMaximumDuration = config.scoringNodesPunishmentMaximumDuration();
+
+                    long addressPunishmentDuration = config.scoringAddressesPunishmentDuration();
+                    int addressPunishmentIncrement = config.scoringAddressesPunishmentIncrement();
+                    long addressPunishmentMaximunDuration = config.scoringAddressesPunishmentMaximumDuration();
+
+                    this.peerScoringManager = new PeerScoringManager(nnodes, new PunishmentParameters(nodePunishmentDuration, nodePunishmentIncrement, nodePunhishmentMaximumDuration), new PunishmentParameters(addressPunishmentDuration, addressPunishmentIncrement, addressPunishmentMaximunDuration));
+                }
+            }
+        }
+
+        return this.peerScoringManager;
+    }
+
+    @Override
     public MessageHandler getMessageHandler() {
         if (this.messageHandler == null) {
             synchronized (NMH_LOCK) {
                 if (this.messageHandler == null) {
                     this.nodeBlockProcessor = this.getNodeBlockProcessor(); // Initialize nodeBlockProcessor if not done already.
                     NodeMessageHandler handler = new NodeMessageHandler(this.nodeBlockProcessor, this.syncProcessor, getChannelManager(),
-                            getWorldManager().getPendingState(), new TxHandlerImpl(getWorldManager()));
+                            getWorldManager().getPendingState(), new TxHandlerImpl(getWorldManager()), this.getPeerScoringManager());
                     handler.start();
                     this.messageHandler = handler;
                 }

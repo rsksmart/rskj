@@ -19,27 +19,22 @@
 
 package org.ethereum.vm;
 
-import co.rsk.panic.PanicProcessor;
+import org.ethereum.vm.trace.ProgramTrace;
+import org.ethereum.vm.trace.Serializers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.Inflater;
-import java.util.zip.InflaterOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.zip.*;
 
-import static java.lang.String.format;
-import static java.lang.System.getProperty;
-import static org.apache.commons.codec.binary.Base64.decodeBase64;
-import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 import static org.ethereum.config.SystemProperties.CONFIG;
-import static org.springframework.util.StringUtils.isEmpty;
 
 public final class VMUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("VM");
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private VMUtils() {
     }
@@ -54,53 +49,29 @@ public final class VMUtils {
         }
     }
 
-    private static File createProgramTraceFile(String txHash) {
-        File result = null;
-
-        if (!CONFIG.vmTrace() || isEmpty(CONFIG.vmTraceDir()))
-            return result;
-
-        String pathname = format("%s/%s/%s/%s.json", getProperty("user.dir"), CONFIG.databaseDir(), CONFIG.vmTraceDir(), txHash);
-        File file = new File(pathname);
-
-        if (file.exists()) {
-            if (file.isFile() && file.canWrite()) {
-                result = file;
+    public static void saveProgramTraceFile(Path basePath, String txHash, boolean compress, ProgramTrace trace) throws IOException {
+        if (compress) {
+            try(final FileOutputStream fos = new FileOutputStream(basePath.resolve(txHash + ".zip").toFile());
+                final ZipOutputStream zos = new ZipOutputStream(fos)
+            ) {
+                ZipEntry zipEntry = new ZipEntry(txHash + ".json");
+                zos.putNextEntry(zipEntry);
+                Serializers.serializeFieldsOnly(trace, true, zos);
             }
         } else {
-            try {
-                file.getParentFile().mkdirs();
-                if (!file.createNewFile())
-                    LOGGER.trace("Program trace file already exists");
-                result = file;
-            } catch (IOException e) {
-                // ignored
+            try (final OutputStream out = Files.newOutputStream(basePath.resolve(txHash + ".json"))) {
+                Serializers.serializeFieldsOnly(trace, true, out);
             }
-        }
-
-        return result;
-    }
-
-    private static void writeStringToFile(File file, String data) {
-        OutputStream out = null;
-        try {
-            out = new FileOutputStream(file);
-            if (data != null) {
-                out.write(data.getBytes("UTF-8"));
-            }
-        } catch (Exception e){
-            LOGGER.error(format("Cannot write to file '%s': ", file.getAbsolutePath()), e);
-            panicProcessor.panic("vmutils", String.format("Cannot write to file %s: %s", file.getAbsolutePath(), e.getMessage()));
-        } finally {
-            closeQuietly(out);
         }
     }
 
-    public static void saveProgramTraceFile(String txHash, String content) {
-        File file = createProgramTraceFile(txHash);
-        if (file != null) {
-            writeStringToFile(file, content);
+    public static void saveProgramTraceFile(String txHash, boolean compress, ProgramTrace trace) throws IOException {
+        Path tracePath = Paths.get(CONFIG.databaseDir(), CONFIG.vmTraceDir());
+        File traceDir = tracePath.toFile();
+        if (!traceDir.exists()) {
+            traceDir.mkdirs();
         }
+        saveProgramTraceFile(tracePath, txHash, compress, trace);
     }
 
     private static final int BUF_SIZE = 4096;
@@ -141,24 +112,5 @@ public final class VMUtils {
         write(in, out, BUF_SIZE);
 
         return baos.toByteArray();
-    }
-
-    public static String zipAndEncode(String content) {
-        try {
-            return encodeBase64String(compress(content));
-        } catch (Exception e) {
-            LOGGER.error("Cannot zip or encode: ", e);
-            return content;
-        }
-    }
-
-    public static String unzipAndDecode(String content) {
-        try {
-            byte[] decoded = decodeBase64(content);
-            return new String(decompress(decoded), "UTF-8");
-        } catch (Exception e) {
-            LOGGER.error("Cannot unzip or decode: ", e);
-            return content;
-        }
     }
 }

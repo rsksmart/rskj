@@ -33,10 +33,12 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.Arrays;
+import org.spongycastle.util.BigIntegers;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -58,9 +60,11 @@ public class Block {
 
     private BlockHeader header;
 
+    // Using concurrent lists
+    // (the add and remove methods copy an internal array,
+    // but the iterator directly use the internal array)
     /* Transactions */
     private List<Transaction> transactionsList = new CopyOnWriteArrayList<>();
-
     /* Uncles */
     private List<BlockHeader> uncleList = new CopyOnWriteArrayList<>();
 
@@ -70,9 +74,17 @@ public class Block {
 
     private Trie txsState;
 
-    /* Constructors */
+    /* Indicates if this block can or cannot be changed */
+    private volatile boolean sealed;
+
     public Block(byte[] rawData) {
         this.rlpEncoded = rawData;
+        this.sealed = true;
+    }
+
+    protected Block(byte[] rawData, boolean sealed) {
+        this.rlpEncoded = rawData;
+        this.sealed = sealed;
     }
 
     public Block(BlockHeader header) {
@@ -116,7 +128,7 @@ public class Block {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
                 gasUsed, timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot,
-                stateRoot, transactionsList, uncleList, minimumGasPrice);
+                stateRoot, transactionsList, uncleList, minimumGasPrice, 0L);
 
         this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
         this.header.setBitcoinMergedMiningHeader(bitcoinMergedMiningHeader);
@@ -141,11 +153,12 @@ public class Block {
                  long gasUsed, long timestamp, byte[] extraData,
                  byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
-                 List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
+                 List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, long paidFees) {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
                 gasUsed, timestamp, extraData, mixHash, nonce, transactionsList, uncleList, minimumGasPrice);
 
+        this.header.setPaidFees(paidFees);
         this.header.setTransactionsRoot(Block.getTxTrie(transactionsList).getHash());
         if (!Hex.toHexString(transactionsRoot).
                 equals(Hex.toHexString(this.header.getTxTrieRoot()))) {
@@ -158,7 +171,6 @@ public class Block {
 
         this.flushRLP();
     }
-
 
     public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
@@ -189,17 +201,33 @@ public class Block {
         block.header = header;
         block.transactionsList = transactionsList;
         block.uncleList = uncleList;
+        block.seal();
         return block;
     }
 
-    private void parseRLP() {
+    public void seal() {
+        this.sealed = true;
+        this.header.seal();
+    }
 
-        RLPList params = RLP.decode2(rlpEncoded);
+    public boolean isSealed() {
+        return this.sealed;
+    }
+
+    // Clone this block allowing modifications
+    public Block cloneBlock() {
+        Block clone = new Block(this.getEncoded(), false);
+
+        return clone;
+    }
+
+    private void parseRLP() {
+        ArrayList<RLPElement> params = RLP.decode2(rlpEncoded);
         RLPList block = (RLPList) params.get(0);
 
         // Parse Header
         RLPList header = (RLPList) block.get(0);
-        this.header = new BlockHeader(header);
+        this.header = new BlockHeader(header, this.sealed);
 
         // Parse Transactions
         RLPList txTransactions = (RLPList) block.get(1);
@@ -210,13 +238,17 @@ public class Block {
         for (RLPElement rawUncle : uncleBlocks) {
 
             RLPList uncleHeader = (RLPList) rawUncle;
-            BlockHeader blockData = new BlockHeader(uncleHeader);
+            BlockHeader blockData = new BlockHeader(uncleHeader, this.sealed);
             this.uncleList.add(blockData);
         }
         this.parsed = true;
     }
 
     public void setTransactionsList(List<Transaction> transactionsList) {
+        /* A sealed block is immutable, cannot be changed */
+        if (this.sealed)
+            throw new SealedBlockException("trying to alter transaction list");
+
         this.transactionsList = transactionsList;
         rlpEncoded = null;
     }
@@ -258,6 +290,10 @@ public class Block {
     }
 
     public void setStateRoot(byte[] stateRoot) {
+        /* A sealed block is immutable, cannot be changed */
+        if (this.sealed)
+            throw new SealedBlockException("trying to alter state root");
+
         if (!parsed)
             parseRLP();
         this.header.setStateRoot(stateRoot);
@@ -334,7 +370,6 @@ public class Block {
         return this.header.getGasUsed();
     }
 
-
     public byte[] getExtraData() {
         if (!parsed)
             parseRLP();
@@ -342,6 +377,10 @@ public class Block {
     }
 
   public void setExtraData(byte[] data) {
+      /* A sealed block is immutable, cannot be changed */
+      if (this.sealed)
+          throw new SealedBlockException("trying to alter extra data");
+
         this.header.setExtraData(data);
         rlpEncoded = null;
     }
@@ -350,13 +389,14 @@ public class Block {
         if (!parsed)
             parseRLP();
 
-        return transactionsList;
+        return Collections.unmodifiableList(this.transactionsList);
     }
 
     public List<BlockHeader> getUncleList() {
         if (!parsed)
             parseRLP();
-        return uncleList;
+
+        return Collections.unmodifiableList(this.uncleList);
     }
 
     public byte[] getMinimumGasPrice() {
@@ -426,12 +466,11 @@ public class Block {
     }
 
     private void parseTxs(RLPList txTransactions) {
-
         this.txsState = new TrieImpl();
         int txsStateIndex = 0;
         for (int i = 0; i < txTransactions.size(); i++) {
             RLPElement transactionRaw = txTransactions.get(i);
-            Transaction tx = new Transaction(transactionRaw.getRLPData());
+            Transaction tx = new ImmutableTransaction(transactionRaw.getRLPData());
 
             if (isRemascTransaction(tx, i, txTransactions.size())) {
                 // It is the remasc transaction
@@ -528,6 +567,9 @@ public class Block {
     }
 
     public void addUncle(BlockHeader uncle) {
+        if (this.sealed)
+            throw new SealedBlockException("trying to add uncle");
+
         uncleList.add(uncle);
         this.getHeader().setUnclesHash(SHA3Helper.sha3(getUnclesEncoded()));
         rlpEncoded = null;
@@ -614,8 +656,9 @@ public class Block {
     }
 
     public void setBitcoinMergedMiningHeader(byte[] bitcoinMergedMiningHeader) {
-        if (!parsed)
-            parseRLP();
+        /* A sealed block is immutable, cannot be changed */
+        if (this.sealed)
+            throw new SealedBlockException("trying to alter bitcoin merged mining header");
 
         this.header.setBitcoinMergedMiningHeader(bitcoinMergedMiningHeader);
         rlpEncoded = null;
@@ -630,6 +673,10 @@ public class Block {
     }
 
     public void setBitcoinMergedMiningMerkleProof(byte[] bitcoinMergedMiningMerkleProof) {
+        /* A sealed block is immutable, cannot be changed */
+        if (this.sealed)
+            throw new SealedBlockException("trying to alter bitcoin merged mining Merkle proof");
+
         this.header.setBitcoinMergedMiningMerkleProof(bitcoinMergedMiningMerkleProof);
         rlpEncoded = null;
     }
@@ -643,6 +690,9 @@ public class Block {
     }
 
     public void setBitcoinMergedMiningCoinbaseTransaction(byte[] bitcoinMergedMiningCoinbaseTransaction) {
+        if (this.sealed)
+            throw new SealedBlockException("trying to alter bitcoin merged mining coinbase transaction");
+
         this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
         rlpEncoded = null;
     }
@@ -664,10 +714,18 @@ public class Block {
     }
 
     public BigInteger getMinGasPriceAsInteger() {
-        return (this.getMinimumGasPrice() == null) ? null : new BigInteger(1, this.getMinimumGasPrice());
+        return (this.getMinimumGasPrice() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getMinimumGasPrice());
+    }
+
+    public BigInteger getGasLimitAsInteger() {
+        return (this.getGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getGasLimit());
     }
 
     private byte[] calcTxTrie(List<Transaction> transactions){
+        /* A sealed block is immutable, cannot be changed */
+        if (this.sealed)
+            throw new SealedBlockException("trying to alter transaction root");
+
         this.txsState = getTxTrie(transactions);
 
         return txsState.getHash();

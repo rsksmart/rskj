@@ -46,7 +46,7 @@ public class TwoAsyncNodeTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null, null).disablePoWValidation();
+        NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null, null, null).disablePoWValidation();
 
         handler.disablePoWValidation();
 
@@ -66,7 +66,7 @@ public class TwoAsyncNodeTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null, null).disablePoWValidation();
+        NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null, null, null).disablePoWValidation();
 
         handler.disablePoWValidation();
 

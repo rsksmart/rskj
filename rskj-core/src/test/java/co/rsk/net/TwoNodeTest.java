@@ -47,7 +47,7 @@ public class TwoNodeTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null, null).disablePoWValidation();
+        NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null, null, null).disablePoWValidation();
 
         return new SimpleNode(handler);
     }

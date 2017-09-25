@@ -371,7 +371,7 @@ public class Channel {
         if (inetSocketAddress != null ? !inetSocketAddress.equals(channel.inetSocketAddress) : channel.inetSocketAddress != null) {
             return false;
         }
-        return !(node != null ? !node.equals(channel.node) : channel.node != null);
+        return node != null ? node.equals(channel.node) : channel.node == null;
 
     }
 

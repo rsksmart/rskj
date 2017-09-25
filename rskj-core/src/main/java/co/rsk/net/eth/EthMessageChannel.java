@@ -24,6 +24,7 @@ import co.rsk.net.messages.Message;
 import org.ethereum.net.eth.handler.Eth;
 
 import javax.annotation.Nonnull;
+import java.net.InetAddress;
 
 /**
  * EthMessageChannel implements the MessageChannel interface.
@@ -33,6 +34,7 @@ import javax.annotation.Nonnull;
 public class EthMessageChannel implements MessageChannel {
     private final Eth eth;
     private NodeID nodeID;
+    private InetAddress address;
 
     /**
      * EthMessageChannel creates a new message sender.
@@ -67,4 +69,10 @@ public class EthMessageChannel implements MessageChannel {
     public void setPeerNodeID(@Nonnull final byte[] peerNodeId) {
         this.nodeID = new NodeID(peerNodeId);
     }
+
+    @Override
+    public InetAddress getAddress() { return this.address; }
+
+    @Override
+    public void setAddress(InetAddress address) { this.address = address; }
 }

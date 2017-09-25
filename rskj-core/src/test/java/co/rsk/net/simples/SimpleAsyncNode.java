@@ -97,7 +97,7 @@ public class SimpleAsyncNode extends SimpleNode {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
         SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, null, null, null);
+        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, null, null, null, null);
         handler.disablePoWValidation();
         return new SimpleAsyncNode(handler, syncProcessor);
     }

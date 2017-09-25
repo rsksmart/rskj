@@ -23,22 +23,32 @@ import co.rsk.net.NodeID;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
  * Created by ajlopez on 5/11/2016.
  */
 public class SimpleMessageChannel implements MessageChannel {
+    private static Random random = new Random();
     private List<Message> messages = new ArrayList<>();
-    private NodeID nodeID = new NodeID(HashUtil.randomPeerId());
+    private NodeID nodeID;
+    private InetAddress address;
 
-    public SimpleMessageChannel() {
+    public SimpleMessageChannel() throws UnknownHostException {
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        this.nodeID = new NodeID(bytes);
 
+        byte[] addressBytes = new byte[4];
+        random.nextBytes(bytes);
+        this.address = InetAddress.getByAddress(addressBytes);
     }
 
     public SimpleMessageChannel(byte[] nodeID) {
@@ -74,4 +84,10 @@ public class SimpleMessageChannel implements MessageChannel {
     public void setPeerNodeID(byte[] peerNodeId) {
         this.nodeID = new NodeID(peerNodeId);
     }
+
+    @Override
+    public InetAddress getAddress() { return this.address; }
+
+    @Override
+    public void setAddress(InetAddress address) { this.address = address; }
 }

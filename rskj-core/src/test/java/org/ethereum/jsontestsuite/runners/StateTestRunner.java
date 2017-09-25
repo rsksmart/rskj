@@ -102,6 +102,8 @@ public class StateTestRunner {
         invokeFactory = new TestProgramInvokeFactory(env);
 
         block = BlockBuilder.build(env);
+        block.setStateRoot(repository.getRoot());
+        block.flushRLP();
 
         blockchain.setBestBlock(block);
         //blockchain.setProgramInvokeFactory(invokeFactory);

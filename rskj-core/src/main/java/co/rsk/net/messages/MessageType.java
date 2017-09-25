@@ -24,6 +24,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
+import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -95,7 +96,7 @@ public enum MessageType {
             List<Transaction> txs = list.stream()
                     .map(RLPElement::getRLPData)
                     .filter(MessageType::validTransactionLength)
-                    .map(Transaction::new)
+                    .map(ImmutableTransaction::new)
                     .collect(Collectors.toList());
             return new TransactionsMessage(txs);
         }
@@ -146,8 +147,7 @@ public enum MessageType {
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
 
             List<BlockHeader> headers = rlpHeaders.stream()
-                    .map(RLPElement::getRLPData)
-                    .map(BlockHeader::new)
+                    .map(el -> new BlockHeader(el.getRLPData(), true))
                     .collect(Collectors.toList());
 
             return new BlockHeadersResponseMessage(id, headers);
@@ -214,7 +214,7 @@ public enum MessageType {
             List<Transaction> transactions = new ArrayList<>();
             for (int k = 0; k < rlpTransactions.size(); k++) {
                 byte[] txdata = rlpTransactions.get(k).getRLPData();
-                Transaction tx = new Transaction(txdata);
+                Transaction tx = new ImmutableTransaction(txdata);
 
                 if (Block.isRemascTransaction(tx, k, rlpTransactions.size()))
                     tx = new RemascTransaction(txdata);
@@ -223,8 +223,7 @@ public enum MessageType {
             }
 
             List<BlockHeader> uncles = rlpUncles.stream()
-                    .map(RLPElement::getRLPData)
-                    .map(BlockHeader::new)
+                    .map(el -> new BlockHeader(el.getRLPData(), true))
                     .collect(Collectors.toList());
 
             return new BodyResponseMessage(id, transactions, uncles);

@@ -186,6 +186,14 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
      */
     @Override
     public ImportResult tryToConnect(Block block) {
+        if (block == null)
+            return ImportResult.INVALID_BLOCK;
+
+        if (!block.isSealed()) {
+            panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), Hex.toHexString(block.getHash())));
+            block.seal();
+        }
+
         if (blockRecorder != null)
             blockRecorder.writeBlock(block);
 
