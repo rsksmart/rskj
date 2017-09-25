@@ -14,6 +14,6 @@ public interface SyncStatus {
     default void newPeerStatus(SyncStatusSetter statusSetter, NodeID peerID, Status status, Set<Runnable> finishedWaitingForPeersCallbacks) {
     }
 
-    default void tick(SyncStatusSetter statusSetter, Duration duration) {
+    default void tick(SyncStatusSetter statusSetter, Duration duration, Set<Runnable> finishedWaitingForPeersCallbacks) {
     }
 }

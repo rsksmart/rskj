@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
+import java.time.Duration;
 import java.util.*;
 
 /**
@@ -324,6 +325,10 @@ public class SyncProcessor {
             map.putAll(peer.getExpectedResponses());
         }
         return map;
+    }
+
+    public void onTimePassed(Duration timePassed) {
+        this.statusHandler.tick(timePassed);
     }
 
     private static class PendingBodyResponse {

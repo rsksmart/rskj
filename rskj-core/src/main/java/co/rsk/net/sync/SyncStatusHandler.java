@@ -33,7 +33,7 @@ public class SyncStatusHandler implements SyncStatusSetter {
     }
 
     public void tick(Duration duration) {
-        status.tick(this, duration);
+        status.tick(this, duration, finishedWaitingForPeersCallbacks);
     }
 
     /**

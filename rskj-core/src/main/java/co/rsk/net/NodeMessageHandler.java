@@ -37,6 +37,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -213,11 +214,17 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                     logger.trace("No task");
                 }
 
-                //Refresh status to peers every 10 seconds or so
                 Long now = System.currentTimeMillis();
-                if (now - lastStatusSent > TimeUnit.SECONDS.toMillis(10)) {
-                    this.blockProcessor.sendStatusToAll();
+                Duration timePassed = Duration.ofMillis(now - lastStatusSent);
+                if (timePassed.getSeconds() > 10) {
                     lastStatusSent = now;
+
+                    //Refresh status to peers every 10 seconds or so
+                    this.blockProcessor.sendStatusToAll();
+
+                    // Notify SyncProcessor that some time has passed.
+                    // This will allow to perform cleanup and other time-dependant tasks.
+                    this.syncProcessor.onTimePassed(timePassed);
                 }
             }
             catch (Throwable ex) {

@@ -10,11 +10,11 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -59,6 +59,45 @@ public class SyncProcessorTest {
         Assert.assertFalse(ids.isEmpty());
         Assert.assertTrue(ids.contains(sender.getPeerNodeID()));
 
+        Assert.assertFalse(sender.getMessages().isEmpty());
+        Assert.assertEquals(1, sender.getMessages().size());
+
+        Message message = sender.getMessages().get(0);
+
+        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
+
+        BlockHashRequestMessage request = (BlockHashRequestMessage)message;
+
+        Assert.assertEquals(50, request.getHeight());
+    }
+
+    @Test
+    public void processStatusWithAdvancedPeerAfter2Minutes() {
+        final BlockStore store = new BlockStore();
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        byte[] hash = HashUtil.randomHash();
+        byte[] parentHash = HashUtil.randomHash();
+
+        Status status = new Status(100, hash, parentHash, blockchain.getTotalDifficulty().add(BigInteger.TEN));
+
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.DEFAULT);
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
+        processor.processStatus(sender, status);
+
+        Assert.assertEquals(1, processor.getNoPeers());
+        Assert.assertEquals(1, processor.getNoAdvancedPeers());
+
+        Set<NodeID> ids = processor.getKnownPeersNodeIDs();
+        Assert.assertFalse(ids.isEmpty());
+        Assert.assertTrue(ids.contains(sender.getPeerNodeID()));
+        Assert.assertTrue(sender.getMessages().isEmpty());
+
+        processor.onTimePassed(Duration.ofMinutes(1));
+        Assert.assertTrue(sender.getMessages().isEmpty());
+
+        processor.onTimePassed(Duration.ofMinutes(1));
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
 

@@ -9,7 +9,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class DecidingSyncStatus implements SyncStatus {
-    private int peers;
     private Duration timeElapsed = Duration.ZERO;
     private Set<NodeID> knownPeers = new HashSet<>();
     private SyncConfiguration syncConfiguration;
@@ -32,21 +31,20 @@ public class DecidingSyncStatus implements SyncStatus {
 
         knownPeers.add(peerID);
 
-        peers++;
-        if (peers == syncConfiguration.getMinimumPeers()) {
+        if (knownPeers.size() == syncConfiguration.getMinimumPeers()) {
             statusSetter.setStatus(new FindingConnectionPointSyncStatus());
             finishedWaitingForPeersCallbacks.forEach(Runnable::run);
         }
     }
 
     @Override
-    public void tick(SyncStatusSetter statusSetter, Duration duration) {
+    public void tick(SyncStatusSetter statusSetter, Duration duration, Set<Runnable> finishedWaitingForPeersCallbacks) {
         timeElapsed = timeElapsed.plus(duration);
-        if (peers <= 0 ||
-                timeElapsed.toMinutes() < syncConfiguration.getTimeoutWaitingPeers()) {
-            return;
-        }
+        if (!knownPeers.isEmpty() &&
+                timeElapsed.toMinutes() >= syncConfiguration.getTimeoutWaitingPeers()) {
 
-        statusSetter.setStatus(new FindingConnectionPointSyncStatus());
+            statusSetter.setStatus(new FindingConnectionPointSyncStatus());
+            finishedWaitingForPeersCallbacks.forEach(Runnable::run);
+        }
     }
 }

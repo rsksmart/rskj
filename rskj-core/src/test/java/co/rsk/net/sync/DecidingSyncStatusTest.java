@@ -55,7 +55,7 @@ public class DecidingSyncStatusTest {
         statusHandler.setStatus(new DecidingSyncStatus(SyncConfiguration.DEFAULT));
         Assert.assertEquals(SyncStatusIds.DECIDING, statusHandler.getStatus().getId());
 
-        statusHandler.getStatus().tick(statusHandler, Duration.ofMinutes(2));
+        statusHandler.getStatus().tick(statusHandler, Duration.ofMinutes(2), Collections.emptySet());
         Assert.assertEquals(SyncStatusIds.DECIDING, statusHandler.getStatus().getId());
     }
 
@@ -67,7 +67,7 @@ public class DecidingSyncStatusTest {
 
         SimpleNode peer = SimpleNode.createNode();
         statusHandler.getStatus().newPeerStatus(statusHandler, peer.getNodeID(), peer.getFullStatus(), Collections.emptySet());
-        statusHandler.getStatus().tick(statusHandler, Duration.ofMinutes(2));
+        statusHandler.getStatus().tick(statusHandler, Duration.ofMinutes(2), Collections.emptySet());
         Assert.assertEquals(SyncStatusIds.FINDING_CONNECTION_POINT, statusHandler.getStatus().getId());
     }
 
@@ -79,7 +79,7 @@ public class DecidingSyncStatusTest {
 
         SimpleNode peer = SimpleNode.createNode();
         statusHandler.getStatus().newPeerStatus(statusHandler, peer.getNodeID(), peer.getFullStatus(), Collections.emptySet());
-        statusHandler.getStatus().tick(statusHandler, Duration.ofSeconds(119));
+        statusHandler.getStatus().tick(statusHandler, Duration.ofSeconds(119), Collections.emptySet());
         Assert.assertEquals(SyncStatusIds.DECIDING, statusHandler.getStatus().getId());
     }
 }
