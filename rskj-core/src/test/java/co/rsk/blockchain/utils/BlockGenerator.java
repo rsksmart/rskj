@@ -18,28 +18,26 @@
 
 package co.rsk.blockchain.utils;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.peg.PegTestUtils;
-import co.rsk.peg.simples.SimpleRskTransaction;
 import co.rsk.mine.MinimumGasPriceCalculator;
+import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleBlock;
-
+import co.rsk.peg.simples.SimpleRskTransaction;
+import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.InitialAddressState;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
-import co.rsk.trie.Trie;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 import org.spongycastle.util.encoders.Hex;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
-
 import java.util.List;
 import java.util.Map;
 

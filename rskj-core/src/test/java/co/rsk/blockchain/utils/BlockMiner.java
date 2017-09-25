@@ -28,7 +28,8 @@ public class BlockMiner {
 
         findNonce(bitcoinMergedMiningBlock, targetBI);
 
-        Block newBlock = new Block(block.getEncoded());
+        // We need to clone to allow modifications
+        Block newBlock = new Block(block.getEncoded()).cloneBlock();
 
         newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
 

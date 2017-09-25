@@ -660,6 +660,9 @@ public class Block {
         if (this.sealed)
             throw new SealedBlockException("trying to alter bitcoin merged mining header");
 
+        if (!parsed)
+            parseRLP();
+
         this.header.setBitcoinMergedMiningHeader(bitcoinMergedMiningHeader);
         rlpEncoded = null;
     }
