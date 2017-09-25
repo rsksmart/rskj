@@ -438,21 +438,22 @@ public class SyncProcessorTest {
     }
 
     @Test
-    @Ignore("This test breaks because we don't have a blockchain builder that takes an initial account balance.")
     public void processBodyResponseWithTransactionAddsToBlockchain() {
         Account senderAccount = createAccount("sender");
         Account receiverAccount = createAccount("receiver");
 
-        final BlockStore store = new BlockStore();
-        Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        Block genesis = blockchain.getBestBlock();
-        Repository repository = blockchain.getRepository();
-        repository.createAccount(senderAccount.getAddress());
-        repository.addBalance(senderAccount.getAddress(), BigInteger.valueOf(20000000));
-        genesis.setStateRoot(repository.getRoot());
-        genesis.flushRLP();
-        blockchain.getBlockStore().saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+        List<Account> accounts = new ArrayList<Account>();
+        List<BigInteger> balances = new ArrayList<BigInteger>();
 
+        accounts.add(senderAccount);
+        balances.add(BigInteger.valueOf(20000000));
+        accounts.add(receiverAccount);
+        balances.add(BigInteger.ZERO);
+
+        final BlockStore store = new BlockStore();
+        Blockchain blockchain = BlockChainBuilder.ofSize(0, false, accounts, balances);
+
+        Block genesis = blockchain.getBestBlock();
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
