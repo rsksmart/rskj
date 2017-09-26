@@ -15,7 +15,7 @@ function downloadJar(){
 	fi
 	curl https://deps.rsklabs.io/rsk-gradle-witness.jar -o ~/$DOWNLOAD_FILE1
 	curl https://deps.rsklabs.io/gradle-wrapper.jar -o ~/$DOWNLOAD_FILE2
-	if [[ $PLATFORM == 'linux' ]]; then
+	if [[ $PLATFORM == 'linux' || $PLATFORM == 'windows' ]]; then
 		DOWNLOADED_HASH1=$(sha256sum ~/${DOWNLOAD_FILE1} | cut -d' ' -f1)
 		DOWNLOADED_HASH2=$(sha256sum ~/${DOWNLOAD_FILE2} | cut -d' ' -f1)
 	elif [[ $PLATFORM == 'mac' ]]; then
@@ -43,6 +43,8 @@ function platform() {
 		PLATFORM='linux'
 	elif [[ "$unamestr" == 'Darwin' ]]; then
 		PLATFORM='mac'
+	elif [[ "$unamestr" =~ 'MINGW' ]]; then
+		PLATFORM='windows'
 	fi
 }
 
