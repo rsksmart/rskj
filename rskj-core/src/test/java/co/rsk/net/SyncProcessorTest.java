@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by ajlopez on 29/08/2017.
@@ -72,7 +73,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void processStatusWithAdvancedPeerAfter2Minutes() {
+    public void syncWithAdvancedPeerAfterTimeoutWaitingPeers() {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
         byte[] hash = HashUtil.randomHash();
@@ -102,6 +103,86 @@ public class SyncProcessorTest {
         Assert.assertEquals(1, sender.getMessages().size());
 
         Message message = sender.getMessages().get(0);
+
+        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
+
+        BlockHashRequestMessage request = (BlockHashRequestMessage)message;
+
+        Assert.assertEquals(50, request.getHeight());
+    }
+
+    @Test
+    public void dontSyncWithoutAdvancedPeerAfterTimeoutWaitingPeers() {
+        final BlockStore store = new BlockStore();
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        byte[] hash = HashUtil.randomHash();
+        byte[] parentHash = HashUtil.randomHash();
+
+        Status status = new Status(0, hash, parentHash, blockchain.getTotalDifficulty());
+
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.DEFAULT);
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
+        processor.processStatus(sender, status);
+
+        Assert.assertEquals(1, processor.getNoPeers());
+        Assert.assertEquals(0, processor.getNoAdvancedPeers());
+
+        Set<NodeID> ids = processor.getKnownPeersNodeIDs();
+        Assert.assertFalse(ids.isEmpty());
+        Assert.assertTrue(ids.contains(sender.getPeerNodeID()));
+        Assert.assertTrue(sender.getMessages().isEmpty());
+
+        processor.onTimePassed(Duration.ofMinutes(1));
+        Assert.assertTrue(sender.getMessages().isEmpty());
+
+        processor.onTimePassed(Duration.ofMinutes(1));
+        Assert.assertTrue(sender.getMessages().isEmpty());
+    }
+
+    @Test
+    public void syncWithAdvancedStatusAnd5Peers() {
+        final BlockStore store = new BlockStore();
+        Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        byte[] hash = HashUtil.randomHash();
+        byte[] parentHash = HashUtil.randomHash();
+
+        Status status = new Status(100, hash, parentHash, blockchain.getTotalDifficulty().add(BigInteger.TEN));
+
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.DEFAULT);
+
+        List<SimpleMessageChannel> senders = new ArrayList<SimpleMessageChannel>();
+
+        int lessPeers = SyncConfiguration.DEFAULT.getMinimumPeers() - 1;
+        for (int i = 0; i < lessPeers; i++) {
+            senders.add(new SimpleMessageChannel(HashUtil.randomPeerId()));
+        }
+
+        senders.forEach(s -> Assert.assertTrue(s.getMessages().isEmpty()));
+        senders.forEach(s -> processor.processStatus(s, status));
+        senders.forEach(s -> Assert.assertTrue(s.getMessages().isEmpty()));
+
+        Assert.assertEquals(lessPeers, processor.getNoAdvancedPeers());
+
+        Set<NodeID> ids = processor.getKnownPeersNodeIDs();
+        Assert.assertTrue(ids.containsAll(senders.stream().
+                map(s -> (s.getPeerNodeID())).collect(Collectors.toList())));
+
+        SimpleMessageChannel lastSender = new SimpleMessageChannel(HashUtil.randomPeerId());
+        Assert.assertFalse(ids.contains(lastSender.getPeerNodeID()));
+
+        processor.processStatus(lastSender, status);
+
+        Assert.assertTrue(ids.contains(lastSender.getPeerNodeID()));
+        Assert.assertFalse(senders.stream().allMatch(s -> s.getMessages().isEmpty()));
+        Assert.assertEquals(1, senders.stream().mapToInt(s->s.getMessages().size()).sum());
+
+        Message message = senders.stream().filter(s -> !s.getMessages().isEmpty()).
+                collect(Collectors.toList()).
+                get(0).getMessages().get(0);
 
         Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
 
