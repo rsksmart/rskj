@@ -90,7 +90,6 @@ public class Web3Impl implements Web3 {
     CompositeEthereumListener compositeEthereumListener;
 
     long initialBlockNumber;
-    long maxBlockNumberSeen;
 
     private final Object filterLock = new Object();
 
