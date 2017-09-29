@@ -18,35 +18,30 @@
 
 package co.rsk.peg;
 
-import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.crypto.Sha3Hash;
-import co.rsk.peg.simples.SimpleRskTransaction;
-import co.rsk.test.builders.BlockChainBuilder;
-import com.google.common.collect.Lists;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.peg.simples.SimpleBlockChain;
-import co.rsk.peg.simples.SimpleBridgeStorageProvider;
-import co.rsk.peg.simples.SimpleWallet;
-import org.spongycastle.util.encoders.Hex;
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
-import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.bitcoinj.store.BtcBlockStore;
+import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.crypto.Sha3Hash;
+import co.rsk.db.RepositoryImpl;
+import co.rsk.peg.simples.SimpleBlockChain;
+import co.rsk.peg.simples.SimpleBridgeStorageProvider;
+import co.rsk.peg.simples.SimpleRskTransaction;
+import co.rsk.peg.simples.SimpleWallet;
+import co.rsk.test.builders.BlockChainBuilder;
+import com.google.common.collect.Lists;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.RegTestConfig;
-
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.core.*;
-import org.ethereum.core.Block;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
-import co.rsk.db.RepositoryImpl;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.AfterClass;
@@ -56,6 +51,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.spongycastle.crypto.params.ECPrivateKeyParameters;
 import org.spongycastle.crypto.signers.ECDSASigner;
+import org.spongycastle.util.encoders.Hex;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -63,7 +59,10 @@ import java.nio.ByteBuffer;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by ajlopez on 6/9/2016.
@@ -286,17 +285,13 @@ public class BridgeSupportTest {
         TransactionInfo ti3 = new TransactionInfo(receipt3, blocks.get(1).getHash(), 2);
 
         List<TransactionInfo> tis = Lists.newArrayList(ti1, ti2, ti3);
-        blocks.get(1).getTransactionsList().add(rskTx1);
-        blocks.get(1).getTransactionsList().add(rskTx2);
-        blocks.get(1).getTransactionsList().add(rskTx3);
-        blocks.get(1).flushRLP();
 
         BlockChainBuilder builder = new BlockChainBuilder();
 
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).setGenesis(BlockGenerator.getGenesisBlock()).build();
 
-        for (int k = 0; k < blocks.size(); k++)
-            blockchain.getBlockStore().saveBlock(blocks.get(k), BigInteger.ONE, true);
+        for (Block block : blocks)
+            blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         ReceiptStore rskReceiptStore = blockchain.getReceiptStore();
@@ -349,11 +344,9 @@ public class BridgeSupportTest {
 
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).build();
 
-        blocks.get(1).getTransactionsList().add(rskTx1);
-        blocks.get(1).flushRLP();
 
-        for (int k = 0; k < blocks.size(); k++)
-            blockchain.getBlockStore().saveBlock(blocks.get(k), BigInteger.ONE, true);
+        for (Block block : blocks)
+            blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         ReceiptStore rskReceiptStore = blockchain.getReceiptStore();
@@ -405,10 +398,9 @@ public class BridgeSupportTest {
         BlockChainBuilder builder = new BlockChainBuilder();
 
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).build();
-        blocks.get(1).getTransactionsList().add(rskTx1);
-        blocks.get(1).flushRLP();
-        for (int k = 0; k < blocks.size(); k++)
-            blockchain.getBlockStore().saveBlock(blocks.get(k), BigInteger.ONE, true);
+
+        for (Block block : blocks)
+            blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         ReceiptStore rskReceiptStore = blockchain.getReceiptStore();
@@ -450,10 +442,9 @@ public class BridgeSupportTest {
         BlockChainBuilder builder = new BlockChainBuilder();
 
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).setGenesis(genesisBlock).build();
-        blocks.get(1).getTransactionsList().add(rskTx1);
-        blocks.get(1).flushRLP();
-        for (int k = 0; k < blocks.size(); k++)
-            blockchain.getBlockStore().saveBlock(blocks.get(k), BigInteger.ONE, true);
+
+        for (Block block : blocks)
+            blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         ReceiptStore rskReceiptStore = blockchain.getReceiptStore();
@@ -523,14 +514,12 @@ public class BridgeSupportTest {
         TransactionInfo ti = new TransactionInfo(receipt, blocks.get(1).getHash(), 0);
         List<TransactionInfo> tis = new ArrayList<>();
         tis.add(ti);
-        blocks.get(1).getTransactionsList().add(tx);
-        blocks.get(1).flushRLP();
 
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).build();
 
-        for (int k = 0; k < blocks.size(); k++)
-            blockchain.getBlockStore().saveBlock(blocks.get(k), BigInteger.ONE, true);
+        for (Block block : blocks)
+            blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         ReceiptStore rskReceiptStore = blockchain.getReceiptStore();

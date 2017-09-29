@@ -18,25 +18,22 @@
 
 package co.rsk.peg;
 
-import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.crypto.Sha3Hash;
-import co.rsk.peg.bitcoin.SimpleBtcTransaction;
-import co.rsk.peg.simples.SimpleRskTransaction;
-import co.rsk.config.BridgeConstants;
-import co.rsk.test.World;
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.crypto.Sha3Hash;
+import co.rsk.db.RepositoryImpl;
+import co.rsk.peg.bitcoin.SimpleBtcTransaction;
+import co.rsk.peg.simples.SimpleRskTransaction;
+import co.rsk.test.World;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
-import org.ethereum.core.Block;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
-import co.rsk.db.RepositoryImpl;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.AfterClass;
@@ -81,7 +78,7 @@ public class BridgeTest {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, track, null, null, null);
 
-        bridge.execute(Bridge.UPDATE_COLLECTIONS.encode(new Object[0]));
+        bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
 
         track.commit();
 
@@ -119,7 +116,7 @@ public class BridgeTest {
         World world = new World();
         bridge.init(null, world.getBlockChain().getBestBlock(), track, world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null);
 
-        bridge.execute(Bridge.UPDATE_COLLECTIONS.encode(new Object[0]));
+        bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
 
         track.commit();
 
@@ -172,14 +169,12 @@ public class BridgeTest {
         for (TransactionInfo txi: tis)
             receiptStore.add(txi.getBlockHash(), txi.getIndex(), txi.getReceipt());
 
-        blocks.get(1).getTransactionsList().add(tx);
-        blocks.get(1).flushRLP();
         world.getBlockChain().getBlockStore().saveBlock(blocks.get(1), BigInteger.ONE, true);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, world.getBlockChain().getBlockStore().getBestBlock(), track, world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null);
 
-        bridge.execute(Bridge.UPDATE_COLLECTIONS.encode(new Object[0]));
+        bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
 
         track.commit();
 
@@ -197,7 +192,7 @@ public class BridgeTest {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, track, null, null, null);
 
-        bridge.execute(Bridge.RECEIVE_HEADERS.encode(new co.rsk.bitcoinj.core.BtcBlock[0]));
+        bridge.execute(Bridge.RECEIVE_HEADERS.encode());
 
         track.commit();
     }
@@ -210,7 +205,7 @@ public class BridgeTest {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, track, null, null, null);
 
-        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(networkParameters, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, Utils.encodeCompactBits(networkParameters.getMaxTarget()), 1, new ArrayList<BtcTransaction>());
+        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(networkParameters, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, Utils.encodeCompactBits(networkParameters.getMaxTarget()), 1, new ArrayList<>());
         co.rsk.bitcoinj.core.BtcBlock[] headers = new co.rsk.bitcoinj.core.BtcBlock[1];
         headers[0] = block;
 
@@ -264,7 +259,7 @@ public class BridgeTest {
         bridge.init(null, null, track, null, null, null);
 
 
-        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(new Object[]{new byte[3], 1, new byte[30]});
+        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(new byte[3], 1, new byte[30]);
 
         Assert.assertNull(bridge.execute(data));
     }
@@ -282,7 +277,7 @@ public class BridgeTest {
         tx.addOutput(Coin.COIN, new BtcECKey().toAddress(btcParams));
         tx.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, new BtcECKey()));
 
-        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(new Object[]{tx.bitcoinSerialize(), 1, new byte[3]});
+        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(tx.bitcoinSerialize(), 1, new byte[3]);
 
         Assert.assertNull(bridge.execute(data));
     }
@@ -300,7 +295,7 @@ public class BridgeTest {
         tx.addOutput(Coin.COIN, new BtcECKey().toAddress(btcParams));
         tx.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, new BtcECKey()));
 
-        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(new Object[]{tx.bitcoinSerialize(), 1, new byte[30]});
+        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(tx.bitcoinSerialize(), 1, new byte[30]);
 
         Assert.assertNull(bridge.execute(data));
     }
@@ -313,7 +308,7 @@ public class BridgeTest {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, track, null, null, null);
 
-        byte[] data = Bridge.GET_BTC_TX_HASHES_ALREADY_PROCESSED.encode(new Object[0]);
+        byte[] data = Bridge.GET_BTC_TX_HASHES_ALREADY_PROCESSED.encode();
 
         Assert.assertNotNull(bridge.execute(data));
     }
@@ -326,7 +321,7 @@ public class BridgeTest {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, track, null, null, null);
 
-        byte[] data = Bridge.GET_FEDERATION_ADDRESS.encode(new Object[0]);
+        byte[] data = Bridge.GET_FEDERATION_ADDRESS.encode();
 
         Assert.assertArrayEquals(Bridge.GET_FEDERATION_ADDRESS.encodeOutputs(bridgeConstants.getFederationAddress().toString()), bridge.execute(data));
     }
@@ -340,7 +335,7 @@ public class BridgeTest {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, track, null, null, null);
 
-        byte[] data = Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode(new Object[0]);
+        byte[] data = Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode();
 
         Assert.assertArrayEquals(Bridge.GET_MINIMUM_LOCK_TX_VALUE.encodeOutputs(bridgeConstants.getMinimumLockTxValue().value), bridge.execute(data));
     }
@@ -355,7 +350,7 @@ public class BridgeTest {
         byte[] federatorPublicKeySerialized = new byte[3];
         Object[] signaturesObjectArray = new Object[0];
         byte[] rskTxHash = new byte[32];
-        byte[] data = Bridge.ADD_SIGNATURE.encode(new Object[]{federatorPublicKeySerialized, signaturesObjectArray, rskTxHash});
+        byte[] data = Bridge.ADD_SIGNATURE.encode(federatorPublicKeySerialized, signaturesObjectArray, rskTxHash);
 
         Assert.assertNull(bridge.execute(data));
     }
@@ -370,7 +365,7 @@ public class BridgeTest {
         byte[] federatorPublicKeySerialized = new BtcECKey().getPubKey();
         Object[] signaturesObjectArray = new Object[0];
         byte[] rskTxHash = new byte[32];
-        byte[] data = Bridge.ADD_SIGNATURE.encode(new Object[]{federatorPublicKeySerialized, signaturesObjectArray, rskTxHash});
+        byte[] data = Bridge.ADD_SIGNATURE.encode(federatorPublicKeySerialized, signaturesObjectArray, rskTxHash);
 
         Assert.assertNull(bridge.execute(data));
     }
@@ -386,7 +381,7 @@ public class BridgeTest {
         byte[] federatorPublicKeySerialized = new BtcECKey().getPubKey();
         Object[] signaturesObjectArray = new Object[]{new byte[3]};
         byte[] rskTxHash = new byte[32];
-        byte[] data = Bridge.ADD_SIGNATURE.encode(new Object[]{federatorPublicKeySerialized, signaturesObjectArray, rskTxHash});
+        byte[] data = Bridge.ADD_SIGNATURE.encode(federatorPublicKeySerialized, signaturesObjectArray, rskTxHash);
 
         Assert.assertNull(bridge.execute(data));
     }
@@ -402,7 +397,7 @@ public class BridgeTest {
         byte[] federatorPublicKeySerialized = new BtcECKey().getPubKey();
         Object[] signaturesObjectArray = new Object[]{new BtcECKey().sign(Sha256Hash.ZERO_HASH).encodeToDER()};
         byte[] rskTxHash = new byte[3];
-        byte[] data = Bridge.ADD_SIGNATURE.encode(new Object[]{federatorPublicKeySerialized, signaturesObjectArray, rskTxHash});
+        byte[] data = Bridge.ADD_SIGNATURE.encode(federatorPublicKeySerialized, signaturesObjectArray, rskTxHash);
 
         Assert.assertNull(bridge.execute(data));
     }
@@ -591,7 +586,7 @@ public class BridgeTest {
 
 
 
-    public void getGasForDataPaidTx(int expected, CallTransaction.Function function, Object ... funcArgs) {
+    private void getGasForDataPaidTx(int expected, CallTransaction.Function function, Object... funcArgs) {
         BlockchainNetConfig blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
         SystemProperties.CONFIG.setBlockchainConfig(new UnitTestBlockchainNetConfig());
 
