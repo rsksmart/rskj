@@ -1134,7 +1134,7 @@ public class Web3Impl implements Web3 {
 
             if (fr.address instanceof String) {
                 logFilter.withContractAddress(stringHexToByteArray((String) fr.address));
-            } else if (fr.address instanceof List<?> && ((List)fr.address).get(0) instanceof String) {
+            } else if (fr.address instanceof List<?> && !((List)fr.address).isEmpty() && ((List)fr.address).get(0) instanceof String) {
                 List<byte[]> addr = new ArrayList<>();
                 for (String s : ((List<String>) fr.address)) {
                     addr.add(stringHexToByteArray(s));
@@ -1148,9 +1148,9 @@ public class Web3Impl implements Web3 {
                         logFilter.withTopic(null);
                     } else if (topic instanceof String) {
                         logFilter.withTopic(new DataWord(stringHexToByteArray((String) topic)).getData());
-                    } else if (topic instanceof String[]) {
+                    } else if (topic instanceof List<?> && !((List)topic).isEmpty() && ((List)topic).get(0) instanceof String) {
                         List<byte[]> t = new ArrayList<>();
-                        for (String s : ((String[]) topic)) {
+                        for (String s : ((List<String>) topic)) {
                             t.add(new DataWord(stringHexToByteArray(s)).getData());
                         }
                         logFilter.withTopic(t.toArray(new byte[0][]));

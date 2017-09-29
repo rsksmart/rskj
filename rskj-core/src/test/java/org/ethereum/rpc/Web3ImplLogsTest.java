@@ -231,7 +231,6 @@ public class Web3ImplLogsTest {
     @Test
     public void getLogsFromBlockchainWithCallContractAndFilterByUnknownTopic() throws Exception {
         Web3Impl web3 = getWeb3WithContractCall();
-        Block block1 = web3.worldManager.getBlockchain().getBlockByNumber(1l);
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         fr.topics = new Object[1];
@@ -250,6 +249,24 @@ public class Web3ImplLogsTest {
         fr.fromBlock = "earliest";
         fr.topics = new Object[1];
         fr.topics[0] = "1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b";
+        Object[] logs = web3.eth_getLogs(fr);
+
+        Assert.assertNotNull(logs);
+        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress());
+        Assert.assertEquals(1, logs.length);
+        Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
+    }
+
+    @Test
+    public void getLogsFromBlockchainWithCallContractAndFilterByKnownTopicInList() throws Exception {
+        Web3Impl web3 = getWeb3WithContractCall();
+        Block block1 = web3.worldManager.getBlockchain().getBlockByNumber(1l);
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        fr.topics = new Object[1];
+        List<String> topics = new ArrayList<>();
+        topics.add("1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b");
+        fr.topics[0] = topics;
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
