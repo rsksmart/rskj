@@ -22,7 +22,9 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -42,10 +44,12 @@ public class SimpleBlock extends Block {
                 timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot, stateRoot,
                 transactionsList, uncleList, BigInteger.TEN.toByteArray(), 0L);
 
-        this.transactionList = transactionsList;
+        if (transactionsList != null)
+            this.transactionList = Collections.unmodifiableList(transactionsList);
     }
 
     @Override
+    @Nullable
     public List<Transaction> getTransactionsList() {
         return this.transactionList;
     }

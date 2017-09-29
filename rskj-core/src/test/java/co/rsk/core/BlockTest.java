@@ -34,6 +34,7 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class BlockTest {
@@ -156,7 +157,7 @@ public class BlockTest {
         block.seal();
 
         try {
-            block.setTransactionsList(null);
+            block.setTransactionsList(Collections.emptyList());
             Assert.fail();
         }
         catch (SealedBlockException ex) {
