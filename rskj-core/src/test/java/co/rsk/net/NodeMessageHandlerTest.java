@@ -261,7 +261,6 @@ public class NodeMessageHandlerTest {
         Assert.assertNotNull(sender.getGetBlockMessages());
         Assert.assertTrue(sender.getGetBlockMessages().isEmpty());
         Assert.assertNotNull(sender.getMessages());
-        Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
 
         Message request = sender.getMessages().get(0);

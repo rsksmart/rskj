@@ -1,5 +1,6 @@
 package co.rsk.net;
 
+import co.rsk.net.sync.SyncPeerStatus;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -12,14 +13,14 @@ import java.util.concurrent.TimeUnit;
 public class SyncPeerStatusTest {
     @Test
     public void justCreatedIsNotExpired() {
-        SyncPeerStatus status = new SyncPeerStatus();
+        SyncPeerStatus status = new SyncPeerStatus(null);
 
         Assert.assertFalse(status.isExpired(Duration.ofMillis(1000)));
     }
 
     @Test
     public void isExpiredAfterTimeout() throws InterruptedException {
-        SyncPeerStatus status = new SyncPeerStatus();
+        SyncPeerStatus status = new SyncPeerStatus(null);
 
         TimeUnit.MILLISECONDS.sleep(1000);
 
@@ -28,7 +29,7 @@ public class SyncPeerStatusTest {
 
     @Test
     public void isNotExpiredAfterShortTimeout() throws InterruptedException {
-        SyncPeerStatus status = new SyncPeerStatus();
+        SyncPeerStatus status = new SyncPeerStatus(null);
 
         TimeUnit.MILLISECONDS.sleep(100);
 

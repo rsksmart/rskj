@@ -24,6 +24,7 @@ import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
 import org.ethereum.db.ByteArrayWrapper;
+import org.junit.Assert;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -41,14 +42,18 @@ public class SimpleMessageChannel implements MessageChannel {
     private NodeID nodeID;
     private InetAddress address;
 
-    public SimpleMessageChannel() throws UnknownHostException {
+    public SimpleMessageChannel() {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         this.nodeID = new NodeID(bytes);
 
-        byte[] addressBytes = new byte[4];
-        random.nextBytes(bytes);
-        this.address = InetAddress.getByAddress(addressBytes);
+        try {
+            byte[] addressBytes = new byte[4];
+            random.nextBytes(bytes);
+            this.address = InetAddress.getByAddress(addressBytes);
+        } catch (UnknownHostException e) {
+            Assert.fail("SimpleMessageChannel creation failed");
+        }
     }
 
     public SimpleMessageChannel(byte[] nodeID) {

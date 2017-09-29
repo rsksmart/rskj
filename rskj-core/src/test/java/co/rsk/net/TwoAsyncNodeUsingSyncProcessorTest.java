@@ -61,8 +61,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertTrue(node1.getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getExpectedResponses().isEmpty());
 
-        Assert.assertFalse(node1.getSyncProcessor().peerIsSyncing(node2.getNodeID()));
-        Assert.assertFalse(node2.getSyncProcessor().peerIsSyncing(node1.getNodeID()));
+        Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
     }
 
     @Test
@@ -86,8 +86,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertTrue(node1.getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getExpectedResponses().isEmpty());
 
-        Assert.assertFalse(node1.getSyncProcessor().peerIsSyncing(node2.getNodeID()));
-        Assert.assertFalse(node2.getSyncProcessor().peerIsSyncing(node1.getNodeID()));
+        Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
     }
 
     @Test
@@ -113,8 +113,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertTrue(node1.getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getExpectedResponses().isEmpty());
 
-        Assert.assertFalse(node1.getSyncProcessor().peerIsSyncing(node2.getNodeID()));
-        Assert.assertFalse(node2.getSyncProcessor().peerIsSyncing(node1.getNodeID()));
+        Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
     }
 
     @Test
@@ -160,8 +160,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertTrue(node1.getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getExpectedResponses().isEmpty());
 
-        Assert.assertFalse(node1.getSyncProcessor().peerIsSyncing(node2.getNodeID()));
-        Assert.assertFalse(node2.getSyncProcessor().peerIsSyncing(node1.getNodeID()));
+        Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
     }
 
     @Test
@@ -185,7 +185,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(1, node2.getBestBlock().getNumber());
         Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
 
-        Assert.assertFalse(node1.getSyncProcessor().peerIsSyncing(node2.getNodeID()));
-        Assert.assertFalse(node2.getSyncProcessor().peerIsSyncing(node1.getNodeID()));
+        Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
     }
 }

@@ -1,0 +1,15 @@
+package co.rsk.net.utils;
+
+import co.rsk.net.Status;
+import org.ethereum.core.Blockchain;
+
+public class StatusUtils {
+    public static Status fromBlockchain(Blockchain blockchain) {
+        return new Status(
+                blockchain.getBestBlock().getNumber(),
+                blockchain.getBestBlockHash(),
+                blockchain.getBestBlock().getParentHash(),
+                blockchain.getTotalDifficulty()
+        );
+    }
+}

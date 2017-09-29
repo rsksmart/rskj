@@ -1,7 +1,7 @@
 package co.rsk.net.sync;
 
+import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
-import co.rsk.net.SyncPeerStatus;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -16,8 +16,12 @@ import java.util.function.Predicate;
  *     things such as the underlying communication channel.
  */
 public class PeersInformation {
+    private final SyncConfiguration syncCofiguration;
     private Map<NodeID, SyncPeerStatus> peerStatuses = new HashMap<>();
-    private static final Duration peerTimeout = Duration.ofMinutes(10);
+
+    public PeersInformation(SyncConfiguration syncConfiguration){
+        this.syncCofiguration = syncConfiguration;
+    }
 
     public int count() {
         return peerStatuses.size();
@@ -30,13 +34,13 @@ public class PeersInformation {
         return Math.toIntExact(count);
     }
 
-    public SyncPeerStatus getOrRegisterPeer(NodeID nodeID) {
-        SyncPeerStatus peerStatus = this.peerStatuses.get(nodeID);
+    public SyncPeerStatus getOrRegisterPeer(MessageChannel messageChannel) {
+        SyncPeerStatus peerStatus = this.peerStatuses.get(messageChannel.getPeerNodeID());
 
-        if (peerStatus != null && !peerStatus.isExpired(peerTimeout))
+        if (peerStatus != null && !peerStatus.isExpired(syncCofiguration.getExpirationTimePeerStatus()))
             return peerStatus;
 
-        return this.registerPeer(nodeID);
+        return this.registerPeer(messageChannel);
     }
 
     public SyncPeerStatus getPeer(NodeID nodeID) {
@@ -44,11 +48,12 @@ public class PeersInformation {
         return this.peerStatuses.get(nodeID);
     }
 
-    public Optional<NodeID> getBestPeerID() {
+    public Optional<MessageChannel> getBestPeer() {
         return peerStatuses.entrySet().stream()
-                .filter(e -> !e.getValue().isExpired(peerTimeout))
+                .filter(e -> !e.getValue().isExpired(syncCofiguration.getExpirationTimePeerStatus()))
                 .max(this::bestPeerComparator)
-                .map(Map.Entry::getKey);
+                .map(Map.Entry::getValue)
+                .map(SyncPeerStatus::getMessageChannel);
     }
 
     public Set<NodeID> knownNodeIds() {
@@ -56,19 +61,14 @@ public class PeersInformation {
     }
 
     private int bestPeerComparator(Map.Entry<NodeID, SyncPeerStatus> left, Map.Entry<NodeID, SyncPeerStatus> right) {
-        // TODO(mc) check expiration
          return Long.compare(
                  left.getValue().getStatus().getBestBlockNumber(),
                  right.getValue().getStatus().getBestBlockNumber());
     }
 
-    public SyncPeerStatus registerPeer(NodeID nodeID) {
-        SyncPeerStatus peerStatus = new SyncPeerStatus();
-        peerStatuses.put(nodeID, peerStatus);
+    public SyncPeerStatus registerPeer(MessageChannel messageChannel) {
+        SyncPeerStatus peerStatus = new SyncPeerStatus(messageChannel);
+        peerStatuses.put(messageChannel.getPeerNodeID(), peerStatus);
         return peerStatus;
-    }
-
-    public boolean isKnownPeer(NodeID peerID) {
-        return peerStatuses.containsKey(peerID);
     }
 }
