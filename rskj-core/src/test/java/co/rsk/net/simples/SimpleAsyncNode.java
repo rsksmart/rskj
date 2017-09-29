@@ -25,6 +25,7 @@ import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Blockchain;
+import org.junit.Assert;
 
 import java.util.Map;
 import java.util.concurrent.*;
@@ -71,7 +72,10 @@ public class SimpleAsyncNode extends SimpleNode {
                 }
                 task.get();
             }
-        } catch (InterruptedException | ExecutionException ignored) {
+        } catch (ExecutionException ex) {
+            ex.printStackTrace();
+            Assert.fail();
+        } catch (InterruptedException ignored) {
         }
     }
 

@@ -10,9 +10,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void stopSyncing() {
-
-    }
+    public void stopSyncing() { }
 
     public boolean canStartSyncingWasCalled() {
         return canStartSyncingWasCalled_;

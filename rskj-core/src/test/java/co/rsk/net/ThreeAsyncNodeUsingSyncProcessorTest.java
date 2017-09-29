@@ -18,6 +18,7 @@
 
 package co.rsk.net;
 
+import co.rsk.net.messages.NewBlockHashMessage;
 import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Blockchain;
@@ -268,6 +269,99 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(80, node2.getBestBlock().getNumber());
         Assert.assertEquals(80, node3.getBestBlock().getNumber());
         Assert.assertArrayEquals(node2.getBestBlock().getHash(), node3.getBestBlock().getHash());
+
+        Assert.assertTrue(node1.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node3.getExpectedResponses().isEmpty());
+
+        node1.joinWithTimeout();
+        node2.joinWithTimeout();
+        node3.joinWithTimeout();
+
+        Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
+        Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node3.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node3.getNodeID()));
+        Assert.assertFalse(node3.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
+    }
+
+    @Test
+    public void ignoreNewBlockHashesWhenSyncing() {
+        Blockchain b1 = BlockChainBuilder.ofSize(30, true);
+        Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 1, true);
+
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2);
+        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithBlockChainBuilder(0);
+
+        Assert.assertEquals(30, node1.getBestBlock().getNumber());
+        Assert.assertEquals(31, node2.getBestBlock().getNumber());
+        Assert.assertEquals(0, node3.getBestBlock().getNumber());
+
+        node1.sendFullStatusTo(node3);
+        // receive the hash of a better block than node1's best
+        // while it's syncing with node1
+        node3.receiveMessageFrom(node2, new NewBlockHashMessage(node2.getBestBlock().getHash()));
+        // receive and ignore NewBlockHashMessage
+        node3.waitUntilNTasksWithTimeout(1);
+        // sync setup
+        node3.waitUntilNTasksWithTimeout(11);
+        // synchronize 30 new blocks from node 1
+        node3.waitExactlyNTasksWithTimeout(30);
+
+        Assert.assertEquals(30, node1.getBestBlock().getNumber());
+        Assert.assertEquals(31, node2.getBestBlock().getNumber());
+        Assert.assertEquals(30, node3.getBestBlock().getNumber());
+
+        Assert.assertTrue(node1.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node3.getExpectedResponses().isEmpty());
+
+        node1.joinWithTimeout();
+        node2.joinWithTimeout();
+        node3.joinWithTimeout();
+
+        Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
+        Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node3.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node3.getNodeID()));
+        Assert.assertFalse(node3.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
+    }
+
+    @Test
+    public void acceptNewBlockHashWhenNotSyncing() {
+        Blockchain b1 = BlockChainBuilder.ofSize(30, true);
+        Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 1, true);
+
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2);
+        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithBlockChainBuilder(0);
+
+        Assert.assertEquals(30, node1.getBestBlock().getNumber());
+        Assert.assertEquals(31, node2.getBestBlock().getNumber());
+        Assert.assertEquals(0, node3.getBestBlock().getNumber());
+
+        node1.sendFullStatusTo(node3);
+        // sync setup
+        node3.waitUntilNTasksWithTimeout(11);
+        // synchronize 30 new blocks from node 1
+        node3.waitExactlyNTasksWithTimeout(30);
+
+        Assert.assertEquals(30, node1.getBestBlock().getNumber());
+        Assert.assertEquals(31, node2.getBestBlock().getNumber());
+        Assert.assertEquals(30, node3.getBestBlock().getNumber());
+
+        // receive the hash of a better block than node1's best
+        // while it's syncing with node1
+        node3.receiveMessageFrom(node2, new NewBlockHashMessage(node2.getBestBlock().getHash()));
+        // receive block hash, then receive block
+        node3.waitExactlyNTasksWithTimeout(2);
+
+        Assert.assertEquals(30, node1.getBestBlock().getNumber());
+        Assert.assertEquals(31, node2.getBestBlock().getNumber());
+        Assert.assertEquals(31, node3.getBestBlock().getNumber());
 
         Assert.assertTrue(node1.getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getExpectedResponses().isEmpty());

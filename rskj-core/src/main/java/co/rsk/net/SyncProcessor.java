@@ -271,9 +271,11 @@ public class SyncProcessor implements SyncEventsHandler {
         if (this.blockSyncService.getBlockFromStoreOrBlockchain(hash) != null)
             return;
 
-        sender.sendMessage(new BlockRequestMessage(++lastRequestId, hash));
-        this.getPeerStatusAndSaveSender(sender);
-        syncPeerProcessor.registerExpectedResponse(lastRequestId, MessageType.BLOCK_RESPONSE_MESSAGE);
+        if (!syncState.isSyncing()) {
+            sender.sendMessage(new BlockRequestMessage(++lastRequestId, hash));
+            this.getPeerStatusAndSaveSender(sender);
+            syncPeerProcessor.registerExpectedResponse(lastRequestId, MessageType.BLOCK_RESPONSE_MESSAGE);
+        }
     }
 
     public Set<NodeID> getKnownPeersNodeIDs() {
