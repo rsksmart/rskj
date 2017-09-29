@@ -1133,9 +1133,9 @@ public class Web3Impl implements Web3 {
 
             if (fr.address instanceof String) {
                 logFilter.withContractAddress(stringHexToByteArray((String) fr.address));
-            } else if (fr.address instanceof String[]) {
+            } else if (fr.address instanceof List<?> && ((List)fr.address).get(0) instanceof String) {
                 List<byte[]> addr = new ArrayList<>();
-                for (String s : ((String[]) fr.address)) {
+                for (String s : ((List<String>) fr.address)) {
                     addr.add(stringHexToByteArray(s));
                 }
                 logFilter.withContractAddress(addr.toArray(new byte[0][]));
