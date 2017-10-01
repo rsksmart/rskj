@@ -26,8 +26,6 @@ import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.StatusMessage;
 import co.rsk.scoring.EventType;
-import io.netty.channel.ChannelConfig;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
