@@ -690,7 +690,7 @@ public class SystemProperties {
 
     public long scoringAddressesPunishmentMaximumDuration() {
         // default value: 1 week
-        return getLong("scoring.addresses.maximum", 60 * 24 * 7)  * 60000L;
+        return getLong("scoring.addresses.maximum", 60L * 24 * 7)  * 60000L;
     }
 
     protected int getInt(String path, int val) {

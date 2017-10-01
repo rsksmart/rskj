@@ -58,9 +58,9 @@ public class RLPList extends ArrayList<RLPElement> implements RLPElement {
     }
 
     public static void recursivePrint(@Nonnull ArrayList<RLPElement> list) {
-        System.out.print("[");
+        System.out.print('[');
         for (RLPElement singleElement : list)
             recursivePrint(singleElement);
-        System.out.print("]");
+        System.out.print(']');
     }
 }

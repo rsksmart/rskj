@@ -45,6 +45,7 @@ import java.math.BigInteger;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -193,8 +194,7 @@ public class Transaction implements SerializableObject {
     }
 
     public void rlpParse() {
-
-        ArrayList<RLPElement> transaction = (RLPList)RLP.decode2(rlpEncoded).get(0);
+        List<RLPElement> transaction = (RLPList)RLP.decode2(rlpEncoded).get(0);
 
         this.nonce = transaction.get(0).getRLPData();
         this.gasPrice = transaction.get(1).getRLPData();
