@@ -187,27 +187,7 @@ public class Web3Impl implements Web3 {
         return x;
     }
 
-    public String[] toJsonHexArray(Collection<String> c) {
-        String[] arr = new String[c.size()];
-        int i = 0;
-        for (String item : c) {
-            arr[i++] = toJsonHex(item);
-        }
-        return arr;
-    }
-
-    public String[] listObjectHashtoJsonHexArray(Collection<SerializableObject> c) {
-        String[] arr = new String[c.size()];
-        int i = 0;
-        for (SerializableObject item : c) {
-            // Todo: Which hash is required? RawHash or Hash ?
-            arr[i++] = toJsonHex(item.getHash());
-        }
-        return arr;
-    }
-
     public String web3_clientVersion() {
-
         String clientVersion = baseClientVersion + "/" + SystemProperties.CONFIG.projectVersion() + "/" +
                 System.getProperty("os.name") + "/Java1.8/" +
                 SystemProperties.CONFIG.projectVersionModifier() + "-" + BuildInfo.getBuildHash();
@@ -217,7 +197,6 @@ public class Web3Impl implements Web3 {
         }
 
         return clientVersion;
-
     }
 
     public String web3_sha3(String data) throws Exception {
@@ -230,7 +209,6 @@ public class Web3Impl implements Web3 {
                 logger.debug("web3_sha3({}): {}", data, s);
         }
     }
-
 
     public String net_version() {
         String s = null;
@@ -245,7 +223,6 @@ public class Web3Impl implements Web3 {
         }
     }
 
-
     public String net_peerCount() {
         String s = null;
         try {
@@ -259,7 +236,6 @@ public class Web3Impl implements Web3 {
             }
         }
     }
-
 
     public boolean net_listening() {
         Boolean s = null;
