@@ -3,6 +3,7 @@ package co.rsk.net.sync;
 
 public class SimpleSyncEventsHandler implements SyncEventsHandler {
     private boolean canStartSyncingWasCalled_;
+    private boolean stopSyncingWasCalled_;
 
     @Override
     public void canStartSyncing() {
@@ -10,9 +11,13 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void stopSyncing() { }
+    public void stopSyncing() { this.stopSyncingWasCalled_ = true; }
 
     public boolean canStartSyncingWasCalled() {
         return canStartSyncingWasCalled_;
+    }
+
+    public boolean stopSyncingWasCalled() {
+        return stopSyncingWasCalled_;
     }
 }
