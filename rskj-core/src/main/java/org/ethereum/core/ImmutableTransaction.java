@@ -1,7 +1,5 @@
 package org.ethereum.core;
 
-import org.ethereum.crypto.ECKey;
-
 /**
  * Created by ajlopez on 02/08/2017.
  */
