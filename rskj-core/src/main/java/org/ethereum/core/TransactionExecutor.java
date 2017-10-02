@@ -460,7 +460,7 @@ public class TransactionExecutor {
                 }
             } catch (IOException e) {
                 String errorMessage = "Cannot write trace to file";
-                panicProcessor.panic("executor", errorMessage + ": " + e.toString());
+                panicProcessor.panic("executor", errorMessage + ": " + e);
                 logger.error(errorMessage, e);
             }
         }

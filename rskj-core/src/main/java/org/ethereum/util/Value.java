@@ -39,10 +39,7 @@ public class Value {
     private byte[] rlp;
     private byte[] sha3;
 
-    private boolean decoded = false;
-
     public static Value fromRlpEncoded(byte[] data) {
-
         if (data != null && data.length != 0) {
             Value v = new Value();
             v.init(data);
@@ -59,8 +56,6 @@ public class Value {
     }
 
     public Value(Object obj) {
-
-        this.decoded = true;
         if (obj == null) {
             return;
         }
