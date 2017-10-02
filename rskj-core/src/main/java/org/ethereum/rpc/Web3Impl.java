@@ -270,8 +270,6 @@ public class Web3Impl implements Web3 {
     }
 
     public Object eth_syncing() {
-        Blockchain blockchain = worldManager.getBlockchain();
-
         long currentBlock = worldManager.getBlockchain().getBestBlock().getNumber();
         BlockProcessor processor = worldManager.getNodeBlockProcessor();
         if (processor == null) {
