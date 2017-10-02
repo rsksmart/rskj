@@ -47,6 +47,7 @@ import java.net.Socket;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static org.ethereum.crypto.SHA3Helper.sha3;
 
@@ -690,7 +691,7 @@ public class SystemProperties {
 
     public long scoringAddressesPunishmentMaximumDuration() {
         // default value: 1 week
-        return getLong("scoring.addresses.maximum", 60L * 24 * 7)  * 60000L;
+        return TimeUnit.MINUTES.toMillis(getLong("scoring.addresses.maximum", TimeUnit.DAYS.toMinutes(7)));
     }
 
     protected int getInt(String path, int val) {
