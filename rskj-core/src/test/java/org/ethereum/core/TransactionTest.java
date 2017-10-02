@@ -635,8 +635,6 @@ public class TransactionTest {
 
             function doIt(address invokedAddress) {
                 externalEvent();
-                //TestEventInvoked(invokedAddress).doIt();
-                //TestEventInvoked(invokedAddress).doIt.gas(50000)();
                 invokedAddress.call.gas(50000)(0xb29f0835);
             }
         }
