@@ -23,6 +23,8 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.db.AbstractBlockstore;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.IndexedBlockStore;
+import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -32,6 +34,7 @@ import java.util.Map;
 
 import static java.math.BigInteger.ZERO;
 import static org.ethereum.util.ByteUtil.wrap;
+import static org.spongycastle.util.Arrays.areEqual;
 
 /**
  * Created by oscar and mario on 13/12/2016.
@@ -42,6 +45,7 @@ public class RemascTestBlockStore extends AbstractBlockstore {
     Map<Long, Block> numberIndex = new HashMap<>();
     List<Block> blocks = new ArrayList<>();
     BigInteger totalDifficulty = ZERO;
+    Map<Long, List<IndexedBlockStore.BlockInfo>> index = new HashMap<>();
 
     @Override
     public byte[] getBlockHashByNumber(long blockNumber) {
@@ -91,6 +95,30 @@ public class RemascTestBlockStore extends AbstractBlockstore {
         hashIndex.put(wHash, block);
         numberIndex.put(block.getNumber(), block);
         totalDifficulty = totalDifficulty.add(block.getCumulativeDifficulty());
+
+        List<IndexedBlockStore.BlockInfo> blockInfos = index.get(block.getNumber());
+        if (blockInfos == null) {
+            blockInfos = new ArrayList<>();
+        }
+
+        IndexedBlockStore.BlockInfo blockInfo = null;
+        for (IndexedBlockStore.BlockInfo bi : blockInfos) {
+            if (areEqual(bi.getHash(), block.getHash())) {
+                blockInfo = bi;
+            } else if (mainChain) {
+                bi.setMainChain(false);
+            }
+        }
+        if (blockInfo == null) {
+            blockInfo = new IndexedBlockStore.BlockInfo();
+            blockInfos.add(blockInfo);
+        }
+
+        blockInfo.setCummDifficulty(cummDifficulty);
+        blockInfo.setHash(block.getHash());
+        blockInfo.setMainChain(mainChain);
+
+        index.put(block.getNumber(), blockInfos);
     }
 
     @Override
@@ -134,5 +162,22 @@ public class RemascTestBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public List<BlockInformation> getBlocksInformationByNumber(long blockNumber) { return null; }
+    public List<BlockInformation> getBlocksInformationByNumber(long blockNumber) {
+        List<BlockInformation> result = new ArrayList<>();
+
+        List<IndexedBlockStore.BlockInfo> blockInfos = index.get(blockNumber);
+
+        if (blockInfos == null)
+            return result;
+
+        for (IndexedBlockStore.BlockInfo blockInfo : blockInfos) {
+            byte[] hash = ByteUtils.clone(blockInfo.getHash());
+            BigInteger totalDifficulty = blockInfo.getCummDifficulty();
+            boolean isInBlockChain = blockInfo.isMainChain();
+
+            result.add(new BlockInformation(hash, totalDifficulty, isInBlockChain));
+        }
+
+        return result;
+    }
 }
