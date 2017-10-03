@@ -300,7 +300,9 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         // It is the new best block
         if (totalDifficulty.compareTo(status.getTotalDifficulty()) > 0) {
             if (bestBlock != null && !bestBlock.isParentOf(block)) {
-                logger.info("Rebranching: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}", bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(), status.getTotalDifficulty().toString(), totalDifficulty.toString());
+                logger.info("Rebranching: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
+                        bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
+                        status.getTotalDifficulty().toString(), totalDifficulty.toString());
                 BlockFork fork = new BlockFork();
                 fork.calculate(bestBlock, block, blockStore);
                 Metrics.rebranch(bestBlock, block, fork.getNewBlocks().size() + fork.getOldBlocks().size());
@@ -347,6 +349,10 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
 
             return ImportResult.IMPORTED_NOT_BEST;
         }
+    }
+
+    private boolean bestBlockDecider(Block c,BigInteger totalDifficulty) {
+        return totalDifficulty.compareTo(status.getTotalDifficulty()) > 0;
     }
 
     @Override

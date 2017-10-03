@@ -24,8 +24,10 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
+import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.BIUtil;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
@@ -34,6 +36,7 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -197,15 +200,53 @@ public class Remasc {
         }
     }
 
+    private BigInteger getTotalDifficultyOfProcessingBlockHeader(List<BlockInformation> listBlockInformation,
+                                                                 BlockHeader processingBlockHeader) {
+        BigInteger ret = processingBlockHeader.getDifficultyBI();
+        for (BlockInformation information : listBlockInformation) {
+            if (Arrays.equals(processingBlockHeader.getHash(), information.getHash())) {
+                return information.getTotalDifficulty();
+            }
+        }
+        return ret;
+    }
+
+    // Ugly, there should be a better way to obtain the diff
+
+    private BigInteger getMaxTotalDifficultyForSiblings(List<BlockInformation> listBlockInformation,
+                                                        List<Sibling> siblings) {
+        BigInteger max = BigInteger.valueOf(0);
+        for (Sibling sibling : siblings) {
+            for (BlockInformation information : listBlockInformation) {
+                if (Arrays.equals(information.getHash(), sibling.getHash())) {
+                    if (max.compareTo(information.getTotalDifficulty()) < 0) {
+                        max = information.getTotalDifficulty();
+                    }
+                }
+            }
+        }
+        return max;
+    }
     private boolean isBrokenSelectionRule(BlockHeader processingBlockHeader, List<Sibling> siblings) {
         // Find out if main chain block selection rule was broken
+        List<BlockInformation> listBlockInformation =
+                blockStore.getBlocksInformationByNumber(processingBlockHeader.getNumber());
+        // Get max difficulty
+        BigInteger maxSiblingDifficulty = getMaxTotalDifficultyForSiblings(listBlockInformation, siblings);
+        BigInteger processingBlockTotalDifficulty = getTotalDifficultyOfProcessingBlockHeader(listBlockInformation,
+                processingBlockHeader);
+//        if (maxSiblingDifficulty.compareTo(processingBlockTotalDifficulty) != 0) {
+//            return false;
+//        }
         for (Sibling sibling : siblings) {
             // Sibling pays significant more fees than block in the main chain OR Sibling has lower hash than block in the main chain
             if (sibling.getPaidFees() > 2 * processingBlockHeader.getPaidFees() ||
-                    FastByteComparisons.compareTo(sibling.getHash(), 0, 32, processingBlockHeader.getHash(), 0, 32) < 0) {
+                    FastByteComparisons.compareTo(sibling.getHash(), 0, 32,
+                            processingBlockHeader.getHash(), 0, 32) < 0) {
                 return true;
             }
         }
+
         return false;
     }
 

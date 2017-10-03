@@ -146,6 +146,33 @@ public class BlockGenerator {
         return createChildBlock(parent, 0);
     }
 
+    public static Block createChildBlock(Block parent, long fees, List<BlockHeader> uncles, byte[] difficulty) {
+        List<Transaction> txs = new ArrayList<>();
+
+        return new Block(
+                parent.getHash(), // parent hash
+                EMPTY_LIST_HASH, // uncle hash
+                parent.getCoinbase(),
+                ByteUtils.clone(new Bloom().getData()),
+                difficulty, // difficulty
+                parent.getNumber() + 1,
+                parent.getGasLimit(),
+                parent.getGasUsed(),
+                parent.getTimestamp() + ++count,
+                EMPTY_BYTE_ARRAY,   // extraData
+                EMPTY_BYTE_ARRAY,   // mixHash
+                BigInteger.ZERO.toByteArray(),  // provisory nonce
+                EMPTY_TRIE_HASH,   // receipts root
+                BlockChainImpl.calcTxTrie(txs),  // transaction root
+                ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
+                txs,       // transaction list
+                uncles,        // uncle list
+                null,
+                fees
+        );
+//        return createChildBlock(parent, 0);
+    }
+
     public static Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot ) {
         return createChildBlock(parent, txs, stateRoot, parent.getCoinbase());
     }
@@ -199,7 +226,8 @@ public class BlockGenerator {
     }
 
 
-    public static Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles, long difficulty, BigInteger minGasPrice) {
+    public static Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
+                                         long difficulty, BigInteger minGasPrice) {
         if (txs == null)
             txs = new ArrayList<>();
         if (uncles == null)

@@ -33,6 +33,7 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
@@ -258,6 +259,38 @@ public class BlockChainImplTest {
 
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
     }
+
+    @Test
+    public void tryToConnectSelectionRuleRemasc() {
+        BlockChainImpl blockChain = createBlockChain();
+//        return createChildBlock(parent, ntxs, ByteUtil.bytesToBigInteger(parent.getDifficulty()).longValue());
+
+        Block genesis = getGenesisBlock(blockChain);
+
+        Block parent =  BlockGenerator.createChildBlock(genesis);
+        Block uncle =  BlockGenerator.createChildBlock(genesis);
+
+        BigInteger difficulty = ByteUtil.bytesToBigInteger(parent.getDifficulty()).multiply(BigInteger.valueOf(2));
+        List<BlockHeader> uncles = new ArrayList<>();
+        List<Transaction> txs = new ArrayList<>();
+        uncles.add(uncle.getHeader());
+
+        Block childBlock = BlockGenerator.createChildBlock(parent, 10, uncles,
+                ByteUtil.bigIntegerToBytes(difficulty));
+        Block syblingBlock = BlockGenerator.createChildBlock(parent, 10, uncles,
+                ByteUtil.bigIntegerToBytes(difficulty));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(parent));
+        Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(uncle));
+//        Block syblingBlock = BlockGenerator.createChildBlock(parent, txs, uncles, difficulty*2, BigInteger.valueOf(10l));
+//        syblingBlock
+        /* unserstand total difficulty first *
+           For now fail
+         */
+        Assert.fail();
+        childBlock.getHeader().setPaidFees(0);
+    }
+
 
     @Test
     public void addInvalidBlockOneBadLogsBloom() {
