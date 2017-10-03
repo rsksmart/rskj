@@ -11,6 +11,8 @@ import java.net.UnknownHostException;
  * Created by ajlopez on 15/07/2017.
  */
 public class InetAddressUtils {
+    private InetAddressUtils() {}
+
     /**
      * Returns <tt>true</tt> if the specified texts represent an address with mask
      * ie "192.168.51.1/16" has a mask
@@ -26,10 +28,7 @@ public class InetAddressUtils {
 
         String[] parts = text.split("/");
 
-        if (parts.length != 2 || parts[0].length() == 0 || parts[1].length() == 0)
-            return false;
-
-        return true;
+        return !(parts.length != 2 || parts[0].length() == 0 || parts[1].length() == 0);
     }
 
     /**
@@ -40,11 +39,11 @@ public class InetAddressUtils {
      *
      * @return  the text converted to an InetAddress
      */
-    public static InetAddress getAddressForBan(String name) throws InvalidInetAddressException {
-        if (name == null)
+    public static InetAddress getAddressForBan(String hostname) throws InvalidInetAddressException {
+        if (hostname == null)
             throw new InvalidInetAddressException("null address", null);
 
-        name = name.trim();
+        String name = hostname.trim();
         if (name.length() == 0)
             throw new InvalidInetAddressException("empty address", null);
 
@@ -95,6 +94,4 @@ public class InetAddressUtils {
 
         return new InetAddressBlock(address, nbits);
     }
-
-    private InetAddressUtils() {}
 }

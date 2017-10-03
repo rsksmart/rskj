@@ -1,6 +1,7 @@
 package co.rsk.scoring;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 
 import java.net.InetAddress;
 import java.util.Arrays;
@@ -94,7 +95,7 @@ public class InetAddressBlock {
 
     @VisibleForTesting
     public byte[] getBytes() {
-        return this.bytes;
+        return ByteUtils.clone(this.bytes);
     }
 
     @VisibleForTesting
