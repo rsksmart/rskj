@@ -28,6 +28,7 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.facade.EthereumImpl;
+import org.ethereum.validator.ProofOfWorkRule;
 import org.springframework.stereotype.Component;
 
 /**
@@ -41,6 +42,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
 
     private PeerScoringManager peerScoringManager;
     private MessageHandler messageHandler;
+    private static final ProofOfWorkRule blockValidationRule = new ProofOfWorkRule();
     private static final Object NMH_LOCK = new Object();
     private static final Object PSM_LOCK = new Object();
 
@@ -87,7 +89,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
                 if (this.messageHandler == null) {
                     this.nodeBlockProcessor = this.getNodeBlockProcessor(); // Initialize nodeBlockProcessor if not done already.
                     NodeMessageHandler handler = new NodeMessageHandler(this.nodeBlockProcessor, this.syncProcessor, getChannelManager(),
-                            getWorldManager().getPendingState(), new TxHandlerImpl(getWorldManager()), this.getPeerScoringManager());
+                            getWorldManager().getPendingState(), new TxHandlerImpl(getWorldManager()), this.getPeerScoringManager(), blockValidationRule);
                     handler.start();
                     this.messageHandler = handler;
                 }
@@ -105,7 +107,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
             BlockNodeInformation nodeInformation = new BlockNodeInformation();
             BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, getChannelManager());
             this.nodeBlockProcessor = new NodeBlockProcessor(store, blockchain, this.getWorldManager(), nodeInformation, blockSyncService);
-            this.syncProcessor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.DEFAULT);
+            this.syncProcessor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.DEFAULT, blockValidationRule);
         }
         return this.nodeBlockProcessor;
     }

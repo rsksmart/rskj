@@ -21,6 +21,7 @@ package co.rsk.net.simples;
 import co.rsk.net.*;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.StatusMessage;
+import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.HashUtil;
 
@@ -77,8 +78,7 @@ public class SimpleNode {
     public NodeID getNodeID() { return nodeID; }
 
     public static SimpleNode createNode() {
-        NodeMessageHandler handler = NodeMessageHandlerUtil.createHandler();
-        handler.disablePoWValidation();
+        NodeMessageHandler handler = NodeMessageHandlerUtil.createHandler(new DummyBlockValidationRule());
         return new SimpleNode(handler);
     }
 }

@@ -24,6 +24,7 @@ import co.rsk.net.messages.MessageType;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
 
@@ -100,9 +101,9 @@ public class SimpleAsyncNode extends SimpleNode {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
-        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, null, null, null, null);
-        handler.disablePoWValidation();
+        DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
+        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockValidationRule);
+        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, null, null, null, null, blockValidationRule);
         return new SimpleAsyncNode(handler, syncProcessor);
     }
 

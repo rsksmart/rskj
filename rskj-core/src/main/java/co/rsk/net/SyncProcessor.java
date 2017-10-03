@@ -11,7 +11,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
-import org.ethereum.validator.ProofOfWorkRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -26,7 +25,7 @@ import java.util.*;
 public class SyncProcessor implements SyncEventsHandler {
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
-    private static BlockValidationRule blockValidationRule = new ProofOfWorkRule();
+    private BlockValidationRule blockValidationRule;
     private static BlockParentDependantValidationRule blockParentValidationRule = new BlockDifficultyRule();
     private final SyncConfiguration syncConfiguration;
 
@@ -41,11 +40,12 @@ public class SyncProcessor implements SyncEventsHandler {
     private SyncPeerProcessor syncPeerProcessor;
     private MessageChannel selectedPeer;
 
-    public SyncProcessor(Blockchain blockchain, BlockSyncService blockSyncService, SyncConfiguration syncConfiguration) {
+    public SyncProcessor(Blockchain blockchain, BlockSyncService blockSyncService, SyncConfiguration syncConfiguration, BlockValidationRule blockValidationRule) {
         // TODO(mc) implement FollowBestChain
         this.blockchain = blockchain;
         this.blockSyncService = blockSyncService;
         this.syncConfiguration = syncConfiguration;
+        this.blockValidationRule = blockValidationRule;
         this.peerStatuses = new PeersInformation(syncConfiguration);
         this.syncState = new DecidingSyncState(this.syncConfiguration, this, peerStatuses);
         this.syncPeerProcessor = new SyncPeerProcessor();

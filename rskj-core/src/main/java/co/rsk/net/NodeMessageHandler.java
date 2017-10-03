@@ -22,6 +22,7 @@ import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
+import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.PendingState;
@@ -29,7 +30,6 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.validator.ProofOfWorkRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +58,8 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private final PeerScoringManager peerScoringManager;
     private long lastStatusSent = System.currentTimeMillis();
 
-    private ProofOfWorkRule powRule;
+    @Nonnull
+    private BlockValidationRule blockValidationRule;
 
     private TransactionNodeInformation transactionNodeInformation;
 
@@ -76,23 +77,18 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                               @Nullable final ChannelManager channelManager,
                               @Nullable final PendingState pendingState,
                               final TxHandler txHandler,
-                              @Nullable final PeerScoringManager peerScoringManager) {
+                              @Nullable final PeerScoringManager peerScoringManager,
+                              @Nonnull BlockValidationRule blockValidationRule) {
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
         this.pendingState = pendingState;
-        powRule = new ProofOfWorkRule();
+        this.blockValidationRule = blockValidationRule;
         transactionNodeInformation = new TransactionNodeInformation();
         this.txHandler = txHandler;
         this.lastImportedBestBlock = System.currentTimeMillis();
         this.cleanMsgTimestamp = this.lastImportedBestBlock;
         this.peerScoringManager = peerScoringManager;
-    }
-
-    @VisibleForTesting
-    public NodeMessageHandler disablePoWValidation() {
-        this.powRule = null;
-        return this;
     }
 
     /**
@@ -257,19 +253,12 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
      * @return true if the block is valid, false otherwise.
      */
     private boolean isValidBlock(@Nonnull final Block block) {
-        if (powRule == null)
-            return true;
-
         try {
-
-            if (!powRule.isValid(block))
-                return false;
-
+            return blockValidationRule.isValid(block);
         } catch (Exception e) {
             logger.error("Failed to validate PoW from block {}: {}", block.getShortHash(), e);
             return false;
         }
-        return true;
     }
 
     /**

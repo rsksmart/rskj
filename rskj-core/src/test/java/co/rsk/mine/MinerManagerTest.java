@@ -22,7 +22,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
 import co.rsk.test.World;
-import co.rsk.validators.BlockValidationRule;
+import co.rsk.validators.DummyBlockValidationRule;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.ethereum.core.Block;
@@ -349,13 +349,7 @@ public class MinerManagerTest {
         worldManager.setBlockchain(blockchain);
         ethereum.repository = (org.ethereum.facade.Repository)blockchain.getRepository();
         ethereum.worldManager = worldManager;
-        return new MinerServerImpl(ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(), blockchain.getRepository(), RskSystemProperties.RSKCONFIG, new BlockValidationRuleDummy());
+        return new MinerServerImpl(ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(), blockchain.getRepository(), RskSystemProperties.RSKCONFIG, new DummyBlockValidationRule());
     }
 
-    public static class BlockValidationRuleDummy implements BlockValidationRule {
-        @Override
-        public boolean isValid(Block block) {
-            return true;
-        }
-    }
 }
