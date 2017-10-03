@@ -1107,12 +1107,9 @@ public class Web3Impl implements Web3 {
 
             if (fr.address instanceof String) {
                 logFilter.withContractAddress(stringHexToByteArray((String) fr.address));
-            } else if (fr.address instanceof List<?> && !((List)fr.address).isEmpty() && ((List)fr.address).get(0) instanceof String) {
-                List<byte[]> addr = new ArrayList<>();
-                for (String s : ((List<String>) fr.address)) {
-                    addr.add(stringHexToByteArray(s));
-                }
-                logFilter.withContractAddress(addr.toArray(new byte[0][]));
+            } else if (fr.address instanceof Collection<?>) {
+                byte[][] addresses = collectionToBytesArray((Collection<?>) fr.address);
+                logFilter.withContractAddress(addresses);
             }
 
             if (fr.topics != null) {
@@ -1121,12 +1118,10 @@ public class Web3Impl implements Web3 {
                         logFilter.withTopic(null);
                     } else if (topic instanceof String) {
                         logFilter.withTopic(new DataWord(stringHexToByteArray((String) topic)).getData());
-                    } else if (topic instanceof List<?> && !((List)topic).isEmpty() && ((List)topic).get(0) instanceof String) {
-                        List<byte[]> t = new ArrayList<>();
-                        for (String s : ((List<String>) topic)) {
-                            t.add(new DataWord(stringHexToByteArray(s)).getData());
-                        }
-                        logFilter.withTopic(t.toArray(new byte[0][]));
+                    } else if (topic instanceof Collection<?>) {
+                        byte[][] topics = collectionToBytesArray((Collection<?>) topic);
+
+                        logFilter.withTopic(topics);
                     }
                 }
             }
@@ -1167,6 +1162,15 @@ public class Web3Impl implements Web3 {
                 logger.debug("eth_newFilter(" + fr + "): " + str);
             }
         }
+    }
+
+    private byte[][] collectionToBytesArray(Collection<?> topic) {
+        Collection<?> iterable = topic;
+
+        return iterable.stream()
+                .filter(String.class::isInstance).map(String.class::cast)
+                .map(TypeConverter::stringHexToByteArray)
+                .toArray(byte[][]::new);
     }
 
     @Override
