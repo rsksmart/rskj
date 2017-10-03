@@ -1134,7 +1134,14 @@ public class Web3Impl implements Web3 {
             if (fr.address instanceof String) {
                 logFilter.withContractAddress(stringHexToByteArray((String) fr.address));
             } else if (fr.address instanceof Collection<?>) {
-                byte[][] addresses = collectionToBytesArray((Collection<?>) fr.address);
+                Collection<?> iterable = (Collection<?>)fr.address;
+
+                byte[][] addresses = iterable.stream()
+                        .filter(String.class::isInstance)
+                        .map(String.class::cast)
+                        .map(TypeConverter::stringHexToByteArray)
+                        .toArray(byte[][]::new);
+
                 logFilter.withContractAddress(addresses);
             }
 
@@ -1145,7 +1152,15 @@ public class Web3Impl implements Web3 {
                     } else if (topic instanceof String) {
                         logFilter.withTopic(new DataWord(stringHexToByteArray((String) topic)).getData());
                     } else if (topic instanceof Collection<?>) {
-                        byte[][] topics = collectionToBytesArray((Collection<?>) topic);
+                        Collection<?> iterable = (Collection<?>)topic;
+
+                        byte[][] topics = iterable.stream()
+                                .filter(String.class::isInstance)
+                                .map(String.class::cast)
+                                .map(TypeConverter::stringHexToByteArray)
+                                .map(DataWord::new)
+                                .map(DataWord::getData)
+                                .toArray(byte[][]::new);
 
                         logFilter.withTopic(topics);
                     }
@@ -1188,15 +1203,6 @@ public class Web3Impl implements Web3 {
                 logger.debug("eth_newFilter(" + fr + "): " + str);
             }
         }
-    }
-
-    private static byte[][] collectionToBytesArray(Collection<?> topic) {
-        Collection<?> iterable = topic;
-
-        return iterable.stream()
-                .filter(String.class::isInstance).map(String.class::cast)
-                .map(TypeConverter::stringHexToByteArray)
-                .toArray(byte[][]::new);
     }
 
     @Override
