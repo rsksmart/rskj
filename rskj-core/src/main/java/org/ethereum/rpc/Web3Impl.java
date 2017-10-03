@@ -1164,7 +1164,7 @@ public class Web3Impl implements Web3 {
         }
     }
 
-    private byte[][] collectionToBytesArray(Collection<?> topic) {
+    private static byte[][] collectionToBytesArray(Collection<?> topic) {
         Collection<?> iterable = topic;
 
         return iterable.stream()
