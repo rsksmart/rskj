@@ -101,7 +101,8 @@ class RemascTestRunner {
         List<Block> mainChainBlocks = new ArrayList<>();
         this.blockchain.tryToConnect(this.genesis);
 
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
+        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(),
+                blockchain, blockchain.getBlockStore(), null);
 
         for(int i = 0; i <= this.initialHeight; i++) {
             int finalI = i;
@@ -109,6 +110,11 @@ class RemascTestRunner {
                     .filter(siblingElement -> siblingElement.getHeightToBeIncluded() == finalI)
                     .collect(Collectors.toList());
             List<BlockHeader> blockSiblings = new ArrayList<>();
+            //Si voy a agregar siblings
+            BigInteger cummDifficulty = BigInteger.ZERO;
+            if (siblingsForCurrentHeight.size() > 0){
+                cummDifficulty = blockchain.getTotalDifficulty();
+            }
             for(SiblingElement sibling : siblingsForCurrentHeight) {
                 Sha3Hash siblingCoinbase = PegTestUtils.createHash3();
                 Block mainchainSiblingParent = mainChainBlocks.get(sibling.getHeight() - 1);
@@ -117,6 +123,9 @@ class RemascTestRunner {
                         this.txSigningKey, null);
 
                 blockSiblings.add(siblingBlock.getHeader());
+
+
+                blockchain.getBlockStore().saveBlock(siblingBlock, cummDifficulty.add(siblingBlock.getCumulativeDifficulty()), false);
                 this.addedSiblings.add(siblingBlock);
             }
 
