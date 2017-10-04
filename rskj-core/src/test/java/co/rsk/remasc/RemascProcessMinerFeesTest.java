@@ -285,8 +285,7 @@ public class RemascProcessMinerFeesTest {
     public void processMinersFeesWithOneSiblingBrokenSelectionRuleBlockWithLowerDifficulty() throws IOException, ClassNotFoundException {
         processMinersFeesWithOneSiblingBrokenSelectionRule("lowerDifficulty");
     }
-
-
+    
     @Test
     public void siblingThatBreaksSelectionRuleGetsPunished() throws IOException {
         BlockChainBuilder builder = new BlockChainBuilder();

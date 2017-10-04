@@ -93,7 +93,10 @@ public class RemascTestBlockStore extends AbstractBlockstore {
         ByteArrayWrapper wHash = wrap(block.getHash());
         blocks.add(block);
         hashIndex.put(wHash, block);
-        numberIndex.put(block.getNumber(), block);
+
+        if (mainChain)
+            numberIndex.put(block.getNumber(), block);
+
         totalDifficulty = totalDifficulty.add(block.getCumulativeDifficulty());
 
         List<IndexedBlockStore.BlockInfo> blockInfos = index.get(block.getNumber());
