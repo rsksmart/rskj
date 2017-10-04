@@ -78,7 +78,7 @@ public class DecidingSyncStateTest {
     }
 
     @Test
-    public void doesntSwitchToDecidingWith1PeerAfter119Seconds() {
+    public void doesntSwitchToDecidingWith1PeerBeforeTimeout() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         PeersInformation knownPeers = new PeersInformation(syncConfiguration);
@@ -87,7 +87,7 @@ public class DecidingSyncStateTest {
 
         knownPeers.registerPeer(new SimpleMessageChannel());
         syncState.newPeerStatus();
-        syncState.tick(Duration.ofSeconds(119));
+        syncState.tick(syncConfiguration.getTimeoutWaitingPeers().minusSeconds(1L));
         Assert.assertFalse(syncEventsHandler.canStartSyncingWasCalled());
     }
 }

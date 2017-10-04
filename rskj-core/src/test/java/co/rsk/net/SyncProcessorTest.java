@@ -86,7 +86,8 @@ public class SyncProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.DEFAULT, new ProofOfWorkRule());
+        SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
+        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, syncConfiguration, new ProofOfWorkRule());
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
         processor.processStatus(sender, status);
 
@@ -98,10 +99,10 @@ public class SyncProcessorTest {
         Assert.assertTrue(ids.contains(sender.getPeerNodeID()));
         Assert.assertTrue(sender.getMessages().isEmpty());
 
-        processor.onTimePassed(Duration.ofMinutes(1));
+        processor.onTimePassed(syncConfiguration.getTimeoutWaitingPeers().dividedBy(2));
         Assert.assertTrue(sender.getMessages().isEmpty());
 
-        processor.onTimePassed(Duration.ofMinutes(1));
+        processor.onTimePassed(syncConfiguration.getTimeoutWaitingPeers().dividedBy(2));
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
 

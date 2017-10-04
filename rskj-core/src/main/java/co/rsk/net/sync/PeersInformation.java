@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * This is mostly a workaround because SyncProcessor needs to access MessageChannel instances.
@@ -70,5 +71,11 @@ public class PeersInformation {
         SyncPeerStatus peerStatus = new SyncPeerStatus(messageChannel);
         peerStatuses.put(messageChannel.getPeerNodeID(), peerStatus);
         return peerStatus;
+    }
+
+    public void cleanExpired(Duration expirationTimePeerStatus) {
+        peerStatuses = peerStatuses.entrySet().stream()
+                .filter(e -> !e.getValue().isExpired(expirationTimePeerStatus))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

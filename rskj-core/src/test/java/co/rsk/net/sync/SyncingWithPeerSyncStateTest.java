@@ -27,10 +27,10 @@ public class SyncingWithPeerSyncStateTest {
         syncState.newPeerStatus();
         Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
 
-        syncState.tick(Duration.ofSeconds(20));
+        syncState.tick(syncConfiguration.getTimeoutWaitingRequest().dividedBy(2));
         Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
 
-        syncState.tick(Duration.ofSeconds(20));
+        syncState.tick(syncConfiguration.getTimeoutWaitingRequest());
         Assert.assertTrue(syncEventsHandler.stopSyncingWasCalled());
     }
 
@@ -47,11 +47,11 @@ public class SyncingWithPeerSyncStateTest {
             syncState.messageSent();
             Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
 
-            syncState.tick(Duration.ofSeconds(20));
+            syncState.tick(syncConfiguration.getTimeoutWaitingRequest().dividedBy(2));
             Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
         }
 
-        syncState.tick(Duration.ofSeconds(20));
+        syncState.tick(syncConfiguration.getTimeoutWaitingRequest());
         Assert.assertTrue(syncEventsHandler.stopSyncingWasCalled());
     }
 

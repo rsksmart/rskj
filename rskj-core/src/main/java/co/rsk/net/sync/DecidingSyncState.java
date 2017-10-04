@@ -31,10 +31,12 @@ public class DecidingSyncState implements SyncState {
     @Override
     public void tick(Duration duration) {
         timeElapsed = timeElapsed.plus(duration);
-        if (knownPeers.count() > 0 &&
+        if (knownPeers.countIf(s -> !s.isExpired(syncConfiguration.getExpirationTimePeerStatus())) > 0 &&
                 timeElapsed.compareTo(syncConfiguration.getTimeoutWaitingPeers()) >= 0) {
 
             syncEventsHandler.canStartSyncing();
+        } else {
+            knownPeers.cleanExpired(syncConfiguration.getExpirationTimePeerStatus());
         }
     }
 }
