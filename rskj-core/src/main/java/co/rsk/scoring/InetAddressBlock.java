@@ -1,7 +1,6 @@
 package co.rsk.scoring;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 
 import java.net.InetAddress;
 import java.util.Arrays;
