@@ -160,6 +160,7 @@ dependencies {
     testCompile "org.powermock:powermock-core:${powermockitoVersion}"
     testCompile "org.powermock:powermock-module-testng:${powermockitoVersion}"
     testCompile "org.powermock:powermock-module-junit4:${powermockitoVersion}"
+    testCompile "org.powermock:powermock-api-mockito:${powermockitoVersion}"
     testCompile "co.rsk:lll-compiler:${rskLllVersion}"
     testCompile "org.springframework:spring-tx:${springVersion}"
     testCompile "org.springframework:spring-orm:${springVersion}"
