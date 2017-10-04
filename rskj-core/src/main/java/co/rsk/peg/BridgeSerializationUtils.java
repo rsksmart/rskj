@@ -185,9 +185,13 @@ public class BridgeSerializationUtils {
         byte[][] bytes = new byte[map.size() * 2][];
         int n = 0;
 
-        for (Map.Entry<Sha256Hash, Long> entry : map.entrySet()) {
-            bytes[n++] = RLP.encodeElement(entry.getKey().getBytes());
-            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getValue()));
+        List<Sha256Hash> sortedHashes = new ArrayList<>(map.keySet());
+        Collections.sort(sortedHashes);
+
+        for (Sha256Hash hash : sortedHashes) {
+            Long value = map.get(hash);
+            bytes[n++] = RLP.encodeElement(hash.getBytes());
+            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(value));
         }
 
         return RLP.encodeList(bytes);
