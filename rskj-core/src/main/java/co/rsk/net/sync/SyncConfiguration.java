@@ -46,4 +46,8 @@ public final class SyncConfiguration {
     public final Duration getExpirationTimePeerStatus() {
         return expirationTimePeerStatus;
     }
+
+    public final int getMaxSkeletonChunks() {
+        return 5;
+    }
 }

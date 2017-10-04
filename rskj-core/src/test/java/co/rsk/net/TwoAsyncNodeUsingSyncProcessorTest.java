@@ -22,8 +22,11 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.messages.NewBlockHashMessage;
 import co.rsk.net.simples.SimpleAsyncNode;
+import co.rsk.net.utils.SyncUtils;
 import co.rsk.test.World;
+import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -46,10 +49,10 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false);
 
         node1.sendFullStatusTo(node2);
-        // find connection point
-        node1.waitUntilNTasksWithTimeout(11);
+        // sync setup
+        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(100, 0));
         // get blocks
-        node1.waitExactlyNTasksWithTimeout(100);
+        node2.waitExactlyNTasksWithTimeout(100);
 
         node1.joinWithTimeout();
         node2.joinWithTimeout();
@@ -71,8 +74,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false);
 
         node1.sendFullStatusTo(node2);
-        // find connection point
-        node2.waitUntilNTasksWithTimeout(16);
+        // sync setup
+        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(400, 0));
         // get blocks
         node2.waitExactlyNTasksWithTimeout(400);
 
@@ -97,7 +100,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         node1.sendFullStatusTo(node2);
         // find connection point
-        node2.waitUntilNTasksWithTimeout(8);
+        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(10, 0));
         // get blocks
         node2.waitExactlyNTasksWithTimeout(10);
 
@@ -140,11 +143,11 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         node1.sendFullStatusTo(node2);
         // find connection point
-        node2.waitUntilNTasksWithTimeout(7);
+        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(10, 5));
         // get blocks
         node2.waitExactlyNTasksWithTimeout(5);
         // drain node 1 for next test
-        node1.waitExactlyNTasksWithTimeout(11);
+        node1.clearQueue();
 
         node2.sendFullStatusTo(node1);
         // receive status, do nothing
@@ -188,4 +191,76 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
     }
+
+    @Test
+    public void stopSyncingAfter5SkeletonChunks() {
+        Blockchain b1 = BlockChainBuilder.ofSize(30, false);
+        Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 2000, false);
+
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2);
+
+        Assert.assertEquals(30, node1.getBestBlock().getNumber());
+        Assert.assertEquals(2030, node2.getBestBlock().getNumber());
+
+        node2.sendFullStatusTo(node1);
+        // sync setup
+        node1.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(2030, 30));
+        // request bodies
+        node1.waitExactlyNTasksWithTimeout(930);
+
+        Assert.assertTrue(node1.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getExpectedResponses().isEmpty());
+
+        Assert.assertEquals(960, node1.getBestBlock().getNumber());
+        Assert.assertEquals(2030, node2.getBestBlock().getNumber());
+
+        node1.joinWithTimeout();
+        node2.joinWithTimeout();
+
+        Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
+    }
+
+    @Test
+    public void syncInMultipleStepsWithLongBlockchain() {
+        Blockchain b1 = BlockChainBuilder.ofSize(300, false);
+        Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 4000, false);
+
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2);
+
+        Assert.assertEquals(300, node1.getBestBlock().getNumber());
+        Assert.assertEquals(4300, node2.getBestBlock().getNumber());
+
+        for (int i = 0; i < 5; i++) {
+            int skippedChunks = 300 / 192;
+            int expectedBestBlockNumber = Math.min(4300, 192 * skippedChunks + 192 * 5 * (i + 1));
+            long currentBestBlock = node1.getBestBlock().getNumber();
+            // at the beginning and the end we might have different number of blocks to download
+            int blocksToDownload = Math.toIntExact(expectedBestBlockNumber - currentBestBlock);
+
+            node2.sendFullStatusTo(node1);
+            node1.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(4300, currentBestBlock));
+
+            // request bodies
+            node1.waitExactlyNTasksWithTimeout(blocksToDownload);
+
+            Assert.assertTrue(node1.getExpectedResponses().isEmpty());
+            Assert.assertTrue(node2.getExpectedResponses().isEmpty());
+
+            Assert.assertEquals(expectedBestBlockNumber, node1.getBestBlock().getNumber());
+            Assert.assertEquals(4300, node2.getBestBlock().getNumber());
+
+            // this prevents node2's queue to get full
+            node2.clearQueue();
+        }
+
+        node1.joinWithTimeout();
+        node2.joinWithTimeout();
+
+        Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
+    }
+
 }

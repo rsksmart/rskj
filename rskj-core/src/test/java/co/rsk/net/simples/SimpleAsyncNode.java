@@ -36,7 +36,7 @@ import java.util.concurrent.*;
  */
 public class SimpleAsyncNode extends SimpleNode {
     private ExecutorService executor = Executors.newSingleThreadExecutor();
-    private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(1000);
+    private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(1500);
     private SyncProcessor syncProcessor;
 
     public SimpleAsyncNode(MessageHandler handler) {
@@ -85,6 +85,10 @@ public class SimpleAsyncNode extends SimpleNode {
         int remaining = this.futures.size();
         if (remaining > 0)
             throw new RuntimeException("Too many tasks. Expected " + number + " but got " + (number + remaining));
+    }
+
+    public void clearQueue() {
+        this.futures.clear();
     }
 
     public Map<Long, MessageType> getExpectedResponses() {

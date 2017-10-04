@@ -13,8 +13,8 @@ import java.util.Optional;
 public class SyncPeerProcessor {
 
     // Status used to find connection point
-    private long findingHeight;
-    private long findingInterval;
+    private long start;
+    private long end;
 
     // Connection point found or not
     private Optional<Long> connectionPoint = Optional.empty();
@@ -27,8 +27,8 @@ public class SyncPeerProcessor {
     private Map<Long, MessageType> expectedResponses = new HashMap<>();
 
     public void startFindConnectionPoint(long height) {
-        this.findingInterval = height / 2;
-        this.findingHeight = height - this.findingInterval;
+        this.start = 0;
+        this.end = height;
         this.connectionPoint = Optional.empty();
     }
 
@@ -40,34 +40,24 @@ public class SyncPeerProcessor {
         return this.connectionPoint;
     }
 
-    public long getFindingHeight() { return this.findingHeight; }
+    public long getFindingHeight() {
+        return this.start + (this.end - this.start) / 2;
+    }
 
     public void updateFound() {
-        if (this.findingInterval == -1) {
-            this.setConnectionPoint(this.findingHeight);
-            return;
+        this.start = getFindingHeight();
+
+        if (this.end - this.start <= 1) {
+            this.setConnectionPoint(this.start);
         }
-
-        this.findingInterval = Math.abs(this.findingInterval / 2);
-
-        if (this.findingInterval <= 1)
-            this.findingInterval = 2;
-
-        this.findingHeight += this.findingInterval;
     }
 
     public void updateNotFound() {
-        if (this.findingInterval == 1) {
-            this.setConnectionPoint(this.findingHeight - 1);
-            return;
+        this.end = getFindingHeight();
+
+        if (this.end - this.start <= 1) {
+            this.setConnectionPoint(this.start);
         }
-
-        this.findingInterval = -Math.abs(this.findingInterval / 2);
-
-        if (this.findingInterval == 0)
-            this.findingInterval = -1;
-
-        this.findingHeight += this.findingInterval;
     }
 
     public boolean hasSkeleton() {
