@@ -172,6 +172,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(1, false);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false);
 
+        node2.getSyncProcessor().setSelectedPeer(node1.getMessageChannel(node2));
         node2.receiveMessageFrom(node1, new NewBlockHashMessage(node1.getBestBlock().getHash()));
 
         // send hash

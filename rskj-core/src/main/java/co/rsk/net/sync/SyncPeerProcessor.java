@@ -1,10 +1,12 @@
 package co.rsk.net.sync;
 
+import co.rsk.net.NodeID;
 import co.rsk.net.messages.MessageType;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,9 +18,14 @@ public class SyncPeerProcessor {
     private Optional<List<BlockIdentifier>> skeleton = Optional.empty();
     private int lastRequestedLinkIndex;
     private long lastRequestId;
+    private NodeID selectedPeerId;
 
     // Expected response
     private Map<Long, MessageType> expectedResponses = new HashMap<>();
+
+    public SyncPeerProcessor(@Nullable NodeID selectedPeerId) {
+        this.selectedPeerId = selectedPeerId;
+    }
 
     public boolean hasSkeleton() {
         return this.skeleton.isPresent();
@@ -56,5 +63,9 @@ public class SyncPeerProcessor {
     @VisibleForTesting
     public Map<Long, MessageType> getExpectedResponses() {
         return this.expectedResponses;
+    }
+
+    public NodeID getSelectedPeerId() {
+        return selectedPeerId;
     }
 }

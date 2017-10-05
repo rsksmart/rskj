@@ -5,9 +5,9 @@ import java.time.Duration;
 
 public class DecidingSyncState implements SyncState {
     private Duration timeElapsed = Duration.ZERO;
-    private PeersInformation knownPeers;
     private SyncConfiguration syncConfiguration;
     private SyncEventsHandler syncEventsHandler;
+    private PeersInformation knownPeers;
 
     public DecidingSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, PeersInformation knownPeers) {
         this.syncConfiguration = syncConfiguration;

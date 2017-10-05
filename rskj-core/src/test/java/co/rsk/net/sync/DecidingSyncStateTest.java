@@ -1,11 +1,6 @@
 package co.rsk.net.sync;
 
-import co.rsk.net.NodeMessageHandlerUtil;
-import co.rsk.net.SyncProcessor;
 import co.rsk.net.simples.SimpleMessageChannel;
-import co.rsk.net.simples.SimpleNode;
-import co.rsk.test.builders.BlockChainBuilder;
-import org.ethereum.core.Blockchain;
 import org.junit.Assert;
 import org.junit.Test;
 
