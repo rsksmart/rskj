@@ -49,6 +49,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.mockito.internal.util.reflection.Whitebox;
 import org.spongycastle.crypto.params.ECPrivateKeyParameters;
 import org.spongycastle.crypto.signers.ECDSASigner;
 import org.spongycastle.util.encoders.Hex;
@@ -1000,6 +1001,8 @@ public class BridgeSupportTest {
         Repository repository = new RepositoryImpl();
         repository.addBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
         Repository track = repository.startTracking();
+        Block executionBlock = Mockito.mock(Block.class);
+        Mockito.when(executionBlock.getNumber()).thenReturn(10L);
 
         BridgeRegTestConstants bridgeConstants = (BridgeRegTestConstants) RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
 
@@ -1040,6 +1043,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress);
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, provider, btcBlockStore, btcBlockChain);
+        Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
 
         byte[] bits = new byte[1];
         bits[0] = 0x01;
@@ -1077,6 +1081,8 @@ public class BridgeSupportTest {
     public void registerBtcTransactionLockTx() throws BlockStoreException, AddressFormatException, IOException {
         Repository repository = new RepositoryImpl();
         repository.addBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
+        Block executionBlock = Mockito.mock(Block.class);
+        Mockito.when(executionBlock.getNumber()).thenReturn(10L);
 
         Repository track = repository.startTracking();
 
@@ -1095,7 +1101,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress);
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, provider, btcBlockStore, btcBlockChain);
-
+        Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
         byte[] bits = new byte[1];
         bits[0] = 0x01;
         List<Sha256Hash> hashes = new ArrayList<>();
