@@ -1,8 +1,10 @@
 package co.rsk.net.sync;
 
 
+import co.rsk.net.MessageChannel;
+
 public class SimpleSyncEventsHandler implements SyncEventsHandler {
-    private boolean canStartSyncingWasCalled_;
+    private boolean startSyncingWasCalled_;
     private boolean stopSyncingWasCalled_;
 
     @Override
@@ -12,15 +14,15 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     public void sendBlockHashRequestTo(long height) { }
 
     @Override
-    public void canStartSyncing() {
-        this.canStartSyncingWasCalled_ = true;
+    public void startSyncing(MessageChannel peer) {
+        this.startSyncingWasCalled_ = true;
     }
 
     @Override
     public void stopSyncing() { this.stopSyncingWasCalled_ = true; }
 
-    public boolean canStartSyncingWasCalled() {
-        return canStartSyncingWasCalled_;
+    public boolean startSyncingWasCalled() {
+        return startSyncingWasCalled_;
     }
 
     public boolean stopSyncingWasCalled() {

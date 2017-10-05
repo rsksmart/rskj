@@ -591,7 +591,7 @@ public class SyncProcessorTest {
         List<BlockIdentifier> blockIdentifiers = buildSkeleton(blockchain, connectionPoint, step, linkCount);
 
         processor.setSelectedPeer(sender);
-        processor.getConnectionPointFinder().setConnectionPoint(0);
+        processor.setConnectionPoint(0);
         long lastRequestId = processor.registerExpectedResponse(MessageType.SKELETON_RESPONSE_MESSAGE);
         processor.processSkeletonResponse(sender, new SkeletonResponseMessage(lastRequestId, blockIdentifiers));
 
@@ -644,7 +644,7 @@ public class SyncProcessorTest {
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
         processor.setSelectedPeer(sender);
-        processor.getConnectionPointFinder().setConnectionPoint(25);
+        processor.setConnectionPoint(25);
 
         int connectionPoint = 25;
         int step = 10;

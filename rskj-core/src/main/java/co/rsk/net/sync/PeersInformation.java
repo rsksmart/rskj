@@ -17,11 +17,11 @@ import java.util.stream.Collectors;
  *     things such as the underlying communication channel.
  */
 public class PeersInformation {
-    private final SyncConfiguration syncCofiguration;
+    private final SyncConfiguration syncConfiguration;
     private Map<NodeID, SyncPeerStatus> peerStatuses = new HashMap<>();
 
     public PeersInformation(SyncConfiguration syncConfiguration){
-        this.syncCofiguration = syncConfiguration;
+        this.syncConfiguration = syncConfiguration;
     }
 
     public int count() {
@@ -38,7 +38,7 @@ public class PeersInformation {
     public SyncPeerStatus getOrRegisterPeer(MessageChannel messageChannel) {
         SyncPeerStatus peerStatus = this.peerStatuses.get(messageChannel.getPeerNodeID());
 
-        if (peerStatus != null && !peerStatus.isExpired(syncCofiguration.getExpirationTimePeerStatus()))
+        if (peerStatus != null && !peerStatus.isExpired(syncConfiguration.getExpirationTimePeerStatus()))
             return peerStatus;
 
         return this.registerPeer(messageChannel);
@@ -51,7 +51,7 @@ public class PeersInformation {
 
     public Optional<MessageChannel> getBestPeer() {
         return peerStatuses.entrySet().stream()
-                .filter(e -> !e.getValue().isExpired(syncCofiguration.getExpirationTimePeerStatus()))
+                .filter(e -> !e.getValue().isExpired(syncConfiguration.getExpirationTimePeerStatus()))
                 .max(this::bestPeerComparator)
                 .map(Map.Entry::getValue)
                 .map(SyncPeerStatus::getMessageChannel);
