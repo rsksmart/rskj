@@ -40,11 +40,16 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.internal.util.reflection.Whitebox;
+import org.mockito.invocation.InvocationOnMock;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 6/8/2016.
@@ -610,6 +615,80 @@ public class BridgeTest {
         RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
+    @Test
+    public void isBtcTxHashAlreadyProcessed_normalFlow() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        Set<Sha256Hash> hashes = new HashSet<>();
+        when(bridgeSupportMock.isBtcTxHashAlreadyProcessed(any(Sha256Hash.class))).then((InvocationOnMock invocation) -> hashes.contains(invocation.getArgumentAt(0, Sha256Hash.class)));
 
+        hashes.add(Sha256Hash.of("hash_1".getBytes()));
+        hashes.add(Sha256Hash.of("hash_2".getBytes()));
+        hashes.add(Sha256Hash.of("hash_3".getBytes()));
+        hashes.add(Sha256Hash.of("hash_4".getBytes()));
 
+        for (Sha256Hash hash : hashes) {
+            Assert.assertTrue(bridge.isBtcTxHashAlreadyProcessed(new Object[]{hash.toString()}));
+            verify(bridgeSupportMock).isBtcTxHashAlreadyProcessed(hash);
+        }
+        Assert.assertFalse(bridge.isBtcTxHashAlreadyProcessed(new Object[]{Sha256Hash.of("anything".getBytes()).toString()}));
+        Assert.assertFalse(bridge.isBtcTxHashAlreadyProcessed(new Object[]{Sha256Hash.of("yetanotheranything".getBytes()).toString()}));
+    }
+
+    @Test
+    public void isBtcTxHashAlreadyProcessed_exception() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+
+        boolean thrown = false;
+        try {
+            bridge.isBtcTxHashAlreadyProcessed(new Object[]{"notahash"});
+        } catch (RuntimeException e) {
+            thrown = true;
+        }
+        Assert.assertTrue(thrown);
+        verify(bridgeSupportMock, never()).isBtcTxHashAlreadyProcessed(any());
+    }
+
+    @Test
+    public void getBtcTxHashProcessedHeight_normalFlow() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        Map<Sha256Hash, Long> hashes = new HashMap<>();
+        when(bridgeSupportMock.getBtcTxHashProcessedHeight(any(Sha256Hash.class))).then((InvocationOnMock invocation) -> hashes.get(invocation.getArgumentAt(0, Sha256Hash.class)));
+
+        hashes.put(Sha256Hash.of("hash_1".getBytes()), 1L);
+        hashes.put(Sha256Hash.of("hash_2".getBytes()), 2L);
+        hashes.put(Sha256Hash.of("hash_3".getBytes()), 3L);
+        hashes.put(Sha256Hash.of("hash_4".getBytes()), 4L);
+
+        for (Map.Entry<Sha256Hash, Long> entry : hashes.entrySet()) {
+            Assert.assertEquals(entry.getValue(), bridge.getBtcTxHashProcessedHeight(new Object[]{entry.getKey().toString()}));
+            verify(bridgeSupportMock).getBtcTxHashProcessedHeight(entry.getKey());
+        }
+        Assert.assertNull(bridge.getBtcTxHashProcessedHeight(new Object[]{Sha256Hash.of("anything".getBytes()).toString()}));
+    }
+
+    @Test
+    public void getBtcTxHashProcessedHeight_exception() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+
+        boolean thrown = false;
+        try {
+            bridge.getBtcTxHashProcessedHeight(new Object[]{"notahash"});
+        } catch (RuntimeException e) {
+            thrown = true;
+        }
+        Assert.assertTrue(thrown);
+        verify(bridgeSupportMock, never()).getBtcTxHashProcessedHeight(any());
+    }
 }
