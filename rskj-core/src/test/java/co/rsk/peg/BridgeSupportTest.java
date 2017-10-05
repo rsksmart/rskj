@@ -18,6 +18,17 @@
 
 package co.rsk.peg;
 
+import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.crypto.Sha3Hash;
+import co.rsk.peg.simples.SimpleRskTransaction;
+import co.rsk.test.builders.BlockChainBuilder;
+import com.google.common.collect.Lists;
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.peg.simples.SimpleBlockChain;
+import co.rsk.peg.simples.SimpleBridgeStorageProvider;
+import co.rsk.peg.simples.SimpleWallet;
+import org.spongycastle.util.encoders.Hex;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
@@ -25,17 +36,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.crypto.Sha3Hash;
 import co.rsk.db.RepositoryImpl;
-import co.rsk.peg.simples.SimpleBlockChain;
-import co.rsk.peg.simples.SimpleBridgeStorageProvider;
-import co.rsk.peg.simples.SimpleRskTransaction;
-import co.rsk.peg.simples.SimpleWallet;
-import co.rsk.test.builders.BlockChainBuilder;
-import com.google.common.collect.Lists;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.RegTestConfig;
@@ -51,7 +52,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.spongycastle.crypto.params.ECPrivateKeyParameters;
 import org.spongycastle.crypto.signers.ECDSASigner;
-import org.spongycastle.util.encoders.Hex;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -63,6 +63,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 6/9/2016.
@@ -1134,26 +1137,68 @@ public class BridgeSupportTest {
         Assert.assertTrue(hasEnoughConfirmations(20));
     }
 
+    @Test
+    public void isBtcTxHashAlreadyProcessed() throws IOException, BlockStoreException {
+        BridgeSupport bridgeSupport = new BridgeSupport(
+                null,
+                null,
+                getBridgeStorageProviderMockWithProcessedHashes(),
+                null,
+                null);
+
+        for (int i = 0; i < 10; i++) {
+            Assert.assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(Sha256Hash.of(("hash_" + i).getBytes())));
+        }
+        Assert.assertFalse(bridgeSupport.isBtcTxHashAlreadyProcessed(Sha256Hash.of("anything".getBytes())));
+    }
+
+    @Test
+    public void getBtcTxHashProcessedHeight() throws IOException, BlockStoreException {
+        BridgeSupport bridgeSupport = new BridgeSupport(
+                null,
+                null,
+                getBridgeStorageProviderMockWithProcessedHashes(),
+                null,
+                null);
+
+        for (int i = 0; i < 10; i++) {
+            Assert.assertEquals((long) i, bridgeSupport.getBtcTxHashProcessedHeight(Sha256Hash.of(("hash_" + i).getBytes())).longValue());
+        }
+        Assert.assertEquals(-1L, bridgeSupport.getBtcTxHashProcessedHeight(Sha256Hash.of("anything".getBytes())).longValue());
+    }
+
+    private BridgeStorageProvider getBridgeStorageProviderMockWithProcessedHashes() throws IOException {
+        Map<Sha256Hash, Long> mockedHashes = new HashMap<>();
+        BridgeStorageProvider providerMock = mock(BridgeStorageProvider.class);
+        when(providerMock.getBtcTxHashesAlreadyProcessed()).thenReturn(mockedHashes);
+
+        for (int i = 0; i < 10; i++) {
+            mockedHashes.put(Sha256Hash.of(("hash_" + i).getBytes()), (long) i);
+        }
+
+        return providerMock;
+    }
+
     public boolean hasEnoughConfirmations(long currentBlockNumber) throws Exception{
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
         byte[] blockHash = new byte[32];
         new SecureRandom().nextBytes(blockHash);
-        TransactionInfo transactionInfo = Mockito.mock(TransactionInfo.class);
-        Mockito.when(transactionInfo.getBlockHash()).thenReturn(blockHash);
+        TransactionInfo transactionInfo = mock(TransactionInfo.class);
+        when(transactionInfo.getBlockHash()).thenReturn(blockHash);
 
-        ReceiptStore receiptStore = Mockito.mock(ReceiptStore.class);
-        Mockito.when(receiptStore.get(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(transactionInfo);
+        ReceiptStore receiptStore = mock(ReceiptStore.class);
+        when(receiptStore.get(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(transactionInfo);
 
-        org.ethereum.core.Block includedBlock = Mockito.mock(org.ethereum.core.Block.class);
-        Mockito.when(includedBlock.getNumber()).thenReturn(Long.valueOf(10));
+        org.ethereum.core.Block includedBlock = mock(org.ethereum.core.Block.class);
+        when(includedBlock.getNumber()).thenReturn(Long.valueOf(10));
 
-        org.ethereum.db.BlockStore blockStore = Mockito.mock(org.ethereum.db.BlockStore.class);
-        Mockito.when(blockStore.getBlockByHash(Mockito.any())).thenReturn(includedBlock);
+        org.ethereum.db.BlockStore blockStore = mock(org.ethereum.db.BlockStore.class);
+        when(blockStore.getBlockByHash(Mockito.any())).thenReturn(includedBlock);
 
-        org.ethereum.core.Block currentBlock = Mockito.mock(org.ethereum.core.Block.class);
-        Mockito.when(currentBlock.getNumber()).thenReturn(Long.valueOf(currentBlockNumber));
+        org.ethereum.core.Block currentBlock = mock(org.ethereum.core.Block.class);
+        when(currentBlock.getNumber()).thenReturn(Long.valueOf(currentBlockNumber));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
         BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, currentBlock, receiptStore, blockStore);
