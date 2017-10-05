@@ -21,20 +21,16 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import org.apache.commons.codec.binary.Hex;
 import org.ethereum.util.RLP;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.ethereum.util.RLPList;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
@@ -42,44 +38,13 @@ import static org.mockito.Matchers.anyVararg;
 
 @RunWith(PowerMockRunner.class)
 public class BridgeSerializationUtilsTest {
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownAfterClass() throws Exception {
-    }
-
     @PrepareForTest({ RLP.class })
     @Test
     public void testSerializeMapOfHashesToLong() throws Exception {
         PowerMockito.mockStatic(RLP.class);
-        // Identity prepending byte '0xdd'
-        PowerMockito.when(RLP.encodeElement(any(byte[].class))).then((InvocationOnMock invocation) -> {
-            byte[] arg = invocation.getArgumentAt(0, byte[].class);
-            byte[] result = new byte[arg.length+1];
-            result[0] = (byte) 0xdd;
-            for (int i = 0; i < arg.length; i++)
-                result[i+1] = arg[i];
-            return result;
-        });
-        // To byte array prepending byte '0xff'
-        PowerMockito.when(RLP.encodeBigInteger(any(BigInteger.class))).then((InvocationOnMock invocation) -> {
-            byte[] arg = (invocation.getArgumentAt(0, BigInteger.class)).toByteArray();
-            byte[] result = new byte[arg.length+1];
-            result[0] = (byte) 0xff;
-            for (int i = 0; i < arg.length; i++)
-                result[i+1] = arg[i];
-            return result;
-        });
-        // To flat byte array
-        PowerMockito.when(RLP.encodeList(anyVararg())).then((InvocationOnMock invocation) -> {
-            Object[] args = invocation.getArguments();
-            byte[][] bytes = new byte[args.length][];
-            for (int i = 0; i < args.length; i++)
-                bytes[i] = (byte[])args[i];
-            return flatten(bytes);
-        });
+        mock_RLP_encodeElement();
+        mock_RLP_encodeBigInteger();
+        mock_RLP_encodeList();
 
         Map<Sha256Hash, Long> sample = new HashMap<>();
         sample.put(Sha256Hash.wrap(charNTimes('b', 64)), 1L);
@@ -99,6 +64,92 @@ public class BridgeSerializationUtilsTest {
             expectedBuilder.append(Hex.encodeHexString(BigInteger.valueOf(sample.get(Sha256Hash.wrap(key))).toByteArray()));
         }
         assertEquals(expectedBuilder.toString(), hexResult);
+    }
+
+    @Test
+    public void testdeserializeMapOfHashesToLong_emptyOrNull() throws Exception {
+        assertEquals(BridgeSerializationUtils.deserializeMapOfHashesToLong(null), new HashMap<>());
+        assertEquals(BridgeSerializationUtils.deserializeMapOfHashesToLong(new byte[]{}), new HashMap<>());
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void testdeserializeMapOfHashesToLong_nonEmpty() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_decode2();
+
+        byte[] sample = new byte[]{(byte)'b', 7, (byte)'d', 76, (byte) 'a', 123};
+        Map<Sha256Hash, Long> result = BridgeSerializationUtils.deserializeMapOfHashesToLong(sample);
+        assertEquals(3, result.size());
+        assertEquals(7L, result.get(Sha256Hash.wrap(charNTimes('b', 64))).longValue());
+        assertEquals(76L, result.get(Sha256Hash.wrap(charNTimes('d', 64))).longValue());
+        assertEquals(123L, result.get(Sha256Hash.wrap(charNTimes('a', 64))).longValue());
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void testdeserializeMapOfHashesToLong_nonEmptyOddSize() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_decode2();
+
+        byte[] sample = new byte[]{(byte)'b', 7, (byte)'d', 76, (byte) 'a'};
+        Map<Sha256Hash, Long> result = BridgeSerializationUtils.deserializeMapOfHashesToLong(sample);
+        assertEquals(BridgeSerializationUtils.deserializeMapOfHashesToLong(new byte[]{}), new HashMap<>());
+    }
+
+    private void mock_RLP_encodeElement() {
+        // Identity prepending byte '0xdd'
+        PowerMockito.when(RLP.encodeElement(any(byte[].class))).then((InvocationOnMock invocation) -> {
+            byte[] arg = invocation.getArgumentAt(0, byte[].class);
+            byte[] result = new byte[arg.length+1];
+            result[0] = (byte) 0xdd;
+            for (int i = 0; i < arg.length; i++)
+                result[i+1] = arg[i];
+            return result;
+        });
+    }
+
+    private void mock_RLP_encodeBigInteger() {
+        // To byte array prepending byte '0xff'
+        PowerMockito.when(RLP.encodeBigInteger(any(BigInteger.class))).then((InvocationOnMock invocation) -> {
+            byte[] arg = (invocation.getArgumentAt(0, BigInteger.class)).toByteArray();
+            byte[] result = new byte[arg.length+1];
+            result[0] = (byte) 0xff;
+            for (int i = 0; i < arg.length; i++)
+                result[i+1] = arg[i];
+            return result;
+        });
+    }
+
+    private void mock_RLP_encodeList() {
+        // To flat byte array
+        PowerMockito.when(RLP.encodeList(anyVararg())).then((InvocationOnMock invocation) -> {
+            Object[] args = invocation.getArguments();
+            byte[][] bytes = new byte[args.length][];
+            for (int i = 0; i < args.length; i++)
+                bytes[i] = (byte[])args[i];
+            return flatten(bytes);
+        });
+    }
+
+    private void mock_RLP_decode2() {
+        // Identity prepending byte '0xdd'
+        PowerMockito.when(RLP.decode2(any(byte[].class))).then((InvocationOnMock invocation) -> {
+            RLPList result = new RLPList();
+            byte[] arg = invocation.getArgumentAt(0, byte[].class);
+            // Odd byte -> hash of 64 bytes with same char from byte
+            // Even byte -> long from byte
+            for (int i = 0; i < arg.length; i++) {
+                byte[] element;
+                if (i%2 == 0) {
+                    element = Hex.decodeHex(charNTimes((char) arg[i], 64).toCharArray());
+                } else {
+                    element = new byte[]{arg[i]};
+                }
+                result.add(() -> element);
+            }
+            return new ArrayList<>(Arrays.asList(result));
+        });
     }
 
     private String charNTimes(char c, int n) {
