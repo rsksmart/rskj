@@ -1,6 +1,6 @@
 package co.rsk.net.utils;
 
-import co.rsk.net.sync.SyncPeerProcessor;
+import co.rsk.net.sync.ConnectionPointFinder;
 
 public final class SyncUtils {
     public static int syncSetupRequests(long bestBlock, long currentBestBlock) {
@@ -21,15 +21,15 @@ public final class SyncUtils {
     }
 
     private static int binarySearchExpectedRequests(long bestBlock, long currentBestBlock) {
-        SyncPeerProcessor syncPeerProcessor = new SyncPeerProcessor();
-        syncPeerProcessor.startFindConnectionPoint(bestBlock);
+        ConnectionPointFinder connectionPointFinder = new ConnectionPointFinder();
+        connectionPointFinder.startFindConnectionPoint(bestBlock);
         int i = 0;
-        while (!syncPeerProcessor.getConnectionPoint().isPresent()) {
+        while (!connectionPointFinder.getConnectionPoint().isPresent()) {
             i++;
-            if (syncPeerProcessor.getFindingHeight() <= currentBestBlock)
-                syncPeerProcessor.updateFound();
+            if (connectionPointFinder.getFindingHeight() <= currentBestBlock)
+                connectionPointFinder.updateFound();
             else
-                syncPeerProcessor.updateNotFound();
+                connectionPointFinder.updateNotFound();
         }
 
         return i;

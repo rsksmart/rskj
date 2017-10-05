@@ -40,6 +40,7 @@ public class SyncProcessor implements SyncEventsHandler {
     private Map<NodeID, MessageChannel> senders = new HashMap<>();
     private SyncState syncState;
     private SyncPeerProcessor syncPeerProcessor;
+    private ConnectionPointFinder connectionPointFinder;
     private MessageChannel selectedPeer;
 
     public SyncProcessor(Blockchain blockchain, BlockSyncService blockSyncService, SyncConfiguration syncConfiguration, BlockValidationRule blockValidationRule) {
@@ -51,6 +52,7 @@ public class SyncProcessor implements SyncEventsHandler {
         this.peerStatuses = new PeersInformation(syncConfiguration);
         this.syncState = new DecidingSyncState(this.syncConfiguration, this, peerStatuses);
         this.syncPeerProcessor = new SyncPeerProcessor();
+        this.connectionPointFinder = new ConnectionPointFinder();
     }
 
     public void processStatus(MessageChannel sender, Status status) {
@@ -100,24 +102,25 @@ public class SyncProcessor implements SyncEventsHandler {
 
         // We use 0 so we start iterarting from the second element,
         // because we always have the first element in our blockchain
-        int linkIndex = syncPeerProcessor.getLastRequestedLinkIndex().orElse(0) + 1;
 
-        if (linkIndex >= skeleton.size() || linkIndex > syncConfiguration.getMaxSkeletonChunks()) {
+        int linkIndex = syncPeerProcessor.getLastRequestedLinkIndex() + 1;
+
+        if (linkIndex >= syncPeerProcessor.getSkeleton().size() || linkIndex > syncConfiguration.getMaxSkeletonChunks()) {
             logger.trace("Finished verifying headers from peer {}", peer.getPeerNodeID());
             sendNextBodyRequestTo(peer);
             return;
         }
 
-        long connectionPoint = syncPeerProcessor.getConnectionPoint().orElseGet(() -> {
-            logger.error("Sending BlockHeaders request to peer {} but the connection point is missing", peer.getPeerNodeID());
-            return 0L;
-        });
+//        long connectionPoint = syncPeerProcessor.getConnectionPoint().orElseGet(() -> {
+//            logger.error("Sending BlockHeaders request to peer {} but the connection point is missing", peer.getPeerNodeID());
+//            return 0L;
+//        });
 
         byte[] hash = skeleton.get(linkIndex).getHash();
         long height = skeleton.get(linkIndex).getNumber();
 
         long lastHeight = skeleton.get(linkIndex - 1).getNumber();
-        long previousKnownHeight = Math.max(lastHeight, connectionPoint);
+        long previousKnownHeight = Math.max(lastHeight, connectionPointFinder.getConnectionPoint().get());
 
         int count = (int)(height - previousKnownHeight);
 
@@ -152,9 +155,9 @@ public class SyncProcessor implements SyncEventsHandler {
 
     private void findConnectionPointOf(NodeID nodeID, Status status) {
         logger.trace("Find connection point with node {}", nodeID);
-        syncPeerProcessor.startFindConnectionPoint(status.getBestBlockNumber());
+        connectionPointFinder.startFindConnectionPoint(status.getBestBlockNumber());
         MessageChannel channel = peerStatuses.getPeer(nodeID).getMessageChannel();
-        this.sendBlockHashRequestTo(channel, syncPeerProcessor.getFindingHeight());
+        this.sendBlockHashRequestTo(channel, connectionPointFinder.getFindingHeight());
     }
 
     public void processBlockHashResponse(MessageChannel sender, BlockHashResponseMessage message) {
@@ -167,22 +170,22 @@ public class SyncProcessor implements SyncEventsHandler {
         Block block = this.blockchain.getBlockByHash(message.getHash());
 
         if (block != null)
-            syncPeerProcessor.updateFound();
+            connectionPointFinder.updateFound();
         else
-            syncPeerProcessor.updateNotFound();
+            connectionPointFinder.updateNotFound();
 
-        Optional<Long> cp = syncPeerProcessor.getConnectionPoint();
+        Optional<Long> cp = connectionPointFinder.getConnectionPoint();
         if (cp.isPresent()) {
             sendSkeletonRequestTo(sender, cp.get());
             return;
         }
 
-        sendBlockHashRequestTo(sender, syncPeerProcessor.getFindingHeight());
+        sendBlockHashRequestTo(sender, connectionPointFinder.getFindingHeight());
     }
 
-    public void processBlockHeadersResponse(MessageChannel sender, BlockHeadersResponseMessage message) {
-        logger.trace("Process block headers response from node {}", sender.getPeerNodeID());
-        this.getPeerStatusAndSaveSender(sender);
+    public void processBlockHeadersResponse(MessageChannel peer, BlockHeadersResponseMessage message) {
+        logger.trace("Process block headers response from node {}", peer.getPeerNodeID());
+        this.getPeerStatusAndSaveSender(peer);
 
         if (!syncPeerProcessor.isExpectedResponse(message.getId(), message.getMessageType()))
             return;
@@ -206,7 +209,7 @@ public class SyncProcessor implements SyncEventsHandler {
                 parent = this.blockchain.getBlockByHash(header.getParentHash());
 
             if (parent != null && !validateBlockWithHeader(block, parent)) {
-                logger.trace("Couldn't validate block header {} hash {} from peer {}", header.getNumber(), HashUtil.shortHash(header.getHash()), sender.getPeerNodeID());
+                logger.trace("Couldn't validate block header {} hash {} from peer {}", header.getNumber(), HashUtil.shortHash(header.getHash()), peer.getPeerNodeID());
                 stopSyncing();
                 return;
             }
@@ -216,7 +219,7 @@ public class SyncProcessor implements SyncEventsHandler {
             parent = block;
         }
 
-        this.sendNextBlockHeadersRequestTo(sender);
+        this.sendNextBlockHeadersRequestTo(peer);
     }
 
     private boolean validateBlockWithHeader(Block block, Block parent) {
@@ -238,25 +241,30 @@ public class SyncProcessor implements SyncEventsHandler {
         return true;
     }
 
-    public void processBodyResponse(MessageChannel sender, BodyResponseMessage message) {
-        logger.trace("Process body response from node {}", sender.getPeerNodeID());
-        this.getPeerStatusAndSaveSender(sender);
+    public void processBodyResponse(MessageChannel peer, BodyResponseMessage message) {
+        logger.trace("Process body response from node {}", peer.getPeerNodeID());
+        this.getPeerStatusAndSaveSender(peer);
 
         if (!syncPeerProcessor.isExpectedResponse(message.getId(), message.getMessageType()))
             return;
 
         PendingBodyResponse expected = pendingBodyResponses.get(message.getId());
 
-        if (expected == null || !sender.getPeerNodeID().equals(expected.nodeID)) {
+        if (expected == null || !peer.getPeerNodeID().equals(expected.nodeID)) {
             // TODO(mc) do peer scoring and banning
             return;
         }
 
         // TODO(mc): validate transactions and uncles are part of this block (with header)
-        blockSyncService.processBlock(sender, Block.fromValidData(expected.header, message.getTransactions(), message.getUncles()));
-        this.getPeerStatusAndSaveSender(sender);
+        blockSyncService.processBlock(peer, Block.fromValidData(expected.header, message.getTransactions(), message.getUncles()));
 
-        this.sendNextBodyRequestTo(sender);
+        if (bodiesToRequest.isEmpty()) {
+            logger.trace("Finished syncing with peer {}", peer.getPeerNodeID());
+            stopSyncing();
+            return;
+        }
+
+        this.sendNextBodyRequestTo(peer);
     }
 
     public void processBlockResponse(MessageChannel sender, BlockResponseMessage message) {
@@ -296,6 +304,11 @@ public class SyncProcessor implements SyncEventsHandler {
         return syncPeerProcessor;
     }
 
+    @VisibleForTesting
+    public ConnectionPointFinder getConnectionPointFinder() {
+        return connectionPointFinder;
+    }
+
     public SyncPeerStatus getPeerStatusAndSaveSender(MessageChannel sender) {
         SyncPeerStatus peerStatus = peerStatuses.getOrRegisterPeer(sender);
         return peerStatus;
@@ -331,7 +344,9 @@ public class SyncProcessor implements SyncEventsHandler {
             if (this.blockchain.getStatus().hasLowerDifficulty(status)) {
                 setSyncState(new SyncingWithPeerSyncState(this.syncConfiguration, this));
                 this.syncPeerProcessor = new SyncPeerProcessor();
+                this.connectionPointFinder = new ConnectionPointFinder();
                 this.selectedPeer = bp;
+
                 this.findConnectionPointOf(bp.getPeerNodeID(), status);
             }
         });
