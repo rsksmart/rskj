@@ -40,7 +40,7 @@ import static org.mockito.Matchers.anyVararg;
 public class BridgeSerializationUtilsTest {
     @PrepareForTest({ RLP.class })
     @Test
-    public void testSerializeMapOfHashesToLong() throws Exception {
+    public void serializeMapOfHashesToLong() throws Exception {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_encodeElement();
         mock_RLP_encodeBigInteger();
@@ -67,14 +67,14 @@ public class BridgeSerializationUtilsTest {
     }
 
     @Test
-    public void testdeserializeMapOfHashesToLong_emptyOrNull() throws Exception {
+    public void desserializeMapOfHashesToLong_emptyOrNull() throws Exception {
         assertEquals(BridgeSerializationUtils.deserializeMapOfHashesToLong(null), new HashMap<>());
         assertEquals(BridgeSerializationUtils.deserializeMapOfHashesToLong(new byte[]{}), new HashMap<>());
     }
 
     @PrepareForTest({ RLP.class })
     @Test
-    public void testdeserializeMapOfHashesToLong_nonEmpty() throws Exception {
+    public void desserializeMapOfHashesToLong_nonEmpty() throws Exception {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_decode2();
 
@@ -88,7 +88,7 @@ public class BridgeSerializationUtilsTest {
 
     @PrepareForTest({ RLP.class })
     @Test
-    public void testdeserializeMapOfHashesToLong_nonEmptyOddSize() throws Exception {
+    public void desserializeMapOfHashesToLong_nonEmptyOddSize() throws Exception {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_decode2();
 
