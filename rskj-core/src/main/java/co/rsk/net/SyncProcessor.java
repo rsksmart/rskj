@@ -14,7 +14,6 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.HashUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.time.Duration;
 import java.util.*;
@@ -54,7 +53,7 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     public void processStatus(MessageChannel sender, Status status) {
-        logger.trace("Receiving syncState from node {} block {} {}", sender.getPeerNodeID(), status.getBestBlockNumber(), Hex.toHexString(status.getBestBlockHash()).substring(0, 6), status.getBestBlockHash());
+        logger.trace("Receiving syncState from node {} block {} {}", sender.getPeerNodeID(), status.getBestBlockNumber(), HashUtil.shortHash(status.getBestBlockHash()).substring(0, 6), status.getBestBlockHash());
         this.peerStatuses.getOrRegisterPeer(sender).setStatus(status);
         this.syncState.newPeerStatus();
     }
@@ -159,7 +158,7 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     public void processBlockHashResponse(MessageChannel sender, BlockHashResponseMessage message) {
-        logger.trace("Process block hash response from node {} hash {}", sender.getPeerNodeID(), Hex.toHexString(message.getHash()).substring(0, 6));
+        logger.trace("Process block hash response from node {} hash {}", sender.getPeerNodeID(), HashUtil.shortHash(message.getHash()));
         this.getPeerStatusAndSaveSender(sender);
 
         if (!syncPeerProcessor.isExpectedResponse(message.getId(), message.getMessageType()))
@@ -276,7 +275,7 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     public void processNewBlockHash(MessageChannel sender, NewBlockHashMessage message) {
-        logger.trace("Process new block hash from node {} hash {}", sender.getPeerNodeID(), Hex.toHexString(message.getBlockHash()).substring(0, 6));
+        logger.trace("Process new block hash from node {} hash {}", sender.getPeerNodeID(), HashUtil.shortHash(message.getBlockHash()));
         byte[] hash = message.getBlockHash();
 
         if (this.blockSyncService.getBlockFromStoreOrBlockchain(hash) != null)
