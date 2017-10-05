@@ -30,14 +30,12 @@ public class SyncProcessor implements SyncEventsHandler {
     private static BlockParentDependantValidationRule blockParentValidationRule = new BlockDifficultyRule();
     private final SyncConfiguration syncConfiguration;
 
-    private long lastRequestId;
     private Blockchain blockchain;
     private BlockSyncService blockSyncService;
     private PeersInformation peerStatuses;
     private Map<Long, PendingBodyResponse> pendingBodyResponses = new HashMap<>();
-    private Queue<BlockHeader> bodiesToRequest = new ArrayDeque<>();
+    private Queue<BlockHeader> pendingHeaders = new ArrayDeque<>();
 
-    private Map<NodeID, MessageChannel> senders = new HashMap<>();
     private SyncState syncState;
     private SyncPeerProcessor syncPeerProcessor;
     private ConnectionPointFinder connectionPointFinder;
@@ -64,8 +62,8 @@ public class SyncProcessor implements SyncEventsHandler {
     public void sendSkeletonRequestTo(MessageChannel peer, long height) {
         logger.trace("Send skeleton request to node {} height {}", peer.getPeerNodeID(), height);
         syncState.messageSent();
-        peer.sendMessage(new SkeletonRequestMessage(++lastRequestId, height));
-        syncPeerProcessor.registerExpectedResponse(lastRequestId, MessageType.SKELETON_RESPONSE_MESSAGE);
+        long lastRequestId = syncPeerProcessor.registerExpectedResponse(MessageType.SKELETON_RESPONSE_MESSAGE);
+        peer.sendMessage(new SkeletonRequestMessage(lastRequestId, height));
     }
 
     public void processSkeletonResponse(MessageChannel sender, SkeletonResponseMessage message) {
@@ -126,14 +124,14 @@ public class SyncProcessor implements SyncEventsHandler {
 
         logger.trace("Send headers request to node {}", peer.getPeerNodeID());
         syncState.messageSent();
-        peer.sendMessage(new BlockHeadersRequestMessage(++lastRequestId, hash, count));
-        syncPeerProcessor.registerExpectedResponse(lastRequestId, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
+        long lastRequestId = syncPeerProcessor.registerExpectedResponse(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
+        peer.sendMessage(new BlockHeadersRequestMessage(lastRequestId, hash, count));
         syncPeerProcessor.setLastRequestedLinkIndex(linkIndex);
     }
 
     private void sendNextBodyRequestTo(MessageChannel peer) {
         // We request one body at a time, from oldest to newest
-        BlockHeader header = this.bodiesToRequest.poll();
+        BlockHeader header = this.pendingHeaders.poll();
         if (header == null) {
             logger.trace("Finished syncing with peer {}", peer.getPeerNodeID());
             stopSyncing();
@@ -141,16 +139,16 @@ public class SyncProcessor implements SyncEventsHandler {
         }
 
         logger.trace("Send body request block {} hash {} to peer {}", header.getNumber(), HashUtil.shortHash(header.getHash()), peer.getPeerNodeID());
-        peer.sendMessage(new BodyRequestMessage(++lastRequestId, header.getHash()));
-        syncPeerProcessor.registerExpectedResponse(lastRequestId, MessageType.BODY_RESPONSE_MESSAGE);
+        long lastRequestId = syncPeerProcessor.registerExpectedResponse(MessageType.BODY_RESPONSE_MESSAGE);
+        peer.sendMessage(new BodyRequestMessage(lastRequestId, header.getHash()));
         pendingBodyResponses.put(lastRequestId, new PendingBodyResponse(peer.getPeerNodeID(), header));
     }
 
     public void sendBlockHashRequestTo(MessageChannel peer, long height) {
         logger.trace("Send hash request to node {} height {}", peer.getPeerNodeID(), height);
         syncState.messageSent();
-        peer.sendMessage(new BlockHashRequestMessage(++lastRequestId, height));
-        syncPeerProcessor.registerExpectedResponse(lastRequestId, MessageType.BLOCK_HASH_RESPONSE_MESSAGE);
+        long lastRequestId = syncPeerProcessor.registerExpectedResponse(MessageType.BLOCK_HASH_RESPONSE_MESSAGE);
+        peer.sendMessage(new BlockHashRequestMessage(lastRequestId, height));
     }
 
     private void findConnectionPointOf(NodeID nodeID, Status status) {
@@ -214,7 +212,7 @@ public class SyncProcessor implements SyncEventsHandler {
                 return;
             }
 
-            bodiesToRequest.add(header);
+            pendingHeaders.add(header);
 
             parent = block;
         }
@@ -258,7 +256,7 @@ public class SyncProcessor implements SyncEventsHandler {
         // TODO(mc): validate transactions and uncles are part of this block (with header)
         blockSyncService.processBlock(peer, Block.fromValidData(expected.header, message.getTransactions(), message.getUncles()));
 
-        if (bodiesToRequest.isEmpty()) {
+        if (pendingHeaders.isEmpty()) {
             logger.trace("Finished syncing with peer {}", peer.getPeerNodeID());
             stopSyncing();
             return;
@@ -285,9 +283,9 @@ public class SyncProcessor implements SyncEventsHandler {
             return;
 
         if (!syncState.isSyncing()) {
-            sender.sendMessage(new BlockRequestMessage(++lastRequestId, hash));
+            long lastRequestId = syncPeerProcessor.registerExpectedResponse(MessageType.BLOCK_RESPONSE_MESSAGE);
+            sender.sendMessage(new BlockRequestMessage(lastRequestId, hash));
             this.getPeerStatusAndSaveSender(sender);
-            syncPeerProcessor.registerExpectedResponse(lastRequestId, MessageType.BLOCK_RESPONSE_MESSAGE);
         }
     }
 
@@ -356,7 +354,7 @@ public class SyncProcessor implements SyncEventsHandler {
         // TODO(mc) do better cleanup
         this.selectedPeer = null;
 //        this.syncPeerProcessor = null;
-        this.bodiesToRequest.clear();
+        this.pendingHeaders.clear();
         this.pendingBodyResponses.clear();
         setSyncState(new DecidingSyncState(this.syncConfiguration, this, peerStatuses));
     }

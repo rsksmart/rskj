@@ -15,6 +15,7 @@ public class SyncPeerProcessor {
     // Block identifiers retrieved in skeleton
     private Optional<List<BlockIdentifier>> skeleton = Optional.empty();
     private int lastRequestedLinkIndex;
+    private long lastRequestId;
 
     // Expected response
     private Map<Long, MessageType> expectedResponses = new HashMap<>();
@@ -37,8 +38,10 @@ public class SyncPeerProcessor {
 
     public void setLastRequestedLinkIndex(int index) { this.lastRequestedLinkIndex = index; }
 
-    public void registerExpectedResponse(long responseId, MessageType type) {
-        this.expectedResponses.put(responseId, type);
+    public long registerExpectedResponse(MessageType type) {
+        lastRequestId++;
+        this.expectedResponses.put(lastRequestId, type);
+        return lastRequestId;
     }
 
     public boolean isExpectedResponse(long responseId, MessageType type) {

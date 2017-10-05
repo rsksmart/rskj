@@ -295,10 +295,10 @@ public class SyncProcessorTest {
         SyncProcessor processor = new SyncProcessor(blockchain, null, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
 
         List<BlockHeader> headers = new ArrayList<>();
-        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(98, headers);
-
         processor.getPeerStatusAndSaveSender(sender);
-        processor.getSyncPeerProcessor().registerExpectedResponse(98, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
+
+        long lastRequestId = processor.getSyncPeerProcessor().registerExpectedResponse(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
+        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(lastRequestId, headers);
         processor.processBlockHeadersResponse(sender, response);
         Assert.assertTrue(sender.getMessages().isEmpty());
 
@@ -315,10 +315,10 @@ public class SyncProcessorTest {
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
-        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(100, headers);
+        long lastRequestId = processor.getSyncPeerProcessor().registerExpectedResponse(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
+        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(lastRequestId, headers);
 
         processor.getPeerStatusAndSaveSender(sender);
-        processor.getSyncPeerProcessor().registerExpectedResponse(100, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
         processor.processBlockHeadersResponse(sender, response);
         Assert.assertTrue(sender.getMessages().isEmpty());
 
@@ -338,10 +338,10 @@ public class SyncProcessorTest {
         for (int k = 10; k >= 2; k--)
             headers.add(otherBlockchain.getBlockByNumber(k).getHeader());
 
-        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(99, headers);
+        long lastRequestId = processor.getSyncPeerProcessor().registerExpectedResponse(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
+        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(lastRequestId, headers);
 
         processor.getPeerStatusAndSaveSender(sender);
-        processor.getSyncPeerProcessor().registerExpectedResponse(99, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
         processor.processBlockHeadersResponse(sender, response);
         Assert.assertEquals(0, sender.getMessages().size());
         Assert.assertEquals(0, processor.getSyncPeerProcessor().getExpectedResponses().size());
@@ -357,10 +357,10 @@ public class SyncProcessorTest {
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
-        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(97, headers);
+        long lastRequestId = processor.getSyncPeerProcessor().registerExpectedResponse(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
+        BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(lastRequestId, headers);
 
         processor.getPeerStatusAndSaveSender(sender);
-        processor.getSyncPeerProcessor().registerExpectedResponse(97, MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
         processor.processBlockHeadersResponse(sender, response);
         Assert.assertTrue(sender.getMessages().isEmpty());
         Assert.assertTrue(processor.getSyncPeerProcessor().getExpectedResponses().isEmpty());
@@ -373,10 +373,10 @@ public class SyncProcessorTest {
 
         SyncProcessor processor = new SyncProcessor(blockchain, null, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
 
-        BodyResponseMessage response = new BodyResponseMessage(100, null, null);
+        long lastRequestId = processor.getSyncPeerProcessor().registerExpectedResponse(MessageType.BODY_RESPONSE_MESSAGE);
+        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, null, null);
 
         processor.getPeerStatusAndSaveSender(sender);
-        processor.getSyncPeerProcessor().registerExpectedResponse(100, MessageType.BODY_RESPONSE_MESSAGE);
         processor.processBodyResponse(sender, response);
         Assert.assertTrue(sender.getMessages().isEmpty());
         Assert.assertTrue(processor.getSyncPeerProcessor().getExpectedResponses().isEmpty());
@@ -400,11 +400,11 @@ public class SyncProcessorTest {
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
-        BodyResponseMessage response = new BodyResponseMessage(96, transactions, uncles);
+        long lastRequestId = processor.getSyncPeerProcessor().registerExpectedResponse(MessageType.BODY_RESPONSE_MESSAGE);
+        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
 
         processor.getPeerStatusAndSaveSender(sender);
-        processor.getSyncPeerProcessor().registerExpectedResponse(96, MessageType.BODY_RESPONSE_MESSAGE);
-        processor.expectBodyResponseFor(96, sender.getPeerNodeID(), block.getHeader());
+        processor.expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
         processor.processBodyResponse(sender, response);
 
         Assert.assertTrue(sender.getMessages().isEmpty());
@@ -455,11 +455,11 @@ public class SyncProcessorTest {
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
         List<Transaction> transactions = block.getTransactionsList();
         List<BlockHeader> uncles = block.getUncleList();
-        BodyResponseMessage response = new BodyResponseMessage(96, transactions, uncles);
+        long lastRequestId = processor.getSyncPeerProcessor().registerExpectedResponse(MessageType.BODY_RESPONSE_MESSAGE);
+        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
 
         processor.getPeerStatusAndSaveSender(sender);
-        processor.getSyncPeerProcessor().registerExpectedResponse(96, MessageType.BODY_RESPONSE_MESSAGE);
-        processor.expectBodyResponseFor(96, sender.getPeerNodeID(), block.getHeader());
+        processor.expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
         processor.processBodyResponse(sender, response);
 
         Assert.assertTrue(sender.getMessages().isEmpty());
@@ -485,10 +485,10 @@ public class SyncProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
-        BlockResponseMessage response = new BlockResponseMessage(96, block);
+        long lastRequestId = processor.getSyncPeerProcessor().registerExpectedResponse(MessageType.BLOCK_RESPONSE_MESSAGE);
+        BlockResponseMessage response = new BlockResponseMessage(lastRequestId, block);
 
         processor.getPeerStatusAndSaveSender(sender);
-        processor.getSyncPeerProcessor().registerExpectedResponse(96, MessageType.BLOCK_RESPONSE_MESSAGE);
         processor.processBlockResponse(sender, response);
 
         Assert.assertEquals(11, blockchain.getBestBlock().getNumber());
@@ -590,8 +590,8 @@ public class SyncProcessorTest {
 
         processor.getPeerStatusAndSaveSender(sender);
         processor.getConnectionPointFinder().setConnectionPoint(0);
-        processor.getSyncPeerProcessor().registerExpectedResponse(1, MessageType.SKELETON_RESPONSE_MESSAGE);
-        processor.processSkeletonResponse(sender, new SkeletonResponseMessage(1, blockIdentifiers));
+        long lastRequestId = processor.getSyncPeerProcessor().registerExpectedResponse(MessageType.SKELETON_RESPONSE_MESSAGE);
+        processor.processSkeletonResponse(sender, new SkeletonResponseMessage(lastRequestId, blockIdentifiers));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -625,8 +625,8 @@ public class SyncProcessorTest {
         List<BlockIdentifier> blockIdentifiers = new ArrayList<>();
 
         processor.getPeerStatusAndSaveSender(sender);
-        processor.getSyncPeerProcessor().registerExpectedResponse(1, MessageType.SKELETON_RESPONSE_MESSAGE);
-        processor.processSkeletonResponse(sender, new SkeletonResponseMessage(1, blockIdentifiers));
+        long lastRequestId = processor.getSyncPeerProcessor().registerExpectedResponse(MessageType.SKELETON_RESPONSE_MESSAGE);
+        processor.processSkeletonResponse(sender, new SkeletonResponseMessage(lastRequestId, blockIdentifiers));
 
         Assert.assertTrue(sender.getMessages().isEmpty());
         Assert.assertTrue(processor.getSyncPeerProcessor().getExpectedResponses().isEmpty());
@@ -650,8 +650,8 @@ public class SyncProcessorTest {
         int linkCount = 10;
         List<BlockIdentifier> blockIdentifiers = buildSkeleton(blockchain, connectionPoint, step, linkCount);
 
-        processor.getSyncPeerProcessor().registerExpectedResponse(1, MessageType.SKELETON_RESPONSE_MESSAGE);
-        processor.processSkeletonResponse(sender, new SkeletonResponseMessage(1, blockIdentifiers));
+        long lastRequestId = processor.getSyncPeerProcessor().registerExpectedResponse(MessageType.SKELETON_RESPONSE_MESSAGE);
+        processor.processSkeletonResponse(sender, new SkeletonResponseMessage(lastRequestId, blockIdentifiers));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());

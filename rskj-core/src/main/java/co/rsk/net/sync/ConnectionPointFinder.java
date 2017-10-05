@@ -1,7 +1,6 @@
 package co.rsk.net.sync;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.Block;
 
 import java.util.Optional;
 
