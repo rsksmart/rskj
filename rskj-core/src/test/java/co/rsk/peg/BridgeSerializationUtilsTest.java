@@ -93,8 +93,7 @@ public class BridgeSerializationUtilsTest {
         mock_RLP_decode2();
 
         byte[] sample = new byte[]{(byte)'b', 7, (byte)'d', 76, (byte) 'a'};
-        Map<Sha256Hash, Long> result = BridgeSerializationUtils.deserializeMapOfHashesToLong(sample);
-        assertEquals(BridgeSerializationUtils.deserializeMapOfHashesToLong(new byte[]{}), new HashMap<>());
+        assertEquals(BridgeSerializationUtils.deserializeMapOfHashesToLong(sample), new HashMap<>());
     }
 
     private void mock_RLP_encodeElement() {
@@ -137,8 +136,8 @@ public class BridgeSerializationUtilsTest {
         PowerMockito.when(RLP.decode2(any(byte[].class))).then((InvocationOnMock invocation) -> {
             RLPList result = new RLPList();
             byte[] arg = invocation.getArgumentAt(0, byte[].class);
-            // Odd byte -> hash of 64 bytes with same char from byte
-            // Even byte -> long from byte
+            // Even byte -> hash of 64 bytes with same char from byte
+            // Odd byte -> long from byte
             for (int i = 0; i < arg.length; i++) {
                 byte[] element;
                 if (i%2 == 0) {
