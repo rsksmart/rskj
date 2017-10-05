@@ -18,17 +18,6 @@
 
 package co.rsk.peg;
 
-import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.crypto.Sha3Hash;
-import co.rsk.peg.simples.SimpleRskTransaction;
-import co.rsk.test.builders.BlockChainBuilder;
-import com.google.common.collect.Lists;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.peg.simples.SimpleBlockChain;
-import co.rsk.peg.simples.SimpleBridgeStorageProvider;
-import co.rsk.peg.simples.SimpleWallet;
-import org.spongycastle.util.encoders.Hex;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
@@ -36,7 +25,17 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
+import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.peg.simples.SimpleBlockChain;
+import co.rsk.peg.simples.SimpleBridgeStorageProvider;
+import co.rsk.peg.simples.SimpleRskTransaction;
+import co.rsk.peg.simples.SimpleWallet;
+import co.rsk.test.builders.BlockChainBuilder;
+import com.google.common.collect.Lists;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.RegTestConfig;
@@ -50,8 +49,10 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.mockito.internal.util.reflection.Whitebox;
 import org.spongycastle.crypto.params.ECPrivateKeyParameters;
 import org.spongycastle.crypto.signers.ECDSASigner;
+import org.spongycastle.util.encoders.Hex;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -1000,6 +1001,8 @@ public class BridgeSupportTest {
         Repository repository = new RepositoryImpl();
         repository.addBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
         Repository track = repository.startTracking();
+        Block executionBlock = Mockito.mock(Block.class);
+        Mockito.when(executionBlock.getNumber()).thenReturn(10L);
 
         BridgeRegTestConstants bridgeConstants = (BridgeRegTestConstants) SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
 
@@ -1040,6 +1043,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress);
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, provider, btcBlockStore, btcBlockChain);
+        Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
 
         byte[] bits = new byte[1];
         bits[0] = 0x01;
@@ -1077,6 +1081,8 @@ public class BridgeSupportTest {
     public void registerBtcTransactionLockTx() throws BlockStoreException, AddressFormatException, IOException {
         Repository repository = new RepositoryImpl();
         repository.addBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
+        Block executionBlock = Mockito.mock(Block.class);
+        Mockito.when(executionBlock.getNumber()).thenReturn(10L);
 
         Repository track = repository.startTracking();
 
@@ -1095,7 +1101,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress);
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, provider, btcBlockStore, btcBlockChain);
-
+        Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
         byte[] bits = new byte[1];
         bits[0] = 0x01;
         List<Sha256Hash> hashes = new ArrayList<>();
