@@ -61,8 +61,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(100, node2.getBestBlock().getNumber());
         Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
 
-        Assert.assertTrue(node1.getExpectedResponses().isEmpty());
-        Assert.assertTrue(node2.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
 
         Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
@@ -86,8 +86,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(400, node2.getBestBlock().getNumber());
         Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
 
-        Assert.assertTrue(node1.getExpectedResponses().isEmpty());
-        Assert.assertTrue(node2.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
 
         Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
@@ -113,8 +113,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(10, node2.getBestBlock().getNumber());
         Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
 
-        Assert.assertTrue(node1.getExpectedResponses().isEmpty());
-        Assert.assertTrue(node2.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
 
         Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
@@ -160,8 +160,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(10, node2.getBestBlock().getNumber());
         Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
 
-        Assert.assertTrue(node1.getExpectedResponses().isEmpty());
-        Assert.assertTrue(node2.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
 
         Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
@@ -210,8 +210,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         // request bodies
         node1.waitExactlyNTasksWithTimeout(930);
 
-        Assert.assertTrue(node1.getExpectedResponses().isEmpty());
-        Assert.assertTrue(node2.getExpectedResponses().isEmpty());
+        Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
 
         Assert.assertEquals(960, node1.getBestBlock().getNumber());
         Assert.assertEquals(2030, node2.getBestBlock().getNumber());
@@ -247,8 +247,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
             // request bodies
             node1.waitExactlyNTasksWithTimeout(blocksToDownload);
 
-            Assert.assertTrue(node1.getExpectedResponses().isEmpty());
-            Assert.assertTrue(node2.getExpectedResponses().isEmpty());
+            Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
+            Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
 
             Assert.assertEquals(expectedBestBlockNumber, node1.getBestBlock().getNumber());
             Assert.assertEquals(4300, node2.getBestBlock().getNumber());

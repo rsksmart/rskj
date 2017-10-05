@@ -69,7 +69,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     public void processSkeletonResponse(MessageChannel sender, SkeletonResponseMessage message) {
         logger.trace("Process skeleton response from node {}", sender.getPeerNodeID());
-        this.getPeerStatusAndSaveSender(sender);
+        peerStatuses.getOrRegisterPeer(sender);
 
         if (!syncPeerProcessor.isExpectedResponse(message.getId(), message.getMessageType()))
             return;
@@ -163,7 +163,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     public void processBlockHashResponse(MessageChannel sender, BlockHashResponseMessage message) {
         logger.trace("Process block hash response from node {} hash {}", sender.getPeerNodeID(), HashUtil.shortHash(message.getHash()));
-        this.getPeerStatusAndSaveSender(sender);
+        peerStatuses.getOrRegisterPeer(sender);
 
         if (!syncPeerProcessor.isExpectedResponse(message.getId(), message.getMessageType()))
             return;
@@ -173,7 +173,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     public void processBlockHeadersResponse(MessageChannel peer, BlockHeadersResponseMessage message) {
         logger.trace("Process block headers response from node {}", peer.getPeerNodeID());
-        this.getPeerStatusAndSaveSender(peer);
+        peerStatuses.getOrRegisterPeer(peer);
 
         if (!syncPeerProcessor.isExpectedResponse(message.getId(), message.getMessageType()))
             return;
@@ -231,7 +231,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     public void processBodyResponse(MessageChannel peer, BodyResponseMessage message) {
         logger.trace("Process body response from node {}", peer.getPeerNodeID());
-        this.getPeerStatusAndSaveSender(peer);
+        peerStatuses.getOrRegisterPeer(peer);
 
         if (!syncPeerProcessor.isExpectedResponse(message.getId(), message.getMessageType()))
             return;
@@ -257,7 +257,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     public void processBlockResponse(MessageChannel sender, BlockResponseMessage message) {
         logger.trace("Process block response from node {} block {} {}", sender.getPeerNodeID(), message.getBlock().getNumber(), message.getBlock().getShortHash());
-        this.getPeerStatusAndSaveSender(sender);
+        peerStatuses.getOrRegisterPeer(sender);
 
         if (!syncPeerProcessor.isExpectedResponse(message.getId(), message.getMessageType()))
             return;
@@ -275,7 +275,7 @@ public class SyncProcessor implements SyncEventsHandler {
         if (!syncState.isSyncing()) {
             long lastRequestId = syncPeerProcessor.registerExpectedResponse(MessageType.BLOCK_RESPONSE_MESSAGE);
             sender.sendMessage(new BlockRequestMessage(lastRequestId, hash));
-            this.getPeerStatusAndSaveSender(sender);
+            peerStatuses.getOrRegisterPeer(sender);
         }
     }
 
@@ -288,24 +288,24 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @VisibleForTesting
-    public SyncPeerProcessor getSyncPeerProcessor() {
-        return syncPeerProcessor;
+    public long registerExpectedResponse(MessageType message) {
+        return syncPeerProcessor.registerExpectedResponse(message);
     }
 
     @VisibleForTesting
     public void setSelectedPeer(MessageChannel peer) {
         this.syncPeerProcessor = new SyncPeerProcessor(peer.getPeerNodeID());
-        this.getPeerStatusAndSaveSender(peer);
+        peerStatuses.getOrRegisterPeer(peer);
+    }
+
+    @VisibleForTesting
+    public List<BlockIdentifier> getSkeleton() {
+        return this.syncPeerProcessor.getSkeleton();
     }
 
     @VisibleForTesting
     public ConnectionPointFinder getConnectionPointFinder() {
         return connectionPointFinder;
-    }
-
-    public SyncPeerStatus getPeerStatusAndSaveSender(MessageChannel sender) {
-        SyncPeerStatus peerStatus = peerStatuses.getOrRegisterPeer(sender);
-        return peerStatus;
     }
 
     @VisibleForTesting
@@ -319,7 +319,7 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @VisibleForTesting
-    public Map<Long, MessageType> getExpectedBodyResponses() {
+    public Map<Long, MessageType> getExpectedResponses() {
         // we're not syncing yet
         if (this.syncPeerProcessor == null) {
             return Collections.emptyMap();

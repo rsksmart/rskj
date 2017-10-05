@@ -20,7 +20,6 @@ package co.rsk.net.simples;
 
 import co.rsk.net.*;
 import co.rsk.net.messages.Message;
-import co.rsk.net.messages.MessageType;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -28,7 +27,6 @@ import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
 
-import java.util.Map;
 import java.util.concurrent.*;
 
 /**
@@ -89,10 +87,6 @@ public class SimpleAsyncNode extends SimpleNode {
 
     public void clearQueue() {
         this.futures.clear();
-    }
-
-    public Map<Long, MessageType> getExpectedResponses() {
-        return this.syncProcessor.getExpectedBodyResponses();
     }
 
     public SyncProcessor getSyncProcessor() {
