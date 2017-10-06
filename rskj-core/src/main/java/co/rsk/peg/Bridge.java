@@ -18,11 +18,10 @@
 
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.panic.PanicProcessor;
 import com.google.common.annotations.VisibleForTesting;
-import co.rsk.bitcoinj.core.*;
-import com.google.common.primitives.Longs;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
@@ -34,7 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
-import java.io.*;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;

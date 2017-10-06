@@ -216,6 +216,8 @@ dependencyVerification {
         'org.mapdb:mapdb:1268e9ec22ff770ef7e63d7cc72563406ad239422c791acc8b9ee4fdfba0bb1e',
         'org.mockito:mockito-core:d5831ee4f71055800821a34a3051cf1ed5b3702f295ffebd50f65fb5d81a71b8',
         'org.objenesis:objenesis:b043f03e466752f7f03e2326a3b13a49b7c649f8f2a2dc87715827e24f73d9c6',
+        'org.powermock:powermock-api-mockito:68667e82c0e5d8c65e7030403c56ddc8595bbd723bf04719976106c03a022b85',
+        'org.powermock:powermock-api-support:ade74743df908ebd859591c2136ce400443e57bbd8abdc0703871ac7309ac09b',
         'org.powermock:powermock-core:9b4da42d513500dda03f4d90e303647f6a7b50c6bc5ed88cd39118680f6b329f',
         'org.powermock:powermock-module-junit4-common:1b4928d42a8e6f0aa196d0f6fcf7831e0bc29b8a925ce755479b4bd29b3643bb',
         'org.powermock:powermock-module-junit4:a90e4bc135e349852eaebed9f1a14d404e14c5a8a7248b4e20e062879a97e63f',
