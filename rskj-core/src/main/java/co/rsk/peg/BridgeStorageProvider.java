@@ -18,21 +18,22 @@
 
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.apache.commons.lang3.tuple.Pair;
-import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.wallet.Wallet;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
 
 /**
  * Provides an object oriented facade of the bridge contract memory.

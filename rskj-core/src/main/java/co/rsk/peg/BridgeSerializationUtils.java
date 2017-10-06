@@ -207,7 +207,7 @@ public class BridgeSerializationUtils {
 
         // List size must be even - key, value pairs expected in sequence
         if (rlpList.size() % 2 != 0) {
-            return map;
+            throw new RuntimeException("deserializeMapOfHashesToLong: expected an even number of entries, but odd given");
         }
 
         int numEntries = rlpList.size() / 2;
