@@ -1,7 +1,11 @@
 package co.rsk.net.sync;
 
+import co.rsk.net.Status;
+import org.ethereum.core.BlockIdentifier;
+
 import javax.annotation.Nonnull;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 
 public class SyncingWithPeerSyncState implements SyncState {
@@ -36,7 +40,7 @@ public class SyncingWithPeerSyncState implements SyncState {
     }
 
     @Override
-    public void newBlockHash(byte[] hash) {
+    public void newConnectionPointData(byte[] hash) {
         ConnectionPointFinder connectionPointFinder = syncInformation.getConnectionPointFinder();
         if (this.syncInformation.isKnownBlock(hash))
             connectionPointFinder.updateFound();
@@ -45,11 +49,28 @@ public class SyncingWithPeerSyncState implements SyncState {
 
         Optional<Long> cp = connectionPointFinder.getConnectionPoint();
         if (cp.isPresent()) {
-            syncEventsHandler.sendSkeletonRequestTo(cp.get());
+            syncEventsHandler.sendSkeletonRequest(cp.get());
             return;
         }
 
-        syncEventsHandler.sendBlockHashRequestTo(connectionPointFinder.getFindingHeight());
+        syncEventsHandler.sendBlockHashRequest(syncInformation.getConnectionPointFinder().getFindingHeight());
+    }
+
+    @Override
+    public void newSkeleton(List<BlockIdentifier> skeleton) {
+        if (skeleton.size() < 2) {
+            syncEventsHandler.stopSyncing();
+            return;
+        }
+
+        syncEventsHandler.startRequestingHeaders(skeleton);
+    }
+
+    @Override
+    public void onEnter() {
+        Status status = syncInformation.getSelectedPeerStatus();
+        syncInformation.getConnectionPointFinder().startFindConnectionPoint(status.getBestBlockNumber());
+        syncEventsHandler.sendBlockHashRequest(syncInformation.getConnectionPointFinder().getFindingHeight());
     }
 
     @Override

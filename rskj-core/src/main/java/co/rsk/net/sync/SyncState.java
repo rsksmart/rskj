@@ -1,7 +1,10 @@
 package co.rsk.net.sync;
 
+import org.ethereum.core.BlockIdentifier;
+
 import javax.annotation.Nonnull;
 import java.time.Duration;
+import java.util.List;
 
 public interface SyncState {
     @Nonnull
@@ -14,7 +17,11 @@ public interface SyncState {
      */
     default void newPeerStatus() {}
 
-    default void newBlockHash(byte[] hash) {}
+    default void newConnectionPointData(byte[] hash) {}
+
+    default void newSkeleton(List<BlockIdentifier> skeletonChunk) { }
+
+    default void onEnter() {}
 
     default void tick(Duration duration) {}
 

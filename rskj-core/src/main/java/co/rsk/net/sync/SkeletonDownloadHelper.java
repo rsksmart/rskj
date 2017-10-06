@@ -4,7 +4,6 @@ import co.rsk.net.NodeID;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
 public class SkeletonDownloadHelper {
@@ -14,7 +13,7 @@ public class SkeletonDownloadHelper {
     private int lastRequestedLinkIndex;
     private NodeID selectedPeerId;
 
-    public SkeletonDownloadHelper(@Nullable NodeID selectedPeerId) {
+    public SkeletonDownloadHelper(@Nonnull NodeID selectedPeerId) {
         this.selectedPeerId = selectedPeerId;
     }
 
@@ -40,7 +39,7 @@ public class SkeletonDownloadHelper {
 
     public void setLastRequestedLinkIndex(int index) { this.lastRequestedLinkIndex = index; }
 
-    @Nullable
+    @Nonnull
     public NodeID getSelectedPeerId() {
         return selectedPeerId;
     }

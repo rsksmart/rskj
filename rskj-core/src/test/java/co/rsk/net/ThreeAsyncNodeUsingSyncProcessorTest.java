@@ -133,7 +133,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
     }
 
     @Test
-    public void synchronizeNewNodeWithTwoPeers() throws InterruptedException {
+    public void synchronizeNewNodeWithTwoPeers() {
         Blockchain b1 = BlockChainBuilder.ofSize(30, true);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 43, true);
 

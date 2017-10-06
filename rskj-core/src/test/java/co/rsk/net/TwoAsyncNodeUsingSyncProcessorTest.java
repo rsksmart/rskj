@@ -172,14 +172,13 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(1, false);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false);
 
-        node2.getSyncProcessor().setSelectedPeer(node1.getMessageChannel(node2));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
+
         node2.receiveMessageFrom(node1, new NewBlockHashMessage(node1.getBestBlock().getHash()));
 
-        // send hash
+        // process new block hash
         node2.waitUntilNTasksWithTimeout(1);
-        // request header
-        node1.waitExactlyNTasksWithTimeout(1);
-        // respond header
+        // process block response
         node2.waitExactlyNTasksWithTimeout(1);
 
         node1.joinWithTimeout();

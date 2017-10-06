@@ -60,16 +60,6 @@ public class SyncProcessor implements SyncEventsHandler {
         this.syncState.newPeerStatus();
     }
 
-    @Override
-    public void sendSkeletonRequestTo(long height) {
-        NodeID peerId = skeletonDownloadHelper.getSelectedPeerId();
-        logger.trace("Send skeleton request to node {} height {}", peerId, height);
-        syncState.messageSent();
-        long lastRequestId = expectedMessages.registerExpectedMessage(MessageType.SKELETON_RESPONSE_MESSAGE);
-        MessageChannel channel = peerStatuses.getPeer(peerId).getMessageChannel();
-        channel.sendMessage(new SkeletonRequestMessage(lastRequestId, height));
-    }
-
     public void processSkeletonResponse(MessageChannel sender, SkeletonResponseMessage message) {
         logger.trace("Process skeleton response from node {}", sender.getPeerNodeID());
         peerStatuses.getOrRegisterPeer(sender);
@@ -77,87 +67,7 @@ public class SyncProcessor implements SyncEventsHandler {
         if (!expectedMessages.isExpectedMessage(message.getId(), message.getMessageType()))
             return;
 
-        skeletonDownloadHelper.setSkeleton(message.getBlockIdentifiers());
-        this.sendNextBlockHeadersRequestTo(sender);
-    }
-
-    @VisibleForTesting
-    int getNoPeers() {
-        return this.peerStatuses.count();
-    }
-
-    @VisibleForTesting
-    int getNoAdvancedPeers() {
-        BlockChainStatus chainStatus = this.blockchain.getStatus();
-
-        if (chainStatus == null)
-            return this.peerStatuses.count();
-
-        return this.peerStatuses.countIf(s -> chainStatus.hasLowerDifficulty(s.getStatus()));
-    }
-
-    private void sendNextBlockHeadersRequestTo(MessageChannel peer) {
-        if (!skeletonDownloadHelper.hasSkeleton())
-            return;
-
-        List<BlockIdentifier> skeleton = skeletonDownloadHelper.getSkeleton();
-
-        // We use 0 so we start iterarting from the second element,
-        // because we always have the first element in our blockchain
-
-        int linkIndex = skeletonDownloadHelper.getLastRequestedLinkIndex() + 1;
-
-        if (linkIndex >= skeletonDownloadHelper.getSkeleton().size() || linkIndex > syncConfiguration.getMaxSkeletonChunks()) {
-            logger.trace("Finished verifying headers from peer {}", peer.getPeerNodeID());
-            sendNextBodyRequestTo(peer);
-            return;
-        }
-
-        byte[] hash = skeleton.get(linkIndex).getHash();
-        long height = skeleton.get(linkIndex).getNumber();
-
-        long lastHeight = skeleton.get(linkIndex - 1).getNumber();
-        long previousKnownHeight = Math.max(lastHeight, connectionPointFinder.getConnectionPoint().get());
-
-        int count = (int)(height - previousKnownHeight);
-
-        logger.trace("Send headers request to node {}", peer.getPeerNodeID());
-        syncState.messageSent();
-        long lastRequestId = expectedMessages.registerExpectedMessage(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
-        peer.sendMessage(new BlockHeadersRequestMessage(lastRequestId, hash, count));
-        skeletonDownloadHelper.setLastRequestedLinkIndex(linkIndex);
-    }
-
-    private void sendNextBodyRequestTo(MessageChannel peer) {
-        // We request one body at a time, from oldest to newest
-        BlockHeader header = this.pendingHeaders.poll();
-        if (header == null) {
-            logger.trace("Finished syncing with peer {}", peer.getPeerNodeID());
-            stopSyncing();
-            return;
-        }
-
-        logger.trace("Send body request block {} hash {} to peer {}", header.getNumber(), HashUtil.shortHash(header.getHash()), peer.getPeerNodeID());
-        long lastRequestId = expectedMessages.registerExpectedMessage(MessageType.BODY_RESPONSE_MESSAGE);
-        peer.sendMessage(new BodyRequestMessage(lastRequestId, header.getHash()));
-        pendingBodyResponses.put(lastRequestId, new PendingBodyResponse(peer.getPeerNodeID(), header));
-    }
-
-    @Override
-    public void sendBlockHashRequestTo(long height) {
-        NodeID peerId = skeletonDownloadHelper.getSelectedPeerId();
-        logger.trace("Send hash request to node {} height {}", peerId, height);
-        syncState.messageSent();
-        long lastRequestId = expectedMessages.registerExpectedMessage(MessageType.BLOCK_HASH_RESPONSE_MESSAGE);
-        MessageChannel channel = peerStatuses.getPeer(peerId).getMessageChannel();
-        channel.sendMessage(new BlockHashRequestMessage(lastRequestId, height));
-    }
-
-    private void findConnectionPointOf(NodeID peerId) {
-        logger.trace("Find connection point with node {}", peerId);
-        Status status = getPeerStatus(peerId).getStatus();
-        connectionPointFinder.startFindConnectionPoint(status.getBestBlockNumber());
-        this.sendBlockHashRequestTo(connectionPointFinder.getFindingHeight());
+        syncState.newSkeleton(message.getBlockIdentifiers());
     }
 
     public void processBlockHashResponse(MessageChannel sender, BlockHashResponseMessage message) {
@@ -167,7 +77,7 @@ public class SyncProcessor implements SyncEventsHandler {
         if (!expectedMessages.isExpectedMessage(message.getId(), message.getMessageType()))
             return;
 
-        this.syncState.newBlockHash(message.getHash());
+        this.syncState.newConnectionPointData(message.getHash());
     }
 
     public void processBlockHeadersResponse(MessageChannel peer, BlockHeadersResponseMessage message) {
@@ -206,26 +116,18 @@ public class SyncProcessor implements SyncEventsHandler {
             parent = block;
         }
 
+        List<BlockIdentifier> skeleton = skeletonDownloadHelper.getSkeleton();
+
+        // We use 0 so we start iterarting from the second element,
+        // because we always have the first element in our blockchain
+        int linkIndex = skeletonDownloadHelper.getLastRequestedLinkIndex() + 1;
+        if (linkIndex >= skeleton.size() || linkIndex > syncConfiguration.getMaxSkeletonChunks()) {
+            logger.trace("Finished verifying headers from peer {}", peer.getPeerNodeID());
+            sendNextBodyRequestTo(peer);
+            return;
+        }
+
         this.sendNextBlockHeadersRequestTo(peer);
-    }
-
-    private boolean validateBlockWithHeader(Block block, Block parent) {
-        if (this.blockchain.getBlockByHash(block.getHash()) != null)
-            return false;
-
-        if (!parent.isParentOf(block))
-            return false;
-
-        if (parent.getNumber() + 1 != block.getNumber())
-            return false;
-
-        if (!blockParentValidationRule.isValid(block, parent))
-            return false;
-
-        if (!blockValidationRule.isValid(block))
-            return false;
-
-        return true;
     }
 
     public void processBodyResponse(MessageChannel peer, BodyResponseMessage message) {
@@ -254,16 +156,6 @@ public class SyncProcessor implements SyncEventsHandler {
         this.sendNextBodyRequestTo(peer);
     }
 
-    public void processBlockResponse(MessageChannel sender, BlockResponseMessage message) {
-        logger.trace("Process block response from node {} block {} {}", sender.getPeerNodeID(), message.getBlock().getNumber(), message.getBlock().getShortHash());
-        peerStatuses.getOrRegisterPeer(sender);
-
-        if (!expectedMessages.isExpectedMessage(message.getId(), message.getMessageType()))
-            return;
-
-        blockSyncService.processBlock(sender, message.getBlock());
-    }
-
     public void processNewBlockHash(MessageChannel sender, NewBlockHashMessage message) {
         logger.trace("Process new block hash from node {} hash {}", sender.getPeerNodeID(), HashUtil.shortHash(message.getBlockHash()));
         byte[] hash = message.getBlockHash();
@@ -278,12 +170,147 @@ public class SyncProcessor implements SyncEventsHandler {
         }
     }
 
+    @Override
+    public void sendSkeletonRequest(long height) {
+        NodeID peerId = skeletonDownloadHelper.getSelectedPeerId();
+        logger.trace("Send skeleton request to node {} height {}", peerId, height);
+        syncState.messageSent();
+        long lastRequestId = expectedMessages.registerExpectedMessage(MessageType.SKELETON_RESPONSE_MESSAGE);
+        MessageChannel channel = peerStatuses.getPeer(peerId).getMessageChannel();
+        channel.sendMessage(new SkeletonRequestMessage(lastRequestId, height));
+    }
+
+    @Override
+    public void sendBlockHashRequest(long height) {
+        NodeID peerId = skeletonDownloadHelper.getSelectedPeerId();
+        logger.trace("Send hash request to node {} height {}", peerId, height);
+        syncState.messageSent();
+        long lastRequestId = expectedMessages.registerExpectedMessage(MessageType.BLOCK_HASH_RESPONSE_MESSAGE);
+        MessageChannel channel = peerStatuses.getPeer(peerId).getMessageChannel();
+        channel.sendMessage(new BlockHashRequestMessage(lastRequestId, height));
+    }
+
+    @Override
+    public void startRequestingHeaders(List<BlockIdentifier> skeleton) {
+        skeletonDownloadHelper.setSkeleton(skeleton);
+        NodeID peerId = skeletonDownloadHelper.getSelectedPeerId();
+        MessageChannel peer = peerStatuses.getPeer(peerId).getMessageChannel();
+        sendNextBlockHeadersRequestTo(peer);
+    }
+
+    public void processBlockResponse(MessageChannel sender, BlockResponseMessage message) {
+        logger.trace("Process block response from node {} block {} {}", sender.getPeerNodeID(), message.getBlock().getNumber(), message.getBlock().getShortHash());
+        peerStatuses.getOrRegisterPeer(sender);
+
+        if (!expectedMessages.isExpectedMessage(message.getId(), message.getMessageType()))
+            return;
+
+        blockSyncService.processBlock(sender, message.getBlock());
+    }
+
     public Set<NodeID> getKnownPeersNodeIDs() {
         return this.peerStatuses.knownNodeIds();
     }
 
-    public SyncPeerStatus getPeerStatus(NodeID nodeID) {
+    public void onTimePassed(Duration timePassed) {
+        this.syncState.tick(timePassed);
+    }
+
+    @Override
+    public void startSyncing(MessageChannel peer) {
+        logger.trace("Find connection point with node {}", peer.getPeerNodeID());
+        this.connectionPointFinder = new ConnectionPointFinder();
+        this.skeletonDownloadHelper = new SkeletonDownloadHelper(peer.getPeerNodeID());
+        // connectionPointFinder.startFindConnectionPoint is called in SyncingWithPeerSyncState's constructor
+        setSyncState(new SyncingWithPeerSyncState(this.syncConfiguration, this, syncInformation));
+    }
+
+    @Override
+    public void stopSyncing() {
+        this.skeletonDownloadHelper = null;
+        this.pendingHeaders.clear();
+        this.pendingBodyResponses.clear();
+        this.expectedMessages.clear();
+        setSyncState(new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses));
+    }
+
+    private void sendNextBlockHeadersRequestTo(MessageChannel peer) {
+        long connectionPoint = connectionPointFinder.getConnectionPoint().get();
+        List<BlockIdentifier> skeleton = skeletonDownloadHelper.getSkeleton();
+        // We use 0 so we start iterarting from the second element,
+        // because we always have the first element in our blockchain
+        int linkIndex = skeletonDownloadHelper.getLastRequestedLinkIndex() + 1;
+        byte[] hash = skeleton.get(linkIndex).getHash();
+        long height = skeleton.get(linkIndex).getNumber();
+
+        long lastHeight = skeleton.get(linkIndex - 1).getNumber();
+        long previousKnownHeight = Math.max(lastHeight, connectionPoint);
+
+        int count = (int)(height - previousKnownHeight);
+
+        logger.trace("Send headers request to node {}", peer.getPeerNodeID());
+        syncState.messageSent();
+        long lastRequestId = expectedMessages.registerExpectedMessage(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
+        peer.sendMessage(new BlockHeadersRequestMessage(lastRequestId, hash, count));
+        skeletonDownloadHelper.setLastRequestedLinkIndex(linkIndex);
+    }
+
+    private void sendNextBodyRequestTo(MessageChannel peer) {
+        // We request one body at a time, from oldest to newest
+        BlockHeader header = this.pendingHeaders.poll();
+        if (header == null) {
+            logger.trace("Finished syncing with peer {}", peer.getPeerNodeID());
+            stopSyncing();
+            return;
+        }
+
+        logger.trace("Send body request block {} hash {} to peer {}", header.getNumber(), HashUtil.shortHash(header.getHash()), peer.getPeerNodeID());
+        long lastRequestId = expectedMessages.registerExpectedMessage(MessageType.BODY_RESPONSE_MESSAGE);
+        peer.sendMessage(new BodyRequestMessage(lastRequestId, header.getHash()));
+        pendingBodyResponses.put(lastRequestId, new PendingBodyResponse(peer.getPeerNodeID(), header));
+    }
+
+    private SyncPeerStatus getPeerStatus(NodeID nodeID) {
         return this.peerStatuses.getPeer(nodeID);
+    }
+
+    private void setSyncState(SyncState syncState) {
+        this.syncState = syncState;
+        this.syncState.onEnter();
+    }
+
+    private boolean validateBlockWithHeader(Block block, Block parent) {
+        if (this.blockchain.getBlockByHash(block.getHash()) != null)
+            return false;
+
+        if (!parent.isParentOf(block))
+            return false;
+
+        if (parent.getNumber() + 1 != block.getNumber())
+            return false;
+
+        if (!blockParentValidationRule.isValid(block, parent))
+            return false;
+
+        if (!blockValidationRule.isValid(block))
+            return false;
+
+        return true;
+    }
+
+    @VisibleForTesting
+    int getNoPeers() {
+        return this.peerStatuses.count();
+    }
+
+    @VisibleForTesting
+    int getNoAdvancedPeers() {
+        BlockChainStatus chainStatus = this.blockchain.getStatus();
+
+        if (chainStatus == null)
+            return this.peerStatuses.count();
+
+        return this.peerStatuses.countIf(s -> chainStatus.hasLowerDifficulty(s.getStatus()));
     }
 
     @VisibleForTesting
@@ -292,9 +319,11 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @VisibleForTesting
-    public void setSelectedPeer(MessageChannel peer) {
+    public void setSelectedPeer(MessageChannel peer, Status status) {
+        peerStatuses.getOrRegisterPeer(peer).setStatus(status);
+        this.connectionPointFinder = new ConnectionPointFinder();
         this.skeletonDownloadHelper = new SkeletonDownloadHelper(peer.getPeerNodeID());
-        peerStatuses.getOrRegisterPeer(peer);
+        this.syncState = new SyncingWithPeerSyncState(this.syncConfiguration, this, syncInformation);
     }
 
     @VisibleForTesting
@@ -319,40 +348,10 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @VisibleForTesting
     public Map<Long, MessageType> getExpectedResponses() {
-        // we're not syncing yet
-        if (this.skeletonDownloadHelper == null) {
-            return Collections.emptyMap();
-        }
-
         return this.expectedMessages.getExpectedMessages();
     }
-
-    public void setSyncState(SyncState syncState) {
-        this.syncState = syncState;
-    }
-
-    public void onTimePassed(Duration timePassed) {
-        this.syncState.tick(timePassed);
-    }
-
-    @Override
-    public void startSyncing(MessageChannel peer) {
-        this.skeletonDownloadHelper = new SkeletonDownloadHelper(peer.getPeerNodeID());
-        this.connectionPointFinder = new ConnectionPointFinder();
-        setSyncState(new SyncingWithPeerSyncState(this.syncConfiguration, this, new SyncInformationImpl()));
-        this.findConnectionPointOf(peer.getPeerNodeID());
-    }
-
-    @Override
-    public void stopSyncing() {
-        this.skeletonDownloadHelper = null;
-        this.pendingHeaders.clear();
-        this.pendingBodyResponses.clear();
-        this.expectedMessages.clear();
-        setSyncState(new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses));
-    }
-
     private class SyncInformationImpl implements SyncInformation {
+
         @Override
         public boolean isKnownBlock(byte[] hash) {
             return blockchain.getBlockByHash(hash) != null;
@@ -367,6 +366,11 @@ public class SyncProcessor implements SyncEventsHandler {
         public boolean hasLowerDifficulty(MessageChannel peer) {
             Status status = getPeerStatus(peer.getPeerNodeID()).getStatus();
             return blockchain.getStatus().hasLowerDifficulty(status);
+        }
+
+        @Override
+        public Status getSelectedPeerStatus() {
+            return getPeerStatus(skeletonDownloadHelper.getSelectedPeerId()).getStatus();
         }
     }
 
