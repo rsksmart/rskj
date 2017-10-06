@@ -1,6 +1,7 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.Status;
+import co.rsk.net.messages.BodyResponseMessage;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockIdentifier;
 
@@ -43,11 +44,36 @@ public class SyncingWithPeerSyncState implements SyncState {
     }
 
     @Override
+    public void newBody(BodyResponseMessage message) {
+        if (!syncInformation.isExpectedBody(message.getId())) {
+            // Invalid body response
+            // TODO(mc) do peer scoring, banning and logging
+            syncEventsHandler.stopSyncing();
+            return;
+        }
+
+        // TODO(mc) validate transactions and uncles are part of this block (with header)
+        syncInformation.saveBlock(message);
+
+        if (syncInformation.isExpectingMoreBodies()) {
+            this.resetTimeElapsed();
+            syncEventsHandler.sendNextBodyRequest();
+            return;
+        }
+
+        // Finished syncing
+        syncEventsHandler.stopSyncing();
+    }
+
+    @Override
     public void newConnectionPointData(byte[] hash) {
-        if (this.syncInformation.isKnownBlock(hash))
+        this.resetTimeElapsed();
+
+        if (this.syncInformation.isKnownBlock(hash)) {
             connectionPointFinder.updateFound();
-        else
+        } else {
             connectionPointFinder.updateNotFound();
+        }
 
         Optional<Long> cp = connectionPointFinder.getConnectionPoint();
         if (!cp.isPresent()) {
@@ -79,12 +105,12 @@ public class SyncingWithPeerSyncState implements SyncState {
     }
 
     @Override
-    public void messageSent(){
+    public void messageSent() {
         this.resetTimeElapsed();
     }
 
     @Override
-    public boolean isSyncing(){
+    public boolean isSyncing() {
         return true;
     }
 

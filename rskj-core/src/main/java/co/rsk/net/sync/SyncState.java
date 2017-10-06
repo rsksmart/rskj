@@ -1,5 +1,6 @@
 package co.rsk.net.sync;
 
+import co.rsk.net.messages.BodyResponseMessage;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
@@ -10,20 +11,23 @@ public interface SyncState {
     @Nonnull
     SyncStatesIds getId();
 
-    default void messageSent() {}
+    default void messageSent() { }
 
     /**
      * should only be called when a new peer arrives
      */
-    default void newPeerStatus() {}
+    default void newPeerStatus() { }
 
-    default void newConnectionPointData(byte[] hash) {}
+    // TODO(mc) don't receive a full message
+    default void newBody(BodyResponseMessage message) { }
+
+    default void newConnectionPointData(byte[] hash) { }
 
     default void newSkeleton(List<BlockIdentifier> skeletonChunk) { }
 
-    default void onEnter() {}
+    default void onEnter() { }
 
-    default void tick(Duration duration) {}
+    default void tick(Duration duration) { }
 
     default boolean isSyncing(){
         return false;

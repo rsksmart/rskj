@@ -17,6 +17,9 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     public void sendBlockHashRequest(long height) { }
 
     @Override
+    public void sendNextBodyRequest() { }
+
+    @Override
     public void startSyncing(MessageChannel peer) {
         this.startSyncingWasCalled_ = true;
     }

@@ -10,6 +10,8 @@ public interface SyncEventsHandler {
 
     void sendBlockHashRequest(long height);
 
+    void sendNextBodyRequest();
+
     void startSyncing(MessageChannel peer);
 
     void startRequestingHeaders(List<BlockIdentifier> skeleton, long connectionPoint);
