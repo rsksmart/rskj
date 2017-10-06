@@ -22,8 +22,6 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
@@ -34,10 +32,14 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 import org.ethereum.config.SystemProperties;
+import org.ethereum.core.Block;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
+import org.ethereum.util.RLP;
+import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +67,7 @@ public class BridgeSupport {
     private BtcBlockChain btcBlockChain;
 
     private BridgeStorageProvider provider;
+    private List<LogInfo> logs;
 
     private Repository rskRepository;
 
@@ -75,13 +78,13 @@ public class BridgeSupport {
     private StoredBlock initialBtcStoredBlock;
 
     // Used by bridge
-    public BridgeSupport(Repository repository, String contractAddress, org.ethereum.core.Block rskExecutionBlock, ReceiptStore rskReceiptStore, org.ethereum.db.BlockStore rskBlockStore) throws IOException, BlockStoreException {
-        this(repository, contractAddress, new BridgeStorageProvider(repository, contractAddress), rskExecutionBlock, rskReceiptStore, rskBlockStore);
+    public BridgeSupport(Repository repository, String contractAddress, Block rskExecutionBlock, ReceiptStore rskReceiptStore, BlockStore rskBlockStore, List<LogInfo> logs) throws IOException, BlockStoreException {
+        this(repository, contractAddress, new BridgeStorageProvider(repository, contractAddress), rskExecutionBlock, rskReceiptStore, rskBlockStore, logs);
     }
 
 
     // Used by unit tests
-    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, org.ethereum.core.Block rskExecutionBlock, ReceiptStore rskReceiptStore, org.ethereum.db.BlockStore rskBlockStore) throws IOException, BlockStoreException {
+    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, Block rskExecutionBlock, ReceiptStore rskReceiptStore, BlockStore rskBlockStore, List<LogInfo> logs) throws IOException, BlockStoreException {
         this.provider = provider;
 
         bridgeConstants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
@@ -102,7 +105,7 @@ public class BridgeSupport {
         rskRepository = repository;
 
         this.initialBtcStoredBlock = this.getLowestBlock();
-
+        this.logs = logs;
         this.rskExecutionBlock = rskExecutionBlock;
         this.rskReceiptStore = rskReceiptStore;
         this.rskBlockStore = rskBlockStore;
@@ -367,14 +370,6 @@ public class BridgeSupport {
                 provider.getRskTxsWaitingForSignatures().put(rskTxHash, btcTx);
             }
         }
-
-        Iterator<Map.Entry<Sha3Hash, Pair<BtcTransaction, Long>>> iter2 = provider.getRskTxsWaitingForBroadcasting().entrySet().iterator();
-        while (iter2.hasNext()) {
-            Map.Entry<Sha3Hash, Pair<BtcTransaction, Long>> entry = iter2.next();
-            if (hadEnoughTimeToBroadcast(entry.getKey())) {
-                iter2.remove();
-            }
-        }
     }
 
     /**
@@ -419,15 +414,6 @@ public class BridgeSupport {
             return false;
 
         return (rskExecutionBlock.getNumber() - includedBlock.getNumber() + 1) >= bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations();
-    }
-
-    /**
-     * Return true if enough blocks has passed, so federators had for sure enough time to broadcast it to the btc network
-     */
-    private boolean hadEnoughTimeToBroadcast(Sha3Hash rskTxHash) throws IOException {
-        long bestBlockNumber = rskExecutionBlock.getNumber();
-        long broadcastingInclusionBlock = provider.getRskTxsWaitingForBroadcasting().get(rskTxHash).getRight();
-        return (bestBlockNumber - broadcastingInclusionBlock) > bridgeConstants.getBtcBroadcastingMinimumAcceptableBlocks();
     }
 
     /**
@@ -500,7 +486,13 @@ public class BridgeSupport {
             logger.info("Tx fully signed {}. Hex: {}", btcTx, Hex.toHexString(btcTx.bitcoinSerialize()));
             removeUsedUTXOs(btcTx);
             provider.getRskTxsWaitingForSignatures().remove(new Sha3Hash(rskTxHash));
-            provider.getRskTxsWaitingForBroadcasting().put(new Sha3Hash(rskTxHash), new ImmutablePair(btcTx, executionBlockNumber));
+            logs.add(
+                new LogInfo(
+                    getFederationAddress().getHash160(),
+                    Collections.singletonList(Bridge.RELEASE_BTC_TOPIC),
+                    RLP.encodeElement(btcTx.bitcoinSerialize())
+                )
+            );
         } else {
             logger.debug("Tx not yet fully signed {}.", new Sha3Hash(rskTxHash));
         }
@@ -554,7 +546,7 @@ public class BridgeSupport {
      * @return a StateForFederator serialized in RLP
      */
     public byte[] getStateForBtcReleaseClient() throws IOException {
-        StateForFederator stateForFederator = new StateForFederator(provider.getRskTxsWaitingForSignatures(), provider.getRskTxsWaitingForBroadcasting());
+        StateForFederator stateForFederator = new StateForFederator(provider.getRskTxsWaitingForSignatures());
         return stateForFederator.getEncoded();
     }
 

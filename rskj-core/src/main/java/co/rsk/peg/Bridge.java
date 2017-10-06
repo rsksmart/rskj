@@ -27,6 +27,7 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
@@ -81,6 +82,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_FEDERATION_ADDRESS = CallTransaction.Function.fromSignature("getFederationAddress", new String[]{}, new String[]{"string"});
     // Returns the minimum amount of satoshis a user should send to the federation.
     public static final CallTransaction.Function GET_MINIMUM_LOCK_TX_VALUE = CallTransaction.Function.fromSignature("getMinimumLockTxValue", new String[]{}, new String[]{"int"});
+    public static final DataWord RELEASE_BTC_TOPIC = new DataWord("release_btc_topic".getBytes());
 
     private static Map<CallTransaction.Function, Long> functionCostMap = new HashMap<>();
 
@@ -247,8 +249,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     private BridgeSupport setup() throws Exception {
-        BridgeSupport bridgeSupport = new BridgeSupport(repository, contractAddress, rskExecutionBlock, rskReceiptStore, rskBlockStore);
-        return bridgeSupport;
+        return new BridgeSupport(repository, contractAddress, rskExecutionBlock, rskReceiptStore, rskBlockStore, logs);
     }
 
     private void teardown() throws IOException {
