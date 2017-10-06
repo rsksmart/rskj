@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import org.apache.commons.codec.binary.Hex;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
@@ -92,8 +93,14 @@ public class BridgeSerializationUtilsTest {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_decode2();
 
-        byte[] sample = new byte[]{(byte)'b', 7, (byte)'d', 76, (byte) 'a'};
-        assertEquals(BridgeSerializationUtils.deserializeMapOfHashesToLong(sample), new HashMap<>());
+        boolean thrown = false;
+        try {
+            byte[] sample = new byte[]{(byte)'b', 7, (byte)'d', 76, (byte) 'a'};
+            BridgeSerializationUtils.deserializeMapOfHashesToLong(sample);
+        } catch (RuntimeException e) {
+            thrown = true;
+        }
+        Assert.assertTrue(thrown);
     }
 
     private void mock_RLP_encodeElement() {
