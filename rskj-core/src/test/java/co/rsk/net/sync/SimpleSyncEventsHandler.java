@@ -22,7 +22,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void startRequestingHeaders(List<BlockIdentifier> skeleton) { }
+    public void startRequestingHeaders(List<BlockIdentifier> skeleton, long connectionPoint) { }
 
     @Override
     public void stopSyncing() { this.stopSyncingWasCalled_ = true; }

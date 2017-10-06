@@ -20,11 +20,6 @@ public class ConnectionPointFinder {
         this.connectionPoint = Optional.empty();
     }
 
-    @VisibleForTesting
-    public void setConnectionPoint(long height) {
-        this.connectionPoint = Optional.of(height);
-    }
-
     public Optional<Long> getConnectionPoint() {
         return this.connectionPoint;
     }
@@ -49,4 +44,8 @@ public class ConnectionPointFinder {
         }
     }
 
+    @VisibleForTesting
+    public void setConnectionPoint(long height) {
+        this.connectionPoint = Optional.of(height);
+    }
 }

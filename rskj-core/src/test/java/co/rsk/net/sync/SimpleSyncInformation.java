@@ -3,9 +3,6 @@ package co.rsk.net.sync;
 
 import co.rsk.net.MessageChannel;
 import co.rsk.net.Status;
-import org.ethereum.core.BlockIdentifier;
-
-import java.util.List;
 
 public class SimpleSyncInformation implements SyncInformation {
     private boolean hasLowerDifficulty = true;
@@ -13,11 +10,6 @@ public class SimpleSyncInformation implements SyncInformation {
     @Override
     public boolean isKnownBlock(byte[] hash) {
         return false;
-    }
-
-    @Override
-    public ConnectionPointFinder getConnectionPointFinder() {
-        return null;
     }
 
     @Override

@@ -232,7 +232,7 @@ public class SyncProcessorTest {
 
         SyncProcessor processor = new SyncProcessor(blockchain, null, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
 
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus());
+        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         processor.sendSkeletonRequest(0);
 
         Assert.assertFalse(sender.getMessages().isEmpty());
@@ -259,7 +259,7 @@ public class SyncProcessorTest {
 
         SyncProcessor processor = new SyncProcessor(blockchain, null, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
 
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus());
+        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         Assert.assertTrue(processor.isPeerSyncing(sender.getPeerNodeID()));
 
         processor.sendBlockHashRequest(100);
@@ -289,7 +289,7 @@ public class SyncProcessorTest {
         processor.processStatus(sender, new Status(100, null));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void processBlockHeadersResponseWithEmptyList() {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
@@ -297,11 +297,13 @@ public class SyncProcessorTest {
         SyncProcessor processor = new SyncProcessor(blockchain, null, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
 
         List<BlockHeader> headers = new ArrayList<>();
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus());
+        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         long lastRequestId = processor.registerExpectedMessage(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE);
         BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(lastRequestId, headers);
         processor.processBlockHeadersResponse(sender, response);
+        Assert.assertEquals(0, sender.getMessages().size());
+        Assert.assertEquals(0, processor.getExpectedResponses().size());
     }
 
     @Test
@@ -311,7 +313,7 @@ public class SyncProcessorTest {
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
         SyncProcessor processor = new SyncProcessor(blockchain, null, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus());
+        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
@@ -319,19 +321,18 @@ public class SyncProcessorTest {
         BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(lastRequestId, headers);
 
         processor.processBlockHeadersResponse(sender, response);
-        Assert.assertTrue(sender.getMessages().isEmpty());
-
-        Assert.assertTrue(processor.getExpectedResponses().isEmpty());
+        Assert.assertEquals(0, sender.getMessages().size());
+        Assert.assertEquals(0, processor.getExpectedResponses().size());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void processBlockHeadersResponseWithManyHeadersMissingFirstParent() {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
         Blockchain otherBlockchain = BlockChainBuilder.ofSize(10, true);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
         SyncProcessor processor = new SyncProcessor(blockchain, null, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus());
+        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         List<BlockHeader> headers = new ArrayList<>();
 
@@ -342,6 +343,8 @@ public class SyncProcessorTest {
         BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(lastRequestId, headers);
 
         processor.processBlockHeadersResponse(sender, response);
+        Assert.assertEquals(0, sender.getMessages().size());
+        Assert.assertEquals(0, processor.getExpectedResponses().size());
     }
 
     @Test
@@ -351,7 +354,7 @@ public class SyncProcessorTest {
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
         SyncProcessor processor = new SyncProcessor(blockchain, null, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus());
+        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
@@ -359,8 +362,8 @@ public class SyncProcessorTest {
         BlockHeadersResponseMessage response = new BlockHeadersResponseMessage(lastRequestId, headers);
 
         processor.processBlockHeadersResponse(sender, response);
-        Assert.assertTrue(sender.getMessages().isEmpty());
-        Assert.assertTrue(processor.getExpectedResponses().isEmpty());
+        Assert.assertEquals(0, sender.getMessages().size());
+        Assert.assertEquals(0, processor.getExpectedResponses().size());
     }
 
     @Test
@@ -369,7 +372,7 @@ public class SyncProcessorTest {
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
         SyncProcessor processor = new SyncProcessor(blockchain, null, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus());
+        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         long lastRequestId = processor.registerExpectedMessage(MessageType.BODY_RESPONSE_MESSAGE);
         BodyResponseMessage response = new BodyResponseMessage(lastRequestId, null, null);
@@ -395,7 +398,7 @@ public class SyncProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus());
+        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
         long lastRequestId = processor.registerExpectedMessage(MessageType.BODY_RESPONSE_MESSAGE);
@@ -450,7 +453,7 @@ public class SyncProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus());
+        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         List<Transaction> transactions = block.getTransactionsList();
         List<BlockHeader> uncles = block.getUncleList();
         long lastRequestId = processor.registerExpectedMessage(MessageType.BODY_RESPONSE_MESSAGE);
@@ -482,7 +485,7 @@ public class SyncProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus());
+        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
         long lastRequestId = processor.registerExpectedMessage(MessageType.BLOCK_RESPONSE_MESSAGE);
         BlockResponseMessage response = new BlockResponseMessage(lastRequestId, block);
 
@@ -583,10 +586,9 @@ public class SyncProcessorTest {
         int connectionPoint = 0;
         int step = 10;
         int linkCount = 10;
+        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), connectionPoint);
         List<BlockIdentifier> blockIdentifiers = buildSkeleton(blockchain, connectionPoint, step, linkCount);
 
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus());
-        processor.setConnectionPoint(0);
         long lastRequestId = processor.registerExpectedMessage(MessageType.SKELETON_RESPONSE_MESSAGE);
         processor.processSkeletonResponse(sender, new SkeletonResponseMessage(lastRequestId, blockIdentifiers));
 
@@ -615,8 +617,7 @@ public class SyncProcessorTest {
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
         SyncProcessor processor = new SyncProcessor(blockchain, null, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus());
-        processor.setConnectionPoint(0);
+        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
 
         List<BlockIdentifier> blockIdentifiers = new ArrayList<>();
 
@@ -638,12 +639,11 @@ public class SyncProcessorTest {
 
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
-        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus());
-        processor.setConnectionPoint(25);
 
         int connectionPoint = 25;
         int step = 10;
         int linkCount = 10;
+        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), connectionPoint);
         List<BlockIdentifier> blockIdentifiers = buildSkeleton(blockchain, connectionPoint, step, linkCount);
 
         long lastRequestId = processor.registerExpectedMessage(MessageType.SKELETON_RESPONSE_MESSAGE);

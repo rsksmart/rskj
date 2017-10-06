@@ -1,6 +1,7 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.Status;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
@@ -13,11 +14,13 @@ public class SyncingWithPeerSyncState implements SyncState {
     private SyncConfiguration syncConfiguration;
     private SyncEventsHandler syncEventsHandler;
     private SyncInformation syncInformation;
+    private ConnectionPointFinder connectionPointFinder;
 
     public SyncingWithPeerSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation) {
         this.syncConfiguration = syncConfiguration;
         this.syncEventsHandler = syncEventsHandler;
         this.syncInformation = syncInformation;
+        this.connectionPointFinder = new ConnectionPointFinder();
         this.resetTimeElapsed();
     }
 
@@ -41,36 +44,38 @@ public class SyncingWithPeerSyncState implements SyncState {
 
     @Override
     public void newConnectionPointData(byte[] hash) {
-        ConnectionPointFinder connectionPointFinder = syncInformation.getConnectionPointFinder();
         if (this.syncInformation.isKnownBlock(hash))
             connectionPointFinder.updateFound();
         else
             connectionPointFinder.updateNotFound();
 
         Optional<Long> cp = connectionPointFinder.getConnectionPoint();
-        if (cp.isPresent()) {
-            syncEventsHandler.sendSkeletonRequest(cp.get());
+        if (!cp.isPresent()) {
+            syncEventsHandler.sendBlockHashRequest(connectionPointFinder.getFindingHeight());
             return;
         }
 
-        syncEventsHandler.sendBlockHashRequest(syncInformation.getConnectionPointFinder().getFindingHeight());
+        // connection point found, request skeleton
+        syncEventsHandler.sendSkeletonRequest(cp.get());
     }
 
     @Override
     public void newSkeleton(List<BlockIdentifier> skeleton) {
-        if (skeleton.size() < 2) {
+        // defensive programming: this should never happen
+        if (!connectionPointFinder.getConnectionPoint().isPresent()
+                || skeleton.size() < 2) {
             syncEventsHandler.stopSyncing();
             return;
         }
 
-        syncEventsHandler.startRequestingHeaders(skeleton);
+        syncEventsHandler.startRequestingHeaders(skeleton, connectionPointFinder.getConnectionPoint().get());
     }
 
     @Override
     public void onEnter() {
         Status status = syncInformation.getSelectedPeerStatus();
-        syncInformation.getConnectionPointFinder().startFindConnectionPoint(status.getBestBlockNumber());
-        syncEventsHandler.sendBlockHashRequest(syncInformation.getConnectionPointFinder().getFindingHeight());
+        connectionPointFinder.startFindConnectionPoint(status.getBestBlockNumber());
+        syncEventsHandler.sendBlockHashRequest(connectionPointFinder.getFindingHeight());
     }
 
     @Override
@@ -81,5 +86,10 @@ public class SyncingWithPeerSyncState implements SyncState {
     @Override
     public boolean isSyncing(){
         return true;
+    }
+
+    @VisibleForTesting
+    public void setConnectionPoint(long height) {
+        connectionPointFinder.setConnectionPoint(height);
     }
 }

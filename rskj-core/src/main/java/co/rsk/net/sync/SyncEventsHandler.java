@@ -12,7 +12,7 @@ public interface SyncEventsHandler {
 
     void startSyncing(MessageChannel peer);
 
-    void startRequestingHeaders(List<BlockIdentifier> skeleton);
+    void startRequestingHeaders(List<BlockIdentifier> skeleton, long connectionPoint);
 
     void stopSyncing();
 }
