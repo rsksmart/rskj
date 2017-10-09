@@ -198,7 +198,8 @@ public class BlockExecutor {
 
         for (Transaction tx : block.getTransactionsList()) {
             logger.info("apply block: [{}] tx: [{}] ", block.getNumber(), i);
-            TransactionExecutor txExecutor = new TransactionExecutor(tx, block.getCoinbase(), track, blockStore, blockChain.getReceiptStore(), programInvokeFactory, block, listener, totalGasUsed);
+            TransactionExecutor txExecutor = new TransactionExecutor(tx, block.getCoinbase(), track, blockStore,
+                    blockChain.getReceiptStore(), programInvokeFactory, block, listener, totalGasUsed);
 
             boolean readyToExecute = txExecutor.init();
             if (!ignoreReadyToExecute && !readyToExecute) {

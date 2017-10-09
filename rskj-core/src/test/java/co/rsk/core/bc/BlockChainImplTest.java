@@ -36,6 +36,7 @@ import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.spongycastle.util.Arrays;
 import org.spongycastle.util.encoders.Hex;
@@ -260,6 +261,8 @@ public class BlockChainImplTest {
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
     }
 
+    //RCS-30 Not implemented yet WIP
+    @Ignore
     @Test
     public void tryToConnectSelectionRuleRemasc() {
         BlockChainImpl blockChain = createBlockChain();
