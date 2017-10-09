@@ -33,4 +33,9 @@ public abstract class MessageWithId extends Message {
     public abstract long getId();
 
     protected abstract byte[] getEncodedMessageWithoutId();
+
+    public MessageType getResponseMessageType(){
+        throw new AbstractMethodError("This method should be implemented by children (request Messages)");
+    }
+
 }

@@ -40,6 +40,11 @@ public class SkeletonRequestMessage extends MessageWithId {
     }
 
     @Override
+    public MessageType getResponseMessageType() {
+        return MessageType.SKELETON_RESPONSE_MESSAGE;
+    }
+
+    @Override
     public byte[] getEncodedMessageWithoutId() {
         byte[] rlpStartNumber = RLP.encodeBigInteger(BigInteger.valueOf(this.startNumber));
         return RLP.encodeList(rlpStartNumber);

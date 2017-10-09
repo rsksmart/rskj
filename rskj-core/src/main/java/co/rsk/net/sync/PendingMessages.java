@@ -1,23 +1,26 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.messages.MessageType;
+import co.rsk.net.messages.MessageWithId;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class ExpectedMessages {
+public class PendingMessages {
 
     private Map<Long, MessageType> messages = new HashMap<>();
     private long lastRequestId;
 
-    public long registerExpectedMessage(MessageType type) {
-        lastRequestId++;
-        this.messages.put(lastRequestId, type);
-        return lastRequestId;
+    public void register(MessageWithId message) {
+        this.messages.put(message.getId(), message.getResponseMessageType());
     }
 
-    public boolean isExpectedMessage(long responseId, MessageType type) {
+    public long getNextRequestId(){
+        return ++lastRequestId;
+    }
+
+    public boolean isPending(long responseId, MessageType type) {
         if (!this.messages.containsKey(responseId) || this.messages.get(responseId) != type)
             return false;
 
@@ -34,5 +37,10 @@ public class ExpectedMessages {
     @VisibleForTesting
     public Map<Long, MessageType> getExpectedMessages() {
         return this.messages;
+    }
+
+    @VisibleForTesting
+    public void registerExpectedMessage(MessageWithId message) {
+        this.messages.put(message.getId(), message.getMessageType());
     }
 }

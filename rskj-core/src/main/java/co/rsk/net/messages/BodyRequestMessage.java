@@ -30,6 +30,11 @@ public class BodyRequestMessage extends MessageWithId {
     }
 
     @Override
+    public MessageType getResponseMessageType() {
+        return MessageType.BODY_RESPONSE_MESSAGE;
+    }
+
+    @Override
     public byte[] getEncodedMessageWithoutId() {
         byte[] rlpHash = RLP.encodeElement(this.hash);
         return RLP.encodeList(rlpHash);

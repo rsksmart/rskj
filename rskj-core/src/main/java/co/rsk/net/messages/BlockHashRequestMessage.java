@@ -40,6 +40,11 @@ public class BlockHashRequestMessage extends MessageWithId {
     }
 
     @Override
+    public MessageType getResponseMessageType() {
+        return MessageType.BLOCK_HASH_RESPONSE_MESSAGE;
+    }
+
+    @Override
     public byte[] getEncodedMessageWithoutId() {
         byte[] rlpHeight = RLP.encodeBigInteger(BigInteger.valueOf(this.height));
 
