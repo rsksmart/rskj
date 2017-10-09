@@ -5,18 +5,16 @@ import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.messages.BodyResponseMessage;
+import org.ethereum.core.BlockHeader;
+
+import javax.annotation.Nonnull;
 
 public class SimpleSyncInformation implements SyncInformation {
     private boolean hasLowerDifficulty = true;
 
     @Override
-    public boolean isKnownBlock(byte[] hash) {
+    public boolean blockHeaderIsValid(@Nonnull BlockHeader header, @Nonnull BlockHeader parentHeader) {
         return false;
-    }
-
-    @Override
-    public boolean hasLowerDifficulty(MessageChannel peer) {
-        return hasLowerDifficulty;
     }
 
     @Override
@@ -30,12 +28,22 @@ public class SimpleSyncInformation implements SyncInformation {
     }
 
     @Override
-    public boolean isExpectingMoreBodies() {
-        return false;
+    public SkeletonDownloadHelper getSkeletonDownloadHelper() {
+        return null;
+    }
+
+    @Override
+    public boolean hasLowerDifficulty(MessageChannel peer) {
+        return hasLowerDifficulty;
     }
 
     @Override
     public boolean isExpectedBody(long expected) {
+        return false;
+    }
+
+    @Override
+    public boolean isKnownBlock(byte[] hash) {
         return false;
     }
 

@@ -39,7 +39,7 @@ import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.*;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.solidity.compiler.SolidityCompiler;
-import org.ethereum.validator.ProofOfWorkRule;
+import co.rsk.validators.ProofOfWorkRule;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Serializer;

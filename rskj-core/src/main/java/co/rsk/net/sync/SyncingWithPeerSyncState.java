@@ -1,27 +1,36 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.Status;
+import co.rsk.net.messages.BlockHeadersResponseMessage;
 import co.rsk.net.messages.BodyResponseMessage;
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
+import org.ethereum.util.ByteUtil;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
+import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Optional;
+import java.util.Queue;
 
 public class SyncingWithPeerSyncState implements SyncState {
-    private Duration timeElapsed;
     private SyncConfiguration syncConfiguration;
     private SyncEventsHandler syncEventsHandler;
     private SyncInformation syncInformation;
+
     private ConnectionPointFinder connectionPointFinder;
+    private Queue<BlockHeader> pendingHeaders;
+    private Duration timeElapsed;
 
     public SyncingWithPeerSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation) {
         this.syncConfiguration = syncConfiguration;
         this.syncEventsHandler = syncEventsHandler;
         this.syncInformation = syncInformation;
+
         this.connectionPointFinder = new ConnectionPointFinder();
+        this.pendingHeaders = new ArrayDeque<>();
         this.resetTimeElapsed();
     }
 
@@ -44,6 +53,47 @@ public class SyncingWithPeerSyncState implements SyncState {
     }
 
     @Override
+    public void newBlockHeaders(BlockHeadersResponseMessage message) {
+        List<BlockHeader> chunk = message.getBlockHeaders();
+
+        SkeletonDownloadHelper skeletonDownloadHelper = syncInformation.getSkeletonDownloadHelper();
+        Optional<ChunkDescriptor> currentChunk = skeletonDownloadHelper.getCurrentChunk();
+        if (!currentChunk.isPresent()
+                || chunk.size() != currentChunk.get().getCount()
+                || !ByteUtil.fastEquals(chunk.get(0).getHash(), currentChunk.get().getHash())) {
+            // TODO(mc) do peer scoring and banning
+//            logger.trace("Invalid block headers response with ID {} from peer {}", message.getId(), peer.getPeerNodeID());
+            syncEventsHandler.stopSyncing();
+            return;
+        }
+
+        for (int k = 1; k < chunk.size(); ++k) {
+            BlockHeader parentHeader = chunk.get(chunk.size() - k);
+            BlockHeader header = chunk.get(chunk.size() - k - 1);
+
+            if (!syncInformation.blockHeaderIsValid(header, parentHeader)) {
+                // TODO(mc) do peer scoring and banning
+//                logger.trace("Couldn't validate block header {} hash {} from peer {}", header.getNumber(), HashUtil.shortHash(header.getHash()), peer.getPeerNodeID());
+                syncEventsHandler.stopSyncing();
+                return;
+            }
+        }
+
+        for (int k = 0; k < chunk.size(); ++k) {
+            BlockHeader header = chunk.get(chunk.size() - 1 - k);
+            pendingHeaders.add(header);
+        }
+
+        if (skeletonDownloadHelper.hasNextChunk()) {
+            syncEventsHandler.sendNextBlockHeadersRequest();
+            return;
+        }
+
+//        logger.trace("Finished verifying headers from peer {}", peer.getPeerNodeID());
+        syncEventsHandler.sendNextBodyRequest(pendingHeaders.remove());
+    }
+
+    @Override
     public void newBody(BodyResponseMessage message) {
         if (!syncInformation.isExpectedBody(message.getId())) {
             // Invalid body response
@@ -55,9 +105,9 @@ public class SyncingWithPeerSyncState implements SyncState {
         // TODO(mc) validate transactions and uncles are part of this block (with header)
         syncInformation.saveBlock(message);
 
-        if (syncInformation.isExpectingMoreBodies()) {
+        if (!pendingHeaders.isEmpty()) {
             this.resetTimeElapsed();
-            syncEventsHandler.sendNextBodyRequest();
+            syncEventsHandler.sendNextBodyRequest(this.pendingHeaders.remove());
             return;
         }
 

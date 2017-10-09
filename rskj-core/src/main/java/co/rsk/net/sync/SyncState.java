@@ -1,5 +1,6 @@
 package co.rsk.net.sync;
 
+import co.rsk.net.messages.BlockHeadersResponseMessage;
 import co.rsk.net.messages.BodyResponseMessage;
 import org.ethereum.core.BlockIdentifier;
 
@@ -13,15 +14,18 @@ public interface SyncState {
 
     default void messageSent() { }
 
-    /**
-     * should only be called when a new peer arrives
-     */
-    default void newPeerStatus() { }
+    // TODO(mc) don't receive a full message
+    default void newBlockHeaders(BlockHeadersResponseMessage message) { }
 
     // TODO(mc) don't receive a full message
     default void newBody(BodyResponseMessage message) { }
 
     default void newConnectionPointData(byte[] hash) { }
+
+    /**
+     * should only be called when a new peer arrives
+     */
+    default void newPeerStatus() { }
 
     default void newSkeleton(List<BlockIdentifier> skeletonChunk) { }
 

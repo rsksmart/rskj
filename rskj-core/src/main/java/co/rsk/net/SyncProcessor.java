@@ -3,18 +3,25 @@ package co.rsk.net;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.*;
-import co.rsk.validators.BlockDifficultyRule;
-import co.rsk.validators.BlockParentDependantValidationRule;
-import co.rsk.validators.BlockValidationRule;
+import co.rsk.validators.BlockHeaderValidationRule;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockIdentifier;
+import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.validator.DependentBlockHeaderRule;
+import org.ethereum.validator.DifficultyRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.time.Duration;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by ajlopez on 29/08/2017.
@@ -23,29 +30,25 @@ import java.util.*;
 public class SyncProcessor implements SyncEventsHandler {
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
-    private BlockValidationRule blockValidationRule;
-    private static BlockParentDependantValidationRule blockParentValidationRule = new BlockDifficultyRule();
     private final SyncConfiguration syncConfiguration;
 
     private Blockchain blockchain;
     private BlockSyncService blockSyncService;
     private PeersInformation peerStatuses;
     private Map<Long, PendingBodyResponse> pendingBodyResponses = new HashMap<>();
-    private Queue<BlockHeader> pendingHeaders = new ArrayDeque<>();
 
     private SyncState syncState;
     private SkeletonDownloadHelper skeletonDownloadHelper;
     private PendingMessages pendingMessages;
     private SyncInformationImpl syncInformation;
 
-    public SyncProcessor(Blockchain blockchain, BlockSyncService blockSyncService, SyncConfiguration syncConfiguration, BlockValidationRule blockValidationRule) {
+    public SyncProcessor(Blockchain blockchain, BlockSyncService blockSyncService, SyncConfiguration syncConfiguration, BlockHeaderValidationRule blockHeaderValidationRule) {
         // TODO(mc) implement FollowBestChain
         this.blockchain = blockchain;
         this.blockSyncService = blockSyncService;
         this.syncConfiguration = syncConfiguration;
-        this.blockValidationRule = blockValidationRule;
         this.peerStatuses = new PeersInformation(syncConfiguration);
-        this.syncInformation = new SyncInformationImpl();
+        this.syncInformation = new SyncInformationImpl(blockHeaderValidationRule);
         this.syncState = new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses);
         this.pendingMessages = new PendingMessages();
     }
@@ -83,51 +86,7 @@ public class SyncProcessor implements SyncEventsHandler {
         if (!pendingMessages.isPending(message.getId(), message.getMessageType()))
             return;
 
-        // to validate:
-        // - PoW
-        // - Parent exists
-        // - consecutive numbers
-        // - consistent difficulty
-
-        List<BlockHeader> chunk = message.getBlockHeaders();
-        Block parent = null;
-
-        Optional<ChunkDescriptor> currentChunk = skeletonDownloadHelper.getCurrentChunk();
-        if (!currentChunk.isPresent()
-                || chunk.size() != currentChunk.get().getCount()
-                || !ByteUtil.fastEquals(chunk.get(0).getHash(), currentChunk.get().getHash())) {
-            // TODO(mc) do peer scoring and banning
-            logger.trace("Invalid block headers response with ID {} from peer {}", message.getId(), peer.getPeerNodeID());
-            stopSyncing();
-            return;
-        }
-
-        for (int k = chunk.size(); k-- > 0;) {
-            BlockHeader header = chunk.get(k);
-            Block block = Block.fromValidData(header, null, null);
-
-            if (parent == null)
-                parent = this.blockchain.getBlockByHash(header.getParentHash());
-
-            if (parent != null && !validateBlockWithHeader(block, parent)) {
-                // TODO(mc) do peer scoring and banning
-                logger.trace("Couldn't validate block header {} hash {} from peer {}", header.getNumber(), HashUtil.shortHash(header.getHash()), peer.getPeerNodeID());
-                stopSyncing();
-                return;
-            }
-
-            pendingHeaders.add(header);
-
-            parent = block;
-        }
-
-        if (skeletonDownloadHelper.hasNextChunk()) {
-            this.sendNextBlockHeadersRequestTo(peer);
-            return;
-        }
-
-        logger.trace("Finished verifying headers from peer {}", peer.getPeerNodeID());
-        this.sendNextBodyRequestTo(peer);
+        syncState.newBlockHeaders(message);
     }
 
     public void processBodyResponse(MessageChannel peer, BodyResponseMessage message) {
@@ -174,9 +133,7 @@ public class SyncProcessor implements SyncEventsHandler {
     @Override
     public void startRequestingHeaders(List<BlockIdentifier> skeleton, long connectionPoint) {
         skeletonDownloadHelper.setSkeleton(skeleton, connectionPoint);
-        NodeID peerId = skeletonDownloadHelper.getSelectedPeerId();
-        MessageChannel peer = peerStatuses.getPeer(peerId).getMessageChannel();
-        this.sendNextBlockHeadersRequestTo(peer);
+        this.sendNextBlockHeadersRequest();
     }
 
     public void processBlockResponse(MessageChannel sender, BlockResponseMessage message) {
@@ -198,6 +155,28 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
+    public void sendNextBlockHeadersRequest() {
+        NodeID peerId = skeletonDownloadHelper.getSelectedPeerId();
+        MessageChannel peer = peerStatuses.getPeer(peerId).getMessageChannel();
+        logger.trace("Send headers request to node {}", peer.getPeerNodeID());
+        ChunkDescriptor chunk = skeletonDownloadHelper.getNextChunk();
+        syncState.messageSent();
+        BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(pendingMessages.getNextRequestId(), chunk.getHash(), chunk.getCount());
+        sendMessage(peer, message);
+    }
+
+    @Override
+    public void sendNextBodyRequest(@Nonnull BlockHeader header) {
+        NodeID peerId = skeletonDownloadHelper.getSelectedPeerId();
+        MessageChannel peer = peerStatuses.getPeer(peerId).getMessageChannel();
+
+        logger.trace("Send body request block {} hash {} to peer {}", header.getNumber(), HashUtil.shortHash(header.getHash()), peer.getPeerNodeID());
+        BodyRequestMessage message = new BodyRequestMessage(pendingMessages.getNextRequestId(), header.getHash());
+        sendMessage(peer, message);
+        pendingBodyResponses.put(message.getId(), new PendingBodyResponse(peer.getPeerNodeID(), header));
+    }
+
+    @Override
     public void startSyncing(MessageChannel peer) {
         logger.trace("Find connection point with node {}", peer.getPeerNodeID());
         this.skeletonDownloadHelper = new SkeletonDownloadHelper(syncConfiguration, peer.getPeerNodeID());
@@ -207,16 +186,9 @@ public class SyncProcessor implements SyncEventsHandler {
     @Override
     public void stopSyncing() {
         this.skeletonDownloadHelper = null;
-        this.pendingHeaders.clear();
         this.pendingBodyResponses.clear();
         this.pendingMessages.clear();
         setSyncState(new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses));
-    }
-
-    @Override
-    public void sendNextBodyRequest() {
-        MessageChannel peer = syncInformation.getSelectedPeer();
-        this.sendNextBodyRequestTo(peer);
     }
 
     private void sendMessage(MessageChannel channel, MessageWithId message) {
@@ -224,51 +196,9 @@ public class SyncProcessor implements SyncEventsHandler {
         channel.sendMessage(message);
     }
 
-    private void sendNextBlockHeadersRequestTo(MessageChannel peer) {
-        logger.trace("Send headers request to node {}", peer.getPeerNodeID());
-        ChunkDescriptor chunk = skeletonDownloadHelper.getNextChunk();
-        syncState.messageSent();
-        BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(pendingMessages.getNextRequestId(), chunk.getHash(), chunk.getCount());
-        sendMessage(peer, message);
-    }
-
-    private void sendNextBodyRequestTo(MessageChannel peer) {
-        // We request one body at a time, from oldest to newest
-        BlockHeader header = this.pendingHeaders.poll();
-        if (header == null) {
-            logger.trace("Finished syncing with peer {}", peer.getPeerNodeID());
-            stopSyncing();
-            return;
-        }
-
-        logger.trace("Send body request block {} hash {} to peer {}", header.getNumber(), HashUtil.shortHash(header.getHash()), peer.getPeerNodeID());
-        BodyRequestMessage message = new BodyRequestMessage(pendingMessages.getNextRequestId(), header.getHash());
-        sendMessage(peer, message);
-        pendingBodyResponses.put(message.getId(), new PendingBodyResponse(peer.getPeerNodeID(), header));
-    }
-
     private void setSyncState(SyncState syncState) {
         this.syncState = syncState;
         this.syncState.onEnter();
-    }
-
-    private boolean validateBlockWithHeader(Block block, Block parent) {
-        if (this.blockchain.getBlockByHash(block.getHash()) != null)
-            return false;
-
-        if (!parent.isParentOf(block))
-            return false;
-
-        if (parent.getNumber() + 1 != block.getNumber())
-            return false;
-
-        if (!blockParentValidationRule.isValid(block, parent))
-            return false;
-
-        if (!blockValidationRule.isValid(block))
-            return false;
-
-        return true;
     }
 
     @VisibleForTesting
@@ -319,7 +249,14 @@ public class SyncProcessor implements SyncEventsHandler {
     public Map<Long, MessageType> getExpectedResponses() {
         return this.pendingMessages.getExpectedMessages();
     }
+
     private class SyncInformationImpl implements SyncInformation {
+        private DependentBlockHeaderRule blockParentValidationRule = new DifficultyRule();
+        private BlockHeaderValidationRule blockHeaderValidationRule;
+
+        public SyncInformationImpl(BlockHeaderValidationRule blockHeaderValidationRule) {
+            this.blockHeaderValidationRule = blockHeaderValidationRule;
+        }
 
         @Override
         public boolean isKnownBlock(byte[] hash) {
@@ -343,11 +280,6 @@ public class SyncProcessor implements SyncEventsHandler {
         }
 
         @Override
-        public boolean isExpectingMoreBodies() {
-            return !pendingHeaders.isEmpty();
-        }
-
-        @Override
         public boolean isExpectedBody(long requestId) {
             PendingBodyResponse expected = pendingBodyResponses.get(requestId);
             return expected != null && getSelectedPeerId().equals(expected.nodeID);
@@ -358,6 +290,31 @@ public class SyncProcessor implements SyncEventsHandler {
             // we know it exists because it was called from a SyncEvent
             BlockHeader header = pendingBodyResponses.get(message.getId()).header;
             blockSyncService.processBlock(getSelectedPeer(), Block.fromValidData(header, message.getTransactions(), message.getUncles()));
+        }
+
+        @Override
+        public boolean blockHeaderIsValid(@Nonnull BlockHeader header, @Nonnull BlockHeader parentHeader) {
+            if (isKnownBlock(header.getHash()))
+                return false;
+
+            if (!ByteUtil.fastEquals(parentHeader.getHash(), header.getParentHash()))
+                return false;
+
+            if (header.getNumber() != parentHeader.getNumber() + 1)
+                return false;
+
+            if (!blockParentValidationRule.validate(header, parentHeader))
+                return false;
+
+            if (!blockHeaderValidationRule.isValid(header))
+                return false;
+
+            return true;
+        }
+
+        @Override
+        public SkeletonDownloadHelper getSkeletonDownloadHelper() {
+            return skeletonDownloadHelper;
         }
 
         public MessageChannel getSelectedPeer() {

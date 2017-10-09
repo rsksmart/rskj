@@ -2,8 +2,10 @@ package co.rsk.net.sync;
 
 
 import co.rsk.net.MessageChannel;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 
 public class SimpleSyncEventsHandler implements SyncEventsHandler {
@@ -11,21 +13,24 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     private boolean stopSyncingWasCalled_;
 
     @Override
-    public void sendSkeletonRequest(long height) { }
-
-    @Override
     public void sendBlockHashRequest(long height) { }
 
     @Override
-    public void sendNextBodyRequest() { }
+    public void sendNextBlockHeadersRequest() { }
+
+    @Override
+    public void sendNextBodyRequest(@Nonnull BlockHeader header) { }
+
+    @Override
+    public void sendSkeletonRequest(long height) { }
+
+    @Override
+    public void startRequestingHeaders(List<BlockIdentifier> skeleton, long connectionPoint) { }
 
     @Override
     public void startSyncing(MessageChannel peer) {
         this.startSyncingWasCalled_ = true;
     }
-
-    @Override
-    public void startRequestingHeaders(List<BlockIdentifier> skeleton, long connectionPoint) { }
 
     @Override
     public void stopSyncing() { this.stopSyncingWasCalled_ = true; }

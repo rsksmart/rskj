@@ -39,7 +39,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
-import org.ethereum.validator.ProofOfWorkRule;
+import co.rsk.validators.ProofOfWorkRule;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;

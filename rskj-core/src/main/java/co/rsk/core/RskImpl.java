@@ -23,12 +23,12 @@ import co.rsk.mine.MinerServer;
 import co.rsk.net.*;
 import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.Blockchain;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.facade.EthereumImpl;
-import org.ethereum.validator.ProofOfWorkRule;
 import org.springframework.stereotype.Component;
 
 /**

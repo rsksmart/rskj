@@ -4,7 +4,7 @@ import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.World;
 import co.rsk.validators.BlockValidationRule;
 import org.ethereum.core.Blockchain;
-import org.ethereum.validator.ProofOfWorkRule;
+import co.rsk.validators.ProofOfWorkRule;
 
 public class NodeMessageHandlerUtil {
 

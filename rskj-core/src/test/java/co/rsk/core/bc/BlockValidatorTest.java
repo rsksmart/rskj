@@ -23,15 +23,13 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
-import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockParentDependantValidationRule;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.validator.ProofOfWorkRule;
+import co.rsk.validators.ProofOfWorkRule;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
