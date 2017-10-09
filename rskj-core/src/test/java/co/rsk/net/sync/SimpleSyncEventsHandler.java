@@ -7,6 +7,7 @@ import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Queue;
 
 public class SimpleSyncEventsHandler implements SyncEventsHandler {
     private boolean startSyncingWasCalled_;
@@ -31,6 +32,9 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     public void startSyncing(MessageChannel peer) {
         this.startSyncingWasCalled_ = true;
     }
+
+    @Override
+    public void startDownloadingBodies(Queue<BlockHeader> pendingHeaders) { }
 
     @Override
     public void stopSyncing() { this.stopSyncingWasCalled_ = true; }

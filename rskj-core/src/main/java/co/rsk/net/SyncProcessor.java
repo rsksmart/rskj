@@ -18,10 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by ajlopez on 29/08/2017.
@@ -181,6 +178,11 @@ public class SyncProcessor implements SyncEventsHandler {
         logger.trace("Find connection point with node {}", peer.getPeerNodeID());
         this.skeletonDownloadHelper = new SkeletonDownloadHelper(syncConfiguration, peer.getPeerNodeID());
         setSyncState(new SyncingWithPeerSyncState(this.syncConfiguration, this, syncInformation));
+    }
+
+    @Override
+    public void startDownloadingBodies(Queue<BlockHeader> pendingHeaders) {
+        setSyncState(new DownloadingBodiesSyncState(this.syncConfiguration, this, syncInformation, pendingHeaders));
     }
 
     @Override

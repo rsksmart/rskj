@@ -6,6 +6,7 @@ import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Queue;
 
 public interface SyncEventsHandler {
     void sendSkeletonRequest(long height);
@@ -15,6 +16,8 @@ public interface SyncEventsHandler {
     void sendNextBodyRequest(@Nonnull BlockHeader header);
 
     void startSyncing(MessageChannel peer);
+
+    void startDownloadingBodies(Queue<BlockHeader> pendingHeaders);
 
     void startRequestingHeaders(List<BlockIdentifier> skeleton, long connectionPoint);
 

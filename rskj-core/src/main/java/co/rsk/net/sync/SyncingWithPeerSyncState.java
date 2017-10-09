@@ -10,10 +10,7 @@ import org.ethereum.util.ByteUtil;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
-import java.util.ArrayDeque;
-import java.util.List;
-import java.util.Optional;
-import java.util.Queue;
+import java.util.*;
 
 public class SyncingWithPeerSyncState implements SyncState {
     private SyncConfiguration syncConfiguration;
@@ -67,6 +64,8 @@ public class SyncingWithPeerSyncState implements SyncState {
             return;
         }
 
+        pendingHeaders.add(chunk.get(chunk.size() - 1));
+
         for (int k = 1; k < chunk.size(); ++k) {
             BlockHeader parentHeader = chunk.get(chunk.size() - k);
             BlockHeader header = chunk.get(chunk.size() - k - 1);
@@ -77,10 +76,7 @@ public class SyncingWithPeerSyncState implements SyncState {
                 syncEventsHandler.stopSyncing();
                 return;
             }
-        }
 
-        for (int k = 0; k < chunk.size(); ++k) {
-            BlockHeader header = chunk.get(chunk.size() - 1 - k);
             pendingHeaders.add(header);
         }
 
@@ -90,28 +86,12 @@ public class SyncingWithPeerSyncState implements SyncState {
         }
 
 //        logger.trace("Finished verifying headers from peer {}", peer.getPeerNodeID());
-        syncEventsHandler.sendNextBodyRequest(pendingHeaders.remove());
+        syncEventsHandler.startDownloadingBodies(pendingHeaders);
     }
 
     @Override
     public void newBody(BodyResponseMessage message) {
-        if (!syncInformation.isExpectedBody(message.getId())) {
-            // Invalid body response
-            // TODO(mc) do peer scoring, banning and logging
-            syncEventsHandler.stopSyncing();
-            return;
-        }
-
-        // TODO(mc) validate transactions and uncles are part of this block (with header)
-        syncInformation.saveBlock(message);
-
-        if (!pendingHeaders.isEmpty()) {
-            this.resetTimeElapsed();
-            syncEventsHandler.sendNextBodyRequest(this.pendingHeaders.remove());
-            return;
-        }
-
-        // Finished syncing
+        // TODO(mc) do peer scoring, banning and logging
         syncEventsHandler.stopSyncing();
     }
 

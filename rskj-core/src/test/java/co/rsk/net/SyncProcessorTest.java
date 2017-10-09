@@ -7,20 +7,17 @@ import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.StatusUtils;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import co.rsk.validators.ProofOfWorkRule;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by ajlopez on 29/08/2017.
@@ -407,9 +404,9 @@ public class SyncProcessorTest {
         processor.registerExpectedMessage(response);
 
         processor.expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
-        processor.processBodyResponse(sender, response);
+        processor.startDownloadingBodies(new ArrayDeque<>(Collections.singletonList(block.getHeader())));
 
-        Assert.assertTrue(sender.getMessages().isEmpty());
+        processor.processBodyResponse(sender, response);
 
         Assert.assertEquals(11, blockchain.getBestBlock().getNumber());
         Assert.assertArrayEquals(block.getHash(), blockchain.getBestBlockHash());
@@ -463,9 +460,9 @@ public class SyncProcessorTest {
         processor.registerExpectedMessage(response);
 
         processor.expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
-        processor.processBodyResponse(sender, response);
+        processor.startDownloadingBodies(new ArrayDeque<>(Collections.singletonList(block.getHeader())));
 
-        Assert.assertTrue(sender.getMessages().isEmpty());
+        processor.processBodyResponse(sender, response);
 
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
         Assert.assertArrayEquals(block.getHash(), blockchain.getBestBlockHash());
