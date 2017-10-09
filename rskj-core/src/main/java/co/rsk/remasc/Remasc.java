@@ -200,33 +200,6 @@ public class Remasc {
         }
     }
 
-    private BigInteger getTotalDifficultyOfProcessingBlockHeader(List<BlockInformation> listBlockInformation,
-                                                                 BlockHeader processingBlockHeader) {
-        BigInteger ret = processingBlockHeader.getDifficultyBI();
-        for (BlockInformation information : listBlockInformation) {
-            if (Arrays.equals(processingBlockHeader.getHash(), information.getHash())) {
-                return information.getTotalDifficulty();
-            }
-        }
-        return ret;
-    }
-
-    // Ugly, there should be a better way to obtain the diff
-
-    private BigInteger getMaxTotalDifficultyForSiblings(List<BlockInformation> listBlockInformation,
-                                                        List<Sibling> siblings) {
-        BigInteger max = BigInteger.valueOf(0);
-        for (Sibling sibling : siblings) {
-            for (BlockInformation information : listBlockInformation) {
-                if (Arrays.equals(information.getHash(), sibling.getHash())) {
-                    if (max.compareTo(information.getTotalDifficulty()) < 0) {
-                        max = information.getTotalDifficulty();
-                    }
-                }
-            }
-        }
-        return max;
-    }
     private boolean isBrokenSelectionRule(BlockHeader processingBlockHeader, List<Sibling> siblings) {
         // Find out if main chain block selection rule was broken
 
