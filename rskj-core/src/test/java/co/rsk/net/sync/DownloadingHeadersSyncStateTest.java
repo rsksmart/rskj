@@ -3,12 +3,14 @@ package co.rsk.net.sync;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class SyncingWithPeerSyncStateTest {
+import java.util.Collections;
+
+public class DownloadingHeadersSyncStateTest {
     @Test
     public void itIgnoresNewPeerInformation() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
-        SyncState syncState = new SyncingWithPeerSyncState(syncConfiguration, syncEventsHandler, null);
+        SyncState syncState = new DownloadingHeadersSyncState(syncConfiguration, syncEventsHandler, null, Collections.emptyList(), 0);
 
         for (int i = 0; i < 10; i++) {
             syncState.newPeerStatus();
@@ -20,7 +22,7 @@ public class SyncingWithPeerSyncStateTest {
     public void itTimeoutsWhenWaitingForRequest() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
-        SyncState syncState = new SyncingWithPeerSyncState(syncConfiguration, syncEventsHandler, null);
+        SyncState syncState = new DownloadingHeadersSyncState(syncConfiguration, syncEventsHandler, null, Collections.emptyList(), 0);
 
         syncState.newPeerStatus();
         Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
@@ -36,7 +38,7 @@ public class SyncingWithPeerSyncStateTest {
     public void itDoesntTimeoutWhenSendingMessages() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
-        SyncState syncState = new SyncingWithPeerSyncState(syncConfiguration, syncEventsHandler, null);
+        DownloadingHeadersSyncState syncState = new DownloadingHeadersSyncState(syncConfiguration, syncEventsHandler, null, Collections.emptyList(), 0);
 
         syncState.newPeerStatus();
         Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());

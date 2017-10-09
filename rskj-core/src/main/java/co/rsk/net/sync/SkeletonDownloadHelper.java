@@ -1,6 +1,5 @@
 package co.rsk.net.sync;
 
-import co.rsk.net.NodeID;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
@@ -9,16 +8,14 @@ import java.util.Optional;
 
 public class SkeletonDownloadHelper {
     private SyncConfiguration syncConfiguration;
-    private NodeID selectedPeerId;
 
     // Block identifiers retrieved in skeleton
     private List<BlockIdentifier> skeleton = null;
     private long connectionPoint;
     private int lastRequestedLinkIndex;
 
-    public SkeletonDownloadHelper(@Nonnull SyncConfiguration syncConfiguration, @Nonnull NodeID selectedPeerId) {
+    public SkeletonDownloadHelper(@Nonnull SyncConfiguration syncConfiguration) {
         this.syncConfiguration = syncConfiguration;
-        this.selectedPeerId = selectedPeerId;
     }
 
     public boolean hasSkeleton() {
@@ -43,11 +40,6 @@ public class SkeletonDownloadHelper {
     public int getLastRequestedLinkIndex() { return this.lastRequestedLinkIndex; }
 
     public void setLastRequestedLinkIndex(int index) { this.lastRequestedLinkIndex = index; }
-
-    @Nonnull
-    public NodeID getSelectedPeerId() {
-        return selectedPeerId;
-    }
 
     public boolean hasNextChunk() {
         int linkIndex = getLastRequestedLinkIndex() + 1;

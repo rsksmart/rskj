@@ -4,6 +4,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageChannel;
+import co.rsk.net.sync.DownloadingHeadersSyncState;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.StatusUtils;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -587,6 +588,7 @@ public class SyncProcessorTest {
         int step = 10;
         int linkCount = 10;
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), connectionPoint);
+        processor.startDownloadingSkeleton(connectionPoint);
         List<BlockIdentifier> blockIdentifiers = buildSkeleton(blockchain, connectionPoint, step, linkCount);
 
         SkeletonResponseMessage response = new SkeletonResponseMessage(new Random().nextLong(), blockIdentifiers);
@@ -594,10 +596,12 @@ public class SyncProcessorTest {
         processor.processSkeletonResponse(sender, response);
 
         Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assert.assertEquals(2, sender.getMessages().size());
 
-        Message message = sender.getMessages().get(0);
+        Message message = sender.getMessages().get(1);
 
+        // startDownloadingSkeleton tries to send a SKELETON_REQUEST_MESSAGE that is never consumed
+        Assert.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, sender.getMessages().get(0).getMessageType());
         Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
 
         BlockHeadersRequestMessage request = (BlockHeadersRequestMessage)message;
@@ -605,10 +609,11 @@ public class SyncProcessorTest {
         Assert.assertArrayEquals(blockIdentifiers.get(1).getHash(), request.getHash());
         Assert.assertEquals(10, request.getCount());
 
-        List<BlockIdentifier> skeleton = processor.getSkeleton();
+        DownloadingHeadersSyncState syncState = (DownloadingHeadersSyncState) processor.getSyncState();
+        List<BlockIdentifier> skeleton = syncState.getSkeleton();
 
         Assert.assertEquals(10, skeleton.size());
-        Assert.assertEquals(1, processor.getExpectedResponses().size());
+        Assert.assertEquals(2, processor.getExpectedResponses().size());
     }
 
     @Test
@@ -646,6 +651,7 @@ public class SyncProcessorTest {
         int step = 10;
         int linkCount = 10;
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), connectionPoint);
+        processor.startDownloadingSkeleton(connectionPoint);
         List<BlockIdentifier> blockIdentifiers = buildSkeleton(blockchain, connectionPoint, step, linkCount);
 
         SkeletonResponseMessage response = new SkeletonResponseMessage(new Random().nextLong(), blockIdentifiers);
@@ -653,17 +659,19 @@ public class SyncProcessorTest {
         processor.processSkeletonResponse(sender, response);
 
         Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        Assert.assertEquals(2, sender.getMessages().size());
 
-        Message message = sender.getMessages().get(0);
+        Message message = sender.getMessages().get(1);
 
+        // startDownloadingSkeleton tries to send a SKELETON_REQUEST_MESSAGE that is never consumed
+        Assert.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, sender.getMessages().get(0).getMessageType());
         Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
 
         BlockHeadersRequestMessage request = (BlockHeadersRequestMessage)message;
 
         Assert.assertEquals(5, request.getCount());
         Assert.assertArrayEquals(blockIdentifiers.get(1).getHash(), request.getHash());
-        Assert.assertEquals(1, processor.getExpectedResponses().size());
+        Assert.assertEquals(2, processor.getExpectedResponses().size());
     }
 
     private List<BlockIdentifier> buildSkeleton(Blockchain blockchain, int connectionPoint, int step, int linkCount) {

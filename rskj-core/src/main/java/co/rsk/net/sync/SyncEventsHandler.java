@@ -13,15 +13,17 @@ public interface SyncEventsHandler {
 
     void sendBlockHashRequest(long height);
 
-    void sendNextBodyRequest(@Nonnull BlockHeader header);
+    void sendBodyRequest(@Nonnull BlockHeader header);
 
     void startSyncing(MessageChannel peer);
 
     void startDownloadingBodies(Queue<BlockHeader> pendingHeaders);
 
-    void startRequestingHeaders(List<BlockIdentifier> skeleton, long connectionPoint);
+    void startDownloadingHeaders(List<BlockIdentifier> skeleton, long connectionPoint);
+
+    void startDownloadingSkeleton(long connectionPoint);
 
     void stopSyncing();
 
-    void sendNextBlockHeadersRequest();
+    void sendBlockHeadersRequest(ChunkDescriptor chunk);
 }

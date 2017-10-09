@@ -35,7 +35,7 @@ public class SyncProcessor implements SyncEventsHandler {
     private Map<Long, PendingBodyResponse> pendingBodyResponses = new HashMap<>();
 
     private SyncState syncState;
-    private SkeletonDownloadHelper skeletonDownloadHelper;
+    private NodeID selectedPeerId;
     private PendingMessages pendingMessages;
     private SyncInformationImpl syncInformation;
 
@@ -83,7 +83,7 @@ public class SyncProcessor implements SyncEventsHandler {
         if (!pendingMessages.isPending(message.getId(), message.getMessageType()))
             return;
 
-        syncState.newBlockHeaders(message);
+        syncState.newBlockHeaders(message.getBlockHeaders());
     }
 
     public void processBodyResponse(MessageChannel peer, BodyResponseMessage message) {
@@ -111,26 +111,18 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @Override
     public void sendSkeletonRequest(long height) {
-        NodeID peerId = skeletonDownloadHelper.getSelectedPeerId();
-        logger.trace("Send skeleton request to node {} height {}", peerId, height);
+        logger.trace("Send skeleton request to node {} height {}", selectedPeerId, height);
         MessageWithId message = new SkeletonRequestMessage(pendingMessages.getNextRequestId(), height);
-        MessageChannel channel = peerStatuses.getPeer(peerId).getMessageChannel();
+        MessageChannel channel = peerStatuses.getPeer(selectedPeerId).getMessageChannel();
         sendMessage(channel, message);
     }
 
     @Override
     public void sendBlockHashRequest(long height) {
-        NodeID peerId = skeletonDownloadHelper.getSelectedPeerId();
-        logger.trace("Send hash request to node {} height {}", peerId, height);
+        logger.trace("Send hash request to node {} height {}", selectedPeerId, height);
         BlockHashRequestMessage message = new BlockHashRequestMessage(pendingMessages.getNextRequestId(), height);
-        MessageChannel channel = peerStatuses.getPeer(peerId).getMessageChannel();
+        MessageChannel channel = peerStatuses.getPeer(selectedPeerId).getMessageChannel();
         sendMessage(channel, message);
-    }
-
-    @Override
-    public void startRequestingHeaders(List<BlockIdentifier> skeleton, long connectionPoint) {
-        skeletonDownloadHelper.setSkeleton(skeleton, connectionPoint);
-        this.sendNextBlockHeadersRequest();
     }
 
     public void processBlockResponse(MessageChannel sender, BlockResponseMessage message) {
@@ -152,22 +144,19 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void sendNextBlockHeadersRequest() {
-        NodeID peerId = skeletonDownloadHelper.getSelectedPeerId();
-        MessageChannel peer = peerStatuses.getPeer(peerId).getMessageChannel();
-        logger.trace("Send headers request to node {}", peer.getPeerNodeID());
-        ChunkDescriptor chunk = skeletonDownloadHelper.getNextChunk();
-        syncState.messageSent();
+    public void sendBlockHeadersRequest(ChunkDescriptor chunk) {
+        logger.trace("Send headers request to node {}", selectedPeerId);
+
+        MessageChannel peer = peerStatuses.getPeer(selectedPeerId).getMessageChannel();
         BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(pendingMessages.getNextRequestId(), chunk.getHash(), chunk.getCount());
         sendMessage(peer, message);
     }
 
     @Override
-    public void sendNextBodyRequest(@Nonnull BlockHeader header) {
-        NodeID peerId = skeletonDownloadHelper.getSelectedPeerId();
-        MessageChannel peer = peerStatuses.getPeer(peerId).getMessageChannel();
+    public void sendBodyRequest(@Nonnull BlockHeader header) {
+        logger.trace("Send body request block {} hash {} to peer {}", header.getNumber(), HashUtil.shortHash(header.getHash()), selectedPeerId);
 
-        logger.trace("Send body request block {} hash {} to peer {}", header.getNumber(), HashUtil.shortHash(header.getHash()), peer.getPeerNodeID());
+        MessageChannel peer = peerStatuses.getPeer(selectedPeerId).getMessageChannel();
         BodyRequestMessage message = new BodyRequestMessage(pendingMessages.getNextRequestId(), header.getHash());
         sendMessage(peer, message);
         pendingBodyResponses.put(message.getId(), new PendingBodyResponse(peer.getPeerNodeID(), header));
@@ -176,8 +165,8 @@ public class SyncProcessor implements SyncEventsHandler {
     @Override
     public void startSyncing(MessageChannel peer) {
         logger.trace("Find connection point with node {}", peer.getPeerNodeID());
-        this.skeletonDownloadHelper = new SkeletonDownloadHelper(syncConfiguration, peer.getPeerNodeID());
-        setSyncState(new SyncingWithPeerSyncState(this.syncConfiguration, this, syncInformation));
+        selectedPeerId = peer.getPeerNodeID();
+        setSyncState(new FindingConnectionPointSyncState(this.syncConfiguration, this, syncInformation));
     }
 
     @Override
@@ -186,8 +175,18 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
+    public void startDownloadingHeaders(List<BlockIdentifier> skeleton, long connectionPoint) {
+        setSyncState(new DownloadingHeadersSyncState(this.syncConfiguration, this, syncInformation, skeleton, connectionPoint));
+    }
+
+    @Override
+    public void startDownloadingSkeleton(long connectionPoint) {
+        setSyncState(new DownloadingSkeletonSyncState(this.syncConfiguration, this, syncInformation, connectionPoint));
+    }
+
+    @Override
     public void stopSyncing() {
-        this.skeletonDownloadHelper = null;
+        selectedPeerId = null;
         this.pendingBodyResponses.clear();
         this.pendingMessages.clear();
         setSyncState(new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses));
@@ -226,20 +225,20 @@ public class SyncProcessor implements SyncEventsHandler {
     @VisibleForTesting
     public void setSelectedPeer(MessageChannel peer, Status status, long height) {
         peerStatuses.getOrRegisterPeer(peer).setStatus(status);
-        this.skeletonDownloadHelper = new SkeletonDownloadHelper(syncConfiguration, peer.getPeerNodeID());
-        SyncingWithPeerSyncState newState = new SyncingWithPeerSyncState(this.syncConfiguration, this, syncInformation);
+        selectedPeerId = peer.getPeerNodeID();
+        FindingConnectionPointSyncState newState = new FindingConnectionPointSyncState(this.syncConfiguration, this, syncInformation);
         newState.setConnectionPoint(height);
         this.syncState = newState;
     }
 
     @VisibleForTesting
-    public List<BlockIdentifier> getSkeleton() {
-        return this.skeletonDownloadHelper.getSkeleton();
+    public SyncState getSyncState() {
+        return this.syncState;
     }
 
     @VisibleForTesting
     public boolean isPeerSyncing(NodeID nodeID) {
-        return syncState.isSyncing() && skeletonDownloadHelper.getSelectedPeerId() == nodeID;
+        return syncState.isSyncing() && selectedPeerId == nodeID;
     }
 
     @VisibleForTesting
@@ -272,19 +271,14 @@ public class SyncProcessor implements SyncEventsHandler {
         }
 
         @Override
-        public NodeID getSelectedPeerId() {
-            return skeletonDownloadHelper.getSelectedPeerId();
-        }
-
-        @Override
         public Status getSelectedPeerStatus() {
-            return getPeerStatus(getSelectedPeerId()).getStatus();
+            return getPeerStatus(selectedPeerId).getStatus();
         }
 
         @Override
         public boolean isExpectedBody(long requestId) {
             PendingBodyResponse expected = pendingBodyResponses.get(requestId);
-            return expected != null && getSelectedPeerId().equals(expected.nodeID);
+            return expected != null && selectedPeerId.equals(expected.nodeID);
         }
 
         @Override
@@ -314,13 +308,8 @@ public class SyncProcessor implements SyncEventsHandler {
             return true;
         }
 
-        @Override
-        public SkeletonDownloadHelper getSkeletonDownloadHelper() {
-            return skeletonDownloadHelper;
-        }
-
         public MessageChannel getSelectedPeer() {
-            return peerStatuses.getPeer(getSelectedPeerId()).getMessageChannel();
+            return peerStatuses.getPeer(selectedPeerId).getMessageChannel();
         }
 
         private SyncPeerStatus getPeerStatus(NodeID nodeID) {

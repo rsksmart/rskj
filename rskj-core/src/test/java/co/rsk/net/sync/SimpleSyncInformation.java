@@ -2,7 +2,6 @@ package co.rsk.net.sync;
 
 
 import co.rsk.net.MessageChannel;
-import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.messages.BodyResponseMessage;
 import org.ethereum.core.BlockHeader;
@@ -18,17 +17,7 @@ public class SimpleSyncInformation implements SyncInformation {
     }
 
     @Override
-    public NodeID getSelectedPeerId() {
-        return null;
-    }
-
-    @Override
     public Status getSelectedPeerStatus() {
-        return null;
-    }
-
-    @Override
-    public SkeletonDownloadHelper getSkeletonDownloadHelper() {
         return null;
     }
 

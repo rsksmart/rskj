@@ -1,26 +1,19 @@
 package co.rsk.net.sync;
 
-import javax.annotation.Nonnull;
 import java.time.Duration;
 
-public class DecidingSyncState implements SyncState {
-    private Duration timeElapsed = Duration.ZERO;
-    private SyncConfiguration syncConfiguration;
-    private SyncEventsHandler syncEventsHandler;
-    private SyncInformation syncInformation;
+public class DecidingSyncState extends BaseSyncState {
     private PeersInformation knownPeers;
 
     public DecidingSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation, PeersInformation knownPeers) {
-        this.syncConfiguration = syncConfiguration;
-        this.syncEventsHandler = syncEventsHandler;
-        this.syncInformation = syncInformation;
+        super(syncInformation, syncEventsHandler, syncConfiguration);
+
         this.knownPeers = knownPeers;
     }
 
-    @Nonnull
     @Override
-    public SyncStatesIds getId() {
-        return SyncStatesIds.DECIDING;
+    public boolean isSyncing() {
+        return false;
     }
 
     @Override

@@ -17,16 +17,16 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     public void sendBlockHashRequest(long height) { }
 
     @Override
-    public void sendNextBlockHeadersRequest() { }
+    public void sendBlockHeadersRequest(ChunkDescriptor chunk) { }
 
     @Override
-    public void sendNextBodyRequest(@Nonnull BlockHeader header) { }
+    public void sendBodyRequest(@Nonnull BlockHeader header) { }
 
     @Override
     public void sendSkeletonRequest(long height) { }
 
     @Override
-    public void startRequestingHeaders(List<BlockIdentifier> skeleton, long connectionPoint) { }
+    public void startDownloadingHeaders(List<BlockIdentifier> skeleton, long connectionPoint) { }
 
     @Override
     public void startSyncing(MessageChannel peer) {
@@ -35,6 +35,9 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
 
     @Override
     public void startDownloadingBodies(Queue<BlockHeader> pendingHeaders) { }
+
+    @Override
+    public void startDownloadingSkeleton(long connectionPoint) { }
 
     @Override
     public void stopSyncing() { this.stopSyncingWasCalled_ = true; }
