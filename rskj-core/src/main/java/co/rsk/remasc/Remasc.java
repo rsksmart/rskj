@@ -229,15 +229,16 @@ public class Remasc {
     }
     private boolean isBrokenSelectionRule(BlockHeader processingBlockHeader, List<Sibling> siblings) {
         // Find out if main chain block selection rule was broken
+
         List<BlockInformation> listBlockInformation =
                 blockStore.getBlocksInformationByNumber(processingBlockHeader.getNumber());
         // Get max difficulty
         BigInteger maxSiblingDifficulty = getMaxTotalDifficultyForSiblings(listBlockInformation, siblings);
         BigInteger processingBlockTotalDifficulty = getTotalDifficultyOfProcessingBlockHeader(listBlockInformation,
                 processingBlockHeader);
-//        if (maxSiblingDifficulty.compareTo(processingBlockTotalDifficulty) != 0) {
-//            return false;
-//        }
+        if (maxSiblingDifficulty.compareTo(processingBlockTotalDifficulty) != 0) {
+            return false;
+        }
         for (Sibling sibling : siblings) {
             // Sibling pays significant more fees than block in the main chain OR Sibling has lower hash than block in the main chain
             if (sibling.getPaidFees() > 2 * processingBlockHeader.getPaidFees() ||
