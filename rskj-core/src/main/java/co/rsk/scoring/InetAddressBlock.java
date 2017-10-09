@@ -94,7 +94,7 @@ public class InetAddressBlock {
 
     @VisibleForTesting
     public byte[] getBytes() {
-        return this.bytes;
+        return this.bytes.clone();
     }
 
     @VisibleForTesting

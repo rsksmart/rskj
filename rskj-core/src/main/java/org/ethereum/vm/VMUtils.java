@@ -21,8 +21,6 @@ package org.ethereum.vm;
 
 import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.Serializers;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -33,20 +31,7 @@ import java.util.zip.*;
 import static org.ethereum.config.SystemProperties.CONFIG;
 
 public final class VMUtils {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger("VM");
-
     private VMUtils() {
-    }
-
-    public static void closeQuietly(Closeable closeable) {
-        try {
-            if (closeable != null) {
-                closeable.close();
-            }
-        } catch (IOException ioe) {
-            // ignore
-        }
     }
 
     public static void saveProgramTraceFile(Path basePath, String txHash, boolean compress, ProgramTrace trace) throws IOException {
@@ -72,45 +57,5 @@ public final class VMUtils {
             traceDir.mkdirs();
         }
         saveProgramTraceFile(tracePath, txHash, compress, trace);
-    }
-
-    private static final int BUF_SIZE = 4096;
-
-    private static void write(InputStream in, OutputStream out, int bufSize) throws IOException {
-        try {
-            byte[] buf = new byte[bufSize];
-            for (int count = in.read(buf); count != -1; count = in.read(buf)) {
-                out.write(buf, 0, count);
-            }
-        } finally {
-            closeQuietly(in);
-            closeQuietly(out);
-        }
-    }
-
-    public static byte[] compress(byte[] bytes) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        ByteArrayInputStream in = new ByteArrayInputStream(bytes);
-        DeflaterOutputStream out = new DeflaterOutputStream(baos, new Deflater(), BUF_SIZE);
-
-        write(in, out, BUF_SIZE);
-
-        return baos.toByteArray();
-    }
-
-    public static byte[] compress(String content) throws IOException {
-        return compress(content.getBytes("UTF-8"));
-    }
-
-    public static byte[] decompress(byte[] data) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(data.length);
-
-        ByteArrayInputStream in = new ByteArrayInputStream(data);
-        InflaterOutputStream out = new InflaterOutputStream(baos, new Inflater(), BUF_SIZE);
-
-        write(in, out, BUF_SIZE);
-
-        return baos.toByteArray();
     }
 }

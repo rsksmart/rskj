@@ -69,10 +69,6 @@ import static org.spongycastle.util.BigIntegers.asUnsignedByteArray;
  * @since 01.04.2014
  */
 public class RLP {
-
-    private static final Logger logger = LoggerFactory.getLogger("rlp");
-
-
     /**
      * Allow for content up to size of 2^64 bytes *
      */
@@ -770,26 +766,4 @@ public class RLP {
         }
         throw new RuntimeException("Unsupported type: Only accepting String, Integer and BigInteger for now");
     }
-
-
-    private static int calculateLength(byte[] data, int index) {
-        if ((data[index] & 0xFF) < OFFSET_SHORT_ITEM) {
-            return 1;
-        } else if ((data[index] & 0xFF) >= OFFSET_LONG_ITEM
-                && (data[index] & 0xFF) < OFFSET_SHORT_LIST) {
-
-            byte lengthOfLength = (byte) (data[index] - OFFSET_LONG_ITEM);
-            return calcLengthRaw(lengthOfLength, data, index);
-
-        } else if ((data[index] & 0xFF) >= OFFSET_SHORT_ITEM
-                && (data[index] & 0xFF) < OFFSET_LONG_ITEM) {
-
-            return (byte) (data[index] - OFFSET_SHORT_ITEM);
-
-        } else {
-            throw new RuntimeException("wrong decode attempt");
-        }
-    }
-
-
 }
