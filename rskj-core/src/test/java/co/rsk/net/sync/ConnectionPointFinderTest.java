@@ -8,8 +8,7 @@ public class ConnectionPointFinderTest {
     public void findConnectionPoint0In50() {
         Long expectedConnectionPoint = 0L;
         long[] expectedHeights = new long[] { 25, 12, 6, 3, 1 };
-        ConnectionPointFinder syncPeerProcessor = new ConnectionPointFinder();
-        syncPeerProcessor.startFindConnectionPoint(50);
+        ConnectionPointFinder syncPeerProcessor = new ConnectionPointFinder(50);
 
         for (long expectedHeight : expectedHeights) {
             Assert.assertEquals(expectedHeight, syncPeerProcessor.getFindingHeight());
@@ -25,8 +24,7 @@ public class ConnectionPointFinderTest {
     public void findConnectionPoint0In100() {
         Long expectedConnectionPoint = 0L;
         long[] expectedHeights = new long[] { 50, 25, 12, 6, 3, 1 };
-        ConnectionPointFinder connectionPointFinder = new ConnectionPointFinder();
-        connectionPointFinder.startFindConnectionPoint(100);
+        ConnectionPointFinder connectionPointFinder = new ConnectionPointFinder(100);
 
         for (long expectedHeight : expectedHeights) {
             Assert.assertEquals(expectedHeight, connectionPointFinder.getFindingHeight());
@@ -41,8 +39,7 @@ public class ConnectionPointFinderTest {
     @Test
     public void findConnectionPoint30In100() {
         Long expectedConnectionPoint = 30L;
-        ConnectionPointFinder connectionPointFinder = new ConnectionPointFinder();
-        connectionPointFinder.startFindConnectionPoint(100);
+        ConnectionPointFinder connectionPointFinder = new ConnectionPointFinder(100);
 
         Assert.assertEquals(50, connectionPointFinder.getFindingHeight());
         connectionPointFinder.updateNotFound();
@@ -73,8 +70,7 @@ public class ConnectionPointFinderTest {
     public void findConnectionPoint30In2030() {
         Long expectedConnectionPoint = 30L;
         long[] expectedHeights = new long[] { 1015, 507, 253, 126, 63, 31 };
-        ConnectionPointFinder connectionPointFinder = new ConnectionPointFinder();
-        connectionPointFinder.startFindConnectionPoint(2030);
+        ConnectionPointFinder connectionPointFinder = new ConnectionPointFinder(2030);
 
         for (long expectedHeight : expectedHeights) {
             Assert.assertEquals(expectedHeight, connectionPointFinder.getFindingHeight());
@@ -105,8 +101,7 @@ public class ConnectionPointFinderTest {
     public void findConnectionPoint300In4300() {
         Long expectedConnectionPoint = 300L;
         long[] expectedHeights = new long[] { 2150, 1075, 537 };
-        ConnectionPointFinder connectionPointFinder = new ConnectionPointFinder();
-        connectionPointFinder.startFindConnectionPoint(4300);
+        ConnectionPointFinder connectionPointFinder = new ConnectionPointFinder(4300);
 
         for (long expectedHeight : expectedHeights) {
             Assert.assertEquals(expectedHeight, connectionPointFinder.getFindingHeight());

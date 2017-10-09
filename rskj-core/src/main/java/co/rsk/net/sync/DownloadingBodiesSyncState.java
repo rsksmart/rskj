@@ -9,8 +9,6 @@ import java.util.Queue;
 public class DownloadingBodiesSyncState  extends BaseSyncState {
     private Queue<BlockHeader> pendingHeaders;
 
-    private Duration timeElapsed;
-
     public DownloadingBodiesSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation, Queue<BlockHeader> pendingHeaders) {
         super(syncInformation, syncEventsHandler, syncConfiguration);
 

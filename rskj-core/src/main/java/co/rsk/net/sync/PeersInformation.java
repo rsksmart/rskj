@@ -3,7 +3,6 @@ package co.rsk.net.sync;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -73,9 +72,9 @@ public class PeersInformation {
         return peerStatus;
     }
 
-    public void cleanExpired(Duration expirationTimePeerStatus) {
+    public void cleanExpired() {
         peerStatuses = peerStatuses.entrySet().stream()
-                .filter(e -> !e.getValue().isExpired(expirationTimePeerStatus))
+                .filter(e -> !e.getValue().isExpired(syncConfiguration.getExpirationTimePeerStatus()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

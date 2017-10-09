@@ -19,8 +19,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
         super(syncInformation, syncEventsHandler, syncConfiguration);
 
         this.pendingHeaders = new ArrayDeque<>();
-        this.skeletonDownloadHelper = new SkeletonDownloadHelper(syncConfiguration);
-        skeletonDownloadHelper.setSkeleton(skeleton, connectionPoint);
+        this.skeletonDownloadHelper = new SkeletonDownloadHelper(syncConfiguration, skeleton, connectionPoint);
     }
 
     @Override
@@ -35,7 +34,6 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
                 || chunk.size() != currentChunk.get().getCount()
                 || !ByteUtil.fastEquals(chunk.get(0).getHash(), currentChunk.get().getHash())) {
             // TODO(mc) do peer scoring and banning
-//            logger.trace("Invalid block headers response with ID {} from peer {}", message.getId(), peer.getPeerNodeID());
             syncEventsHandler.stopSyncing();
             return;
         }
@@ -48,7 +46,6 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
 
             if (!syncInformation.blockHeaderIsValid(header, parentHeader)) {
                 // TODO(mc) do peer scoring and banning
-//                logger.trace("Couldn't validate block header {} hash {} from peer {}", header.getNumber(), HashUtil.shortHash(header.getHash()), peer.getPeerNodeID());
                 syncEventsHandler.stopSyncing();
                 return;
             }
@@ -62,7 +59,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
             return;
         }
 
-//        logger.trace("Finished verifying headers from peer {}", peer.getPeerNodeID());
+        // Finished verifying headers
         syncEventsHandler.startDownloadingBodies(pendingHeaders);
     }
 

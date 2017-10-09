@@ -12,8 +12,6 @@ public interface SyncInformation {
 
     boolean hasLowerDifficulty(MessageChannel peer);
 
-    Status getSelectedPeerStatus();
-
     boolean isExpectedBody(long expected);
 
     // TODO(mc) don't receive a full message

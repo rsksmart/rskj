@@ -4,6 +4,9 @@ import com.google.common.annotations.VisibleForTesting;
 
 import java.util.Optional;
 
+/**
+ * Uses Binary Search to help find a connection point with another peer.
+ */
 public class ConnectionPointFinder {
 
     // Status used to find connection point
@@ -11,17 +14,15 @@ public class ConnectionPointFinder {
     private long end;
 
     // Connection point found or not
-    private Optional<Long> connectionPoint = Optional.empty();
+    private Long connectionPoint = null;
 
-
-    public void startFindConnectionPoint(long height) {
+    public ConnectionPointFinder(long height) {
         this.start = 0;
         this.end = height;
-        this.connectionPoint = Optional.empty();
     }
 
     public Optional<Long> getConnectionPoint() {
-        return this.connectionPoint;
+        return Optional.ofNullable(this.connectionPoint);
     }
 
     public long getFindingHeight() {
@@ -30,15 +31,15 @@ public class ConnectionPointFinder {
 
     public void updateFound() {
         this.start = getFindingHeight();
-
-        if (this.end - this.start <= 1) {
-            this.setConnectionPoint(this.start);
-        }
+        trySettingConnectionPoint();
     }
 
     public void updateNotFound() {
         this.end = getFindingHeight();
+        trySettingConnectionPoint();
+    }
 
+    private void trySettingConnectionPoint() {
         if (this.end - this.start <= 1) {
             this.setConnectionPoint(this.start);
         }
@@ -46,6 +47,6 @@ public class ConnectionPointFinder {
 
     @VisibleForTesting
     public void setConnectionPoint(long height) {
-        this.connectionPoint = Optional.of(height);
+        this.connectionPoint = height;
     }
 }

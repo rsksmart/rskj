@@ -1,6 +1,5 @@
 package co.rsk.net.sync;
 
-import co.rsk.net.Status;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.util.Optional;
@@ -8,10 +7,10 @@ import java.util.Optional;
 public class FindingConnectionPointSyncState extends BaseSyncState {
     private ConnectionPointFinder connectionPointFinder;
 
-    public FindingConnectionPointSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation) {
+    public FindingConnectionPointSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation, long bestBlockNumber) {
         super(syncInformation, syncEventsHandler, syncConfiguration);
 
-        this.connectionPointFinder = new ConnectionPointFinder();
+        this.connectionPointFinder = new ConnectionPointFinder(bestBlockNumber);
     }
 
     @Override
@@ -21,7 +20,6 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
 
     @Override
     public void newConnectionPointData(byte[] hash) {
-        this.resetTimeElapsed();
 
         if (this.syncInformation.isKnownBlock(hash)) {
             connectionPointFinder.updateFound();
@@ -31,18 +29,17 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
 
         Optional<Long> cp = connectionPointFinder.getConnectionPoint();
         if (!cp.isPresent()) {
+            this.resetTimeElapsed();
             syncEventsHandler.sendBlockHashRequest(connectionPointFinder.getFindingHeight());
             return;
         }
 
-        // connection point found, request skeleton
+        // connection point found
         syncEventsHandler.startDownloadingSkeleton(cp.get());
     }
 
     @Override
     public void onEnter() {
-        Status status = syncInformation.getSelectedPeerStatus();
-        connectionPointFinder.startFindConnectionPoint(status.getBestBlockNumber());
         syncEventsHandler.sendBlockHashRequest(connectionPointFinder.getFindingHeight());
     }
 

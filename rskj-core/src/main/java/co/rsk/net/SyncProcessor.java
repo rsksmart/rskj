@@ -166,7 +166,8 @@ public class SyncProcessor implements SyncEventsHandler {
     public void startSyncing(MessageChannel peer) {
         logger.trace("Find connection point with node {}", peer.getPeerNodeID());
         selectedPeerId = peer.getPeerNodeID();
-        setSyncState(new FindingConnectionPointSyncState(this.syncConfiguration, this, syncInformation));
+        long bestBlockNumber = syncInformation.getPeerStatus(selectedPeerId).getStatus().getBestBlockNumber();
+        setSyncState(new FindingConnectionPointSyncState(this.syncConfiguration, this, syncInformation, bestBlockNumber));
     }
 
     @Override
@@ -226,7 +227,7 @@ public class SyncProcessor implements SyncEventsHandler {
     public void setSelectedPeer(MessageChannel peer, Status status, long height) {
         peerStatuses.getOrRegisterPeer(peer).setStatus(status);
         selectedPeerId = peer.getPeerNodeID();
-        FindingConnectionPointSyncState newState = new FindingConnectionPointSyncState(this.syncConfiguration, this, syncInformation);
+        FindingConnectionPointSyncState newState = new FindingConnectionPointSyncState(this.syncConfiguration, this, syncInformation, height);
         newState.setConnectionPoint(height);
         this.syncState = newState;
     }
@@ -271,11 +272,6 @@ public class SyncProcessor implements SyncEventsHandler {
         }
 
         @Override
-        public Status getSelectedPeerStatus() {
-            return getPeerStatus(selectedPeerId).getStatus();
-        }
-
-        @Override
         public boolean isExpectedBody(long requestId) {
             PendingBodyResponse expected = pendingBodyResponses.get(requestId);
             return expected != null && selectedPeerId.equals(expected.nodeID);
@@ -285,7 +281,7 @@ public class SyncProcessor implements SyncEventsHandler {
         public void saveBlock(BodyResponseMessage message) {
             // we know it exists because it was called from a SyncEvent
             BlockHeader header = pendingBodyResponses.get(message.getId()).header;
-            blockSyncService.processBlock(getSelectedPeer(), Block.fromValidData(header, message.getTransactions(), message.getUncles()));
+            blockSyncService.processBlock(getSelectedPeerChannel(), Block.fromValidData(header, message.getTransactions(), message.getUncles()));
         }
 
         @Override
@@ -308,7 +304,7 @@ public class SyncProcessor implements SyncEventsHandler {
             return true;
         }
 
-        public MessageChannel getSelectedPeer() {
+        public MessageChannel getSelectedPeerChannel() {
             return peerStatuses.getPeer(selectedPeerId).getMessageChannel();
         }
 

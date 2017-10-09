@@ -25,13 +25,12 @@ public class DecidingSyncState extends BaseSyncState {
 
     @Override
     public void tick(Duration duration) {
+        knownPeers.cleanExpired();
         timeElapsed = timeElapsed.plus(duration);
-        if (knownPeers.countIf(s -> !s.isExpired(syncConfiguration.getExpirationTimePeerStatus())) > 0 &&
+        if (knownPeers.count() > 0 &&
                 timeElapsed.compareTo(syncConfiguration.getTimeoutWaitingPeers()) >= 0) {
 
             canStartSyncing();
-        } else {
-            knownPeers.cleanExpired(syncConfiguration.getExpirationTimePeerStatus());
         }
     }
 

@@ -17,11 +17,6 @@ public class SimpleSyncInformation implements SyncInformation {
     }
 
     @Override
-    public Status getSelectedPeerStatus() {
-        return null;
-    }
-
-    @Override
     public boolean hasLowerDifficulty(MessageChannel peer) {
         return hasLowerDifficulty;
     }
