@@ -472,19 +472,6 @@ public class BridgeTest {
         }
     }
 
-//    @Test
-//    public void exceptionInGetBtcTxHashesAlreadyProcessed() {
-//        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-//
-//        try {
-//            bridge.getBtcTxHashesAlreadyProcessed(null);
-//            Assert.fail();
-//        }
-//        catch (RuntimeException ex) {
-//            Assert.assertEquals("Exception in getBtcTxHashesAlreadyProcessed", ex.getMessage());
-//        }
-//    }
-
     private BtcTransaction createTransaction() {
         return new SimpleBtcTransaction(networkParameters, PegTestUtils.createHash());
     }
@@ -561,11 +548,6 @@ public class BridgeTest {
         getGasForDataPaidTx(50017, Bridge.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR);
     }
 
-//    @Test
-//    public void getGasForDataGBTHAP() {
-//        getGasForDataPaidTx(50018, Bridge.GET_BTC_TX_HASHES_ALREADY_PROCESSED);
-//    }
-
     @Test
     public void getGasForDataGetFederationAddress() {
         getGasForDataPaidTx(50018, Bridge.GET_FEDERATION_ADDRESS);
@@ -575,8 +557,6 @@ public class BridgeTest {
     public void getGasForDataGetMinimumLockTxValue() {
         getGasForDataPaidTx(50019, Bridge.GET_MINIMUM_LOCK_TX_VALUE);
     }
-
-
 
     private void getGasForDataPaidTx(int expected, CallTransaction.Function function, Object... funcArgs) {
         BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
