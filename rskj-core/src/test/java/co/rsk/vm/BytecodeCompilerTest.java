@@ -126,6 +126,20 @@ public class BytecodeCompilerTest {
     }
 
     @Test
+    public void compileDupNWithValue() {
+        BytecodeCompiler compiler = new BytecodeCompiler();
+
+        Assert.assertArrayEquals(new byte[] { (byte)0xa9, 0x00 }, compiler.compile("DUPN 0x00"));
+    }
+
+    @Test
+    public void compileSwapNWithValue() {
+        BytecodeCompiler compiler = new BytecodeCompiler();
+
+        Assert.assertArrayEquals(new byte[] { (byte)0xaa, 0x01 }, compiler.compile("SWAPN 0x01"));
+    }
+
+    @Test
     public void compileSimplePushWithDecimal() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
