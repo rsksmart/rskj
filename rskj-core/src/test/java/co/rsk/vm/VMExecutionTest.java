@@ -42,7 +42,6 @@ public class VMExecutionTest {
 
     @Before
     public void setup() {
-
         invoke = new ProgramInvokeMockImpl();
         compiler = new BytecodeCompiler();
     }
@@ -74,7 +73,30 @@ public class VMExecutionTest {
 
     @Test
     public void testJumpSkippingInvalidJump() {
-        testCode("PUSH1 0x05 JUMP PUSH1 0xa0 JUMPDEST PUSH1 0x01", 4, "0000000000000000000000000000000000000000000000000000000000000001");
+        testCode("PUSH1 0x05 JUMP PUSH1 0xa0 JUMPDEST PUSH1 0x01",
+                4,
+                "0000000000000000000000000000000000000000000000000000000000000001");
+    }
+
+    @Test
+    public void dupnFirstItem() {
+        testCode("PUSH1 0x01 DUPN 0x00",
+                2,
+                "0000000000000000000000000000000000000000000000000000000000000001");
+    }
+
+    @Test
+    public void dupnFourthItem() {
+        testCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 DUPN 0x03",
+                5,
+                "0000000000000000000000000000000000000000000000000000000000000001");
+    }
+
+    @Test
+    public void dupnTwentiethItem() {
+        testCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x14 DUPN 0x13",
+                21,
+                "0000000000000000000000000000000000000000000000000000000000000001");
     }
 
     @Test
