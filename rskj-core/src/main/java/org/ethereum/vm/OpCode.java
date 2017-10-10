@@ -574,6 +574,11 @@ public enum OpCode {
      */
     DUPN(0xa9, 1, 2, VERY_LOW_TIER),
 
+    /**
+     * SWAPN
+     */
+    SWAPN(0xaa, 2, 2, VERY_LOW_TIER),
+
     /*  System operations   */
 
     /**
