@@ -556,6 +556,9 @@ public class OpCodes {
     /*  System operations   */
     static final byte OP_CODEREPLACE =(byte)0xa8  ;
 
+    static final byte OP_DUPN = (byte)0xa9;
+    static final byte OP_SWAPN = (byte)0xaa;
+
     /**
      * (0xf0) Create a new account with associated code
      */
