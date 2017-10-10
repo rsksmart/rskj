@@ -406,6 +406,10 @@ public class Program {
         return data;
     }
 
+    public int getOperand() {
+        return ops[pc] & 0xff;
+    }
+
     public DataWord sweepGetDataWord(int n) {
           if (pc + n > ops.length) {
               stop();

@@ -942,6 +942,16 @@ public class VM {
         program.step();
     }
 
+    protected void doDUPN() {
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        program.step();
+        int n = program.getOperand();
+        DataWord word1 = stack.get(stack.size() - n - 1);
+        program.stackPush(program.newDataWord(word1));
+        program.step();
+    }
+
     protected void doSWAP(){
         spendOpCodeGas();
         // EXECUTION PHASE
@@ -1071,7 +1081,6 @@ public class VM {
         program.disposeWord(value);
         program.step();
     }
-
 
     protected void doSLOAD() {
         if (computeGas) {
@@ -1693,6 +1702,8 @@ public class VM {
             break;
             case OpCodes.OP_CODEREPLACE: doCODEREPLACE();
             break;
+            case OpCodes.OP_DUPN: doDUPN();
+                break;
             case OpCodes.OP_HEADER:
                 //fallthrough to default case until implementation's ready
             default:

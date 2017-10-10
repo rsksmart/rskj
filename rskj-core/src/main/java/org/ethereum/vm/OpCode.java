@@ -569,6 +569,11 @@ public enum OpCode {
      */
     CODEREPLACE(0xa8, 2, 1, SPECIAL_TIER,1),   //       [in_size] [in_offs] CODEREPLACE -> success
 
+    /**
+     * DUPN
+     */
+    DUPN(0xa9, 1, 2, VERY_LOW_TIER),
+
     /*  System operations   */
 
     /**
