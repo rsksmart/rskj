@@ -946,8 +946,8 @@ public class VM {
         spendOpCodeGas();
         // EXECUTION PHASE
         program.step();
-        int n = program.getOperand();
-        DataWord word1 = stack.get(stack.size() - n - 1);
+        int n = program.getOperand() + 1;
+        DataWord word1 = stack.get(stack.size() - n);
         program.stackPush(program.newDataWord(word1));
         program.step();
     }
@@ -956,6 +956,15 @@ public class VM {
         spendOpCodeGas();
         // EXECUTION PHASE
         int n = op.val() - OpCode.SWAP1.val() + 2;
+        stack.swap(stack.size() - 1, stack.size() - n);
+        program.step();
+    }
+
+    protected void doSWAPN(){
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        program.step();
+        int n = program.getOperand() + 2;
         stack.swap(stack.size() - 1, stack.size() - n);
         program.step();
     }
@@ -1628,6 +1637,8 @@ public class VM {
             case OpCodes.OP_SWAP_15:
             case OpCodes.OP_SWAP_16: doSWAP();
             break;
+            case OpCodes.OP_SWAPN: doSWAPN();
+                break;
             case OpCodes.OP_LOG_0:
             case OpCodes.OP_LOG_1:
             case OpCodes.OP_LOG_2:
