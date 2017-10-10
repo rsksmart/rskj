@@ -72,6 +72,7 @@ public class BytecodeCompiler {
             return 0x06;
         if ("smod".equals(token))
             return 0x07;
+
         if ("dup1".equals(token))
             return (byte)0x80;
         if ("dup2".equals(token))
@@ -104,6 +105,45 @@ public class BytecodeCompiler {
             return (byte)0x8e;
         if ("dup16".equals(token))
             return (byte)0x8f;
+        if ("dupn".equals(token))
+            return (byte)0xa9;
+
+        if ("swap1".equals(token))
+            return (byte)0x90;
+        if ("swap2".equals(token))
+            return (byte)0x91;
+        if ("swap3".equals(token))
+            return (byte)0x92;
+        if ("swap4".equals(token))
+            return (byte)0x93;
+        if ("swap5".equals(token))
+            return (byte)0x94;
+        if ("swap6".equals(token))
+            return (byte)0x95;
+        if ("swap7".equals(token))
+            return (byte)0x96;
+        if ("swap8".equals(token))
+            return (byte)0x97;
+        if ("swap9".equals(token))
+            return (byte)0x98;
+        if ("swap10".equals(token))
+            return (byte)0x99;
+        if ("swap11".equals(token))
+            return (byte)0x9a;
+        if ("swap12".equals(token))
+            return (byte)0x9b;
+        if ("swap13".equals(token))
+            return (byte)0x9c;
+        if ("swap14".equals(token))
+            return (byte)0x9d;
+        if ("swap15".equals(token))
+            return (byte)0x9e;
+        if ("swap16".equals(token))
+            return (byte)0x9f;
+
+        if ("swapn".equals(token))
+            return (byte)0xaa;
+
         if ("jump".equals(token))
             return (byte)0x56;
         if ("jumpi".equals(token))
@@ -112,8 +152,8 @@ public class BytecodeCompiler {
             return (byte)0x5b;
 
         if (token.startsWith("0x"))
-            return (byte) Integer.parseInt(token.substring(2), 16);
+            return (byte)Integer.parseInt(token.substring(2), 16);
 
-        return (byte) Integer.parseInt(token);
+        return (byte)Integer.parseInt(token);
     }
 }
