@@ -19,21 +19,23 @@
 
 package org.ethereum.config;
 
+import co.rsk.config.MiningConfig;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.metrics.BlockHeaderElement;
 import co.rsk.metrics.HashRateCalculator;
-import co.rsk.metrics.HashRateCalculatorImpl;
+import co.rsk.metrics.HashRateCalculatorMining;
+import co.rsk.metrics.HashRateCalculatorNonMining;
 import co.rsk.net.discovery.PeerExplorer;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
-import co.rsk.util.AccountUtils;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.*;
@@ -55,6 +57,7 @@ import org.springframework.context.annotation.Scope;
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -136,11 +139,31 @@ public class DefaultConfig {
     }
 
     @Bean
-    public HashRateCalculator hashRateCalculator() {
-        BlockStore blockStore = appCtx.getBean(BlockStore.class);
-        AccountUtils accountUtils = appCtx.getBean(AccountUtils.class);
-        RskCustomCache<ByteArrayWrapper, BlockHeaderElement> cache = new RskCustomCache<ByteArrayWrapper, BlockHeaderElement>(60000L);
-        return new HashRateCalculatorImpl(blockStore, accountUtils, cache);
+    public HashRateCalculator hashRateCalculator(BlockStore blockStore, MiningConfig miningConfig) {
+        RskCustomCache<ByteArrayWrapper, BlockHeaderElement> cache = new RskCustomCache<>(60000L);
+        if (!miningConfig.isMiningEnabled()) {
+            return new HashRateCalculatorNonMining(blockStore, cache);
+        }
+
+        return new HashRateCalculatorMining(blockStore, cache, miningConfig.getCoinbaseAddress());
+    }
+
+    @Bean
+    public MiningConfig miningConfig(RskSystemProperties rskSystemProperties) {
+        String secret = rskSystemProperties.coinbaseSecret();
+        byte[] privKey = HashUtil.sha3(secret.getBytes(StandardCharsets.UTF_8));
+
+        boolean isMiningEnabled = rskSystemProperties.minerServerEnabled();
+        byte[] coinbaseAddress = ECKey.fromPrivate(privKey).getAddress();
+        double minerMinFeesNotifyInDollars = rskSystemProperties.minerMinFeesNotifyInDollars();
+        double minerGasUnitInDollars = rskSystemProperties.minerGasUnitInDollars();
+        long minerMinGasPrice = rskSystemProperties.minerMinGasPrice();
+        int minGasLimit = rskSystemProperties.getBlockchainConfig().getCommonConstants().getMinGasLimit();
+        long targetGasLimit = rskSystemProperties.getBlockchainConfig().getCommonConstants().getTargetGasLimit();
+        boolean isTargetGasLimitForced = rskSystemProperties.getForceTargetGasLimit();
+        int uncleListLimit = rskSystemProperties.getBlockchainConfig().getCommonConstants().getUncleListLimit();
+        int uncleGenerationLimit = rskSystemProperties.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
+        return new MiningConfig(isMiningEnabled, coinbaseAddress, minerMinFeesNotifyInDollars, minerGasUnitInDollars, minerMinGasPrice, minGasLimit, targetGasLimit, isTargetGasLimitForced, uncleListLimit, uncleGenerationLimit);
     }
 
     @Bean

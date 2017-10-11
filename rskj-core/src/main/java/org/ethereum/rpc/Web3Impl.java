@@ -354,12 +354,9 @@ public class Web3Impl implements Web3 {
     }
 
     public String eth_hashrate() {
-        BigDecimal hashesPerSecond = BigDecimal.ZERO;
-        if(RskSystemProperties.CONFIG.minerServerEnabled()) {
-            BigInteger hashesPerHour = this.worldManager.getHashRateCalculator().calculateNodeHashRate(Duration.ofHours(1));
-            hashesPerSecond = new BigDecimal(hashesPerHour)
-                    .divide(new BigDecimal(TimeUnit.HOURS.toSeconds(1)), 3, RoundingMode.HALF_UP);
-        }
+        BigInteger hashesPerHour = this.worldManager.getHashRateCalculator().calculateNodeHashRate(Duration.ofHours(1));
+        BigDecimal hashesPerSecond = new BigDecimal(hashesPerHour)
+                .divide(new BigDecimal(TimeUnit.HOURS.toSeconds(1)), 3, RoundingMode.HALF_UP);
 
         String result = hashesPerSecond.toString();
 

@@ -18,7 +18,7 @@
 
 package co.rsk.metrics;
 
-import co.rsk.util.AccountUtils;
+import co.rsk.config.MiningConfig;
 import co.rsk.util.RskCustomCache;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -47,16 +47,14 @@ public class HashRateCalculatorTest {
     private Block block;
     private BlockHeader blockHeader;
 
-    private AccountUtils accountUtils;
-
-    private HashRateCalculatorImpl hashRateCalculator;
+    private MiningConfig miningConfig;
 
     @Before
     public void init() {
         blockStore = Mockito.mock(BlockStore.class);
         block = Mockito.mock(Block.class);
         blockHeader = Mockito.mock(BlockHeader.class);
-        accountUtils = Mockito.mock(AccountUtils.class);
+        miningConfig = Mockito.mock(MiningConfig.class);
 
         Mockito.when(block.getHeader()).thenReturn(blockHeader);
         Mockito.when(block.getHash()).thenReturn(FAKE_GENERIC_HASH);
@@ -72,9 +70,8 @@ public class HashRateCalculatorTest {
 
         Mockito.when(blockStore.getBestBlock()).thenReturn(block);
         Mockito.when(blockStore.getBlockByHash(Mockito.any())).thenReturn(block);
-        Mockito.when(accountUtils.getCoinbaseAddress()).thenReturn(FAKE_COINBASE);
-
-        hashRateCalculator = new HashRateCalculatorImpl(blockStore, accountUtils, new RskCustomCache<>(1000L));
+        Mockito.when(miningConfig.isMiningEnabled()).thenReturn(true);
+        Mockito.when(miningConfig.getCoinbaseAddress()).thenReturn(FAKE_COINBASE);
     }
 
     @Test
@@ -90,9 +87,31 @@ public class HashRateCalculatorTest {
 
         Mockito.when(block.getCumulativeDifficulty()).thenReturn(BigInteger.ONE);
 
+        HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));
 
         Assert.assertEquals(new BigInteger("+2"), hashRate);
+    }
+
+    @Test
+    public void calculateNodeHashRateWithMiningDisabled() {
+        long ts = System.currentTimeMillis() / 1000L;
+        Mockito.when(blockHeader.getTimestamp()).thenReturn(ts);
+
+        Mockito.when(blockHeader.getCoinbase())
+                .thenReturn(NOT_MY_COINBASE)
+                .thenReturn(FAKE_COINBASE)
+                .thenReturn(FAKE_COINBASE)
+                .thenReturn(NOT_MY_COINBASE);
+
+        Mockito.when(block.getCumulativeDifficulty()).thenReturn(BigInteger.ONE);
+
+        Mockito.when(miningConfig.isMiningEnabled()).thenReturn(false);
+
+        HashRateCalculator hashRateCalculator = new HashRateCalculatorNonMining(blockStore, new RskCustomCache<>(1000L));
+        BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));
+
+        Assert.assertEquals(BigInteger.ZERO, hashRate);
     }
 
     @Test
@@ -105,6 +124,7 @@ public class HashRateCalculatorTest {
 
         Mockito.when(block.getCumulativeDifficulty()).thenReturn(BigInteger.ONE);
 
+        HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));
 
         Assert.assertEquals(hashRate, BigInteger.ZERO);
@@ -123,6 +143,7 @@ public class HashRateCalculatorTest {
 
         Mockito.when(block.getCumulativeDifficulty()).thenReturn(BigInteger.ONE);
 
+        HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNetHashRate(Duration.ofHours(1));
 
         Assert.assertEquals(hashRate, new BigInteger("+4"));
@@ -138,6 +159,7 @@ public class HashRateCalculatorTest {
 
         Mockito.when(block.getCumulativeDifficulty()).thenReturn(BigInteger.ONE);
 
+        HashRateCalculator hashRateCalculator = new HashRateCalculatorMining(blockStore, new RskCustomCache<>(1000L), FAKE_COINBASE);
         BigInteger hashRate = hashRateCalculator.calculateNetHashRate(Duration.ofHours(1));
 
         Assert.assertEquals(hashRate, BigInteger.ZERO);
