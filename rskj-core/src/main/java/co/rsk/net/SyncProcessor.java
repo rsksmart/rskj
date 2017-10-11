@@ -52,6 +52,12 @@ public class SyncProcessor implements SyncEventsHandler {
 
     public void processStatus(MessageChannel sender, Status status) {
         logger.trace("Receiving syncState from node {} block {} {}", sender.getPeerNodeID(), status.getBestBlockNumber(), HashUtil.shortHash(status.getBestBlockHash()), status.getBestBlockHash());
+        // we keep track of best known block
+        final long peerBestBlockNumber = status.getBestBlockNumber();
+
+        if (peerBestBlockNumber > blockSyncService.getLastKnownBlockNumber())
+            blockSyncService.setLastKnownBlockNumber(peerBestBlockNumber);
+
         this.peerStatuses.getOrRegisterPeer(sender).setStatus(status);
         this.syncState.newPeerStatus();
     }

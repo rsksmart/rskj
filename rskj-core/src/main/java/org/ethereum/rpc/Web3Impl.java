@@ -197,16 +197,6 @@ public class Web3Impl implements Web3 {
         return arr;
     }
 
-    public String[] listObjectHashtoJsonHexArray(Collection<SerializableObject> c) {
-        String[] arr = new String[c.size()];
-        int i = 0;
-        for (SerializableObject item : c) {
-            // Todo: Which hash is required? RawHash or Hash ?
-            arr[i++] = toJsonHex(item.getHash());
-        }
-        return arr;
-    }
-
     public String web3_clientVersion() {
 
         String clientVersion = baseClientVersion + "/" + SystemProperties.CONFIG.projectVersion() + "/" +
@@ -295,18 +285,15 @@ public class Web3Impl implements Web3 {
     }
 
     public Object eth_syncing() {
-        Blockchain blockchain = worldManager.getBlockchain();
-
-        long currentBlock = worldManager.getBlockchain().getBestBlock().getNumber();
         BlockProcessor processor = worldManager.getNodeBlockProcessor();
-        if (processor == null) {
-            // TODO(raltman): processor should never be null. Change Web3Impl to request BlockProcessor from Roostock.
+        // TODO(raltman): processor should never be null. Change Web3Impl to request BlockProcessor from Roostock.
+        //if (processor == null || !processor.hasBetterBlockToSync()) {
+        if (processor == null){
             return false;
         }
-        long highestBlock = processor.getLastKnownBlockNumber();
 
-        if (currentBlock >= highestBlock)
-            return false;
+        long currentBlock = worldManager.getBlockchain().getBestBlock().getNumber();
+        long highestBlock = processor.getLastKnownBlockNumber();
 
         SyncingResult s = new SyncingResult();
         try {
