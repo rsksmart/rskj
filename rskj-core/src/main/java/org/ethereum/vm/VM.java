@@ -946,7 +946,7 @@ public class VM {
         spendOpCodeGas();
         // EXECUTION PHASE
         program.step();
-        int n = program.getOperand() + 1;
+        int n = program.getArgument() + 1;
 
         program.verifyStackSize(n);
         program.verifyStackOverflow(n, n + 1);
@@ -970,7 +970,7 @@ public class VM {
         // EXECUTION PHASE
         program.step();
 
-        int n = program.getOperand() + 2;
+        int n = program.getArgument() + 2;
 
         program.verifyStackSize(n);
         program.verifyStackOverflow(n, n);
