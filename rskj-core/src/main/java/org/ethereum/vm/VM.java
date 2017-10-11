@@ -947,6 +947,10 @@ public class VM {
         // EXECUTION PHASE
         program.step();
         int n = program.getOperand() + 1;
+
+        program.verifyStackSize(n);
+        program.verifyStackOverflow(n, n + 1);
+
         DataWord word1 = stack.get(stack.size() - n);
         program.stackPush(program.newDataWord(word1));
         program.step();
@@ -956,6 +960,7 @@ public class VM {
         spendOpCodeGas();
         // EXECUTION PHASE
         int n = op.val() - OpCode.SWAP1.val() + 2;
+
         stack.swap(stack.size() - 1, stack.size() - n);
         program.step();
     }
@@ -964,7 +969,12 @@ public class VM {
         spendOpCodeGas();
         // EXECUTION PHASE
         program.step();
+
         int n = program.getOperand() + 2;
+
+        program.verifyStackSize(n);
+        program.verifyStackOverflow(n, n);
+
         stack.swap(stack.size() - 1, stack.size() - n);
         program.step();
     }
