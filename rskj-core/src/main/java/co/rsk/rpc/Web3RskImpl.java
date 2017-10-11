@@ -19,6 +19,7 @@
 package co.rsk.rpc;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.core.Rsk;
@@ -49,24 +50,17 @@ import java.util.List;
  */
 public class Web3RskImpl extends Web3Impl {
     private static final Logger logger = LoggerFactory.getLogger("web3");
+    private final MinerServer minerServer;
 
-    MinerServer minerServer;
-
-    public Web3RskImpl(Rsk rsk) {
-        super(rsk, RskSystemProperties.CONFIG, WalletFactory.createPersistentWallet());
-        this.minerServer = rsk.getMinerServer();
-    }
-
-    public Web3RskImpl(Rsk rsk, Wallet wallet) {
-        super(rsk, RskSystemProperties.CONFIG, wallet);
-        this.minerServer = rsk.getMinerServer();
+    public Web3RskImpl(Rsk rsk, MinerServer minerServer, MinerClient minerClient) {
+        super(rsk, RskSystemProperties.CONFIG, WalletFactory.createPersistentWallet(), minerClient, minerServer);
+        this.minerServer = minerServer;
     }
 
     public MinerWork mnr_getWork() {
         if (logger.isDebugEnabled()) {
             logger.debug("mnr_getWork()");
         }
-
         return minerServer.getWork();
     }
 

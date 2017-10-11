@@ -55,16 +55,6 @@ public class SimpleRsk extends SimpleEthereum implements Rsk {
     private PeerScoringManager peerScoringManager;
 
     @Override
-    public MinerClient getMinerClient() {
-        return null;
-    }
-
-    @Override
-    public MinerServer getMinerServer() {
-        return null;
-    }
-
-    @Override
     public MessageHandler getMessageHandler() {
         return null;
     }

@@ -29,9 +29,6 @@ import org.ethereum.facade.Ethereum;
  * Created by ajlopez on 3/3/2016.
  */
 public interface Rsk extends Ethereum {
-    MinerClient getMinerClient();
-
-    MinerServer getMinerServer();
 
     MessageHandler getMessageHandler();
 

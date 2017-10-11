@@ -20,7 +20,9 @@ package org.ethereum.rpc;
 
 import co.rsk.core.Rsk;
 import co.rsk.core.SnapshotManager;
+import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerManager;
+import co.rsk.mine.MinerServer;
 import co.rsk.peg.Bridge;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.scoring.*;
@@ -94,6 +96,9 @@ public class Web3Impl implements Web3 {
 
     private Wallet wallet;
 
+    private MinerClient minerClient;
+    private MinerServer minerServer;
+
     private SolidityCompiler solidityCompiler;
 
     private PeerScoringManager peerScoringManager;
@@ -103,11 +108,17 @@ public class Web3Impl implements Web3 {
         this.wallet = wallet;
     }
 
-    public Web3Impl(Ethereum eth, RskSystemProperties properties, Wallet wallet) {
+    public Web3Impl(Ethereum eth,
+                    RskSystemProperties properties,
+                    Wallet wallet,
+                    MinerClient minerClient,
+                    MinerServer minerServer) {
         this.eth = eth;
         this.worldManager = eth.getWorldManager();
         this.repository = eth.getRepository();
         this.wallet = wallet;
+        this.minerClient = minerClient;
+        this.minerServer = minerServer;
 
         if (eth instanceof Rsk)
             this.peerScoringManager = ((Rsk) eth).getPeerScoringManager();
@@ -321,7 +332,7 @@ public class Web3Impl implements Web3 {
     public String eth_coinbase() {
         String s = null;
         try {
-            return s = toJsonHex(worldManager.getMinerServer().getCoinbaseAddress());
+            return s = toJsonHex(minerServer.getCoinbaseAddress());
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_coinbase(): " + s);
@@ -333,7 +344,7 @@ public class Web3Impl implements Web3 {
     public boolean eth_mining() {
         Boolean s = null;
         try {
-            return s = worldManager.getMinerClient().isMining();
+            return s = minerClient.isMining();
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_mining(): " + s);
@@ -1571,7 +1582,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public void evm_mine() {
-        minerManager.mineBlock(worldManager.getBlockchain(), worldManager.getMinerClient(), worldManager.getMinerServer());
+        minerManager.mineBlock(worldManager.getBlockchain(), minerClient, minerServer);
         if (logger.isDebugEnabled())
             logger.debug("evm_mine()");
     }
@@ -1580,7 +1591,7 @@ public class Web3Impl implements Web3 {
     public String evm_increaseTime(String seconds) {
         try {
             long nseconds = stringHexToBigInteger(seconds).longValue();
-            String result = toJsonHex(worldManager.getMinerServer().increaseTime(nseconds));
+            String result = toJsonHex(minerServer.increaseTime(nseconds));
             if (logger.isDebugEnabled())
                 logger.debug("evm_increaseTime({}): {}", seconds, result);
             return result;

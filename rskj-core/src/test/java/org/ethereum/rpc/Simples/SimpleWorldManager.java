@@ -20,8 +20,6 @@ package org.ethereum.rpc.Simples;
 
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.metrics.HashRateCalculator;
-import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
 import org.ethereum.core.PendingState;
 import org.ethereum.db.BlockStore;
@@ -39,8 +37,6 @@ import org.ethereum.solidity.compiler.SolidityCompiler;
 public class SimpleWorldManager implements WorldManager {
 
     BlockProcessor nodeBlockProcessor;
-    public MinerClient minerClient = new SimpleMinerClient();
-    public MinerServer minerServer = null;
     org.ethereum.core.Blockchain blockChain;
     PendingState pendingState;
     BlockStore blockStore;
@@ -145,13 +141,4 @@ public class SimpleWorldManager implements WorldManager {
     public SolidityCompiler getSolidityCompiler() {
         return null;
     }
-
-    @Override
-    public MinerClient getMinerClient(){
-        return this.minerClient;
-    }
-
-    @Override
-    public MinerServer getMinerServer() { return this.minerServer; }
-
 }

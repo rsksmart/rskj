@@ -21,6 +21,8 @@ package co.rsk;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
 import co.rsk.core.RskFactory;
+import co.rsk.mine.MinerClient;
+import co.rsk.mine.MinerServer;
 import co.rsk.mine.TxBuilder;
 import co.rsk.mine.TxBuilderEx;
 import co.rsk.net.Metrics;
@@ -34,7 +36,6 @@ import org.ethereum.rpc.JsonRpcWeb3ServerHandler;
 import org.ethereum.rpc.Web3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ConfigurableApplicationContext;
 
 
 /**
@@ -45,6 +46,8 @@ public class Start {
 
     private String[] args;
     private Class config;
+    private MinerServer minerServer;
+    private MinerClient minerClient;
 
     public Start(String[] args, Class nodeConfig) {
         this.args = args;
@@ -97,10 +100,10 @@ public class Start {
         }
 
         if (RskSystemProperties.CONFIG.minerServerEnabled()) {
-            rsk.getMinerServer().start();
+            minerServer.start();
 
             if (RskSystemProperties.CONFIG.minerClientEnabled()) {
-                rsk.getMinerClient().mine();
+                minerClient.mine();
             }
         }
 
@@ -115,7 +118,7 @@ public class Start {
     }
 
     private void enableRpc(Rsk rsk) throws Exception {
-        Web3 web3Service = new Web3RskImpl(rsk);
+        Web3 web3Service = new Web3RskImpl(rsk, minerServer, minerClient);
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, RskSystemProperties.CONFIG.getRpcModules());
         new JsonRpcNettyServer(
             RskSystemProperties.CONFIG.rpcPort(),

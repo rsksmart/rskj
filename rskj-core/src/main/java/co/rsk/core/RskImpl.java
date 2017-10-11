@@ -18,8 +18,6 @@
 
 package co.rsk.core;
 
-import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockStore;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.NodeBlockProcessor;
@@ -43,16 +41,6 @@ public class RskImpl extends EthereumImpl implements Rsk {
     private static final Object NMH_LOCK = new Object();
     private static final Object PSM_LOCK = new Object();
 
-
-    @Override
-    public MinerClient getMinerClient() {
-        return getWorldManager().getMinerClient();
-    }
-
-    @Override
-    public MinerServer getMinerServer() {
-        return getWorldManager().getMinerServer();
-    }
 
     @Override
     public PeerScoringManager getPeerScoringManager() {
