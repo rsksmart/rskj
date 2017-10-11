@@ -48,10 +48,6 @@ public interface WorldManager {
 
     EthereumListener getListener();
 
-    MinerClient getMinerClient();
-
-    MinerServer getMinerServer();
-
     org.ethereum.facade.Repository getRepository();
 
     Blockchain getBlockchain();

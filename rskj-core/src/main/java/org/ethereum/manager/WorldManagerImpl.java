@@ -21,8 +21,6 @@ package org.ethereum.manager;
 
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.metrics.HashRateCalculator;
-import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
@@ -85,12 +83,6 @@ public class WorldManagerImpl implements WorldManager {
     @Autowired
     ConfigCapabilities configCapabilities;
 
-    @Autowired
-    private MinerServer minerServer;
-
-    @Autowired
-    private MinerClient minerClient;
-
     BlockProcessor nodeBlockProcessor;
 
     @Autowired
@@ -152,10 +144,6 @@ public class WorldManagerImpl implements WorldManager {
     public BlockProcessor getNodeBlockProcessor(){
         return this.nodeBlockProcessor;
     }
-
-    public MinerClient getMinerClient() { return this.minerClient; }
-
-    public MinerServer getMinerServer() { return this.minerServer; }
 
     public HashRateCalculator getHashRateCalculator() { return hashRateCalculator; }
 
