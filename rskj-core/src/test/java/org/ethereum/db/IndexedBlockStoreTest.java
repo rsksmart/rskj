@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import org.ethereum.config.SystemProperties;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.Genesis;
 import org.ethereum.datasource.HashMapDB;
@@ -66,7 +66,7 @@ public class IndexedBlockStoreTest {
         File file = new File(scenario1.toURI());
         List<String> strData = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
 
-        Block genesis = Genesis.getInstance(SystemProperties.CONFIG);
+        Block genesis = Genesis.getInstance(RskSystemProperties.CONFIG);
         blocks.add(genesis);
         cumDifficulty = cumDifficulty.add(genesis.getCumulativeDifficulty());
 
@@ -421,7 +421,7 @@ public class IndexedBlockStoreTest {
     public void test4() throws IOException {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
-        SystemProperties.CONFIG.setDataBaseDir(testDir);
+        RskSystemProperties.CONFIG.setDataBaseDir(testDir);
 
         DB indexDB = createMapDB(testDir);
         Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = createIndexMap(indexDB);
@@ -569,7 +569,7 @@ public class IndexedBlockStoreTest {
     public void test5() throws IOException {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
-        SystemProperties.CONFIG.setDataBaseDir(testDir);
+        RskSystemProperties.CONFIG.setDataBaseDir(testDir);
 
         DB indexDB = createMapDB(testDir);
         Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = createIndexMap(indexDB);
@@ -731,7 +731,7 @@ public class IndexedBlockStoreTest {
     public void test6() throws IOException {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
-        SystemProperties.CONFIG.setDataBaseDir(testDir);
+        RskSystemProperties.CONFIG.setDataBaseDir(testDir);
 
         DB indexDB = createMapDB(testDir);
         Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = createIndexMap(indexDB);
@@ -743,7 +743,7 @@ public class IndexedBlockStoreTest {
             IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
             indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
-            Block genesis = Genesis.getInstance(SystemProperties.CONFIG);
+            Block genesis = Genesis.getInstance(RskSystemProperties.CONFIG);
             List<Block> bestLine = getRandomChain(genesis.getHash(), 1, 100);
 
             indexedBlockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
@@ -772,7 +772,7 @@ public class IndexedBlockStoreTest {
 
             // calc all TDs
             Map<ByteArrayWrapper, BigInteger> tDiffs = new HashMap<>();
-            td = Genesis.getInstance(SystemProperties.CONFIG).getCumulativeDifficulty();
+            td = Genesis.getInstance(RskSystemProperties.CONFIG).getCumulativeDifficulty();
             for (Block block : bestLine){
                 td = td.add(block.getCumulativeDifficulty());
                 tDiffs.put(wrap(block.getHash()), td);
@@ -836,7 +836,7 @@ public class IndexedBlockStoreTest {
 
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
-        SystemProperties.CONFIG.setDataBaseDir(testDir);
+        RskSystemProperties.CONFIG.setDataBaseDir(testDir);
 
         DB indexDB = createMapDB(testDir);
         Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = createIndexMap(indexDB);
@@ -848,7 +848,7 @@ public class IndexedBlockStoreTest {
             IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
             indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
-            Block genesis = Genesis.getInstance(SystemProperties.CONFIG);
+            Block genesis = Genesis.getInstance(RskSystemProperties.CONFIG);
             List<Block> bestLine = getRandomChain(genesis.getHash(), 1, 100);
 
             indexedBlockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
@@ -891,7 +891,7 @@ public class IndexedBlockStoreTest {
 
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
-        SystemProperties.CONFIG.setDataBaseDir(testDir);
+        RskSystemProperties.CONFIG.setDataBaseDir(testDir);
 
         DB indexDB = createMapDB(testDir);
         Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = createIndexMap(indexDB);
@@ -903,7 +903,7 @@ public class IndexedBlockStoreTest {
             IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
             indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
-            Block genesis = Genesis.getInstance(SystemProperties.CONFIG);
+            Block genesis = Genesis.getInstance(RskSystemProperties.CONFIG);
             List<Block> bestLine = getRandomChain(genesis.getHash(), 1, 100);
 
             indexedBlockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);

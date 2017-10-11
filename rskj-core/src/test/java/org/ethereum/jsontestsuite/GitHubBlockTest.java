@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
-import org.ethereum.config.SystemProperties;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.json.simple.parser.ParseException;
@@ -31,7 +31,7 @@ import org.junit.runners.MethodSorters;
 import java.io.IOException;
 import java.util.Collections;
 
-import static org.ethereum.config.SystemProperties.CONFIG;
+import static co.rsk.config.RskSystemProperties.CONFIG;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Ignore
@@ -44,7 +44,7 @@ public class GitHubBlockTest {
     @Test
     public void runSingleTest() throws ParseException, IOException {
         CONFIG.setGenesisInfo("frontier.json");
-        SystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig());
+        RskSystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig());
 
         String json = JSONReader.loadJSONFromCommit("BlockchainTests/Homestead/bcTotalDifficultyTest.json", shacommit);
         GitHubJSONTestSuite.runGitHubJsonSingleBlockTest(json, "sideChainWithNewMaxDifficultyStartingFromBlock3AfterBlock4");
@@ -57,11 +57,11 @@ public class GitHubBlockTest {
 
     private void runHomestead(String name) throws IOException, ParseException {
         String json = JSONReader.loadJSONFromCommit("BlockchainTests/Homestead/" + name + ".json", shacommit);
-        SystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig());
+        RskSystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig());
         try {
             GitHubJSONTestSuite.runGitHubJsonBlockTest(json, Collections.EMPTY_SET);
         } finally {
-            SystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+            RskSystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
         }
     }
 

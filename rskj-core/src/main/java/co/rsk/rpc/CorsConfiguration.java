@@ -18,7 +18,7 @@
 
 package co.rsk.rpc;
 
-import org.ethereum.config.SystemProperties;
+import co.rsk.config.RskSystemProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +30,7 @@ public class CorsConfiguration {
     private String header;
 
     public CorsConfiguration() {
-        this(SystemProperties.CONFIG.corsDomains());
+        this(RskSystemProperties.CONFIG.corsDomains());
     }
 
     public CorsConfiguration(String header) {

@@ -19,7 +19,7 @@
 
 package org.ethereum.core;
 
-import org.ethereum.config.SystemProperties;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -75,7 +75,7 @@ public class AccountState {
 
 
     public AccountState() {
-        this(SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce(), BigInteger.ZERO);
+        this(RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce(), BigInteger.ZERO);
     }
 
     public AccountState(BigInteger nonce, BigInteger balance) {

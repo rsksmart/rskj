@@ -26,8 +26,8 @@ import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Genesis;
@@ -168,8 +168,8 @@ public class BridgeUtilsTest {
 
 
     private void isFreeBridgeTx(boolean expected, String destinationAddress, BlockchainNetConfig config, byte[] privKeyBytes) {
-        BlockchainNetConfig blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(config);
+        BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(config);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
 
@@ -182,10 +182,10 @@ public class BridgeUtilsTest {
                 Bridge.UPDATE_COLLECTIONS);
         rskTx.sign(privKeyBytes);
 
-        org.ethereum.core.Block rskExecutionBlock = BlockGenerator.createChildBlock(Genesis.getInstance(SystemProperties.CONFIG));
+        org.ethereum.core.Block rskExecutionBlock = BlockGenerator.createChildBlock(Genesis.getInstance(RskSystemProperties.CONFIG));
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
         Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, rskExecutionBlock.getNumber()));
 
-        SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 }

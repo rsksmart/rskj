@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import co.rsk.config.BridgeConstants;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
 import com.google.common.annotations.VisibleForTesting;
@@ -33,7 +34,6 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ReceiptStore;
@@ -84,7 +84,7 @@ public class BridgeSupport {
     public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, org.ethereum.core.Block rskExecutionBlock, ReceiptStore rskReceiptStore, org.ethereum.db.BlockStore rskBlockStore) throws IOException, BlockStoreException {
         this.provider = provider;
 
-        bridgeConstants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         btcContext = new Context(btcParams);
 
@@ -122,7 +122,7 @@ public class BridgeSupport {
     public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain) {
         this.provider = provider;
 
-        bridgeConstants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         btcContext = new Context(bridgeConstants.getBtcParams());
 
         this.btcBlockStore = btcBlockStore;
@@ -397,7 +397,7 @@ public class BridgeSupport {
         Coin spentByFederation = sumInputs.subtract(change);
         if (spentByFederation.isLessThan(sentByUser)) {
             Coin coinsToBurn = sentByUser.subtract(spentByFederation);
-            byte[] burnAddress = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress();
+            byte[] burnAddress = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress();
             transfer(rskRepository, Hex.decode(PrecompiledContracts.BRIDGE_ADDR), burnAddress, Denomination.satoshisToWeis(BigInteger.valueOf(coinsToBurn.getValue())));
         }
     }

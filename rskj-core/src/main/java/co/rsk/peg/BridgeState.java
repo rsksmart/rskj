@@ -48,7 +48,7 @@ public class BridgeState {
     private final SortedMap<Sha3Hash, Pair<BtcTransaction, Long>> rskTxsWaitingForBroadcasting;
 
 
-    private static final NetworkParameters params =RskSystemProperties.RSKCONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+    private static final NetworkParameters params =RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
     private BridgeState(int btcBlockchainBestChainHeight, SortedSet<Sha256Hash> btcTxHashesAlreadyProcessed, List<UTXO> btcUTXOs,
                        SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForConfirmations, SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForSignatures,

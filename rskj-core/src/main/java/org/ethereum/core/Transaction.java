@@ -19,11 +19,11 @@
 
 package org.ethereum.core;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.config.Constants;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.ECDSASignature;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
@@ -43,7 +43,6 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.security.SignatureException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -317,7 +316,7 @@ public class Transaction implements SerializableObject {
 
         byte chId = this.getChainId();
 
-        if (chId !=0 && chId != SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId())
+        if (chId !=0 && chId != RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId())
             return false;
 
         return true;
@@ -527,7 +526,7 @@ public class Transaction implements SerializableObject {
     }
 
     public static byte getConfigChainId() {
-        return SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId();
+        return RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId();
     }
 
     public static Transaction create(byte[] nonce, Web3.CallArguments args){

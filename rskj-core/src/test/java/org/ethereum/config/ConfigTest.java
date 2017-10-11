@@ -19,6 +19,7 @@
 
 package org.ethereum.config;
 
+import co.rsk.config.RskSystemProperties;
 import com.typesafe.config.*;
 import org.junit.Assert;
 import org.junit.Test;
@@ -75,7 +76,7 @@ public class ConfigTest {
 
     @Test
     public void ethereumjConfTest() {
-        System.out.println("'" + SystemProperties.CONFIG.databaseDir() + "'");
-        System.out.println(SystemProperties.CONFIG.peerActive());
+        System.out.println("'" + RskSystemProperties.CONFIG.databaseDir() + "'");
+        System.out.println(RskSystemProperties.CONFIG.peerActive());
     }
 }

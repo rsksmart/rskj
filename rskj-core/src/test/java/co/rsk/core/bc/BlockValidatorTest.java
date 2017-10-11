@@ -23,7 +23,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
-import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockParentDependantValidationRule;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockInformation;
@@ -31,7 +30,6 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.validator.ProofOfWorkRule;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -753,7 +751,7 @@ public class BlockValidatorTest {
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
         blockChain.tryToConnect(genesis);
 
-        int validPeriod = RskSystemProperties.RSKCONFIG.getBlockchainConfig().getCommonConstants().getNewBlockMaxMinInTheFuture();
+        int validPeriod = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getNewBlockMaxMinInTheFuture();
 
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getTimestamp())

@@ -50,7 +50,7 @@ public class CommonConfig {
     private MapDBFactory mapDBFactory;
 
     @Autowired
-    SystemProperties config = SystemProperties.CONFIG;
+    SystemProperties config = RskSystemProperties.CONFIG;
 
     @Bean
     public Repository repository() {
