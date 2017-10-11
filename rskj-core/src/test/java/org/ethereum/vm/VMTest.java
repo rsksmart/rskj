@@ -2977,6 +2977,15 @@ public class VMTest {
         String result = Program.stringifyMultiline(Hex.decode(code2));
         assertTrue(result.contains("00000000000000000000000000000000")); // detecting bynary data in bytecode
     }
+
+    @Test
+    public void decompileDupnSwapn() {
+        String code = "6060a961aa62";
+        String result = Program.stringifyMultiline(Hex.decode(code));
+        assertTrue(result.contains("PUSH1 0x60 (96)"));
+        assertTrue(result.contains("DUPN 0x61 (97)"));
+        assertTrue(result.contains("SWAPN 0x62 (98)"));
+    }
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Testing an unfinished script header
     // header must be 4 bytes or more to be valid
