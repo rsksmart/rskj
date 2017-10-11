@@ -221,6 +221,36 @@ public class VMExecutionTest {
     }
 
     @Test
+    public void dupnArgumentIsNotJumpdest() {
+        byte[] code = compiler.compile("JUMPDEST DUPN 0x5b 0x5b");
+        Program program = new Program(code, invoke);
+
+        BitSet jumpdestSet = program.getJumpdestSet();
+
+        Assert.assertNotNull(jumpdestSet);
+        Assert.assertEquals(4, jumpdestSet.size());
+        Assert.assertTrue(jumpdestSet.get(0));
+        Assert.assertFalse(jumpdestSet.get(1));
+        Assert.assertFalse(jumpdestSet.get(2));
+        Assert.assertTrue(jumpdestSet.get(3));
+    }
+
+    @Test
+    public void swapnArgumentIsNotJumpdest() {
+        byte[] code = compiler.compile("JUMPDEST SWAPN 0x5b 0x5b");
+        Program program = new Program(code, invoke);
+
+        BitSet jumpdestSet = program.getJumpdestSet();
+
+        Assert.assertNotNull(jumpdestSet);
+        Assert.assertEquals(4, jumpdestSet.size());
+        Assert.assertTrue(jumpdestSet.get(0));
+        Assert.assertFalse(jumpdestSet.get(1));
+        Assert.assertFalse(jumpdestSet.get(2));
+        Assert.assertTrue(jumpdestSet.get(3));
+    }
+
+    @Test
     public void thePathOfFifteenThousandJumps() {
         byte[] bytecode = new byte[15000 * 6 + 3];
 

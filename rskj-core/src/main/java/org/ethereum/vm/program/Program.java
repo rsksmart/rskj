@@ -22,6 +22,7 @@ package org.ethereum.vm.program;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -105,7 +106,7 @@ public class Program {
     private byte scriptVersion; // currently limited to 0..127
     private int startAddr;
 
-    private BitSet jumpdest;
+    private BitSet jumpdestSet;
     /**********************************************************************************************************
      * About DataWord Pool:
      *---------------------------------------------------------------------------------------------------------
@@ -1260,8 +1261,8 @@ public class Program {
     }
 
     public void computeJumpDests(int i) {
-        if (jumpdest == null)
-            jumpdest = new BitSet(ops.length);
+        if (jumpdestSet == null)
+            jumpdestSet = new BitSet(ops.length);
 
         for (; i < ops.length; ++i) {
             OpCode op = OpCode.code(ops[i]);
@@ -1270,11 +1271,12 @@ public class Program {
                 continue;
 
             if (op == OpCode.JUMPDEST)
-                jumpdest.set(i);
+                jumpdestSet.set(i);
 
-            if (op.asInt() >= OpCode.PUSH1.asInt() && op.asInt() <= OpCode.PUSH32.asInt()) {
+            if (op.asInt() >= OpCode.PUSH1.asInt() && op.asInt() <= OpCode.PUSH32.asInt())
                 i += op.asInt() - OpCode.PUSH1.asInt() + 1;
-            }
+            else if (op == OpCode.DUPN || op == OpCode.SWAPN)
+                i++;
         }
     }
 
@@ -1434,7 +1436,7 @@ public class Program {
             throw Program.Exception.badJumpDestination(-1);
         }
         int ret = nextPC.intValue(); // could be negative
-        if (ret < 0 || ret >= jumpdest.size() || !jumpdest.get(ret)) {
+        if (ret < 0 || ret >= jumpdestSet.size() || !jumpdestSet.get(ret)) {
             throw Program.Exception.badJumpDestination(ret);
         }
         return ret;
@@ -1617,4 +1619,7 @@ public class Program {
     public int getStartAddr(){
         return startAddr;
     }
+
+    @VisibleForTesting
+    public BitSet getJumpdestSet() { return this.jumpdestSet; }
 }
