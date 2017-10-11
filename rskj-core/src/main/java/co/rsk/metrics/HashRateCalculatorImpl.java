@@ -25,8 +25,10 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
 
 import java.math.BigInteger;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 /**
@@ -47,19 +49,19 @@ public class HashRateCalculatorImpl implements HashRateCalculator {
     }
 
     @Override
-    public BigInteger calculateNodeHashRate(Long periodLenght, TimeUnit periodUnit) {
-        return calculateHashRate(b -> checkOwnership(b), periodUnit.toSeconds(periodLenght));
+    public BigInteger calculateNodeHashRate(Duration duration) {
+        return calculateHashRate(this::checkOwnership, duration);
     }
 
     @Override
-    public BigInteger calculateNetHashRate(Long periodLenght, TimeUnit periodUnit) {
-        return calculateHashRate(b -> true, periodUnit.toSeconds(periodLenght));
+    public BigInteger calculateNetHashRate(Duration duration) {
+        return calculateHashRate(b -> true, duration);
     }
 
-    private BigInteger calculateHashRate(Predicate<BlockHeaderElement> countCondition, long windowDuration) {
+    private BigInteger calculateHashRate(Predicate<BlockHeaderElement> countCondition, Duration windowDuration) {
         if (hasBestBlock()) {
-            long upto = System.currentTimeMillis() / 1000L;
-            long from = upto - windowDuration;
+            Instant upto = Clock.systemUTC().instant();
+            Instant from = upto.minus(windowDuration);
             return this.hashRate(getHeaderElement(blockStore.getBestBlock().getHash()), countCondition, b -> checkBlockTimeRange(b, from, upto));
         }
         return BigInteger.ZERO;
@@ -80,9 +82,9 @@ public class HashRateCalculatorImpl implements HashRateCalculator {
         return hashRate;
     }
 
-    private boolean checkBlockTimeRange(BlockHeaderElement element, long from, long upto) {
-        long ts = element.getBlockHeader().getTimestamp();
-        return ts >= from && element.getBlockHeader().getTimestamp() <= upto;
+    private boolean checkBlockTimeRange(BlockHeaderElement element, Instant from, Instant upto) {
+        Instant ts = Instant.ofEpochSecond(element.getBlockHeader().getTimestamp());
+        return !ts.isBefore(from) && !ts.isAfter(upto);
     }
 
     private Boolean checkOwnership(BlockHeaderElement element) {

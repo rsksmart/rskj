@@ -19,14 +19,14 @@
 package co.rsk.metrics;
 
 import java.math.BigInteger;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 /**
  * Created by mario on 05/08/2016.
  */
 public interface HashRateCalculator {
 
-    BigInteger calculateNodeHashRate(Long periodLenght, TimeUnit unit);
+    BigInteger calculateNodeHashRate(Duration duration);
 
-    BigInteger calculateNetHashRate(Long periodLenght, TimeUnit unit);
+    BigInteger calculateNetHashRate(Duration duration);
 }

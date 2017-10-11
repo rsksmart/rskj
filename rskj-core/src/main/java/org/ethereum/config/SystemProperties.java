@@ -389,8 +389,6 @@ public abstract class SystemProperties {
         return ret;
     }
 
-
-    @ValidateMe
     public String coinbaseSecret() {
         return config.getString("coinbase.secret");
     }

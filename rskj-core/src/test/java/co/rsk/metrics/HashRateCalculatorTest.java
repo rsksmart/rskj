@@ -18,8 +18,8 @@
 
 package co.rsk.metrics;
 
-import co.rsk.util.RskCustomCache;
 import co.rsk.util.AccountUtils;
+import co.rsk.util.RskCustomCache;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
@@ -29,7 +29,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 /**
  * Created by mario on 05/08/2016.
@@ -90,7 +90,7 @@ public class HashRateCalculatorTest {
 
         Mockito.when(block.getCumulativeDifficulty()).thenReturn(BigInteger.ONE);
 
-        BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(1L, TimeUnit.HOURS);
+        BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));
 
         Assert.assertEquals(new BigInteger("+2"), hashRate);
     }
@@ -105,7 +105,7 @@ public class HashRateCalculatorTest {
 
         Mockito.when(block.getCumulativeDifficulty()).thenReturn(BigInteger.ONE);
 
-        BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(1L, TimeUnit.HOURS);
+        BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));
 
         Assert.assertEquals(hashRate, BigInteger.ZERO);
     }
@@ -123,7 +123,7 @@ public class HashRateCalculatorTest {
 
         Mockito.when(block.getCumulativeDifficulty()).thenReturn(BigInteger.ONE);
 
-        BigInteger hashRate = hashRateCalculator.calculateNetHashRate(1L, TimeUnit.HOURS);
+        BigInteger hashRate = hashRateCalculator.calculateNetHashRate(Duration.ofHours(1));
 
         Assert.assertEquals(hashRate, new BigInteger("+4"));
     }
@@ -138,7 +138,7 @@ public class HashRateCalculatorTest {
 
         Mockito.when(block.getCumulativeDifficulty()).thenReturn(BigInteger.ONE);
 
-        BigInteger hashRate = hashRateCalculator.calculateNetHashRate(1L, TimeUnit.HOURS);
+        BigInteger hashRate = hashRateCalculator.calculateNetHashRate(Duration.ofHours(1));
 
         Assert.assertEquals(hashRate, BigInteger.ZERO);
     }

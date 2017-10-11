@@ -67,6 +67,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -355,7 +356,7 @@ public class Web3Impl implements Web3 {
     public String eth_hashrate() {
         BigDecimal hashesPerSecond = BigDecimal.ZERO;
         if(RskSystemProperties.CONFIG.minerServerEnabled()) {
-            BigInteger hashesPerHour = this.worldManager.getHashRateCalculator().calculateNodeHashRate(1L, TimeUnit.HOURS);
+            BigInteger hashesPerHour = this.worldManager.getHashRateCalculator().calculateNodeHashRate(Duration.ofHours(1));
             hashesPerSecond = new BigDecimal(hashesPerHour)
                     .divide(new BigDecimal(TimeUnit.HOURS.toSeconds(1)), 3, RoundingMode.HALF_UP);
         }
@@ -370,7 +371,7 @@ public class Web3Impl implements Web3 {
     }
 
     public String eth_netHashrate() {
-        BigInteger hashesPerHour = this.worldManager.getHashRateCalculator().calculateNetHashRate(1L, TimeUnit.HOURS);
+        BigInteger hashesPerHour = this.worldManager.getHashRateCalculator().calculateNetHashRate(Duration.ofHours(1));
         BigDecimal hashesPerSecond = new BigDecimal(hashesPerHour)
                 .divide(new BigDecimal(TimeUnit.HOURS.toSeconds(1)), 3, RoundingMode.HALF_UP);
 
