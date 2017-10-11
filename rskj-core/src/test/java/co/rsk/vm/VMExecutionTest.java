@@ -27,6 +27,8 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.internal.runners.statements.ExpectException;
+import org.junit.rules.ExpectedException;
 import org.spongycastle.util.BigIntegers;
 import org.spongycastle.util.encoders.Hex;
 
@@ -133,6 +135,11 @@ public class VMExecutionTest {
             Assert.assertEquals(new DataWord(k + 1), stack.get(k));
     }
 
+    @Test(expected = Program.StackTooSmallException.class)
+    public void dupnTwentiethItemWithoutEnoughItems() {
+        executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 DUPN 0x13", 20);
+    }
+
     @Test
     public void swapnSecondItem() {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 SWAPN 0x00", 3);
@@ -166,6 +173,11 @@ public class VMExecutionTest {
 
         for (int k = 1; k < 19; k++)
             Assert.assertEquals(new DataWord(k + 1), stack.get(k));
+    }
+
+    @Test(expected = Program.StackTooSmallException.class)
+    public void swapnTwentiethItemWithoutEnoughItems() {
+        executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 SWAPN 0x12", 21);
     }
 
     @Test
