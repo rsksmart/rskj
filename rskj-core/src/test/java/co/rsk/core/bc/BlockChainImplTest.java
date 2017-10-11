@@ -34,6 +34,7 @@ import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -261,40 +262,6 @@ public class BlockChainImplTest {
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
     }
 
-    //RCS-30 Not implemented yet WIP
-    @Ignore
-    @Test
-    public void tryToConnectSelectionRuleRemasc() {
-        BlockChainImpl blockChain = createBlockChain();
-//        return createChildBlock(parent, ntxs, ByteUtil.bytesToBigInteger(parent.getDifficulty()).longValue());
-
-        Block genesis = getGenesisBlock(blockChain);
-
-        Block parent =  BlockGenerator.createChildBlock(genesis);
-        Block uncle =  BlockGenerator.createChildBlock(genesis);
-
-        BigInteger difficulty = ByteUtil.bytesToBigInteger(parent.getDifficulty()).multiply(BigInteger.valueOf(2));
-        List<BlockHeader> uncles = new ArrayList<>();
-        List<Transaction> txs = new ArrayList<>();
-        uncles.add(uncle.getHeader());
-
-        Block childBlock = BlockGenerator.createChildBlock(parent, 10, uncles,
-                ByteUtil.bigIntegerToBytes(difficulty));
-        Block syblingBlock = BlockGenerator.createChildBlock(parent, 10, uncles,
-                ByteUtil.bigIntegerToBytes(difficulty));
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(parent));
-        Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(uncle));
-//        Block syblingBlock = BlockGenerator.createChildBlock(parent, txs, uncles, difficulty*2, BigInteger.valueOf(10l));
-//        syblingBlock
-        /* unserstand total difficulty first *
-           For now fail
-         */
-        Assert.fail();
-        childBlock.getHeader().setPaidFees(0);
-    }
-
-
     @Test
     public void addInvalidBlockOneBadLogsBloom() {
         BlockChainImpl blockChain = createBlockChain();
@@ -339,20 +306,26 @@ public class BlockChainImplTest {
         Block block1 = BlockGenerator.createChildBlock(genesis);
         Block block1b = BlockGenerator.createChildBlock(genesis);
 
+        boolean block1bBigger = FastByteComparisons.compareTo(
+                block1.getHash(), 0, 32,
+                block1b.getHash(), 0, 32) < 0;
+
         BlockExecutorTest.SimpleEthereumListener listener = (BlockExecutorTest.SimpleEthereumListener) blockChain.getListener();
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1bBigger?block1:block1b));
 
         Assert.assertNotNull(listener.getLatestBlock());
         Assert.assertNotNull(listener.getLatestTrace());
-        Assert.assertArrayEquals(block1.getHash(), listener.getLatestBlock().getHash());
+        Assert.assertArrayEquals(block1bBigger?block1.getHash():block1b.getHash(),
+                listener.getLatestBlock().getHash());
 
-        Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(block1b));
+        Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(block1bBigger?block1b:block1));
 
         Assert.assertNotNull(listener.getLatestBlock());
         Assert.assertNotNull(listener.getLatestTrace());
-        Assert.assertArrayEquals(block1b.getHash(), listener.getLatestBlock().getHash());
+        Assert.assertArrayEquals(block1bBigger?block1b.getHash():block1.getHash(),
+                listener.getLatestBlock().getHash());
 
         BlockChainStatus status = blockChain.getStatus();
 
@@ -364,7 +337,7 @@ public class BlockChainImplTest {
 
         Assert.assertNotNull(bestBlock);
         Assert.assertEquals(1, bestBlock.getNumber());
-        Assert.assertArrayEquals(block1.getHash(), bestBlock.getHash());
+        Assert.assertArrayEquals(block1bBigger?block1.getHash():block1b.getHash(), bestBlock.getHash());
     }
 
     @Test
@@ -471,10 +444,13 @@ public class BlockChainImplTest {
         Block block1 = BlockGenerator.createChildBlock(genesis);
         Block block1b = BlockGenerator.createChildBlock(genesis);
         Block block2b = BlockGenerator.createChildBlock(block1b);
-
+        boolean block1bBigger = FastByteComparisons.compareTo(block1.getHash(), 0, 32,
+                block1b.getHash(), 0, 32) < 0;
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
-        Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(block1b));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(
+                block1bBigger?block1:block1b));
+        Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(
+                block1bBigger?block1b:block1));
 
         blockChain.setBlockValidator(new RejectValidator());
 
@@ -497,20 +473,32 @@ public class BlockChainImplTest {
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block2b));
     }
 
+    private void switchToOtherChainInvalidBadBlockBadReceiptsRootHelper(
+            BlockChainImpl blockChain, Block genesis,
+            Block firstBlock,
+            Block secondBlock) {
+        Block thirdBlock = BlockGenerator.createChildBlock(firstBlock);
+        thirdBlock.getHeader().setReceiptsRoot(cloneAlterBytes(thirdBlock.getReceiptsRoot()));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(firstBlock));
+        Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(secondBlock));
+        Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(thirdBlock));
+    }
+
     @Test
     public void switchToOtherChainInvalidBadBlockBadReceiptsRoot() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
         Block block1 = BlockGenerator.createChildBlock(genesis);
         Block block1b = BlockGenerator.createChildBlock(genesis);
-        Block block2b = BlockGenerator.createChildBlock(block1b);
-
-        block2b.getHeader().setReceiptsRoot(cloneAlterBytes(block2b.getReceiptsRoot()));
-
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
-        Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(block1b));
-        Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block2b));
+        if (FastByteComparisons.compareTo(block1.getHash(), 0, 32,
+                block1b.getHash(), 0, 32) < 0) {
+            switchToOtherChainInvalidBadBlockBadReceiptsRootHelper(blockChain,
+                    genesis, block1, block1b);
+        } else {
+            switchToOtherChainInvalidBadBlockBadReceiptsRootHelper(blockChain,
+                    genesis, block1b, block1);
+        }
     }
 
     @Test
@@ -519,13 +507,20 @@ public class BlockChainImplTest {
         Block genesis = getGenesisBlock(blockChain);
         Block block1 = BlockGenerator.createChildBlock(genesis);
         Block block1b = BlockGenerator.createChildBlock(genesis);
-        Block block2b = BlockGenerator.createChildBlock(block1b);
+
+        boolean block1bBigger = FastByteComparisons.compareTo(
+                block1.getHash(), 0, 32,
+                block1b.getHash(), 0, 32) < 0;
+
+        Block block2b = BlockGenerator.createChildBlock(block1bBigger?block1:block1b);
 
         block2b.getHeader().setLogsBloom(cloneAlterBytes(block2b.getLogBloom()));
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
-        Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(block1b));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(
+                block1bBigger?block1:block1b));
+        Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(
+                block1bBigger?block1b:block1));
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block2b));
     }
 
@@ -551,13 +546,18 @@ public class BlockChainImplTest {
         Block genesis = getGenesisBlock(blockChain);
         Block block1 = BlockGenerator.createChildBlock(genesis);
         Block block1b = BlockGenerator.createChildBlock(genesis);
+        boolean block1bBigger = FastByteComparisons.compareTo(
+                block1.getHash(), 0, 32,
+                block1b.getHash(), 0, 32) < 0;
         Block block2b = BlockGenerator.createChildBlock(block1b);
 
         block2b.getHeader().setPaidFees(block2b.getHeader().getPaidFees() + 1);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
-        Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(block1b));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(
+                block1bBigger?block1:block1b));
+        Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(
+                block1bBigger?block1b:block1));
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block2b));
     }
 

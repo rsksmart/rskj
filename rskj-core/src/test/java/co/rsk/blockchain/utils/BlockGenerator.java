@@ -148,10 +148,11 @@ public class BlockGenerator {
 
     public static Block createChildBlock(Block parent, long fees, List<BlockHeader> uncles, byte[] difficulty) {
         List<Transaction> txs = new ArrayList<>();
+        byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
 
         return new Block(
                 parent.getHash(), // parent hash
-                EMPTY_LIST_HASH, // uncle hash
+                unclesListHash, // uncle hash
                 parent.getCoinbase(),
                 ByteUtils.clone(new Bloom().getData()),
                 difficulty, // difficulty

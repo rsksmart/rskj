@@ -32,7 +32,7 @@ import java.util.ArrayList;
  * Sibling information is added to contract state as blocks are processed and removed when no longer needed.
  * @author Oscar Guindzberg
  */
-class Sibling {
+public class Sibling {
 
     // Hash of the sibling block
     private byte[] hash;

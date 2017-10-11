@@ -34,6 +34,7 @@ import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
+import org.ethereum.util.FastByteComparisons;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -216,7 +218,8 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     private ImportResult internalTryToConnect(Block block) {
-        if (blockStore.getBlockByHash(block.getHash()) != null && !BigInteger.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash()))) {
+        if (blockStore.getBlockByHash(block.getHash()) != null &&
+                !BigInteger.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash()))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
                     Hex.toHexString(block.getHash()).substring(0, 6),
                     block.getNumber());
@@ -298,7 +301,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         logger.info("TD: updated to {}", totalDifficulty);
 
         // It is the new best block
-        if (totalDifficulty.compareTo(status.getTotalDifficulty()) > 0) {
+        if (SelectionRule.shouldWeAddThisBlock(totalDifficulty, status.getTotalDifficulty(),block, bestBlock)) {
             if (bestBlock != null && !bestBlock.isParentOf(block)) {
                 logger.info("Rebranching: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
                         bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
@@ -331,7 +334,9 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         // It is not the new best block
         else {
             if (bestBlock != null && !bestBlock.isParentOf(block))
-                logger.info("No rebranch: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}", bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(), status.getTotalDifficulty().toString(), totalDifficulty.toString());
+                logger.info("No rebranch: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
+                        bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
+                        status.getTotalDifficulty().toString(), totalDifficulty.toString());
 
             logger.trace("Start extendAlternativeBlockChain");
             extendAlternativeBlockChain(block, totalDifficulty);
@@ -349,10 +354,6 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
 
             return ImportResult.IMPORTED_NOT_BEST;
         }
-    }
-
-    private boolean bestBlockDecider(Block c,BigInteger totalDifficulty) {
-        return totalDifficulty.compareTo(status.getTotalDifficulty()) > 0;
     }
 
     @Override

@@ -19,6 +19,8 @@
 package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
+import co.rsk.core.bc.SelectionRule;
+import com.sun.org.apache.bcel.internal.generic.Select;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -197,22 +199,10 @@ public class Remasc {
         }
     }
 
-    private boolean isBrokenSelectionRule(BlockHeader processingBlockHeader, List<Sibling> siblings) {
+    private boolean isBrokenSelectionRule(BlockHeader processingBlockHeader,
+                                            List<Sibling> siblings) {
         // Find out if main chain block selection rule was broken
-
-        for (Sibling sibling : siblings) {
-            if (processingBlockHeader.getUncleCount() - sibling.getUncleCount() < 0) {
-                return true;
-            }
-            // Sibling pays significant more fees than block in the main chain OR Sibling has lower hash than block in the main chain
-            if (sibling.getPaidFees() > 2 * processingBlockHeader.getPaidFees() ||
-                    FastByteComparisons.compareTo(sibling.getHash(), 0, 32,
-                            processingBlockHeader.getHash(), 0, 32) < 0) {
-                return true;
-            }
-        }
-
-        return false;
+        return SelectionRule.isBrokenSelectionRule(processingBlockHeader, siblings);
     }
 
     private void transfer(byte[] toAddr, BigInteger value) {
