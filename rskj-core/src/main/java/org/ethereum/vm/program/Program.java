@@ -1276,11 +1276,11 @@ public class Program {
         computeJumpDests(i);
     }
 
-    public void computeJumpDests(int i) {
+    public void computeJumpDests(int start) {
         if (jumpdestSet == null)
             jumpdestSet = new BitSet(ops.length);
 
-        for (; i < ops.length; ++i) {
+        for (int i = start; i < ops.length; ++i) {
             OpCode op = OpCode.code(ops[i]);
 
             if (op == null)
@@ -1356,6 +1356,18 @@ public class Program {
                 }
 
                 index += nPush + 1;
+            }
+            else if (op.name().equals("DUPN") || op.name().equals("SWAPN")) {
+                    sb.append(' ').append(op.name()).append(' ');
+
+                    byte[] data = Arrays.copyOfRange(code, index + 1, index + 2);
+                    BigInteger bi = new BigInteger(1, data);
+                    sb.append("0x").append(bi.toString(16));
+                    if (bi.bitLength() <= 32) {
+                        sb.append(" (").append(new BigInteger(1, data).toString()).append(") ");
+                    }
+
+                    index++;
             } else {
                 sb.append(' ').append(op.name());
                 index++;
@@ -1388,6 +1400,14 @@ public class Program {
 
         public boolean isPush() {
             return getCurOpcode() != null ? getCurOpcode().name().startsWith("PUSH") : false;
+        }
+
+        public boolean isDupN() {
+            return getCurOpcode() != null ? getCurOpcode().name().equals("DUPN") : false;
+        }
+
+        public boolean isSwapN() {
+            return getCurOpcode() != null ? getCurOpcode().name().equals("SWAPN") : false;
         }
 
         public byte[] getCurOpcodeArg() {
@@ -1470,7 +1490,6 @@ public class Program {
         byte[] senderAddress = this.getOwnerAddressLast20Bytes();
         byte[] codeAddress = msg.getCodeAddress().getLast20Bytes();
         byte[] contextAddress = msg.getType().isStateless() ? senderAddress : codeAddress;
-
 
         BigInteger endowment = msg.getEndowment().value();
         BigInteger senderBalance = track.getBalance(senderAddress);
