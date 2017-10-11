@@ -389,10 +389,6 @@ public abstract class SystemProperties {
         return ret;
     }
 
-    public String coinbaseSecret() {
-        return config.getString("coinbase.secret");
-    }
-
     @ValidateMe
     public Integer peerChannelReadTimeout() {
         return config.getInt("peer.channel.read.timeout");

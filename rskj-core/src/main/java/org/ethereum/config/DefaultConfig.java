@@ -35,7 +35,6 @@ import co.rsk.validators.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.*;
@@ -57,7 +56,6 @@ import org.springframework.context.annotation.Scope;
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -150,20 +148,18 @@ public class DefaultConfig {
 
     @Bean
     public MiningConfig miningConfig(RskSystemProperties rskSystemProperties) {
-        String secret = rskSystemProperties.coinbaseSecret();
-        byte[] privKey = HashUtil.sha3(secret.getBytes(StandardCharsets.UTF_8));
-
-        boolean isMiningEnabled = rskSystemProperties.minerServerEnabled();
-        byte[] coinbaseAddress = ECKey.fromPrivate(privKey).getAddress();
-        double minerMinFeesNotifyInDollars = rskSystemProperties.minerMinFeesNotifyInDollars();
-        double minerGasUnitInDollars = rskSystemProperties.minerGasUnitInDollars();
-        long minerMinGasPrice = rskSystemProperties.minerMinGasPrice();
-        int minGasLimit = rskSystemProperties.getBlockchainConfig().getCommonConstants().getMinGasLimit();
-        long targetGasLimit = rskSystemProperties.getBlockchainConfig().getCommonConstants().getTargetGasLimit();
-        boolean isTargetGasLimitForced = rskSystemProperties.getForceTargetGasLimit();
-        int uncleListLimit = rskSystemProperties.getBlockchainConfig().getCommonConstants().getUncleListLimit();
-        int uncleGenerationLimit = rskSystemProperties.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
-        return new MiningConfig(isMiningEnabled, coinbaseAddress, minerMinFeesNotifyInDollars, minerGasUnitInDollars, minerMinGasPrice, minGasLimit, targetGasLimit, isTargetGasLimitForced, uncleListLimit, uncleGenerationLimit);
+        return new MiningConfig(
+                rskSystemProperties.minerServerEnabled(),
+                rskSystemProperties.coinbaseAddress(),
+                rskSystemProperties.minerMinFeesNotifyInDollars(),
+                rskSystemProperties.minerGasUnitInDollars(),
+                rskSystemProperties.minerMinGasPrice(),
+                rskSystemProperties.getBlockchainConfig().getCommonConstants().getMinGasLimit(),
+                rskSystemProperties.getBlockchainConfig().getCommonConstants().getTargetGasLimit(),
+                rskSystemProperties.getForceTargetGasLimit(),
+                rskSystemProperties.getBlockchainConfig().getCommonConstants().getUncleListLimit(),
+                rskSystemProperties.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit()
+        );
     }
 
     @Bean

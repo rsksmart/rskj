@@ -25,9 +25,12 @@ import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import org.ethereum.config.SystemProperties;
+import org.ethereum.crypto.HashUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
+import javax.annotation.Nullable;
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -49,6 +52,7 @@ public class RskSystemProperties extends SystemProperties {
 
     public static final int PD_DEFAULT_REFRESH_PERIOD = 60000;
     public static final int BLOCKS_FOR_PEERS_DEFAULT = 100;
+    public static final String MINER_COINBASE_ADDRESS_CONFIG = "miner.coinbase.address";
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
@@ -56,6 +60,37 @@ public class RskSystemProperties extends SystemProperties {
     private MessageRecorder messageRecorder;
 
     private List<ModuleDescription> moduleDescriptions;
+
+    @Nullable
+    public byte[] coinbaseAddress() {
+        if (!minerServerEnabled()) {
+            return null;
+        }
+
+        String coinbaseSecret = coinbaseSecret();
+        if (coinbaseSecret != null && !coinbaseSecret.isEmpty()) {
+            if (config.hasPath(MINER_COINBASE_ADDRESS_CONFIG)) {
+                throw new RskConfigurationException("It is required to have only one of miner.coinbase.address and coinbase.address");
+            }
+
+            return HashUtil.sha3(coinbaseSecret.getBytes(StandardCharsets.UTF_8));
+        } else if (config.hasPath("miner.coinbase.address")) {
+            String coinbaseAddress = config.getString("miner.coinbase.address");
+            if (coinbaseAddress.length() != 64) {
+                throw new RskConfigurationException("The miner.coinbase.address needs to be Hex encoded and 32 byte length");
+            }
+
+            return Hex.decode(coinbaseAddress);
+        }
+
+        throw new RskConfigurationException("It is required to either have miner.coinbase.address or coinbase.secret to use the miner server");
+    }
+
+    @Nullable
+    public String coinbaseSecret() {
+        return config.hasPath("coinbase.secret") ?
+                config.getString("coinbase.secret") : null;
+    }
 
     public boolean minerClientEnabled() {
         return config.hasPath("miner.client.enabled") ?
