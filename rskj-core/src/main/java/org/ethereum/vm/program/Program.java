@@ -406,7 +406,7 @@ public class Program {
         return data;
     }
 
-    public int getOperand() {
+    public int getArgument() {
         return ops[pc] & 0xff;
     }
 
