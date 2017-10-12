@@ -6,7 +6,7 @@ machine:
 dependencies:
   pre: 
     - sudo apt-get update -y; true
-    - sudo apt-get install -y apt gnupg2 gnupg-curl
+    - sudo apt-get install -y apt gnupg2 gnupg-curl npm
     - sudo add-apt-repository ppa:ethereum/ethereum -y
     - sudo apt-get update -y; true
     - sudo apt-get install -y solc
