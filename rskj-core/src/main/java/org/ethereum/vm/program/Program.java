@@ -308,7 +308,7 @@ public class Program {
             return;
         }
 
-        while (stack.size()>0) {
+        while (!stack.isEmpty()) {
             disposeWord(stack.pop());
         }
 
@@ -1341,7 +1341,7 @@ public class Program {
 
                 index += nPush + 1;
             }
-            else if (op.name().equals("DUPN") || op.name().equals("SWAPN")) {
+            else if ("DUPN".equals(op.name()) || "SWAPN".equals(op.name())) {
                     sb.append(' ').append(op.name()).append(' ');
 
                     byte[] data = Arrays.copyOfRange(code, index + 1, index + 2);
@@ -1387,18 +1387,17 @@ public class Program {
         }
 
         public boolean isDupN() {
-            return getCurOpcode() != null ? getCurOpcode().name().equals("DUPN") : false;
+            return getCurOpcode() != null ? "DUPN".equals(getCurOpcode().name()) : false;
         }
 
         public boolean isSwapN() {
-            return getCurOpcode() != null ? getCurOpcode().name().equals("SWAPN") : false;
+            return getCurOpcode() != null ? "SWAPN".equals(getCurOpcode().name()) : false;
         }
 
         public byte[] getCurOpcodeArg() {
             if (isPush()) {
                 int nPush = getCurOpcode().val() - OpCode.PUSH1.val() + 1;
-                byte[] data = Arrays.copyOfRange(code, pc + 1, pc + nPush + 1);
-                return data;
+                return Arrays.copyOfRange(code, pc + 1, pc + nPush + 1);
             } else if (isDupN() || isSwapN()) {
                 return Arrays.copyOfRange(code, pc + 1, pc + 2);
             }
