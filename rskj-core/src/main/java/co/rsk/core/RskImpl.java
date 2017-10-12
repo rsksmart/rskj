@@ -18,6 +18,7 @@
 
 package co.rsk.core;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.*;
@@ -65,7 +66,6 @@ public class RskImpl extends EthereumImpl implements Rsk {
                     SystemProperties config = this.getSystemProperties();
 
                     int nnodes = config.scoringNumberOfNodes();
-
                     long nodePunishmentDuration = config.scoringNodesPunishmentDuration();
                     int nodePunishmentIncrement = config.scoringNodesPunishmentIncrement();
                     long nodePunhishmentMaximumDuration = config.scoringNodesPunishmentMaximumDuration();
@@ -101,13 +101,13 @@ public class RskImpl extends EthereumImpl implements Rsk {
 
     @Override
     public NodeBlockProcessor getNodeBlockProcessor() {
-        if (this.nodeBlockProcessor == null) {
+        if (nodeBlockProcessor == null) {
             BlockStore store = new BlockStore();
             Blockchain blockchain = this.getWorldManager().getBlockchain();
             BlockNodeInformation nodeInformation = new BlockNodeInformation();
             BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, getChannelManager());
-            this.nodeBlockProcessor = new NodeBlockProcessor(store, blockchain, this.getWorldManager(), nodeInformation, blockSyncService);
-            this.syncProcessor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.DEFAULT, blockValidationRule);
+            nodeBlockProcessor = new NodeBlockProcessor(store, blockchain, getWorldManager(), nodeInformation, blockSyncService);
+            syncProcessor = new SyncProcessor(blockchain, blockSyncService, getSyncConfiguration(), blockValidationRule);
         }
         return this.nodeBlockProcessor;
     }
@@ -134,5 +134,17 @@ public class RskImpl extends EthereumImpl implements Rsk {
     @Override
     public boolean hasBetterBlockToSync() {
             return this.getNodeBlockProcessor().hasBetterBlockToSync();
+    }
+
+    @Override
+    public SyncConfiguration getSyncConfiguration() {
+        int expectedPeers = RskSystemProperties.RSKCONFIG.getExpectedPeers();
+        int timeoutWaitingPeers = RskSystemProperties.RSKCONFIG.getTimeoutWaitingPeers();
+        int timeoutWaitingRequest = RskSystemProperties.RSKCONFIG.getTimeoutWaitingRequest();
+        int expirationTimePeerStatus = RskSystemProperties.RSKCONFIG.getExpirationTimePeerStatus();
+        int maxSkeletonChunks = RskSystemProperties.RSKCONFIG.getMaxSkeletonChunks();
+        int chunkSize = RskSystemProperties.RSKCONFIG.getChunkSize();
+        return new SyncConfiguration(expectedPeers, timeoutWaitingPeers, timeoutWaitingRequest,
+                expirationTimePeerStatus, maxSkeletonChunks, chunkSize);
     }
 }

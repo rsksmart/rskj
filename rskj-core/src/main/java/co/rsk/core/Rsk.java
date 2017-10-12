@@ -22,6 +22,7 @@ import co.rsk.mine.MinerServer;
 import co.rsk.mine.MinerClient;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.NodeBlockProcessor;
+import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.facade.Ethereum;
 
@@ -46,4 +47,6 @@ public interface Rsk extends Ethereum {
     boolean isBlockchainEmpty();
 
     boolean hasBetterBlockToSync();
+
+    SyncConfiguration getSyncConfiguration();
 }

@@ -46,6 +46,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     private final Blockchain blockchain;
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
     private final BlockSyncService blockSyncService;
+    private final Map <Long, byte[]> skeletonCache = new HashMap<>();
 
     private long blocksForPeers;
 
@@ -321,8 +322,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         long skeletonStartHeight = (blockStart.getNumber() / skeletonStep) * skeletonStep;
         List<BlockIdentifier> blockIdentifiers = new ArrayList<>();
         for (long skeletonNumber = skeletonStartHeight; skeletonNumber < this.getBestBlockNumber(); skeletonNumber += skeletonStep) {
-            // TODO(mc) get from an in-memory store
-            byte[] skeletonHash = this.getBlockFromBlockchainStore(skeletonNumber).getHash();
+            byte[] skeletonHash = getSkeletonHash(skeletonNumber);
             blockIdentifiers.add(new BlockIdentifier(skeletonHash, skeletonNumber));
         }
 
@@ -331,6 +331,15 @@ public class NodeBlockProcessor implements BlockProcessor {
         SkeletonResponseMessage responseMessage = new SkeletonResponseMessage(requestId, blockIdentifiers);
 
         sender.sendMessage(responseMessage);
+    }
+
+    private byte[] getSkeletonHash(long skeletonNumber) {
+        byte[] hash = skeletonCache.get(skeletonNumber);
+        if (hash == null){
+            hash = getBlockFromBlockchainStore(skeletonNumber).getHash();
+            skeletonCache.put(skeletonNumber, hash);
+        }
+        return hash;
     }
 
     /**

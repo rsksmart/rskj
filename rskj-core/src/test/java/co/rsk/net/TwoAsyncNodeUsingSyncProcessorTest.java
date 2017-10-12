@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.messages.NewBlockHashMessage;
 import co.rsk.net.simples.SimpleAsyncNode;
+import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.SyncUtils;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -50,7 +51,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         node1.sendFullStatusTo(node2);
         // sync setup
-        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(100, 0));
+        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(100, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // get blocks
         node2.waitExactlyNTasksWithTimeout(100);
 
@@ -75,7 +76,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         node1.sendFullStatusTo(node2);
         // sync setup
-        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(400, 0));
+        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(400, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // get blocks
         node2.waitExactlyNTasksWithTimeout(400);
 
@@ -100,7 +101,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         node1.sendFullStatusTo(node2);
         // find connection point
-        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(10, 0));
+        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(10, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // get blocks
         node2.waitExactlyNTasksWithTimeout(10);
 
@@ -143,7 +144,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         node1.sendFullStatusTo(node2);
         // find connection point
-        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(10, 5));
+        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(10, 5, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // get blocks
         node2.waitExactlyNTasksWithTimeout(5);
         // drain node 1 for next test
@@ -205,7 +206,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         node2.sendFullStatusTo(node1);
         // sync setup
-        node1.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(2030, 30));
+        node1.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(2030, 30, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // request bodies
         node1.waitExactlyNTasksWithTimeout(930);
 
@@ -241,7 +242,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
             int blocksToDownload = Math.toIntExact(expectedBestBlockNumber - currentBestBlock);
 
             node2.sendFullStatusTo(node1);
-            node1.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(4300, currentBestBlock));
+            node1.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(4300, currentBestBlock, SyncConfiguration.IMMEDIATE_FOR_TESTING));
 
             // request bodies
             node1.waitExactlyNTasksWithTimeout(blocksToDownload);

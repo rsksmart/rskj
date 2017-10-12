@@ -23,6 +23,7 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.NodeBlockProcessor;
+import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
@@ -101,5 +102,10 @@ public class SimpleRsk extends SimpleEthereum implements Rsk {
     @Override
     public boolean hasBetterBlockToSync() {
         return false;
+    }
+
+    @Override
+    public SyncConfiguration getSyncConfiguration() {
+        return SyncConfiguration.IMMEDIATE_FOR_TESTING;
     }
 }

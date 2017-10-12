@@ -1,9 +1,10 @@
 package co.rsk.net.utils;
 
 import co.rsk.net.sync.ConnectionPointFinder;
+import co.rsk.net.sync.SyncConfiguration;
 
 public final class SyncUtils {
-    public static int syncSetupRequests(long bestBlock, long currentBestBlock) {
+    public static int syncSetupRequests(long bestBlock, long currentBestBlock, SyncConfiguration syncConfiguration) {
         if (currentBestBlock >= bestBlock) {
             return 1;
         }
@@ -11,9 +12,11 @@ public final class SyncUtils {
         // 192 and 5 are configuration values that are hardcoded for testing
         // 192: chunk size
         // 5: max chunks to download in skeleton
-        int skippedChunks = (int) Math.floor(currentBestBlock / 192f);
-        int chunksToBestBlock = (int) Math.ceil(bestBlock / 192f);
-        int chunksToDownload = Math.max(1, Math.min(5, chunksToBestBlock - skippedChunks));
+        float chunkSize = (float)syncConfiguration.getChunkSize();
+        int maxSkeletonChunks = syncConfiguration.getMaxSkeletonChunks();
+        int skippedChunks = (int) Math.floor(currentBestBlock / chunkSize);
+        int chunksToBestBlock = (int) Math.ceil(bestBlock / chunkSize);
+        int chunksToDownload = Math.max(1, Math.min(maxSkeletonChunks, chunksToBestBlock - skippedChunks));
         return 1 + // get status
                 binarySearchExpectedRequests(bestBlock, currentBestBlock) + // find connection point
                 1 + // get skeleton

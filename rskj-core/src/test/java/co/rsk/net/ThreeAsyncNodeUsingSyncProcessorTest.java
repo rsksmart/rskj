@@ -20,6 +20,7 @@ package co.rsk.net;
 
 import co.rsk.net.messages.NewBlockHashMessage;
 import co.rsk.net.simples.SimpleAsyncNode;
+import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.SyncUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Blockchain;
@@ -40,7 +41,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node1.sendFullStatusTo(node2);
         // sync setup
-        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(100, 0));
+        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(100, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 100 new blocks from node 1
         node2.waitExactlyNTasksWithTimeout(100);
 
@@ -53,7 +54,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node2.sendFullStatusTo(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(100, 0));
+        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(100, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 100 new blocks from node 2
         node3.waitExactlyNTasksWithTimeout(100);
 
@@ -92,7 +93,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node1.sendFullStatusTo(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(30, 0));
+        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(30, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 30 new blocks from node 1
         node3.waitExactlyNTasksWithTimeout(30);
 
@@ -106,7 +107,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node2.sendFullStatusTo(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(50, 0));
+        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(50, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 50 new blocks from node 2
         node3.waitExactlyNTasksWithTimeout(50);
 
@@ -147,7 +148,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node1.sendFullStatusTo(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(30, 0));
+        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(30, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 30 new blocks from node 1
         node3.waitExactlyNTasksWithTimeout(30);
 
@@ -161,7 +162,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node2.sendFullStatusTo(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(73, 30));
+        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(73, 30, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 43 new blocks from node 2
         node3.waitExactlyNTasksWithTimeout(43);
 
@@ -199,7 +200,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node1.sendFullStatusTo(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(50, 0));
+        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(50, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 50 new blocks from node 1
         node3.waitExactlyNTasksWithTimeout(50);
 
@@ -262,7 +263,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node3.sendFullStatusTo(node2);
         // sync setup
-        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(80, 73));
+        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(80, 73, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 7 new blocks from node 3
         node2.waitExactlyNTasksWithTimeout(7);
 
@@ -307,7 +308,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         // receive and ignore NewBlockHashMessage
         node3.waitUntilNTasksWithTimeout(1);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(30, 0));
+        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(30, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 30 new blocks from node 1
         node3.waitExactlyNTasksWithTimeout(30);
 
@@ -346,7 +347,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         node1.sendFullStatusTo(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(30, 0));
+        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(30, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 30 new blocks from node 1
         node3.waitExactlyNTasksWithTimeout(30);
 
