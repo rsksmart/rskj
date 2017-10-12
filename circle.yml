@@ -11,11 +11,14 @@ dependencies:
     - sudo apt-get update -y; true
     - sudo apt-get install -y solc
     - gpg2 --keyserver https://secchannel.rsk.co/release.asc --recv-keys 5DECF4415E3B8FA4
+    - sudo npm install -g sonarqube-scanner
   override:
     - gpg2 --verify SHA256SUMS.asc
     - sha256sum --check SHA256SUMS.asc
     - ./configure.sh
-    - ./gradlew dependencies
+    - ./gradlew dependencieso
+  post:
+    - sonar-scanner -Dsonar.analysis.mode=preview -Dsonar.github.pullRequest=$PULL_REQUEST_ID -Dsonar.github.repository=rsksmart/rskj -Dsonar.github.oauth=$GITHUB_ACCESS_TOKEN -Dsonar.host.url=https://sonar.rsk.co/sonar -Dsonar.login=$SONARQUBE_ACCESS_TOKEN
 test:
   override:
     - ./gradlew test
