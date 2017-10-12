@@ -16,6 +16,7 @@ import org.ethereum.validator.DifficultyRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.*;
@@ -32,7 +33,6 @@ public class SyncProcessor implements SyncEventsHandler {
     private Blockchain blockchain;
     private BlockSyncService blockSyncService;
     private PeersInformation peerStatuses;
-    private Map<Long, PendingBodyResponse> pendingBodyResponses = new HashMap<>();
 
     private SyncState syncState;
     private NodeID selectedPeerId;
@@ -46,8 +46,8 @@ public class SyncProcessor implements SyncEventsHandler {
         this.syncConfiguration = syncConfiguration;
         this.peerStatuses = new PeersInformation(syncConfiguration);
         this.syncInformation = new SyncInformationImpl(blockHeaderValidationRule);
-        this.syncState = new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses);
         this.pendingMessages = new PendingMessages();
+        setSyncState(new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses));
     }
 
     public void processStatus(MessageChannel sender, Status status) {
@@ -106,10 +106,7 @@ public class SyncProcessor implements SyncEventsHandler {
         logger.trace("Process new block hash from node {} hash {}", sender.getPeerNodeID(), HashUtil.shortHash(message.getBlockHash()));
         byte[] hash = message.getBlockHash();
 
-        if (this.blockSyncService.getBlockFromStoreOrBlockchain(hash) != null)
-            return;
-
-        if (!syncState.isSyncing()) {
+        if (!syncState.isSyncing() && blockSyncService.getBlockFromStoreOrBlockchain(hash) == null) {
             sendMessage(sender, new BlockRequestMessage(pendingMessages.getNextRequestId(), hash));
             peerStatuses.getOrRegisterPeer(sender);
         }
@@ -153,19 +150,19 @@ public class SyncProcessor implements SyncEventsHandler {
     public void sendBlockHeadersRequest(ChunkDescriptor chunk) {
         logger.trace("Send headers request to node {}", selectedPeerId);
 
-        MessageChannel peer = peerStatuses.getPeer(selectedPeerId).getMessageChannel();
+        MessageChannel channel = peerStatuses.getPeer(selectedPeerId).getMessageChannel();
         BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(pendingMessages.getNextRequestId(), chunk.getHash(), chunk.getCount());
-        sendMessage(peer, message);
+        sendMessage(channel, message);
     }
 
     @Override
-    public void sendBodyRequest(@Nonnull BlockHeader header) {
+    public long sendBodyRequest(@Nonnull BlockHeader header) {
         logger.trace("Send body request block {} hash {} to peer {}", header.getNumber(), HashUtil.shortHash(header.getHash()), selectedPeerId);
 
-        MessageChannel peer = peerStatuses.getPeer(selectedPeerId).getMessageChannel();
+        MessageChannel channel = peerStatuses.getPeer(selectedPeerId).getMessageChannel();
         BodyRequestMessage message = new BodyRequestMessage(pendingMessages.getNextRequestId(), header.getHash());
-        sendMessage(peer, message);
-        pendingBodyResponses.put(message.getId(), new PendingBodyResponse(peer.getPeerNodeID(), header));
+        sendMessage(channel, message);
+        return message.getId();
     }
 
     @Override
@@ -194,9 +191,20 @@ public class SyncProcessor implements SyncEventsHandler {
     @Override
     public void stopSyncing() {
         selectedPeerId = null;
-        this.pendingBodyResponses.clear();
         this.pendingMessages.clear();
         setSyncState(new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses));
+    }
+
+    @Override
+    public void onErrorSyncing(String message, Object... arguments) {
+        logger.trace(message, arguments);
+        stopSyncing();
+    }
+
+    @Override
+    public void onCompletedSyncing() {
+        logger.trace("Completed syncing phase with node {}", selectedPeerId);
+        stopSyncing();
     }
 
     private void sendMessage(MessageChannel channel, MessageWithId message) {
@@ -249,11 +257,6 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @VisibleForTesting
-    public void expectBodyResponseFor(long requestId, NodeID nodeID, BlockHeader header) {
-        pendingBodyResponses.put(requestId, new PendingBodyResponse(nodeID, header));
-    }
-
-    @VisibleForTesting
     public Map<Long, MessageType> getExpectedResponses() {
         return this.pendingMessages.getExpectedMessages();
     }
@@ -278,16 +281,8 @@ public class SyncProcessor implements SyncEventsHandler {
         }
 
         @Override
-        public boolean isExpectedBody(long requestId) {
-            PendingBodyResponse expected = pendingBodyResponses.get(requestId);
-            return expected != null && selectedPeerId.equals(expected.nodeID);
-        }
-
-        @Override
-        public void saveBlock(BodyResponseMessage message) {
-            // we know it exists because it was called from a SyncEvent
-            BlockHeader header = pendingBodyResponses.get(message.getId()).header;
-            blockSyncService.processBlock(getSelectedPeerChannel(), Block.fromValidData(header, message.getTransactions(), message.getUncles()));
+        public void saveBlock(Block block) {
+            blockSyncService.processBlock(getSelectedPeerChannel(), block);
         }
 
         @Override
@@ -310,22 +305,18 @@ public class SyncProcessor implements SyncEventsHandler {
             return true;
         }
 
+        @CheckForNull
+        @Override
+        public NodeID getSelectedPeerId() {
+            return selectedPeerId;
+        }
+
         public MessageChannel getSelectedPeerChannel() {
             return peerStatuses.getPeer(selectedPeerId).getMessageChannel();
         }
 
         private SyncPeerStatus getPeerStatus(NodeID nodeID) {
             return peerStatuses.getPeer(nodeID);
-        }
-    }
-
-    private static class PendingBodyResponse {
-        private NodeID nodeID;
-        private BlockHeader header;
-
-        PendingBodyResponse(NodeID nodeID, BlockHeader header) {
-            this.nodeID = nodeID;
-            this.header = header;
         }
     }
 }

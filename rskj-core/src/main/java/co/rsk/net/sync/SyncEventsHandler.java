@@ -13,7 +13,7 @@ public interface SyncEventsHandler {
 
     void sendBlockHashRequest(long height);
 
-    void sendBodyRequest(@Nonnull BlockHeader header);
+    long sendBodyRequest(@Nonnull BlockHeader header);
 
     void startSyncing(MessageChannel peer);
 
@@ -26,4 +26,8 @@ public interface SyncEventsHandler {
     void stopSyncing();
 
     void sendBlockHeadersRequest(ChunkDescriptor chunk);
+
+    void onErrorSyncing(String message, Object... arguments);
+
+    void onCompletedSyncing();
 }

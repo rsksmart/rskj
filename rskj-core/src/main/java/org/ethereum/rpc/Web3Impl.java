@@ -295,6 +295,10 @@ public class Web3Impl implements Web3 {
         long currentBlock = worldManager.getBlockchain().getBestBlock().getNumber();
         long highestBlock = processor.getLastKnownBlockNumber();
 
+        if (highestBlock <= currentBlock){
+            return false;
+        }
+
         SyncingResult s = new SyncingResult();
         try {
             s.startingBlock = TypeConverter.toJsonHex(initialBlockNumber);

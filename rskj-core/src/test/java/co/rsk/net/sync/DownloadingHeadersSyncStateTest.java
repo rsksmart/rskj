@@ -22,7 +22,7 @@ public class DownloadingHeadersSyncStateTest {
     public void itTimeoutsWhenWaitingForRequest() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
-        SyncState syncState = new DownloadingHeadersSyncState(syncConfiguration, syncEventsHandler, null, Collections.emptyList(), 0);
+        SyncState syncState = new DownloadingHeadersSyncState(syncConfiguration, syncEventsHandler, new SimpleSyncInformation(), Collections.emptyList(), 0);
 
         syncState.newPeerStatus();
         Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());
@@ -38,7 +38,7 @@ public class DownloadingHeadersSyncStateTest {
     public void itDoesntTimeoutWhenSendingMessages() {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
-        DownloadingHeadersSyncState syncState = new DownloadingHeadersSyncState(syncConfiguration, syncEventsHandler, null, Collections.emptyList(), 0);
+        DownloadingHeadersSyncState syncState = new DownloadingHeadersSyncState(syncConfiguration, syncEventsHandler, new SimpleSyncInformation(), Collections.emptyList(), 0);
 
         syncState.newPeerStatus();
         Assert.assertFalse(syncEventsHandler.stopSyncingWasCalled());

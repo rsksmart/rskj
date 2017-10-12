@@ -75,14 +75,15 @@ public class BlockSyncService {
         this.nodeInformation = nodeInformation;
     }
 
-    public BlockProcessResult processBlock(MessageChannel sender, Block block) {
-        long bestBlockNumber = this.getBestBlockNumber();
-        long blockNumber = block.getNumber();
-
+    public BlockProcessResult processBlock(MessageChannel sender, @Nullable Block block) {
         if (block == null) {
             logger.error("Block not received");
             return new BlockProcessResult(false, null);
         }
+
+        long bestBlockNumber = this.getBestBlockNumber();
+        long blockNumber = block.getNumber();
+
 
         if ((++processedBlocksCounter % 200) == 0) {
             long minimal = store.minimalHeight();

@@ -34,7 +34,9 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
                 || chunk.size() != currentChunk.get().getCount()
                 || !ByteUtil.fastEquals(chunk.get(0).getHash(), currentChunk.get().getHash())) {
             // TODO(mc) do peer scoring and banning
-            syncEventsHandler.stopSyncing();
+            syncEventsHandler.onErrorSyncing(
+                    "Invalid chunk received from node {}",
+                    syncInformation.getSelectedPeerId());
             return;
         }
 
@@ -46,7 +48,9 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
 
             if (!syncInformation.blockHeaderIsValid(header, parentHeader)) {
                 // TODO(mc) do peer scoring and banning
-                syncEventsHandler.stopSyncing();
+                syncEventsHandler.onErrorSyncing(
+                        "Invalid header received from node {}",
+                        syncInformation.getSelectedPeerId());
                 return;
             }
 

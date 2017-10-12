@@ -20,7 +20,17 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     public void sendBlockHeadersRequest(ChunkDescriptor chunk) { }
 
     @Override
-    public void sendBodyRequest(@Nonnull BlockHeader header) { }
+    public void onErrorSyncing(String message, Object... arguments) {
+        stopSyncing();
+    }
+
+    @Override
+    public void onCompletedSyncing() {
+        stopSyncing();
+    }
+
+    @Override
+    public long sendBodyRequest(@Nonnull BlockHeader header) { return 0; }
 
     @Override
     public void sendSkeletonRequest(long height) { }

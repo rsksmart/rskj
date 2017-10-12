@@ -4,6 +4,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageChannel;
+import co.rsk.net.sync.DownloadingBodiesSyncState;
 import co.rsk.net.sync.DownloadingHeadersSyncState;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.StatusUtils;
@@ -404,8 +405,8 @@ public class SyncProcessorTest {
         BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
         processor.registerExpectedMessage(response);
 
-        processor.expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
         processor.startDownloadingBodies(new ArrayDeque<>(Collections.singletonList(block.getHeader())));
+        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
 
         processor.processBodyResponse(sender, response);
 
@@ -460,8 +461,8 @@ public class SyncProcessorTest {
         BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
         processor.registerExpectedMessage(response);
 
-        processor.expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
         processor.startDownloadingBodies(new ArrayDeque<>(Collections.singletonList(block.getHeader())));
+        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
 
         processor.processBodyResponse(sender, response);
 

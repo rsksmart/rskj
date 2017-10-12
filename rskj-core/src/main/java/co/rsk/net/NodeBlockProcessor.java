@@ -133,15 +133,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     private boolean hasHeader(@Nonnull final BlockHeader h) {
-        if (hasBlock(h.getHash())) {
-            return true;
-        }
-
-        if (store.hasHeader(h.getHash())) {
-            return true;
-        }
-        
-        return false;
+        return hasBlock(h.getHash()) || store.hasHeader(h.getHash());
     }
 
     private void processBlockHeader(@Nonnull final MessageChannel sender, @Nonnull final BlockHeader header) {
@@ -333,11 +325,19 @@ public class NodeBlockProcessor implements BlockProcessor {
         sender.sendMessage(responseMessage);
     }
 
-    private byte[] getSkeletonHash(long skeletonNumber) {
-        byte[] hash = skeletonCache.get(skeletonNumber);
+    /**
+     *
+     * @param skeletonBlockNumber a block number that belongs to the skeleton
+     * @return the proper hash for the block
+     */
+    private byte[] getSkeletonHash(long skeletonBlockNumber) {
+        byte[] hash = skeletonCache.get(skeletonBlockNumber);
         if (hash == null){
-            hash = getBlockFromBlockchainStore(skeletonNumber).getHash();
-            skeletonCache.put(skeletonNumber, hash);
+            Block block = getBlockFromBlockchainStore(skeletonBlockNumber);
+            if (block != null){
+                hash = block.getHash();
+                skeletonCache.put(skeletonBlockNumber, hash);
+            }
         }
         return hash;
     }
@@ -438,7 +438,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      *
      * @return the blockchain's best block's hash.
      */
-    public byte[] getBestBlockHash() {
+    private byte[] getBestBlockHash() {
         return this.blockchain.getBestBlock().getHash();
     }
 

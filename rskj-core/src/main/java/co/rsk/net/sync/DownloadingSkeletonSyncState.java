@@ -22,7 +22,9 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
     public void newSkeleton(List<BlockIdentifier> skeleton) {
         // defensive programming: this should never happen
         if (skeleton.size() < 2) {
-            syncEventsHandler.stopSyncing();
+            syncEventsHandler.onErrorSyncing(
+                    "Invalid skeleton received from node {}",
+                    syncInformation.getSelectedPeerId());
             return;
         }
 

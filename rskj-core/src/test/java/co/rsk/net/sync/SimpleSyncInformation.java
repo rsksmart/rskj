@@ -2,8 +2,10 @@ package co.rsk.net.sync;
 
 
 import co.rsk.net.MessageChannel;
+import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.messages.BodyResponseMessage;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
 import javax.annotation.Nonnull;
@@ -17,22 +19,24 @@ public class SimpleSyncInformation implements SyncInformation {
     }
 
     @Override
+    public NodeID getSelectedPeerId() {
+        return null;
+    }
+
+    @Override
     public boolean hasLowerDifficulty(MessageChannel peer) {
         return hasLowerDifficulty;
     }
 
     @Override
-    public boolean isExpectedBody(long expected) {
-        return false;
+    public void saveBlock(Block block) {
+
     }
 
     @Override
     public boolean isKnownBlock(byte[] hash) {
         return false;
     }
-
-    @Override
-    public void saveBlock(BodyResponseMessage message) { }
 
     public SimpleSyncInformation withWorsePeers() {
         this.hasLowerDifficulty = false;

@@ -24,7 +24,7 @@ import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
- * BlockNodeInformation has information about which blocks are known by which blocks,
+ * BlockNodeInformation has information about which blocks are known by which peer,
  * and provides convenient functions to retrieve all the blocks known by a node, and
  * which nodes know a certain block.
  * <p>
