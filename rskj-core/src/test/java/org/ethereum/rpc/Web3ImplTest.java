@@ -1350,8 +1350,6 @@ public class Web3ImplTest {
     }
 
     private RskSystemProperties getMockProperties() {
-        RskSystemProperties mockProperties = mock(RskSystemProperties.class);
-        when(mockProperties.coinbaseSecret()).thenReturn("cow");
-        return mockProperties;
+        return mock(RskSystemProperties.class);
     }
 }

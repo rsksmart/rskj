@@ -139,13 +139,16 @@ public class Web3Impl implements Web3 {
             personal_newAccountWithSeed("cow");
         }
 
-        String secret = properties.coinbaseSecret();
-        personal_newAccountWithSeed(secret);
+        // This creates a new account based on a configured secret passphrase,
+        // which is then used to set the current miner coinbase address.
+        // Generally used for testing, since you usually don't want to store
+        // wallets in production for security reasons.
+        Account coinbaseAccount = properties.localCoinbaseAccount();
+        if (coinbaseAccount != null)
+            personal_newAccount(coinbaseAccount);
 
         // initializes wallet accounts based on configuration
-        List<WalletAccount> accs = properties.walletAccounts();
-
-        for (WalletAccount acc : accs)
+        for (WalletAccount acc : properties.walletAccounts())
             this.wallet.addAccountWithPrivateKey(Hex.decode(acc.getPrivateKey()));
     }
 
@@ -1370,6 +1373,16 @@ public class Web3Impl implements Web3 {
                 return ((Repository) this.repository).getSnapshotTo(block.getStateRoot());
             } else {
                 return null;
+            }
+        }
+    }
+
+    private void personal_newAccount(Account account) {
+        try {
+            this.wallet.addAccount(account);
+        } finally {
+            if (logger.isDebugEnabled()) {
+                logger.debug("personal_newAccount(*****): " + toJsonHex(account.getAddress()));
             }
         }
     }

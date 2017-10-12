@@ -25,6 +25,8 @@ import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import org.ethereum.config.SystemProperties;
+import org.ethereum.core.Account;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +54,8 @@ public class RskSystemProperties extends SystemProperties {
 
     public static final int PD_DEFAULT_REFRESH_PERIOD = 60000;
     public static final int BLOCKS_FOR_PEERS_DEFAULT = 100;
-    public static final String MINER_COINBASE_ADDRESS_CONFIG = "miner.coinbase.address";
+    private static final String MINER_COINBASE_ADDRESS_CONFIG = "miner.coinbase.address";
+    private static final String MINER_COINBASE_SECRET_CONFIG = "coinbase.secret";
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
@@ -67,29 +70,40 @@ public class RskSystemProperties extends SystemProperties {
             return null;
         }
 
-        String coinbaseSecret = coinbaseSecret();
-        if (coinbaseSecret != null && !coinbaseSecret.isEmpty()) {
-            if (config.hasPath(MINER_COINBASE_ADDRESS_CONFIG)) {
-                throw new RskConfigurationException("It is required to have only one of miner.coinbase.address and coinbase.address");
-            }
-
-            return HashUtil.sha3(coinbaseSecret.getBytes(StandardCharsets.UTF_8));
-        } else if (config.hasPath("miner.coinbase.address")) {
-            String coinbaseAddress = config.getString("miner.coinbase.address");
-            if (coinbaseAddress.length() != 64) {
-                throw new RskConfigurationException("The miner.coinbase.address needs to be Hex encoded and 32 byte length");
-            }
-
-            return Hex.decode(coinbaseAddress);
+        // validity checks are performed by localCoinbaseAccount
+        Account account = localCoinbaseAccount();
+        if (account != null) {
+            return account.getAddress();
         }
 
-        throw new RskConfigurationException("It is required to either have miner.coinbase.address or coinbase.secret to use the miner server");
+        String coinbaseAddress = config.getString(MINER_COINBASE_ADDRESS_CONFIG);
+        if (coinbaseAddress.length() != 64) {
+            throw new RskConfigurationException(MINER_COINBASE_ADDRESS_CONFIG + " needs to be Hex encoded and 32 byte length");
+        }
+
+        return Hex.decode(coinbaseAddress);
     }
 
     @Nullable
-    public String coinbaseSecret() {
-        return config.hasPath("coinbase.secret") ?
-                config.getString("coinbase.secret") : null;
+    public Account localCoinbaseAccount() {
+        if (!minerServerEnabled()) {
+            return null;
+        }
+
+        if (config.hasPath(MINER_COINBASE_SECRET_CONFIG)) {
+            if (config.hasPath(MINER_COINBASE_ADDRESS_CONFIG)) {
+                throw new RskConfigurationException("It is required to have only one of " + MINER_COINBASE_ADDRESS_CONFIG + " or " + MINER_COINBASE_SECRET_CONFIG);
+            }
+
+            String coinbaseSecret = config.getString(MINER_COINBASE_SECRET_CONFIG);
+            return new Account(ECKey.fromPrivate(HashUtil.sha3(coinbaseSecret.getBytes(StandardCharsets.UTF_8))));
+        }
+
+        if (!config.hasPath(MINER_COINBASE_ADDRESS_CONFIG)) {
+            throw new RskConfigurationException("It is required to either have " + MINER_COINBASE_ADDRESS_CONFIG + " or " + MINER_COINBASE_SECRET_CONFIG + " to use the miner server");
+        }
+
+        return null;
     }
 
     public boolean minerClientEnabled() {

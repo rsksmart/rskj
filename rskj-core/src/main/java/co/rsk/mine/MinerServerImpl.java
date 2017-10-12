@@ -115,7 +115,6 @@ public class MinerServerImpl implements MinerServer {
 
         executor = new BlockExecutor(repository, blockchain, blockStore, null);
 
-        coinbaseAddress = miningConfig.getCoinbaseAddress();
         blocksWaitingforPoW = new LinkedHashMap<Sha3Hash, Block>(CACHE_SIZE) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<Sha3Hash, Block> eldest) {
@@ -125,9 +124,10 @@ public class MinerServerImpl implements MinerServer {
 
         latestPaidFeesWithNotify = 0;
         latestParentHash = null;
-        minFeesNotifyInDollars = this.miningConfig.getMinFeesNotifyInDollars();
-        gasUnitInDollars = this.miningConfig.getGasUnitInDollars();
-        minerMinGasPriceTarget = toBI(this.miningConfig.getMinGasPriceTarget());
+        coinbaseAddress = miningConfig.getCoinbaseAddress();
+        minFeesNotifyInDollars = miningConfig.getMinFeesNotifyInDollars();
+        gasUnitInDollars = miningConfig.getGasUnitInDollars();
+        minerMinGasPriceTarget = toBI(miningConfig.getMinGasPriceTarget());
         powRule = new ProofOfWorkRule();
     }
 
