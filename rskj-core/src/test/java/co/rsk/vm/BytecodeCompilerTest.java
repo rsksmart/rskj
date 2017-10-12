@@ -140,6 +140,13 @@ public class BytecodeCompilerTest {
     }
 
     @Test
+    public void compileTxIndex() {
+        BytecodeCompiler compiler = new BytecodeCompiler();
+
+        Assert.assertArrayEquals(new byte[] { (byte)0xab }, compiler.compile("TXINDEX"));
+    }
+
+    @Test
     public void compileSimplePushWithDecimal() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 

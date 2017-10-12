@@ -144,6 +144,9 @@ public class BytecodeCompiler {
         if ("swapn".equals(token))
             return (byte)0xaa;
 
+        if ("txindex".equals(token))
+            return (byte)0xab;
+
         if ("jump".equals(token))
             return (byte)0x56;
         if ("jumpi".equals(token))
