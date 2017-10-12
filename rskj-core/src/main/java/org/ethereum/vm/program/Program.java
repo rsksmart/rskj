@@ -1082,6 +1082,10 @@ public class Program {
         return invoke.getNumber().clone();
     }
 
+    public DataWord getTransactionIndex() {
+        return invoke.getTransactionIndex().clone();
+    }
+
     public DataWord getDifficulty() {
         return invoke.getDifficulty().clone();
     }

@@ -194,6 +194,11 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     @Override
+    public DataWord getTransactionIndex() {
+        return new DataWord(0);
+    }
+
+    @Override
     public DataWord getDifficulty() {
         byte[] difficulty = Hex.decode("3ED290");
         return new DataWord(difficulty);
