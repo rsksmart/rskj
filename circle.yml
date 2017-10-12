@@ -16,7 +16,7 @@ dependencies:
     - gpg2 --verify SHA256SUMS.asc
     - sha256sum --check SHA256SUMS.asc
     - ./configure.sh
-    - ./gradlew dependencieso
+    - ./gradlew dependencies
   post:
     - sonar-scanner -Dsonar.analysis.mode=preview -Dsonar.github.pullRequest=$PULL_REQUEST_ID -Dsonar.github.repository=rsksmart/rskj -Dsonar.github.oauth=$GITHUB_ACCESS_TOKEN -Dsonar.host.url=https://sonar.rsk.co/sonar -Dsonar.login=$SONARQUBE_ACCESS_TOKEN
 test:
