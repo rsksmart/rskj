@@ -18,10 +18,10 @@
 
 package co.rsk.db;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.*;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.datasource.DataSourcePool;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -390,7 +390,7 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
     private void checkExternalStorage() {
-        this.externalStorage = (keys.size() > SystemProperties.CONFIG.detailsInMemoryStorageLimit()) || this.externalStorage;
+        this.externalStorage = (keys.size() > RskSystemProperties.CONFIG.detailsInMemoryStorageLimit()) || this.externalStorage;
     }
 
     private String getDataSourceName() {

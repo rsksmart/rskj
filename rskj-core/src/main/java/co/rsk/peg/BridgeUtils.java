@@ -19,13 +19,13 @@
 package co.rsk.peg;
 
 import co.rsk.config.BridgeConstants;
+import co.rsk.config.RskSystemProperties;
 import org.apache.commons.lang3.StringUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,7 +108,7 @@ public class BridgeUtils {
     }
 
     public static boolean isFreeBridgeTx(org.ethereum.core.Transaction rskTx, long blockNumber) {
-        BlockchainNetConfig blockchainConfig = SystemProperties.CONFIG.getBlockchainConfig();
+        BlockchainNetConfig blockchainConfig = RskSystemProperties.CONFIG.getBlockchainConfig();
         byte[] receiveAddress = rskTx.getReceiveAddress();
 
         if (receiveAddress == null)

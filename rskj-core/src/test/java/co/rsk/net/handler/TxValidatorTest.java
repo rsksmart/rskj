@@ -19,8 +19,8 @@
 package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -126,8 +126,8 @@ public class TxValidatorTest {
 
     @Test
     public void brigdeTxTest() {
-        BlockchainNetConfig blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
+        BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
 
         TxValidator txValidator = new TxValidator();
         List<Transaction> txs = new LinkedList<>();
@@ -152,7 +152,7 @@ public class TxValidatorTest {
         List<Transaction> result = txValidator.filterTxs(txs, times, repository, worldManager, txmap);
         Assert.assertTrue(result.size() == 1);
 
-        SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     private Transaction createTransaction(long value, long gaslimit, long gasprice, long nonce, long data, long sender) {
@@ -173,7 +173,7 @@ public class TxValidatorTest {
         Mockito.when(transaction.getSignature()).thenReturn(new ECKey.ECDSASignature(BigInteger.ONE, BigInteger.ONE));
         Mockito.when(transaction.transactionCost(Mockito.any())).thenReturn(new Long(0));
         Mockito.when(transaction.getGasLimitAsInteger()).thenReturn(BigInteger.ZERO);
-        byte[] federator0PubKey = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getFederatorPublicKeys().get(0).getPubKey();
+        byte[] federator0PubKey = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getFederatorPublicKeys().get(0).getPubKey();
         Mockito.when(transaction.getKey()).thenReturn(ECKey.fromPublicOnly(federator0PubKey));
         return transaction;
     }

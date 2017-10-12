@@ -53,12 +53,12 @@ public class Web3RskImpl extends Web3Impl {
     MinerServer minerServer;
 
     public Web3RskImpl(Rsk rsk) {
-        super(rsk, RskSystemProperties.RSKCONFIG, WalletFactory.createPersistentWallet());
+        super(rsk, RskSystemProperties.CONFIG, WalletFactory.createPersistentWallet());
         this.minerServer = rsk.getMinerServer();
     }
 
     public Web3RskImpl(Rsk rsk, Wallet wallet) {
-        super(rsk, RskSystemProperties.RSKCONFIG, wallet);
+        super(rsk, RskSystemProperties.CONFIG, wallet);
         this.minerServer = rsk.getMinerServer();
     }
 

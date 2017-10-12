@@ -19,6 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageSender;
@@ -31,7 +32,6 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.test.World;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.db.ByteArrayWrapper;
@@ -64,13 +64,13 @@ public class NodeMessageHandlerTest {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
+        blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
     }
 
     @AfterClass
     public static void tearDownAfterClass() throws Exception {
-        SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     private static String rlp = "f9030ff902eca079431a9262b600ef32a6817030453633d47d46d4c007b685d77a94a1c38048aca01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d493479428fdc38c327f4a3bbdf9501fd3a01ac7228c7af7a06c5369d2b4bab07027fd384c9a533518e9145fa60e6e033643a93496976573c1a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a03cbc7bed3852ab6e09537cef2f70e329251ba6b5accbf495b574059c31efc0f4b90100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000101832dc6c08084591c5e1e80800080b850711101000000000000000000000000000000000000000000000000000000000000000000afdcab14f0b9a7139c9146334699e8dde74694da35e30ab3759b59498d135d2e215e1c59ffff7f2103000000a70100000001afdcab14f0b9a7139c9146334699e8dde74694da35e30ab3759b59498d135d2e0101b8a300000000000003403daa1e6ab8bba82f3805006ae5d995da40f784faf67f1c38e97e8f6470d8a8a862a1d6e8a6110e8dd6cf28eb422b2e3f999f9293d150839debb15e131c52534b424c4f434b3ab1831f63f32d8ca273e09ac392694434f6fc1733f0622fb82119f9fcd5bf4b1cffffffff0100f2052a01000000232103232d7db808a1e895a810a12a86e4e9fcfd2a51b80589393a1344fa0614f6c829ac00000000dedd8000009400000000000000000000000000000000010000088080808080c0";

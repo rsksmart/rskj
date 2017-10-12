@@ -20,10 +20,10 @@
 package org.ethereum.validator;
 
 import co.rsk.config.RskMiningConstants;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.BlockValidationRule;
 import org.apache.commons.lang3.ArrayUtils;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
@@ -50,7 +50,7 @@ public class ProofOfWorkRule implements BlockValidationRule {
     public boolean isValid(Block block) {
 
         BlockHeader header = block.getHeader();
-        co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+        co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
         byte[] bitcoinMergedMiningCoinbaseTransactionCompressed = header.getBitcoinMergedMiningCoinbaseTransaction();
         co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = bitcoinNetworkParameters.getDefaultSerializer().makeBlock(header.getBitcoinMergedMiningHeader());
         co.rsk.bitcoinj.core.PartialMerkleTree bitcoinMergedMiningMerkleBranch  = new co.rsk.bitcoinj.core.PartialMerkleTree(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof(), 0);

@@ -18,8 +18,8 @@
 
 package co.rsk.db;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.trie.*;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
@@ -37,7 +37,7 @@ import static org.ethereum.util.ByteUtil.toHexString;
  * Created by ajlopez on 05/04/2017.
  */
 public class ContractDetailsImplTest {
-    private static final int IN_MEMORY_STORAGE_LIMIT = SystemProperties.CONFIG.detailsInMemoryStorageLimit();
+    private static final int IN_MEMORY_STORAGE_LIMIT = RskSystemProperties.CONFIG.detailsInMemoryStorageLimit();
 
     @Test
     public void getNullFromUnusedAddress() {

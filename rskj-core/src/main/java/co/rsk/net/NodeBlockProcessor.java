@@ -87,7 +87,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         this.nodeInformation = new BlockNodeInformation();
         worldManager.setNodeBlockProcessor(this);
         this.channelManager = worldManager.getChannelManager();
-        this.blocksForPeers = RskSystemProperties.RSKCONFIG.getBlocksForPeers();
+        this.blocksForPeers = RskSystemProperties.CONFIG.getBlocksForPeers();
     }
 
     /**
@@ -101,7 +101,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         this.blockchain = blockchain;
         this.nodeInformation = new BlockNodeInformation();
         this.channelManager = null;
-        this.blocksForPeers = RskSystemProperties.RSKCONFIG.getBlocksForPeers();
+        this.blocksForPeers = RskSystemProperties.CONFIG.getBlocksForPeers();
     }
 
     @Override

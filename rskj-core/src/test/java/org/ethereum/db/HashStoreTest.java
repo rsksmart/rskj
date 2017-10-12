@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import org.ethereum.config.SystemProperties;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.datasource.mapdb.MapDBFactory;
 import org.ethereum.datasource.mapdb.MapDBFactoryImpl;
 import org.ethereum.util.FileUtil;
@@ -61,8 +61,8 @@ public class HashStoreTest {
 
         BigInteger bi = new BigInteger(32, new Random());
         testDb = "test_db_" + bi;
-        SystemProperties.CONFIG.setDataBaseDir(testDb);
-        SystemProperties.CONFIG.setDatabaseReset(false);
+        RskSystemProperties.CONFIG.setDataBaseDir(testDb);
+        RskSystemProperties.CONFIG.setDatabaseReset(false);
 //        SystemProperties.CONFIG.overrideParams(SystemProperties.PROPERTY_DB_DIR, testDb);
 
         MapDBFactory mapDBFactory = new MapDBFactoryImpl();

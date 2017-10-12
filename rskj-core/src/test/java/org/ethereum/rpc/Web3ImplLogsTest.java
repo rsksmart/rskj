@@ -79,7 +79,7 @@ public class Web3ImplLogsTest {
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = (Repository) world.getBlockChain().getRepository();
         eth.worldManager = worldManager;
-        Web3Impl web3 = new Web3Impl(eth, RskSystemProperties.RSKCONFIG, WalletFactory.createPersistentWallet());
+        Web3Impl web3 = new Web3Impl(eth, RskSystemProperties.CONFIG, WalletFactory.createPersistentWallet());
 
         // TODO tricky link to listener
         world.getBlockChain().setListener(web3.setupListener());
@@ -286,7 +286,7 @@ public class Web3ImplLogsTest {
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = (Repository) world.getBlockChain().getRepository();
         eth.worldManager = worldManager;
-        Web3Impl web3 = new Web3Impl(eth, RskSystemProperties.RSKCONFIG, WalletFactory.createPersistentWallet("testwallet"));
+        Web3Impl web3 = new Web3Impl(eth, RskSystemProperties.CONFIG, WalletFactory.createPersistentWallet("testwallet"));
 
         // TODO tricky link to listener
         world.getBlockChain().setListener(web3.setupListener());
@@ -327,7 +327,7 @@ public class Web3ImplLogsTest {
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = (Repository) world.getBlockChain().getRepository();
         eth.worldManager = worldManager;
-        Web3Impl web3 = new Web3Impl(eth, RskSystemProperties.RSKCONFIG, WalletFactory.createPersistentWallet("testwallet2"));
+        Web3Impl web3 = new Web3Impl(eth, RskSystemProperties.CONFIG, WalletFactory.createPersistentWallet("testwallet2"));
 
         // TODO tricky link to listener
         world.getBlockChain().setListener(web3.setupListener());
@@ -384,7 +384,7 @@ public class Web3ImplLogsTest {
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = (Repository) world.getBlockChain().getRepository();
         eth.worldManager = worldManager;
-        Web3Impl web3 = new Web3Impl(eth, RskSystemProperties.RSKCONFIG, WalletFactory.createPersistentWallet("testwallet3"));
+        Web3Impl web3 = new Web3Impl(eth, RskSystemProperties.CONFIG, WalletFactory.createPersistentWallet("testwallet3"));
 
         // TODO tricky link to listener
         world.getBlockChain().setListener(web3.setupListener());

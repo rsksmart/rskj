@@ -172,7 +172,7 @@ public class Web3ImplSnapshotTest {
         BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
 
         MinerServerImpl minerServer;
-        minerServer = new MinerServerImpl(ethereum, world.getBlockChain(), world.getBlockChain().getBlockStore(), world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), RskSystemProperties.RSKCONFIG, rule);
+        minerServer = new MinerServerImpl(ethereum, world.getBlockChain(), world.getBlockChain().getBlockStore(), world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), RskSystemProperties.CONFIG, rule);
         minerClient.setMinerServer(minerServer);
 
         worldManager.minerClient = minerClient;

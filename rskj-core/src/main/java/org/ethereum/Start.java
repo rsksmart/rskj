@@ -22,7 +22,7 @@ package org.ethereum;
 import org.ethereum.cli.CLIInterface;
 import org.ethereum.facade.EthereumFactory;
 
-import static org.ethereum.config.SystemProperties.CONFIG;
+import static co.rsk.config.RskSystemProperties.CONFIG;
 
 /**
  * @author Roman Mandeleil
