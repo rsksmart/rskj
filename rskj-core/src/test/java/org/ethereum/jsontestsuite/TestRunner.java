@@ -223,7 +223,7 @@ public class TestRunner {
 
             ProgramInvoke programInvoke = new ProgramInvokeImpl(address, origin, caller, balance,
                     gasPrice, gas, callValue, msgData, lastHash, coinbase,
-                    timestamp, number, difficulty, gaslimit, repository, new BlockStoreDummy(), true);
+                    timestamp, number, 0, difficulty, gaslimit, repository, new BlockStoreDummy(), true);
 
             /* 3. Create Program - exec.code */
             /* 4. run VM */

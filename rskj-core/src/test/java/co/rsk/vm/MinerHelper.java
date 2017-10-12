@@ -95,9 +95,11 @@ public class MinerHelper {
             panicProcessor.panic("minerserver", String.format("Strange state in block %d %s", block.getNumber(), Hex.toHexString(block.getHash())));
         }
 
+        int txindex = 0;
+
         for (Transaction tx : block.getTransactionsList()) {
 
-            TransactionExecutor executor = new TransactionExecutor(tx, block.getCoinbase(),
+            TransactionExecutor executor = new TransactionExecutor(tx, txindex++, block.getCoinbase(),
                     track, blockStore, blockchain.getReceiptStore(),
                     programInvokeFactory, block, new EthereumListenerAdapter(), totalGasUsed);
 

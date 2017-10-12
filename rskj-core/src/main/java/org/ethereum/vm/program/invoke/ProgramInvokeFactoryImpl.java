@@ -46,7 +46,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
 
     // Invocation by the wire tx
     @Override
-    public ProgramInvoke createProgramInvoke(Transaction tx, Block block, Repository repository,
+    public ProgramInvoke createProgramInvoke(Transaction tx, int txindex, Block block, Repository repository,
                                              BlockStore blockStore) {
 
         /***         ADDRESS op       ***/
@@ -110,6 +110,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             "coinbase={}\n" +
                             "timestamp={}\n" +
                             "blockNumber={}\n" +
+                            "transactionIndex={}\n" +
                             "difficulty={}\n" +
                             "gaslimit={}\n",
 
@@ -125,12 +126,13 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     Hex.toHexString(coinbase),
                     timestamp,
                     number,
+                    txindex,
                     Hex.toHexString(difficulty),
                     gaslimit);
         }
 
         return new ProgramInvokeImpl(address, origin, caller, balance, gasPrice, gas, callValue, data,
-                lastHash, coinbase, timestamp, number, difficulty, gaslimit,
+                lastHash, coinbase, timestamp, number, txindex,difficulty, gaslimit,
                 repository, blockStore);
     }
 
@@ -158,6 +160,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         DataWord coinbase = program.getCoinbase();
         DataWord timestamp = program.getTimestamp();
         DataWord number = program.getNumber();
+        DataWord transactionIndex = program.getTransactionIndex();
         DataWord difficulty = program.getDifficulty();
         DataWord gasLimit = program.getGasLimit();
 
@@ -175,6 +178,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             "coinbase={}\n" +
                             "timestamp={}\n" +
                             "blockNumber={}\n" +
+                            "transactionIndex={}\n" +
                             "difficulty={}\n" +
                             "gaslimit={}\n",
                     Hex.toHexString(address.getLast20Bytes()),
@@ -189,12 +193,13 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     Hex.toHexString(coinbase.getLast20Bytes()),
                     timestamp.longValue(),
                     number.longValue(),
+                    transactionIndex.intValue(),
                     Hex.toHexString(difficulty.getNoLeadZeroesData()),
                     gasLimit.bigIntValue());
         }
 
         return new ProgramInvokeImpl(address, origin, caller, balance, gasPrice, agas, callValue,
-                data, lastHash, coinbase, timestamp, number, difficulty, gasLimit,
+                data, lastHash, coinbase, timestamp, number, transactionIndex, difficulty, gasLimit,
                 repository, program.getCallDeep() + 1, blockStore, byTestingSuite);
     }
 }
