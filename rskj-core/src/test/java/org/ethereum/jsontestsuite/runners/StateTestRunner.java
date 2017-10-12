@@ -67,7 +67,7 @@ public class StateTestRunner {
         Repository track = repository.startTracking();
 
         TransactionExecutor executor =
-                new TransactionExecutor(transaction, env.getCurrentCoinbase(), track, new BlockStoreDummy(), null,
+                new TransactionExecutor(transaction, 0, env.getCurrentCoinbase(), track, new BlockStoreDummy(), null,
                         invokeFactory, blockchain.getBestBlock());
 
         try{
