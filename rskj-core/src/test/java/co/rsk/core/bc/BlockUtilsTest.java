@@ -72,8 +72,8 @@ public class BlockUtilsTest {
         genesis.setStateRoot(blockChain.getRepository().getRoot());
         genesis.flushRLP();
 
-        Block block1 = new BlockBuilder().parent(genesis).build();
-        Block block1b = new BlockBuilder().parent(genesis).build();
+        Block block1 = new BlockBuilder().difficulty(2l).parent(genesis).build();
+        Block block1b = new BlockBuilder().difficulty(1l).parent(genesis).build();
         Block block2 = new BlockBuilder().parent(block1).build();
         Block block3 = new BlockBuilder().parent(block2).build();
 

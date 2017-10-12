@@ -26,6 +26,7 @@ import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.simples.SimpleBlock;
 
 import co.rsk.trie.TrieImpl;
+import com.fasterxml.jackson.databind.node.BigIntegerNode;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.InitialAddressState;
@@ -339,6 +340,10 @@ public class BlockGenerator {
         return getBlockChain(BlockGenerator.getGenesisBlock(), size);
     }
 
+    public static List<Block> getBlockChain(Block parent, int size, long difficulty) {
+        return getBlockChain(parent, size,0,false,difficulty);
+    }
+
     public static List<Block> getBlockChain(Block parent, int size) {
         return getBlockChain(parent, size, 0);
     }
@@ -348,10 +353,14 @@ public class BlockGenerator {
     }
 
     public static List<Block> getBlockChain(Block parent, int size, int ntxs) {
-        return getBlockChain(parent, size, ntxs, false);
+        return getBlockChain(parent, size, ntxs, false, null);
     }
 
     public static List<Block> getBlockChain(Block parent, int size, int ntxs, boolean withUncles) {
+        return getBlockChain(parent, size, ntxs, withUncles, null);
+    }
+
+    public static List<Block> getBlockChain(Block parent, int size, int ntxs, boolean withUncles, Long difficulty) {
         List<Block> chain = new ArrayList<Block>();
         List<BlockHeader> uncles = new ArrayList<>();
         int chainSize = 0;
@@ -362,7 +371,14 @@ public class BlockGenerator {
             for (int ntx = 0; ntx < ntxs; ntx++)
                 txs.add(new SimpleRskTransaction(null));
 
-            Block newblock = BlockGenerator.createChildBlock(parent, txs, uncles, ByteUtil.bytesToBigInteger(parent.getDifficulty()).longValue(), null);
+            long diff = ByteUtil.bytesToBigInteger(parent.getDifficulty()).longValue();
+            if (difficulty != null) {
+                diff = difficulty;
+            }
+            Block newblock = BlockGenerator.createChildBlock(
+                    parent, txs, uncles,
+                    diff,
+                    null);
             chain.add(newblock);
 
             if (withUncles) {

@@ -407,9 +407,9 @@ public class BlockChainImplTest {
     public void switchToOtherChain() throws InterruptedException {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.createChildBlock(genesis);
-        Block block1b = BlockGenerator.createChildBlock(genesis);
-        Block block2b = BlockGenerator.createChildBlock(block1b);
+        Block block1 = BlockGenerator.createChildBlock(genesis,0,2l);
+        Block block1b = BlockGenerator.createChildBlock(genesis,0,1l);
+        Block block2b = BlockGenerator.createChildBlock(block1b,0,2l);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
@@ -457,9 +457,9 @@ public class BlockChainImplTest {
     public void switchToOtherChainInvalidBadBlockBadStateRoot() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.createChildBlock(genesis);
-        Block block1b = BlockGenerator.createChildBlock(genesis);
-        Block block2b = BlockGenerator.createChildBlock(block1b);
+        Block block1 = BlockGenerator.createChildBlock(genesis,0,2l);
+        Block block1b = BlockGenerator.createChildBlock(genesis,0,1l);
+        Block block2b = BlockGenerator.createChildBlock(block1b,0,2l);
 
         block2b.getHeader().setStateRoot(cloneAlterBytes(block2b.getStateRoot()));
 
