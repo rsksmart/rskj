@@ -1357,7 +1357,7 @@ public class Program {
 
                 index += nPush + 1;
             }
-            else if (op.name().equals("DUPN") || op.name().equals("SWAPN")) {
+            else if ("DUPN".equals(op.name()) || "SWAPN".equals(op.name())) {
                     sb.append(' ').append(op.name()).append(' ');
 
                     byte[] data = Arrays.copyOfRange(code, index + 1, index + 2);
@@ -1403,11 +1403,11 @@ public class Program {
         }
 
         public boolean isDupN() {
-            return getCurOpcode() != null ? getCurOpcode().name().equals("DUPN") : false;
+            return getCurOpcode() != null ? "DUPN".equals(getCurOpcode().name()) : false;
         }
 
         public boolean isSwapN() {
-            return getCurOpcode() != null ? getCurOpcode().name().equals("SWAPN") : false;
+            return getCurOpcode() != null ? "SWAPN".equals(getCurOpcode().name()) : false;
         }
 
         public byte[] getCurOpcodeArg() {
