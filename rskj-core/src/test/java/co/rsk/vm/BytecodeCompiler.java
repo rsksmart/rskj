@@ -52,12 +52,9 @@ public class BytecodeCompiler {
     }
 
     private byte compileToken(String token) {
-        if ("push1".equals(token))
-            return 0x60;
-        if ("push2".equals(token))
-            return 0x61;
-        if ("push32".equals(token))
-            return 0x7f;
+        if (token.length() > 4 && "push".equals(token.substring(0, 4)))
+            return (byte)(0x60 + Integer.parseInt(token.substring(4)) - 1);
+
         if ("add".equals(token))
             return 0x01;
         if ("mul".equals(token))
