@@ -19,9 +19,9 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.RskSystemProperties;
 import org.spongycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
@@ -40,13 +40,13 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
 
     @Before
     public void setUp() {
-        originalConfig = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
+        originalConfig = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
     }
 
     @After
     public void tearDown() {
-        SystemProperties.CONFIG.setBlockchainConfig(originalConfig);
+        RskSystemProperties.CONFIG.setBlockchainConfig(originalConfig);
     }
 
     @Test
@@ -57,7 +57,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                             new ECKey().getAddress(),
                             BigInteger.ZERO.toByteArray(),
                             null,
-                            SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                            RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx1.sign(new ECKey().getPrivKeyBytes());
 
         Transaction tx2 = new Transaction(BigInteger.ZERO.toByteArray(),
@@ -66,7 +66,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 new ECKey().getAddress(),
                 BigInteger.ZERO.toByteArray(),
                 Hex.decode("0001"),
-                SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx2.sign(new ECKey().getPrivKeyBytes());
 
         Transaction tx3 = new Transaction(BigInteger.ZERO.toByteArray(),
@@ -75,7 +75,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 new ECKey().getAddress(),
                 BigInteger.ZERO.toByteArray(),
                 Hex.decode("0001"),
-                SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx3.sign(new ECKey().getPrivKeyBytes());
 
         Transaction tx4 = new Transaction(BigInteger.ZERO.toByteArray(),
@@ -84,7 +84,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 Hex.decode(PrecompiledContracts.BRIDGE_ADDR),
                 BigInteger.ZERO.toByteArray(),
                 null,
-                SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         BridgeRegTestConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
         tx4.sign(bridgeRegTestConstants.getFederatorPrivateKeys().get(0).getPrivKeyBytes());
 
@@ -106,7 +106,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 new ECKey().getAddress(),
                 BigInteger.ZERO.toByteArray(),
                 Hex.decode("0001"),
-                SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx1.sign(new ECKey().getPrivKeyBytes());
 
         Transaction tx2 = new Transaction(BigInteger.ZERO.toByteArray(),
@@ -115,7 +115,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 new ECKey().getAddress(),
                 BigInteger.ZERO.toByteArray(),
                 null,
-                SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx2.sign(new ECKey().getPrivKeyBytes());
 
         Transaction tx3 = new Transaction(BigInteger.ZERO.toByteArray(),
@@ -124,7 +124,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 new ECKey().getAddress(),
                 BigInteger.ZERO.toByteArray(),
                 Hex.decode("0001"),
-                SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx3.sign(new ECKey().getPrivKeyBytes());
 
         Transaction tx4 = new Transaction(BigInteger.ZERO.toByteArray(),
@@ -133,7 +133,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 new ECKey().getAddress(),
                 BigInteger.ZERO.toByteArray(),
                 null,
-                SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx4.sign(new ECKey().getPrivKeyBytes());
 
         TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator();

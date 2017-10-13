@@ -28,6 +28,7 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.simples.SimpleBlockChain;
@@ -37,7 +38,6 @@ import co.rsk.peg.simples.SimpleWallet;
 import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.core.*;
@@ -84,22 +84,22 @@ public class BridgeSupportTest {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
-        bridgeConstants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
+        bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         btcParams = bridgeConstants.getBtcParams();
     }
 
     @AfterClass
     public static void tearDownAfterClass() throws Exception {
-        SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @Test
     public void testInitialChainHeadWithoutBtcCheckpoints() throws Exception {
-        BlockchainNetConfig blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
-        NetworkParameters _networkParameters = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+        BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
+        NetworkParameters _networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
@@ -109,13 +109,13 @@ public class BridgeSupportTest {
         Assert.assertEquals(0, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
         Assert.assertEquals(_networkParameters.getGenesisBlock(), bridgeSupport.getBtcBlockStore().getChainHead().getHeader());
 
-        SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @Test
     public void testInitialChainHeadWithBtcCheckpoints() throws Exception {
-        BlockchainNetConfig blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(new TestNetConfig());
+        BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(new TestNetConfig());
 
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
@@ -124,14 +124,14 @@ public class BridgeSupportTest {
         BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null);
         Assert.assertEquals(1116864, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
 
-        SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @Test
     public void testGetBtcBlockchainBlockLocatorWithoutBtcCheckpoints() throws Exception {
-        BlockchainNetConfig blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
-        NetworkParameters _networkParameters = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+        BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
+        NetworkParameters _networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
@@ -156,15 +156,15 @@ public class BridgeSupportTest {
         Assert.assertEquals(blocks.get(1).getHash(), locator.get(4));
         Assert.assertEquals(_networkParameters.getGenesisBlock().getHash(), locator.get(5));
 
-        SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
 
     @Test
     public void testGetBtcBlockchainBlockLocatorWithBtcCheckpoints() throws Exception {
-        BlockchainNetConfig blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
-        NetworkParameters _networkParameters = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+        BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
+        NetworkParameters _networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
@@ -195,7 +195,7 @@ public class BridgeSupportTest {
         Assert.assertEquals(blocks.get(1).getHash(), locator.get(4));
         Assert.assertEquals(checkpoints.get(9).getHash(), locator.get(5));
 
-        SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     private List<BtcBlock> createBtcBlocks(NetworkParameters _networkParameters, BtcBlock parent, int numberOfBlocksToCreate) {
@@ -477,7 +477,7 @@ public class BridgeSupportTest {
         Assert.assertEquals(0, provider.getRskTxsWaitingForConfirmations().size());
         Assert.assertEquals(1, provider.getRskTxsWaitingForSignatures().size());
         Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(21000000-2600)), repository.getBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR)));
-        Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(2600)), repository.getBalance(SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress()));
+        Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(2600)), repository.getBalance(RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress()));
     }
 
     @Test
@@ -503,7 +503,7 @@ public class BridgeSupportTest {
         track.commit();
 
         track = repository.startTracking();
-        BridgeConstants bridgeConstants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        BridgeConstants bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         Context context = new Context(bridgeConstants.getBtcParams());
         BridgeStorageProvider provider = new SimpleBridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, new SimpleWallet(context));
 
@@ -545,7 +545,7 @@ public class BridgeSupportTest {
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
-        BridgeConstants bridgeConstants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        BridgeConstants bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         Context btcContext = new Context(bridgeConstants.getBtcParams());
         BtcBlockStore btcBlockStore = new RepositoryBlockStore(track, contractAddress);
         BtcBlockChain btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
@@ -571,7 +571,7 @@ public class BridgeSupportTest {
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
-        BridgeConstants bridgeConstants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        BridgeConstants bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         Context btcContext = new Context(bridgeConstants.getBtcParams());
         BtcBlockStore btcBlockStore = new RepositoryBlockStore(track, contractAddress);
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
@@ -908,9 +908,9 @@ public class BridgeSupportTest {
 
     @Test
     public void registerBtcTransactionOfTransactionInMerkleTreeWithNotEnoughtHeight() throws BlockStoreException, AddressFormatException, IOException {
-        BlockchainNetConfig blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
-        NetworkParameters _networkParameters = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+        BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
+        NetworkParameters _networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
@@ -940,7 +940,7 @@ public class BridgeSupportTest {
         Assert.assertTrue(provider2.getRskTxsWaitingForBroadcasting().isEmpty());
         Assert.assertTrue(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
 
-        SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @Test
@@ -948,7 +948,7 @@ public class BridgeSupportTest {
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
-        BridgeConstants bridgeConstants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        BridgeConstants bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
 
         BtcTransaction tx = new BtcTransaction(this.btcParams);
         Address address = ScriptBuilder.createP2SHOutputScript(2, Lists.newArrayList(new BtcECKey(), new BtcECKey(), new BtcECKey())).getToAddress(bridgeConstants.getBtcParams());
@@ -998,7 +998,7 @@ public class BridgeSupportTest {
         repository.addBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
         Repository track = repository.startTracking();
 
-        BridgeRegTestConstants bridgeConstants = (BridgeRegTestConstants) SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        BridgeRegTestConstants bridgeConstants = (BridgeRegTestConstants) RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
 
         BtcTransaction tx = new BtcTransaction(this.btcParams);
         Address address = ScriptBuilder.createP2SHOutputScript(2, Lists.newArrayList(new BtcECKey(), new BtcECKey(), new BtcECKey())).getToAddress(bridgeConstants.getBtcParams());
@@ -1077,7 +1077,7 @@ public class BridgeSupportTest {
 
         Repository track = repository.startTracking();
 
-        BridgeConstants bridgeConstants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        BridgeConstants bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
 
         BtcTransaction tx = new BtcTransaction(this.btcParams);
         Address address = bridgeConstants.getFederationAddress();

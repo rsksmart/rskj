@@ -312,7 +312,7 @@ public class Web3ImplScoringTest {
         worldManager.setBlockchain(world.getBlockChain());
         rsk.worldManager = worldManager;
 
-        Web3Impl web3 = new Web3Impl(rsk, RskSystemProperties.RSKCONFIG, new Wallet());
+        Web3Impl web3 = new Web3Impl(rsk, RskSystemProperties.CONFIG, new Wallet());
 
         return web3;
     }

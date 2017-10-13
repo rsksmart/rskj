@@ -44,7 +44,7 @@ import java.util.Map;
 
 import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
-import static org.ethereum.config.SystemProperties.CONFIG;
+import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.util.ByteUtil.toHexString;
@@ -423,7 +423,7 @@ public class TransactionExecutor {
         BigInteger summaryFee = summary.getFee();
 
         //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-        if(RskSystemProperties.RSKCONFIG.isRemascEnabled()) {
+        if(RskSystemProperties.CONFIG.isRemascEnabled()) {
             logger.info("Adding fee to remasc contract account");
             track.addBalance(Hex.decode(PrecompiledContracts.REMASC_ADDR), summaryFee);
         } else {

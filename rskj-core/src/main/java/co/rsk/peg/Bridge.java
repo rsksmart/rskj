@@ -19,10 +19,10 @@
 package co.rsk.peg;
 
 import co.rsk.config.BridgeConstants;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import com.google.common.annotations.VisibleForTesting;
 import co.rsk.bitcoinj.core.*;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ByteArrayWrapper;
@@ -114,7 +114,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.functions.put(new ByteArrayWrapper(GET_FEDERATION_ADDRESS.encodeSignature()),      GET_FEDERATION_ADDRESS);
         this.functions.put(new ByteArrayWrapper(GET_MINIMUM_LOCK_TX_VALUE.encodeSignature()),   GET_MINIMUM_LOCK_TX_VALUE);
 
-        bridgeConstants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
 
         functionCostMap.put(UPDATE_COLLECTIONS,                    50001L);
         functionCostMap.put(RECEIVE_HEADERS,                       50002L);

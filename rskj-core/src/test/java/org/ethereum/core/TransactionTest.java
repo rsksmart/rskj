@@ -19,7 +19,7 @@
 
 package org.ethereum.core;
 
-import org.ethereum.config.SystemProperties;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -538,11 +538,11 @@ public class TransactionTest {
         System.out.println(json.replaceAll("'", "\""));
 
         try {
-            SystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig());
+            RskSystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig());
             List<String> res = new StateTestRunner(stateTestSuite.getTestCases().get("test1")).runImpl();
             if (!res.isEmpty()) throw new RuntimeException("Test failed: " + res);
         } finally {
-            SystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+            RskSystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
         }
     }
 
@@ -571,7 +571,7 @@ public class TransactionTest {
 
          */
 
-        BigInteger nonce = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
+        BigInteger nonce = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
         Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
                 getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
 
@@ -641,7 +641,7 @@ public class TransactionTest {
 
          */
 
-        BigInteger nonce = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
+        BigInteger nonce = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
         Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
                 getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
 

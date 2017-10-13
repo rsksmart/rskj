@@ -33,7 +33,6 @@ import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeStateReader;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.HashedMap;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -208,9 +207,9 @@ public class Web3Impl implements Web3 {
 
     public String web3_clientVersion() {
 
-        String clientVersion = baseClientVersion + "/" + SystemProperties.CONFIG.projectVersion() + "/" +
+        String clientVersion = baseClientVersion + "/" + RskSystemProperties.CONFIG.projectVersion() + "/" +
                 System.getProperty("os.name") + "/Java1.8/" +
-                SystemProperties.CONFIG.projectVersionModifier() + "-" + BuildInfo.getBuildHash();
+                RskSystemProperties.CONFIG.projectVersionModifier() + "-" + BuildInfo.getBuildHash();
 
         if (logger.isDebugEnabled()) {
             logger.debug("web3_clientVersion(): " + clientVersion);
@@ -235,7 +234,7 @@ public class Web3Impl implements Web3 {
     public String net_version() {
         String s = null;
         try {
-            byte netVersion = RskSystemProperties.RSKCONFIG.getBlockchainConfig().getCommonConstants().getChainId();
+            byte netVersion = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId();
             return s = Byte.toString(netVersion);
         }
         finally {
@@ -344,7 +343,7 @@ public class Web3Impl implements Web3 {
 
     public String eth_hashrate() {
         BigDecimal hashesPerSecond = BigDecimal.ZERO;
-        if(RskSystemProperties.RSKCONFIG.minerServerEnabled()) {
+        if(RskSystemProperties.CONFIG.minerServerEnabled()) {
             BigInteger hashesPerHour = this.worldManager.getHashRateCalculator().calculateNodeHashRate(1L, TimeUnit.HOURS);
             hashesPerSecond = new BigDecimal(hashesPerHour)
                     .divide(new BigDecimal(TimeUnit.HOURS.toSeconds(1)), 3, RoundingMode.HALF_UP);
@@ -1300,7 +1299,7 @@ public class Web3Impl implements Web3 {
 
         Map<String, String> map = new HashMap<>();
 
-        for (ModuleDescription module : RskSystemProperties.RSKCONFIG.getRpcModules())
+        for (ModuleDescription module : RskSystemProperties.CONFIG.getRpcModules())
             if (module.isEnabled())
                 map.put(module.getName(), module.getVersion());
 

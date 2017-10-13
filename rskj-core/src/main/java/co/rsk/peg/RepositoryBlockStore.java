@@ -21,7 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import org.ethereum.config.SystemProperties;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
@@ -50,7 +50,7 @@ public class RepositoryBlockStore implements BtcBlockStore{
 
         // Insert the genesis block.
         try {
-            this.params = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+            this.params = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
             if (getChainHead()==null) {
                 BtcBlock genesisHeader = params.getGenesisBlock().cloneAsHeader();
                 StoredBlock storedGenesis = new StoredBlock(genesisHeader, genesisHeader.getWork(), 0);

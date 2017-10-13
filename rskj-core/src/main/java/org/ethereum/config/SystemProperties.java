@@ -66,7 +66,7 @@ import static org.ethereum.crypto.SHA3Helper.sha3;
  * @author Roman Mandeleil
  * @since 22.05.2014
  */
-public class SystemProperties {
+public abstract class SystemProperties {
     public static final String DEFAULT_BIND_IP = "0.0.0.0";
     private static Logger logger = LoggerFactory.getLogger("general");
 
@@ -85,8 +85,6 @@ public class SystemProperties {
 
     private static final String YES = "yes";
     private static final String NO = "no";
-
-    public static final SystemProperties CONFIG = new SystemProperties();
 
     /**
      * Marks config accessor methods which need to be called (for value validation)
@@ -114,48 +112,9 @@ public class SystemProperties {
 
     private BlockchainNetConfig blockchainConfig;
     
-    public SystemProperties() {
-        this(ConfigFactory.empty());
-    }
-
-    public SystemProperties(File configFile) {
-        this(ConfigFactory.parseFile(configFile));
-    }
-
-    public SystemProperties(String configResource) {
-        this(ConfigFactory.parseResources(configResource));
-    }
-
-    public SystemProperties(Config apiConfig) {
+    protected SystemProperties() {
         try {
-            Config javaSystemProperties = ConfigFactory.load("no-such-resource-only-system-props");
-            Config referenceConfig = ConfigFactory.parseResources("rskj.conf");
-            logger.info("Config ( {} ): default properties from resource 'rskj.conf'", referenceConfig.entrySet().isEmpty() ? NO : YES);
-            String res = System.getProperty("rskj.conf.res");
-            Config cmdLineConfigRes = res != null ? ConfigFactory.parseResources(res) : ConfigFactory.empty();
-            logger.info("Config ( {} ): user properties from -Drskj.conf.res resource '{}'", cmdLineConfigRes.entrySet().isEmpty() ? NO : YES, res);
-            Config userConfig = ConfigFactory.parseResources("user.conf");
-            logger.info("Config ( {} ): user properties from resource 'user.conf'", userConfig.entrySet().isEmpty() ? NO : YES);
-            File userDirFile = new File(System.getProperty("user.dir"), "/config/rskj.conf");
-            Config userDirConfig = ConfigFactory.parseFile(userDirFile);
-            logger.info("Config ( {} ): user properties from file '{}'", userDirConfig.entrySet().isEmpty() ? NO : YES, userDirFile);
-            Config testConfig = ConfigFactory.parseResources("test-rskj.conf");
-            logger.info("Config ( {} ): test properties from resource 'test-rskj.conf'", testConfig.entrySet().isEmpty() ? NO : YES);
-            Config testUserConfig = ConfigFactory.parseResources("test-user.conf");
-            logger.info("Config ( {} ): test properties from resource 'test-user.conf'", testUserConfig.entrySet().isEmpty() ? NO : YES);
-            String file = System.getProperty("rsk.conf.file");
-            Config cmdLineConfigFile = file != null ? ConfigFactory.parseFile(new File(file)) : ConfigFactory.empty();
-            logger.info("Config ( {} ): user properties from -Drsk.conf.file file '{}'", cmdLineConfigFile.entrySet().isEmpty() ? NO : YES, file);
-            logger.info("Config ( {} ): config passed via constructor", apiConfig.entrySet().isEmpty() ? NO : YES);
-            config = javaSystemProperties
-                    .withFallback(apiConfig)
-                    .withFallback(cmdLineConfigFile)
-                    .withFallback(testUserConfig)
-                    .withFallback(testConfig)
-                    .withFallback(userConfig)
-                    .withFallback(userDirConfig)
-                    .withFallback(cmdLineConfigRes)
-                    .withFallback(referenceConfig);
+            config = getConfigFromFiles();
             validateConfig();
 
             logger.debug("Config trace: " + config.root().render(ConfigRenderOptions.defaults().
@@ -164,20 +123,56 @@ public class SystemProperties {
             Properties props = new Properties();
             InputStream is = getClass().getResourceAsStream("/version.properties");
             props.load(is);
-            this.projectVersion = props.getProperty("versionNumber");
-            this.projectVersion = this.projectVersion.replaceAll("'", "");
-
-            if (this.projectVersion == null) {
-                this.projectVersion = "-.-.-";
-            }
-
-            this.projectVersionModifier = props.getProperty("modifier");
-            this.projectVersionModifier = this.projectVersionModifier.replaceAll("\"", "");
+            this.projectVersion = getProjectVersion(props);
+            this.projectVersionModifier = getProjectVersionModifier(props);
 
         } catch (Exception e) {
             logger.error("Can't read config.", e);
             throw new RuntimeException(e);
         }
+    }
+
+    private static String getProjectVersion(Properties props) {
+        String versionNumber = props.getProperty("versionNumber");
+
+        if (versionNumber == null) {
+            return "-.-.-";
+        }
+
+        return versionNumber.replaceAll("'", "");
+    }
+
+    private static String getProjectVersionModifier(Properties props) {
+        return props.getProperty("modifier").replaceAll("\"", "");
+    }
+
+    private static Config getConfigFromFiles() {
+        Config javaSystemProperties = ConfigFactory.load("no-such-resource-only-system-props");
+        Config referenceConfig = ConfigFactory.parseResources("rskj.conf");
+        logger.info("Config ( {} ): default properties from resource 'rskj.conf'", referenceConfig.entrySet().isEmpty() ? NO : YES);
+        String res = System.getProperty("rskj.conf.res");
+        Config cmdLineConfigRes = res != null ? ConfigFactory.parseResources(res) : ConfigFactory.empty();
+        logger.info("Config ( {} ): user properties from -Drskj.conf.res resource '{}'", cmdLineConfigRes.entrySet().isEmpty() ? NO : YES, res);
+        Config userConfig = ConfigFactory.parseResources("user.conf");
+        logger.info("Config ( {} ): user properties from resource 'user.conf'", userConfig.entrySet().isEmpty() ? NO : YES);
+        File userDirFile = new File(System.getProperty("user.dir"), "/config/rskj.conf");
+        Config userDirConfig = ConfigFactory.parseFile(userDirFile);
+        logger.info("Config ( {} ): user properties from file '{}'", userDirConfig.entrySet().isEmpty() ? NO : YES, userDirFile);
+        Config testConfig = ConfigFactory.parseResources("test-rskj.conf");
+        logger.info("Config ( {} ): test properties from resource 'test-rskj.conf'", testConfig.entrySet().isEmpty() ? NO : YES);
+        Config testUserConfig = ConfigFactory.parseResources("test-user.conf");
+        logger.info("Config ( {} ): test properties from resource 'test-user.conf'", testUserConfig.entrySet().isEmpty() ? NO : YES);
+        String file = System.getProperty("rsk.conf.file");
+        Config cmdLineConfigFile = file != null ? ConfigFactory.parseFile(new File(file)) : ConfigFactory.empty();
+        logger.info("Config ( {} ): user properties from -Drsk.conf.file file '{}'", cmdLineConfigFile.entrySet().isEmpty() ? NO : YES, file);
+        return javaSystemProperties
+                .withFallback(cmdLineConfigFile)
+                .withFallback(testUserConfig)
+                .withFallback(testConfig)
+                .withFallback(userConfig)
+                .withFallback(userDirConfig)
+                .withFallback(cmdLineConfigRes)
+                .withFallback(referenceConfig);
     }
 
     public Config getConfig() {

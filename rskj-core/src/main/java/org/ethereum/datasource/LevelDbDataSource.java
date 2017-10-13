@@ -19,13 +19,13 @@
 
 package org.ethereum.datasource;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.SystemProperties;
 import org.iq80.leveldb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -53,9 +53,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("db");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
-
-    @Autowired
-    SystemProperties config  = SystemProperties.CONFIG; // initialized for standalone test
+    private static final SystemProperties config = RskSystemProperties.CONFIG;
 
     String name;
     DB db;

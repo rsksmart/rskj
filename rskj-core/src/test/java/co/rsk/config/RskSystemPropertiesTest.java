@@ -29,19 +29,19 @@ import java.util.List;
 public class RskSystemPropertiesTest {
     @Test
     public void defaultValues() {
-        Assert.assertEquals(false, RskSystemProperties.RSKCONFIG.minerClientEnabled());
-        Assert.assertEquals(false, RskSystemProperties.RSKCONFIG.minerServerEnabled());
-        Assert.assertEquals(0, RskSystemProperties.RSKCONFIG.minerMinGasPrice());
-        Assert.assertEquals(0, RskSystemProperties.RSKCONFIG.minerGasUnitInDollars(), 0.001);
-        Assert.assertEquals(0, RskSystemProperties.RSKCONFIG.minerMinFeesNotifyInDollars(), 0.001);
-        Assert.assertTrue(RskSystemProperties.RSKCONFIG.isFlushEnabled());
+        Assert.assertEquals(false, RskSystemProperties.CONFIG.minerClientEnabled());
+        Assert.assertEquals(false, RskSystemProperties.CONFIG.minerServerEnabled());
+        Assert.assertEquals(0, RskSystemProperties.CONFIG.minerMinGasPrice());
+        Assert.assertEquals(0, RskSystemProperties.CONFIG.minerGasUnitInDollars(), 0.001);
+        Assert.assertEquals(0, RskSystemProperties.CONFIG.minerMinFeesNotifyInDollars(), 0.001);
+        Assert.assertTrue(RskSystemProperties.CONFIG.isFlushEnabled());
     }
 
     @Test
     public void hasMessagesConfiguredInTestConfig() {
-        Assert.assertTrue(RskSystemProperties.RSKCONFIG.hasMessageRecorderEnabled());
+        Assert.assertTrue(RskSystemProperties.CONFIG.hasMessageRecorderEnabled());
 
-        List<String> commands = RskSystemProperties.RSKCONFIG.getMessageRecorderCommands();
+        List<String> commands = RskSystemProperties.CONFIG.getMessageRecorderCommands();
         Assert.assertNotNull(commands);
         Assert.assertEquals(2, commands.size());
         Assert.assertTrue(commands.contains("TRANSACTIONS"));

@@ -20,8 +20,8 @@ package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
@@ -38,14 +38,14 @@ public class RemascContractExecuteTest {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
+        blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
         remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
     }
 
     @AfterClass
     public static void tearDownAfterClass() throws Exception {
-        SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @Test(expected = Program.OutOfGasException.class)

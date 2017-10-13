@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import org.ethereum.config.SystemProperties;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockWrapper;
@@ -49,7 +49,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.ethereum.config.SystemProperties.CONFIG;
+import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.junit.Assert.*;
 
 /**
@@ -74,7 +74,7 @@ public class BlockQueueTest {
         File file = new File(scenario1.toURI());
         List<String> strData = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
 
-        Block genesis = Genesis.getInstance(SystemProperties.CONFIG);
+        Block genesis = Genesis.getInstance(RskSystemProperties.CONFIG);
         blocks.add(genesis);
 
         for (String blockRLP : strData) {

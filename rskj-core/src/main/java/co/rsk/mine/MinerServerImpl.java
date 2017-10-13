@@ -31,7 +31,6 @@ import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -467,7 +466,7 @@ public class MinerServerImpl implements MinerServer {
         BigInteger targetGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getTargetGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, newBlockParent.getGasLimit());
         BigInteger gasUsed = BigInteger.valueOf(newBlockParent.getGasUsed());
-        boolean forceLimit = RskSystemProperties.RSKCONFIG.getForceTargetGasLimit();
+        boolean forceLimit = RskSystemProperties.CONFIG.getForceTargetGasLimit();
         BigInteger gasLimit = new GasLimitCalculator().calculateBlockGasLimit(parentGasLimit,
                 gasUsed, minGasLimit, targetGasLimit, forceLimit);
 

@@ -18,11 +18,11 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.handler.TxPendingValidator;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
@@ -109,9 +109,9 @@ public class PendingStateImpl implements PendingState {
             this.bestBlock = blockChain.getBestBlock();
 
         if (this.outdatedThreshold == 0)
-            this.outdatedThreshold = SystemProperties.CONFIG.txOutdatedThreshold();
+            this.outdatedThreshold = RskSystemProperties.CONFIG.txOutdatedThreshold();
         if (this.outdatedTimeout == 0)
-            this.outdatedTimeout = SystemProperties.CONFIG.txOutdatedTimeout();
+            this.outdatedTimeout = RskSystemProperties.CONFIG.txOutdatedTimeout();
 
         if (this.outdatedTimeout > 0)
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "PendingStateCleanerTimer"));

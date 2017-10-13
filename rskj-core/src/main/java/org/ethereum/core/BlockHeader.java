@@ -18,9 +18,9 @@
  */
 package org.ethereum.core;
 
+import co.rsk.config.RskSystemProperties;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -506,7 +506,7 @@ public class BlockHeader implements SerializableObject {
     }
 
     public BigInteger calcDifficulty(BlockHeader parent) {
-        return SystemProperties.CONFIG.getBlockchainConfig().getConfigForBlock(getNumber()).
+        return RskSystemProperties.CONFIG.getBlockchainConfig().getConfigForBlock(getNumber()).
                 calcDifficulty(this, parent);
     }
 

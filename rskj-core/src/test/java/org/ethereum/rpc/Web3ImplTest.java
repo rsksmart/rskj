@@ -76,7 +76,7 @@ public class Web3ImplTest {
 
         String netVersion = web3.net_version();
 
-        Assert.isTrue(netVersion.compareTo(Byte.toString(RskSystemProperties.RSKCONFIG.getBlockchainConfig().getCommonConstants().getChainId())) == 0, "RSK net version different than expected");
+        Assert.isTrue(netVersion.compareTo(Byte.toString(RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId())) == 0, "RSK net version different than expected");
     }
 
     @Test

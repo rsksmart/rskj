@@ -22,7 +22,7 @@ package org.ethereum.vm.trace;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.listener.ProgramListenerAdaptor;
 
-import static org.ethereum.config.SystemProperties.CONFIG;
+import static co.rsk.config.RskSystemProperties.CONFIG;
 
 public class ProgramTraceListener extends ProgramListenerAdaptor {
 

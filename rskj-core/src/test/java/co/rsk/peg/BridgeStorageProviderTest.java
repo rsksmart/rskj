@@ -19,17 +19,14 @@
 package co.rsk.peg;
 
 import co.rsk.config.BridgeConstants;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
-import co.rsk.peg.bitcoin.SimpleBtcTransaction;
-import co.rsk.config.BridgeConstants;
 import org.apache.commons.lang3.tuple.Pair;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.Wallet;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Repository;
-import org.ethereum.datasource.HashMapDB;
 import co.rsk.db.RepositoryImpl;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -47,7 +44,7 @@ import java.util.SortedSet;
  * Created by ajlopez on 6/7/2016.
  */
 public class BridgeStorageProviderTest {
-    private NetworkParameters networkParameters = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+    private NetworkParameters networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
     private int transactionOffset;
 
     @Test
@@ -291,7 +288,7 @@ public class BridgeStorageProviderTest {
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
-        BridgeConstants bridgeConstants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        BridgeConstants bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
         provider0.getBtcUTXOs().add(new UTXO(hash1, 1, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(bridgeConstants.getFederationAddress())));

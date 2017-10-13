@@ -58,7 +58,7 @@ public class RskFactory {
     }
 
     public static Rsk createRsk(Class userSpringConfig) {
-        return createRsk(SystemProperties.CONFIG, userSpringConfig);
+        return createRsk(RskSystemProperties.CONFIG, userSpringConfig);
     }
 
     public static Rsk createRsk(SystemProperties config, Class userSpringConfig) {
@@ -90,8 +90,8 @@ public class RskFactory {
 
         rs.getBlockchain().setRsk(true);
 
-        if (RskSystemProperties.RSKCONFIG.isBlocksEnabled()) {
-            String recorder = RskSystemProperties.RSKCONFIG.blocksRecorder();
+        if (RskSystemProperties.CONFIG.isBlocksEnabled()) {
+            String recorder = RskSystemProperties.CONFIG.blocksRecorder();
 
             if (recorder != null) {
                 String filename = recorder;
@@ -99,7 +99,7 @@ public class RskFactory {
                 rs.getBlockchain().setBlockRecorder(new FileBlockRecorder(filename));
             }
 
-            final String player = RskSystemProperties.RSKCONFIG.blocksPlayer();
+            final String player = RskSystemProperties.CONFIG.blocksPlayer();
 
             if (player != null) {
                 new Thread() {

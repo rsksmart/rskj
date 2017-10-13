@@ -18,10 +18,10 @@
 
 package co.rsk.mine;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
 import co.rsk.panic.PanicProcessor;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
@@ -103,7 +103,7 @@ public class MinerClientImpl implements MinerClient {
 
     public void doWork() {
         try {
-            if (mineBlock() && !(SystemProperties.CONFIG.getBlockchainConfig() instanceof TestNetConfig))
+            if (mineBlock() && !(RskSystemProperties.CONFIG.getBlockchainConfig() instanceof TestNetConfig))
                 Thread.sleep(20000);
         } catch (Exception e) {
             logger.error("Error on mining", e);
