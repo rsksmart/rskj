@@ -70,76 +70,17 @@ public class BytecodeCompiler {
         if ("smod".equals(token))
             return 0x07;
 
-        if ("dup1".equals(token))
-            return (byte)0x80;
-        if ("dup2".equals(token))
-            return (byte)0x81;
-        if ("dup3".equals(token))
-            return (byte)0x82;
-        if ("dup4".equals(token))
-            return (byte)0x83;
-        if ("dup5".equals(token))
-            return (byte)0x84;
-        if ("dup6".equals(token))
-            return (byte)0x85;
-        if ("dup7".equals(token))
-            return (byte)0x86;
-        if ("dup8".equals(token))
-            return (byte)0x87;
-        if ("dup9".equals(token))
-            return (byte)0x88;
-        if ("dup10".equals(token))
-            return (byte)0x89;
-        if ("dup11".equals(token))
-            return (byte)0x8a;
-        if ("dup12".equals(token))
-            return (byte)0x8b;
-        if ("dup13".equals(token))
-            return (byte)0x8c;
-        if ("dup14".equals(token))
-            return (byte)0x8d;
-        if ("dup15".equals(token))
-            return (byte)0x8e;
-        if ("dup16".equals(token))
-            return (byte)0x8f;
         if ("dupn".equals(token))
             return (byte)0xa9;
 
-        if ("swap1".equals(token))
-            return (byte)0x90;
-        if ("swap2".equals(token))
-            return (byte)0x91;
-        if ("swap3".equals(token))
-            return (byte)0x92;
-        if ("swap4".equals(token))
-            return (byte)0x93;
-        if ("swap5".equals(token))
-            return (byte)0x94;
-        if ("swap6".equals(token))
-            return (byte)0x95;
-        if ("swap7".equals(token))
-            return (byte)0x96;
-        if ("swap8".equals(token))
-            return (byte)0x97;
-        if ("swap9".equals(token))
-            return (byte)0x98;
-        if ("swap10".equals(token))
-            return (byte)0x99;
-        if ("swap11".equals(token))
-            return (byte)0x9a;
-        if ("swap12".equals(token))
-            return (byte)0x9b;
-        if ("swap13".equals(token))
-            return (byte)0x9c;
-        if ("swap14".equals(token))
-            return (byte)0x9d;
-        if ("swap15".equals(token))
-            return (byte)0x9e;
-        if ("swap16".equals(token))
-            return (byte)0x9f;
+        if (token.length() > 3 && "dup".equals(token.substring(0, 3)))
+            return (byte)(0x80 + Integer.parseInt(token.substring(3)) - 1);
 
         if ("swapn".equals(token))
             return (byte)0xaa;
+
+        if (token.length() > 4 && "swap".equals(token.substring(0, 4)))
+            return (byte)(0x90 + Integer.parseInt(token.substring(4)) - 1);
 
         if ("txindex".equals(token))
             return (byte)0xab;
