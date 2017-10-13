@@ -62,13 +62,13 @@ public class BridgeUtils {
         }
     }
 
-    public static boolean isLockTx(BtcTransaction tx, TransactionBag wallet, BridgeConstants bridgeConstants) {
+    public static boolean isLockTx(BtcTransaction tx, Federation federation, TransactionBag wallet, BridgeConstants bridgeConstants) {
         // First, check tx is not a typical release tx (tx spending from the federation address and
         // optionally sending some change to the federation address)
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
             try {
-                transactionInput.getScriptSig().correctlySpends(tx, i, bridgeConstants.getFederationPubScript(), Script.ALL_VERIFY_FLAGS);
+                transactionInput.getScriptSig().correctlySpends(tx, i, federation.getScript(), Script.ALL_VERIFY_FLAGS);
                 // There is an input spending from the federation address, this is not a lock tx
                 return false;
             } catch (ScriptException se) {
@@ -85,11 +85,11 @@ public class BridgeUtils {
         return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue()));
     }
 
-    public static boolean isReleaseTx(BtcTransaction tx, BridgeConstants bridgeConstants) {
+    public static boolean isReleaseTx(BtcTransaction tx, Federation federation, BridgeConstants bridgeConstants) {
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
             try {
-                transactionInput.getScriptSig().correctlySpends(tx, i, bridgeConstants.getFederationPubScript(), Script.ALL_VERIFY_FLAGS);
+                transactionInput.getScriptSig().correctlySpends(tx, i, federation.getScript(), Script.ALL_VERIFY_FLAGS);
                 // There is an input spending from the federation address, this is a release tx
                 return true;
             } catch (ScriptException se) {
@@ -114,9 +114,13 @@ public class BridgeUtils {
         if (receiveAddress == null)
             return false;
 
+        // Temporary assumption: if areBridgeTxsFree() is true then the current federation
+        // must be the genesis federation.
+        // Once the original federation changes, txs are always paid.
         return StringUtils.equals(Hex.toHexString(receiveAddress), PrecompiledContracts.BRIDGE_ADDR) &&
-               blockchainConfig.getConfigForBlock(blockNumber).areBridgeTxsFree() &&
-               rskTx.getSignature() != null &&
-               blockchainConfig.getCommonConstants().getBridgeConstants().getFederatorPublicKeys().contains(co.rsk.bitcoinj.core.BtcECKey.fromPublicOnly(rskTx.getKey().getPubKey()));
+                blockchainConfig.getConfigForBlock(blockNumber).areBridgeTxsFree() &&
+                rskTx.getSignature() != null &&
+                blockchainConfig.getCommonConstants().getBridgeConstants().getGenesisFederation()
+                        .getPublicKeys().contains(co.rsk.bitcoinj.core.BtcECKey.fromPublicOnly(rskTx.getKey().getPubKey()));
     }
 }

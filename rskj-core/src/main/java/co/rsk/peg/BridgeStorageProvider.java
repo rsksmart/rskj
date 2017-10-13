@@ -24,9 +24,6 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
-import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.wallet.Wallet;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
@@ -48,6 +45,11 @@ public class BridgeStorageProvider {
     private static final String BTC_TX_HASHES_ALREADY_PROCESSED_KEY = "btcTxHashesAP";
     private static final String RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY = "rskTxsWaitingFC";
     private static final String RSK_TXS_WAITING_FOR_SIGNATURES_KEY = "rskTxsWaitingFS";
+<<<<<<< HEAD
+=======
+    private static final String RSK_TXS_WAITING_FOR_BROADCASTING_KEY = "rskTxsWaitingFB";
+    private static final String BRIDGE_ACTIVE_FEDERATION_KEY = "bridgeActiveFederation";
+>>>>>>> Currently active federation now stored in the blockchain, non-working version
 
     private static final NetworkParameters networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
@@ -66,6 +68,11 @@ public class BridgeStorageProvider {
     private List<UTXO> btcUTXOs;
     private Wallet btcWallet;
 
+    // Active federation
+    private Federation activeFederation;
+    // Federation to save
+    private Federation newFederation;
+
     private BridgeConstants bridgeConstants;
     private Context btcContext;
 
@@ -76,6 +83,28 @@ public class BridgeStorageProvider {
         btcContext = new Context(bridgeConstants.getBtcParams());
     }
 
+    /**
+     * The current federation is the one stored at the current best block
+     * otherwise it is the genesis federation from the bridge constants.
+     * @return The currently active federation
+     */
+    private Federation getCurrentFederation() throws IOException {
+        Federation activeFederation = getActiveFederation();
+        if (activeFederation == null)
+            activeFederation = bridgeConstants.getGenesisFederation();
+        return activeFederation;
+    }
+
+    /**
+     * Get the wallet for the currently active federation
+     * @return A BTC wallet for the currently active federation
+     *
+     * Ariel Mendelzon, comment: this method has no relation whatsoever with storage.
+     * Consider moving it straight to BridgeSupport and removing getCurrentFederation()
+     * which is already implemented with the same logic there.
+     *
+     * @throws IOException
+     */
     public Wallet getWallet() throws IOException {
         if (btcWallet != null)
             return btcWallet;
@@ -84,9 +113,11 @@ public class BridgeStorageProvider {
 
         RskUTXOProvider utxoProvider = new RskUTXOProvider(bridgeConstants.getBtcParams(), btcUTXOs);
 
-        btcWallet = new BridgeBtcWallet(btcContext, bridgeConstants);
+        Federation federation = getCurrentFederation();
+
+        btcWallet = new BridgeBtcWallet(btcContext, federation);
         btcWallet.setUTXOProvider(utxoProvider);
-        btcWallet.addWatchedAddress(bridgeConstants.getFederationAddress(), bridgeConstants.getFederationAddressCreationTime());
+        btcWallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime());
         btcWallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
 //      Oscar: Comment out these setting since we now have our own bitcoinj wallet and we disabled these features
 //      I leave the code here just in case we decide to rollback to use the full original bitcoinj Wallet
@@ -192,12 +223,46 @@ public class BridgeStorageProvider {
         repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
 
+    public Federation getActiveFederation() throws IOException {
+        if (activeFederation != null)
+            return activeFederation;
+
+        DataWord address = new DataWord(BRIDGE_ACTIVE_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
+
+        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
+
+        if (data == null)
+            return null;
+
+        activeFederation = BridgeSerializationUtils.deserializeFederation(data, btcContext);
+
+        return activeFederation;
+    }
+
+    public void setNewFederation(Federation federation) {
+        newFederation = federation;
+    }
+
+    /**
+     * Save the new (active) federation
+     * Only saved if a new federation was set with BridgeStorageProvider::setActiveFederation
+     */
+    public void saveNewFederation() {
+        if (newFederation == null)
+            return;
+
+        byte[] data = BridgeSerializationUtils.serializeFederation(newFederation);
+
+        DataWord address = new DataWord(BRIDGE_ACTIVE_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
+
+        repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+    }
+
     public void save() throws IOException {
         saveBtcUTXOs();
         saveBtcTxHashesAlreadyProcessed();
         saveRskTxsWaitingForConfirmations();
         saveRskTxsWaitingForSignatures();
+        saveNewFederation();
     }
-
-
 }
