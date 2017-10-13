@@ -851,6 +851,19 @@ public class VM {
         program.step();
     }
 
+    protected void doTXINDEX() {
+        spendOpCodeGas();
+        // EXECUTION PHASE
+
+        DataWord transactionIndex = program.getTransactionIndex();
+
+        if (isLogEnabled)
+            hint = "transactionIndex: " + transactionIndex;
+
+        program.stackPush(transactionIndex);
+        program.step();
+    }
+
     protected void doBLOCKHASH() {
         spendOpCodeGas();
         // EXECUTION PHASE
@@ -1610,6 +1623,8 @@ public class VM {
             case OpCodes.OP_DIFFICULTY: doDIFFICULTY();
             break;
             case OpCodes.OP_GASLIMIT: doGASLIMIT();
+            break;
+            case OpCodes.OP_TXINDEX: doTXINDEX();
             break;
             case OpCodes.OP_POP: doPOP();
             break;

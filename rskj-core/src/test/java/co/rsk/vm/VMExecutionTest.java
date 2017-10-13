@@ -177,6 +177,16 @@ public class VMExecutionTest {
     }
 
     @Test
+    public void txindexExecution() {
+        invoke.setTransactionIndex(new DataWord(42));
+        Program program = executeCode("TXINDEX", 1);
+        Stack stack = program.getStack();
+
+        Assert.assertEquals(1, stack.size());
+        Assert.assertEquals(new DataWord(42), stack.peek());
+    }
+
+    @Test
     public void invalidJustAfterEndOfCode() {
         try {
             executeCode("PUSH1 0x03 JUMP", 2);
