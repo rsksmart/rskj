@@ -2986,6 +2986,13 @@ public class VMTest {
         assertTrue(result.contains("DUPN 0x61 (97)"));
         assertTrue(result.contains("SWAPN 0x62 (98)"));
     }
+
+    @Test
+    public void decompileTxindex() {
+        String code = "ab";
+        String result = Program.stringifyMultiline(Hex.decode(code));
+        assertTrue(result.contains("TXINDEX"));
+    }
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Testing an unfinished script header
     // header must be 4 bytes or more to be valid
