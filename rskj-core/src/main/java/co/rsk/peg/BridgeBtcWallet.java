@@ -33,12 +33,12 @@ import java.util.Arrays;
  * @author Oscar Guindzberg
  */
 public class BridgeBtcWallet extends Wallet {
-    private BridgeConstants bridgeConstants;
+    private Federation federation;
     private Context btcContext;
 
-    public BridgeBtcWallet(Context btcContext, BridgeConstants bridgeConstants) {
+    public BridgeBtcWallet(Context btcContext, Federation federation) {
         super(btcContext);
-        this.bridgeConstants = bridgeConstants;
+        this.federation = federation;
         this.btcContext = btcContext;
     }
 
@@ -53,11 +53,11 @@ public class BridgeBtcWallet extends Wallet {
 //      I leave the code here just in case we decide to rollback to use the full original bitcoinj Wallet
 //      "keyChainGroupLock.lock();"
         try {
-            if (!Arrays.equals(bridgeConstants.getFederationPubScript().getPubKeyHash(), payToScriptHash)) {
+            if (!Arrays.equals(federation.getScript().getPubKeyHash(), payToScriptHash)) {
                 return null;
             }
-            Script redeemScript = ScriptBuilder.createRedeemScript(bridgeConstants.getFederatorsRequiredToSign(), bridgeConstants.getFederatorPublicKeys());
-            return RedeemData.of(bridgeConstants.getFederatorPublicKeys(), redeemScript);
+            Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getPublicKeys());
+            return RedeemData.of(federation.getPublicKeys(), redeemScript);
         } finally {
 //          Oscar: Comment out this line since we now have our own bitcoinj wallet and we disabled this feature
 //          I leave the code here just in case we decide to rollback to use the full original bitcoinj Wallet
