@@ -18,14 +18,16 @@
 
 package co.rsk.config;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.Federation;
 import com.google.common.collect.Lists;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
+import java.util.List;
 
 public class BridgeTestNetConstants extends BridgeConstants {
 
@@ -56,24 +58,28 @@ public class BridgeTestNetConstants extends BridgeConstants {
         BtcECKey federator13PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0297d72f4c58b62495adbd49398b39d8fca69c6714ecaec49bd09e9dfcd9dc35cf"));
         BtcECKey federator14PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03c5dc2281b1bf3a8db339dceb4867bbcca1a633f3a65d5f80f6e8aca35b9b191c"));
 
-        federatorPublicKeys = Lists.newArrayList(federator0PublicKey, federator1PublicKey, federator2PublicKey,
-                                                 federator3PublicKey, federator4PublicKey, federator5PublicKey,
-                                                 federator6PublicKey, federator7PublicKey, federator8PublicKey,
-                                                 federator9PublicKey, federator10PublicKey, federator11PublicKey,
-                                                 federator12PublicKey, federator13PublicKey, federator14PublicKey);
-
-        federatorsRequiredToSign = 7;
-
-        Script redeemScript = ScriptBuilder.createRedeemScript(federatorsRequiredToSign, federatorPublicKeys);
-        federationPubScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-//      The federation address is "2NBPystfboREksK6hMCZesfH444zB3BkUUm"
-        federationAddress = Address.fromP2SHScript(getBtcParams(), federationPubScript);
+        List<BtcECKey> genesisFederationPublicKeys = Lists.newArrayList(
+                federator0PublicKey, federator1PublicKey, federator2PublicKey,
+                federator3PublicKey, federator4PublicKey, federator5PublicKey,
+                federator6PublicKey, federator7PublicKey, federator8PublicKey,
+                federator9PublicKey, federator10PublicKey, federator11PublicKey,
+                federator12PublicKey, federator13PublicKey, federator14PublicKey
+        );
 
         // To recreate the value use
         // federationAddressCreationTime = new GregorianCalendar(2017,4,10).getTimeInMillis() / 1000;
         // Currently set to:
         // Wed May 10 00:00:00 ART 2017
-        federationAddressCreationTime = 1494385200l;
+        long genesisFederationAddressCreationTime = 1494385200l;
+
+        // Expected federation address is:
+        // 2NBPystfboREksK6hMCZesfH444zB3BkUUm
+        genesisFederation = new Federation(
+                7,
+                genesisFederationPublicKeys,
+                genesisFederationAddressCreationTime,
+                getBtcParams()
+        );
 
         btc2RskMinimumAcceptableConfirmations = 10;
         rsk2BtcMinimumAcceptableConfirmations = 10;

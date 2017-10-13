@@ -140,10 +140,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public long getGasForData(byte[] data) {
-        // Required gas is arbitrary
         if (BridgeUtils.isFreeBridgeTx(rskTx, rskExecutionBlock.getNumber())) {
             return 0;
         }
+
         BridgeParsedData bridgeParsedData = parseData(data);
 
         Long functionCost;
@@ -439,7 +439,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public String getFederationAddress(Object[] args)
     {
         logger.trace("getFederationAddress");
-        return bridgeSupport.getFederationAddress().toString();
+        try {
+            return bridgeSupport.getFederationAddress().toString();
+        } catch (IOException e) {
+            logger.warn("Exception in getFederationAddress", e);
+            throw new RuntimeException("Exception in getFederationAddress", e);
+        }
     }
 
 
