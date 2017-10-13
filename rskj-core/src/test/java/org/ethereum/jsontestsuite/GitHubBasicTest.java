@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
-import org.ethereum.config.SystemProperties;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.BlockHeader;
@@ -49,13 +49,13 @@ public class GitHubBasicTest {
 
     @After
     public void recover() {
-        SystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+        RskSystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
     }
 
     @Test
     public void runDifficultyTest() throws IOException, ParseException {
 
-        SystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+        RskSystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficulty.json", shacommit);
 
@@ -75,7 +75,7 @@ public class GitHubBasicTest {
     @Test
     public void runDifficultyFrontierTest() throws IOException, ParseException {
 
-        SystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+        RskSystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficultyFrontier.json", shacommit);
 
@@ -95,7 +95,7 @@ public class GitHubBasicTest {
     @Test
     public void runDifficultyHomesteadTest() throws IOException, ParseException {
 
-        SystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig());
+        RskSystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig());
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficultyHomestead.json", shacommit);
 

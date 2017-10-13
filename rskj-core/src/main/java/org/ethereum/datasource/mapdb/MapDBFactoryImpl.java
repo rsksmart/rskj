@@ -19,6 +19,7 @@
 
 package org.ethereum.datasource.mapdb;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.mapdb.DB;
@@ -34,11 +35,10 @@ import static java.lang.System.getProperty;
 @Component
 public class MapDBFactoryImpl implements MapDBFactory {
 
-    @Autowired
-    private ApplicationContext ctx;
+    private static final SystemProperties config = RskSystemProperties.CONFIG;
 
     @Autowired
-    SystemProperties config = SystemProperties.CONFIG; // initialized for standalone test
+    private ApplicationContext ctx;
 
     @Override
     public KeyValueDataSource createDataSource() {

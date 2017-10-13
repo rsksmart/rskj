@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.lang.String.format;
-import static org.ethereum.config.SystemProperties.CONFIG;
+import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.ethereum.util.ByteUtil.toHexString;
 import static org.ethereum.vm.trace.Serializers.serializeFieldsOnly;
 

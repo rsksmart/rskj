@@ -138,12 +138,12 @@ public class RskImpl extends EthereumImpl implements Rsk {
 
     @Override
     public SyncConfiguration getSyncConfiguration() {
-        int expectedPeers = RskSystemProperties.RSKCONFIG.getExpectedPeers();
-        int timeoutWaitingPeers = RskSystemProperties.RSKCONFIG.getTimeoutWaitingPeers();
-        int timeoutWaitingRequest = RskSystemProperties.RSKCONFIG.getTimeoutWaitingRequest();
-        int expirationTimePeerStatus = RskSystemProperties.RSKCONFIG.getExpirationTimePeerStatus();
-        int maxSkeletonChunks = RskSystemProperties.RSKCONFIG.getMaxSkeletonChunks();
-        int chunkSize = RskSystemProperties.RSKCONFIG.getChunkSize();
+        int expectedPeers = RskSystemProperties.CONFIG.getExpectedPeers();
+        int timeoutWaitingPeers = RskSystemProperties.CONFIG.getTimeoutWaitingPeers();
+        int timeoutWaitingRequest = RskSystemProperties.CONFIG.getTimeoutWaitingRequest();
+        int expirationTimePeerStatus = RskSystemProperties.CONFIG.getExpirationTimePeerStatus();
+        int maxSkeletonChunks = RskSystemProperties.CONFIG.getMaxSkeletonChunks();
+        int chunkSize = RskSystemProperties.CONFIG.getChunkSize();
         return new SyncConfiguration(expectedPeers, timeoutWaitingPeers, timeoutWaitingRequest,
                 expirationTimePeerStatus, maxSkeletonChunks, chunkSize);
     }

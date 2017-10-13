@@ -24,13 +24,13 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import co.rsk.test.World;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.db.ReceiptStore;
@@ -52,22 +52,22 @@ import java.util.List;
 public class BridgeTest {
 
 
-    private static NetworkParameters networkParameters = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+    private static NetworkParameters networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
     private static BlockchainNetConfig blockchainNetConfigOriginal;
     private static BridgeConstants bridgeConstants;
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
-        bridgeConstants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
+        bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         networkParameters = bridgeConstants.getBtcParams();
     }
 
     @AfterClass
     public static void tearDownAfterClass() throws Exception {
-        SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @Test
@@ -499,8 +499,8 @@ public class BridgeTest {
 
     @Test
     public void getGasForDataFreeTx() {
-        BlockchainNetConfig blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(new UnitTestBlockchainNetConfig());
+        BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(new UnitTestBlockchainNetConfig());
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
 
@@ -513,11 +513,11 @@ public class BridgeTest {
                 Bridge.UPDATE_COLLECTIONS);
         rskTx.sign(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0).getPrivKeyBytes());
 
-        org.ethereum.core.Block rskExecutionBlock = BlockGenerator.createChildBlock(Genesis.getInstance(SystemProperties.CONFIG));
+        org.ethereum.core.Block rskExecutionBlock = BlockGenerator.createChildBlock(Genesis.getInstance(RskSystemProperties.CONFIG));
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
         Assert.assertEquals(0, bridge.getGasForData(rskTx.getData()));
 
-        SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @Test
@@ -587,8 +587,8 @@ public class BridgeTest {
 
 
     private void getGasForDataPaidTx(int expected, CallTransaction.Function function, Object... funcArgs) {
-        BlockchainNetConfig blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(new UnitTestBlockchainNetConfig());
+        BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(new UnitTestBlockchainNetConfig());
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         org.ethereum.core.Transaction rskTx;
@@ -613,14 +613,14 @@ public class BridgeTest {
 
         rskTx.sign(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0).getPrivKeyBytes());
 
-        org.ethereum.core.Block rskExecutionBlock = BlockGenerator.createChildBlock(Genesis.getInstance(SystemProperties.CONFIG));
+        org.ethereum.core.Block rskExecutionBlock = BlockGenerator.createChildBlock(Genesis.getInstance(RskSystemProperties.CONFIG));
         for (int i = 0; i < 20; i++) {
             rskExecutionBlock = BlockGenerator.createChildBlock(rskExecutionBlock);
         }
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
         Assert.assertEquals(expected, bridge.getGasForData(rskTx.getData()));
 
-        SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
 

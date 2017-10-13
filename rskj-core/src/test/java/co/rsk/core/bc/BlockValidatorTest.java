@@ -751,7 +751,7 @@ public class BlockValidatorTest {
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
         blockChain.tryToConnect(genesis);
 
-        int validPeriod = RskSystemProperties.RSKCONFIG.getBlockchainConfig().getCommonConstants().getNewBlockMaxMinInTheFuture();
+        int validPeriod = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getNewBlockMaxMinInTheFuture();
 
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getTimestamp())

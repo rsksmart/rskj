@@ -23,6 +23,7 @@ import co.rsk.net.messages.*;
 import org.ethereum.core.*;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.manager.WorldManager;
+import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -47,6 +48,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
     private final BlockSyncService blockSyncService;
     private final Map <Long, byte[]> skeletonCache = new HashMap<>();
+    private final ChannelManager channelManager;
 
     private long blocksForPeers;
 
@@ -68,7 +70,8 @@ public class NodeBlockProcessor implements BlockProcessor {
         this.blockchain = blockchain;
         this.nodeInformation = nodeInformation;
         worldManager.setNodeBlockProcessor(this);
-        this.blocksForPeers = RskSystemProperties.RSKCONFIG.getBlocksForPeers();
+        this.channelManager = worldManager.getChannelManager();
+        this.blocksForPeers = RskSystemProperties.CONFIG.getBlocksForPeers();
         this.blockSyncService = blockSyncService;
     }
 
@@ -87,7 +90,8 @@ public class NodeBlockProcessor implements BlockProcessor {
         this.blockchain = blockchain;
         this.nodeInformation = nodeInformation;
         this.blockSyncService = blockSyncService;
-        this.blocksForPeers = RskSystemProperties.RSKCONFIG.getBlocksForPeers();
+        this.blocksForPeers = RskSystemProperties.CONFIG.getBlocksForPeers();
+        this.channelManager = null;
     }
 
     @Override

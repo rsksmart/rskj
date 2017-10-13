@@ -63,7 +63,7 @@ public class InetAddressTable {
         if (this.addresses.contains(address))
             return true;
 
-        if (this.blocks.size() == 0)
+        if (this.blocks.isEmpty())
             return false;
 
         //TODO(mmarquez): we need to check if this is thread safe
@@ -81,7 +81,7 @@ public class InetAddressTable {
      * @return  the list of known addresses
      */
     public List<InetAddress> getAddressList() {
-        if (this.addresses.size() == 0)
+        if (this.addresses.isEmpty())
             return new ArrayList<>();
 
         //TODO(mmarquez): we need to check if this is thread safe
@@ -101,7 +101,7 @@ public class InetAddressTable {
      * @return  the list of known address blocks
      */
     public List<InetAddressBlock> getAddressBlockList() {
-        if (this.blocks.size() == 0)
+        if (this.blocks.isEmpty())
             return new ArrayList<>();
 
         //TODO(mmarquez): we need to check if this is thread safe

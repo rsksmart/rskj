@@ -181,7 +181,7 @@ public class ModuleDescriptionTest {
 
     @Test
     public void getModulesFromTestNewRskSystemProperties() {
-        List<ModuleDescription> modules = RskSystemProperties.RSKCONFIG.getRpcModules();
+        List<ModuleDescription> modules = RskSystemProperties.CONFIG.getRpcModules();
 
         Assert.assertNotNull(modules);
         Assert.assertFalse(modules.isEmpty());

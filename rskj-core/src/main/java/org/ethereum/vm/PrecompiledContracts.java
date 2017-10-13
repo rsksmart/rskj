@@ -87,7 +87,7 @@ public class PrecompiledContracts {
             return modexp;
         }
         if (address.isHex(REMASC_ADDR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + REMASC_ADDR))
-            return new RemascContract(REMASC_ADDR, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(RskSystemProperties.RSKCONFIG.netName()));
+            return new RemascContract(REMASC_ADDR, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(RskSystemProperties.CONFIG.netName()));
 
         return null;
     }

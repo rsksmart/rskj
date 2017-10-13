@@ -20,7 +20,6 @@ package co.rsk.net.handler.txvalidator;
 
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
-import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 

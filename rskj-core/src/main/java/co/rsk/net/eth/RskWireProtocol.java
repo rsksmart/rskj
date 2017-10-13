@@ -130,7 +130,7 @@ public class RskWireProtocol extends EthHandler {
     private void init()
     {
         this.messageChannel = new EthMessageChannel(this);
-        this.messageRecorder = RskSystemProperties.RSKCONFIG.getMessageRecorder();
+        this.messageRecorder = RskSystemProperties.CONFIG.getMessageRecorder();
 
         if (this.rsk != null)
             this.messageHandler = this.rsk.getMessageHandler();

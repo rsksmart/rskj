@@ -34,6 +34,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.ethereum.util.ByteUtil.byteArrayToInt;
 
@@ -65,9 +66,8 @@ public class Node implements Serializable {
     }
 
     public Node(byte[] rlp) {
-
-        ArrayList<RLPElement> nodeRLP = RLP.decode2(rlp);
-        nodeRLP = (RLPList) nodeRLP.get(0);
+        List<RLPElement> nodeRLP = RLP.decode2(rlp);
+        nodeRLP = (List<RLPElement>) nodeRLP.get(0);
 
         byte[] hostB = nodeRLP.get(0).getRLPData();
         byte[] portB = nodeRLP.get(1).getRLPData();

@@ -25,7 +25,6 @@ import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.apache.commons.lang3.tuple.Pair;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.wallet.Wallet;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
@@ -49,7 +48,7 @@ public class BridgeStorageProvider {
     private static final String RSK_TXS_WAITING_FOR_SIGNATURES_KEY = "rskTxsWaitingFS";
     private static final String RSK_TXS_WAITING_FOR_BROADCASTING_KEY = "rskTxsWaitingFB";
 
-    private static final NetworkParameters networkParameters = RskSystemProperties.RSKCONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+    private static final NetworkParameters networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
     private Repository repository;
     private String contractAddress;
@@ -74,7 +73,7 @@ public class BridgeStorageProvider {
     public BridgeStorageProvider(Repository repository, String contractAddress) {
         this.repository = repository;
         this.contractAddress = contractAddress;
-        bridgeConstants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         btcContext = new Context(bridgeConstants.getBtcParams());
     }
 

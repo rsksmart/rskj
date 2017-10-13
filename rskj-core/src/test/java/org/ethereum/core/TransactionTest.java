@@ -19,7 +19,7 @@
 
 package org.ethereum.core;
 
-import org.ethereum.config.SystemProperties;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -29,8 +29,6 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
-import org.ethereum.solidity.compiler.CompilationResult;
-import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.ProgramResult;
@@ -38,10 +36,8 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.spongycastle.util.BigIntegers;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -120,7 +116,6 @@ public class TransactionTest {
 
         System.out.println(tx.toString());
     }
-
 
     @Ignore
     @Test  /* achieve public key of the sender nonce: 01 */
@@ -543,159 +538,130 @@ public class TransactionTest {
         System.out.println(json.replaceAll("'", "\""));
 
         try {
-            SystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig());
+            RskSystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig());
             List<String> res = new StateTestRunner(stateTestSuite.getTestCases().get("test1")).runImpl();
             if (!res.isEmpty()) throw new RuntimeException("Test failed: " + res);
         } finally {
-            SystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+            RskSystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
         }
     }
 
     @Test
-    @Ignore
     public void multiSuicideTest() throws IOException, InterruptedException {
-        SystemProperties systemProperties = Mockito.mock(SystemProperties.class);
-        String solc = System.getProperty("solc");
-        if(StringUtils.isEmpty(solc))
-            solc = "/usr/bin/solc";
+        /*
+        Original contract
 
-        Mockito.when(systemProperties.customSolcPath()).thenReturn(solc);
+        pragma solidity ^0.4.3;
 
-        SolidityCompiler solidityCompiler = new SolidityCompiler(systemProperties);
-        String contract =
-                "pragma solidity ^0.4.3;" +
-                        "contract PsychoKiller {" +
-                        "    function () payable {}" +
-                        "    function homicide() {" +
-                        "        suicide(msg.sender);" +
-                        "    }" +
-                        "    function multipleHomocide() {" +
-                        "        PsychoKiller k  = this;" +
-                        "        k.homicide();" +
-                        "        k.homicide();" +
-                        "        k.homicide();" +
-                        "        k.homicide();" +
-                        "    }" +
-                        "}";
-        SolidityCompiler.Result res = solidityCompiler.compile(
-                contract.getBytes(), true, SolidityCompiler.Options.ABI, SolidityCompiler.Options.BIN);
-        System.out.println(res.errors);
-        CompilationResult cres = CompilationResult.parse(res.output);
+        contract PsychoKiller {
+            function () payable {}
 
-        BigInteger nonce = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
+            function homicide() {
+                suicide(msg.sender);
+            }
+
+            function multipleHomicide() {
+                PsychoKiller k  = this;
+                k.homicide();
+                k.homicide();
+                k.homicide();
+                k.homicide();
+            }
+        }
+
+         */
+
+        BigInteger nonce = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
         Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
                 getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
 
-        CompilationResult.ContractMetadata cmeta = cres.contracts.get("PsychoKiller");
+        String code = "6060604052341561000c57fe5b5b6102938061001c6000396000f3006060604052361561004a576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806309e587a514610053578063de990da914610065575b6100515b5b565b005b341561005b57fe5b610063610077565b005b341561006d57fe5b610075610092565b005b3373ffffffffffffffffffffffffffffffffffffffff16ff5b565b60003090508073ffffffffffffffffffffffffffffffffffffffff166309e587a56040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401809050600060405180830381600087803b15156100fa57fe5b60325a03f1151561010757fe5b5050508073ffffffffffffffffffffffffffffffffffffffff166309e587a56040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401809050600060405180830381600087803b151561016d57fe5b60325a03f1151561017a57fe5b5050508073ffffffffffffffffffffffffffffffffffffffff166309e587a56040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401809050600060405180830381600087803b15156101e057fe5b60325a03f115156101ed57fe5b5050508073ffffffffffffffffffffffffffffffffffffffff166309e587a56040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401809050600060405180830381600087803b151561025357fe5b60325a03f1151561026057fe5b5050505b505600a165627a7a72305820084e74021c556522723b6725354378df2fb4b6732f82dd33f5daa29e2820b37c0029";
+        String abi = "[{\"constant\":false,\"inputs\":[],\"name\":\"homicide\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"multipleHomicide\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"payable\":true,\"type\":\"fallback\"}]";
 
-        if (cmeta == null)
-            cmeta = cres.contracts.get("<stdin>:PsychoKiller");
+        Transaction tx = createTx(blockchain, sender, new byte[0], Hex.decode(code));
+        executeTransaction(blockchain, tx);
 
-        if(cmeta != null) {
-//            Transaction tx = createTx(blockchain, sender, new byte[0], Hex.decode(cres.contracts.get("PsychoKiller").bin), 1000000000L);
-            Transaction tx = createTx(blockchain, sender, new byte[0], Hex.decode(cmeta.bin));
-            executeTransaction(blockchain, tx);
+        byte[] contractAddress = tx.getContractAddress();
 
-            byte[] contractAddress = tx.getContractAddress();
+        CallTransaction.Contract contract1 = new CallTransaction.Contract(abi);
+        byte[] callData = contract1.getByName("multipleHomicide").encode();
 
-            CallTransaction.Contract contract1 = new CallTransaction.Contract(cmeta.abi);
-            byte[] callData = contract1.getByName("multipleHomocide").encode();
+        Assert.assertNull(contract1.getConstructor());
+        Assert.assertNotNull(contract1.parseInvocation(callData));
+        Assert.assertNotNull(contract1.parseInvocation(callData).toString());
 
-            Assert.assertNull(contract1.getConstructor());
-            Assert.assertNotNull(contract1.parseInvocation(callData));
-            Assert.assertNotNull(contract1.parseInvocation(callData).toString());
-
-            try {
-                contract1.parseInvocation(new byte[32]);
-                Assert.fail();
-            }
-            catch (RuntimeException ex) {
-            }
-
-            try {
-                contract1.parseInvocation(new byte[2]);
-                Assert.fail();
-            }
-            catch (RuntimeException ex) {
-            }
-
-            Transaction tx1 = createTx(blockchain, sender, contractAddress, callData, 0);
-            ProgramResult programResult = executeTransaction(blockchain, tx1).getResult();
-
-            // suicide of a single account should be counted only once
-            Assert.assertEquals(24000, programResult.getFutureRefund());
-        } else {
+        try {
+            contract1.parseInvocation(new byte[32]);
             Assert.fail();
         }
+        catch (RuntimeException ex) {
+        }
+
+        try {
+            contract1.parseInvocation(new byte[2]);
+            Assert.fail();
+        }
+        catch (RuntimeException ex) {
+        }
+
+        Transaction tx1 = createTx(blockchain, sender, contractAddress, callData, 0);
+        ProgramResult programResult = executeTransaction(blockchain, tx1).getResult();
+
+        // suicide of a single account should be counted only once
+        Assert.assertEquals(24000, programResult.getFutureRefund());
     }
 
     @Test
-    @Ignore
     public void dontLogWhenOutOfGasTest() throws IOException, InterruptedException {
-        SystemProperties systemProperties = Mockito.mock(SystemProperties.class);
-        String solc = System.getProperty("solc");
-        if(StringUtils.isEmpty(solc))
-            solc = "/usr/bin/solc";
+        /*
 
-        Mockito.when(systemProperties.customSolcPath()).thenReturn(solc);
+        Original contracts
 
-        SolidityCompiler solidityCompiler = new SolidityCompiler(systemProperties);
-        String contract =
-                "pragma solidity ^0.4.0;\n" +
-                        "contract TestEventInvoked {\n" +
-                        "    event internalEvent();\n" +
-                        "    \n" +
-                        "    function doIt() {\n" +
-                        "        internalEvent();\n" +
-                        "        throw;\n" +
-                        "    }\n" +
-                        "}\n" +
-                        "\n" +
-                        "\n" +
-                        "contract TestEventInvoker {\n" +
-                        "    event externalEvent();\n" +
-                        "\n" +
-                        "    function doIt(address invokedAddress) {\n" +
-                        "        externalEvent();\n" +
-                        "        //TestEventInvoked(invokedAddress).doIt();\n" +
-                        "        //TestEventInvoked(invokedAddress).doIt.gas(50000)();\n" +
-                        "        invokedAddress.call.gas(50000)(0xb29f0835);\n" +
-                        "    }\n" +
-                        "}\n";
-        SolidityCompiler.Result res = solidityCompiler.compile(
-                contract.getBytes(), true, SolidityCompiler.Options.ABI, SolidityCompiler.Options.BIN);
-        System.out.println(res.errors);
-        CompilationResult cres = CompilationResult.parse(res.output);
+        pragma solidity ^0.4.0;
+        contract TestEventInvoked {
+            event internalEvent();
 
-        BigInteger nonce = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
+            function doIt() {
+                internalEvent();
+                throw;
+            }
+        }
+
+        contract TestEventInvoker {
+            event externalEvent();
+
+            function doIt(address invokedAddress) {
+                externalEvent();
+                invokedAddress.call.gas(50000)(0xb29f0835);
+            }
+        }
+
+         */
+
+        BigInteger nonce = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
         Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
                 getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
 
-        CompilationResult.ContractMetadata cmeta = cres.contracts.get("TestEventInvoked");
-        if (cmeta == null)
-            cmeta = cres.contracts.get("<stdin>:TestEventInvoked");
-        if (cmeta == null)
-            Assert.fail("cmeta is null");
+        // First contract code TestEventInvoked
+        String code1 = "606060405234610000575b60a9806100186000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063b29f083514603c575b6000565b3460005760466048565b005b7f95481a538d62f8458d3cecac82408d5ff2630d8335962b1cdbac16f1a9b910e760405180905060405180910390a16000565b5600a165627a7a723058209725d297dbc46ff810ec63ead7ba25fc7be5dc5d1a4135e8ba80acf92ab8b7710029";
+        // Second contract code TestEventInvoker
+        String code2 = "606060405234610000575b610135806100196000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063e25fd8a71461003e575b610000565b346100005761006f600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610071565b005b7f4cd6f2e769273405c20f3a0c098c9045749deec145502c4838b54206ec5c542860405180905060405180910390a18073ffffffffffffffffffffffffffffffffffffffff1661c35063b29f0835906040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180905060006040518083038160008887f19350505050505b505600a165627a7a72305820081c99bb51613c4a07c465914404f263138f8c2856af816fe608233e8d78ff3d0029";
+        // Second contract ABI
+        String abi2 = "[{\"constant\":false,\"inputs\":[{\"name\":\"invokedAddress\",\"type\":\"address\"}],\"name\":\"doIt\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[],\"name\":\"externalEvent\",\"type\":\"event\"}]";
 
-        Transaction tx1 = createTx(blockchain, sender, new byte[0], Hex.decode(cmeta.bin));
+        Transaction tx1 = createTx(blockchain, sender, new byte[0], Hex.decode(code1));
         executeTransaction(blockchain, tx1);
 
-        CompilationResult.ContractMetadata cmeta2 = cres.contracts.get("TestEventInvoker");
-        if (cmeta2 == null)
-            cmeta2 = cres.contracts.get("<stdin>:TestEventInvoker");
-        if (cmeta2 == null)
-            Assert.fail("cmeta2 is null");
-
-        Transaction tx2 = createTx(blockchain, sender, new byte[0], Hex.decode(cmeta2.bin));
+        Transaction tx2 = createTx(blockchain, sender, new byte[0], Hex.decode(code2));
         executeTransaction(blockchain, tx2);
 
-        CallTransaction.Contract contract2 = new CallTransaction.Contract(cmeta2.abi);
+        CallTransaction.Contract contract2 = new CallTransaction.Contract(abi2);
         byte[] data = contract2.getByName("doIt").encode(Hex.toHexString(tx1.getContractAddress()));
 
         Transaction tx3 = createTx(blockchain, sender, tx2.getContractAddress(), data);
@@ -704,7 +670,6 @@ public class TransactionTest {
         Assert.assertEquals(false, executor.getResult().getLogInfoList().get(0).isRejected());
         Assert.assertEquals(true, executor.getResult().getLogInfoList().get(1).isRejected());
         Assert.assertEquals(1, executor.getVMLogs().size());
-
     }
 
     private Transaction createTx(Blockchain blockchain, ECKey sender, byte[] receiveAddress, byte[] data) throws InterruptedException {

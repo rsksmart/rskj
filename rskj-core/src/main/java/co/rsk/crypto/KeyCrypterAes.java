@@ -49,47 +49,32 @@ import java.util.Arrays;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * <p>This class encrypts and decrypts byte arrays and strings using scrypt as the
- * key derivation function and AES for the encryption.</p>
- *
- * <p>You can use this class to:</p>
- *
- * <p>1) Using a user password, create an AES key that can encrypt and decrypt your private keys.
- * To convert the password to the AES key, scrypt is used. This is an algorithm resistant
- * to brute force attacks. You can use the ScryptParameters to tune how difficult you
- * want this to be generation to be.</p>
- *
- * <p>2) Using the AES Key generated above, you then can encrypt and decrypt any bytes using
- * the AES symmetric cipher. Eight bytes of salt is used to prevent dictionary attacks.</p>
+ * This class encrypts and decrypts byte arrays using AES symmetric cipher.
  */
-public class KeyCrypterScrypt implements KeyCrypter {
+public class KeyCrypterAes implements KeyCrypter {
 
     /**
      * The size of an AES block in bytes.
      * This is also the length of the initialisation vector.
      */
-    public static final int BLOCK_LENGTH = 16;  // = 128 bits.
+    private static final int BLOCK_LENGTH = 16;  // = 128 bits.
 
-    static {
-        secureRandom = new SecureRandom();
-    }
-
-    private static final SecureRandom secureRandom;
+    private static final SecureRandom secureRandom = new SecureRandom();
 
     /**
      * Password based encryption using AES - CBC 256 bits.
      */
     @Override
-    public EncryptedData encrypt(byte[] plainBytes, KeyParameter aesKey) {
+    public EncryptedData encrypt(byte[] plainBytes, KeyParameter key) {
         checkNotNull(plainBytes);
-        checkNotNull(aesKey);
+        checkNotNull(key);
 
         try {
             // Generate iv - each encryption call has a different iv.
             byte[] iv = new byte[BLOCK_LENGTH];
             secureRandom.nextBytes(iv);
 
-            ParametersWithIV keyWithIv = new ParametersWithIV(aesKey, iv);
+            ParametersWithIV keyWithIv = new ParametersWithIV(key, iv);
 
             // Encrypt using AES.
             BufferedBlockCipher cipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(new AESFastEngine()));
@@ -108,17 +93,17 @@ public class KeyCrypterScrypt implements KeyCrypter {
      * Decrypt bytes previously encrypted with this class.
      *
      * @param dataToDecrypt    The data to decrypt
-     * @param aesKey           The AES key to use for decryption
+     * @param key              The AES key to use for decryption
      * @return                 The decrypted bytes
      * @throws                 KeyCrypterException if bytes could not be decrypted
      */
     @Override
-    public byte[] decrypt(EncryptedData dataToDecrypt, KeyParameter aesKey) {
+    public byte[] decrypt(EncryptedData dataToDecrypt, KeyParameter key) {
         checkNotNull(dataToDecrypt);
-        checkNotNull(aesKey);
+        checkNotNull(key);
 
         try {
-            ParametersWithIV keyWithIv = new ParametersWithIV(new KeyParameter(aesKey.getKey()), dataToDecrypt.initialisationVector);
+            ParametersWithIV keyWithIv = new ParametersWithIV(new KeyParameter(key.getKey()), dataToDecrypt.initialisationVector);
 
             // Decrypt the message.
             BufferedBlockCipher cipher = new PaddedBufferedBlockCipher(new CBCBlockCipher(new AESFastEngine()));

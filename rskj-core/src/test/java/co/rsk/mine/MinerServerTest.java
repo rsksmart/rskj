@@ -84,7 +84,7 @@ public class MinerServerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServerImpl minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, localPendingState, repository, RskSystemProperties.RSKCONFIG, unclesValidationRule);
+        MinerServerImpl minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, localPendingState, repository, RskSystemProperties.CONFIG, unclesValidationRule);
 
         minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
         Block blockAtHeightOne = minerServer.getBlocksWaitingforPoW().entrySet().iterator().next().getValue();
@@ -104,7 +104,7 @@ public class MinerServerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, blockchain, null, blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), RskSystemProperties.RSKCONFIG, unclesValidationRule);
+        MinerServer minerServer = new MinerServerImpl(ethereumImpl, blockchain, null, blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), RskSystemProperties.CONFIG, unclesValidationRule);
 
         minerServer.start();
         MinerWork work = minerServer.getWork();
@@ -138,7 +138,7 @@ public class MinerServerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), RskSystemProperties.RSKCONFIG, unclesValidationRule);
+        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), RskSystemProperties.CONFIG, unclesValidationRule);
 
         minerServer.start();
         MinerWork work = minerServer.getWork();
@@ -172,7 +172,7 @@ public class MinerServerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), RskSystemProperties.RSKCONFIG, unclesValidationRule);
+        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), RskSystemProperties.CONFIG, unclesValidationRule);
 
         minerServer.start();
         MinerWork work = minerServer.getWork();
@@ -206,7 +206,7 @@ public class MinerServerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), RskSystemProperties.RSKCONFIG, unclesValidationRule);
+        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), RskSystemProperties.CONFIG, unclesValidationRule);
 
         minerServer.start();
 
@@ -222,7 +222,7 @@ public class MinerServerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), RskSystemProperties.RSKCONFIG, unclesValidationRule);
+        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), RskSystemProperties.CONFIG, unclesValidationRule);
 
         minerServer.start();
 
@@ -238,7 +238,7 @@ public class MinerServerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), RskSystemProperties.RSKCONFIG, unclesValidationRule);
+        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), RskSystemProperties.CONFIG, unclesValidationRule);
 
         minerServer.start();
 
@@ -258,7 +258,7 @@ public class MinerServerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), RskSystemProperties.RSKCONFIG, unclesValidationRule);
+        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), RskSystemProperties.CONFIG, unclesValidationRule);
 
         minerServer.start();
 
@@ -277,7 +277,7 @@ public class MinerServerTest {
     public void getCurrentTimeInMilliseconds() {
         long current = System.currentTimeMillis() / 1000;
 
-        MinerServer server = new MinerServerImpl(null, null, null, null, null, RskSystemProperties.RSKCONFIG, null);
+        MinerServer server = new MinerServerImpl(null, null, null, null, null, RskSystemProperties.CONFIG, null);
 
         long result = server.getCurrentTimeInSeconds();
 
@@ -289,7 +289,7 @@ public class MinerServerTest {
     public void increaseTime() {
         long current = System.currentTimeMillis() / 1000;
 
-        MinerServer server = new MinerServerImpl(null, null, null, null, null, RskSystemProperties.RSKCONFIG, null);
+        MinerServer server = new MinerServerImpl(null, null, null, null, null, RskSystemProperties.CONFIG, null);
 
         Assert.assertEquals(10, server.increaseTime(10));
 
@@ -303,7 +303,7 @@ public class MinerServerTest {
     public void increaseTimeUsingNegativeNumberHasNoEffect() {
         long current = System.currentTimeMillis() / 1000;
 
-        MinerServer server = new MinerServerImpl(null, null, null, null, null, RskSystemProperties.RSKCONFIG, null);
+        MinerServer server = new MinerServerImpl(null, null, null, null, null, RskSystemProperties.CONFIG, null);
 
         Assert.assertEquals(0, server.increaseTime(-10));
 
@@ -316,7 +316,7 @@ public class MinerServerTest {
     public void increaseTimeTwice() {
         long current = System.currentTimeMillis() / 1000;
 
-        MinerServer server = new MinerServerImpl(null, null, null, null, null, RskSystemProperties.RSKCONFIG, null);
+        MinerServer server = new MinerServerImpl(null, null, null, null, null, RskSystemProperties.CONFIG, null);
 
         Assert.assertEquals(5, server.increaseTime(5));
         Assert.assertEquals(10, server.increaseTime(5));

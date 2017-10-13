@@ -20,7 +20,7 @@ package co.rsk.core;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.crypto.EncryptedData;
-import co.rsk.crypto.KeyCrypterScrypt;
+import co.rsk.crypto.KeyCrypterAes;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.SHA3Helper;
@@ -202,7 +202,7 @@ public class Wallet {
         try {
             ByteArrayInputStream in = new ByteArrayInputStream(encryptedBytes);
             ObjectInputStream byteStream = new ObjectInputStream(in);
-            KeyCrypterScrypt keyCrypter = new KeyCrypterScrypt();
+            KeyCrypterAes keyCrypter = new KeyCrypterAes();
             KeyParameter keyParameter = new KeyParameter(Sha256Hash.hash(passphrase));
 
             ArrayList<byte[]> bytes = (ArrayList<byte[]>) byteStream.readObject();
@@ -216,7 +216,7 @@ public class Wallet {
     }
 
     private byte[] encryptAES(byte[] privateKeyBytes, byte[] passphrase) {
-        KeyCrypterScrypt keyCrypter = new KeyCrypterScrypt();
+        KeyCrypterAes keyCrypter = new KeyCrypterAes();
         KeyParameter keyParameter = new KeyParameter(Sha256Hash.hash(passphrase));
         EncryptedData enc = keyCrypter.encrypt(privateKeyBytes, keyParameter);
 
