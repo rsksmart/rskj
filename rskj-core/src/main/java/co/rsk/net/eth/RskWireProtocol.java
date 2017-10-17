@@ -78,6 +78,8 @@ public class RskWireProtocol extends EthHandler {
      * also, is useful when returned BLOCK_BODIES msg doesn't cover all sent hashes
      * or in case when peer is disconnected
      */
+    @Autowired
+    private final PeerScoringManager peerScoringManager;
     protected final List<BlockHeaderWrapper> sentHeaders = Collections.synchronizedList(new ArrayList<BlockHeaderWrapper>());
     protected final SyncStatistics syncStats = new SyncStatistics();
     @Autowired
@@ -96,9 +98,6 @@ public class RskWireProtocol extends EthHandler {
      * Number and hash of best known remote block
      */
     protected Queue<GetBlockHeadersMessageWrapper> headerRequests = new LinkedBlockingQueue<>();
-
-    @Autowired
-    private Rsk rsk;
 
     private MessageSender messageSender;
     private MessageHandler messageHandler;
@@ -228,13 +227,13 @@ public class RskWireProtocol extends EthHandler {
 
             InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
 
-            if (!this.rsk.getPeerScoringManager().hasGoodReputation(address))
+            if (!peerScoringManager.hasGoodReputation(address))
                 return false;
 
             byte[] nid = channel.getNodeId();
             NodeID nodeID = nid != null ? new NodeID(nid) : null;
 
-            if (nodeID != null && !this.rsk.getPeerScoringManager().hasGoodReputation(nodeID))
+            if (nodeID != null && !peerScoringManager.hasGoodReputation(nodeID))
                 return false;
 
         }
@@ -243,7 +242,7 @@ public class RskWireProtocol extends EthHandler {
     }
 
     private void recordEvent(EventType event) {
-        this.rsk.getPeerScoringManager().recordEvent(
+        peerScoringManager.recordEvent(
                         this.messageSender.getNodeID(),
                         this.messageSender.getAddress(),
                         event);

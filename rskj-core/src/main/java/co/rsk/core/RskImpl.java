@@ -24,7 +24,6 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.NodeMessageHandler;
 import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.scoring.PeerScoringManager;
-import co.rsk.scoring.PunishmentParameters;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.PendingState;
 import org.ethereum.db.ReceiptStore;
@@ -46,10 +45,9 @@ import org.springframework.stereotype.Component;
 public class RskImpl extends EthereumImpl implements Rsk {
     private boolean isplaying;
     private NodeBlockProcessor nodeBlockProcessor;
-    private PeerScoringManager peerScoringManager;
     private MessageHandler messageHandler;
     private static final Object NMH_LOCK = new Object();
-    private static final Object PSM_LOCK = new Object();
+    private PeerScoringManager peerScoringManager;
 
     @Autowired
     public RskImpl(WorldManager worldManager,
@@ -61,32 +59,14 @@ public class RskImpl extends EthereumImpl implements Rsk {
                    SystemProperties config,
                    CompositeEthereumListener compositeEthereumListener,
                    ReceiptStore receiptStore,
+                   PeerScoringManager peerScoringManager,
                    ApplicationContext ctx) {
         super(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore, ctx);
+        this.peerScoringManager = peerScoringManager;
     }
 
     @Override
     public PeerScoringManager getPeerScoringManager() {
-        if (this.peerScoringManager == null) {
-            synchronized (PSM_LOCK) {
-                if (this.peerScoringManager == null) {
-                    SystemProperties config = this.getSystemProperties();
-
-                    int nnodes = config.scoringNumberOfNodes();
-
-                    long nodePunishmentDuration = config.scoringNodesPunishmentDuration();
-                    int nodePunishmentIncrement = config.scoringNodesPunishmentIncrement();
-                    long nodePunhishmentMaximumDuration = config.scoringNodesPunishmentMaximumDuration();
-
-                    long addressPunishmentDuration = config.scoringAddressesPunishmentDuration();
-                    int addressPunishmentIncrement = config.scoringAddressesPunishmentIncrement();
-                    long addressPunishmentMaximunDuration = config.scoringAddressesPunishmentMaximumDuration();
-
-                    this.peerScoringManager = new PeerScoringManager(nnodes, new PunishmentParameters(nodePunishmentDuration, nodePunishmentIncrement, nodePunhishmentMaximumDuration), new PunishmentParameters(addressPunishmentDuration, addressPunishmentIncrement, addressPunishmentMaximunDuration));
-                }
-            }
-        }
-
         return this.peerScoringManager;
     }
 
