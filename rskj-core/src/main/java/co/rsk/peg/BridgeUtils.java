@@ -68,7 +68,7 @@ public class BridgeUtils {
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
             try {
-                transactionInput.getScriptSig().correctlySpends(tx, i, federation.getScript(), Script.ALL_VERIFY_FLAGS);
+                transactionInput.getScriptSig().correctlySpends(tx, i, federation.getP2SHScript(), Script.ALL_VERIFY_FLAGS);
                 // There is an input spending from the federation address, this is not a lock tx
                 return false;
             } catch (ScriptException se) {
@@ -89,7 +89,7 @@ public class BridgeUtils {
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
             try {
-                transactionInput.getScriptSig().correctlySpends(tx, i, federation.getScript(), Script.ALL_VERIFY_FLAGS);
+                transactionInput.getScriptSig().correctlySpends(tx, i, federation.getP2SHScript(), Script.ALL_VERIFY_FLAGS);
                 // There is an input spending from the federation address, this is a release tx
                 return true;
             } catch (ScriptException se) {

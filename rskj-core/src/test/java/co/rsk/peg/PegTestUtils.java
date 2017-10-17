@@ -60,7 +60,7 @@ public class PegTestUtils {
     public static Script createBaseInputScriptThatSpendsFromTheFederation(BridgeConstants bridgeConstants) {
         // Spending is from the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
-        Script scriptPubKey = federation.getScript();
+        Script scriptPubKey = federation.getP2SHScript();
         Script redeemScript = createBaseRedeemScriptThatSpendsFromTheFederation(federation);
         RedeemData redeemData = RedeemData.of(federation.getPublicKeys(), redeemScript);
         Script inputScript = scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
