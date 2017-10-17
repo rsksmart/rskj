@@ -26,7 +26,17 @@ import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import org.ethereum.config.SystemProperties;
+import org.ethereum.core.PendingState;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.EthereumImpl;
+import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.manager.AdminInfo;
+import org.ethereum.manager.WorldManager;
+import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.PeerServer;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 /**
@@ -41,6 +51,19 @@ public class RskImpl extends EthereumImpl implements Rsk {
     private static final Object NMH_LOCK = new Object();
     private static final Object PSM_LOCK = new Object();
 
+    @Autowired
+    public RskImpl(WorldManager worldManager,
+                   AdminInfo adminInfo,
+                   ChannelManager channelManager,
+                   PeerServer peerServer,
+                   ProgramInvokeFactory programInvokeFactory,
+                   PendingState pendingState,
+                   SystemProperties config,
+                   CompositeEthereumListener compositeEthereumListener,
+                   ReceiptStore receiptStore,
+                   ApplicationContext ctx) {
+        super(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore, ctx);
+    }
 
     @Override
     public PeerScoringManager getPeerScoringManager() {

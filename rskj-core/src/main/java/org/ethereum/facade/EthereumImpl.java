@@ -41,7 +41,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.util.concurrent.FutureAdapter;
 
@@ -54,50 +53,44 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-/**
- * @author Roman Mandeleil
- * @since 27.07.2014
- */
-// @Component
 public class EthereumImpl implements Ethereum {
 
     private static final Logger logger = LoggerFactory.getLogger("facade");
     private static final Logger gLogger = LoggerFactory.getLogger("general");
 
-    @Autowired
-    WorldManager worldManager;
-
-    @Autowired
-    AdminInfo adminInfo;
-
-    @Autowired
-    ChannelManager channelManager;
-
-    @Autowired
-    PeerServer peerServer;
-
-    @Autowired
-    ApplicationContext ctx;
-
-    @Autowired
-    ProgramInvokeFactory programInvokeFactory;
-
-    @Autowired
-    PendingState pendingState;
-
-    @Autowired
-    SystemProperties config;
-
-    @Autowired
-    CompositeEthereumListener compositeEthereumListener;
-
-    @Autowired
-    ReceiptStore receiptStore;
+    private final WorldManager worldManager;
+    private final AdminInfo adminInfo;
+    private final ChannelManager channelManager;
+    private final PeerServer peerServer;
+    private final ProgramInvokeFactory programInvokeFactory;
+    private final PendingState pendingState;
+    private final SystemProperties config;
+    private final CompositeEthereumListener compositeEthereumListener;
+    private final ReceiptStore receiptStore;
+    private final ApplicationContext ctx;
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
 
-    public EthereumImpl() {
-        System.out.println();
+    public EthereumImpl(WorldManager worldManager,
+                        AdminInfo adminInfo,
+                        ChannelManager channelManager,
+                        PeerServer peerServer,
+                        ProgramInvokeFactory programInvokeFactory,
+                        PendingState pendingState,
+                        SystemProperties config,
+                        CompositeEthereumListener compositeEthereumListener,
+                        ReceiptStore receiptStore,
+                        ApplicationContext ctx) {
+        this.worldManager = worldManager;
+        this.adminInfo = adminInfo;
+        this.channelManager = channelManager;
+        this.peerServer = peerServer;
+        this.programInvokeFactory = programInvokeFactory;
+        this.pendingState = pendingState;
+        this.config = config;
+        this.compositeEthereumListener = compositeEthereumListener;
+        this.receiptStore = receiptStore;
+        this.ctx = ctx;
     }
 
     @PostConstruct
