@@ -33,7 +33,6 @@ import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 /**
@@ -59,8 +58,8 @@ public class RskImpl extends EthereumImpl implements Rsk {
                    PeerScoringManager peerScoringManager,
                    NodeBlockProcessor nodeBlockProcessor,
                    NodeMessageHandler messageHandler,
-                   ApplicationContext ctx) {
-        super(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore, ctx);
+                   PeerClientFactory peerClientFactory) {
+        super(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore, peerClientFactory);
         this.peerScoringManager = peerScoringManager;
         this.nodeBlockProcessor = nodeBlockProcessor;
         this.messageHandler = messageHandler;

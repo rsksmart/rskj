@@ -41,7 +41,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.context.ApplicationContext;
 import org.springframework.util.concurrent.FutureAdapter;
 
 import javax.annotation.Nonnull;
@@ -67,7 +66,7 @@ public class EthereumImpl implements Ethereum {
     private final SystemProperties config;
     private final CompositeEthereumListener compositeEthereumListener;
     private final ReceiptStore receiptStore;
-    private final ApplicationContext ctx;
+    private final PeerClientFactory peerClientFactory;
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
 
@@ -80,7 +79,7 @@ public class EthereumImpl implements Ethereum {
                         SystemProperties config,
                         CompositeEthereumListener compositeEthereumListener,
                         ReceiptStore receiptStore,
-                        ApplicationContext ctx) {
+                        PeerClientFactory peerClientFactory) {
         this.worldManager = worldManager;
         this.adminInfo = adminInfo;
         this.channelManager = channelManager;
@@ -90,7 +89,7 @@ public class EthereumImpl implements Ethereum {
         this.config = config;
         this.compositeEthereumListener = compositeEthereumListener;
         this.receiptStore = receiptStore;
-        this.ctx = ctx;
+        this.peerClientFactory = peerClientFactory;
     }
 
     @PostConstruct
@@ -117,7 +116,7 @@ public class EthereumImpl implements Ethereum {
     @Override
     public void connect(final String ip, final int port, final String remoteId) {
         logger.info("Connecting to: {}:{}", ip, port);
-        final PeerClient peerClient = ctx.getBean(PeerClient.class);
+        PeerClient peerClient = peerClientFactory.newInstance();
         peerClient.connectAsync(ip, port, remoteId, false);
     }
 
@@ -300,5 +299,9 @@ public class EthereumImpl implements Ethereum {
     @Override
     public SystemProperties getSystemProperties() {
         return this.config;
+    }
+
+    public interface PeerClientFactory {
+        PeerClient newInstance();
     }
 }

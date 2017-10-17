@@ -19,10 +19,6 @@
 
 package org.ethereum.net.client;
 
-import org.ethereum.config.SystemProperties;
-import org.ethereum.listener.EthereumListener;
-import org.ethereum.net.server.EthereumChannelInitializer;
-
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
@@ -30,14 +26,12 @@ import io.netty.channel.DefaultMessageSizeEstimator;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-
+import org.ethereum.config.SystemProperties;
+import org.ethereum.listener.EthereumListener;
+import org.ethereum.net.EthereumChannelInitializerFactory;
+import org.ethereum.net.server.EthereumChannelInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.concurrent.ThreadFactory;
@@ -49,20 +43,19 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @see <a href="http://netty.io">http://netty.io</a>
  */
-@Component
-@Scope("prototype")
 public class PeerClient {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
 
-    @Autowired
-    SystemProperties config;
+    private final SystemProperties config;
+    private final EthereumListener ethereumListener;
+    private final EthereumChannelInitializerFactory ethereumChannelInitializerFactory;
 
-    @Autowired
-    private ApplicationContext ctx;
-
-    @Autowired
-    EthereumListener ethereumListener;
+    public PeerClient(SystemProperties config, EthereumListener ethereumListener, EthereumChannelInitializerFactory ethereumChannelInitializerFactory) {
+        this.config = config;
+        this.ethereumListener = ethereumListener;
+        this.ethereumChannelInitializerFactory = ethereumChannelInitializerFactory;
+    }
 
     private static EventLoopGroup workerGroup = new NioEventLoopGroup(0, new ThreadFactory() {
         AtomicInteger cnt = new AtomicInteger(0);
@@ -108,7 +101,7 @@ public class PeerClient {
     public ChannelFuture connectAsync(String host, int port, String remoteId, boolean discoveryMode) {
         ethereumListener.trace("Connecting to: " + host + ":" + port);
 
-        EthereumChannelInitializer ethereumChannelInitializer = ctx.getBean(EthereumChannelInitializer.class, remoteId);
+        EthereumChannelInitializer ethereumChannelInitializer = ethereumChannelInitializerFactory.newInstance(remoteId);
         ethereumChannelInitializer.setPeerDiscoveryMode(discoveryMode);
 
         Bootstrap b = new Bootstrap();
@@ -125,4 +118,5 @@ public class PeerClient {
         // Start the client.
         return b.connect();
     }
+
 }

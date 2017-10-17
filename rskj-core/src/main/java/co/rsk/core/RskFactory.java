@@ -21,10 +21,8 @@ package co.rsk.core;
 import co.rsk.blocks.FileBlockPlayer;
 import co.rsk.blocks.FileBlockRecorder;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.net.BlockProcessResult;
-import co.rsk.net.BlockStore;
-import co.rsk.net.NodeBlockProcessor;
-import co.rsk.net.NodeMessageHandler;
+import co.rsk.net.*;
+import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
@@ -33,9 +31,25 @@ import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
+import org.ethereum.facade.EthereumImpl;
+import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.WorldManager;
+import org.ethereum.net.EthereumChannelInitializerFactory;
+import org.ethereum.net.MessageQueue;
+import org.ethereum.net.NodeManager;
+import org.ethereum.net.client.ConfigCapabilities;
+import org.ethereum.net.client.PeerClient;
 import org.ethereum.net.eth.EthVersion;
+import org.ethereum.net.eth.handler.EthHandlerFactory;
+import org.ethereum.net.eth.handler.EthHandlerFactoryImpl;
+import org.ethereum.net.message.StaticMessages;
+import org.ethereum.net.p2p.P2pHandler;
+import org.ethereum.net.rlpx.HandshakeHandler;
+import org.ethereum.net.rlpx.MessageCodec;
+import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.EthereumChannelInitializer;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.FileUtil;
 import org.slf4j.Logger;
@@ -77,7 +91,6 @@ public class RskFactory {
             FileUtil.recursiveDelete(config.databaseDir());
             logger.info("Database reset done");
         }
-
         return userSpringConfig == null ? createRsk(new Class[] {DefaultConfig.class}) :
                 createRsk(DefaultConfig.class, userSpringConfig);
     }
@@ -163,5 +176,43 @@ public class RskFactory {
         NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(nodeBlockProcessor, channelManager, worldManager.getPendingState(), new TxHandlerImpl(worldManager), peerScoringManager);
         nodeMessageHandler.start();
         return nodeMessageHandler;
+    }
+
+    @Bean
+    public EthereumImpl.PeerClientFactory getPeerClientFactory(SystemProperties config,
+                                                               EthereumListener ethereumListener,
+                                                               EthereumChannelInitializerFactory ethereumChannelInitializerFactory) {
+        return () -> new PeerClient(config, ethereumListener, ethereumChannelInitializerFactory);
+    }
+
+    @Bean
+    public EthereumChannelInitializerFactory getEthereumChannelInitializerFactory(ChannelManager channelManager, EthereumChannelInitializer.ChannelFactory channelFactory) {
+        return remoteId -> new EthereumChannelInitializer(remoteId, channelManager, channelFactory);
+    }
+
+    @Bean
+    public EthereumChannelInitializer.ChannelFactory getChannelFactory(SystemProperties config,
+                                                                       EthereumListener ethereumListener,
+                                                                       ConfigCapabilities configCapabilities,
+                                                                       NodeManager nodeManager,
+                                                                       EthHandlerFactory ethHandlerFactory,
+                                                                       StaticMessages staticMessages,
+                                                                       PeerScoringManager peerScoringManager) {
+        return () -> {
+            HandshakeHandler handshakeHandler = new HandshakeHandler(config, peerScoringManager);
+            MessageQueue messageQueue = new MessageQueue();
+            P2pHandler p2pHandler = new P2pHandler(ethereumListener, configCapabilities, config);
+            MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
+            return new Channel(config, messageQueue, p2pHandler, messageCodec, handshakeHandler, nodeManager, ethHandlerFactory, staticMessages);
+        };
+    }
+
+    @Bean
+    public EthHandlerFactoryImpl.RskWireProtocolFactory getRskWireProtocolFactory (PeerScoringManager peerScoringManager,
+                                                                                   MessageHandler messageHandler,
+                                                                                   Blockchain blockchain,
+                                                                                   SystemProperties config,
+                                                                                   CompositeEthereumListener ethereumListener){
+        return () -> new RskWireProtocol(peerScoringManager, messageHandler, blockchain, config, ethereumListener);
     }
 }
