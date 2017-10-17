@@ -49,6 +49,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.mockito.internal.util.reflection.Whitebox;
 import org.spongycastle.crypto.params.ECPrivateKeyParameters;
 import org.spongycastle.crypto.signers.ECDSASigner;
 import org.spongycastle.util.encoders.Hex;
@@ -63,6 +64,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 6/9/2016.
@@ -826,7 +830,7 @@ public class BridgeSupportTest {
         BtcTransaction tx = createTransaction();
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        provider.getBtcTxHashesAlreadyProcessed().add(tx.getHash());
+        provider.getBtcTxHashesAlreadyProcessed().put(tx.getHash(), 1L);
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null);
 
@@ -997,6 +1001,8 @@ public class BridgeSupportTest {
         Repository repository = new RepositoryImpl();
         repository.addBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
         Repository track = repository.startTracking();
+        Block executionBlock = Mockito.mock(Block.class);
+        Mockito.when(executionBlock.getNumber()).thenReturn(10L);
 
         BridgeRegTestConstants bridgeConstants = (BridgeRegTestConstants) RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
 
@@ -1037,6 +1043,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress);
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, provider, btcBlockStore, btcBlockChain);
+        Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
 
         byte[] bits = new byte[1];
         bits[0] = 0x01;
@@ -1074,6 +1081,8 @@ public class BridgeSupportTest {
     public void registerBtcTransactionLockTx() throws BlockStoreException, AddressFormatException, IOException {
         Repository repository = new RepositoryImpl();
         repository.addBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
+        Block executionBlock = Mockito.mock(Block.class);
+        Mockito.when(executionBlock.getNumber()).thenReturn(10L);
 
         Repository track = repository.startTracking();
 
@@ -1092,7 +1101,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress);
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, provider, btcBlockStore, btcBlockChain);
-
+        Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
         byte[] bits = new byte[1];
         bits[0] = 0x01;
         List<Sha256Hash> hashes = new ArrayList<>();
@@ -1134,26 +1143,68 @@ public class BridgeSupportTest {
         Assert.assertTrue(hasEnoughConfirmations(20));
     }
 
+    @Test
+    public void isBtcTxHashAlreadyProcessed() throws IOException, BlockStoreException {
+        BridgeSupport bridgeSupport = new BridgeSupport(
+                null,
+                null,
+                getBridgeStorageProviderMockWithProcessedHashes(),
+                null,
+                null);
+
+        for (int i = 0; i < 10; i++) {
+            Assert.assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(Sha256Hash.of(("hash_" + i).getBytes())));
+        }
+        Assert.assertFalse(bridgeSupport.isBtcTxHashAlreadyProcessed(Sha256Hash.of("anything".getBytes())));
+    }
+
+    @Test
+    public void getBtcTxHashProcessedHeight() throws IOException, BlockStoreException {
+        BridgeSupport bridgeSupport = new BridgeSupport(
+                null,
+                null,
+                getBridgeStorageProviderMockWithProcessedHashes(),
+                null,
+                null);
+
+        for (int i = 0; i < 10; i++) {
+            Assert.assertEquals((long) i, bridgeSupport.getBtcTxHashProcessedHeight(Sha256Hash.of(("hash_" + i).getBytes())).longValue());
+        }
+        Assert.assertEquals(-1L, bridgeSupport.getBtcTxHashProcessedHeight(Sha256Hash.of("anything".getBytes())).longValue());
+    }
+
+    private BridgeStorageProvider getBridgeStorageProviderMockWithProcessedHashes() throws IOException {
+        Map<Sha256Hash, Long> mockedHashes = new HashMap<>();
+        BridgeStorageProvider providerMock = mock(BridgeStorageProvider.class);
+        when(providerMock.getBtcTxHashesAlreadyProcessed()).thenReturn(mockedHashes);
+
+        for (int i = 0; i < 10; i++) {
+            mockedHashes.put(Sha256Hash.of(("hash_" + i).getBytes()), (long) i);
+        }
+
+        return providerMock;
+    }
+
     public boolean hasEnoughConfirmations(long currentBlockNumber) throws Exception{
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
         byte[] blockHash = new byte[32];
         new SecureRandom().nextBytes(blockHash);
-        TransactionInfo transactionInfo = Mockito.mock(TransactionInfo.class);
-        Mockito.when(transactionInfo.getBlockHash()).thenReturn(blockHash);
+        TransactionInfo transactionInfo = mock(TransactionInfo.class);
+        when(transactionInfo.getBlockHash()).thenReturn(blockHash);
 
-        ReceiptStore receiptStore = Mockito.mock(ReceiptStore.class);
-        Mockito.when(receiptStore.get(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(transactionInfo);
+        ReceiptStore receiptStore = mock(ReceiptStore.class);
+        when(receiptStore.get(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(transactionInfo);
 
-        org.ethereum.core.Block includedBlock = Mockito.mock(org.ethereum.core.Block.class);
-        Mockito.when(includedBlock.getNumber()).thenReturn(Long.valueOf(10));
+        org.ethereum.core.Block includedBlock = mock(org.ethereum.core.Block.class);
+        when(includedBlock.getNumber()).thenReturn(Long.valueOf(10));
 
-        org.ethereum.db.BlockStore blockStore = Mockito.mock(org.ethereum.db.BlockStore.class);
-        Mockito.when(blockStore.getBlockByHash(Mockito.any())).thenReturn(includedBlock);
+        org.ethereum.db.BlockStore blockStore = mock(org.ethereum.db.BlockStore.class);
+        when(blockStore.getBlockByHash(Mockito.any())).thenReturn(includedBlock);
 
-        org.ethereum.core.Block currentBlock = Mockito.mock(org.ethereum.core.Block.class);
-        Mockito.when(currentBlock.getNumber()).thenReturn(Long.valueOf(currentBlockNumber));
+        org.ethereum.core.Block currentBlock = mock(org.ethereum.core.Block.class);
+        when(currentBlock.getNumber()).thenReturn(Long.valueOf(currentBlockNumber));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
         BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, currentBlock, receiptStore, blockStore);
