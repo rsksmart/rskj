@@ -159,18 +159,6 @@ public class EthereumImpl implements Ethereum {
     }
 
     @Override
-    public PeerClient getDefaultPeer() {
-
-        PeerClient peer = worldManager.getActivePeer();
-        if (peer == null) {
-
-            peer = new PeerClient();
-            worldManager.setActivePeer(peer);
-        }
-        return peer;
-    }
-
-    @Override
     public boolean isConnected() {
         return worldManager.getActivePeer() != null;
     }
