@@ -18,6 +18,8 @@
 
 package co.rsk.rpc;
 
+import co.rsk.mine.MinerClient;
+import co.rsk.mine.MinerServer;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.core.Rsk;
@@ -63,7 +65,7 @@ public class Web3RskImplTest {
         Mockito.when(blockchain.getBestBlock()).thenReturn(block);
         Mockito.when(rsk.getWorldManager()).thenReturn(worldManager);
 
-        Web3RskImpl web3 = new Web3RskImpl(rsk, Mockito.mock(Wallet.class));
+        Web3RskImpl web3 = new Web3RskImpl(rsk, Mockito.mock(MinerServer.class), Mockito.mock(MinerClient.class));
         web3.ext_dumpState();
     }
 

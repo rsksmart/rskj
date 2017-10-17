@@ -21,21 +21,23 @@ package org.ethereum.net.eth.handler;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.ethereum.listener.EthereumListener;
 import org.ethereum.config.SystemProperties;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.eth.EthVersion;
-import org.ethereum.net.eth.message.*;
+import org.ethereum.net.eth.message.EthMessage;
+import org.ethereum.net.eth.message.EthMessageCodes;
+import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.server.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.PostConstruct;
 import java.util.List;
 
 /**
@@ -48,15 +50,7 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
 
     private static final Logger logger = LoggerFactory.getLogger("net");
 
-    @Autowired
-    protected Blockchain blockchain;
-
-    @Autowired
-    protected SystemProperties config;
-
-    @Autowired
-    protected CompositeEthereumListener ethereumListener;
-
+    protected final CompositeEthereumListener ethereumListener;
     protected Channel channel;
 
     private MessageQueue msgQueue = null;
@@ -77,12 +71,9 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
 
     protected boolean processTransactions = false;
 
-    protected EthHandler(EthVersion version) {
+    protected EthHandler(Blockchain blockchain, SystemProperties config, CompositeEthereumListener ethereumListener, EthVersion version) {
+        this.ethereumListener = ethereumListener;
         this.version = version;
-    }
-
-    @PostConstruct
-    private void init() {
         maxHashesAsk = config.maxHashesAsk();
         bestBlock = blockchain.getBestBlock();
         ethereumListener.addListener(listener);

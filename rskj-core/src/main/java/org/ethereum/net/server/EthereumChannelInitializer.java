@@ -23,33 +23,21 @@ import io.netty.channel.*;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
-/**
- * @author Roman Mandeleil
- * @since 01.11.2014
- */
-@Component
-@Scope("prototype")
 public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChannel> {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
 
-    @Autowired
-    private ApplicationContext ctx;
-
-    @Autowired
-    ChannelManager channelManager;
-
-    private String remoteId;
+    private final String remoteId;
+    private final ChannelManager channelManager;
+    private final ChannelFactory channelFactory;
 
     private boolean peerDiscoveryMode = false;
 
-    public EthereumChannelInitializer(String remoteId) {
+    public EthereumChannelInitializer(String remoteId, ChannelManager channelManager, ChannelFactory channelFactory) {
         this.remoteId = remoteId;
+        this.channelManager = channelManager;
+        this.channelFactory = channelFactory;
     }
 
     @Override
@@ -66,7 +54,7 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
                 return;
             }
 
-            final Channel channel = ctx.getBean(Channel.class);
+            final Channel channel = channelFactory.newInstance();
             channel.init(ch.pipeline(), remoteId, peerDiscoveryMode);
 
             if(!peerDiscoveryMode) {
@@ -99,5 +87,9 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
 
     public void setPeerDiscoveryMode(boolean peerDiscoveryMode) {
         this.peerDiscoveryMode = peerDiscoveryMode;
+    }
+
+    public interface ChannelFactory {
+        Channel newInstance();
     }
 }
