@@ -222,10 +222,11 @@ public class BridgeSerializationUtils {
     // A federation is serialized as a list in the following order:
     // creation time (8 bytes)
     // # of signatures required (4 bytes)
-    // list of public keys -> [pubkey1, pubkey2, ..., pubkeyn],
-    // ordered in lexicographical ordered of each public key's hex representation
+    // list of public keys -> [pubkey1, pubkey2, ..., pubkeyn], sorted
+    // using the lexicographical order of the public keys (see BtcECKey.PUBKEY_COMPARATOR).
     public static byte[] serializeFederation(Federation federation) {
         List<byte[]> publicKeys = federation.getPublicKeys().stream()
+                .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .map(key -> key.getPubKey())
                 .collect(Collectors.toList());
         return RLP.encodeList(
