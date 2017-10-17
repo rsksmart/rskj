@@ -340,8 +340,8 @@ public class BlockChainImplTest {
     public void getBlocksByNumber() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.createChildBlock(genesis);
-        Block block1b = BlockGenerator.createChildBlock(genesis);
+        Block block1 = BlockGenerator.createChildBlock(genesis,0,2);
+        Block block1b = BlockGenerator.createChildBlock(genesis,0,1);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));

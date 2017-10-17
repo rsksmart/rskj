@@ -161,7 +161,7 @@ public class BlockchainTest {
         for (Block b : chain2)
             Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockchain.tryToConnect(b));
 
-        Block newblock = BlockGenerator.createChildBlock(chain2.get(chain2.size() - 1), 0, height*chain2Diff);
+        Block newblock = BlockGenerator.createChildBlock(chain2.get(chain2.size() - 1), 0, 2*height*chain2Diff);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(newblock));
 
         Assert.assertEquals(blockchain.getBestBlock(), newblock);
