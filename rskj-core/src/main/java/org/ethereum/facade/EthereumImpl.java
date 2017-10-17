@@ -159,11 +159,6 @@ public class EthereumImpl implements Ethereum {
     }
 
     @Override
-    public boolean isConnected() {
-        return worldManager.getActivePeer() != null;
-    }
-
-    @Override
     public Transaction createTransaction(BigInteger nonce,
                                          BigInteger gasPrice,
                                          BigInteger gas,

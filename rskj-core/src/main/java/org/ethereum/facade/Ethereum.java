@@ -55,8 +55,6 @@ public interface Ethereum {
 
     ImportResult addNewMinedBlock(Block block);
 
-    boolean isConnected();
-
     void close();
 
     /**

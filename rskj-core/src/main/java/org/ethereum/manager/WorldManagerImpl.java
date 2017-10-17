@@ -34,7 +34,6 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.client.PeerClient;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.slf4j.Logger;
@@ -64,9 +63,6 @@ public class WorldManagerImpl implements WorldManager {
 
     @Autowired
     private Repository repository;
-
-    @Autowired
-    private PeerClient activePeer;
 
     @Autowired
     private BlockStore blockStore;
@@ -131,14 +127,6 @@ public class WorldManagerImpl implements WorldManager {
 
     public Blockchain getBlockchain() {
         return blockchain;
-    }
-
-    public void setActivePeer(PeerClient peer) {
-        this.activePeer = peer;
-    }
-
-    public PeerClient getActivePeer() {
-        return activePeer;
     }
 
     public BlockStore getBlockStore() {

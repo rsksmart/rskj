@@ -30,7 +30,6 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.client.PeerClient;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.solidity.compiler.SolidityCompiler;
 
@@ -90,16 +89,6 @@ public class SimpleWorldManager implements WorldManager {
 
     public void setBlockchain(org.ethereum.core.Blockchain blockchain) {
         this.blockChain = blockchain;
-    }
-
-    @Override
-    public void setActivePeer(PeerClient peer) {
-
-    }
-
-    @Override
-    public PeerClient getActivePeer() {
-        return null;
     }
 
     @Override

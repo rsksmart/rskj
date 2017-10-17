@@ -77,11 +77,6 @@ public class SimpleEthereum implements Ethereum {
     }
 
     @Override
-    public boolean isConnected() {
-        return false;
-    }
-
-    @Override
     public void close() {
 
     }
