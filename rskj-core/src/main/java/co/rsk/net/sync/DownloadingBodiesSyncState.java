@@ -13,7 +13,6 @@ import java.util.Queue;
 public class DownloadingBodiesSyncState  extends BaseSyncState {
     private Queue<BlockHeader> pendingHeaders;
     private Map<Long, PendingBodyResponse> pendingBodyResponses = new HashMap<>();
-    ;
 
     public DownloadingBodiesSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation, Queue<BlockHeader> pendingHeaders) {
         super(syncInformation, syncEventsHandler, syncConfiguration);
@@ -32,11 +31,10 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
             return;
         }
 
-        // TODO(mc) validate transactions and uncles are part of this block (with header)
         // we know it exists because it was called from a SyncEvent
         BlockHeader header = pendingBodyResponses.get(message.getId()).header;
         Block block = Block.fromValidData(header, message.getTransactions(), message.getUncles());
-        syncInformation.saveBlock(block);
+        syncInformation.processBlock(block);
 
         if (!pendingHeaders.isEmpty()) {
             requestBody();

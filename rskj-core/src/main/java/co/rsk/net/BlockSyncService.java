@@ -75,15 +75,9 @@ public class BlockSyncService {
         this.nodeInformation = nodeInformation;
     }
 
-    public BlockProcessResult processBlock(MessageChannel sender, @Nullable Block block) {
-        if (block == null) {
-            logger.error("Block not received");
-            return new BlockProcessResult(false, null);
-        }
-
+    public BlockProcessResult processBlock(MessageChannel sender, @Nonnull Block block) {
         long bestBlockNumber = this.getBestBlockNumber();
         long blockNumber = block.getNumber();
-
 
         if ((++processedBlocksCounter % 200) == 0) {
             long minimal = store.minimalHeight();
@@ -97,17 +91,15 @@ public class BlockSyncService {
         }
 
         // On incoming block, refresh status if needed
-        if (this.hasBetterBlockToSync())
-            sendStatusToAll();
+        trySendStatusAll();
 
-        this.store.removeHeader(block.getHeader());
+        store.removeHeader(block.getHeader());
 
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
 
         unknownBlockHashes.remove(blockHash);
 
-        if (blockNumber > this.lastKnownBlockNumber)
-            this.lastKnownBlockNumber = blockNumber;
+        lastKnownBlockNumber = Math.max(blockNumber, lastKnownBlockNumber);
 
         if (ignoreAdvancedBlocks && blockNumber >= bestBlockNumber + 1000) {
             logger.trace("Block too advanced {} {} from {} ", blockNumber, block.getShortHash(), sender != null ? sender.getPeerNodeID().toString() : "N/A");
@@ -128,50 +120,39 @@ public class BlockSyncService {
 
         this.processMissingHashes(sender, unknownHashes);
 
+        trySaveStore(block);
+
         // We can't add the block if there are missing ancestors or uncles. Request the missing blocks to the sender.
         if (!unknownHashes.isEmpty()) {
             logger.trace("Missing hashes for block " + blockNumber + " " + block.getShortHash());
-
-            if (!this.store.hasBlock(block))
-                this.store.saveBlock(block);
-
             return new BlockProcessResult(false, null);
         }
 
-        if (!this.store.hasBlock(block))
-            this.store.saveBlock(block);
-
         logger.trace("Trying to add to blockchain");
 
-        BlockProcessResult result = new BlockProcessResult(true, connectBlocksAndDescendants(sender, BlockUtils.sortBlocksByNumber(this.getParentsNotInBlockchain(block))));
+        BlockProcessResult result = new BlockProcessResult(true,
+                connectBlocksAndDescendants(sender,
+                BlockUtils.sortBlocksByNumber(this.getParentsNotInBlockchain(block))));
 
         // After adding a long blockchain, refresh status if needed
-        if (this.hasBetterBlockToSync())
-            sendStatusToAll();
+        trySendStatusAll();
 
         return result;
     }
 
     public boolean isSyncingBlocks() {
         synchronized (syncLock) {
-            long last = this.getLastKnownBlockNumber();
-            long current = this.getBestBlockNumber();
-
-            if (last >= current + NBLOCKS_TO_SYNC) {
-                if (!syncing)
-                    nsyncs++;
-
-                syncing = true;
-
-                if (nsyncs > 1)
-                    return false;
-
-                return true;
+            if (!hasBetterBlockToSync()) {
+                syncing = false;
+                return false;
             }
 
-            syncing = false;
+            if (!syncing) {
+                nsyncs++;
+            }
+            syncing = true;
 
-            return false;
+            return nsyncs < 2;
         }
     }
 
@@ -180,10 +161,7 @@ public class BlockSyncService {
             long last = this.getLastKnownBlockNumber();
             long current = this.getBestBlockNumber();
 
-            if (last >= current + NBLOCKS_TO_SYNC)
-                return true;
-
-            return false;
+            return last >= current + NBLOCKS_TO_SYNC;
         }
     }
 
@@ -199,31 +177,45 @@ public class BlockSyncService {
         return this.blockchain.getBestBlock().getNumber();
     }
 
+    private void trySaveStore(@Nonnull Block block) {
+        if (!this.store.hasBlock(block))
+            this.store.saveBlock(block);
+    }
+
+    private void trySendStatusAll() {
+        if (this.hasBetterBlockToSync())
+            sendStatusToAll();
+    }
+
     // This does not send status to ALL anymore.
     // Should be renamed to something like sendStatusToSome.
     // Not renamed yet to avoid merging hell.
     public void sendStatusToAll() {
         synchronized (statusLock) {
-            if (this.channelManager == null)
+            if (this.channelManager == null) {
                 return;
+            }
 
             BlockChainStatus blockChainStatus = this.blockchain.getStatus();
 
-            if (blockChainStatus == null)
+            if (blockChainStatus == null) {
                 return;
+            }
 
             Block block = blockChainStatus.getBestBlock();
             BigInteger totalDifficulty = blockChainStatus.getTotalDifficulty();
 
-            if (block == null)
+            if (block == null) {
                 return;
+            }
 
             Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), totalDifficulty);
 
             long currentTime = System.currentTimeMillis();
 
-            if (currentTime - lastStatusTime < 1000)
+            if (currentTime - lastStatusTime < 1000) {
                 return;
+            }
 
             lastStatusTime = currentTime;
 
@@ -261,10 +253,11 @@ public class BlockSyncService {
 
     private Map<ByteArrayWrapper, ImportResult> connectBlocksAndDescendants(MessageChannel sender, List<Block> blocks) {
         Map<ByteArrayWrapper, ImportResult> connectionsResult = new HashMap<>();
-        while (!blocks.isEmpty()) {
+        List<Block> remainingBlocks = blocks;
+        while (!remainingBlocks.isEmpty()) {
             List<Block> connected = new ArrayList<>();
 
-            for (Block block : blocks) {
+            for (Block block : remainingBlocks) {
                 logger.trace("Trying to add block {} {}", block.getNumber(), block.getShortHash());
 
                 Set<ByteArrayWrapper> missingHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
@@ -284,7 +277,7 @@ public class BlockSyncService {
                 }
             }
 
-            blocks = this.store.getChildrenOf(connected);
+            remainingBlocks = this.store.getChildrenOf(connected);
         }
 
         return connectionsResult;
@@ -319,11 +312,11 @@ public class BlockSyncService {
     @Nonnull
     private List<Block> getParentsNotInBlockchain(@Nullable Block block) {
         final List<Block> blocks = new ArrayList<>();
+        Block currentBlock = block;
+        while (currentBlock != null && !blockchain.hasBlockInSomeBlockchain(currentBlock.getHash())) {
+            BlockUtils.addBlockToList(blocks, currentBlock);
 
-        while (block != null && !blockchain.hasBlockInSomeBlockchain(block.getHash())) {
-            BlockUtils.addBlockToList(blocks, block);
-
-            block = getBlockFromStoreOrBlockchain(block.getParentHash());
+            currentBlock = getBlockFromStoreOrBlockchain(currentBlock.getParentHash());
         }
 
         return blocks;

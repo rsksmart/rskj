@@ -2,8 +2,6 @@ package co.rsk.net.messages;
 
 import org.ethereum.util.RLP;
 
-import java.math.BigInteger;
-
 /**
  * Created by ajlopez on 23/08/2017.
  */

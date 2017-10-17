@@ -281,7 +281,7 @@ public class SyncProcessor implements SyncEventsHandler {
         }
 
         @Override
-        public void saveBlock(Block block) {
+        public void processBlock(Block block) {
             blockSyncService.processBlock(getSelectedPeerChannel(), block);
         }
 
@@ -299,10 +299,7 @@ public class SyncProcessor implements SyncEventsHandler {
             if (!blockParentValidationRule.validate(header, parentHeader))
                 return false;
 
-            if (!blockHeaderValidationRule.isValid(header))
-                return false;
-
-            return true;
+            return blockHeaderValidationRule.isValid(header);
         }
 
         @CheckForNull

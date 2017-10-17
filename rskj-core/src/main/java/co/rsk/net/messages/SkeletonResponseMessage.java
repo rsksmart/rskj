@@ -21,8 +21,6 @@ package co.rsk.net.messages;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.util.RLP;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 
 /**

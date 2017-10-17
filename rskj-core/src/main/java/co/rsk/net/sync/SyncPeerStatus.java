@@ -2,18 +2,10 @@ package co.rsk.net.sync;
 
 import co.rsk.net.MessageChannel;
 import co.rsk.net.Status;
-import co.rsk.net.messages.MessageType;
-import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.BlockIdentifier;
 
-import javax.annotation.Nonnull;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * Created by ajlopez on 29/08/2017.

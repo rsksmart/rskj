@@ -29,7 +29,7 @@ public class SimpleSyncInformation implements SyncInformation {
     }
 
     @Override
-    public void saveBlock(Block block) {
+    public void processBlock(Block block) {
 
     }
 

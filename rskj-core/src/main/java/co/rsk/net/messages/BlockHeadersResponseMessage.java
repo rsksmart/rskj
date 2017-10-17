@@ -3,7 +3,6 @@ package co.rsk.net.messages;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.util.RLP;
 
-import java.math.BigInteger;
 import java.util.List;
 
 /**

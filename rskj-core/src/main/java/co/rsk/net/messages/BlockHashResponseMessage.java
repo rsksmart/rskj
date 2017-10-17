@@ -20,8 +20,6 @@ package co.rsk.net.messages;
 
 import org.ethereum.util.RLP;
 
-import java.math.BigInteger;
-
 /**
  * Implements encoding of the BLOCK_HASH_RESPONSE message type.
  */
