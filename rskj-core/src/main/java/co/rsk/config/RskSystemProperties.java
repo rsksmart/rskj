@@ -54,8 +54,8 @@ public class RskSystemProperties extends SystemProperties {
 
     public static final int PD_DEFAULT_REFRESH_PERIOD = 60000;
     public static final int BLOCKS_FOR_PEERS_DEFAULT = 100;
-    private static final String MINER_COINBASE_ADDRESS_CONFIG = "miner.coinbase.address";
-    private static final String MINER_COINBASE_SECRET_CONFIG = "coinbase.secret";
+    private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
+    private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
@@ -76,9 +76,9 @@ public class RskSystemProperties extends SystemProperties {
             return account.getAddress();
         }
 
-        String coinbaseAddress = config.getString(MINER_COINBASE_ADDRESS_CONFIG);
+        String coinbaseAddress = config.getString(MINER_REWARD_ADDRESS_CONFIG);
         if (coinbaseAddress.length() != 64) {
-            throw new RskConfigurationException(MINER_COINBASE_ADDRESS_CONFIG + " needs to be Hex encoded and 32 byte length");
+            throw new RskConfigurationException(MINER_REWARD_ADDRESS_CONFIG + " needs to be Hex encoded and 32 byte length");
         }
 
         return Hex.decode(coinbaseAddress);
@@ -90,20 +90,22 @@ public class RskSystemProperties extends SystemProperties {
             return null;
         }
 
-        if (config.hasPath(MINER_COINBASE_SECRET_CONFIG)) {
-            if (config.hasPath(MINER_COINBASE_ADDRESS_CONFIG)) {
-                throw new RskConfigurationException("It is required to have only one of " + MINER_COINBASE_ADDRESS_CONFIG + " or " + MINER_COINBASE_SECRET_CONFIG);
-            }
-
-            String coinbaseSecret = config.getString(MINER_COINBASE_SECRET_CONFIG);
-            return new Account(ECKey.fromPrivate(HashUtil.sha3(coinbaseSecret.getBytes(StandardCharsets.UTF_8))));
+        if (config.hasPath(MINER_COINBASE_SECRET_CONFIG) &&
+                config.hasPath(MINER_REWARD_ADDRESS_CONFIG)) {
+            throw new RskConfigurationException("It is required to have only one of " + MINER_REWARD_ADDRESS_CONFIG + " or " + MINER_COINBASE_SECRET_CONFIG);
         }
 
-        if (!config.hasPath(MINER_COINBASE_ADDRESS_CONFIG)) {
-            throw new RskConfigurationException("It is required to either have " + MINER_COINBASE_ADDRESS_CONFIG + " or " + MINER_COINBASE_SECRET_CONFIG + " to use the miner server");
+        if (!config.hasPath(MINER_COINBASE_SECRET_CONFIG) &&
+                !config.hasPath(MINER_REWARD_ADDRESS_CONFIG)) {
+            throw new RskConfigurationException("It is required to either have " + MINER_REWARD_ADDRESS_CONFIG + " or " + MINER_COINBASE_SECRET_CONFIG + " to use the miner server");
         }
 
-        return null;
+        if (!config.hasPath(MINER_COINBASE_SECRET_CONFIG)) {
+            return null;
+        }
+
+        String coinbaseSecret = config.getString(MINER_COINBASE_SECRET_CONFIG);
+        return new Account(ECKey.fromPrivate(HashUtil.sha3(coinbaseSecret.getBytes(StandardCharsets.UTF_8))));
     }
 
     public boolean minerClientEnabled() {
