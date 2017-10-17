@@ -45,11 +45,7 @@ public class BridgeStorageProvider {
     private static final String BTC_TX_HASHES_ALREADY_PROCESSED_KEY = "btcTxHashesAP";
     private static final String RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY = "rskTxsWaitingFC";
     private static final String RSK_TXS_WAITING_FOR_SIGNATURES_KEY = "rskTxsWaitingFS";
-<<<<<<< HEAD
-=======
-    private static final String RSK_TXS_WAITING_FOR_BROADCASTING_KEY = "rskTxsWaitingFB";
     private static final String BRIDGE_ACTIVE_FEDERATION_KEY = "bridgeActiveFederation";
->>>>>>> Currently active federation now stored in the blockchain, non-working version
 
     private static final NetworkParameters networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 

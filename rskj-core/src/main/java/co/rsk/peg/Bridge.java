@@ -85,6 +85,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function IS_BTC_TX_HASH_ALREADY_PROCESSED = CallTransaction.Function.fromSignature("isBtcTxHashAlreadyProcessed", new String[]{"string"}, new String[]{"bool"});
     // Returns whether a given btc tx hash was already processed by the bridge
     public static final CallTransaction.Function GET_BTC_TX_HASH_PROCESSED_HEIGHT = CallTransaction.Function.fromSignature("getBtcTxHashProcessedHeight", new String[]{"string"}, new String[]{"int64"});
+    // Returns the number of federates in the currently active federation
+    public static final CallTransaction.Function GET_FEDERATION_SIZE = CallTransaction.Function.fromSignature("getFederationSize", new String[]{}, new String[]{"uint"});
+    // Returns the public key of the federator at the specified index
+    public static final CallTransaction.Function GET_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getFederatorPublicKey", new String[]{"uint"}, new String[]{"bytes65"});
+    // Returns the creation time of the federation
+    public static final CallTransaction.Function GET_FEDERATION_CREATION_TIME = CallTransaction.Function.fromSignature("getFederationCreationTime", new String[]{}, new String[]{"uint64"});
+
+    // Log topics used by the Bridge
     public static final DataWord RELEASE_BTC_TOPIC = new DataWord("release_btc_topic".getBytes(StandardCharsets.UTF_8));
 
     private static Map<CallTransaction.Function, Long> functionCostMap = new HashMap<>();
@@ -119,6 +127,9 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.functions.put(new ByteArrayWrapper(GET_MINIMUM_LOCK_TX_VALUE.encodeSignature()),   GET_MINIMUM_LOCK_TX_VALUE);
         this.functions.put(new ByteArrayWrapper(IS_BTC_TX_HASH_ALREADY_PROCESSED.encodeSignature()),  IS_BTC_TX_HASH_ALREADY_PROCESSED);
         this.functions.put(new ByteArrayWrapper(GET_BTC_TX_HASH_PROCESSED_HEIGHT.encodeSignature()),  GET_BTC_TX_HASH_PROCESSED_HEIGHT);
+        this.functions.put(new ByteArrayWrapper(GET_FEDERATION_SIZE.encodeSignature()), GET_FEDERATION_SIZE);
+        this.functions.put(new ByteArrayWrapper(GET_FEDERATOR_PUBLIC_KEY.encodeSignature()), GET_FEDERATOR_PUBLIC_KEY);
+        this.functions.put(new ByteArrayWrapper(GET_FEDERATION_CREATION_TIME.encodeSignature()), GET_FEDERATION_CREATION_TIME);
 
         bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
 
@@ -135,6 +146,9 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         functionCostMap.put(GET_MINIMUM_LOCK_TX_VALUE,             50011L);
         functionCostMap.put(IS_BTC_TX_HASH_ALREADY_PROCESSED,      50012L);
         functionCostMap.put(GET_BTC_TX_HASH_PROCESSED_HEIGHT,      50013L);
+        functionCostMap.put(GET_FEDERATION_SIZE,                   50014L);
+        functionCostMap.put(GET_FEDERATOR_PUBLIC_KEY,              50015L);
+        functionCostMap.put(GET_FEDERATION_CREATION_TIME,          50016L);
 
     }
 
@@ -477,6 +491,44 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         } catch (Exception e) {
             logger.warn("Exception in getBtcTxHashProcessedHeight", e);
             throw new RuntimeException("Exception in getBtcTxHashProcessedHeight", e);
+        }
+    }
+
+    public Integer getFederationSize(Object[] args)
+    {
+        logger.trace("getFederationSize");
+
+        try {
+            return bridgeSupport.getFederationSize();
+        } catch (IOException e) {
+            logger.warn("Exception in getFederationSize", e);
+            throw new RuntimeException("Exception in getFederationSize", e);
+        }
+    }
+
+    public byte[] getFederatorPublicKey(Object[] args)
+    {
+        logger.trace("getFederatorPublicKey");
+
+        try {
+            int index = (int) args[0];
+            return bridgeSupport.getFederatorPublicKey(index);
+        } catch (Exception e) {
+            logger.warn("Exception in getFederatorPublicKey", e);
+            throw new RuntimeException("Exception in getFederatorPublicKey", e);
+        }
+    }
+
+    public Long getFederationCreationTime(Object[] args)
+    {
+        logger.trace("getFederationCreationTime");
+
+        try {
+            // Return the creation time in milliseconds from the epoch
+            return bridgeSupport.getFederationCreationTime();
+        } catch (IOException e) {
+            logger.warn("Exception in getFederationCreationTime", e);
+            throw new RuntimeException("Exception in getFederationCreationTime", e);
         }
     }
 }
