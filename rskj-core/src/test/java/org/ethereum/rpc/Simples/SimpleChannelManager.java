@@ -94,8 +94,8 @@ public class SimpleChannelManager implements ChannelManager {
     @Override
     public Collection<Channel> getActivePeers() {
         Collection<Channel> channels = new ArrayList<Channel>();
-        channels.add(new Channel());
-        channels.add(new Channel());
+        channels.add(new Channel(null, null, null, null, null, null, null, null));
+        channels.add(new Channel(null, null, null, null, null, null, null, null));
         return channels;
     }
 
