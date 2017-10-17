@@ -36,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import static co.rsk.config.RskSystemProperties.CONFIG;
 
 /**
  * Created by ajlopez on 3/3/2016.
@@ -62,20 +61,12 @@ public class Start {
 
         CLIInterface.call(args);
 
-        if (!"".equals(CONFIG.blocksLoader())) {
-            CONFIG.setSyncEnabled(Boolean.FALSE);
-            CONFIG.setDiscoveryEnabled(Boolean.FALSE);
+        if (!"".equals(RskSystemProperties.CONFIG.blocksLoader())) {
+            RskSystemProperties.CONFIG.setSyncEnabled(Boolean.FALSE);
+            RskSystemProperties.CONFIG.setDiscoveryEnabled(Boolean.FALSE);
         }
 
-        Rsk rsk = RskFactory.createRsk(config);
-
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                ((ConfigurableApplicationContext) RskFactory.getContext()).close();
-            }
-        });
-        Metrics.registerNodeID(CONFIG.nodeId());
+        Metrics.registerNodeID(RskSystemProperties.CONFIG.nodeId());
 
         if (RskSystemProperties.CONFIG.simulateTxs()) {
             enableSimulateTxs(rsk);
