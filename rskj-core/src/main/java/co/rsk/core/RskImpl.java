@@ -18,7 +18,6 @@
 
 package co.rsk.core;
 
-import co.rsk.net.BlockStore;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.NodeMessageHandler;
@@ -60,9 +59,11 @@ public class RskImpl extends EthereumImpl implements Rsk {
                    CompositeEthereumListener compositeEthereumListener,
                    ReceiptStore receiptStore,
                    PeerScoringManager peerScoringManager,
+                   NodeBlockProcessor nodeBlockProcessor,
                    ApplicationContext ctx) {
         super(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore, ctx);
         this.peerScoringManager = peerScoringManager;
+        this.nodeBlockProcessor = nodeBlockProcessor;
     }
 
     @Override
@@ -89,9 +90,6 @@ public class RskImpl extends EthereumImpl implements Rsk {
 
     @Override
     public NodeBlockProcessor getNodeBlockProcessor() {
-        if (this.nodeBlockProcessor == null) {
-            this.nodeBlockProcessor = new NodeBlockProcessor(new BlockStore(), this.getWorldManager().getBlockchain(), this.getWorldManager());
-        }
         return this.nodeBlockProcessor;
     }
 

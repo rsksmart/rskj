@@ -22,6 +22,8 @@ import co.rsk.blocks.FileBlockPlayer;
 import co.rsk.blocks.FileBlockRecorder;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.BlockProcessResult;
+import co.rsk.net.BlockStore;
+import co.rsk.net.NodeBlockProcessor;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import org.ethereum.config.DefaultConfig;
@@ -29,6 +31,7 @@ import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
+import org.ethereum.manager.WorldManager;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.util.BuildInfo;
@@ -146,5 +149,10 @@ public class RskFactory {
 
         return new PeerScoringManager(nnodes, new PunishmentParameters(nodePunishmentDuration, nodePunishmentIncrement,
                 nodePunhishmentMaximumDuration), new PunishmentParameters(addressPunishmentDuration, addressPunishmentIncrement, addressPunishmentMaximunDuration));
+    }
+
+    @Bean
+    public NodeBlockProcessor getNodeBlockProcessor(WorldManager worldManager) {
+        return new NodeBlockProcessor(new BlockStore(), worldManager.getBlockchain(), worldManager);
     }
 }
