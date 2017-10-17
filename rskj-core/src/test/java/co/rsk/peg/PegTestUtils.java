@@ -58,15 +58,17 @@ public class PegTestUtils {
     }
 
     public static Script createBaseInputScriptThatSpendsFromTheFederation(BridgeConstants bridgeConstants) {
-        Script scriptPubKey = bridgeConstants.getFederationPubScript();
-        Script redeemScript = createBaseRedeemScriptThatSpendsFromTheFederation(bridgeConstants);
-        RedeemData redeemData = RedeemData.of(bridgeConstants.getFederatorPublicKeys(), redeemScript);
+        // Spending is from the genesis federation ATM
+        Federation federation = bridgeConstants.getGenesisFederation();
+        Script scriptPubKey = federation.getScript();
+        Script redeemScript = createBaseRedeemScriptThatSpendsFromTheFederation(federation);
+        RedeemData redeemData = RedeemData.of(federation.getPublicKeys(), redeemScript);
         Script inputScript = scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
         return inputScript;
     }
 
-    public static Script createBaseRedeemScriptThatSpendsFromTheFederation(BridgeConstants bridgeConstants) {
-        Script redeemScript = ScriptBuilder.createRedeemScript(bridgeConstants.getFederatorsRequiredToSign(), bridgeConstants.getFederatorPublicKeys());
+    public static Script createBaseRedeemScriptThatSpendsFromTheFederation(Federation federation) {
+        Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getPublicKeys());
         return redeemScript;
     }
 }

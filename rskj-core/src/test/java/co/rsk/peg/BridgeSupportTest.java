@@ -252,6 +252,8 @@ public class BridgeSupportTest {
 
     @Test
     public void callUpdateCollectionsFundsEnoughForJustTheSmallerTx() throws IOException, BlockStoreException {
+        // Federation is the genesis federation ATM
+        Federation federation = bridgeConstants.getGenesisFederation();
         BtcTransaction tx1 = new BtcTransaction(btcParams);
         tx1.addOutput(Coin.valueOf(30,0), new BtcECKey().toAddress(btcParams));
         BtcTransaction tx2 = new BtcTransaction(btcParams);
@@ -270,7 +272,14 @@ public class BridgeSupportTest {
         provider0.getRskTxsWaitingForConfirmations().put(hash1, tx1);
         provider0.getRskTxsWaitingForConfirmations().put(hash2, tx2);
         provider0.getRskTxsWaitingForConfirmations().put(hash3, tx3);
-        provider0.getBtcUTXOs().add(new UTXO(PegTestUtils.createHash(), 1, Coin.valueOf(12,0), 0, false, ScriptBuilder.createOutputScript(bridgeConstants.getFederationAddress())));
+        provider0.getBtcUTXOs().add(new UTXO(
+                PegTestUtils.createHash(),
+                1,
+                Coin.valueOf(12,0),
+                0,
+                false,
+                ScriptBuilder.createOutputScript(federation.getAddress())
+        ));
 
         provider0.save();
 
@@ -323,6 +332,8 @@ public class BridgeSupportTest {
 
     @Test
     public void callUpdateCollectionsThrowsCouldNotAdjustDownwards() throws IOException, BlockStoreException {
+        // Federation is the genesis federation ATM
+        Federation federation = bridgeConstants.getGenesisFederation();
         BtcTransaction tx1 = new BtcTransaction(btcParams);
         tx1.addOutput(Coin.valueOf(37500), new BtcECKey().toAddress(btcParams));
         Sha3Hash hash1 = PegTestUtils.createHash3();
@@ -333,7 +344,14 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
         provider0.getRskTxsWaitingForConfirmations().put(hash1, tx1);
-        provider0.getBtcUTXOs().add(new UTXO(PegTestUtils.createHash(), 1, Coin.valueOf(1000000), 0, false, ScriptBuilder.createOutputScript(bridgeConstants.getFederationAddress())));
+        provider0.getBtcUTXOs().add(new UTXO(
+                PegTestUtils.createHash(),
+                1,
+                Coin.valueOf(1000000),
+                0,
+                false,
+                ScriptBuilder.createOutputScript(federation.getAddress())
+        ));
 
         provider0.save();
 
@@ -376,6 +394,8 @@ public class BridgeSupportTest {
 
     @Test
     public void callUpdateCollectionsThrowsExceededMaxTransactionSize() throws IOException, BlockStoreException {
+        // Federation is the genesis federation ATM
+        Federation federation = bridgeConstants.getGenesisFederation();
         BtcTransaction tx1 = new BtcTransaction(btcParams);
         tx1.addOutput(Coin.COIN.multiply(7), new BtcECKey().toAddress(btcParams));
         Sha3Hash hash1 = PegTestUtils.createHash3();
@@ -387,7 +407,14 @@ public class BridgeSupportTest {
 
         provider0.getRskTxsWaitingForConfirmations().put(hash1, tx1);
         for (int i = 0; i < 2000; i++) {
-            provider0.getBtcUTXOs().add(new UTXO(PegTestUtils.createHash(), 1, Coin.CENT, 0, false, ScriptBuilder.createOutputScript(bridgeConstants.getFederationAddress())));
+            provider0.getBtcUTXOs().add(new UTXO(
+                    PegTestUtils.createHash(),
+                    1,
+                    Coin.CENT,
+                    0,
+                    false,
+                    ScriptBuilder.createOutputScript(federation.getAddress())
+            ));
         }
 
         provider0.save();
@@ -430,6 +457,8 @@ public class BridgeSupportTest {
 
     @Test
     public void callUpdateCollectionsChangeGetsOutOfDust() throws IOException, BlockStoreException {
+        // Federation is the genesis federation ATM
+        Federation federation = bridgeConstants.getGenesisFederation();
         BtcTransaction tx1 = new BtcTransaction(btcParams);
         tx1.addOutput(Coin.COIN, new BtcECKey().toAddress(btcParams));
         Sha3Hash hash1 = PegTestUtils.createHash3();
@@ -464,7 +493,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
         provider0.getRskTxsWaitingForConfirmations().put(hash1, tx1);
-        provider0.getBtcUTXOs().add(new UTXO(PegTestUtils.createHash(), 1, Coin.COIN.add(Coin.valueOf(100)), 0, false, ScriptBuilder.createOutputScript(bridgeConstants.getFederationAddress())));
+        provider0.getBtcUTXOs().add(new UTXO(PegTestUtils.createHash(), 1, Coin.COIN.add(Coin.valueOf(100)), 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
 
         provider0.save();
 
@@ -602,12 +631,14 @@ public class BridgeSupportTest {
 
     @Test
     public void addSignatureToMissingTransaction() throws Exception {
+        // Federation is the genesis federation ATM
+        Federation federation = bridgeConstants.getGenesisFederation();
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, (Block) null, null, null, Collections.emptyList());
 
-        bridgeSupport.addSignature(1, bridgeConstants.getFederatorPublicKeys().get(0), null, PegTestUtils.createHash().getBytes());
+        bridgeSupport.addSignature(1, federation.getPublicKeys().get(0), null, PegTestUtils.createHash().getBytes());
         bridgeSupport.save();
 
         track.commit();
@@ -685,6 +716,8 @@ public class BridgeSupportTest {
      * @param expectedResult "InvalidParameters", "PartiallySigned" or "FullySigned"
      */
     private void addSignatureFromValidFederator(List<BtcECKey> privateKeysToSignWith, int numberOfInputsToSign, boolean signatureCanonical, boolean signTwice, String expectedResult) throws Exception {
+        // Federation is the genesis federation ATM
+        Federation federation = bridgeConstants.getGenesisFederation();
         Repository repository = new RepositoryImpl();
 
         final Sha3Hash sha3Hash = PegTestUtils.createHash3();
@@ -693,7 +726,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
         BtcTransaction prevTx = new BtcTransaction(btcParams);
-        TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, bridgeConstants.getFederationAddress());
+        TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, federation.getAddress());
         prevTx.addOutput(prevOut);
         UTXO utxo = new UTXO(prevTx.getHash(), 0, prevOut.getValue(), 0, false, prevOut.getScriptPubKey());
         provider.getBtcUTXOs().add(utxo);
@@ -726,7 +759,7 @@ public class BridgeSupportTest {
         for (int i = 0; i < numberOfInputsToSign; i++) {
             derEncodedSigs.add(derEncodedSig);
         }
-        bridgeSupport.addSignature(1, bridgeConstants.getFederatorPublicKeys().get(0), derEncodedSigs, sha3Hash.getBytes());
+        bridgeSupport.addSignature(1, federation.getPublicKeys().get(0), derEncodedSigs, sha3Hash.getBytes());
         if (signTwice) {
             // Create another valid signature with the same private key
             ECDSASigner signer = new ECDSASigner();
@@ -734,7 +767,7 @@ public class BridgeSupportTest {
             signer.init(true, privKey);
             BigInteger[] components = signer.generateSignature(sighash.getBytes());
             BtcECKey.ECDSASignature sig2 = new BtcECKey.ECDSASignature(components[0], components[1]).toCanonicalised();
-            bridgeSupport.addSignature(1, bridgeConstants.getFederatorPublicKeys().get(0), Lists.newArrayList(sig2.encodeToDER()), sha3Hash.getBytes());
+            bridgeSupport.addSignature(1, federation.getPublicKeys().get(0), Lists.newArrayList(sig2.encodeToDER()), sha3Hash.getBytes());
         }
         if (privateKeysToSignWith.size()>1) {
             BtcECKey.ECDSASignature sig2 = privateKeysToSignWith.get(1).sign(sighash);
@@ -743,7 +776,7 @@ public class BridgeSupportTest {
             for (int i = 0; i < numberOfInputsToSign; i++) {
                 derEncodedSigs2.add(derEncodedSig2);
             }
-            bridgeSupport.addSignature(1, bridgeConstants.getFederatorPublicKeys().get(1), derEncodedSigs2, sha3Hash.getBytes());
+            bridgeSupport.addSignature(1, federation.getPublicKeys().get(1), derEncodedSigs2, sha3Hash.getBytes());
         }
         bridgeSupport.save();
         track.commit();
@@ -999,6 +1032,8 @@ public class BridgeSupportTest {
 
     @Test
     public void registerBtcTransactionReleaseTx() throws BlockStoreException, AddressFormatException, IOException {
+        // Federation is the genesis federation ATM
+        Federation federation = bridgeConstants.getGenesisFederation();
         Repository repository = new RepositoryImpl();
         repository.addBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
         Repository track = repository.startTracking();
@@ -1010,29 +1045,29 @@ public class BridgeSupportTest {
         BtcTransaction tx = new BtcTransaction(this.btcParams);
         Address address = ScriptBuilder.createP2SHOutputScript(2, Lists.newArrayList(new BtcECKey(), new BtcECKey(), new BtcECKey())).getToAddress(bridgeConstants.getBtcParams());
         tx.addOutput(Coin.COIN, address);
-        Address address2 = bridgeConstants.getFederationAddress();
+        Address address2 = federation.getAddress();
         tx.addOutput(Coin.COIN, address2);
 
         // Create previous tx
         BtcTransaction prevTx = new BtcTransaction(btcParams);
-        TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, bridgeConstants.getFederationAddress());
+        TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, federation.getAddress());
         prevTx.addOutput(prevOut);
         // Create tx input
         tx.addInput(prevOut);
         // Create tx input base script sig
         Script scriptSig = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(bridgeConstants);
         // Create sighash
-        Script redeemScript = ScriptBuilder.createRedeemScript(bridgeConstants.getFederatorsRequiredToSign(), bridgeConstants.getFederatorPublicKeys());
+        Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getPublicKeys());
         Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
         // Sign by federator 0
         BtcECKey.ECDSASignature sig0 = bridgeConstants.getFederatorPrivateKeys().get(0).sign(sighash);
         TransactionSignature txSig0 = new TransactionSignature(sig0, BtcTransaction.SigHash.ALL, false);
-        int sigIndex0 = scriptSig.getSigInsertionIndex(sighash, bridgeConstants.getFederatorPublicKeys().get(0));
+        int sigIndex0 = scriptSig.getSigInsertionIndex(sighash, federation.getPublicKeys().get(0));
         scriptSig = ScriptBuilder.updateScriptWithSignature(scriptSig, txSig0.encodeToBitcoin(), sigIndex0, 1, 1);
         // Sign by federator 1
         BtcECKey.ECDSASignature sig1 = bridgeConstants.getFederatorPrivateKeys().get(1).sign(sighash);
         TransactionSignature txSig1 = new TransactionSignature(sig1, BtcTransaction.SigHash.ALL, false);
-        int sigIndex1 = scriptSig.getSigInsertionIndex(sighash, bridgeConstants.getFederatorPublicKeys().get(1));
+        int sigIndex1 = scriptSig.getSigInsertionIndex(sighash, federation.getPublicKeys().get(1));
         scriptSig = ScriptBuilder.updateScriptWithSignature(scriptSig, txSig1.encodeToBitcoin(), sigIndex1, 1, 1);
         // Set scipt sign to tx input
         tx.getInput(0).setScriptSig(scriptSig);
@@ -1079,6 +1114,8 @@ public class BridgeSupportTest {
 
     @Test
     public void registerBtcTransactionLockTx() throws BlockStoreException, AddressFormatException, IOException {
+        // Federation is the genesis federation ATM
+        Federation federation = bridgeConstants.getGenesisFederation();
         Repository repository = new RepositoryImpl();
         repository.addBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
         Block executionBlock = Mockito.mock(Block.class);
@@ -1089,7 +1126,7 @@ public class BridgeSupportTest {
         BridgeConstants bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
 
         BtcTransaction tx = new BtcTransaction(this.btcParams);
-        Address address = bridgeConstants.getFederationAddress();
+        Address address = federation.getAddress();
         tx.addOutput(Coin.COIN, address);
         BtcECKey srcKey = new BtcECKey();
         tx.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey));
