@@ -57,18 +57,20 @@ public class BridgeUtilsTest {
 
     @Test
     public void testIsLock() throws Exception {
+        // Lock is for the genesis federation ATM
         NetworkParameters params = RegTestParams.get();
         Context btcContext = new Context(params);
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
-        Wallet wallet = new BridgeBtcWallet(btcContext, bridgeConstants);
-        wallet.addWatchedAddress(bridgeConstants.getFederationAddress(), bridgeConstants.getFederationAddressCreationTime());
-        Address address = bridgeConstants.getFederationAddress();
+        Federation federation = bridgeConstants.getGenesisFederation();
+        Wallet wallet = new BridgeBtcWallet(btcContext, federation);
+        wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime());
+        Address address = federation.getAddress();
 
         // Tx sending less than 1 btc to the federation, not a lock tx
         BtcTransaction tx = new BtcTransaction(params);
         tx.addOutput(Coin.CENT, address);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertFalse(BridgeUtils.isLockTx(tx, wallet, bridgeConstants));
+        assertFalse(BridgeUtils.isLockTx(tx, federation, wallet, bridgeConstants));
 
         // Tx sending 1 btc to the federation, but also spending from the federation addres, the typical release tx, not a lock tx.
         BtcTransaction tx2 = new BtcTransaction(params);
@@ -76,19 +78,19 @@ public class BridgeUtilsTest {
         TransactionInput txIn = new TransactionInput(params, tx2, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
         tx2.addInput(txIn);
         signWithTwoKeys(txIn, tx2, bridgeConstants);
-        assertFalse(BridgeUtils.isLockTx(tx2, wallet, bridgeConstants));
+        assertFalse(BridgeUtils.isLockTx(tx2, federation, wallet, bridgeConstants));
 
         // Tx sending 1 btc to the federation, is a lock tx
         BtcTransaction tx3 = new BtcTransaction(params);
         tx3.addOutput(Coin.COIN, address);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isLockTx(tx3, wallet, bridgeConstants));
+        assertTrue(BridgeUtils.isLockTx(tx3, federation, wallet, bridgeConstants));
 
         // Tx sending 50 btc to the federation, is a lock tx
         BtcTransaction tx4 = new BtcTransaction(params);
         tx4.addOutput(Coin.FIFTY_COINS, address);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isLockTx(tx4, wallet, bridgeConstants));
+        assertTrue(BridgeUtils.isLockTx(tx4, federation, wallet, bridgeConstants));
 
     }
 
@@ -117,7 +119,9 @@ public class BridgeUtilsTest {
         return privKey;
     }
     private void signWithTwoKeys(TransactionInput txIn, BtcTransaction tx, BridgeRegTestConstants bridgeConstants) {
-        Script redeemScript = PegTestUtils.createBaseRedeemScriptThatSpendsFromTheFederation(bridgeConstants);
+        // Signing is on the genesis federation ATM
+        Federation federation = bridgeConstants.getGenesisFederation();
+        Script redeemScript = PegTestUtils.createBaseRedeemScriptThatSpendsFromTheFederation(federation);
         Script inputScript = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(bridgeConstants);
         txIn.setScriptSig(inputScript);
 
@@ -129,8 +133,10 @@ public class BridgeUtilsTest {
     }
 
     private Script signWithOneKey(Script inputScript, Sha256Hash sighash, int federatorIndex, BridgeRegTestConstants bridgeConstants) {
+        // Federation is the genesis federation ATM
+        Federation federation = bridgeConstants.getGenesisFederation();
         BtcECKey federatorPrivKey = bridgeConstants.getFederatorPrivateKeys().get(federatorIndex);
-        BtcECKey federatorPublicKey = bridgeConstants.getFederatorPublicKeys().get(federatorIndex);
+        BtcECKey federatorPublicKey = federation.getPublicKeys().get(federatorIndex);
 
         BtcECKey.ECDSASignature sig = federatorPrivKey.sign(sighash);
         TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
