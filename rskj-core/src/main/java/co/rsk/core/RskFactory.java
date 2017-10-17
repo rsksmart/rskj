@@ -22,6 +22,8 @@ import co.rsk.blocks.FileBlockPlayer;
 import co.rsk.blocks.FileBlockRecorder;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.BlockProcessResult;
+import co.rsk.scoring.PeerScoringManager;
+import co.rsk.scoring.PunishmentParameters;
 import org.ethereum.config.DefaultConfig;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
@@ -35,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 /**
@@ -75,7 +78,6 @@ public class RskFactory {
     }
 
     public static Rsk createRsk(Class ... springConfigs) {
-
         if (logger.isInfoEnabled()) {
             StringBuilder versions = new StringBuilder();
             for (EthVersion v : EthVersion.supported()) {
@@ -128,5 +130,21 @@ public class RskFactory {
         }
 
         return rs;
+    }
+
+    @Bean
+    public PeerScoringManager getPeerScoringManager(SystemProperties config) {
+        int nnodes = config.scoringNumberOfNodes();
+
+        long nodePunishmentDuration = config.scoringNodesPunishmentDuration();
+        int nodePunishmentIncrement = config.scoringNodesPunishmentIncrement();
+        long nodePunhishmentMaximumDuration = config.scoringNodesPunishmentMaximumDuration();
+
+        long addressPunishmentDuration = config.scoringAddressesPunishmentDuration();
+        int addressPunishmentIncrement = config.scoringAddressesPunishmentIncrement();
+        long addressPunishmentMaximunDuration = config.scoringAddressesPunishmentMaximumDuration();
+
+        return new PeerScoringManager(nnodes, new PunishmentParameters(nodePunishmentDuration, nodePunishmentIncrement,
+                nodePunhishmentMaximumDuration), new PunishmentParameters(addressPunishmentDuration, addressPunishmentIncrement, addressPunishmentMaximunDuration));
     }
 }
