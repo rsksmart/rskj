@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 public final class Federation {
     private int numberOfSignaturesRequired;
     private List<BtcECKey> publicKeys;
+    // TODO: it would be (really) good to have the creation time as a proper date/time
     private long creationTime;
     private NetworkParameters btcParams;
     private Script redeemScript;
