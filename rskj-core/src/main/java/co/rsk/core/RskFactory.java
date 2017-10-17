@@ -26,7 +26,6 @@ import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
-import org.ethereum.config.DefaultConfig;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -36,6 +35,9 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.EthereumChannelInitializerFactory;
+import org.ethereum.core.PendingState;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.manager.AdminInfo;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.client.ConfigCapabilities;
@@ -53,103 +55,83 @@ import org.ethereum.net.server.EthereumChannelInitializer;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.net.server.PeerServerImpl;
 import org.ethereum.util.BuildInfo;
-import org.ethereum.util.FileUtil;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
 
-/**
- * Created by ajlopez on 3/3/2016.
- */
-@Component
+import java.util.stream.Collectors;
+
+@Configuration
+@ComponentScan("org.ethereum")
 public class RskFactory {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
-    private static ApplicationContext context;
 
-    private RskFactory(){
-    }
+    @Bean
+    public Rsk getRsk(WorldManager worldManager,
+                      AdminInfo adminInfo,
+                      ChannelManager channelManager,
+                      PeerServer peerServer,
+                      ProgramInvokeFactory programInvokeFactory,
+                      PendingState pendingState,
+                      SystemProperties config,
+                      CompositeEthereumListener compositeEthereumListener,
+                      ReceiptStore receiptStore,
+                      EthereumImpl.PeerClientFactory peerClientFactory,
+                      PeerScoringManager peerScoringManager,
+                      NodeBlockProcessor nodeBlockProcessor,
+                      NodeMessageHandler nodeMessageHandler) {
 
-    public static Rsk createRsk() {
-        return createRsk((Class) null);
-    }
-
-    public static ApplicationContext getContext(){
-        return context;
-    }
-
-    public static Rsk createRsk(Class userSpringConfig) {
-        return createRsk(RskSystemProperties.CONFIG, userSpringConfig);
-    }
-
-    public static Rsk createRsk(SystemProperties config, Class userSpringConfig) {
         logger.info("Running {},  core version: {}-{}", config.genesisInfo(), config.projectVersion(), config.projectVersionModifier());
         BuildInfo.printInfo();
 
-        if (config.databaseReset()){
-            FileUtil.recursiveDelete(config.databaseDir());
-            logger.info("Database reset done");
+        RskImpl rsk = new RskImpl(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory,
+                pendingState, config, compositeEthereumListener, receiptStore, peerScoringManager, nodeBlockProcessor, nodeMessageHandler, peerClientFactory);
+
+        rsk.init();
+        rsk.getBlockchain().setRsk(true);  //TODO: check if we can remove this field from org.ethereum.facade.Blockchain
+        if (logger.isInfoEnabled()) {
+            String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
+            logger.info("Capability eth version: [{}]", versions);
         }
-        return userSpringConfig == null ? createRsk(new Class[] {DefaultConfig.class}) :
-                createRsk(DefaultConfig.class, userSpringConfig);
+        if (RskSystemProperties.CONFIG.isBlocksEnabled()) {
+            setupRecorder(rsk, RskSystemProperties.CONFIG.blocksRecorder());
+            setupPlayer(rsk, RskSystemProperties.CONFIG.blocksPlayer());
+        }
+        return rsk;
     }
 
-    public static Rsk createRsk(Class ... springConfigs) {
-        if (logger.isInfoEnabled()) {
-            StringBuilder versions = new StringBuilder();
-            for (EthVersion v : EthVersion.supported()) {
-                versions.append(v.getCode()).append(", ");
-            }
-            versions.delete(versions.length() - 2, versions.length());
-            logger.info("capability eth version: [{}]", versions);
+    private void setupRecorder(RskImpl rsk, String blocksRecorderFileName) {
+        if (blocksRecorderFileName != null) {
+            rsk.getBlockchain().setBlockRecorder(new FileBlockRecorder(blocksRecorderFileName));
         }
+    }
 
-        context = new AnnotationConfigApplicationContext(springConfigs);
-        final Rsk rs = context.getBean(Rsk.class);
+    private void setupPlayer(RskImpl rsk, String blocksPlayerFileName) {
+        if (blocksPlayerFileName != null) {
+            new Thread(() -> {
+                try (FileBlockPlayer bplayer = new FileBlockPlayer(blocksPlayerFileName)) {
+                    rsk.setIsPlayingBlocks(true);
 
-        rs.getBlockchain().setRsk(true);
+                    Blockchain bc = rsk.getWorldManager().getBlockchain();
+                    ChannelManager cm = rsk.getChannelManager();
 
-        if (RskSystemProperties.CONFIG.isBlocksEnabled()) {
-            String recorder = RskSystemProperties.CONFIG.blocksRecorder();
-
-            if (recorder != null) {
-                String filename = recorder;
-
-                rs.getBlockchain().setBlockRecorder(new FileBlockRecorder(filename));
-            }
-
-            final String player = RskSystemProperties.CONFIG.blocksPlayer();
-
-            if (player != null) {
-                new Thread() {
-                    @Override
-                    public void run() {
-                        try (FileBlockPlayer bplayer = new FileBlockPlayer(player)) {
-                            ((RskImpl)rs).setIsPlayingBlocks(true);
-
-                            Blockchain bc = rs.getWorldManager().getBlockchain();
-                            ChannelManager cm = rs.getChannelManager();
-
-                            for (Block block = bplayer.readBlock(); block != null; block = bplayer.readBlock()) {
-                                ImportResult tryToConnectResult = bc.tryToConnect(block);
-                                if (BlockProcessResult.importOk(tryToConnectResult)) {
-                                    cm.broadcastBlock(block, null);
-                                }
-                            }
-                        } catch (Exception e) {
-                            logger.error("Error", e);
-                        } finally {
-                            ((RskImpl)rs).setIsPlayingBlocks(false);
+                    for (Block block = bplayer.readBlock(); block != null; block = bplayer.readBlock()) {
+                        ImportResult tryToConnectResult = bc.tryToConnect(block);
+                        if (BlockProcessResult.importOk(tryToConnectResult)) {
+                            cm.broadcastBlock(block, null);
                         }
                     }
-                }.start();
-            }
+                } catch (Exception e) {
+                    logger.error("Error", e);
+                } finally {
+                    rsk.setIsPlayingBlocks(false);
+                }
+            }).start();
         }
-
-        return rs;
     }
 
     @Bean

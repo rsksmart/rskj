@@ -44,7 +44,6 @@ import org.spongycastle.util.encoders.Hex;
 import org.springframework.util.concurrent.FutureAdapter;
 
 import javax.annotation.Nonnull;
-import javax.annotation.PostConstruct;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.util.List;
@@ -92,7 +91,6 @@ public class EthereumImpl implements Ethereum {
         this.peerClientFactory = peerClientFactory;
     }
 
-    @PostConstruct
     public void init() {
         if (config.listenPort() > 0) {
             Executors.newSingleThreadExecutor(runnable -> {
