@@ -34,32 +34,42 @@ import org.ethereum.config.DefaultConfig;
 import org.ethereum.rpc.JsonRpcNettyServer;
 import org.ethereum.rpc.JsonRpcWeb3ServerHandler;
 import org.ethereum.rpc.Web3;
+import org.ethereum.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.stereotype.Component;
 
-
-/**
- * Created by ajlopez on 3/3/2016.
- */
+@Component
 public class Start {
     private static Logger logger = LoggerFactory.getLogger("start");
 
-    private String[] args;
-    private Class config;
+    private Rsk rsk;
+    private UDPServer udpServer;
     private MinerServer minerServer;
     private MinerClient minerClient;
 
-    public Start(String[] args, Class nodeConfig) {
-        this.args = args;
-        this.config = nodeConfig;
-    }
-
     public static void main(String[] args) throws Exception {
-        Start start = new Start(args, DefaultConfig.class);
-        start.startNode();
+        if (RskSystemProperties.CONFIG.databaseReset()){ //FIXME: move this outside main
+            FileUtil.recursiveDelete(RskSystemProperties.CONFIG.databaseDir());
+            logger.info("Database reset done");
+        }
+        ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
+        Start start = ctx.getBean(Start.class);
+        start.startNode(args);
     }
 
-    public void startNode() throws Exception {
+    @Autowired
+    public Start(Rsk rsk, UDPServer udpServer, MinerServer minerServer, MinerClient minerClient) {
+        this.rsk = rsk;
+        this.udpServer = udpServer;
+        this.minerServer = minerServer;
+        this.minerClient = minerClient;
+    }
+
+    public void startNode(String[] args) throws Exception {
         logger.info("Starting RSK");
 
         CLIInterface.call(args);
@@ -105,7 +115,6 @@ public class Start {
     }
 
     private void enablePeerDiscovery() {
-        UDPServer udpServer = RskFactory.getContext().getBean(UDPServer.class);
         udpServer.start();
     }
 

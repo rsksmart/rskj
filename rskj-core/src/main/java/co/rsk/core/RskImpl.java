@@ -32,20 +32,14 @@ import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-/**
- * Created by ajlopez on 3/3/2016.
- */
-@Component
 public class RskImpl extends EthereumImpl implements Rsk {
+
     private boolean isplaying;
     private NodeBlockProcessor nodeBlockProcessor;
     private MessageHandler messageHandler;
     private PeerScoringManager peerScoringManager;
 
-    @Autowired
     public RskImpl(WorldManager worldManager,
                    AdminInfo adminInfo,
                    ChannelManager channelManager,
