@@ -39,7 +39,8 @@ public final class Federation {
     private List<BtcECKey> publicKeys;
     private long creationTime;
     private NetworkParameters btcParams;
-    private Script script;
+    private Script redeemScript;
+    private Script p2shScript;
     private Address address;
 
     public static Federation fromPrivateKeys(int numberOfSignaturesRequired, List<BtcECKey> privateKeys, long creationTime, NetworkParameters btcParams) {
@@ -55,7 +56,7 @@ public final class Federation {
         this.creationTime = creationTime;
         this.btcParams = btcParams;
         // Calculated once on-demand
-        this.script = null;
+        this.redeemScript = null;
         this.address = null;
     }
 
@@ -75,17 +76,25 @@ public final class Federation {
         return btcParams;
     }
 
-    public Script getScript() {
-        if (script == null) {
-            script = ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getPublicKeys());
+    public Script getRedeemScript() {
+        if (redeemScript == null) {
+            redeemScript = ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getPublicKeys());
         }
 
-        return script;
+        return redeemScript;
+    }
+
+    public Script getP2SHScript() {
+        if (p2shScript == null) {
+            p2shScript = ScriptBuilder.createP2SHOutputScript(getNumberOfSignaturesRequired(), getPublicKeys());
+        }
+
+        return p2shScript;
     }
 
     public Address getAddress() {
         if (address == null) {
-            address = Address.fromP2SHScript(btcParams, getScript());
+            address = Address.fromP2SHScript(btcParams, getP2SHScript());
         }
 
         return address;

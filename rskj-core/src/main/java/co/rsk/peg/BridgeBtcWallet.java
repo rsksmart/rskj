@@ -18,7 +18,6 @@
 
 package co.rsk.peg;
 
-import co.rsk.config.BridgeConstants;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -53,7 +52,7 @@ public class BridgeBtcWallet extends Wallet {
 //      I leave the code here just in case we decide to rollback to use the full original bitcoinj Wallet
 //      "keyChainGroupLock.lock();"
         try {
-            if (!Arrays.equals(federation.getScript().getPubKeyHash(), payToScriptHash)) {
+            if (!Arrays.equals(federation.getP2SHScript().getPubKeyHash(), payToScriptHash)) {
                 return null;
             }
             Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getPublicKeys());
