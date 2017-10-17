@@ -681,6 +681,37 @@ public class BridgeSupport {
     }
 
     /**
+     * Returns the federation's size
+     * @return the federation size
+     */
+    public Integer getFederationSize() throws IOException {
+        return getFederation().getNumberOfSignaturesRequired();
+    }
+
+    /**
+     * Returns the public key of the federation's federator at the given index
+     * @param index the federator's index (zero-based)
+     * @return the federator's public key
+     */
+    public byte[] getFederatorPublicKey(int index) throws IOException {
+        List<BtcECKey> publicKeys = getFederation().getPublicKeys();
+
+        if (index < 0 || index >= publicKeys.size()) {
+            throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and {}", publicKeys.size() - 1));
+        }
+
+        return publicKeys.get(index).getPubKey();
+    }
+
+    /**
+     * Returns the federation's creation time
+     * @return the federation creation time
+     */
+    public Long getFederationCreationTime() throws IOException {
+        return getFederation().getCreationTime();
+    }
+
+    /**
      * Returns the minimum amount of satoshis a user should send to the federation.
      * @return the minimum amount of satoshis a user should send to the federation.
      */
@@ -708,7 +739,5 @@ public class BridgeSupport {
     BtcBlockStore getBtcBlockStore() {
         return btcBlockStore;
     }
-
-
 }
 
