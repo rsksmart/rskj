@@ -24,6 +24,8 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.net.BlockProcessResult;
 import co.rsk.net.BlockStore;
 import co.rsk.net.NodeBlockProcessor;
+import co.rsk.net.NodeMessageHandler;
+import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import org.ethereum.config.DefaultConfig;
@@ -154,5 +156,12 @@ public class RskFactory {
     @Bean
     public NodeBlockProcessor getNodeBlockProcessor(WorldManager worldManager) {
         return new NodeBlockProcessor(new BlockStore(), worldManager.getBlockchain(), worldManager);
+    }
+
+    @Bean
+    public NodeMessageHandler getNodeMessageHandler(NodeBlockProcessor nodeBlockProcessor, ChannelManager channelManager, WorldManager worldManager, PeerScoringManager peerScoringManager) {
+        NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(nodeBlockProcessor, channelManager, worldManager.getPendingState(), new TxHandlerImpl(worldManager), peerScoringManager);
+        nodeMessageHandler.start();
+        return nodeMessageHandler;
     }
 }

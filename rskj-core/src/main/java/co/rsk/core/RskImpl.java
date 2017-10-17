@@ -21,7 +21,6 @@ package co.rsk.core;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.NodeMessageHandler;
-import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.PendingState;
@@ -45,7 +44,6 @@ public class RskImpl extends EthereumImpl implements Rsk {
     private boolean isplaying;
     private NodeBlockProcessor nodeBlockProcessor;
     private MessageHandler messageHandler;
-    private static final Object NMH_LOCK = new Object();
     private PeerScoringManager peerScoringManager;
 
     @Autowired
@@ -60,10 +58,12 @@ public class RskImpl extends EthereumImpl implements Rsk {
                    ReceiptStore receiptStore,
                    PeerScoringManager peerScoringManager,
                    NodeBlockProcessor nodeBlockProcessor,
+                   NodeMessageHandler messageHandler,
                    ApplicationContext ctx) {
         super(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore, ctx);
         this.peerScoringManager = peerScoringManager;
         this.nodeBlockProcessor = nodeBlockProcessor;
+        this.messageHandler = messageHandler;
     }
 
     @Override
@@ -73,18 +73,6 @@ public class RskImpl extends EthereumImpl implements Rsk {
 
     @Override
     public MessageHandler getMessageHandler() {
-        if (this.messageHandler == null) {
-            synchronized (NMH_LOCK) {
-                if (this.messageHandler == null) {
-                    this.nodeBlockProcessor = getNodeBlockProcessor(); // Initialize nodeBlockProcessor if not done already.
-                    NodeMessageHandler handler = new NodeMessageHandler(this.nodeBlockProcessor, getChannelManager(),
-                            getWorldManager().getPendingState(), new TxHandlerImpl(getWorldManager()), this.getPeerScoringManager());
-                    handler.start();
-                    this.messageHandler = handler;
-                }
-            }
-        }
-
         return this.messageHandler;
     }
 
