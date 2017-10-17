@@ -24,7 +24,9 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
-import org.apache.commons.lang3.tuple.Pair;
+import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.wallet.Wallet;
+import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
@@ -46,7 +48,6 @@ public class BridgeStorageProvider {
     private static final String BTC_TX_HASHES_ALREADY_PROCESSED_KEY = "btcTxHashesAP";
     private static final String RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY = "rskTxsWaitingFC";
     private static final String RSK_TXS_WAITING_FOR_SIGNATURES_KEY = "rskTxsWaitingFS";
-    private static final String RSK_TXS_WAITING_FOR_BROADCASTING_KEY = "rskTxsWaitingFB";
 
     private static final NetworkParameters networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
@@ -61,8 +62,6 @@ public class BridgeStorageProvider {
     private SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForConfirmations;
     // key = rsk tx hash, value = btc tx
     private SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForSignatures;
-    // key = rsk tx hash, value = btc tx and block when it was ready for broadcasting
-    private SortedMap<Sha3Hash, Pair<BtcTransaction, Long>> rskTxsWaitingForBroadcasting;
 
     private List<UTXO> btcUTXOs;
     private Wallet btcWallet;
@@ -193,36 +192,11 @@ public class BridgeStorageProvider {
         repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
 
-    public SortedMap<Sha3Hash, Pair<BtcTransaction, Long>> getRskTxsWaitingForBroadcasting() throws IOException {
-        if (rskTxsWaitingForBroadcasting != null)
-            return rskTxsWaitingForBroadcasting;
-
-        DataWord address = new DataWord(RSK_TXS_WAITING_FOR_BROADCASTING_KEY.getBytes(StandardCharsets.UTF_8));
-
-        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
-
-        rskTxsWaitingForBroadcasting = BridgeSerializationUtils.deserializePairMap(data, networkParameters);
-
-        return rskTxsWaitingForBroadcasting;
-    }
-
-    public void saveRskTxsWaitingForBroadcasting() {
-        if (rskTxsWaitingForBroadcasting == null)
-            return;
-
-        byte[] data = BridgeSerializationUtils.serializePairMap(rskTxsWaitingForBroadcasting);
-
-        DataWord address = new DataWord(RSK_TXS_WAITING_FOR_BROADCASTING_KEY.getBytes(StandardCharsets.UTF_8));
-
-        repository.addStorageBytes(Hex.decode(contractAddress), address, data);
-    }
-
     public void save() throws IOException {
         saveBtcUTXOs();
         saveBtcTxHashesAlreadyProcessed();
         saveRskTxsWaitingForConfirmations();
         saveRskTxsWaitingForSignatures();
-        saveRskTxsWaitingForBroadcasting();
     }
 
 
