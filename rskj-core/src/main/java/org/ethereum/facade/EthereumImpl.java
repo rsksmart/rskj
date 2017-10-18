@@ -103,13 +103,13 @@ public class EthereumImpl implements Ethereum {
     @PostConstruct
     public void init() {
         if (config.listenPort() > 0) {
-            Executors.newSingleThreadExecutor().submit(
-                    new Runnable() {
-                        public void run() {
-                            peerServer.start(config.listenPort());
-                        }
-                    }
-            );
+            Executors.newSingleThreadExecutor(runnable -> {
+                Thread thread = new Thread(runnable);
+                thread.setUncaughtExceptionHandler((exceptionThread, exception) -> {
+                    gLogger.error("Unable to start peer server", exception);
+                });
+                return thread;
+            }).execute(() -> peerServer.start(config.listenPort()));
         }
         compositeEthereumListener.addListener(gasPriceTracker);
 
