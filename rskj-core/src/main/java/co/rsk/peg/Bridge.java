@@ -541,7 +541,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         try {
             // Return the creation time in milliseconds from the epoch
-            return bridgeSupport.getFederationCreationTime();
+            return bridgeSupport.getFederationCreationTime().toEpochMilli();
         } catch (IOException e) {
             logger.warn("Exception in getFederationCreationTime", e);
             throw new RuntimeException("Exception in getFederationCreationTime", e);

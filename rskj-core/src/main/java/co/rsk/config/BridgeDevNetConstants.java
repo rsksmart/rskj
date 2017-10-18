@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
+import java.time.Instant;
 import java.util.List;
 
 
@@ -48,17 +49,17 @@ public class BridgeDevNetConstants extends BridgeConstants {
         );
 
         // To recreate the value use
-        // federationAddressCreationTime = new GregorianCalendar(2009,0,1).getTimeInMillis() / 1000;
+        // genesisFederationAddressCreatedAt = Instant.ofEpochMilli(new GregorianCalendar(2009,0,1).getTimeInMillis());
         // Currently set to:
         // Tue Aug 23 21:53:20 ART 2016
-        long genesisFederationAddressCreationTime = 1472000000l;
+        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1472000000l);
 
         // Expected federation address is:
         // 2NCEo1RdmGDj6MqiipD6DUSerSxKv79FNWX
         genesisFederation = new Federation(
                 2,
                 genesisFederationPublicKeys,
-                genesisFederationAddressCreationTime,
+                genesisFederationAddressCreatedAt,
                 getBtcParams()
         );
 

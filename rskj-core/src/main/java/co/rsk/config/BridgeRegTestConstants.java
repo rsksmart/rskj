@@ -28,7 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.util.GregorianCalendar;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 
@@ -52,11 +53,11 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         federatorPrivateKeys = Lists.newArrayList(federator0PrivateKey, federator1PrivateKey, federator2PrivateKey);
 
-        long genesisFederationCreationTime = new GregorianCalendar(2016,0,1).getTimeInMillis();
+        Instant genesisFederationCreatedAt = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
         genesisFederation = Federation.fromPrivateKeys(
                 2,
                 federatorPrivateKeys,
-                genesisFederationCreationTime,
+                genesisFederationCreatedAt,
                 getBtcParams()
         );
 
