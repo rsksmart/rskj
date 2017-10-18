@@ -685,6 +685,14 @@ public class BridgeSupport {
      * @return the federation size
      */
     public Integer getFederationSize() throws IOException {
+        return getFederation().getPublicKeys().size();
+    }
+
+    /**
+     * Returns the federation's minimum required signatures
+     * @return the federation minimum required signatures
+     */
+    public Integer getFederationThreshold() throws IOException {
         return getFederation().getNumberOfSignaturesRequired();
     }
 
