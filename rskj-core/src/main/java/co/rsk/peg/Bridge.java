@@ -87,8 +87,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_BTC_TX_HASH_PROCESSED_HEIGHT = CallTransaction.Function.fromSignature("getBtcTxHashProcessedHeight", new String[]{"string"}, new String[]{"int64"});
     // Returns the number of federates in the currently active federation
     public static final CallTransaction.Function GET_FEDERATION_SIZE = CallTransaction.Function.fromSignature("getFederationSize", new String[]{}, new String[]{"uint"});
+    // Returns the number of minimum required signatures from the currently active federation
+    public static final CallTransaction.Function GET_FEDERATION_THRESHOLD = CallTransaction.Function.fromSignature("getFederationThreshold", new String[]{}, new String[]{"uint"});
     // Returns the public key of the federator at the specified index
-    public static final CallTransaction.Function GET_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getFederatorPublicKey", new String[]{"uint"}, new String[]{"bytes65"});
+    public static final CallTransaction.Function GET_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getFederatorPublicKey", new String[]{"uint"}, new String[]{"bytes"});
     // Returns the creation time of the federation
     public static final CallTransaction.Function GET_FEDERATION_CREATION_TIME = CallTransaction.Function.fromSignature("getFederationCreationTime", new String[]{}, new String[]{"uint64"});
 
@@ -128,6 +130,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.functions.put(new ByteArrayWrapper(IS_BTC_TX_HASH_ALREADY_PROCESSED.encodeSignature()),  IS_BTC_TX_HASH_ALREADY_PROCESSED);
         this.functions.put(new ByteArrayWrapper(GET_BTC_TX_HASH_PROCESSED_HEIGHT.encodeSignature()),  GET_BTC_TX_HASH_PROCESSED_HEIGHT);
         this.functions.put(new ByteArrayWrapper(GET_FEDERATION_SIZE.encodeSignature()), GET_FEDERATION_SIZE);
+        this.functions.put(new ByteArrayWrapper(GET_FEDERATION_THRESHOLD.encodeSignature()), GET_FEDERATION_THRESHOLD);
         this.functions.put(new ByteArrayWrapper(GET_FEDERATOR_PUBLIC_KEY.encodeSignature()), GET_FEDERATOR_PUBLIC_KEY);
         this.functions.put(new ByteArrayWrapper(GET_FEDERATION_CREATION_TIME.encodeSignature()), GET_FEDERATION_CREATION_TIME);
 
@@ -147,8 +150,9 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         functionCostMap.put(IS_BTC_TX_HASH_ALREADY_PROCESSED,      50012L);
         functionCostMap.put(GET_BTC_TX_HASH_PROCESSED_HEIGHT,      50013L);
         functionCostMap.put(GET_FEDERATION_SIZE,                   50014L);
-        functionCostMap.put(GET_FEDERATOR_PUBLIC_KEY,              50015L);
-        functionCostMap.put(GET_FEDERATION_CREATION_TIME,          50016L);
+        functionCostMap.put(GET_FEDERATION_THRESHOLD,              50015L);
+        functionCostMap.put(GET_FEDERATOR_PUBLIC_KEY,              50016L);
+        functionCostMap.put(GET_FEDERATION_CREATION_TIME,          50017L);
 
     }
 
@@ -506,12 +510,24 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
+    public Integer getFederationThreshold(Object[] args)
+    {
+        logger.trace("getFederationThreshold");
+
+        try {
+            return bridgeSupport.getFederationThreshold();
+        } catch (IOException e) {
+            logger.warn("Exception in getFederationThreshold", e);
+            throw new RuntimeException("Exception in getFederationThreshold", e);
+        }
+    }
+
     public byte[] getFederatorPublicKey(Object[] args)
     {
         logger.trace("getFederatorPublicKey");
 
         try {
-            int index = (int) args[0];
+            int index = ((BigInteger) args[0]).intValue();
             return bridgeSupport.getFederatorPublicKey(index);
         } catch (Exception e) {
             logger.warn("Exception in getFederatorPublicKey", e);
