@@ -63,7 +63,7 @@ public class BridgeUtilsTest {
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         Federation federation = bridgeConstants.getGenesisFederation();
         Wallet wallet = new BridgeBtcWallet(btcContext, federation);
-        wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime());
+        wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli());
         Address address = federation.getAddress();
 
         // Tx sending less than 1 btc to the federation, not a lock tx

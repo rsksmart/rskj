@@ -29,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -230,7 +231,7 @@ public class BridgeSerializationUtils {
                 .map(key -> key.getPubKey())
                 .collect(Collectors.toList());
         return RLP.encodeList(
-                RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationTime())),
+                RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationTime().toEpochMilli())),
                 RLP.encodeBigInteger(BigInteger.valueOf(federation.getNumberOfSignaturesRequired())),
                 RLP.encodeList((byte[][])publicKeys.toArray())
         );
@@ -248,7 +249,7 @@ public class BridgeSerializationUtils {
         if (creationTimeBytes.length != 8) {
             throw new RuntimeException(String.format("Invalid serialized Federation creation time. Expected 8 bytes but got {}", creationTimeBytes.length));
         }
-        long creationTime = new BigInteger(creationTimeBytes).longValue();
+        Instant creationTime = Instant.ofEpochMilli(new BigInteger(creationTimeBytes).longValue());
 
         byte[] numberOfSignaturesRequiredBytes = rlpList.get(1).getRLPData();
         if (numberOfSignaturesRequiredBytes.length != 4) {
