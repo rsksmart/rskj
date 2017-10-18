@@ -24,6 +24,11 @@ package org.ethereum.vm;
  * Created by Sergio on 07/07/2016.
  */
 public class OpCodes {
+
+    private OpCodes() {
+
+    }
+
     /**
      * Halts execution (0x00)
      */
