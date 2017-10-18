@@ -50,6 +50,8 @@ import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.EthereumChannelInitializer;
+import org.ethereum.net.server.PeerServer;
+import org.ethereum.net.server.PeerServerImpl;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.FileUtil;
 import org.slf4j.Logger;
@@ -214,5 +216,12 @@ public class RskFactory {
                                                                                    SystemProperties config,
                                                                                    CompositeEthereumListener ethereumListener){
         return () -> new RskWireProtocol(peerScoringManager, messageHandler, blockchain, config, ethereumListener);
+    }
+
+    @Bean
+    public PeerServer getPeerServer(SystemProperties config,
+                                    EthereumListener ethereumListener,
+                                    EthereumChannelInitializerFactory ethereumChannelInitializerFactory) {
+        return new PeerServerImpl(config, ethereumListener, ethereumChannelInitializerFactory);
     }
 }
