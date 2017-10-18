@@ -48,6 +48,7 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.*;
 
 import static org.ethereum.util.BIUtil.toBI;
@@ -96,7 +97,7 @@ public class BridgeSupport {
         btcBlockStore = new RepositoryBlockStore(repository, contractAddress);
         if (btcBlockStore.getChainHead().getHeader().getHash().equals(btcParams.getGenesisBlock().getHash())) {
             // We are building the blockstore for the first time, so we have not set the checkpoints yet.
-            long time = getFederation().getCreationTime();
+            long time = getFederation().getCreationTime().toEpochMilli();
             InputStream checkpoints = this.getCheckPoints();
             if (time > 0 && checkpoints != null) {
                 CheckpointManager.checkpoint(btcParams, checkpoints, btcBlockStore, time);
@@ -715,7 +716,7 @@ public class BridgeSupport {
      * Returns the federation's creation time
      * @return the federation creation time
      */
-    public Long getFederationCreationTime() throws IOException {
+    public Instant getFederationCreationTime() throws IOException {
         return getFederation().getCreationTime();
     }
 
@@ -737,7 +738,7 @@ public class BridgeSupport {
             return new StoredBlock(genesis, genesis.getWork(), 0);
         }
         CheckpointManager manager = new CheckpointManager(bridgeConstants.getBtcParams(), checkpoints);
-        long time = getFederation().getCreationTime();
+        long time = getFederation().getCreationTime().toEpochMilli();
         // Go back 1 week to match CheckpointManager.checkpoint() behaviour
         time -= 86400 * 7;
         return manager.getCheckpointBefore(time);

@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,21 +38,20 @@ import java.util.stream.Collectors;
 public final class Federation {
     private int numberOfSignaturesRequired;
     private List<BtcECKey> publicKeys;
-    // TODO: it would be (really) good to have the creation time as a proper date/time
-    private long creationTime;
+    private Instant creationTime;
     private NetworkParameters btcParams;
     private Script redeemScript;
     private Script p2shScript;
     private Address address;
 
-    public static Federation fromPrivateKeys(int numberOfSignaturesRequired, List<BtcECKey> privateKeys, long creationTime, NetworkParameters btcParams) {
+    public static Federation fromPrivateKeys(int numberOfSignaturesRequired, List<BtcECKey> privateKeys, Instant creationTime, NetworkParameters btcParams) {
         List<BtcECKey> publicKeys = privateKeys.stream()
                 .map(key -> BtcECKey.fromPublicOnly(key.getPubKey()))
                 .collect(Collectors.toList());
         return new Federation(numberOfSignaturesRequired, publicKeys, creationTime, btcParams);
     }
 
-    public Federation(int numberOfSignaturesRequired, List<BtcECKey> publicKeys, long creationTime, NetworkParameters btcParams) {
+    public Federation(int numberOfSignaturesRequired, List<BtcECKey> publicKeys, Instant creationTime, NetworkParameters btcParams) {
         this.numberOfSignaturesRequired = numberOfSignaturesRequired;
         this.publicKeys = Collections.unmodifiableList(publicKeys);
         this.creationTime = creationTime;
@@ -69,7 +69,7 @@ public final class Federation {
         return this.numberOfSignaturesRequired;
     }
 
-    public long getCreationTime() {
+    public Instant getCreationTime() {
         return creationTime;
     }
 

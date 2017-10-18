@@ -113,7 +113,7 @@ public class BridgeStorageProvider {
 
         btcWallet = new BridgeBtcWallet(btcContext, federation);
         btcWallet.setUTXOProvider(utxoProvider);
-        btcWallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime());
+        btcWallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli());
         btcWallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
 //      Oscar: Comment out these setting since we now have our own bitcoinj wallet and we disabled these features
 //      I leave the code here just in case we decide to rollback to use the full original bitcoinj Wallet
