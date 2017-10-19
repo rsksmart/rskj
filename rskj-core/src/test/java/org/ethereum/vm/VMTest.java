@@ -2980,7 +2980,7 @@ public class VMTest {
 
     @Test
     public void decompileDupnSwapn() {
-        String code = "6060a961aa62";
+        String code = "6060a861a962";
         String result = Program.stringifyMultiline(Hex.decode(code));
         assertTrue(result.contains("PUSH1 0x60 (96)"));
         assertTrue(result.contains("DUPN 0x61 (97)"));
@@ -2989,7 +2989,7 @@ public class VMTest {
 
     @Test
     public void decompileTxindex() {
-        String code = "ab";
+        String code = "aa";
         String result = Program.stringifyMultiline(Hex.decode(code));
         assertTrue(result.contains("TXINDEX"));
     }

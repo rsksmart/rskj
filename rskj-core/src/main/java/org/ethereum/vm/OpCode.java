@@ -565,24 +565,24 @@ public enum OpCode {
 
 
     /**
-     * CODEREPLACE
-     */
-    CODEREPLACE(0xa8, 2, 1, SPECIAL_TIER,1),   //       [in_size] [in_offs] CODEREPLACE -> success
-
-    /**
      * DUPN
      */
-    DUPN(0xa9, 1, 2, VERY_LOW_TIER),
+    DUPN(0xa8, 1, 2, VERY_LOW_TIER),
 
     /**
      * SWAPN
      */
-    SWAPN(0xaa, 2, 2, VERY_LOW_TIER),
+    SWAPN(0xa9, 2, 2, VERY_LOW_TIER),
 
     /**
      * TXINDEX
      */
-    TXINDEX(0xab, 0, 1, BASE_TIER),
+    TXINDEX(0xaa, 0, 1, BASE_TIER),
+
+    /**
+     * CODEREPLACE
+     */
+    CODEREPLACE(0xab, 2, 1, SPECIAL_TIER,1),   //       [in_size] [in_offs] CODEREPLACE -> success
 
     /*  System operations   */
 
@@ -626,7 +626,7 @@ public enum OpCode {
      */
     SUICIDE(0xff, 1, 0, ZERO_TIER);
 
-    public final byte opcode;
+    public final byte opCode;
     private final int require;
     private final Tier tier;
     private final int ret;
@@ -637,20 +637,20 @@ public enum OpCode {
     private static final OpCode[] intToTypeFastMap = new OpCode[256]; //
     static {
         for (OpCode type : OpCode.values()) {
-            if (type.opcode<0)
-                intToTypeFastMap[256+type.opcode]=type;
+            if (type.opCode<0)
+                intToTypeFastMap[256+type.opCode]=type;
             else
-                intToTypeFastMap[type.opcode]=type;
+                intToTypeFastMap[type.opCode]=type;
 
-            intToTypeMap.put(type.opcode, type);
-            stringToByteMap.put(type.name(), type.opcode);
+            intToTypeMap.put(type.opCode, type);
+            stringToByteMap.put(type.name(), type.opCode);
         }
     }
 
     //require = required elements
     //return = required return
     private OpCode(int op, int require, int ret, Tier tier) {
-        this.opcode = (byte) op;
+        this.opCode = (byte) op;
         this.require = require;
         this.tier = tier;
         this.ret = ret;
@@ -658,14 +658,15 @@ public enum OpCode {
     }
 
     private OpCode(int op, int require, int ret, Tier tier, int scriptVersion) {
-        this.opcode = (byte) op;
+        this.opCode = (byte) op;
         this.require = require;
         this.tier = tier;
         this.ret = ret;
         this.scriptVersion = scriptVersion;
     }
+
     public byte val() {
-        return opcode;
+        return opCode;
     }
 
     /**
@@ -682,7 +683,7 @@ public enum OpCode {
     }
 
     public int asInt() {
-        return opcode;
+        return opCode;
     }
 
     public int scriptVersion() { return scriptVersion; }
