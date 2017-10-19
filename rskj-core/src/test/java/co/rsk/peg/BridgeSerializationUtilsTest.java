@@ -18,9 +18,12 @@
 
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import org.apache.commons.codec.binary.Hex;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,8 +32,11 @@ import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.spongycastle.util.encoders.Hex;
+import sun.nio.ch.Net;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
@@ -54,7 +60,7 @@ public class BridgeSerializationUtilsTest {
         sample.put(Sha256Hash.wrap(charNTimes('c', 64)), 4L);
 
         byte[] result = BridgeSerializationUtils.serializeMapOfHashesToLong(sample);
-        String hexResult = Hex.encodeHexString(result);
+        String hexResult = Hex.toHexString(result);
         StringBuilder expectedBuilder = new StringBuilder();
         char[] sorted = new char[]{'a','b','c','d'};
         for (char c : sorted) {
@@ -62,7 +68,7 @@ public class BridgeSerializationUtilsTest {
             expectedBuilder.append("dd");
             expectedBuilder.append(key);
             expectedBuilder.append("ff");
-            expectedBuilder.append(Hex.encodeHexString(BigInteger.valueOf(sample.get(Sha256Hash.wrap(key))).toByteArray()));
+            expectedBuilder.append(Hex.toHexString(BigInteger.valueOf(sample.get(Sha256Hash.wrap(key))).toByteArray()));
         }
         assertEquals(expectedBuilder.toString(), hexResult);
     }
@@ -77,7 +83,7 @@ public class BridgeSerializationUtilsTest {
     @Test
     public void desserializeMapOfHashesToLong_nonEmpty() throws Exception {
         PowerMockito.mockStatic(RLP.class);
-        mock_RLP_decode2();
+        mock_RLP_decode2_forMapOfHashesToLong();
 
         byte[] sample = new byte[]{(byte)'b', 7, (byte)'d', 76, (byte) 'a', 123};
         Map<Sha256Hash, Long> result = BridgeSerializationUtils.deserializeMapOfHashesToLong(sample);
@@ -91,13 +97,190 @@ public class BridgeSerializationUtilsTest {
     @Test
     public void desserializeMapOfHashesToLong_nonEmptyOddSize() throws Exception {
         PowerMockito.mockStatic(RLP.class);
-        mock_RLP_decode2();
+        mock_RLP_decode2_forMapOfHashesToLong();
 
         boolean thrown = false;
         try {
             byte[] sample = new byte[]{(byte)'b', 7, (byte)'d', 76, (byte) 'a'};
             BridgeSerializationUtils.deserializeMapOfHashesToLong(sample);
         } catch (RuntimeException e) {
+            thrown = true;
+        }
+        Assert.assertTrue(thrown);
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void serializeFederation() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_encodeBigInteger();
+        mock_RLP_encodeList();
+
+        byte[][] publicKeyBytes = new byte[][]{
+                BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
+        };
+
+        Federation federation = new Federation(
+            3,
+            Arrays.asList(new BtcECKey[]{
+                    BtcECKey.fromPublicOnly(publicKeyBytes[0]),
+                    BtcECKey.fromPublicOnly(publicKeyBytes[1]),
+                    BtcECKey.fromPublicOnly(publicKeyBytes[2]),
+                    BtcECKey.fromPublicOnly(publicKeyBytes[3]),
+                    BtcECKey.fromPublicOnly(publicKeyBytes[4]),
+                    BtcECKey.fromPublicOnly(publicKeyBytes[5]),
+            }),
+            Instant.ofEpochMilli(0xabcdef), //
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+
+        byte[] result = BridgeSerializationUtils.serializeFederation(federation);
+        StringBuilder expectedBuilder = new StringBuilder();
+        expectedBuilder.append("ff00abcdef"); // Creation time
+        expectedBuilder.append("ff03"); // Number of sinatures required
+        federation.getPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
+            expectedBuilder.append(Hex.toHexString(key.getPubKey()));
+        });
+        byte[] expected = Hex.decode(expectedBuilder.toString());
+        Assert.assertTrue(Arrays.equals(expected, result));
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void desserializeFederation_ok() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_decode2_forFederation();
+
+        byte[][] publicKeyBytes = new byte[][]{
+            BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey(),
+            BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
+        };
+
+        StringBuilder sampleBuilder = new StringBuilder();
+        sampleBuilder.append("03"); // Length of outer list
+        sampleBuilder.append("02"); // Length of first element
+        sampleBuilder.append("01"); // Length of second element
+        sampleBuilder.append("cd"); // Length of third element
+        sampleBuilder.append("1388"); // First element (creation date -> 5000 milliseconds from epoch)
+        sampleBuilder.append("03"); // Second element (# of signatures required - 3)
+        sampleBuilder.append("06212121212121"); // Third element (inner list, public keys). 6 elements of 33 bytes (0x21 bytes) each.
+        for (int i = 0; i < publicKeyBytes.length; i++) {
+            sampleBuilder.append(Hex.toHexString(publicKeyBytes[i]));
+        }
+        byte[] sample = Hex.decode(sampleBuilder.toString());
+
+        Federation deserializedFederation = BridgeSerializationUtils.deserializeFederation(sample, new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
+
+        Assert.assertEquals(5000, deserializedFederation.getCreationTime().toEpochMilli());
+        Assert.assertEquals(3, deserializedFederation.getNumberOfSignaturesRequired());
+        Assert.assertEquals(6, deserializedFederation.getPublicKeys().size());
+        for (int i = 0; i < 6; i++) {
+            Assert.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedFederation.getPublicKeys().get(i).getPubKey()));
+        }
+        Assert.assertEquals(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), deserializedFederation.getBtcParams());
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void desserializeFederation_wrongListSize() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_decode2_forFederation();
+
+        StringBuilder sampleBuilder = new StringBuilder();
+        sampleBuilder.append("02"); // Length of outer list
+        sampleBuilder.append("02"); // Length of first element
+        sampleBuilder.append("01"); // Length of second element
+        sampleBuilder.append("cd"); // Length of third element
+        sampleBuilder.append("1388"); // First element (creation date -> 5000 milliseconds from epoch)
+        sampleBuilder.append("03"); // Second element (# of signatures required - 3)
+        byte[] sample = Hex.decode(sampleBuilder.toString());
+
+        boolean thrown = false;
+        try {
+            Federation deserializedFederation = BridgeSerializationUtils.deserializeFederation(sample, new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
+        } catch (Exception e) {
+            Assert.assertTrue(e.getMessage().contains("Expected 3 elements "));
+            thrown = true;
+        }
+        Assert.assertTrue(thrown);
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void desserializeFederation_wrongNumberOfSignatures() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_decode2_forFederation();
+
+        byte[][] publicKeyBytes = new byte[][]{
+                BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
+        };
+
+        StringBuilder sampleBuilder = new StringBuilder();
+        sampleBuilder.append("03"); // Length of outer list
+        sampleBuilder.append("02"); // Length of first element
+        sampleBuilder.append("01"); // Length of second element
+        sampleBuilder.append("cd"); // Length of third element
+        sampleBuilder.append("1388"); // First element (creation date -> 5000 milliseconds from epoch)
+        sampleBuilder.append("00"); // Second element (# of signatures required -> zero, WRONG value, should throw exception)
+        sampleBuilder.append("06212121212121"); // Third element (inner list, public keys). 6 elements of 33 bytes (0x21 bytes) each.
+        for (int i = 0; i < publicKeyBytes.length; i++) {
+            sampleBuilder.append(Hex.toHexString(publicKeyBytes[i]));
+        }
+        byte[] sample = Hex.decode(sampleBuilder.toString());
+
+        boolean thrown = false;
+        try {
+            Federation deserializedFederation = BridgeSerializationUtils.deserializeFederation(sample, new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
+        } catch (Exception e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid serialized Federation # of signatures required"));
+            thrown = true;
+        }
+        Assert.assertTrue(thrown);
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void desserializeFederation_wrongNumberOfPublicKeys() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_decode2_forFederation();
+
+        byte[][] publicKeyBytes = new byte[][]{
+                BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
+        };
+
+        StringBuilder sampleBuilder = new StringBuilder();
+        sampleBuilder.append("03"); // Length of outer list
+        sampleBuilder.append("02"); // Length of first element
+        sampleBuilder.append("01"); // Length of second element
+        sampleBuilder.append("cd"); // Length of third element
+        sampleBuilder.append("1388"); // First element (creation date -> 5000 milliseconds from epoch)
+        sampleBuilder.append("03"); // Second element (# of signatures required -> 3)
+        sampleBuilder.append("022121"); // Third element (inner list, public keys). 2 elements of 33 bytes (0x21 bytes) each.
+        for (int i = 0; i < publicKeyBytes.length; i++) {
+            sampleBuilder.append(Hex.toHexString(publicKeyBytes[i]));
+        }
+        byte[] sample = Hex.decode(sampleBuilder.toString());
+
+        boolean thrown = false;
+        try {
+            Federation deserializedFederation = BridgeSerializationUtils.deserializeFederation(sample, new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
+        } catch (Exception e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid serialized Federation # of public keys"));
             thrown = true;
         }
         Assert.assertTrue(thrown);
@@ -138,8 +321,11 @@ public class BridgeSerializationUtilsTest {
         });
     }
 
-    private void mock_RLP_decode2() {
-        // Identity prepending byte '0xdd'
+    private void mock_RLP_decode2_forMapOfHashesToLong() {
+        // Plain list with first elements being the size
+        // Sizes are 1 byte long
+        // e.g., for list [a,b,c] and a.size = 5, b.size = 7, c.size = 4, then:
+        // 03050704[a bytes][b bytes][c bytes]
         PowerMockito.when(RLP.decode2(any(byte[].class))).then((InvocationOnMock invocation) -> {
             RLPList result = new RLPList();
             byte[] arg = invocation.getArgumentAt(0, byte[].class);
@@ -148,7 +334,7 @@ public class BridgeSerializationUtilsTest {
             for (int i = 0; i < arg.length; i++) {
                 byte[] element;
                 if (i%2 == 0) {
-                    element = Hex.decodeHex(charNTimes((char) arg[i], 64).toCharArray());
+                    element = Hex.decode(charNTimes((char) arg[i], 64));
                 } else {
                     element = new byte[]{arg[i]};
                 }
@@ -156,6 +342,36 @@ public class BridgeSerializationUtilsTest {
             }
             return new ArrayList<>(Arrays.asList(result));
         });
+    }
+
+    private void mock_RLP_decode2_forFederation() {
+        PowerMockito.when(RLP.decode2(any(byte[].class))).then((InvocationOnMock invocation) -> {
+            byte[] bytes = invocation.getArgumentAt(0, byte[].class);
+            // Two decodes: "outer" list and "inner" list (last element of the "outer" list)
+            RLPList outerList = decodeListForFederation(bytes);
+            if (outerList.size() > 2) {
+                byte[] lastElementBytes = outerList.get(outerList.size() - 1).getRLPData();
+                RLPList innerList = decodeListForFederation(lastElementBytes);
+                outerList.set(outerList.size() - 1, innerList);
+            }
+            return new ArrayList<>(Arrays.asList(outerList));
+        });
+    }
+
+    private RLPList decodeListForFederation(byte[] bytes) {
+        // First byte => length of list (n)
+        // Subsequent n bytes => length of each of the n elements
+        // Subsequent bytes => elements
+        RLPList decoded = new RLPList();
+        int size = Byte.toUnsignedInt(bytes[0]);
+        int offset = size+1;
+        for (int i = 1; i <= size; i++) {
+            int elementSize = Byte.toUnsignedInt(bytes[i]);
+            byte[] element = Arrays.copyOfRange(bytes, offset, offset+elementSize);
+            decoded.add(() -> element);
+            offset += elementSize;
+        }
+        return decoded;
     }
 
     private String charNTimes(char c, int n) {

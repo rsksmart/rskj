@@ -58,6 +58,7 @@ public final class Federation {
         this.btcParams = btcParams;
         // Calculated once on-demand
         this.redeemScript = null;
+        this.p2shScript = null;
         this.address = null;
     }
 
@@ -103,6 +104,6 @@ public final class Federation {
 
     @Override
     public String toString() {
-        return getAddress().toString();
+        return String.format("%d of %d signatures federation", numberOfSignaturesRequired, publicKeys.size());
     }
 }
