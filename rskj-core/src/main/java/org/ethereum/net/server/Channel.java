@@ -30,29 +30,26 @@ import org.ethereum.core.BlockWrapper;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.MessageQueue;
+import org.ethereum.net.NodeManager;
+import org.ethereum.net.NodeStatistics;
 import org.ethereum.net.client.Capability;
+import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.handler.Eth;
 import org.ethereum.net.eth.handler.EthAdapter;
 import org.ethereum.net.eth.handler.EthHandler;
 import org.ethereum.net.eth.handler.EthHandlerFactory;
-import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.Eth62MessageFactory;
 import org.ethereum.net.eth.message.EthMessage;
-import org.ethereum.net.message.ReasonCode;
-import org.ethereum.net.rlpx.*;
-import org.ethereum.sync.SyncStatistics;
 import org.ethereum.net.message.MessageFactory;
+import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.message.StaticMessages;
 import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.p2p.P2pMessageFactory;
-import org.ethereum.net.NodeManager;
-import org.ethereum.net.NodeStatistics;
+import org.ethereum.net.rlpx.*;
+import org.ethereum.sync.SyncStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -60,39 +57,18 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author Roman Mandeleil
- * @since 01.11.2014
- */
-@Component
-@Scope("prototype")
 public class Channel {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
 
-    @Autowired
-    SystemProperties config;
-
-    @Autowired
-    private MessageQueue msgQueue;
-
-    @Autowired
-    private P2pHandler p2pHandler;
-
-    @Autowired
-    private MessageCodec messageCodec;
-
-    @Autowired
-    private HandshakeHandler handshakeHandler;
-
-    @Autowired
-    private NodeManager nodeManager;
-
-    @Autowired
-    private EthHandlerFactory ethHandlerFactory;
-
-    @Autowired
-    private StaticMessages staticMessages;
+    private final SystemProperties config;
+    private final MessageQueue msgQueue;
+    private final P2pHandler p2pHandler;
+    private final MessageCodec messageCodec;
+    private final HandshakeHandler handshakeHandler;
+    private final NodeManager nodeManager;
+    private final EthHandlerFactory ethHandlerFactory;
+    private final StaticMessages staticMessages;
 
     private Eth eth = new EthAdapter();
 
@@ -105,6 +81,24 @@ public class Channel {
     private boolean isActive;
 
     private PeerStatistics peerStats = new PeerStatistics();
+
+    public Channel(SystemProperties config,
+                   MessageQueue msgQueue,
+                   P2pHandler p2pHandler,
+                   MessageCodec messageCodec,
+                   HandshakeHandler handshakeHandler,
+                   NodeManager nodeManager,
+                   EthHandlerFactory ethHandlerFactory,
+                   StaticMessages staticMessages) {
+        this.config = config;
+        this.msgQueue = msgQueue;
+        this.p2pHandler = p2pHandler;
+        this.messageCodec = messageCodec;
+        this.handshakeHandler = handshakeHandler;
+        this.nodeManager = nodeManager;
+        this.ethHandlerFactory = ethHandlerFactory;
+        this.staticMessages = staticMessages;
+    }
 
     public void init(ChannelPipeline pipeline, String remoteId, boolean discoveryMode) {
 

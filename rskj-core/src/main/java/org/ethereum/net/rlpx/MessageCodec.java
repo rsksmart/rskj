@@ -36,11 +36,7 @@ import org.ethereum.util.LRUMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,8 +47,6 @@ import static org.ethereum.net.rlpx.FrameCodec.Frame;
 /**
  * The Netty codec which encodes/decodes RPLx frames to subprotocol Messages
  */
-@Component
-@Scope("prototype")
 public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
 
     private static final Logger loggerWire = LoggerFactory.getLogger("wire");
@@ -69,11 +63,7 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
     private MessageFactory ethMessageFactory;
     private EthVersion ethVersion;
 
-    @Autowired
-    EthereumListener ethereumListener;
-
-    @Autowired
-    SystemProperties config;
+    private final EthereumListener ethereumListener;
 
     private boolean supportChunkedFrames = true;
 
@@ -81,9 +71,9 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
     // LRU avoids OOM on invalid peers
     AtomicInteger contextIdCounter = new AtomicInteger(1);
 
-    @PostConstruct
-    private void init() {
-        setMaxFramePayloadSize(config.rlpxMaxFrameSize());
+    public MessageCodec(EthereumListener ethereumListener, SystemProperties config) {
+        this.ethereumListener = ethereumListener;
+        this.maxFramePayloadSize = config.rlpxMaxFrameSize();
     }
 
     @Override

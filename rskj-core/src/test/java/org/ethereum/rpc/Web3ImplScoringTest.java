@@ -20,6 +20,8 @@ package org.ethereum.rpc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Wallet;
+import co.rsk.mine.MinerClient;
+import co.rsk.mine.MinerServer;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringInformation;
@@ -31,6 +33,7 @@ import org.ethereum.rpc.Simples.SimpleWorldManager;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.spongycastle.util.encoders.Hex;
 
 import java.net.InetAddress;
@@ -312,7 +315,7 @@ public class Web3ImplScoringTest {
         worldManager.setBlockchain(world.getBlockChain());
         rsk.worldManager = worldManager;
 
-        Web3Impl web3 = new Web3Impl(rsk, RskSystemProperties.CONFIG, new Wallet());
+        Web3Impl web3 = new Web3Impl(rsk, RskSystemProperties.CONFIG, new Wallet(), Mockito.mock(MinerClient.class), Mockito.mock(MinerServer.class));
 
         return web3;
     }

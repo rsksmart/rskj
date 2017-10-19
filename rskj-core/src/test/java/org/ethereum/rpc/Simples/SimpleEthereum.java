@@ -30,7 +30,6 @@ import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.manager.WorldManager;
-import org.ethereum.net.client.PeerClient;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
@@ -75,16 +74,6 @@ public class SimpleEthereum implements Ethereum {
     @Override
     public void addListener(EthereumListener listener) {
         this.worldManager.addListener(listener);
-    }
-
-    @Override
-    public PeerClient getDefaultPeer() {
-        return null;
-    }
-
-    @Override
-    public boolean isConnected() {
-        return false;
     }
 
     @Override
