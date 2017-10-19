@@ -559,11 +559,10 @@ public class OpCodes {
     static final byte OP_LOG_4 =(byte)0xa4  ;
 
     /*  System operations   */
-    static final byte OP_CODEREPLACE =(byte)0xa8  ;
-
-    static final byte OP_DUPN = (byte)0xa9;
-    static final byte OP_SWAPN = (byte)0xaa;
-    static final byte OP_TXINDEX = (byte)0xab;
+    static final byte OP_DUPN = (byte)0xa8;
+    static final byte OP_SWAPN = (byte)0xa9;
+    static final byte OP_TXINDEX = (byte)0xaa;
+    static final byte OP_CODEREPLACE =(byte)0xab;
 
     /**
      * (0xf0) Create a new account with associated code

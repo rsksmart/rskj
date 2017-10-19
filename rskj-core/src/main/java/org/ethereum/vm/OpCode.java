@@ -565,24 +565,24 @@ public enum OpCode {
 
 
     /**
-     * CODEREPLACE
-     */
-    CODEREPLACE(0xa8, 2, 1, SPECIAL_TIER,1),   //       [in_size] [in_offs] CODEREPLACE -> success
-
-    /**
      * DUPN
      */
-    DUPN(0xa9, 1, 2, VERY_LOW_TIER),
+    DUPN(0xa8, 1, 2, VERY_LOW_TIER),
 
     /**
      * SWAPN
      */
-    SWAPN(0xaa, 2, 2, VERY_LOW_TIER),
+    SWAPN(0xa9, 2, 2, VERY_LOW_TIER),
 
     /**
      * TXINDEX
      */
-    TXINDEX(0xab, 0, 1, BASE_TIER),
+    TXINDEX(0xaa, 0, 1, BASE_TIER),
+
+    /**
+     * CODEREPLACE
+     */
+    CODEREPLACE(0xab, 2, 1, SPECIAL_TIER,1),   //       [in_size] [in_offs] CODEREPLACE -> success
 
     /*  System operations   */
 
@@ -667,6 +667,7 @@ public enum OpCode {
         this.ret = ret;
         this.scriptVersion = scriptVersion;
     }
+
     public byte val() {
         return code;
     }

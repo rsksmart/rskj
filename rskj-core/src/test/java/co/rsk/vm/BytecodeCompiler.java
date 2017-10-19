@@ -71,19 +71,19 @@ public class BytecodeCompiler {
             return 0x07;
 
         if ("dupn".equals(token))
-            return (byte)0xa9;
+            return (byte)0xa8;
 
         if (token.length() > 3 && "dup".equals(token.substring(0, 3)))
             return (byte)(0x80 + Integer.parseInt(token.substring(3)) - 1);
 
         if ("swapn".equals(token))
-            return (byte)0xaa;
+            return (byte)0xa9;
 
         if (token.length() > 4 && "swap".equals(token.substring(0, 4)))
             return (byte)(0x90 + Integer.parseInt(token.substring(4)) - 1);
 
         if ("txindex".equals(token))
-            return (byte)0xab;
+            return (byte)0xaa;
 
         if ("jump".equals(token))
             return (byte)0x56;
