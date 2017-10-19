@@ -221,8 +221,8 @@ public class BridgeSerializationUtils {
     }
 
     // A federation is serialized as a list in the following order:
-    // creation time (8 bytes)
-    // # of signatures required (4 bytes)
+    // creation time
+    // # of signatures required
     // list of public keys -> [pubkey1, pubkey2, ..., pubkeyn], sorted
     // using the lexicographical order of the public keys (see BtcECKey.PUBKEY_COMPARATOR).
     public static byte[] serializeFederation(Federation federation) {
@@ -233,7 +233,7 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(
                 RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationTime().toEpochMilli())),
                 RLP.encodeBigInteger(BigInteger.valueOf(federation.getNumberOfSignaturesRequired())),
-                RLP.encodeList((byte[][])publicKeys.toArray())
+                RLP.encodeList((byte[][])publicKeys.toArray(new byte[publicKeys.size()][]))
         );
     }
 
@@ -242,27 +242,24 @@ public class BridgeSerializationUtils {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         if (rlpList.size() != 3) {
-            throw new RuntimeException(String.format("Invalid serialized Federation. Expected 3 elements but got {}", rlpList.size()));
+            throw new RuntimeException(String.format("Invalid serialized Federation. Expected 3 elements but got %d", rlpList.size()));
         }
 
         byte[] creationTimeBytes = rlpList.get(0).getRLPData();
-        if (creationTimeBytes.length != 8) {
-            throw new RuntimeException(String.format("Invalid serialized Federation creation time. Expected 8 bytes but got {}", creationTimeBytes.length));
-        }
         Instant creationTime = Instant.ofEpochMilli(new BigInteger(creationTimeBytes).longValue());
 
         byte[] numberOfSignaturesRequiredBytes = rlpList.get(1).getRLPData();
-        if (numberOfSignaturesRequiredBytes.length != 4) {
-            throw new RuntimeException(String.format("Invalid serialized Federation # of signatures required. Expected 4 bytes but got {}", numberOfSignaturesRequiredBytes.length));
+        int numberOfSignaturesRequired =  new BigInteger(numberOfSignaturesRequiredBytes).intValue();
+        if (numberOfSignaturesRequired < 1) {
+            throw new RuntimeException(String.format("Invalid serialized Federation # of signatures required. Expected at least 1, but got %d", numberOfSignaturesRequired));
         }
-        int numberOfSignaturesRequired =  new BigInteger(creationTimeBytes).intValue();
 
         List<BtcECKey> pubKeys = ((RLPList) rlpList.get(2)).stream()
                 .map(pubKeyBytes -> BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
                 .collect(Collectors.toList());
 
         if (pubKeys.size() < numberOfSignaturesRequired) {
-            throw new RuntimeException(String.format("Invalid serialized Federation # of public keys. Expected at least {} but got {}", numberOfSignaturesRequired, pubKeys.size()));
+            throw new RuntimeException(String.format("Invalid serialized Federation # of public keys. Expected at least %d but got %d", numberOfSignaturesRequired, pubKeys.size()));
         }
 
         return new Federation(numberOfSignaturesRequired, pubKeys, creationTime, btcContext.getParams());
