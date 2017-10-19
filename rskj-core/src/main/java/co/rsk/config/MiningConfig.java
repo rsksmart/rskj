@@ -23,32 +23,22 @@ package co.rsk.config;
  */
 public class MiningConfig {
 
-    private final boolean isMiningEnabled;
     private final byte[] coinbaseAddress;
     private final double minFeesNotifyInDollars;
     private final double minerGasUnitInDollars;
     private final long minGasPriceTarget;
-    private final int minGasLimit;
-    private final long targetGasLimit;
-    private final boolean isTargetGasLimitForced;
     private final int uncleListLimit;
     private final int uncleGenerationLimit;
+    private final GasLimitConfig gasLimit;
 
-    public MiningConfig(boolean isMiningEnabled, byte[] coinbaseAddress, double minFeesNotifyInDollars, double minerGasUnitInDollars, long minGasPriceTarget, int minGasLimit, long targetGasLimit, boolean isTargetGasLimitForced, int uncleListLimit, int uncleGenerationLimit) {
-        this.isMiningEnabled = isMiningEnabled;
+    public MiningConfig(byte[] coinbaseAddress, double minFeesNotifyInDollars, double minerGasUnitInDollars, long minGasPriceTarget, int uncleListLimit, int uncleGenerationLimit, GasLimitConfig gasLimit) {
         this.coinbaseAddress = coinbaseAddress;
         this.minFeesNotifyInDollars = minFeesNotifyInDollars;
         this.minerGasUnitInDollars = minerGasUnitInDollars;
         this.minGasPriceTarget= minGasPriceTarget;
-        this.minGasLimit = minGasLimit;
-        this.targetGasLimit = targetGasLimit;
-        this.isTargetGasLimitForced = isTargetGasLimitForced;
         this.uncleListLimit = uncleListLimit;
         this.uncleGenerationLimit = uncleGenerationLimit;
-    }
-
-    public boolean isMiningEnabled() {
-        return isMiningEnabled;
+        this.gasLimit = gasLimit;
     }
 
     public byte[] getCoinbaseAddress() {
@@ -67,23 +57,15 @@ public class MiningConfig {
         return minGasPriceTarget;
     }
 
-    public int getMinGasLimit() {
-        return minGasLimit;
-    }
-
-    public long getTargetGasLimit() {
-        return targetGasLimit;
-    }
-
-    public boolean isTargetGasLimitForced() {
-        return isTargetGasLimitForced;
-    }
-
     public int getUncleListLimit() {
         return uncleListLimit;
     }
 
     public int getUncleGenerationLimit() {
         return uncleGenerationLimit;
+    }
+
+    public GasLimitConfig getGasLimit() {
+        return gasLimit;
     }
 }

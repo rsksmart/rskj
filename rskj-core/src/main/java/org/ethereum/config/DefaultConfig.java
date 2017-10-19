@@ -19,6 +19,7 @@
 
 package org.ethereum.config;
 
+import co.rsk.config.GasLimitConfig;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
@@ -74,19 +75,11 @@ public class DefaultConfig {
     ApplicationContext appCtx;
 
     @Autowired
-    CommonConfig commonConfig;
-
-    @Autowired
     SystemProperties config;
 
     @PostConstruct
     public void init() {
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                logger.error("Uncaught exception", e);
-            }
-        });
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> logger.error("Uncaught exception", e));
     }
 
     @Bean
@@ -127,19 +120,15 @@ public class DefaultConfig {
 
     @Bean
     public ReceiptStore receiptStore() {
-
         KeyValueDataSource ds = new LevelDbDataSource("receipts");
         ds.init();
-
-        ReceiptStore store = new ReceiptStoreImpl(ds);
-
-        return store;
+        return new ReceiptStoreImpl(ds);
     }
 
     @Bean
-    public HashRateCalculator hashRateCalculator(BlockStore blockStore, MiningConfig miningConfig) {
+    public HashRateCalculator hashRateCalculator(RskSystemProperties rskSystemProperties, BlockStore blockStore, MiningConfig miningConfig) {
         RskCustomCache<ByteArrayWrapper, BlockHeaderElement> cache = new RskCustomCache<>(60000L);
-        if (!miningConfig.isMiningEnabled()) {
+        if (!rskSystemProperties.minerServerEnabled()) {
             return new HashRateCalculatorNonMining(blockStore, cache);
         }
 
@@ -149,16 +138,17 @@ public class DefaultConfig {
     @Bean
     public MiningConfig miningConfig(RskSystemProperties rskSystemProperties) {
         return new MiningConfig(
-                rskSystemProperties.minerServerEnabled(),
                 rskSystemProperties.coinbaseAddress(),
                 rskSystemProperties.minerMinFeesNotifyInDollars(),
                 rskSystemProperties.minerGasUnitInDollars(),
                 rskSystemProperties.minerMinGasPrice(),
-                rskSystemProperties.getBlockchainConfig().getCommonConstants().getMinGasLimit(),
-                rskSystemProperties.getBlockchainConfig().getCommonConstants().getTargetGasLimit(),
-                rskSystemProperties.getForceTargetGasLimit(),
                 rskSystemProperties.getBlockchainConfig().getCommonConstants().getUncleListLimit(),
-                rskSystemProperties.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit()
+                rskSystemProperties.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit(),
+                new GasLimitConfig(
+                        rskSystemProperties.getBlockchainConfig().getCommonConstants().getMinGasLimit(),
+                        rskSystemProperties.getBlockchainConfig().getCommonConstants().getTargetGasLimit(),
+                        rskSystemProperties.getForceTargetGasLimit()
+                )
         );
     }
 

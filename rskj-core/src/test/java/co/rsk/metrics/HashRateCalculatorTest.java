@@ -18,7 +18,6 @@
 
 package co.rsk.metrics;
 
-import co.rsk.config.MiningConfig;
 import co.rsk.util.RskCustomCache;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -47,14 +46,11 @@ public class HashRateCalculatorTest {
     private Block block;
     private BlockHeader blockHeader;
 
-    private MiningConfig miningConfig;
-
     @Before
     public void init() {
         blockStore = Mockito.mock(BlockStore.class);
         block = Mockito.mock(Block.class);
         blockHeader = Mockito.mock(BlockHeader.class);
-        miningConfig = Mockito.mock(MiningConfig.class);
 
         Mockito.when(block.getHeader()).thenReturn(blockHeader);
         Mockito.when(block.getHash()).thenReturn(FAKE_GENERIC_HASH);
@@ -70,8 +66,6 @@ public class HashRateCalculatorTest {
 
         Mockito.when(blockStore.getBestBlock()).thenReturn(block);
         Mockito.when(blockStore.getBlockByHash(Mockito.any())).thenReturn(block);
-        Mockito.when(miningConfig.isMiningEnabled()).thenReturn(true);
-        Mockito.when(miningConfig.getCoinbaseAddress()).thenReturn(FAKE_COINBASE);
     }
 
     @Test
@@ -105,8 +99,6 @@ public class HashRateCalculatorTest {
                 .thenReturn(NOT_MY_COINBASE);
 
         Mockito.when(block.getCumulativeDifficulty()).thenReturn(BigInteger.ONE);
-
-        Mockito.when(miningConfig.isMiningEnabled()).thenReturn(false);
 
         HashRateCalculator hashRateCalculator = new HashRateCalculatorNonMining(blockStore, new RskCustomCache<>(1000L));
         BigInteger hashRate = hashRateCalculator.calculateNodeHashRate(Duration.ofHours(1));

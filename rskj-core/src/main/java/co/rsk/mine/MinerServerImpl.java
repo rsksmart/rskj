@@ -419,15 +419,6 @@ public class MinerServerImpl implements MinerServer {
         return new MinerUtils().filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice);
     }
 
-    private boolean isSyncing() {
-        BlockProcessor processor = ethereum.getWorldManager().getNodeBlockProcessor();
-
-        if (processor == null)
-            return false;
-
-        return processor.isSyncingBlocks();
-    }
-
     class NewBlockListener extends EthereumListenerAdapter {
 
         @Override
@@ -454,6 +445,15 @@ public class MinerServerImpl implements MinerServer {
 
             logger.trace("End onBlock");
         }
+
+        private boolean isSyncing() {
+            BlockProcessor processor = ethereum.getWorldManager().getNodeBlockProcessor();
+
+            if (processor == null)
+                return false;
+
+            return processor.isSyncingBlocks();
+        }
     }
 
     private BlockHeader createHeader(Block newBlockParent, List<BlockHeader> uncles, List<Transaction> txs, BigInteger minimumGasPrice) {
@@ -462,11 +462,11 @@ public class MinerServerImpl implements MinerServer {
         final long timestampSeconds = this.getCurrentTimeInSeconds();
 
         // Set gas limit before executing block
-        BigInteger minGasLimit = BigInteger.valueOf(miningConfig.getMinGasLimit());
-        BigInteger targetGasLimit = BigInteger.valueOf(miningConfig.getTargetGasLimit());
+        BigInteger minGasLimit = BigInteger.valueOf(miningConfig.getGasLimit().getMininimum());
+        BigInteger targetGasLimit = BigInteger.valueOf(miningConfig.getGasLimit().getTarget());
         BigInteger parentGasLimit = new BigInteger(1, newBlockParent.getGasLimit());
         BigInteger gasUsed = BigInteger.valueOf(newBlockParent.getGasUsed());
-        boolean forceLimit = miningConfig.isTargetGasLimitForced();
+        boolean forceLimit = miningConfig.getGasLimit().isTargetForced();
         BigInteger gasLimit = new GasLimitCalculator().calculateBlockGasLimit(parentGasLimit,
                 gasUsed, minGasLimit, targetGasLimit, forceLimit);
 
