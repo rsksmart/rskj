@@ -70,13 +70,17 @@ public class Wallet {
 
     public byte[] addAccount() {
         Account account = new Account(new ECKey());
-        saveAccount(account);
-        return account.getAddress();
+        return addAccount(account);
     }
 
     public byte[] addAccount(String passphrase) {
         Account account = new Account(new ECKey());
         saveAccount(account, passphrase);
+        return account.getAddress();
+    }
+
+    public byte[] addAccount(Account account) {
+        saveAccount(account);
         return account.getAddress();
     }
 
@@ -155,31 +159,20 @@ public class Wallet {
     }
 
     public byte[] addAccountWithSeed(String seed) {
-        Account account = createAccount(ECKey.fromPrivate(SHA3Helper.sha3(seed.getBytes(StandardCharsets.UTF_8))));
-
-        saveAccount(account);
-
-        return account.getAddress();
+        return addAccountWithPrivateKey(SHA3Helper.sha3(seed.getBytes(StandardCharsets.UTF_8)));
     }
 
     public byte[] addAccountWithPrivateKey(byte[] privateKeyBytes) {
-        Account account = createAccount(ECKey.fromPrivate(privateKeyBytes));
-
-        saveAccount(account);
-
-        return account.getAddress();
+        Account account = new Account(ECKey.fromPrivate(privateKeyBytes));
+        return addAccount(account);
     }
 
     public byte[] addAccountWithPrivateKey(byte[] privateKeyBytes, String passphrase) {
-        Account account = createAccount(ECKey.fromPrivate(privateKeyBytes));
+        Account account = new Account(ECKey.fromPrivate(privateKeyBytes));
 
         saveAccount(account, passphrase);
 
         return account.getAddress();
-    }
-
-    private Account createAccount(ECKey key) {
-        return new Account(key);
     }
 
     private void saveAccount(Account account) {

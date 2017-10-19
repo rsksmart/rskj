@@ -16,11 +16,24 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.util;
+package co.rsk.metrics;
 
-/**
- * Created by adrian.eidelman on 3/16/2016.
- */
-public interface AccountUtils {
-    byte[] getCoinbaseAddress();
+import co.rsk.util.RskCustomCache;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ByteArrayWrapper;
+
+import java.math.BigInteger;
+import java.time.Duration;
+
+public class HashRateCalculatorNonMining extends HashRateCalculator {
+
+    public HashRateCalculatorNonMining(BlockStore blockStore, RskCustomCache<ByteArrayWrapper, BlockHeaderElement> headerCache) {
+        super(blockStore, headerCache);
+    }
+
+    @Override
+    public BigInteger calculateNodeHashRate(Duration period) {
+        return BigInteger.ZERO;
+    }
+
 }

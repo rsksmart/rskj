@@ -16,14 +16,32 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.util;
+package co.rsk.config;
 
 /**
- * Created by adrian.eidelman on 3/16/2016.
+ * Wraps configuration for Mining, which is usually derived from configuration files.
  */
-public class AccountUtilsDummy implements AccountUtils {
-    public byte[] getCoinbaseAddress()
-    {
-        return new byte[0];
+public class GasLimitConfig {
+
+    private final int minGasLimit;
+    private final long targetGasLimit;
+    private final boolean isTargetGasLimitForced;
+
+    public GasLimitConfig(int minGasLimit, long targetGasLimit, boolean isTargetGasLimitForced) {
+        this.minGasLimit = minGasLimit;
+        this.targetGasLimit = targetGasLimit;
+        this.isTargetGasLimitForced = isTargetGasLimitForced;
+    }
+
+    public int getMininimum() {
+        return minGasLimit;
+    }
+
+    public long getTarget() {
+        return targetGasLimit;
+    }
+
+    public boolean isTargetForced() {
+        return isTargetGasLimitForced;
     }
 }

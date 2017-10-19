@@ -67,6 +67,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -138,13 +139,16 @@ public class Web3Impl implements Web3 {
             personal_newAccountWithSeed("cow");
         }
 
-        String secret = properties.coinbaseSecret();
-        personal_newAccountWithSeed(secret);
+        // This creates a new account based on a configured secret passphrase,
+        // which is then used to set the current miner coinbase address.
+        // Generally used for testing, since you usually don't want to store
+        // wallets in production for security reasons.
+        Account coinbaseAccount = properties.localCoinbaseAccount();
+        if (coinbaseAccount != null)
+            personal_newAccount(coinbaseAccount);
 
         // initializes wallet accounts based on configuration
-        List<WalletAccount> accs = properties.walletAccounts();
-
-        for (WalletAccount acc : accs)
+        for (WalletAccount acc : properties.walletAccounts())
             this.wallet.addAccountWithPrivateKey(Hex.decode(acc.getPrivateKey()));
     }
 
@@ -353,12 +357,9 @@ public class Web3Impl implements Web3 {
     }
 
     public String eth_hashrate() {
-        BigDecimal hashesPerSecond = BigDecimal.ZERO;
-        if(RskSystemProperties.CONFIG.minerServerEnabled()) {
-            BigInteger hashesPerHour = this.worldManager.getHashRateCalculator().calculateNodeHashRate(1L, TimeUnit.HOURS);
-            hashesPerSecond = new BigDecimal(hashesPerHour)
-                    .divide(new BigDecimal(TimeUnit.HOURS.toSeconds(1)), 3, RoundingMode.HALF_UP);
-        }
+        BigInteger hashesPerHour = this.worldManager.getHashRateCalculator().calculateNodeHashRate(Duration.ofHours(1));
+        BigDecimal hashesPerSecond = new BigDecimal(hashesPerHour)
+                .divide(new BigDecimal(TimeUnit.HOURS.toSeconds(1)), 3, RoundingMode.HALF_UP);
 
         String result = hashesPerSecond.toString();
 
@@ -370,7 +371,7 @@ public class Web3Impl implements Web3 {
     }
 
     public String eth_netHashrate() {
-        BigInteger hashesPerHour = this.worldManager.getHashRateCalculator().calculateNetHashRate(1L, TimeUnit.HOURS);
+        BigInteger hashesPerHour = this.worldManager.getHashRateCalculator().calculateNetHashRate(Duration.ofHours(1));
         BigDecimal hashesPerSecond = new BigDecimal(hashesPerHour)
                 .divide(new BigDecimal(TimeUnit.HOURS.toSeconds(1)), 3, RoundingMode.HALF_UP);
 
@@ -1372,6 +1373,16 @@ public class Web3Impl implements Web3 {
                 return ((Repository) this.repository).getSnapshotTo(block.getStateRoot());
             } else {
                 return null;
+            }
+        }
+    }
+
+    private void personal_newAccount(Account account) {
+        try {
+            this.wallet.addAccount(account);
+        } finally {
+            if (logger.isDebugEnabled()) {
+                logger.debug("personal_newAccount(*****): " + toJsonHex(account.getAddress()));
             }
         }
     }

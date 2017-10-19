@@ -18,14 +18,13 @@
 
 package co.rsk.mine;
 
+import co.rsk.config.MiningConfig;
 import co.rsk.config.RskMiningConstants;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.net.BlockProcessor;
 import co.rsk.remasc.RemascTransaction;
-import co.rsk.util.AccountUtilsImpl;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
@@ -99,21 +98,23 @@ public class MinerServerImpl implements MinerServer {
 
     private ProofOfWorkRule powRule;
 
-    private RskSystemProperties properties;
+    private MiningConfig miningConfig;
 
     private BlockValidationRule validationRules;
 
     private long timeAdjustment;
 
     @Autowired
-    public MinerServerImpl(Ethereum ethereum, Blockchain blockchain, BlockStore blockStore, PendingState pendingState, Repository repository, RskSystemProperties properties, @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules) {
+    public MinerServerImpl(Ethereum ethereum, Blockchain blockchain, BlockStore blockStore, PendingState pendingState, Repository repository, MiningConfig miningConfig, @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules) {
         this.ethereum = ethereum;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.pendingState = pendingState;
+        this.miningConfig = miningConfig;
+        this.validationRules = validationRules;
+
         executor = new BlockExecutor(repository, blockchain, blockStore, null);
 
-        coinbaseAddress = new AccountUtilsImpl().getCoinbaseAddress();
         blocksWaitingforPoW = new LinkedHashMap<Sha3Hash, Block>(CACHE_SIZE) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<Sha3Hash, Block> eldest) {
@@ -123,12 +124,11 @@ public class MinerServerImpl implements MinerServer {
 
         latestPaidFeesWithNotify = 0;
         latestParentHash = null;
-        this.properties = properties;
-        minFeesNotifyInDollars = this.properties.minerMinFeesNotifyInDollars();
-        gasUnitInDollars = this.properties.minerGasUnitInDollars();
-        minerMinGasPriceTarget = toBI(this.properties.minerMinGasPrice());
+        coinbaseAddress = miningConfig.getCoinbaseAddress();
+        minFeesNotifyInDollars = miningConfig.getMinFeesNotifyInDollars();
+        gasUnitInDollars = miningConfig.getGasUnitInDollars();
+        minerMinGasPriceTarget = toBI(miningConfig.getMinGasPriceTarget());
         powRule = new ProofOfWorkRule();
-        this.validationRules = validationRules;
     }
 
     @VisibleForTesting
@@ -317,13 +317,13 @@ public class MinerServerImpl implements MinerServer {
 
         List<BlockHeader> uncles;
         if (blockStore != null) {
-            uncles = FamilyUtils.getUnclesHeaders(blockStore, newBlockParent.getNumber() + 1, newBlockParent.getHash(), this.properties.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit());
+            uncles = FamilyUtils.getUnclesHeaders(blockStore, newBlockParent.getNumber() + 1, newBlockParent.getHash(), this.miningConfig.getUncleGenerationLimit());
         } else {
             uncles = new ArrayList<>();
         }
 
-        if (uncles.size() > this.properties.getBlockchainConfig().getCommonConstants().getUncleListLimit()) {
-            uncles = uncles.subList(0, this.properties.getBlockchainConfig().getCommonConstants().getUncleListLimit());
+        if (uncles.size() > this.miningConfig.getUncleListLimit()) {
+            uncles = uncles.subList(0, this.miningConfig.getUncleListLimit());
         }
 
         final List<Transaction> txsToRemove = new ArrayList<>();
@@ -419,15 +419,6 @@ public class MinerServerImpl implements MinerServer {
         return new MinerUtils().filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice);
     }
 
-    private boolean isSyncing() {
-        BlockProcessor processor = ethereum.getWorldManager().getNodeBlockProcessor();
-
-        if (processor == null)
-            return false;
-
-        return processor.isSyncingBlocks();
-    }
-
     class NewBlockListener extends EthereumListenerAdapter {
 
         @Override
@@ -454,6 +445,15 @@ public class MinerServerImpl implements MinerServer {
 
             logger.trace("End onBlock");
         }
+
+        private boolean isSyncing() {
+            BlockProcessor processor = ethereum.getWorldManager().getNodeBlockProcessor();
+
+            if (processor == null)
+                return false;
+
+            return processor.isSyncingBlocks();
+        }
     }
 
     private BlockHeader createHeader(Block newBlockParent, List<BlockHeader> uncles, List<Transaction> txs, BigInteger minimumGasPrice) {
@@ -462,11 +462,11 @@ public class MinerServerImpl implements MinerServer {
         final long timestampSeconds = this.getCurrentTimeInSeconds();
 
         // Set gas limit before executing block
-        BigInteger minGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getMinGasLimit());
-        BigInteger targetGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getTargetGasLimit());
+        BigInteger minGasLimit = BigInteger.valueOf(miningConfig.getGasLimit().getMininimum());
+        BigInteger targetGasLimit = BigInteger.valueOf(miningConfig.getGasLimit().getTarget());
         BigInteger parentGasLimit = new BigInteger(1, newBlockParent.getGasLimit());
         BigInteger gasUsed = BigInteger.valueOf(newBlockParent.getGasUsed());
-        boolean forceLimit = RskSystemProperties.CONFIG.getForceTargetGasLimit();
+        boolean forceLimit = miningConfig.getGasLimit().isTargetForced();
         BigInteger gasLimit = new GasLimitCalculator().calculateBlockGasLimit(parentGasLimit,
                 gasUsed, minGasLimit, targetGasLimit, forceLimit);
 
