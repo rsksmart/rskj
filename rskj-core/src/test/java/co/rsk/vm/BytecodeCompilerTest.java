@@ -149,21 +149,21 @@ public class BytecodeCompilerTest {
     public void compileDupNWithValue() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
-        Assert.assertArrayEquals(new byte[] { (byte)0xa9, 0x00 }, compiler.compile("DUPN 0x00"));
+        Assert.assertArrayEquals(new byte[] { (byte)0xa8, 0x00 }, compiler.compile("DUPN 0x00"));
     }
-
+W
     @Test
     public void compileSwapNWithValue() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
-        Assert.assertArrayEquals(new byte[] { (byte)0xaa, 0x01 }, compiler.compile("SWAPN 0x01"));
+        Assert.assertArrayEquals(new byte[] { (byte)0xa9, 0x01 }, compiler.compile("SWAPN 0x01"));
     }
 
     @Test
     public void compileTxIndex() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 
-        Assert.assertArrayEquals(new byte[] { (byte)0xab }, compiler.compile("TXINDEX"));
+        Assert.assertArrayEquals(new byte[] { (byte)0xaa }, compiler.compile("TXINDEX"));
     }
 
     @Test
