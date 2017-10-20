@@ -23,7 +23,6 @@ import co.rsk.mine.MinerServer;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.core.Rsk;
-import co.rsk.core.Wallet;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
@@ -65,7 +64,7 @@ public class Web3RskImplTest {
         Mockito.when(blockchain.getBestBlock()).thenReturn(block);
         Mockito.when(rsk.getWorldManager()).thenReturn(worldManager);
 
-        Web3RskImpl web3 = new Web3RskImpl(rsk, Mockito.mock(MinerServer.class), Mockito.mock(MinerClient.class));
+        Web3RskImpl web3 = new Web3RskImpl(rsk, Mockito.mock(MinerClient.class), Mockito.mock(MinerServer.class));
         web3.ext_dumpState();
     }
 

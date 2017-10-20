@@ -23,7 +23,6 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.core.Rsk;
-import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.mine.MinerWork;
 import org.apache.commons.lang3.ArrayUtils;
@@ -52,7 +51,7 @@ public class Web3RskImpl extends Web3Impl {
     private static final Logger logger = LoggerFactory.getLogger("web3");
     private final MinerServer minerServer;
 
-    public Web3RskImpl(Rsk rsk, MinerServer minerServer, MinerClient minerClient) {
+    public Web3RskImpl(Rsk rsk, MinerClient minerClient, MinerServer minerServer) {
         super(rsk, RskSystemProperties.CONFIG, WalletFactory.createPersistentWallet(), minerClient, minerServer);
         this.minerServer = minerServer;
     }
