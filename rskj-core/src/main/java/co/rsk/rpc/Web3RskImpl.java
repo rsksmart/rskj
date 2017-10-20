@@ -18,12 +18,12 @@
 
 package co.rsk.rpc;
 
-import co.rsk.config.RskSystemProperties;
-import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerServer;
 import co.rsk.config.RskMiningConstants;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
 import co.rsk.core.WalletFactory;
+import co.rsk.mine.MinerClient;
+import co.rsk.mine.MinerServer;
 import co.rsk.mine.MinerWork;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.Block;

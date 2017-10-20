@@ -1145,9 +1145,7 @@ public class Web3ImplTest {
     @Test
     public void sendPersonalTransaction()
     {
-        Web3Impl web3 = new Web3Impl(null, WalletFactory.createWallet());
-        SimpleEthereum eth = new SimpleEthereum();
-        web3.eth = eth;
+        Web3Impl web3 = new Web3Impl(null, WalletFactory.createWallet(), new SimpleEthereum());
 
         // **** Initializes data ******************
         String addr1 = web3.personal_newAccount("passphrase1");
