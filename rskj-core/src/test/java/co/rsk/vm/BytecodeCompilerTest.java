@@ -151,7 +151,7 @@ public class BytecodeCompilerTest {
 
         Assert.assertArrayEquals(new byte[] { (byte)0xa8, 0x00 }, compiler.compile("DUPN 0x00"));
     }
-W
+
     @Test
     public void compileSwapNWithValue() {
         BytecodeCompiler compiler = new BytecodeCompiler();
