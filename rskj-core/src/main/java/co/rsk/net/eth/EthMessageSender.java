@@ -27,21 +27,21 @@ import javax.annotation.Nonnull;
 import java.net.InetAddress;
 
 /**
- * EthMessageChannel implements the MessageChannel interface.
+ * EthMessageSender implements the MessageChannel interface.
  * <p>
  * Created by ajlopez on 5/16/2016.
  */
-public class EthMessageChannel implements MessageChannel {
+public class EthMessageSender implements MessageChannel {
     private final Eth eth;
     private NodeID nodeID;
     private InetAddress address;
 
     /**
-     * EthMessageChannel creates a new message sender.
+     * EthMessageSender creates a new message sender.
      *
      * @param eth the underlying ethereum peer interface
      */
-    public EthMessageChannel(@Nonnull final Eth eth) {
+    public EthMessageSender(@Nonnull final Eth eth) {
         this.eth = eth;
     }
 

@@ -21,6 +21,7 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.mine.MinerClient;
 import co.rsk.net.simples.SimpleBlockProcessor;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
@@ -32,6 +33,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.Repository;
+import org.ethereum.manager.WorldManager;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
@@ -55,6 +57,7 @@ import java.util.Map;
 
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by Ruben Altman on 09/06/2016.
@@ -247,19 +250,18 @@ public class Web3ImplTest {
 
     @Test
     public void eth_mining()  {
+        Ethereum ethMock = getMockEthereum();
+        RskSystemProperties mockProperties = getMockProperties();
+        MinerClient minerClient = new SimpleMinerClient();
 
-        SimpleWorldManager worldManager = new SimpleWorldManager();
-        worldManager.minerClient = new SimpleMinerClient();
-
-        Web3Impl web3 = new Web3Impl(null, WalletFactory.createWallet());
-        web3.worldManager = worldManager;
+        Web3 web3 = new Web3Impl(ethMock, mockProperties, WalletFactory.createWallet(), minerClient, null);
 
         Assert.isTrue(!web3.eth_mining(), "Node is not mining");
 
-        worldManager.minerClient.mine();
+        minerClient.mine();
         Assert.isTrue(web3.eth_mining(), "Node is mining");
 
-        worldManager.minerClient.stop();
+        minerClient.stop();
         Assert.isTrue(!web3.eth_mining(), "Node is not mining");
     }
 
@@ -1018,12 +1020,13 @@ public class Web3ImplTest {
     @Test
     public void eth_coinbase()  {
         String originalCoibase = "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347";
-        SimpleWorldManager worldManager = new SimpleWorldManager();
-        worldManager.minerServer= new SimpleMinerServer();
-        ((SimpleMinerServer) worldManager.minerServer).coinbase = originalCoibase;
+        SimpleMinerServer minerServer= new SimpleMinerServer();
+        minerServer.coinbase = originalCoibase;
 
-        Web3Impl web3 = new Web3Impl(null, WalletFactory.createWallet());
-        web3.worldManager = worldManager;
+        Ethereum ethMock = getMockEthereum();
+        RskSystemProperties mockProperties = getMockProperties();
+
+        Web3 web3 = new Web3Impl(ethMock, mockProperties, WalletFactory.createWallet(), null, minerServer);
 
         Assert.isTrue(web3.eth_coinbase().compareTo("0x" + originalCoibase) == 0, "Not returning coinbase specified on miner server");
     }
@@ -1336,5 +1339,17 @@ public class Web3ImplTest {
             Transaction tx = (Transaction)argument;
             return Arrays.equals(tx.getSender(), from);
         }
+    }
+
+    private Ethereum getMockEthereum() {
+        WorldManager mockWorldManager = mock(WorldManager.class, RETURNS_DEEP_STUBS);
+        when(mockWorldManager.getBlockchain().getBestBlock().getNumber()).thenReturn(0L);
+        Ethereum ethMock = mock(Ethereum.class);
+        when(ethMock.getWorldManager()).thenReturn(mockWorldManager);
+        return ethMock;
+    }
+
+    private RskSystemProperties getMockProperties() {
+        return mock(RskSystemProperties.class);
     }
 }

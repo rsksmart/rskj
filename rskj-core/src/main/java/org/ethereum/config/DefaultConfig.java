@@ -19,16 +19,18 @@
 
 package org.ethereum.config;
 
+import co.rsk.config.GasLimitConfig;
+import co.rsk.config.MiningConfig;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.metrics.BlockHeaderElement;
 import co.rsk.metrics.HashRateCalculator;
-import co.rsk.metrics.HashRateCalculatorImpl;
+import co.rsk.metrics.HashRateCalculatorMining;
+import co.rsk.metrics.HashRateCalculatorNonMining;
 import co.rsk.net.discovery.PeerExplorer;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
-import co.rsk.util.AccountUtils;
 import co.rsk.util.RskCustomCache;
 import co.rsk.validators.*;
 import org.apache.commons.collections4.CollectionUtils;
@@ -73,19 +75,11 @@ public class DefaultConfig {
     ApplicationContext appCtx;
 
     @Autowired
-    CommonConfig commonConfig;
-
-    @Autowired
     SystemProperties config;
 
     @PostConstruct
     public void init() {
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                logger.error("Uncaught exception", e);
-            }
-        });
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> logger.error("Uncaught exception", e));
     }
 
     @Bean
@@ -126,21 +120,36 @@ public class DefaultConfig {
 
     @Bean
     public ReceiptStore receiptStore() {
-
         KeyValueDataSource ds = new LevelDbDataSource("receipts");
         ds.init();
-
-        ReceiptStore store = new ReceiptStoreImpl(ds);
-
-        return store;
+        return new ReceiptStoreImpl(ds);
     }
 
     @Bean
-    public HashRateCalculator hashRateCalculator() {
-        BlockStore blockStore = appCtx.getBean(BlockStore.class);
-        AccountUtils accountUtils = appCtx.getBean(AccountUtils.class);
-        RskCustomCache<ByteArrayWrapper, BlockHeaderElement> cache = new RskCustomCache<ByteArrayWrapper, BlockHeaderElement>(60000L);
-        return new HashRateCalculatorImpl(blockStore, accountUtils, cache);
+    public HashRateCalculator hashRateCalculator(RskSystemProperties rskSystemProperties, BlockStore blockStore, MiningConfig miningConfig) {
+        RskCustomCache<ByteArrayWrapper, BlockHeaderElement> cache = new RskCustomCache<>(60000L);
+        if (!rskSystemProperties.minerServerEnabled()) {
+            return new HashRateCalculatorNonMining(blockStore, cache);
+        }
+
+        return new HashRateCalculatorMining(blockStore, cache, miningConfig.getCoinbaseAddress());
+    }
+
+    @Bean
+    public MiningConfig miningConfig(RskSystemProperties rskSystemProperties) {
+        return new MiningConfig(
+                rskSystemProperties.coinbaseAddress(),
+                rskSystemProperties.minerMinFeesNotifyInDollars(),
+                rskSystemProperties.minerGasUnitInDollars(),
+                rskSystemProperties.minerMinGasPrice(),
+                rskSystemProperties.getBlockchainConfig().getCommonConstants().getUncleListLimit(),
+                rskSystemProperties.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit(),
+                new GasLimitConfig(
+                        rskSystemProperties.getBlockchainConfig().getCommonConstants().getMinGasLimit(),
+                        rskSystemProperties.getBlockchainConfig().getCommonConstants().getTargetGasLimit(),
+                        rskSystemProperties.getForceTargetGasLimit()
+                )
+        );
     }
 
     @Bean

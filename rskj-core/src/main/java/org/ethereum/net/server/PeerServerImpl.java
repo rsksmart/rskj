@@ -29,42 +29,31 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.listener.EthereumListener;
+import org.ethereum.net.EthereumChannelInitializerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.stereotype.Component;
 
 /**
  * This class establishes a listener for incoming connections.
  * See <a href="http://netty.io">http://netty.io</a>.
- *
- * @author Roman Mandeleil
- * @since 01.11.2014
  */
-@Component("PeerServer")
 public class PeerServerImpl implements PeerServer {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
 
-    @Autowired
-    SystemProperties config;
-
-    @Autowired
-    private ApplicationContext ctx;
-
-    public EthereumChannelInitializer ethereumChannelInitializer;
-
-    @Autowired
-    EthereumListener ethereumListener;
+    private final SystemProperties config;
+    private final EthereumListener ethereumListener;
+    private final EthereumChannelInitializerFactory ethereumChannelInitializerFactory;
 
     // TODO review this variable use
     private boolean listening;
 
-    public PeerServerImpl() {
+    public PeerServerImpl(SystemProperties config, EthereumListener ethereumListener, EthereumChannelInitializerFactory ethereumChannelInitializerFactory) {
+        this.config = config;
+        this.ethereumListener = ethereumListener;
+        this.ethereumChannelInitializerFactory = ethereumChannelInitializerFactory;
     }
-
 
     public void start(int port) {
         // TODO review listening use
@@ -73,7 +62,7 @@ public class PeerServerImpl implements PeerServer {
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
 
-        ethereumChannelInitializer = ctx.getBean(EthereumChannelInitializer.class, "");
+        EthereumChannelInitializer ethereumChannelInitializer = ethereumChannelInitializerFactory.newInstance("");
 
         ethereumListener.trace("Listening on port " + port);
 

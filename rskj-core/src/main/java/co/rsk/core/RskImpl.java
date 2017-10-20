@@ -19,96 +19,64 @@
 package co.rsk.core;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerServer;
-import co.rsk.net.*;
-import co.rsk.net.handler.TxHandlerImpl;
+import co.rsk.net.MessageHandler;
+import co.rsk.net.NodeBlockProcessor;
+import co.rsk.net.NodeMessageHandler;
+import co.rsk.net.SyncProcessor;
 import co.rsk.net.sync.SyncConfiguration;
-import co.rsk.validators.ProofOfWorkRule;
-import org.ethereum.core.Blockchain;
 import co.rsk.scoring.PeerScoringManager;
-import co.rsk.scoring.PunishmentParameters;
+import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.SystemProperties;
+import org.ethereum.core.PendingState;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.EthereumImpl;
-import org.springframework.stereotype.Component;
+import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.manager.AdminInfo;
+import org.ethereum.manager.WorldManager;
+import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.PeerServer;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
-/**
- * Created by ajlopez on 3/3/2016.
- */
-@Component
 public class RskImpl extends EthereumImpl implements Rsk {
+
     private boolean isplaying;
     private NodeBlockProcessor nodeBlockProcessor;
+
     private SyncProcessor syncProcessor;
-
-    private PeerScoringManager peerScoringManager;
     private MessageHandler messageHandler;
-    private static final ProofOfWorkRule blockValidationRule = new ProofOfWorkRule();
-    private static final Object NMH_LOCK = new Object();
-    private static final Object PSM_LOCK = new Object();
+    private PeerScoringManager peerScoringManager;
 
-
-    @Override
-    public MinerClient getMinerClient() {
-        return getWorldManager().getMinerClient();
-    }
-
-    @Override
-    public MinerServer getMinerServer() {
-        return getWorldManager().getMinerServer();
+    public RskImpl(WorldManager worldManager,
+                   AdminInfo adminInfo,
+                   ChannelManager channelManager,
+                   PeerServer peerServer,
+                   ProgramInvokeFactory programInvokeFactory,
+                   PendingState pendingState,
+                   SystemProperties config,
+                   CompositeEthereumListener compositeEthereumListener,
+                   ReceiptStore receiptStore,
+                   PeerScoringManager peerScoringManager,
+                   NodeBlockProcessor nodeBlockProcessor,
+                   NodeMessageHandler messageHandler,
+                   PeerClientFactory peerClientFactory) {
+        super(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore, peerClientFactory);
+        this.peerScoringManager = peerScoringManager;
+        this.nodeBlockProcessor = nodeBlockProcessor;
+        this.messageHandler = messageHandler;
     }
 
     @Override
     public PeerScoringManager getPeerScoringManager() {
-        if (this.peerScoringManager == null) {
-            synchronized (PSM_LOCK) {
-                if (this.peerScoringManager == null) {
-                    SystemProperties config = this.getSystemProperties();
-
-                    int nnodes = config.scoringNumberOfNodes();
-                    long nodePunishmentDuration = config.scoringNodesPunishmentDuration();
-                    int nodePunishmentIncrement = config.scoringNodesPunishmentIncrement();
-                    long nodePunhishmentMaximumDuration = config.scoringNodesPunishmentMaximumDuration();
-
-                    long addressPunishmentDuration = config.scoringAddressesPunishmentDuration();
-                    int addressPunishmentIncrement = config.scoringAddressesPunishmentIncrement();
-                    long addressPunishmentMaximunDuration = config.scoringAddressesPunishmentMaximumDuration();
-
-                    this.peerScoringManager = new PeerScoringManager(nnodes, new PunishmentParameters(nodePunishmentDuration, nodePunishmentIncrement, nodePunhishmentMaximumDuration), new PunishmentParameters(addressPunishmentDuration, addressPunishmentIncrement, addressPunishmentMaximunDuration));
-                }
-            }
-        }
-
         return this.peerScoringManager;
     }
 
     @Override
     public MessageHandler getMessageHandler() {
-        if (this.messageHandler == null) {
-            synchronized (NMH_LOCK) {
-                if (this.messageHandler == null) {
-                    this.nodeBlockProcessor = this.getNodeBlockProcessor(); // Initialize nodeBlockProcessor if not done already.
-                    NodeMessageHandler handler = new NodeMessageHandler(this.nodeBlockProcessor, this.syncProcessor, getChannelManager(),
-                            getWorldManager().getPendingState(), new TxHandlerImpl(getWorldManager()), this.getPeerScoringManager(), blockValidationRule);
-                    handler.start();
-                    this.messageHandler = handler;
-                }
-            }
-        }
-
         return this.messageHandler;
     }
 
     @Override
     public NodeBlockProcessor getNodeBlockProcessor() {
-        if (nodeBlockProcessor == null) {
-            BlockStore store = new BlockStore();
-            Blockchain blockchain = this.getWorldManager().getBlockchain();
-            BlockNodeInformation nodeInformation = new BlockNodeInformation();
-            BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, getChannelManager());
-            nodeBlockProcessor = new NodeBlockProcessor(store, blockchain, getWorldManager(), nodeInformation, blockSyncService);
-            syncProcessor = new SyncProcessor(blockchain, blockSyncService, getSyncConfiguration(), blockValidationRule);
-        }
         return this.nodeBlockProcessor;
     }
 
@@ -134,17 +102,5 @@ public class RskImpl extends EthereumImpl implements Rsk {
     @Override
     public boolean hasBetterBlockToSync() {
             return this.getNodeBlockProcessor().hasBetterBlockToSync();
-    }
-
-    @Override
-    public SyncConfiguration getSyncConfiguration() {
-        int expectedPeers = RskSystemProperties.CONFIG.getExpectedPeers();
-        int timeoutWaitingPeers = RskSystemProperties.CONFIG.getTimeoutWaitingPeers();
-        int timeoutWaitingRequest = RskSystemProperties.CONFIG.getTimeoutWaitingRequest();
-        int expirationTimePeerStatus = RskSystemProperties.CONFIG.getExpirationTimePeerStatus();
-        int maxSkeletonChunks = RskSystemProperties.CONFIG.getMaxSkeletonChunks();
-        int chunkSize = RskSystemProperties.CONFIG.getChunkSize();
-        return new SyncConfiguration(expectedPeers, timeoutWaitingPeers, timeoutWaitingRequest,
-                expirationTimePeerStatus, maxSkeletonChunks, chunkSize);
     }
 }

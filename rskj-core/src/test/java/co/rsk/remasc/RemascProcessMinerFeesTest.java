@@ -372,7 +372,7 @@ public class RemascProcessMinerFeesTest {
     @Test
     public void noPublisherFeeIsPaidWhenThePublisherHasNoSiblings() throws IOException {
         BlockChainBuilder builder = new BlockChainBuilder();
-        Blockchain blockchain = builder.setBlockStore(new RemascTestBlockStore()).setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
+        Blockchain blockchain = builder.setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
 
         final long NUMBER_OF_TXS_WITH_FEES = 3;
         List<Block> blocks = createSimpleBlocks(genesisBlock, 4);
@@ -423,7 +423,7 @@ public class RemascProcessMinerFeesTest {
 
     private void processMinersFeesWithOneSiblingBrokenSelectionRule(String reasonForBrokenSelectionRule) throws IOException {
         BlockChainBuilder builder = new BlockChainBuilder();
-        Blockchain blockchain = builder.setBlockStore(new RemascTestBlockStore()).setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
+        Blockchain blockchain = builder.setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
 
         final long NUMBER_OF_TXS_WITH_FEES = 3;
         List<Block> blocks = createSimpleBlocks(this.genesisBlock, 4);
@@ -507,7 +507,7 @@ public class RemascProcessMinerFeesTest {
     @Test
     public void processMinersFeesFromTxThatIsNotTheLatestTx() throws IOException {
         BlockChainBuilder builder = new BlockChainBuilder();
-        Blockchain blockchain = builder.setBlockStore(new RemascTestBlockStore()).setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
+        Blockchain blockchain = builder.setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
 
         List<Block> blocks = createSimpleBlocks(genesisBlock, 4);
         Block blockWithOneTx = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1), PegTestUtils.createHash3(), coinbaseA, null, minerFee, 0, txValue, cowKey);
@@ -563,7 +563,7 @@ public class RemascProcessMinerFeesTest {
     @Test
     public void processMinersFeesFromTxInvokedByAnotherContract() throws IOException {
         BlockChainBuilder builder = new BlockChainBuilder();
-        Blockchain blockchain = builder.setBlockStore(new RemascTestBlockStore()).setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
+        Blockchain blockchain = builder.setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
 
         List<Block> blocks = createSimpleBlocks(genesisBlock, 4);
         Block blockWithOneTx = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1), PegTestUtils.createHash3(), coinbaseA, null, minerFee, 0, txValue, cowKey);
@@ -640,7 +640,7 @@ public class RemascProcessMinerFeesTest {
 
     @Test
     public void siblingIncludedOneBlockLater() throws IOException {
-        BlockChainBuilder builder = new BlockChainBuilder().setBlockStore(new RemascTestBlockStore()).setTesting(true).setRsk(true).setGenesis(genesisBlock);
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setRsk(true).setGenesis(genesisBlock);
 
         List<SiblingElement> siblings = Lists.newArrayList(new SiblingElement(5, 7, this.minerFee));
 
@@ -665,7 +665,7 @@ public class RemascProcessMinerFeesTest {
 
     @Test
     public void oneSiblingIncludedOneBlockLaterAndAnotherIncludedRightAfter() throws IOException {
-        BlockChainBuilder builder = new BlockChainBuilder().setBlockStore(new RemascTestBlockStore()).setTesting(true).setRsk(true).setGenesis(genesisBlock);
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setRsk(true).setGenesis(genesisBlock);
 
         List<SiblingElement> siblings = Lists.newArrayList(new SiblingElement(5, 6, this.minerFee), new SiblingElement(5, 7, this.minerFee));
 
@@ -696,7 +696,7 @@ public class RemascProcessMinerFeesTest {
 
     @Test
     public void siblingIncludedSevenBlocksLater() throws IOException {
-        BlockChainBuilder builder = new BlockChainBuilder().setBlockStore(new RemascTestBlockStore()).setTesting(true).setRsk(true).setGenesis(genesisBlock);
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setRsk(true).setGenesis(genesisBlock);
 
         List<SiblingElement> siblings = Lists.newArrayList(new SiblingElement(5, 12, this.minerFee));
 
@@ -724,7 +724,10 @@ public class RemascProcessMinerFeesTest {
 
     @Test
     public void siblingsFeeForMiningBlockMustBeRoundedAndTheRoundedSurplusBurned() throws IOException {
-        BlockChainBuilder builder = new BlockChainBuilder().setBlockStore(new RemascTestBlockStore()).setTesting(true).setRsk(true).setGenesis(genesisBlock);
+        BlockChainBuilder builder = new BlockChainBuilder()
+                .setTesting(true)
+                .setRsk(true)
+                .setGenesis(genesisBlock);
         long minerFee = 21000;
 
         List<SiblingElement> siblings = Lists.newArrayList();
@@ -759,7 +762,7 @@ public class RemascProcessMinerFeesTest {
 
     @Test
     public void unclesPublishingFeeMustBeRoundedAndTheRoundedSurplusBurned() throws IOException {
-        BlockChainBuilder builder = new BlockChainBuilder().setBlockStore(new RemascTestBlockStore()).setTesting(true).setRsk(true).setGenesis(genesisBlock);
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setRsk(true).setGenesis(genesisBlock);
         long minerFee = 21000;
 
         List<SiblingElement> siblings = Lists.newArrayList();

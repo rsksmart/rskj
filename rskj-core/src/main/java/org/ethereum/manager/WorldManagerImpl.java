@@ -21,8 +21,6 @@ package org.ethereum.manager;
 
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.metrics.HashRateCalculator;
-import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
@@ -34,7 +32,6 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.client.PeerClient;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.slf4j.Logger;
@@ -66,9 +63,6 @@ public class WorldManagerImpl implements WorldManager {
     private Repository repository;
 
     @Autowired
-    private PeerClient activePeer;
-
-    @Autowired
     private BlockStore blockStore;
 
     @Autowired
@@ -88,12 +82,6 @@ public class WorldManagerImpl implements WorldManager {
 
     @Autowired
     ConfigCapabilities configCapabilities;
-
-    @Autowired
-    private MinerServer minerServer;
-
-    @Autowired
-    private MinerClient minerClient;
 
     BlockProcessor nodeBlockProcessor;
 
@@ -133,14 +121,6 @@ public class WorldManagerImpl implements WorldManager {
         return blockchain;
     }
 
-    public void setActivePeer(PeerClient peer) {
-        this.activePeer = peer;
-    }
-
-    public PeerClient getActivePeer() {
-        return activePeer;
-    }
-
     public BlockStore getBlockStore() {
         return blockStore;
     }
@@ -164,10 +144,6 @@ public class WorldManagerImpl implements WorldManager {
     public BlockProcessor getNodeBlockProcessor(){
         return this.nodeBlockProcessor;
     }
-
-    public MinerClient getMinerClient() { return this.minerClient; }
-
-    public MinerServer getMinerServer() { return this.minerServer; }
 
     public HashRateCalculator getHashRateCalculator() { return hashRateCalculator; }
 

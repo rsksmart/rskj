@@ -41,12 +41,9 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.util.concurrent.FutureAdapter;
 
 import javax.annotation.Nonnull;
-import javax.annotation.PostConstruct;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.util.List;
@@ -54,62 +51,55 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-/**
- * @author Roman Mandeleil
- * @since 27.07.2014
- */
-// @Component
 public class EthereumImpl implements Ethereum {
 
     private static final Logger logger = LoggerFactory.getLogger("facade");
     private static final Logger gLogger = LoggerFactory.getLogger("general");
 
-    @Autowired
-    WorldManager worldManager;
-
-    @Autowired
-    AdminInfo adminInfo;
-
-    @Autowired
-    ChannelManager channelManager;
-
-    @Autowired
-    PeerServer peerServer;
-
-    @Autowired
-    ApplicationContext ctx;
-
-    @Autowired
-    ProgramInvokeFactory programInvokeFactory;
-
-    @Autowired
-    PendingState pendingState;
-
-    @Autowired
-    SystemProperties config;
-
-    @Autowired
-    CompositeEthereumListener compositeEthereumListener;
-
-    @Autowired
-    ReceiptStore receiptStore;
+    private final WorldManager worldManager;
+    private final AdminInfo adminInfo;
+    private final ChannelManager channelManager;
+    private final PeerServer peerServer;
+    private final ProgramInvokeFactory programInvokeFactory;
+    private final PendingState pendingState;
+    private final SystemProperties config;
+    private final CompositeEthereumListener compositeEthereumListener;
+    private final ReceiptStore receiptStore;
+    private final PeerClientFactory peerClientFactory;
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
 
-    public EthereumImpl() {
-        System.out.println();
+    public EthereumImpl(WorldManager worldManager,
+                        AdminInfo adminInfo,
+                        ChannelManager channelManager,
+                        PeerServer peerServer,
+                        ProgramInvokeFactory programInvokeFactory,
+                        PendingState pendingState,
+                        SystemProperties config,
+                        CompositeEthereumListener compositeEthereumListener,
+                        ReceiptStore receiptStore,
+                        PeerClientFactory peerClientFactory) {
+        this.worldManager = worldManager;
+        this.adminInfo = adminInfo;
+        this.channelManager = channelManager;
+        this.peerServer = peerServer;
+        this.programInvokeFactory = programInvokeFactory;
+        this.pendingState = pendingState;
+        this.config = config;
+        this.compositeEthereumListener = compositeEthereumListener;
+        this.receiptStore = receiptStore;
+        this.peerClientFactory = peerClientFactory;
     }
 
-    @PostConstruct
     public void init() {
         if (config.listenPort() > 0) {
-            Executors.newSingleThreadExecutor().submit(
-                    new Runnable() {
-                        public void run() {
-                            peerServer.start(config.listenPort());
-                        }
-                    }
-            );
+            Executors.newSingleThreadExecutor(runnable -> {
+                Thread thread = new Thread(runnable);
+                thread.setUncaughtExceptionHandler((exceptionThread, exception) -> {
+                    gLogger.error("Unable to start peer server", exception);
+                });
+                return thread;
+            }).execute(() -> peerServer.start(config.listenPort()));
         }
         compositeEthereumListener.addListener(gasPriceTracker);
 
@@ -124,7 +114,7 @@ public class EthereumImpl implements Ethereum {
     @Override
     public void connect(final String ip, final int port, final String remoteId) {
         logger.info("Connecting to: {}:{}", ip, port);
-        final PeerClient peerClient = ctx.getBean(PeerClient.class);
+        PeerClient peerClient = peerClientFactory.newInstance();
         peerClient.connectAsync(ip, port, remoteId, false);
     }
 
@@ -156,23 +146,6 @@ public class EthereumImpl implements Ethereum {
     @Override
     public void close() {
 //        worldManager.close();
-    }
-
-    @Override
-    public PeerClient getDefaultPeer() {
-
-        PeerClient peer = worldManager.getActivePeer();
-        if (peer == null) {
-
-            peer = new PeerClient();
-            worldManager.setActivePeer(peer);
-        }
-        return peer;
-    }
-
-    @Override
-    public boolean isConnected() {
-        return worldManager.getActivePeer() != null;
     }
 
     @Override
@@ -324,5 +297,9 @@ public class EthereumImpl implements Ethereum {
     @Override
     public SystemProperties getSystemProperties() {
         return this.config;
+    }
+
+    public interface PeerClientFactory {
+        PeerClient newInstance();
     }
 }

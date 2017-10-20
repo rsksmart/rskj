@@ -223,7 +223,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                     this.syncProcessor.onTimePassed(timePassed);
                 }
             }
-            catch (Throwable ex) {
+            catch (Exception ex) {
                 logger.error("Error {}", ex.getMessage());
             }
         }

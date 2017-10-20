@@ -20,7 +20,8 @@ package co.rsk;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
-import co.rsk.core.RskFactory;
+import co.rsk.mine.MinerClient;
+import co.rsk.mine.MinerServer;
 import co.rsk.mine.TxBuilder;
 import co.rsk.mine.TxBuilderEx;
 import co.rsk.net.Metrics;
@@ -32,108 +33,110 @@ import org.ethereum.config.DefaultConfig;
 import org.ethereum.rpc.JsonRpcNettyServer;
 import org.ethereum.rpc.JsonRpcWeb3ServerHandler;
 import org.ethereum.rpc.Web3;
+import org.ethereum.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.stereotype.Component;
 
-import static co.rsk.config.RskSystemProperties.CONFIG;
-
-/**
- * Created by ajlopez on 3/3/2016.
- */
+@Component
 public class Start {
     private static Logger logger = LoggerFactory.getLogger("start");
 
-    private String[] args;
-    private Class config;
-
-    public Start(String[] args, Class nodeConfig) {
-        this.args = args;
-        this.config = nodeConfig;
-    }
+    private Rsk rsk;
+    private UDPServer udpServer;
+    private MinerServer minerServer;
+    private MinerClient minerClient;
 
     public static void main(String[] args) throws Exception {
-        Start start = new Start(args, DefaultConfig.class);
-        start.startNode();
+        if (RskSystemProperties.CONFIG.databaseReset()){ //FIXME: move this outside main
+            FileUtil.recursiveDelete(RskSystemProperties.CONFIG.databaseDir());
+            logger.info("Database reset done");
+        }
+        ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
+        Start start = ctx.getBean(Start.class);
+        start.startNode(args);
     }
 
-    public void startNode() throws Exception {
+    @Autowired
+    public Start(Rsk rsk, UDPServer udpServer, MinerServer minerServer, MinerClient minerClient) {
+        this.rsk = rsk;
+        this.udpServer = udpServer;
+        this.minerServer = minerServer;
+        this.minerClient = minerClient;
+    }
+
+    public void startNode(String[] args) throws Exception {
         logger.info("Starting RSK");
 
         CLIInterface.call(args);
 
-        if (!"".equals(CONFIG.blocksLoader())) {
-            CONFIG.setSyncEnabled(Boolean.FALSE);
-            CONFIG.setDiscoveryEnabled(Boolean.FALSE);
+        if (!"".equals(RskSystemProperties.CONFIG.blocksLoader())) {
+            RskSystemProperties.CONFIG.setSyncEnabled(Boolean.FALSE);
+            RskSystemProperties.CONFIG.setDiscoveryEnabled(Boolean.FALSE);
         }
 
-        Rsk rsk = RskFactory.createRsk(config);
+        Metrics.registerNodeID(RskSystemProperties.CONFIG.nodeId());
 
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                ((ConfigurableApplicationContext) RskFactory.getContext()).close();
-            }
-        });
-        Metrics.registerNodeID(CONFIG.nodeId());
+        if (RskSystemProperties.CONFIG.simulateTxs()) {
+            enableSimulateTxs(rsk);
+        }
 
-        enableSimulateTx(rsk);
+        if (RskSystemProperties.CONFIG.simulateTxsEx()) {
+            enableSimulateTxsEx(rsk);
+        }
 
-        enableRpc(rsk);
+        if (RskSystemProperties.CONFIG.isRpcEnabled()) {
+            logger.info("RPC enabled");
+            enableRpc(rsk);
+        }
+        else {
+            logger.info("RPC disabled");
+        }
 
         if (RskSystemProperties.CONFIG.waitForSync()) {
             waitRskSyncDone(rsk);
         }
 
-        enableMiningFunctionality(rsk);
+        if (RskSystemProperties.CONFIG.minerServerEnabled()) {
+            minerServer.start();
 
-        enablePeerDiscovery();
+            if (RskSystemProperties.CONFIG.minerClientEnabled()) {
+                minerClient.mine();
+            }
+        }
+
+        if (RskSystemProperties.CONFIG.peerDiscovery()) {
+            enablePeerDiscovery();
+        }
     }
 
     private void enablePeerDiscovery() {
-        if(RskSystemProperties.CONFIG.peerDiscovery()) {
-            UDPServer udpServer = RskFactory.getContext().getBean(UDPServer.class);
-            udpServer.start();
-        }
-    }
-
-    private void enableMiningFunctionality(Rsk rsk) {
-        if (RskSystemProperties.CONFIG.minerServerEnabled()) {
-            rsk.getMinerServer().start();
-        }
-
-        if (RskSystemProperties.CONFIG.minerServerEnabled() && RskSystemProperties.CONFIG.minerClientEnabled()) {
-            rsk.getMinerClient().mine();
-        }
+        udpServer.start();
     }
 
     private void enableRpc(Rsk rsk) throws Exception {
-        if (RskSystemProperties.CONFIG.isRpcEnabled()) {
-            logger.info("RPC enabled");
-            Web3 web3Service = new Web3RskImpl(rsk);
-            JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, RskSystemProperties.CONFIG.getRpcModules());
-            new JsonRpcNettyServer(
-                RskSystemProperties.CONFIG.rpcPort(),
-                RskSystemProperties.CONFIG.soLingerTime(),
-                Boolean.TRUE,
-                new CorsConfiguration(),
-                serverHandler
-            ).start();
-        }
-        else {
-            logger.info("RPC disabled");
-        }
+        Web3 web3Service = new Web3RskImpl(rsk, minerServer, minerClient);
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, RskSystemProperties.CONFIG.getRpcModules());
+        new JsonRpcNettyServer(
+            RskSystemProperties.CONFIG.rpcPort(),
+            RskSystemProperties.CONFIG.soLingerTime(),
+            Boolean.TRUE,
+            new CorsConfiguration(),
+            serverHandler
+        ).start();
     }
 
-    private void enableSimulateTx(Rsk rsk) {
-        if (RskSystemProperties.CONFIG.simulateTxs()) {
-            new TxBuilder(rsk).simulateTxs();
-        }
-
-        if (RskSystemProperties.CONFIG.simulateTxsEx()) {
-            new TxBuilderEx().simulateTxs(rsk, RskSystemProperties.CONFIG);
-        }
+    private void enableSimulateTxs(Rsk rsk) {
+        new TxBuilder(rsk).simulateTxs();
     }
+
+    private void enableSimulateTxsEx(Rsk rsk) {
+        new TxBuilderEx().simulateTxs(rsk, RskSystemProperties.CONFIG);
+    }
+
     private void waitRskSyncDone(Rsk rsk) throws InterruptedException {
         while (rsk.isBlockchainEmpty() || rsk.isSyncingBlocks() || rsk.isPlayingBlocks()) {
             try {

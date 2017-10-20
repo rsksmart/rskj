@@ -27,7 +27,6 @@ import org.ethereum.core.Transaction;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.manager.WorldManager;
-import org.ethereum.net.client.PeerClient;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
@@ -55,10 +54,6 @@ public interface Ethereum {
     void addListener(EthereumListener listener);
 
     ImportResult addNewMinedBlock(Block block);
-
-    PeerClient getDefaultPeer();
-
-    boolean isConnected();
 
     void close();
 
