@@ -82,7 +82,7 @@ public class Web3ImplLogsTest {
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = (Repository) world.getBlockChain().getRepository();
         eth.worldManager = worldManager;
-        Web3Impl web3 = new Web3Impl(eth, RskSystemProperties.CONFIG, WalletFactory.createPersistentWallet(), Mockito.mock(MinerClient.class), Mockito.mock(MinerServer.class));
+        Web3Impl web3 = new Web3Impl(eth, RskSystemProperties.CONFIG, WalletFactory.createWallet(), Mockito.mock(MinerClient.class), Mockito.mock(MinerServer.class));
 
         // TODO tricky link to listener
         world.getBlockChain().setListener(web3.setupListener());
