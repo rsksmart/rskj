@@ -45,12 +45,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.mockito.Matchers.any;
 
 @RunWith(PowerMockRunner.class)
 public class FederationTest {
     private Federation federation;
+    private List<BtcECKey> sortedPublicKeys;
 
     @Before
     public void createFederation() {
@@ -67,6 +69,14 @@ public class FederationTest {
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
+        sortedPublicKeys = Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPrivate(BigInteger.valueOf(100)),
+                BtcECKey.fromPrivate(BigInteger.valueOf(200)),
+                BtcECKey.fromPrivate(BigInteger.valueOf(300)),
+                BtcECKey.fromPrivate(BigInteger.valueOf(400)),
+                BtcECKey.fromPrivate(BigInteger.valueOf(500)),
+                BtcECKey.fromPrivate(BigInteger.valueOf(600)),
+        }).stream().sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
     }
 
     @Test
@@ -99,12 +109,9 @@ public class FederationTest {
             List<BtcECKey> publicKeys = invocationOnMock.getArgumentAt(1, List.class);
             Assert.assertEquals(3, numberOfSignaturesRequired);
             Assert.assertEquals(6, publicKeys.size());
-            Assert.assertTrue(Arrays.equals(publicKeys.get(0).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey()));
-            Assert.assertTrue(Arrays.equals(publicKeys.get(1).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey()));
-            Assert.assertTrue(Arrays.equals(publicKeys.get(2).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey()));
-            Assert.assertTrue(Arrays.equals(publicKeys.get(3).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey()));
-            Assert.assertTrue(Arrays.equals(publicKeys.get(4).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey()));
-            Assert.assertTrue(Arrays.equals(publicKeys.get(5).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey()));
+            for (int i = 0; i < sortedPublicKeys.size(); i++) {
+                Assert.assertTrue(Arrays.equals(sortedPublicKeys.get(i).getPubKey(), publicKeys.get(i).getPubKey()));
+            }
             return new Script(new byte[]{(byte)0xaa});
         });
         Assert.assertTrue(Arrays.equals(federation.getRedeemScript().getProgram(), new byte[]{(byte) 0xaa}));
@@ -124,12 +131,9 @@ public class FederationTest {
             List<BtcECKey> publicKeys = invocationOnMock.getArgumentAt(1, List.class);
             Assert.assertEquals(3, numberOfSignaturesRequired);
             Assert.assertEquals(6, publicKeys.size());
-            Assert.assertTrue(Arrays.equals(publicKeys.get(0).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey()));
-            Assert.assertTrue(Arrays.equals(publicKeys.get(1).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey()));
-            Assert.assertTrue(Arrays.equals(publicKeys.get(2).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey()));
-            Assert.assertTrue(Arrays.equals(publicKeys.get(3).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey()));
-            Assert.assertTrue(Arrays.equals(publicKeys.get(4).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey()));
-            Assert.assertTrue(Arrays.equals(publicKeys.get(5).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey()));
+            for (int i = 0; i < sortedPublicKeys.size();i ++) {
+                Assert.assertTrue(Arrays.equals(sortedPublicKeys.get(i).getPubKey(), publicKeys.get(i).getPubKey()));
+            }
             return new Script(new byte[]{(byte)0xaa});
         });
         Assert.assertTrue(Arrays.equals(federation.getP2SHScript().getProgram(), new byte[]{(byte) 0xaa}));
@@ -153,12 +157,9 @@ public class FederationTest {
             List<BtcECKey> publicKeys = invocationOnMock.getArgumentAt(1, List.class);
             Assert.assertEquals(3, numberOfSignaturesRequired);
             Assert.assertEquals(6, publicKeys.size());
-            Assert.assertTrue(Arrays.equals(publicKeys.get(0).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey()));
-            Assert.assertTrue(Arrays.equals(publicKeys.get(1).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey()));
-            Assert.assertTrue(Arrays.equals(publicKeys.get(2).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey()));
-            Assert.assertTrue(Arrays.equals(publicKeys.get(3).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey()));
-            Assert.assertTrue(Arrays.equals(publicKeys.get(4).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey()));
-            Assert.assertTrue(Arrays.equals(publicKeys.get(5).getPubKey(), BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey()));
+            for (int i = 0; i < sortedPublicKeys.size();i ++) {
+                Assert.assertTrue(Arrays.equals(sortedPublicKeys.get(i).getPubKey(), publicKeys.get(i).getPubKey()));
+            }
             return new Script(Hex.decode("a914896ed9f3446d51b5510f7f0b6ef81b2bde55140e87"));
         });
 
@@ -166,6 +167,126 @@ public class FederationTest {
         Assert.assertEquals("2N5muMepJizJE1gR7FbHJU6CD18V3BpNF9p", federation.getAddress().toBase58());
         // Make sure the address creation happens only once
         Assert.assertEquals(1, calls.size());
+    }
+
+    @Test
+    public void testEquals_a() {
+        Assert.assertTrue(federation.equals(federation));
+        Assert.assertTrue(federation.equalsFederation(federation));
+
+        Assert.assertFalse(federation.equals(null));
+        Assert.assertFalse(federation.equals(new Object()));
+        Assert.assertFalse(federation.equals("something else"));
+        Assert.assertFalse(federation.equalsFederation(null));
+    }
+
+    @Test
+    public void testEquals_differentThreshold() {
+        Federation otherFederation = new Federation(
+                2,
+                Arrays.asList(new BtcECKey[]{
+                        BtcECKey.fromPrivate(BigInteger.valueOf(100)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(200)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(300)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(400)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(500)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(600)),
+                }),
+                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        Assert.assertFalse(federation.equals(otherFederation));
+    }
+
+    @Test
+    public void testEquals_differentNumberOfPublicKeys() {
+        Federation otherFederation = new Federation(
+                3,
+                Arrays.asList(new BtcECKey[]{
+                        BtcECKey.fromPrivate(BigInteger.valueOf(100)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(200)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(300)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(400)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(500)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(600)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(700)),
+                }),
+                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        Assert.assertFalse(federation.equals(otherFederation));
+    }
+
+    @Test
+    public void testEquals_differentCreationTime() {
+        Federation otherFederation = new Federation(
+                3,
+                Arrays.asList(new BtcECKey[]{
+                        BtcECKey.fromPrivate(BigInteger.valueOf(100)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(200)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(300)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(400)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(500)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(600)),
+                }),
+                ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        Assert.assertFalse(federation.equals(otherFederation));
+    }
+
+    @Test
+    public void testEquals_differentNetworkParameters() {
+        Federation otherFederation = new Federation(
+                3,
+                Arrays.asList(new BtcECKey[]{
+                        BtcECKey.fromPrivate(BigInteger.valueOf(100)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(200)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(300)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(400)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(500)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(600)),
+                }),
+                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                NetworkParameters.fromID(NetworkParameters.ID_TESTNET)
+        );
+        Assert.assertFalse(federation.equals(otherFederation));
+    }
+
+    @Test
+    public void testEquals_differentPublicKeys() {
+        Federation otherFederation = new Federation(
+                3,
+                Arrays.asList(new BtcECKey[]{
+                        BtcECKey.fromPrivate(BigInteger.valueOf(100)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(200)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(300)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(400)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(500)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(610)),
+                }),
+                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        Assert.assertFalse(federation.equals(otherFederation));
+    }
+
+    @Test
+    public void testEquals_same() {
+        Federation otherFederation = new Federation(
+                3,
+                Arrays.asList(new BtcECKey[]{
+                        BtcECKey.fromPrivate(BigInteger.valueOf(100)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(200)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(300)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(400)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(500)),
+                        BtcECKey.fromPrivate(BigInteger.valueOf(600)),
+                }),
+                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        Assert.assertTrue(federation.equals(otherFederation));
     }
 
     @Test

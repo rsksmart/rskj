@@ -62,6 +62,7 @@ import java.nio.ByteBuffer;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.*;
 
 import static org.mockito.Mockito.mock;
@@ -759,7 +760,7 @@ public class BridgeSupportTest {
         for (int i = 0; i < numberOfInputsToSign; i++) {
             derEncodedSigs.add(derEncodedSig);
         }
-        bridgeSupport.addSignature(1, federation.getPublicKeys().get(0), derEncodedSigs, sha3Hash.getBytes());
+        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(0)), derEncodedSigs, sha3Hash.getBytes());
         if (signTwice) {
             // Create another valid signature with the same private key
             ECDSASigner signer = new ECDSASigner();
@@ -767,7 +768,7 @@ public class BridgeSupportTest {
             signer.init(true, privKey);
             BigInteger[] components = signer.generateSignature(sighash.getBytes());
             BtcECKey.ECDSASignature sig2 = new BtcECKey.ECDSASignature(components[0], components[1]).toCanonicalised();
-            bridgeSupport.addSignature(1, federation.getPublicKeys().get(0), Lists.newArrayList(sig2.encodeToDER()), sha3Hash.getBytes());
+            bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(0)), Lists.newArrayList(sig2.encodeToDER()), sha3Hash.getBytes());
         }
         if (privateKeysToSignWith.size()>1) {
             BtcECKey.ECDSASignature sig2 = privateKeysToSignWith.get(1).sign(sighash);
@@ -776,7 +777,7 @@ public class BridgeSupportTest {
             for (int i = 0; i < numberOfInputsToSign; i++) {
                 derEncodedSigs2.add(derEncodedSig2);
             }
-            bridgeSupport.addSignature(1, federation.getPublicKeys().get(1), derEncodedSigs2, sha3Hash.getBytes());
+            bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(1)), derEncodedSigs2, sha3Hash.getBytes());
         }
         bridgeSupport.save();
         track.commit();
@@ -807,6 +808,15 @@ public class BridgeSupportTest {
             Assert.assertEquals(false, retrievedScriptSig.getChunks().get(2).data.length > 0);
             Assert.assertFalse(provider.getBtcUTXOs().isEmpty());
         }
+    }
+
+    private BtcECKey findPublicKeySignedBy(List<BtcECKey> pubs, BtcECKey pk) {
+        for (BtcECKey pub : pubs) {
+            if (Arrays.equals(pk.getPubKey(), pub.getPubKey())) {
+                return pub;
+            }
+        }
+        return null;
     }
 
     @Test
@@ -1209,6 +1219,51 @@ public class BridgeSupportTest {
         Assert.assertEquals(-1L, bridgeSupport.getBtcTxHashProcessedHeight(Sha256Hash.of("anything".getBytes())).longValue());
     }
 
+    @Test
+    public void getFederationMethods_genesis() throws IOException {
+        Federation activeFederation = new Federation(
+                2,
+                getTestFederationPublicKeys(3),
+                Instant.ofEpochMilli(1000),
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        Federation genesisFederation = new Federation(
+                4,
+                getTestFederationPublicKeys(6),
+                Instant.ofEpochMilli(1000),
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(true, activeFederation, genesisFederation);
+
+        Assert.assertEquals(6, bridgeSupport.getFederationSize().intValue());
+        Assert.assertEquals(4, bridgeSupport.getFederationThreshold().intValue());
+        List<BtcECKey> publicKeys = getTestFederationPublicKeys(6);
+        for (int i = 0; i < 6; i++) {
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
+        }
+    }
+
+    @Test
+    public void getFederationMethods_active() throws IOException {
+        Federation activeFederation = new Federation(
+                2,
+                getTestFederationPublicKeys(3),
+                Instant.ofEpochMilli(1000),
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        Federation genesisFederation = new Federation(
+                4,
+                getTestFederationPublicKeys(6),
+                Instant.ofEpochMilli(1000),
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, activeFederation, genesisFederation);
+
+        Assert.assertEquals(3, bridgeSupport.getFederationSize().intValue());
+        Assert.assertEquals(2, bridgeSupport.getFederationThreshold().intValue());
+
+    }
+
     private BridgeStorageProvider getBridgeStorageProviderMockWithProcessedHashes() throws IOException {
         Map<Sha256Hash, Long> mockedHashes = new HashMap<>();
         BridgeStorageProvider providerMock = mock(BridgeStorageProvider.class);
@@ -1219,6 +1274,33 @@ public class BridgeSupportTest {
         }
 
         return providerMock;
+    }
+
+    private BridgeSupport getBridgeSupportWithMocksForFederationTests(boolean genesis, Federation mockedActiveFederation, Federation mockedGenesisFederation) throws IOException {
+        BridgeConstants constantsMock = mock(BridgeConstants.class);
+        BridgeStorageProvider providerMock = mock(BridgeStorageProvider.class);
+        when(providerMock.getActiveFederation()).thenReturn(genesis ? null : mockedActiveFederation);
+        when(constantsMock.getGenesisFederation()).thenReturn(mockedGenesisFederation);
+
+        BridgeSupport result = new BridgeSupport(
+            null,
+            null,
+            providerMock,
+            null,
+            null
+        );
+
+        Whitebox.setInternalState(result, "bridgeConstants", constantsMock);
+
+        return result;
+    }
+
+    private List<BtcECKey> getTestFederationPublicKeys(int amount) {
+        List<BtcECKey> result = new ArrayList<>();
+        for (int i = 0; i < amount; i++) {
+            result.add(BtcECKey.fromPrivate(BigInteger.valueOf(amount * 100)));
+        }
+        return result;
     }
 
     public boolean hasEnoughConfirmations(long currentBlockNumber) throws Exception{
