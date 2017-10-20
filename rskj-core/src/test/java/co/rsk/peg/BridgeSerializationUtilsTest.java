@@ -156,14 +156,11 @@ public class BridgeSerializationUtilsTest {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_decode2_forFederation();
 
-        byte[][] publicKeyBytes = new byte[][]{
-            BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
-            BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
-            BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey(),
-            BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey(),
-            BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey(),
-            BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
-        };
+        byte[][] publicKeyBytes = Arrays.asList(100, 200, 300, 400, 500, 600).stream()
+            .map(k -> BtcECKey.fromPrivate(BigInteger.valueOf(k)))
+            .sorted(BtcECKey.PUBKEY_COMPARATOR)
+            .map(k -> k.getPubKey())
+            .toArray(byte[][]::new);
 
         StringBuilder sampleBuilder = new StringBuilder();
         sampleBuilder.append("03"); // Length of outer list
