@@ -49,6 +49,7 @@ public class Start {
     private UDPServer udpServer;
     private MinerServer minerServer;
     private MinerClient minerClient;
+    private RskSystemProperties rskSystemProperties;
 
     public static void main(String[] args) throws Exception {
         if (RskSystemProperties.CONFIG.databaseReset()){ //FIXME: move this outside main
@@ -61,11 +62,12 @@ public class Start {
     }
 
     @Autowired
-    public Start(Rsk rsk, UDPServer udpServer, MinerServer minerServer, MinerClient minerClient) {
+    public Start(Rsk rsk, UDPServer udpServer, MinerServer minerServer, MinerClient minerClient, RskSystemProperties rskSystemProperties) {
         this.rsk = rsk;
         this.udpServer = udpServer;
         this.minerServer = minerServer;
         this.minerClient = minerClient;
+        this.rskSystemProperties = rskSystemProperties;
     }
 
     public void startNode(String[] args) throws Exception {
@@ -73,22 +75,22 @@ public class Start {
 
         CLIInterface.call(args);
 
-        if (!"".equals(RskSystemProperties.CONFIG.blocksLoader())) {
-            RskSystemProperties.CONFIG.setSyncEnabled(Boolean.FALSE);
-            RskSystemProperties.CONFIG.setDiscoveryEnabled(Boolean.FALSE);
+        if (!"".equals(rskSystemProperties.blocksLoader())) {
+            rskSystemProperties.setSyncEnabled(Boolean.FALSE);
+            rskSystemProperties.setDiscoveryEnabled(Boolean.FALSE);
         }
 
-        Metrics.registerNodeID(RskSystemProperties.CONFIG.nodeId());
+        Metrics.registerNodeID(rskSystemProperties.nodeId());
 
-        if (RskSystemProperties.CONFIG.simulateTxs()) {
+        if (rskSystemProperties.simulateTxs()) {
             enableSimulateTxs(rsk);
         }
 
-        if (RskSystemProperties.CONFIG.simulateTxsEx()) {
+        if (rskSystemProperties.simulateTxsEx()) {
             enableSimulateTxsEx(rsk);
         }
 
-        if (RskSystemProperties.CONFIG.isRpcEnabled()) {
+        if (rskSystemProperties.isRpcEnabled()) {
             logger.info("RPC enabled");
             enableRpc(rsk);
         }
@@ -96,19 +98,19 @@ public class Start {
             logger.info("RPC disabled");
         }
 
-        if (RskSystemProperties.CONFIG.waitForSync()) {
+        if (rskSystemProperties.waitForSync()) {
             waitRskSyncDone(rsk);
         }
 
-        if (RskSystemProperties.CONFIG.minerServerEnabled()) {
+        if (rskSystemProperties.minerServerEnabled()) {
             minerServer.start();
 
-            if (RskSystemProperties.CONFIG.minerClientEnabled()) {
+            if (rskSystemProperties.minerClientEnabled()) {
                 minerClient.mine();
             }
         }
 
-        if (RskSystemProperties.CONFIG.peerDiscovery()) {
+        if (rskSystemProperties.peerDiscovery()) {
             enablePeerDiscovery();
         }
     }
@@ -119,10 +121,10 @@ public class Start {
 
     private void enableRpc(Rsk rsk) throws Exception {
         Web3 web3Service = new Web3RskImpl(rsk, minerServer, minerClient);
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, RskSystemProperties.CONFIG.getRpcModules());
+        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, rskSystemProperties.getRpcModules());
         new JsonRpcNettyServer(
-            RskSystemProperties.CONFIG.rpcPort(),
-            RskSystemProperties.CONFIG.soLingerTime(),
+            rskSystemProperties.rpcPort(),
+            rskSystemProperties.soLingerTime(),
             Boolean.TRUE,
             new CorsConfiguration(),
             serverHandler
@@ -134,7 +136,7 @@ public class Start {
     }
 
     private void enableSimulateTxsEx(Rsk rsk) {
-        new TxBuilderEx().simulateTxs(rsk, RskSystemProperties.CONFIG);
+        new TxBuilderEx().simulateTxs(rsk, rskSystemProperties);
     }
 
     private void waitRskSyncDone(Rsk rsk) throws InterruptedException {

@@ -83,7 +83,8 @@ public class RskFactory {
                       EthereumImpl.PeerClientFactory peerClientFactory,
                       PeerScoringManager peerScoringManager,
                       NodeBlockProcessor nodeBlockProcessor,
-                      NodeMessageHandler nodeMessageHandler) {
+                      NodeMessageHandler nodeMessageHandler,
+                      RskSystemProperties rskSystemProperties) {
 
         logger.info("Running {},  core version: {}-{}", config.genesisInfo(), config.projectVersion(), config.projectVersionModifier());
         BuildInfo.printInfo();
@@ -97,9 +98,9 @@ public class RskFactory {
             String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
             logger.info("Capability eth version: [{}]", versions);
         }
-        if (RskSystemProperties.CONFIG.isBlocksEnabled()) {
-            setupRecorder(rsk, RskSystemProperties.CONFIG.blocksRecorder());
-            setupPlayer(rsk, RskSystemProperties.CONFIG.blocksPlayer());
+        if (rskSystemProperties.isBlocksEnabled()) {
+            setupRecorder(rsk, rskSystemProperties.blocksRecorder());
+            setupPlayer(rsk, rskSystemProperties.blocksPlayer());
         }
         return rsk;
     }
