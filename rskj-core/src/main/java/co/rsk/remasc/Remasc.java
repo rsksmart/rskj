@@ -25,9 +25,11 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
+import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.FastByteComparisons;
-import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.util.RLP;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +37,7 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -117,7 +120,7 @@ public class Remasc {
 
         // Pay RSK labs cut
         BigInteger payToRskLabs = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
-        transfer(remascConstants.getRskLabsAddress(), payToRskLabs);
+        payMiningFees(processingBlockHeader.getHash(), payToRskLabs, remascConstants.getRskLabsAddress());
         fullBlockReward = fullBlockReward.subtract(payToRskLabs);
 
         List<Sibling> siblings = provider.getSiblings().get(processingBlockNumber);
@@ -135,7 +138,7 @@ public class Remasc {
                 fullBlockReward = fullBlockReward.subtract(punishment);
                 provider.setBurnedBalance(provider.getBurnedBalance().add(punishment));
             }
-            transfer(processingBlockHeader.getCoinbase(), fullBlockReward);
+            payMiningFees(processingBlockHeader.getHash(), fullBlockReward, processingBlockHeader.getCoinbase());
             provider.setBrokenSelectionRule(Boolean.FALSE);
         }
 
@@ -172,33 +175,33 @@ public class Remasc {
     private void payWithSiblings(BlockHeader processingBlockHeader, BigInteger fullBlockReward, List<Sibling> siblings, boolean previousBrokenSelectionRule) {
         SiblingPaymentCalculator paymentCalculator = new SiblingPaymentCalculator(fullBlockReward, previousBrokenSelectionRule, siblings.size(), this.remascConstants);
 
-        this.payPublishersWhoIncludedSiblings(siblings, paymentCalculator.getIndividualPublisherReward());
+        this.payPublishersWhoIncludedSiblings(processingBlockHeader.getHash(), siblings, paymentCalculator.getIndividualPublisherReward());
         provider.addToBurnBalance(paymentCalculator.getPublishersSurplus());
 
         provider.addToBurnBalance(paymentCalculator.getMinersSurplus());
 
-        this.payIncludedSiblings(siblings, paymentCalculator.getIndividualMinerReward());
+        this.payIncludedSiblings(processingBlockHeader.getHash(), siblings, paymentCalculator.getIndividualMinerReward());
         if (previousBrokenSelectionRule) {
             provider.addToBurnBalance(paymentCalculator.getPunishment().multiply(BigInteger.valueOf(siblings.size() + 1L)));
         }
 
         // Pay to main chain block miner
-        transfer(processingBlockHeader.getCoinbase(), paymentCalculator.getIndividualMinerReward());
+        payMiningFees(processingBlockHeader.getHash(), paymentCalculator.getIndividualMinerReward(), processingBlockHeader.getCoinbase());
     }
 
-    private void payPublishersWhoIncludedSiblings(List<Sibling> siblings, BigInteger minerReward) {
+    private void payPublishersWhoIncludedSiblings(byte[] blockHash, List<Sibling> siblings, BigInteger minerReward) {
         for (Sibling sibling : siblings) {
-            transfer(sibling.getIncludedBlockCoinbase(), minerReward);
+            payMiningFees(blockHash, minerReward, sibling.getIncludedBlockCoinbase());
         }
     }
 
-    private void payIncludedSiblings(List<Sibling> siblings, BigInteger topReward) {
+    private void payIncludedSiblings(byte[] blockHash, List<Sibling> siblings, BigInteger topReward) {
         long perLateBlockPunishmentDivisor = remascConstants.getLateUncleInclusionPunishmentDivisor();
         for (Sibling sibling : siblings) {
             long processingBlockNumber = executionBlock.getNumber() - remascConstants.getMaturity();
             long numberOfBlocksLate = sibling.getIncludedHeight() - processingBlockNumber - 1L;
             BigInteger lateInclusionPunishment = topReward.multiply(BigInteger.valueOf(numberOfBlocksLate)).divide(BigInteger.valueOf(perLateBlockPunishmentDivisor));
-            transfer(sibling.getCoinbase(), topReward.subtract(lateInclusionPunishment));
+            payMiningFees(blockHash, topReward.subtract(lateInclusionPunishment), sibling.getCoinbase());
             provider.addToBurnBalance(lateInclusionPunishment);
         }
     }
@@ -216,8 +219,21 @@ public class Remasc {
         return false;
     }
 
-    private void transfer(byte[] toAddr, BigInteger value) {
-        BIUtil.transfer(repository, Hex.decode(PrecompiledContracts.REMASC_ADDR), toAddr, value);
+    private void payMiningFees(byte[] blockHash, BigInteger value, byte[] toAddress) {
+        this.transferPayment(toAddress, value);
+        this.logPayment(blockHash, value, toAddress);
+    }
+
+    private void transferPayment(byte[] toAddress, BigInteger value) {
+        BIUtil.transfer(repository, Hex.decode(contractAddress), toAddress, value);
+    }
+
+    private void logPayment(byte[] blockHash, BigInteger value, byte[] toAddress) {
+
+        List<DataWord> topics = Arrays.asList(RemascContract.MINING_FEE_TOPIC, new DataWord(toAddress));
+        byte[] data = RLP.encodeList(RLP.encodeElement(blockHash), RLP.encodeBigInteger(value));
+
+        logs.add(new LogInfo(TypeConverter.stringToByteArray(contractAddress), topics, data));
     }
 }
 
