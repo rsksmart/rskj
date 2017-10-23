@@ -28,6 +28,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.LogInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -43,6 +44,7 @@ import java.util.List;
 public class Remasc {
     private static final Logger logger = LoggerFactory.getLogger(Remasc.class);
 
+    private final String contractAddress;
     private RemascConfig remascConstants;
     private RemascStorageProvider provider;
 
@@ -52,13 +54,17 @@ public class Remasc {
     private Block executionBlock;
     private BlockStore blockStore;
 
-    Remasc(Transaction executionTx, Repository repository, String contractAddress, Block executionBlock, BlockStore blockStore, RemascConfig remascConstants) {
+    private List<LogInfo> logs;
+
+    Remasc(Transaction executionTx, Repository repository, String contractAddress, Block executionBlock, BlockStore blockStore, RemascConfig remascConstants, List<LogInfo> logs) {
         this.executionTx = executionTx;
         this.repository = repository;
+        this.contractAddress = contractAddress;
         this.executionBlock = executionBlock;
         this.blockStore = blockStore;
         this.remascConstants = remascConstants;
         this.provider = new RemascStorageProvider(repository, contractAddress);
+        this.logs = logs;
     }
 
     public void save() {

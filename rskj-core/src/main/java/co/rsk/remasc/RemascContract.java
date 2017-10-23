@@ -76,7 +76,7 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public void init(Transaction executionTx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
-        this.remasc = new Remasc(executionTx, repository, contractAddress, executionBlock, blockStore, this.config);
+        this.remasc = new Remasc(executionTx, repository, contractAddress, executionBlock, blockStore, this.config, logs);
     }
 
     @Override
