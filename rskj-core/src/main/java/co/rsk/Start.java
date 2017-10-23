@@ -33,7 +33,6 @@ import org.ethereum.config.DefaultConfig;
 import org.ethereum.rpc.JsonRpcNettyServer;
 import org.ethereum.rpc.JsonRpcWeb3ServerHandler;
 import org.ethereum.rpc.Web3;
-import org.ethereum.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,10 +51,6 @@ public class Start {
     private RskSystemProperties rskSystemProperties;
 
     public static void main(String[] args) throws Exception {
-        if (RskSystemProperties.CONFIG.databaseReset()){ //FIXME: move this outside main
-            FileUtil.recursiveDelete(RskSystemProperties.CONFIG.databaseDir());
-            logger.info("Database reset done");
-        }
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
         Start start = ctx.getBean(Start.class);
         start.startNode(args);

@@ -41,6 +41,7 @@ import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.*;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.solidity.compiler.SolidityCompiler;
+import org.ethereum.util.FileUtil;
 import org.ethereum.validator.ProofOfWorkRule;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -78,6 +79,12 @@ public class DefaultConfig {
 
     @PostConstruct
     public void init() {
+        String databaseDir = config.databaseDir();
+        if (config.databaseReset()){
+            FileUtil.recursiveDelete(databaseDir);
+            logger.info("Database reset done");
+        }
+
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> logger.error("Uncaught exception", e));
     }
 
