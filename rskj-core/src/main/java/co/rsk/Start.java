@@ -119,13 +119,13 @@ public class Start {
         udpServer.start();
     }
 
-    private void enableRpc(Rsk rsk) throws Exception {
+    private void enableRpc(Rsk rsk) throws InterruptedException {
         Web3 web3Service = new Web3RskImpl(rsk, minerServer, minerClient);
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, rskSystemProperties.getRpcModules());
         new JsonRpcNettyServer(
             rskSystemProperties.rpcPort(),
             rskSystemProperties.soLingerTime(),
-            Boolean.TRUE,
+            true,
             new CorsConfiguration(),
             serverHandler
         ).start();

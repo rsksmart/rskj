@@ -30,14 +30,14 @@ import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
+import org.ethereum.core.PendingState;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
+import org.ethereum.manager.AdminInfo;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.EthereumChannelInitializerFactory;
-import org.ethereum.core.PendingState;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.manager.AdminInfo;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.client.ConfigCapabilities;
@@ -49,11 +49,7 @@ import org.ethereum.net.message.StaticMessages;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.rlpx.HandshakeHandler;
 import org.ethereum.net.rlpx.MessageCodec;
-import org.ethereum.net.server.Channel;
-import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.server.EthereumChannelInitializer;
-import org.ethereum.net.server.PeerServer;
-import org.ethereum.net.server.PeerServerImpl;
+import org.ethereum.net.server.*;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
@@ -120,18 +116,22 @@ public class RskFactory {
                     Blockchain bc = rsk.getWorldManager().getBlockchain();
                     ChannelManager cm = rsk.getChannelManager();
 
-                    for (Block block = bplayer.readBlock(); block != null; block = bplayer.readBlock()) {
-                        ImportResult tryToConnectResult = bc.tryToConnect(block);
-                        if (BlockProcessResult.importOk(tryToConnectResult)) {
-                            cm.broadcastBlock(block, null);
-                        }
-                    }
+                    connectBlocks(bplayer, bc, cm);
                 } catch (Exception e) {
                     logger.error("Error", e);
                 } finally {
                     rsk.setIsPlayingBlocks(false);
                 }
             }).start();
+        }
+    }
+
+    private void connectBlocks(FileBlockPlayer bplayer, Blockchain bc, ChannelManager cm) {
+        for (Block block = bplayer.readBlock(); block != null; block = bplayer.readBlock()) {
+            ImportResult tryToConnectResult = bc.tryToConnect(block);
+            if (BlockProcessResult.importOk(tryToConnectResult)) {
+                cm.broadcastBlock(block, null);
+            }
         }
     }
 
