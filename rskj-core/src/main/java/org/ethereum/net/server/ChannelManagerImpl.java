@@ -92,8 +92,8 @@ public class ChannelManagerImpl implements ChannelManager {
         mainWorker.scheduleWithFixedDelay((Runnable) () -> {
             try {
                 processNewPeers();
-            } catch (Throwable t) {
-                logger.error("Error", t);
+            } catch (Exception e) {
+                logger.error("Error", e);
             }
         }, 0, 1, TimeUnit.SECONDS);
     }
@@ -295,7 +295,7 @@ public class ChannelManagerImpl implements ChannelManager {
     /**
      * Propagates the new block message across active peers with exclusion of
      * 'receivedFrom' peer.
-     *
+     * @deprecated
      * @param block        new Block to be sent
      * @param receivedFrom the peer which sent original message or null if
      *                     the block has been mined by us

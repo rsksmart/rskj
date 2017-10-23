@@ -23,14 +23,10 @@ import org.ethereum.db.ByteArrayWrapper;
 
 import org.spongycastle.util.encoders.Hex;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
 import java.math.BigInteger;
 
 import java.nio.ByteBuffer;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -297,56 +293,6 @@ public class ByteUtil {
         return bytes;
     }
 
-    /**
-     * @param arg - not more that 32 bits
-     * @return - bytes of the value pad with complete to 32 zeroes
-     */
-    public static byte[] encodeValFor32Bits(Object arg) {
-
-        byte[] data;
-
-        // check if the string is numeric
-        if (arg.toString().trim().matches("-?\\d+(\\.\\d+)?"))
-            data = new BigInteger(arg.toString().trim()).toByteArray();
-            // check if it's hex number
-        else if (arg.toString().trim().matches("0[xX][0-9a-fA-F]+"))
-            data = new BigInteger(arg.toString().trim().substring(2), 16).toByteArray();
-        else
-            data = arg.toString().trim().getBytes(StandardCharsets.UTF_8);
-
-
-        if (data.length > 32)
-            throw new RuntimeException("values can't be more than 32 byte");
-
-        byte[] val = new byte[32];
-
-        int j = 0;
-        for (int i = data.length; i > 0; --i) {
-            val[31 - j] = data[i - 1];
-            ++j;
-        }
-        return val;
-    }
-
-    /**
-     * encode the values and concatenate together
-     *
-     * @param args Object
-     * @return byte[]
-     */
-    public static byte[] encodeDataList(Object... args) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        for (Object arg : args) {
-            byte[] val = encodeValFor32Bits(arg);
-            try {
-                baos.write(val);
-            } catch (IOException e) {
-                throw new Error("Happen something that should never happen ", e);
-            }
-        }
-        return baos.toByteArray();
-    }
-
     public static int firstNonZeroByte(byte[] data) {
         for (int i = 0; i < data.length; ++i) {
             if (data[i] != 0) {
@@ -446,7 +392,7 @@ public class ByteUtil {
         int posByte = data.length - 1 - pos / 8;
         int posBit = pos % 8;
         byte dataByte = data[posByte];
-        return Math.min(1, (dataByte & (1 << (posBit))));
+        return Math.min(1, (dataByte & 0xff & (1 << (posBit))));
     }
 
     public static byte[] and(byte[] b1, byte[] b2) {

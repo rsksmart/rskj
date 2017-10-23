@@ -154,7 +154,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
                 addReceivedMessage(encodedMessage);
             }
-            this.queue.offer(new MessageTask(sender, message));
+            if (!this.queue.offer(new MessageTask(sender, message))){
+                logger.trace("Queue full, message not added to the queue");
+            }
         } else {
             recordEvent(sender, EventType.REPEATED_MESSAGE);
             logger.trace("Received message already known, not added to the queue");

@@ -82,9 +82,9 @@ public class MessageQueue {
             public void run() {
                 try {
                     nudgeQueue();
-                } catch (Throwable t) {
-                    logger.error("Unhandled exception", t);
-                    panicProcessor.panic("messagequeue", String.format("Unhandled exception %s", t.toString()));
+                } catch (Exception e) {
+                    logger.error("Unhandled exception", e);
+                    panicProcessor.panic("messagequeue", String.format("Unhandled exception %s", e.toString()));
                 }
             }
         }, 10, 10, TimeUnit.MILLISECONDS);
