@@ -27,7 +27,6 @@ import co.rsk.mine.TxBuilderEx;
 import co.rsk.net.Metrics;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.rpc.CorsConfiguration;
-import co.rsk.rpc.Web3RskImpl;
 import org.ethereum.cli.CLIInterface;
 import org.ethereum.config.DefaultConfig;
 import org.ethereum.rpc.JsonRpcNettyServer;
@@ -49,6 +48,7 @@ public class Start {
     private MinerServer minerServer;
     private MinerClient minerClient;
     private RskSystemProperties rskSystemProperties;
+    private final Web3Factory web3Factory;
 
     public static void main(String[] args) throws Exception {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
@@ -57,12 +57,13 @@ public class Start {
     }
 
     @Autowired
-    public Start(Rsk rsk, UDPServer udpServer, MinerServer minerServer, MinerClient minerClient, RskSystemProperties rskSystemProperties) {
+    public Start(Rsk rsk, UDPServer udpServer, MinerServer minerServer, MinerClient minerClient, RskSystemProperties rskSystemProperties, Web3Factory web3Factory) {
         this.rsk = rsk;
         this.udpServer = udpServer;
         this.minerServer = minerServer;
         this.minerClient = minerClient;
         this.rskSystemProperties = rskSystemProperties;
+        this.web3Factory = web3Factory;
     }
 
     public void startNode(String[] args) throws Exception {
@@ -87,7 +88,7 @@ public class Start {
 
         if (rskSystemProperties.isRpcEnabled()) {
             logger.info("RPC enabled");
-            enableRpc(rsk);
+            enableRpc();
         }
         else {
             logger.info("RPC disabled");
@@ -114,8 +115,8 @@ public class Start {
         udpServer.start();
     }
 
-    private void enableRpc(Rsk rsk) throws InterruptedException {
-        Web3 web3Service = new Web3RskImpl(rsk, minerClient, minerServer);
+    private void enableRpc() throws InterruptedException {
+        Web3 web3Service = web3Factory.newInstance();
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, rskSystemProperties.getRpcModules());
         new JsonRpcNettyServer(
             rskSystemProperties.rpcPort(),
@@ -143,5 +144,9 @@ public class Start {
                 throw e1;
             }
         }
+    }
+
+    public interface Web3Factory {
+        Web3 newInstance();
     }
 }

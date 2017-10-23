@@ -28,7 +28,6 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.solidity.compiler.SolidityCompiler;
 
 /**
  * WorldManager is a singleton containing references to different parts of the system.
@@ -64,5 +63,4 @@ public interface WorldManager {
 
     NetworkStateExporter getNetworkStateExporter();
 
-    SolidityCompiler getSolidityCompiler();
 }

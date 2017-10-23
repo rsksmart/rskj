@@ -16,31 +16,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.core;
+package co.rsk.rpc.modules.eth;
 
-import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.rpc.dto.CompilationResultDTO;
 
-/**
- * Created by mario on 06/12/16.
- */
-public class WalletFactory {
+import java.util.Map;
 
-    public static Wallet createPersistentWallet() {
-        return createPersistentWallet("wallet");
-    }
+public interface EthModuleSolidity {
 
-    public static Wallet createPersistentWallet(String storeName) {
-        Wallet wallet = new Wallet();
-        KeyValueDataSource ds = new LevelDbDataSource(storeName);
-        ds.init();
-        wallet.setStore(ds);
-        return wallet;
-    }
-
-    public static Wallet createWallet() {
-        return new Wallet();
-    }
-
-
+    Map<String, CompilationResultDTO> compileSolidity(String contract) throws Exception;
 }

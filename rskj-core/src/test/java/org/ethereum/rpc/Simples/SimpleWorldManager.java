@@ -30,7 +30,6 @@ import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.solidity.compiler.SolidityCompiler;
 
 /**
  * Created by Ruben Altman on 09/06/2016.
@@ -43,12 +42,14 @@ public class SimpleWorldManager implements WorldManager {
     BlockStore blockStore;
     EthereumListener listener;
 
-    public SimpleWorldManager() {
-        this(null);
-    }
+    public SimpleWorldManager() { }
 
     public SimpleWorldManager(SimpleBlockProcessor nodeBlockProcessor) {
         this.nodeBlockProcessor = nodeBlockProcessor;
+    }
+
+    public SimpleWorldManager(PendingState pendingState) {
+        this.pendingState = pendingState;
     }
 
     @Override
@@ -136,8 +137,4 @@ public class SimpleWorldManager implements WorldManager {
         return null;
     }
 
-    @Override
-    public SolidityCompiler getSolidityCompiler() {
-        return null;
-    }
 }
