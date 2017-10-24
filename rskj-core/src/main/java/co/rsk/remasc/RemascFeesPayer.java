@@ -30,7 +30,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Created by martin.medina on 10/23/17.
+ * Knows how to transfer funds between accounts and how to log that transaction.
+ *
+ * @author martin.medina
  */
 class RemascFeesPayer {
 

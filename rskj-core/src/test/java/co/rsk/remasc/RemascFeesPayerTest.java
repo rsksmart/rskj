@@ -38,7 +38,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 /**
- * Created by martin.medina on 10/23/17.
+ * @author martin.medina
  */
 public class RemascFeesPayerTest {
 
