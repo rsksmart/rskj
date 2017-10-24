@@ -174,7 +174,7 @@ public class MinerServerImpl implements MinerServer {
             // clone the block
             newBlock = workingBlock.cloneBlock();
 
-            logger.debug("blocksWaitingforPoW size " + blocksWaitingforPoW.size());
+            logger.debug("blocksWaitingForPoW size " + blocksWaitingforPoW.size());
         }
 
         logger.info("Received block {} {}", newBlock.getNumber(), Hex.toHexString(newBlock.getHash()));
@@ -185,14 +185,14 @@ public class MinerServerImpl implements MinerServer {
         newBlock.seal();
 
         if (!isValid(newBlock)) {
-            String message = "Invalid block supplied by miner " + " : " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber() + ". Hash: " + newBlock.getShortHash();
+            String message = "Invalid block supplied by miner: " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber();
             logger.error(message);
 
             return new SubmitBlockResult("ERROR", message);
         } else {
             ImportResult importResult = ethereum.addNewMinedBlock(newBlock);
 
-            logger.info("Mined block import result is " + importResult + " : " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber() + ". Hash: " + newBlock.getShortHash());
+            logger.info("Mined block import result is " + importResult + " : " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber());
             SubmittedBlockInfo blockInfo = new SubmittedBlockInfo(importResult, newBlock.getHash(), newBlock.getNumber());
 
             return new SubmitBlockResult("OK", "OK", blockInfo);
