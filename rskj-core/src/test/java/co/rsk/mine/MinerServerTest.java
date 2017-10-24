@@ -104,6 +104,7 @@ public class MinerServerTest {
     public void submitBitcoinBlock() {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
         Mockito.when(ethereumImpl.getRepository()).thenReturn((org.ethereum.facade.Repository) blockchain.getRepository());
+        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
@@ -116,13 +117,18 @@ public class MinerServerTest {
 
         findNonce(work, bitcoinMergedMiningBlock);
 
-        minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+        SubmitBlockResult result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+
+        Assert.assertEquals("OK", result.getStatus());
+        Assert.assertNotNull(result.getBlockInfo());
+        Assert.assertEquals("0x1", result.getBlockInfo().getBlockIncludedHeight());
+        Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
         Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
     }
 
     /*
-     * This test is probabilistic, but it has a really hight chance to pass. We will generate
+     * This test is probabilistic, but it has a really high chance to pass. We will generate
      * a random block that it is unlikely to pass the Long.MAX_VALUE difficulty, though
      * it may happen once. Twice would be suspicious.
      */
@@ -150,7 +156,10 @@ public class MinerServerTest {
 
         bitcoinMergedMiningBlock.setNonce(2);
 
-        minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+        SubmitBlockResult result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+
+        Assert.assertEquals("ERROR", result.getStatus());
+        Assert.assertNull(result.getBlockInfo());
 
         Mockito.verify(ethereumImpl, Mockito.times(0)).addNewMinedBlock(Mockito.any());
     }
@@ -172,6 +181,7 @@ public class MinerServerTest {
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
         Mockito.when(ethereumImpl.getRepository()).thenReturn((org.ethereum.facade.Repository) blockchain.getRepository());
+        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
@@ -185,20 +195,26 @@ public class MinerServerTest {
         bitcoinMergedMiningBlock.setNonce(1);
 
         // Try to submit a block with invalid PoW, this should not eliminate the block from the cache
-        minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+        SubmitBlockResult result1 = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
+        Assert.assertEquals("ERROR", result1.getStatus());
+        Assert.assertNull(result1.getBlockInfo());
         Mockito.verify(ethereumImpl, Mockito.times(0)).addNewMinedBlock(Mockito.any());
 
         // Now try to submit the same block, this should work fine since the block remains in the cache
         findNonce(work, bitcoinMergedMiningBlock);
 
-        minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+        SubmitBlockResult result2 = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
+        Assert.assertEquals("OK", result2.getStatus());
+        Assert.assertNotNull(result2.getBlockInfo());
         Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
 
         // Finally, submit the same block again and validate that addNewMinedBlock is called again
-        minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+        SubmitBlockResult result3 = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
+        Assert.assertEquals("OK", result3.getStatus());
+        Assert.assertNotNull(result3.getBlockInfo());
         Mockito.verify(ethereumImpl, Mockito.times(2)).addNewMinedBlock(Mockito.any());
     }
 

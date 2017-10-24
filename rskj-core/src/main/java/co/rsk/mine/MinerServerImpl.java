@@ -146,7 +146,7 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @Override
-    public void submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
+    public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
         logger.debug("Received block with hash " + blockHashForMergedMining + " for merged mining");
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningBlock.getTransactions().get(0);
         co.rsk.bitcoinj.core.PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(bitcoinMergedMiningBlock);
@@ -158,8 +158,10 @@ public class MinerServerImpl implements MinerServer {
             Block workingBlock = blocksWaitingforPoW.get(key);
 
             if (workingBlock == null) {
-                logger.warn("Cannot publish block, could not find hash " + blockHashForMergedMining + " in the cache");
-                return;
+                String message = "Cannot publish block, could not find hash " + blockHashForMergedMining + " in the cache";
+                logger.warn(message);
+
+                return new SubmitBlockResult("ERROR", message);
             }
 
             // just in case, remove all references to this block.
@@ -183,10 +185,17 @@ public class MinerServerImpl implements MinerServer {
         newBlock.seal();
 
         if (!isValid(newBlock)) {
-            logger.error("Invalid block supplied by miner " + " : " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber() + ". Hash: " + newBlock.getShortHash());
+            String message = "Invalid block supplied by miner " + " : " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber() + ". Hash: " + newBlock.getShortHash();
+            logger.error(message);
+
+            return new SubmitBlockResult("ERROR", message);
         } else {
             ImportResult importResult = ethereum.addNewMinedBlock(newBlock);
+
             logger.info("Mined block import result is " + importResult + " : " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber() + ". Hash: " + newBlock.getShortHash());
+            SubmittedBlockInfo blockInfo = new SubmittedBlockInfo(importResult, newBlock.getHash(), newBlock.getNumber());
+
+            return new SubmitBlockResult("OK", "OK", blockInfo);
         }
     }
 

@@ -21,6 +21,8 @@ package org.ethereum.rpc.Simples;
 import co.rsk.mine.MinerServer;
 import co.rsk.mine.MinerWork;
 import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.mine.SubmitBlockResult;
+import co.rsk.mine.SubmittedBlockInfo;
 import org.spongycastle.util.encoders.Hex;
 
 /**
@@ -34,7 +36,9 @@ public class SimpleMinerServer implements MinerServer {
     public void start() {}
 
     @Override
-    public void submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock) {}
+    public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock) {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public byte[] getCoinbaseAddress() {
