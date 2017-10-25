@@ -58,14 +58,14 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
             pendingHeaders.add(header);
         }
 
-        if (skeletonDownloadHelper.hasNextChunk()) {
-            resetTimeElapsed();
-            syncEventsHandler.sendBlockHeadersRequest(skeletonDownloadHelper.getNextChunk());
+        if (!skeletonDownloadHelper.hasNextChunk()) {
+            // Finished verifying headers
+            syncEventsHandler.startDownloadingBodies(pendingHeaders);
             return;
         }
 
-        // Finished verifying headers
-        syncEventsHandler.startDownloadingBodies(pendingHeaders);
+        resetTimeElapsed();
+        syncEventsHandler.sendBlockHeadersRequest(skeletonDownloadHelper.getNextChunk());
     }
 
     @Override

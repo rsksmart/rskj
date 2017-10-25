@@ -15,27 +15,24 @@ import java.util.Map;
 import java.util.Queue;
 
 public class DownloadingBodiesSyncState  extends BaseSyncState {
-    private BlockValidationRule blockUnclesHashValidationRule;
-    private BlockValidationRule blockTransactionsValidationRule;
+    private BlockValidationRule blockUnclesHashValidationRule = new BlockUnclesHashValidationRule();
+    private BlockValidationRule blockTransactionsValidationRule = new BlockRootValidationRule();
     private Queue<BlockHeader> pendingHeaders;
     private Map<Long, PendingBodyResponse> pendingBodyResponses = new HashMap<>();
 
     public DownloadingBodiesSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation, Queue<BlockHeader> pendingHeaders) {
         super(syncInformation, syncEventsHandler, syncConfiguration);
-
         this.pendingHeaders = pendingHeaders;
-        this.blockUnclesHashValidationRule = new BlockUnclesHashValidationRule();
-        this.blockTransactionsValidationRule = new BlockRootValidationRule();
     }
 
     @Override
     public void newBody(BodyResponseMessage message) {
         if (!isExpectedBody(message.getId())) {
-            // Invalid body response
             syncEventsHandler.onErrorSyncing(
                     "Unexpected body received from node {}",
                     EventType.UNEXPECTED_MESSAGE,
                     syncInformation.getSelectedPeerId());
+
             return;
         }
 
@@ -52,14 +49,14 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
         syncInformation.processBlock(block);
 
-        if (!pendingHeaders.isEmpty()) {
-            resetTimeElapsed();
-            requestBody();
+        if (pendingHeaders.isEmpty()) {
+            // Finished syncing
+            syncEventsHandler.onCompletedSyncing();
             return;
         }
 
-        // Finished syncing
-        syncEventsHandler.onCompletedSyncing();
+        resetTimeElapsed();
+        requestBody();
     }
 
     @Override

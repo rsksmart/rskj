@@ -1,8 +1,6 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageChannel;
@@ -434,6 +432,82 @@ public class SyncProcessorTest {
         Assert.assertEquals(11, blockchain.getBestBlock().getNumber());
         Assert.assertArrayEquals(block.getHash(), blockchain.getBestBlockHash());
         Assert.assertTrue(processor.getExpectedResponses().isEmpty());
+    }
+
+    @Test
+    public void doesntprocessInvalidBodyResponse() {
+        final BlockStore store = new BlockStore();
+        Blockchain blockchain = BlockChainBuilder.ofSize(10);
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
+
+        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
+
+        Block block = BlockGenerator.createChildBlock(blockchain.getBlockByNumber(10));
+
+        Assert.assertEquals(11, block.getNumber());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+
+        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
+        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
+        List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
+        List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
+        Account senderAccount = createAccount("sender");
+        Account receiverAccount = createAccount("receiver");
+        Transaction tx = createTransaction(senderAccount, receiverAccount, BigInteger.valueOf(1000000), BigInteger.ZERO);
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+
+        long lastRequestId = new Random().nextLong();
+        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, txs, uncles);
+        processor.registerExpectedMessage(response);
+
+        processor.startDownloadingBodies(new ArrayDeque<>(Collections.singletonList(block.getHeader())));
+        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
+
+        processor.processBodyResponse(sender, response);
+
+        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assert.assertNotEquals(block.getNumber(), blockchain.getBestBlock().getNumber());
+        // if an unexpected body arrives then stops syncing
+        Assert.assertFalse(processor.getSyncState().isSyncing());
+    }
+
+    @Test
+    public void doesntprocessUnexpectedBodyResponse() {
+        final BlockStore store = new BlockStore();
+        Blockchain blockchain = BlockChainBuilder.ofSize(10);
+        SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
+
+        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
+
+        Block block = BlockGenerator.createChildBlock(blockchain.getBlockByNumber(10));
+
+        Assert.assertEquals(11, block.getNumber());
+        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+
+        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
+        processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
+        List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
+        List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
+        long lastRequestId = new Random().nextLong();
+        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
+        processor.registerExpectedMessage(response);
+
+        processor.startDownloadingBodies(new ArrayDeque<>(Collections.singletonList(block.getHeader())));
+        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
+
+        processor.processBodyResponse(sender, response);
+
+        Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
+        Assert.assertNotEquals(block.getNumber(), blockchain.getBestBlock().getNumber());
+        // if an invalid body arrives then stops syncing
+        Assert.assertFalse(processor.getSyncState().isSyncing());
     }
 
     @Test
