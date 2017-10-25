@@ -597,13 +597,18 @@ public enum OpCode {
      *  also the Value parameter is omitted for this opCode
      */
     DELEGATECALL(0xf4, 6, 1, SPECIAL_TIER),
-
-  /**
+    /**
      * (0xfc) Halt execution as an invalid opcode
      * setting version==256 assures it's never considered valid.
      * (because scriptVersion range is 0..255)
      */
     HEADER(0xfc, 0, 0, ZERO_TIER,256),
+    /**
+     * (0xfd) The `REVERT` instruction will stop execution, roll back all state changes done so far
+     * and provide a pointer to a memory section, which can be interpreted as an error code or message.
+     * While doing so, it will not consume all the remaining gas.
+     */
+    REVERT(0xfd, 2, 0, ZERO_TIER),
 
     /**
      *  (0xff) Halt execution and register account for

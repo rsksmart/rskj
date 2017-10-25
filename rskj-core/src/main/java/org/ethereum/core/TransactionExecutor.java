@@ -315,6 +315,7 @@ public class TransactionExecutor {
 
         // TODO: transaction call for pre-compiled  contracts
         if (vm == null) {
+            cacheTrack.commit();
             return;
         }
 
@@ -331,7 +332,7 @@ public class TransactionExecutor {
             result = program.getResult();
             mEndGas = toBI(tx.getGasLimit()).subtract(toBI(program.getResult().getGasUsed()));
 
-            if (tx.isContractCreation()) {
+            if (tx.isContractCreation() && !result.isRevert()) {
 
                 int returnDataGasValue = getLength(program.getResult().getHReturn()) * GasCost.CREATE_DATA;
                 if (mEndGas.compareTo(BigInteger.valueOf(returnDataGasValue)) >= 0) {
@@ -347,10 +348,15 @@ public class TransactionExecutor {
                 }
             }
 
-            if (result.getException() != null) {
+            if (result.getException() != null || result.isRevert()) {
                 result.clearFieldsOnException();
+                cacheTrack.rollback();
 
-                throw result.getException();
+                if (result.getException() != null) {
+                    throw result.getException();
+                }
+            } else {
+                cacheTrack.commit();
             }
 
         } catch (Throwable e) {

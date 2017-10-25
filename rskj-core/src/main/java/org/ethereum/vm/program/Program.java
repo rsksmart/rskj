@@ -637,20 +637,7 @@ public class Program {
             getResult().merge(result);
         }
 
-        // 4. CREATE THE CONTRACT OUT OF RETURN
-        byte[] code = result.getHReturn();
-
-        long storageCost = getLength(code) * GasCost.CREATE_DATA;
-        long afterSpend = programInvoke.getGas() - storageCost - result.getGasUsed();
-        if (afterSpend < 0) {
-            result.setException(Program.Exception.notEnoughSpendingGas("No gas to return just created contract",
-                        storageCost, this));
-        } else {
-            result.spendGas(storageCost);
-            track.saveCode(newAddress, code);
-        }
-
-        if (result.getException() != null) {
+        if (result.getException() != null || result.isRevert()) {
             if (isLogEnabled)
               logger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
                     Hex.toHexString(newAddress),
@@ -665,15 +652,31 @@ public class Program {
 
             track.rollback();
             stackPushZero();
-            return;
+            if (result.getException() != null) {
+                return;
+            }
         }
+        else {
+            // 4. CREATE THE CONTRACT OUT OF RETURN
+            byte[] code = result.getHReturn();
 
-        track.commit();
-        getResult().addDeleteAccounts(result.getDeleteAccounts());
-        getResult().addLogInfos(result.getLogInfoList());
+            long storageCost = getLength(code) * GasCost.CREATE_DATA;
+            long afterSpend = programInvoke.getGas() - storageCost - result.getGasUsed();
+            if (afterSpend < 0) {
+                result.setException(Program.Exception.notEnoughSpendingGas("No gas to return just created contract",
+                        storageCost, this));
+            } else {
+                result.spendGas(storageCost);
+                track.saveCode(newAddress, code);
+            }
 
-        // IN SUCCESS PUSH THE ADDRESS INTO THE STACK
-        stackPush(new DataWord(newAddress));
+            track.commit();
+            getResult().addDeleteAccounts(result.getDeleteAccounts());
+            getResult().addLogInfos(result.getLogInfoList());
+
+            // IN SUCCESS PUSH THE ADDRESS INTO THE STACK
+            stackPush(new DataWord(newAddress));
+        }
 
         // 5. REFUND THE REMAIN GAS
         long refundGas = gasLimit - result.getGasUsed();
@@ -825,10 +828,12 @@ public class Program {
             callResult = executeCode(msg,contextAddress, contextBalance,internalTx,track,programCode,senderAddress,data);
         }
         else {
+            // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
             track.commit();
             callResult = true;
             refundGas(msg.getGas().longValue(), "remaining gas from the internal call");
         }
+
         if (callResult)
             stackPushOne();
         else
@@ -861,7 +866,7 @@ public class Program {
         getTrace().merge(program.getTrace());
         getResult().merge(childResult );
 
-        if (childResult .getException() != null) {
+        if (childResult .getException() != null || result.isRevert()) {
             if (isGasLogEnabled)
                 gasLogger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
                     Hex.toHexString(contextAddress),
@@ -872,7 +877,12 @@ public class Program {
             childResult.rejectLogInfos();
 
             track.rollback();
-            return false;
+            if (result.getException() != null) {
+                return false;
+            }
+        } else {
+            // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
+            track.commit();
         }
 
 
@@ -882,10 +892,6 @@ public class Program {
         int size = msg.getOutDataSize().intValue();
 
         memorySaveLimited(offset, buffer, size);
-
-        // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
-        track.commit();
-
 
         // 5. REFUND THE REMAIN GAS
         BigInteger refundGas = msg.getGas().value().subtract(toBI(childResult.getGasUsed()));

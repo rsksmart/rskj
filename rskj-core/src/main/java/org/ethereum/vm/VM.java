@@ -1376,6 +1376,11 @@ public class VM {
         program.step();
     }
 
+    protected void doREVERT(){
+        doRETURN();
+        program.getResult().setRevert();
+    }
+
     protected void doRETURN(){
         DataWord size;
         long sizeLong;
@@ -1688,6 +1693,8 @@ public class VM {
             case OpCodes.OP_DELEGATECALL: doCALL();
             break;
             case OpCodes.OP_RETURN: doRETURN();
+            break;
+            case OpCodes.OP_REVERT: doREVERT();
             break;
             case OpCodes.OP_SUICIDE: doSUICIDE();
             break;
