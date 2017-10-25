@@ -35,8 +35,6 @@ public class DecidingSyncState extends BaseSyncState {
     }
 
     private void tryStartSyncing() {
-        knownPeers.getBestPeer()
-                .filter(syncInformation::hasLowerDifficulty)
-                .ifPresent(syncEventsHandler::startSyncing);
+        knownPeers.getBestPeer().ifPresent(syncEventsHandler::startSyncing);
     }
 }

@@ -2,6 +2,10 @@ package co.rsk.net.sync;
 
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.BodyResponseMessage;
+import co.rsk.scoring.EventType;
+import co.rsk.validators.BlockRootValidationRule;
+import co.rsk.validators.BlockUnclesHashValidationRule;
+import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -11,6 +15,8 @@ import java.util.Map;
 import java.util.Queue;
 
 public class DownloadingBodiesSyncState  extends BaseSyncState {
+    private BlockValidationRule blockUnclesHashValidationRule;
+    private BlockValidationRule blockTransactionsValidationRule;
     private Queue<BlockHeader> pendingHeaders;
     private Map<Long, PendingBodyResponse> pendingBodyResponses = new HashMap<>();
 
@@ -18,15 +24,17 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         super(syncInformation, syncEventsHandler, syncConfiguration);
 
         this.pendingHeaders = pendingHeaders;
+        this.blockUnclesHashValidationRule = new BlockUnclesHashValidationRule();
+        this.blockTransactionsValidationRule = new BlockRootValidationRule();
     }
 
     @Override
     public void newBody(BodyResponseMessage message) {
         if (!isExpectedBody(message.getId())) {
             // Invalid body response
-            // TODO(mc) do peer scoring, banning
             syncEventsHandler.onErrorSyncing(
                     "Unexpected body received from node {}",
+                    EventType.UNEXPECTED_MESSAGE,
                     syncInformation.getSelectedPeerId());
             return;
         }
@@ -34,9 +42,18 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         // we know it exists because it was called from a SyncEvent
         BlockHeader header = pendingBodyResponses.get(message.getId()).header;
         Block block = Block.fromValidData(header, message.getTransactions(), message.getUncles());
+        if (!blockUnclesHashValidationRule.isValid(block) || !blockTransactionsValidationRule.isValid(block)) {
+            syncEventsHandler.onErrorSyncing(
+                    "Invalid body received from node {}",
+                    EventType.INVALID_MESSAGE,
+                    syncInformation.getSelectedPeerId());
+            return;
+        }
+
         syncInformation.processBlock(block);
 
         if (!pendingHeaders.isEmpty()) {
+            resetTimeElapsed();
             requestBody();
             return;
         }
@@ -47,6 +64,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     @Override
     public void onEnter() {
+        resetTimeElapsed();
         requestBody();
     }
 
@@ -55,7 +73,6 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         long messageId = syncEventsHandler.sendBodyRequest(header);
         NodeID peerId = syncInformation.getSelectedPeerId();
         pendingBodyResponses.put(messageId, new PendingBodyResponse(peerId, header));
-        resetTimeElapsed();
     }
 
     public boolean isExpectedBody(long requestId) {

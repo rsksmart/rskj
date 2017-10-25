@@ -3,12 +3,10 @@ package co.rsk.net.sync;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This is mostly a workaround because SyncProcessor needs to access MessageChannel instances.
@@ -17,10 +15,12 @@ import java.util.stream.Collectors;
  */
 public class PeersInformation {
     private final SyncConfiguration syncConfiguration;
+    private final SyncInformation syncInformation;
     private Map<NodeID, SyncPeerStatus> peerStatuses = new HashMap<>();
 
-    public PeersInformation(SyncConfiguration syncConfiguration){
+    public PeersInformation(SyncConfiguration syncConfiguration, SyncInformation syncInformation){
         this.syncConfiguration = syncConfiguration;
+        this.syncInformation = syncInformation;
     }
 
     public int count() {
@@ -44,26 +44,31 @@ public class PeersInformation {
     }
 
     public SyncPeerStatus getPeer(NodeID nodeID) {
-        // TODO(mc) check expiration
         return this.peerStatuses.get(nodeID);
     }
 
     public Optional<MessageChannel> getBestPeer() {
+        return getCandidates()
+                .map(Map.Entry::getValue)
+                .max(SyncPeerStatus::peerTotalDifficultyComparator)
+                .map(SyncPeerStatus::getMessageChannel);
+    }
+
+    private Stream<Map.Entry<NodeID,SyncPeerStatus>> getCandidates(){
         return peerStatuses.entrySet().stream()
                 .filter(e -> !e.getValue().isExpired(syncConfiguration.getExpirationTimePeerStatus()))
-                .max(this::bestPeerComparator)
-                .map(Map.Entry::getValue)
-                .map(SyncPeerStatus::getMessageChannel);
+                .filter(e -> syncInformation.hasGoodReputation(e.getKey()))
+                .filter(e -> syncInformation.hasLowerDifficulty(e.getKey()));
+    }
+
+    public List<MessageChannel> getPeerCandidates() {
+        return getCandidates()
+                .map(e -> e.getValue().getMessageChannel())
+                .collect(Collectors.toList());
     }
 
     public Set<NodeID> knownNodeIds() {
         return peerStatuses.keySet();
-    }
-
-    private int bestPeerComparator(Map.Entry<NodeID, SyncPeerStatus> left, Map.Entry<NodeID, SyncPeerStatus> right) {
-         return Long.compare(
-                 left.getValue().getStatus().getBestBlockNumber(),
-                 right.getValue().getStatus().getBestBlockNumber());
     }
 
     public SyncPeerStatus registerPeer(MessageChannel messageChannel) {

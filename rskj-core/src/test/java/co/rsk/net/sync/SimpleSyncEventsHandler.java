@@ -2,6 +2,7 @@ package co.rsk.net.sync;
 
 
 import co.rsk.net.MessageChannel;
+import co.rsk.scoring.EventType;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
@@ -20,7 +21,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     public void sendBlockHeadersRequest(ChunkDescriptor chunk) { }
 
     @Override
-    public void onErrorSyncing(String message, Object... arguments) {
+    public void onErrorSyncing(String message, EventType eventType, Object... arguments) {
         stopSyncing();
     }
 

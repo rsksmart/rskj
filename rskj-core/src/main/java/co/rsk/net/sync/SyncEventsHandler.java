@@ -1,6 +1,7 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.MessageChannel;
+import co.rsk.scoring.EventType;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
@@ -13,9 +14,9 @@ public interface SyncEventsHandler {
 
     void sendBlockHashRequest(long height);
 
-    long sendBodyRequest(@Nonnull BlockHeader header);
+    void sendBlockHeadersRequest(ChunkDescriptor chunk);
 
-    void startSyncing(MessageChannel peer);
+    long sendBodyRequest(@Nonnull BlockHeader header);
 
     void startDownloadingBodies(Queue<BlockHeader> pendingHeaders);
 
@@ -23,11 +24,11 @@ public interface SyncEventsHandler {
 
     void startDownloadingSkeleton(long connectionPoint);
 
+    void startSyncing(MessageChannel peer);
+
     void stopSyncing();
 
-    void sendBlockHeadersRequest(ChunkDescriptor chunk);
-
-    void onErrorSyncing(String message, Object... arguments);
+    void onErrorSyncing(String message, EventType eventType, Object... arguments);
 
     void onCompletedSyncing();
 }

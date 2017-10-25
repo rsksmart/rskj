@@ -14,7 +14,7 @@ public class DecidingSyncStateTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         SimpleSyncInformation syncInformation = new SimpleSyncInformation();
-        PeersInformation knownPeers = new PeersInformation(syncConfiguration);
+        PeersInformation knownPeers = new PeersInformation(syncConfiguration, syncInformation);
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
 
         for (int i = 0; i < 5; i++) {
@@ -31,7 +31,7 @@ public class DecidingSyncStateTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         SimpleSyncInformation syncInformation = new SimpleSyncInformation();
-        PeersInformation knownPeers = new PeersInformation(syncConfiguration);
+        PeersInformation knownPeers = new PeersInformation(syncConfiguration, syncInformation);
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
 
         SimpleMessageChannel peerToRepeat = new SimpleMessageChannel();
@@ -55,7 +55,7 @@ public class DecidingSyncStateTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         SimpleSyncInformation syncInformation = new SimpleSyncInformation();
-        PeersInformation knownPeers = new PeersInformation(syncConfiguration);
+        PeersInformation knownPeers = new PeersInformation(syncConfiguration, syncInformation);
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
 
         syncState.tick(Duration.ofMinutes(2));
@@ -67,7 +67,7 @@ public class DecidingSyncStateTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         SimpleSyncInformation syncInformation = new SimpleSyncInformation();
-        PeersInformation knownPeers = new PeersInformation(syncConfiguration);
+        PeersInformation knownPeers = new PeersInformation(syncConfiguration, syncInformation);
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
@@ -82,7 +82,7 @@ public class DecidingSyncStateTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         SimpleSyncInformation syncInformation = new SimpleSyncInformation();
-        PeersInformation knownPeers = new PeersInformation(syncConfiguration);
+        PeersInformation knownPeers = new PeersInformation(syncConfiguration, syncInformation);
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
@@ -97,7 +97,7 @@ public class DecidingSyncStateTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
         SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
         SimpleSyncInformation syncInformation = new SimpleSyncInformation().withWorsePeers();
-        PeersInformation knownPeers = new PeersInformation(syncConfiguration);
+        PeersInformation knownPeers = new PeersInformation(syncConfiguration, syncInformation);
         SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
 
@@ -106,4 +106,21 @@ public class DecidingSyncStateTest {
         syncState.tick(Duration.ofMinutes(2));
         Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
     }
+
+    @Test
+    public void doesntStartSyncingIfAllPeersHaveBadReputation() {
+        SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
+        SimpleSyncEventsHandler syncEventsHandler = new SimpleSyncEventsHandler();
+        SimpleSyncInformation syncInformation = new SimpleSyncInformation().withBadReputation();
+        PeersInformation knownPeers = new PeersInformation(syncConfiguration, syncInformation);
+        SyncState syncState = new DecidingSyncState(syncConfiguration, syncEventsHandler, syncInformation, knownPeers);
+        Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+
+        knownPeers.registerPeer(new SimpleMessageChannel());
+        syncState.newPeerStatus();
+        syncState.tick(Duration.ofMinutes(2));
+        Assert.assertFalse(syncEventsHandler.startSyncingWasCalled());
+    }
+
+
 }

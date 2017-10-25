@@ -16,9 +16,8 @@ public class ScoringCalculator {
      * @return  <tt>true</tt> if the peer has good reputation
      */
     public boolean hasGoodReputation(PeerScoring scoring) {
-        if (scoring.getEventCounter(EventType.INVALID_BLOCK) > 0)
-            return false;
-
-        return true;
+        return scoring.getEventCounter(EventType.INVALID_BLOCK) < 1 &&
+                scoring.getEventCounter(EventType.INVALID_MESSAGE) < 1 &&
+                scoring.getEventCounter(EventType.TIMEOUT_MESSAGE) < 1;
     }
 }

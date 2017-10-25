@@ -3,6 +3,8 @@ package co.rsk.net;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.*;
+import co.rsk.scoring.EventType;
+import co.rsk.scoring.PeerScoringManager;
 import co.rsk.validators.BlockHeaderValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
@@ -38,15 +40,17 @@ public class SyncProcessor implements SyncEventsHandler {
     private NodeID selectedPeerId;
     private PendingMessages pendingMessages;
     private SyncInformationImpl syncInformation;
+    private PeerScoringManager peerScoringManager;
 
-    public SyncProcessor(Blockchain blockchain, BlockSyncService blockSyncService, SyncConfiguration syncConfiguration, BlockHeaderValidationRule blockHeaderValidationRule) {
+    public SyncProcessor(Blockchain blockchain, BlockSyncService blockSyncService, PeerScoringManager peerScoringManager, SyncConfiguration syncConfiguration, BlockHeaderValidationRule blockHeaderValidationRule) {
         // TODO(mc) implement FollowBestChain
         this.blockchain = blockchain;
         this.blockSyncService = blockSyncService;
         this.syncConfiguration = syncConfiguration;
-        this.peerStatuses = new PeersInformation(syncConfiguration);
         this.syncInformation = new SyncInformationImpl(blockHeaderValidationRule);
+        this.peerStatuses = new PeersInformation(syncConfiguration, syncInformation);
         this.pendingMessages = new PendingMessages();
+        this.peerScoringManager = peerScoringManager;
         setSyncState(new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses));
     }
 
@@ -196,7 +200,8 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void onErrorSyncing(String message, Object... arguments) {
+    public void onErrorSyncing(String message, EventType eventType, Object... arguments) {
+        peerScoringManager.recordEvent(this.selectedPeerId, null,eventType);
         logger.trace(message, arguments);
         stopSyncing();
     }
@@ -261,6 +266,11 @@ public class SyncProcessor implements SyncEventsHandler {
         return this.pendingMessages.getExpectedMessages();
     }
 
+    @VisibleForTesting
+    public boolean hasGoodReputation(NodeID nodeID) {
+        return this.peerScoringManager.hasGoodReputation(nodeID);
+    }
+
     private class SyncInformationImpl implements SyncInformation {
         private DependentBlockHeaderRule blockParentValidationRule = new DifficultyRule();
         private BlockHeaderValidationRule blockHeaderValidationRule;
@@ -275,14 +285,14 @@ public class SyncProcessor implements SyncEventsHandler {
         }
 
         @Override
-        public boolean hasLowerDifficulty(MessageChannel peer) {
-            Status status = getPeerStatus(peer.getPeerNodeID()).getStatus();
+        public boolean hasLowerDifficulty(NodeID nodeID) {
+            Status status = getPeerStatus(nodeID).getStatus();
             return blockchain.getStatus().hasLowerTotalDifficultyThan(status);
         }
 
         @Override
-        public void processBlock(Block block) {
-            blockSyncService.processBlock(getSelectedPeerChannel(), block);
+        public BlockProcessResult processBlock(Block block) {
+            return blockSyncService.processBlock(getSelectedPeerChannel(), block);
         }
 
         @Override
@@ -306,6 +316,11 @@ public class SyncProcessor implements SyncEventsHandler {
         @Override
         public NodeID getSelectedPeerId() {
             return selectedPeerId;
+        }
+
+        @Override
+        public boolean hasGoodReputation(NodeID nodeID) {
+            return peerScoringManager.hasGoodReputation(nodeID);
         }
 
         public MessageChannel getSelectedPeerChannel() {

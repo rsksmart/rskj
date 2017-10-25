@@ -1,5 +1,6 @@
 package co.rsk.net.sync;
 
+import co.rsk.scoring.EventType;
 import org.ethereum.core.BlockIdentifier;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
         if (skeleton.size() < 2) {
             syncEventsHandler.onErrorSyncing(
                     "Invalid skeleton received from node {}",
+                    EventType.INVALID_MESSAGE,
                     syncInformation.getSelectedPeerId());
             return;
         }

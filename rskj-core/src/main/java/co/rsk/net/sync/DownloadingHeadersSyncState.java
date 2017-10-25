@@ -1,5 +1,6 @@
 package co.rsk.net.sync;
 
+import co.rsk.scoring.EventType;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
@@ -33,9 +34,9 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
         if (!currentChunk.isPresent()
                 || chunk.size() != currentChunk.get().getCount()
                 || !ByteUtil.fastEquals(chunk.get(0).getHash(), currentChunk.get().getHash())) {
-            // TODO(mc) do peer scoring and banning
             syncEventsHandler.onErrorSyncing(
                     "Invalid chunk received from node {}",
+                    EventType.INVALID_MESSAGE,
                     syncInformation.getSelectedPeerId());
             return;
         }
@@ -47,9 +48,9 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
             BlockHeader header = chunk.get(chunk.size() - k - 1);
 
             if (!syncInformation.blockHeaderIsValid(header, parentHeader)) {
-                // TODO(mc) do peer scoring and banning
                 syncEventsHandler.onErrorSyncing(
                         "Invalid header received from node {}",
+                        EventType.INVALID_MESSAGE,
                         syncInformation.getSelectedPeerId());
                 return;
             }

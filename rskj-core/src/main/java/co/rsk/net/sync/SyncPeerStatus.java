@@ -3,6 +3,7 @@ package co.rsk.net.sync;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.Status;
 
+import java.math.BigInteger;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -21,6 +22,20 @@ public class SyncPeerStatus {
     public SyncPeerStatus(MessageChannel messageChannel) {
         this.messageChannel = messageChannel;
         this.updateActivity();
+    }
+
+    public int peerTotalDifficultyComparator(SyncPeerStatus other) {
+        BigInteger ttd = this.status.getTotalDifficulty();
+        BigInteger otd = other.status.getTotalDifficulty();
+
+        if (ttd == null && otd == null)
+            return 0;
+        if (ttd == null)
+            return -1;
+        if (otd == null)
+            return 1;
+
+        return this.status.getTotalDifficulty().compareTo(otd);
     }
 
     private void updateActivity() {

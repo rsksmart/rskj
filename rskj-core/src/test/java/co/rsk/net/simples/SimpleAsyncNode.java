@@ -22,13 +22,18 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.net.*;
 import co.rsk.net.messages.Message;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
+import org.mockito.Mockito;
 
 import java.util.concurrent.*;
+
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 5/15/2016.
@@ -101,7 +106,9 @@ public class SimpleAsyncNode extends SimpleNode {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
         DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
-        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockValidationRule);
+        PeerScoringManager peerScoringManager = Mockito.mock(PeerScoringManager.class);
+        when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
+        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, peerScoringManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockValidationRule);
         NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, null, null, null, null, blockValidationRule);
         return new SimpleAsyncNode(handler, syncProcessor);
     }
