@@ -147,7 +147,7 @@ public class MinerServerImpl implements MinerServer {
 
     @Override
     public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
-        logger.debug("Received block with hash " + blockHashForMergedMining + " for merged mining");
+        logger.debug("Received block with hash {} for merged mining", blockHashForMergedMining);
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningBlock.getTransactions().get(0);
         co.rsk.bitcoinj.core.PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(bitcoinMergedMiningBlock);
 
@@ -158,7 +158,7 @@ public class MinerServerImpl implements MinerServer {
             Block workingBlock = blocksWaitingforPoW.get(key);
 
             if (workingBlock == null) {
-                String message = "Cannot publish block, could not find hash " + blockHashForMergedMining + " in the cache";
+                String message = "Cannot publish block, could not find hash {} in the cache" + blockHashForMergedMining + " in the cache";
                 logger.warn(message);
 
                 return new SubmitBlockResult("ERROR", message);
@@ -174,7 +174,7 @@ public class MinerServerImpl implements MinerServer {
             // clone the block
             newBlock = workingBlock.cloneBlock();
 
-            logger.debug("blocksWaitingForPoW size " + blocksWaitingforPoW.size());
+            logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
         }
 
         logger.info("Received block {} {}", newBlock.getNumber(), Hex.toHexString(newBlock.getHash()));
@@ -192,7 +192,7 @@ public class MinerServerImpl implements MinerServer {
         } else {
             ImportResult importResult = ethereum.addNewMinedBlock(newBlock);
 
-            logger.info("Mined block import result is " + importResult + " : " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber());
+            logger.info("Mined block import result is {}: {} {} at height {}", importResult, newBlock.getShortHash(), newBlock.getShortHashForMergedMining(), newBlock.getNumber());
             SubmittedBlockInfo blockInfo = new SubmittedBlockInfo(importResult, newBlock.getHash(), newBlock.getNumber());
 
             return new SubmitBlockResult("OK", "OK", blockInfo);
@@ -286,8 +286,7 @@ public class MinerServerImpl implements MinerServer {
                     return currentWork;
                 }
                 currentWork = new MinerWork(currentWork.getBlockHashForMergedMining(), currentWork.getTarget(),
-                        Long.valueOf(currentWork.getFeesPaidToMiner()),
-                        false, currentWork.getParentBlockHash());
+                                            currentWork.getFeesPaidToMiner(),false, currentWork.getParentBlockHash());
             }
         }
         return work;
@@ -306,8 +305,8 @@ public class MinerServerImpl implements MinerServer {
         byte[] targetArray = new byte[32];
         System.arraycopy(targetUnknownLengthArray, 0, targetArray, 32 - targetUnknownLengthArray.length, targetUnknownLengthArray.length);
 
-        logger.debug("Sending work for merged mining. Hash: " + block.getShortHashForMergedMining());
-        return new MinerWork(TypeConverter.toJsonHex(blockMergedMiningHash.getBytes()), TypeConverter.toJsonHex(targetArray), block.getFeesPaidToMiner(), notify, TypeConverter.toJsonHex(block.getParentHash()));
+        logger.debug("Sending work for merged mining. Hash: {}", block.getShortHashForMergedMining());
+        return new MinerWork(TypeConverter.toJsonHex(blockMergedMiningHash.getBytes()), TypeConverter.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, TypeConverter.toJsonHex(block.getParentHash()));
     }
 
     /**
@@ -362,12 +361,12 @@ public class MinerServerImpl implements MinerServer {
             latestBlock = newBlock;
             blocksWaitingforPoW.put(latestblockHashWaitingforPoW, latestBlock);
 
-            logger.debug("blocksWaitingForPoW size " + blocksWaitingforPoW.size());
+            logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
         }
 
-        logger.debug("Built block " + newBlock.getShortHashForMergedMining() + ". Parent " + newBlockParent.getShortHashForMergedMining());
+        logger.debug("Built block {}. Parent {}", newBlock.getShortHashForMergedMining(), newBlockParent.getShortHashForMergedMining());
         for (BlockHeader uncleHeader : uncles) {
-            logger.debug("With uncle " + uncleHeader.getShortHashForMergedMining());
+            logger.debug("With uncle {}", uncleHeader.getShortHashForMergedMining());
         }
     }
 
@@ -451,7 +450,7 @@ public class MinerServerImpl implements MinerServer {
                 logger.debug("There is a new best block: {}, number: {}", bestBlock.getShortHashForMergedMining(), bestBlock.getNumber());
                 buildBlockToMine(bestBlock, false);
             } else {
-                logger.debug("New block arrived but there is no need to build a new block to mine: " + block.getShortHashForMergedMining());
+                logger.debug("New block arrived but there is no need to build a new block to mine: {}", block.getShortHashForMergedMining());
             }
 
             logger.trace("End onBlock");
