@@ -26,8 +26,6 @@ import org.iq80.leveldb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,8 +45,6 @@ import static org.fusesource.leveldbjni.JniDBFactory.factory;
  * @author Roman Mandeleil
  * @since 18.01.2015
  */
-@Component
-@Scope("prototype")
 public class LevelDbDataSource implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("db");
@@ -67,19 +63,16 @@ public class LevelDbDataSource implements KeyValueDataSource {
     // however blocks them on init/close/delete operations
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
-    public LevelDbDataSource() {
-    }
-
     public LevelDbDataSource(String name) {
         this.name = name;
-        logger.info("New LevelDbDataSource: " + name);
+        logger.info("New LevelDbDataSource: {}", name);
     }
 
     @Override
     public void init() {
         resetDbLock.writeLock().lock();
         try {
-            logger.debug("~> LevelDbDataSource.init(): " + name);
+            logger.debug("~> LevelDbDataSource.init(): {}", name);
 
             if (isAlive()) {
                 return;

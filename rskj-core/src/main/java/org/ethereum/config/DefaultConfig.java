@@ -41,6 +41,7 @@ import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.*;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.solidity.compiler.SolidityCompiler;
+import org.ethereum.util.FileUtil;
 import org.ethereum.validator.ProofOfWorkRule;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -52,7 +53,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Scope;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
@@ -79,6 +79,12 @@ public class DefaultConfig {
 
     @PostConstruct
     public void init() {
+        String databaseDir = config.databaseDir();
+        if (config.databaseReset()){
+            FileUtil.recursiveDelete(databaseDir);
+            logger.info("Database reset done");
+        }
+
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> logger.error("Uncaught exception", e));
     }
 
@@ -86,10 +92,13 @@ public class DefaultConfig {
     public BlockStore blockStore() {
         String database = config.databaseDir();
 
-        String blocksIndexFile = database + "/blocks/index";
-        File dbFile = new File(blocksIndexFile);
-        if (!dbFile.getParentFile().exists()) {
-            dbFile.getParentFile().mkdirs();
+        File blockIndexDirectory = new File(database + "/blocks/");
+        File dbFile = new File(blockIndexDirectory, "index");
+        if (!blockIndexDirectory.exists()) {
+            boolean mkdirsSuccess = blockIndexDirectory.mkdirs();
+            if (!mkdirsSuccess) {
+                logger.error("Unable to create blocks directory: {}", blockIndexDirectory);
+            }
         }
 
         DB indexDB = DBMaker.fileDB(dbFile)
@@ -102,7 +111,7 @@ public class DefaultConfig {
                 .counterEnable()
                 .makeOrGet();
 
-        KeyValueDataSource blocksDB = appCtx.getBean(LevelDbDataSource.class, "blocks");
+        KeyValueDataSource blocksDB = new LevelDbDataSource("blocks");
         blocksDB.init();
 
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
@@ -110,12 +119,6 @@ public class DefaultConfig {
         indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
         return indexedBlockStore;
-    }
-
-    @Bean
-    @Scope("prototype")
-    LevelDbDataSource levelDbDataSource(String name) {
-        return new LevelDbDataSource(name);
     }
 
     @Bean
