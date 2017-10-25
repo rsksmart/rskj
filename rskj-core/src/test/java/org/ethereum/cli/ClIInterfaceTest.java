@@ -19,6 +19,7 @@
 
 package org.ethereum.cli;
 
+import co.rsk.rpc.CorsConfigurationTest;
 import org.ethereum.config.SystemProperties;
 import org.junit.Assert;
 import org.junit.Test;
@@ -52,8 +53,10 @@ public class ClIInterfaceTest {
     public void callTestWithRpcCors() {
         String[] inputParams = { "-rpccors", "*.ethereum.io" };
         Map<String, String> result = CLIInterface.call(inputParams);
-
         Assert.assertEquals(result.get(SystemProperties.PROPERTY_RPC_CORS), "*.ethereum.io");
+        String[] restoreParams = { "-rpccors", CorsConfigurationTest.EXPECTED_CORS_CONFIG };
+        result = CLIInterface.call(restoreParams);
+        Assert.assertEquals(result.get(SystemProperties.PROPERTY_RPC_CORS), CorsConfigurationTest.EXPECTED_CORS_CONFIG  );
     }
 
     @Test
