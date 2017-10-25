@@ -158,7 +158,7 @@ public class MinerServerImpl implements MinerServer {
             Block workingBlock = blocksWaitingforPoW.get(key);
 
             if (workingBlock == null) {
-                String message = "Cannot publish block, could not find hash {} in the cache" + blockHashForMergedMining + " in the cache";
+                String message = "Cannot publish block, could not find hash " + blockHashForMergedMining + " in the cache";
                 logger.warn(message);
 
                 return new SubmitBlockResult("ERROR", message);
