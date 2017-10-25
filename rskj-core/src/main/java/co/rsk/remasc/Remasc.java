@@ -168,18 +168,19 @@ public class Remasc {
     private void payWithSiblings(BlockHeader processingBlockHeader, BigInteger fullBlockReward, List<Sibling> siblings, boolean previousBrokenSelectionRule) {
         SiblingPaymentCalculator paymentCalculator = new SiblingPaymentCalculator(fullBlockReward, previousBrokenSelectionRule, siblings.size(), this.remascConstants);
 
-        this.payPublishersWhoIncludedSiblings(processingBlockHeader.getHash(), siblings, paymentCalculator.getIndividualPublisherReward());
+        byte[] processingBlockHeaderHash = processingBlockHeader.getHash();
+        this.payPublishersWhoIncludedSiblings(processingBlockHeaderHash, siblings, paymentCalculator.getIndividualPublisherReward());
         provider.addToBurnBalance(paymentCalculator.getPublishersSurplus());
 
         provider.addToBurnBalance(paymentCalculator.getMinersSurplus());
 
-        this.payIncludedSiblings(processingBlockHeader.getHash(), siblings, paymentCalculator.getIndividualMinerReward());
+        this.payIncludedSiblings(processingBlockHeaderHash, siblings, paymentCalculator.getIndividualMinerReward());
         if (previousBrokenSelectionRule) {
             provider.addToBurnBalance(paymentCalculator.getPunishment().multiply(BigInteger.valueOf(siblings.size() + 1L)));
         }
 
         // Pay to main chain block miner
-        feesPayer.payMiningFees(processingBlockHeader.getHash(), paymentCalculator.getIndividualMinerReward(), processingBlockHeader.getCoinbase(), logs);
+        feesPayer.payMiningFees(processingBlockHeaderHash, paymentCalculator.getIndividualMinerReward(), processingBlockHeader.getCoinbase(), logs);
     }
 
     private void payPublishersWhoIncludedSiblings(byte[] blockHash, List<Sibling> siblings, BigInteger minerReward) {

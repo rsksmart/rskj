@@ -29,6 +29,10 @@ import java.nio.charset.StandardCharsets;
  */
 public class TypeConverter {
 
+    private TypeConverter() {
+        throw new IllegalAccessError("Utility class");
+    }
+
     public static BigInteger stringNumberAsBigInt(String input) {
         if (input.startsWith("0x"))
             return TypeConverter.stringHexToBigInteger(input);

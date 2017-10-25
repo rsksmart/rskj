@@ -74,7 +74,7 @@ public class Web3RskImpl extends Web3Impl {
 
     public SubmittedBlockInfo mnr_submitBitcoinBlock(String bitcoinBlockHex) {
         if (logger.isDebugEnabled()) {
-            logger.debug("mnr_submitBitcoinBlock(): " + bitcoinBlockHex.length());
+            logger.debug("mnr_submitBitcoinBlock(): {}", bitcoinBlockHex.length());
         }
         
         co.rsk.bitcoinj.core.NetworkParameters params = co.rsk.bitcoinj.params.RegTestParams.get();
