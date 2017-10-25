@@ -43,22 +43,20 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 public final class PendingFederation {
-    private int id;
-    private int numberOfPublicKeysRequired;
+    private long id;
     private int numberOfSignaturesRequired;
     private List<BtcECKey> publicKeys;
 
-    public PendingFederation(int id, int numberOfSignaturesRequired, int numberOfPublicKeysRequired, List<BtcECKey> publicKeys) {
+    public PendingFederation(long id, int numberOfSignaturesRequired, List<BtcECKey> publicKeys) {
         this.id = id;
         this.numberOfSignaturesRequired = numberOfSignaturesRequired;
-        this.numberOfPublicKeysRequired = numberOfPublicKeysRequired;
         // Sorting public keys ensures same order of federators for same public keys
         // Immutability provides protection unless unwanted modification, thus making the Pending Federation instance
         // effectively immutable
         this.publicKeys = Collections.unmodifiableList(publicKeys.stream().sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList()));
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
@@ -70,12 +68,8 @@ public final class PendingFederation {
         return this.numberOfSignaturesRequired;
     }
 
-    public int getNumberOfPublicKeysRequired() {
-        return this.numberOfPublicKeysRequired;
-    }
-
     public boolean isComplete() {
-        return this.publicKeys.size() == this.numberOfPublicKeysRequired;
+        return this.publicKeys.size() >= this.numberOfSignaturesRequired;
     }
 
     /**
@@ -84,13 +78,9 @@ public final class PendingFederation {
      * @return a new PendingFederation with the added public key
      */
     public PendingFederation addPublicKey(BtcECKey key) {
-        if (this.numberOfPublicKeysRequired == publicKeys.size()) {
-            throw new IllegalStateException("PendingFederation is already complete");
-        }
-
         List<BtcECKey> newKeys = new ArrayList<>(publicKeys);
         newKeys.add(key);
-        return new PendingFederation(this.id, this.numberOfSignaturesRequired, this.numberOfPublicKeysRequired, newKeys);
+        return new PendingFederation(this.id, this.numberOfSignaturesRequired, newKeys);
     }
 
     /**
@@ -105,7 +95,7 @@ public final class PendingFederation {
 
         List<BtcECKey> newKeys = new ArrayList<>(publicKeys);
         newKeys.remove(key);
-        return new PendingFederation(this.id, this.numberOfSignaturesRequired, this.numberOfPublicKeysRequired, newKeys);
+        return new PendingFederation(this.id, this.numberOfSignaturesRequired, newKeys);
     }
 
     public Federation buildFederation(Instant creationTime, NetworkParameters btcParams) {
@@ -145,7 +135,6 @@ public final class PendingFederation {
 
             return this.getId() == ((PendingFederation) other).getId() &&
                     this.getNumberOfSignaturesRequired() == otherFederation.getNumberOfSignaturesRequired() &&
-                    this.getNumberOfPublicKeysRequired() == otherFederation.getNumberOfPublicKeysRequired() &&
                     this.getPublicKeys().size() == otherFederation.getPublicKeys().size() &&
                     Arrays.equals(thisPublicKeys, otherPublicKeys);
         }

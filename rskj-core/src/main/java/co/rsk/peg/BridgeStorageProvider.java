@@ -46,6 +46,7 @@ public class BridgeStorageProvider {
     private static final String RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY = "rskTxsWaitingFC";
     private static final String RSK_TXS_WAITING_FOR_SIGNATURES_KEY = "rskTxsWaitingFS";
     private static final String BRIDGE_ACTIVE_FEDERATION_KEY = "bridgeActiveFederation";
+    private static final String BRIDGE_PENDING_FEDERATION_KEY = "bridgePendingFederation";
 
     private static final NetworkParameters networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
@@ -68,6 +69,8 @@ public class BridgeStorageProvider {
     private Federation activeFederation;
     // Federation to save
     private Federation newFederation;
+    // Pending federation
+    private PendingFederation pendingFederation;
 
     private BridgeConstants bridgeConstants;
     private Context btcContext;
@@ -254,11 +257,47 @@ public class BridgeStorageProvider {
         repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
 
+    public PendingFederation getPendingFederation() {
+        if (pendingFederation != null)
+            return pendingFederation;
+
+        DataWord address = new DataWord(BRIDGE_PENDING_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
+
+        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
+
+        if (data == null)
+            return null;
+
+        pendingFederation = BridgeSerializationUtils.deserializePendingFederation(data);
+
+        return pendingFederation;
+    }
+
+    public void setPendingFederation(PendingFederation federation) {
+        pendingFederation = federation;
+    }
+
+    /**
+     * Save the new (pending) federation
+     * Only saved if a pending federation was set with BridgeStorageProvider::setPendingFederation
+     */
+    public void savePendingFederation() {
+        if (pendingFederation == null)
+            return;
+
+        byte[] data = BridgeSerializationUtils.serializePendingFederation(pendingFederation);
+
+        DataWord address = new DataWord(BRIDGE_PENDING_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
+
+        repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+    }
+
     public void save() throws IOException {
         saveBtcUTXOs();
         saveBtcTxHashesAlreadyProcessed();
         saveRskTxsWaitingForConfirmations();
         saveRskTxsWaitingForSignatures();
         saveNewFederation();
+        savePendingFederation();
     }
 }
