@@ -31,7 +31,7 @@ import static org.ethereum.vm.OpCode.Tier.*;
  * - Appendix G. Virtual Machine Specification
  */
 public enum OpCode {
-    // opcode, in-args,out-args, cost
+    // code, in-args,out-args, cost
     /**
      * Halts execution (0x00)
      */
@@ -616,46 +616,44 @@ public enum OpCode {
      */
     SUICIDE(0xff, 1, 0, ZERO_TIER);
 
-    public final byte opcode;
+    private final byte code;
     private final int require;
     private final Tier tier;
     private final int ret;
     private final int scriptVersion;
 
-    private static final Map<Byte, OpCode> intToTypeMap = new HashMap<>();
     private static final Map<String, Byte> stringToByteMap = new HashMap<>();
     private static final OpCode[] intToTypeFastMap = new OpCode[256]; //
     static {
         for (OpCode type : OpCode.values()) {
-            if (type.opcode<0)
-                intToTypeFastMap[256+type.opcode]=type;
+            if (type.code <0)
+                intToTypeFastMap[256+type.code]=type;
             else
-                intToTypeFastMap[type.opcode]=type;
+                intToTypeFastMap[type.code]=type;
 
-            intToTypeMap.put(type.opcode, type);
-            stringToByteMap.put(type.name(), type.opcode);
+            stringToByteMap.put(type.name(), type.code);
         }
     }
 
     //require = required elements
     //return = required return
-    private OpCode(int op, int require, int ret, Tier tier) {
-        this.opcode = (byte) op;
+    OpCode(int code, int require, int ret, Tier tier) {
+        this.code = (byte) code;
         this.require = require;
         this.tier = tier;
         this.ret = ret;
         scriptVersion = 0;
     }
 
-    private OpCode(int op, int require, int ret, Tier tier, int scriptVersion) {
-        this.opcode = (byte) op;
+    OpCode(int code, int require, int ret, Tier tier, int scriptVersion) {
+        this.code = (byte) code;
         this.require = require;
         this.tier = tier;
         this.ret = ret;
         this.scriptVersion = scriptVersion;
     }
     public byte val() {
-        return opcode;
+        return code;
     }
 
     /**
@@ -672,7 +670,7 @@ public enum OpCode {
     }
 
     public int asInt() {
-        return opcode;
+        return code;
     }
 
     public int scriptVersion() { return scriptVersion; }
@@ -710,7 +708,7 @@ public enum OpCode {
 
         private final int level;
 
-        private Tier(int level) {
+        Tier(int level) {
             this.level = level;
         }
 
