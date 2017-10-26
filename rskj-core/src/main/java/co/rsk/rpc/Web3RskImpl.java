@@ -31,6 +31,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.BlockStore;
+import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3Impl;
 import org.slf4j.Logger;
@@ -52,8 +53,8 @@ public class Web3RskImpl extends Web3Impl {
     private static final Logger logger = LoggerFactory.getLogger("web3");
     private final MinerServer minerServer;
 
-    public Web3RskImpl(Rsk rsk, MinerServer minerServer, MinerClient minerClient) {
-        super(rsk, RskSystemProperties.CONFIG, WalletFactory.createPersistentWallet(), minerClient, minerServer);
+    public Web3RskImpl(Rsk rsk, MinerServer minerServer, MinerClient minerClient, ChannelManager channelManager) {
+        super(rsk, RskSystemProperties.CONFIG, WalletFactory.createPersistentWallet(), minerClient, minerServer, channelManager);
         this.minerServer = minerServer;
     }
 

@@ -30,7 +30,7 @@ import java.util.Map;
 public class Web3ImplRpcTest {
     @Test
     public void getRpcModules() {
-        Web3Impl web3 = new Web3Impl(null, null);
+        Web3Impl web3 = new Web3Impl(null, null, null);
 
         Map<String, String> result = web3.rpc_modules();
 

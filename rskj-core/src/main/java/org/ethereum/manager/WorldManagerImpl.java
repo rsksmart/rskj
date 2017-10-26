@@ -22,6 +22,7 @@ package org.ethereum.manager;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.net.BlockProcessor;
+import co.rsk.net.NodeBlockProcessor;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.PendingState;
@@ -60,6 +61,9 @@ public class WorldManagerImpl implements WorldManager {
     private Blockchain blockchain;
 
     @Autowired
+    private NodeBlockProcessor nodeBlockProcessor;
+
+    @Autowired
     private Repository repository;
 
     @Autowired
@@ -83,8 +87,6 @@ public class WorldManagerImpl implements WorldManager {
     @Autowired
     ConfigCapabilities configCapabilities;
 
-    BlockProcessor nodeBlockProcessor;
-
     @Autowired
     private HashRateCalculator hashRateCalculator;
 
@@ -103,10 +105,6 @@ public class WorldManagerImpl implements WorldManager {
     public void addListener(EthereumListener listener) {
         logger.info("Ethereum listener added");
         ((CompositeEthereumListener) this.listener).addListener(listener);
-    }
-
-    public ChannelManager getChannelManager() {
-        return channelManager;
     }
 
    public EthereumListener getListener() {
@@ -136,10 +134,6 @@ public class WorldManagerImpl implements WorldManager {
     }
 
     public ConfigCapabilities getConfigCapabilities() { return configCapabilities; }
-
-    public void setNodeBlockProcessor(BlockProcessor nodeBlockProcessor){
-        this.nodeBlockProcessor = nodeBlockProcessor;
-    }
 
     public BlockProcessor getNodeBlockProcessor(){
         return this.nodeBlockProcessor;

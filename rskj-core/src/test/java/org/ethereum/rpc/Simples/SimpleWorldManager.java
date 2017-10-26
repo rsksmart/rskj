@@ -28,7 +28,6 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.server.ChannelManager;
 import org.ethereum.solidity.compiler.SolidityCompiler;
 
 /**
@@ -57,11 +56,6 @@ public class SimpleWorldManager implements WorldManager {
             this.listener = new CompositeEthereumListener();
         }
         ((CompositeEthereumListener) this.listener).addListener(listener);
-    }
-
-    @Override
-    public ChannelManager getChannelManager() {
-        return new SimpleChannelManager();
     }
 
     @Override
@@ -96,6 +90,8 @@ public class SimpleWorldManager implements WorldManager {
         this.blockStore = blockStore;
     }
 
+    public void setNodeBlockProcessor(BlockProcessor nodeBlockProcessor) { this.nodeBlockProcessor = nodeBlockProcessor;}
+
     @Override
     public PendingState getPendingState() {
         return pendingState;
@@ -115,11 +111,6 @@ public class SimpleWorldManager implements WorldManager {
         ConfigCapabilities configCapabilities = new SimpleConfigCapabilities();
 
         return configCapabilities;
-    }
-
-    @Override
-    public void setNodeBlockProcessor(BlockProcessor nodeBlockProcessor) {
-        this.nodeBlockProcessor = nodeBlockProcessor;
     }
 
     @Override

@@ -34,10 +34,12 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.manager.WorldManager;
+import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.rpc.Simples.SimpleWorldManager;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.util.List;
 
@@ -173,7 +175,7 @@ public class Web3ImplSnapshotTest {
 
     private Web3Impl createWeb3(World world, SimpleEthereum ethereum, MinerServer minerServer) {
         MinerClientImpl minerClient = new MinerClientImpl();
-        Web3Impl web3 = new Web3Impl(getMockEthereum(), getMockProperties(), WalletFactory.createWallet(), minerClient, minerServer);
+        Web3Impl web3 = new Web3Impl(getMockEthereum(), getMockProperties(), WalletFactory.createWallet(), minerClient, minerServer, Mockito.mock(ChannelManager.class));
 
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());

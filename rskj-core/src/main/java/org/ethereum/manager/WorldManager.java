@@ -44,8 +44,6 @@ public interface WorldManager {
 
     void addListener(EthereumListener listener);
 
-    ChannelManager getChannelManager();
-
     EthereumListener getListener();
 
     org.ethereum.facade.Repository getRepository();
@@ -59,8 +57,6 @@ public interface WorldManager {
     void close() ;
 
     ConfigCapabilities getConfigCapabilities();
-
-    void setNodeBlockProcessor(BlockProcessor nodeBlockProcessor);
 
     BlockProcessor getNodeBlockProcessor();
 

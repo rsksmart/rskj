@@ -43,12 +43,6 @@ import java.util.concurrent.Future;
  */
 public interface Ethereum {
 
-    void connect(InetAddress addr, int port, String remoteId);
-
-    void connect(String ip, int port, String remoteId);
-
-    void connect(Node node);
-
     Blockchain getBlockchain();
 
     void addListener(EthereumListener listener);

@@ -92,8 +92,8 @@ public class ChannelManagerImpl implements ChannelManager {
         mainWorker.scheduleWithFixedDelay((Runnable) () -> {
             try {
                 processNewPeers();
-            } catch (Throwable t) {
-                logger.error("Error", t);
+            } catch (Exception e) {
+                logger.error("Error", e);
             }
         }, 0, 1, TimeUnit.SECONDS);
     }

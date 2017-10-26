@@ -23,21 +23,18 @@ import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.NodeHandler;
 import org.ethereum.net.NodeManager;
+import org.ethereum.net.client.PeerClient;
+import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
 import org.ethereum.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
-import javax.annotation.PostConstruct;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -45,7 +42,8 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.Math.min;
 import static org.ethereum.util.BIUtil.isIn20PercentRange;
-import static org.ethereum.util.TimeUtils.*;
+import static org.ethereum.util.TimeUtils.secondsToMillis;
+import static org.ethereum.util.TimeUtils.timeAfterMillis;
 
 /**
  * <p>Encapsulates logic which manages peers involved in blockchain sync</p>
@@ -53,12 +51,10 @@ import static org.ethereum.util.TimeUtils.*;
  * Holds connections, bans, disconnects and other peers logic<br>
  * The pool is completely threadsafe<br>
  * Implements {@link Iterable} and can be used in "foreach" loop<br>
- * Used by {@link SyncManager}
  *
  * @author Mikhail Kalinin
  * @since 10.08.2015
  */
-@Component
 public class SyncPool implements Iterable<Channel> {
 
     public static final Logger logger = LoggerFactory.getLogger("sync");
@@ -74,23 +70,18 @@ public class SyncPool implements Iterable<Channel> {
 
     private BigInteger lowerUsefulDifficulty = BigInteger.ZERO;
 
-    @Autowired
-    private Ethereum ethereum;
+    private final EthereumListener ethereumListener;
+    private final Blockchain blockchain;
+    private final SystemProperties config;
+    private final NodeManager nodeManager;
+    private final PeerClientFactory peerClientFactory;
 
-    @Autowired
-    private EthereumListener ethereumListener;
-
-    @Autowired
-    private Blockchain blockchain;
-
-    @Autowired
-    private SystemProperties config;
-
-    @Autowired
-    private NodeManager nodeManager;
-
-    @PostConstruct
-    public void init() {
+    public SyncPool(EthereumListener ethereumListener, Blockchain blockchain, SystemProperties config, NodeManager nodeManager, PeerClientFactory peerClientFactory) {
+        this.ethereumListener = ethereumListener;
+        this.blockchain = blockchain;
+        this.config = config;
+        this.nodeManager = nodeManager;
+        this.peerClientFactory = peerClientFactory;
 
         if (!config.isSyncEnabled()) {
             return;
@@ -108,9 +99,9 @@ public class SyncPool implements Iterable<Channel> {
                             updateLowerUsefulDifficulty();
                             fillUp();
                             prepareActive();
-                        } catch (Throwable t) {
-                            logger.error("Unhandled exception", t);
-                            panicProcessor.panic("syncpool", String.format("Unhandled exception {}", t.getMessage()));
+                        } catch (Exception e) {
+                            logger.error("Unhandled exception", e);
+                            panicProcessor.panic("syncpool", String.format("Unhandled exception {}", e.getMessage()));
                         }
                     }
                 }, WORKER_TIMEOUT, WORKER_TIMEOUT, TimeUnit.SECONDS
@@ -215,7 +206,7 @@ public class SyncPool implements Iterable<Channel> {
         logger.info("Peer {}: disconnected", peer.getPeerIdShort());
     }
 
-    public void connect(Node node) {
+    private void connect(Node node) {
         if (logger.isTraceEnabled()) {
             logger.trace(
                 "Peer {}: initiate connection",
@@ -233,9 +224,15 @@ public class SyncPool implements Iterable<Channel> {
         }
 
         synchronized (pendingConnections) {
-            ethereum.connect(node);
+            connect(node.getHost(), node.getPort(), Hex.toHexString(node.getId()));
             pendingConnections.put(node.getHexId(), timeAfterMillis(CONNECTION_TIMEOUT));
         }
+    }
+
+    private void connect(final String ip, final int port, final String remoteId) {
+        logger.info("Connecting to: {}:{}", ip, port);
+        PeerClient peerClient = peerClientFactory.newInstance();
+        peerClient.connectAsync(ip, port, remoteId, false);
     }
 
     public Set<String> nodesInUse() {
@@ -391,5 +388,9 @@ public class SyncPool implements Iterable<Channel> {
                 peer.dropConnection();
             }
         }
+    }
+
+    public interface PeerClientFactory {
+        PeerClient newInstance();
     }
 }

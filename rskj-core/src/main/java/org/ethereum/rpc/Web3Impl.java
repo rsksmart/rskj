@@ -99,27 +99,31 @@ public class Web3Impl implements Web3 {
 
     private MinerClient minerClient;
     private MinerServer minerServer;
+    private ChannelManager channelManager;
 
     private SolidityCompiler solidityCompiler;
 
     private PeerScoringManager peerScoringManager;
 
-    public Web3Impl(SolidityCompiler compiler, Wallet wallet) {
+    public Web3Impl(SolidityCompiler compiler, Wallet wallet, ChannelManager channelManager) {
         this.solidityCompiler = compiler;
         this.wallet = wallet;
+        this.channelManager = channelManager;
     }
 
     public Web3Impl(Ethereum eth,
                     RskSystemProperties properties,
                     Wallet wallet,
                     MinerClient minerClient,
-                    MinerServer minerServer) {
+                    MinerServer minerServer,
+                    ChannelManager channelManager) {
         this.eth = eth;
         this.worldManager = eth.getWorldManager();
         this.repository = eth.getRepository();
         this.wallet = wallet;
         this.minerClient = minerClient;
         this.minerServer = minerServer;
+        this.channelManager = channelManager;
 
         if (eth instanceof Rsk)
             this.peerScoringManager = ((Rsk) eth).getPeerScoringManager();
@@ -253,8 +257,6 @@ public class Web3Impl implements Web3 {
     public String net_peerCount() {
         String s = null;
         try {
-
-            ChannelManager channelManager = worldManager.getChannelManager();
             int n = channelManager.getActivePeers().size();
             return s = TypeConverter.toJsonHex(n);
         } finally {
@@ -377,7 +379,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String[] net_peerList() {
-        Collection<Channel> peers = worldManager.getChannelManager().getActivePeers();
+        Collection<Channel> peers = channelManager.getActivePeers();
         List<String> response = new ArrayList<>();
         peers.forEach(channel -> response.add(channel.toString()));
         return response.stream().toArray(String[]::new);

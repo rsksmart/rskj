@@ -28,6 +28,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.manager.WorldManager;
+import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.LogFilterElement;
 import org.ethereum.rpc.Web3;
 import org.ethereum.vm.DataWord;
@@ -64,7 +65,7 @@ public class Web3RskImplTest {
         Mockito.when(blockchain.getBestBlock()).thenReturn(block);
         Mockito.when(rsk.getWorldManager()).thenReturn(worldManager);
 
-        Web3RskImpl web3 = new Web3RskImpl(rsk, Mockito.mock(MinerServer.class), Mockito.mock(MinerClient.class));
+        Web3RskImpl web3 = new Web3RskImpl(rsk, Mockito.mock(MinerServer.class), Mockito.mock(MinerClient.class), Mockito.mock(ChannelManager.class));
         web3.ext_dumpState();
     }
 

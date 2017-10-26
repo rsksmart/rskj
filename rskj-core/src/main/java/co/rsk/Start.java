@@ -30,6 +30,7 @@ import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.Web3RskImpl;
 import org.ethereum.cli.CLIInterface;
 import org.ethereum.config.DefaultConfig;
+import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.JsonRpcNettyServer;
 import org.ethereum.rpc.JsonRpcWeb3ServerHandler;
 import org.ethereum.rpc.Web3;
@@ -49,6 +50,7 @@ public class Start {
     private UDPServer udpServer;
     private MinerServer minerServer;
     private MinerClient minerClient;
+    private ChannelManager channelManager;
 
     public static void main(String[] args) throws Exception {
         if (RskSystemProperties.CONFIG.databaseReset()){ //FIXME: move this outside main
@@ -61,11 +63,12 @@ public class Start {
     }
 
     @Autowired
-    public Start(Rsk rsk, UDPServer udpServer, MinerServer minerServer, MinerClient minerClient) {
+    public Start(Rsk rsk, UDPServer udpServer, MinerServer minerServer, MinerClient minerClient, ChannelManager channelManager) {
         this.rsk = rsk;
         this.udpServer = udpServer;
         this.minerServer = minerServer;
         this.minerClient = minerClient;
+        this.channelManager = channelManager;
     }
 
     public void startNode(String[] args) throws Exception {
@@ -118,7 +121,7 @@ public class Start {
     }
 
     private void enableRpc(Rsk rsk) throws Exception {
-        Web3 web3Service = new Web3RskImpl(rsk, minerServer, minerClient);
+        Web3 web3Service = new Web3RskImpl(rsk, minerServer, minerClient, channelManager);
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, RskSystemProperties.CONFIG.getRpcModules());
         new JsonRpcNettyServer(
             RskSystemProperties.CONFIG.rpcPort(),

@@ -57,20 +57,20 @@ public class NodeBlockProcessor implements BlockProcessor {
      *
      * @param store        A BlockStore to store the blocks that are not ready for the Blockchain.
      * @param blockchain   The blockchain in which to insert the blocks.
-     * @param worldManager The parent worldManager (used to set the reference)
+     * @param nodeInformation
+     * @param channelManager
+     * @param blockSyncService
      */
-    // TODO define NodeBlockProcessor as a spring component
     public NodeBlockProcessor(
             @Nonnull final BlockStore store,
             @Nonnull final Blockchain blockchain,
-            @Nonnull WorldManager worldManager,
             @Nonnull final BlockNodeInformation nodeInformation,
+            @Nonnull final ChannelManager channelManager,
             @Nonnull final BlockSyncService blockSyncService) {
         this.store = store;
         this.blockchain = blockchain;
         this.nodeInformation = nodeInformation;
-        worldManager.setNodeBlockProcessor(this);
-        this.channelManager = worldManager.getChannelManager();
+        this.channelManager = channelManager;
         this.blocksForPeers = RskSystemProperties.CONFIG.getBlocksForPeers();
         this.blockSyncService = blockSyncService;
     }

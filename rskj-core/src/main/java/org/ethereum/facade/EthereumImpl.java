@@ -65,7 +65,6 @@ public class EthereumImpl implements Ethereum {
     private final SystemProperties config;
     private final CompositeEthereumListener compositeEthereumListener;
     private final ReceiptStore receiptStore;
-    private final PeerClientFactory peerClientFactory;
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
 
@@ -77,8 +76,7 @@ public class EthereumImpl implements Ethereum {
                         PendingState pendingState,
                         SystemProperties config,
                         CompositeEthereumListener compositeEthereumListener,
-                        ReceiptStore receiptStore,
-                        PeerClientFactory peerClientFactory) {
+                        ReceiptStore receiptStore) {
         this.worldManager = worldManager;
         this.adminInfo = adminInfo;
         this.channelManager = channelManager;
@@ -88,7 +86,6 @@ public class EthereumImpl implements Ethereum {
         this.config = config;
         this.compositeEthereumListener = compositeEthereumListener;
         this.receiptStore = receiptStore;
-        this.peerClientFactory = peerClientFactory;
     }
 
     public void init() {
@@ -104,23 +101,6 @@ public class EthereumImpl implements Ethereum {
         compositeEthereumListener.addListener(gasPriceTracker);
 
         gLogger.info("RskJ node started: enode://" + Hex.toHexString(config.nodeId()) + "@" + config.externalIp() + ":" + config.listenPort());
-    }
-
-    @Override
-    public void connect(InetAddress addr, int port, String remoteId) {
-        connect(addr.getHostName(), port, remoteId);
-    }
-
-    @Override
-    public void connect(final String ip, final int port, final String remoteId) {
-        logger.info("Connecting to: {}:{}", ip, port);
-        PeerClient peerClient = peerClientFactory.newInstance();
-        peerClient.connectAsync(ip, port, remoteId, false);
-    }
-
-    @Override
-    public void connect(Node node) {
-        connect(node.getHost(), node.getPort(), Hex.toHexString(node.getId()));
     }
 
     @Override
@@ -297,9 +277,5 @@ public class EthereumImpl implements Ethereum {
     @Override
     public SystemProperties getSystemProperties() {
         return this.config;
-    }
-
-    public interface PeerClientFactory {
-        PeerClient newInstance();
     }
 }

@@ -57,9 +57,8 @@ public class RskImpl extends EthereumImpl implements Rsk {
                    ReceiptStore receiptStore,
                    PeerScoringManager peerScoringManager,
                    NodeBlockProcessor nodeBlockProcessor,
-                   NodeMessageHandler messageHandler,
-                   PeerClientFactory peerClientFactory) {
-        super(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore, peerClientFactory);
+                   NodeMessageHandler messageHandler) {
+        super(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore);
         this.peerScoringManager = peerScoringManager;
         this.nodeBlockProcessor = nodeBlockProcessor;
         this.messageHandler = messageHandler;

@@ -22,16 +22,13 @@ import co.rsk.core.bc.BlockUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.ByteArrayWrapper;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 /**
  * Created by ajlopez on 5/11/2016.
  */
-@Component
 public class BlockStore {
     private Map<ByteArrayWrapper, Block> blocks = new HashMap<>();
     private Map<Long, Set<Block>> blocksbynumber = new HashMap<>();
