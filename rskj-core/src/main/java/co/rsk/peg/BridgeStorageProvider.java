@@ -87,10 +87,12 @@ public class BridgeStorageProvider {
      * otherwise it is the genesis federation from the bridge constants.
      * @return The currently active federation
      */
-    private Federation getCurrentFederation() throws IOException {
+    private Federation getCurrentFederation() {
         Federation activeFederation = getActiveFederation();
+
         if (activeFederation == null)
             activeFederation = bridgeConstants.getGenesisFederation();
+
         return activeFederation;
     }
 
@@ -222,7 +224,7 @@ public class BridgeStorageProvider {
         repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
 
-    public Federation getActiveFederation() throws IOException {
+    public Federation getActiveFederation() {
         if (activeFederation != null)
             return activeFederation;
 

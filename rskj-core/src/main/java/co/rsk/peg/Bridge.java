@@ -94,6 +94,16 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getFederatorPublicKey", new String[]{"uint32"}, new String[]{"bytes"});
     // Returns the creation time of the federation
     public static final CallTransaction.Function GET_FEDERATION_CREATION_TIME = CallTransaction.Function.fromSignature("getFederationCreationTime", new String[]{}, new String[]{"uint64"});
+    // Creates a new pending federation and returns its id
+    public static final CallTransaction.Function CREATE_FEDERATION = CallTransaction.Function.fromSignature("createFederation", new String[]{"uint32"}, new String[]{"uint64"});
+    // Adds the given key to the current pending federation
+    public static final CallTransaction.Function ADD_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("addFederatorPublicKey", new String[]{"bytes"}, new String[]{"uint32"});
+    // Removes the given key from the current pending federation
+    public static final CallTransaction.Function REMOVE_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("removeFederatorPublicKey", new String[]{"bytes"}, new String[]{"uint32"});
+    // Commits the currently pending federation
+    public static final CallTransaction.Function COMMIT_FEDERATION = CallTransaction.Function.fromSignature("commitFederation", new String[]{}, new String[]{"uint32"});
+    // Rolls back the currently pending federation
+    public static final CallTransaction.Function ROLLBACK_FEDERATION = CallTransaction.Function.fromSignature("rollbackFederation", new String[]{}, new String[]{"uint32"});
 
     // Log topics used by the Bridge
     public static final DataWord RELEASE_BTC_TOPIC = new DataWord("release_btc_topic".getBytes(StandardCharsets.UTF_8));
@@ -134,6 +144,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.functions.put(new ByteArrayWrapper(GET_FEDERATION_THRESHOLD.encodeSignature()), GET_FEDERATION_THRESHOLD);
         this.functions.put(new ByteArrayWrapper(GET_FEDERATOR_PUBLIC_KEY.encodeSignature()), GET_FEDERATOR_PUBLIC_KEY);
         this.functions.put(new ByteArrayWrapper(GET_FEDERATION_CREATION_TIME.encodeSignature()), GET_FEDERATION_CREATION_TIME);
+        this.functions.put(new ByteArrayWrapper(CREATE_FEDERATION.encodeSignature()), CREATE_FEDERATION);
+        this.functions.put(new ByteArrayWrapper(ADD_FEDERATOR_PUBLIC_KEY.encodeSignature()), ADD_FEDERATOR_PUBLIC_KEY);
+        this.functions.put(new ByteArrayWrapper(REMOVE_FEDERATOR_PUBLIC_KEY.encodeSignature()), REMOVE_FEDERATOR_PUBLIC_KEY);
+        this.functions.put(new ByteArrayWrapper(COMMIT_FEDERATION.encodeSignature()), COMMIT_FEDERATION);
+        this.functions.put(new ByteArrayWrapper(ROLLBACK_FEDERATION.encodeSignature()), ROLLBACK_FEDERATION);
 
         bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
 
@@ -153,7 +168,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         functionCostMap.put(GET_FEDERATION_SIZE,                   50014L);
         functionCostMap.put(GET_FEDERATION_THRESHOLD,              50015L);
         functionCostMap.put(GET_FEDERATOR_PUBLIC_KEY,              50016L);
-        functionCostMap.put(GET_FEDERATION_CREATION_TIME,          50017L);
+        functionCostMap.put(CREATE_FEDERATION,                     50017L);
+        functionCostMap.put(ADD_FEDERATOR_PUBLIC_KEY,              50018L);
+        functionCostMap.put(REMOVE_FEDERATOR_PUBLIC_KEY,           50019L);
+        functionCostMap.put(COMMIT_FEDERATION,                     50020L);
+        functionCostMap.put(ROLLBACK_FEDERATION,                   50021L);
 
     }
 
@@ -460,12 +479,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public String getFederationAddress(Object[] args)
     {
         logger.trace("getFederationAddress");
-        try {
-            return bridgeSupport.getFederationAddress().toString();
-        } catch (IOException e) {
-            logger.warn("Exception in getFederationAddress", e);
-            throw new RuntimeException("Exception in getFederationAddress", e);
-        }
+
+        return bridgeSupport.getFederationAddress().toString();
     }
 
 
@@ -505,49 +520,87 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     {
         logger.trace("getFederationSize");
 
-        try {
-            return bridgeSupport.getFederationSize();
-        } catch (IOException e) {
-            logger.warn("Exception in getFederationSize", e);
-            throw new RuntimeException("Exception in getFederationSize", e);
-        }
+        return bridgeSupport.getFederationSize();
     }
 
     public Integer getFederationThreshold(Object[] args)
     {
         logger.trace("getFederationThreshold");
 
-        try {
-            return bridgeSupport.getFederationThreshold();
-        } catch (IOException e) {
-            logger.warn("Exception in getFederationThreshold", e);
-            throw new RuntimeException("Exception in getFederationThreshold", e);
-        }
+        return bridgeSupport.getFederationThreshold();
     }
 
     public byte[] getFederatorPublicKey(Object[] args)
     {
         logger.trace("getFederatorPublicKey");
 
-        try {
-            int index = ((BigInteger) args[0]).intValue();
-            return bridgeSupport.getFederatorPublicKey(index);
-        } catch (Exception e) {
-            logger.warn("Exception in getFederatorPublicKey", e);
-            throw new RuntimeException("Exception in getFederatorPublicKey", e);
-        }
+        int index = ((BigInteger) args[0]).intValue();
+        return bridgeSupport.getFederatorPublicKey(index);
     }
 
     public Long getFederationCreationTime(Object[] args)
     {
         logger.trace("getFederationCreationTime");
 
-        try {
-            // Return the creation time in milliseconds from the epoch
-            return bridgeSupport.getFederationCreationTime().toEpochMilli();
-        } catch (IOException e) {
-            logger.warn("Exception in getFederationCreationTime", e);
-            throw new RuntimeException("Exception in getFederationCreationTime", e);
-        }
+        // Return the creation time in milliseconds from the epoch
+        return bridgeSupport.getFederationCreationTime().toEpochMilli();
     }
+
+    public Long createFederation(Object[] args)
+    {
+        logger.trace("createFederation");
+
+        int numberOfSignaturesRequired = ((BigInteger) args[0]).intValue();
+        return bridgeSupport.createFederation(numberOfSignaturesRequired);
+    }
+
+    public Integer addFederatorPublicKey(Object[] args)
+    {
+        logger.trace("addFederatorPublicKey");
+
+        byte[] publicKeyBytes = (byte[]) args[0];
+        BtcECKey publicKey;
+        try {
+            publicKey = BtcECKey.fromPublicOnly(publicKeyBytes);
+        } catch (Exception e) {
+            throw new BridgeIllegalArgumentException("Public key could not be parsed " + Hex.toHexString(publicKeyBytes), e);
+        }
+
+        return bridgeSupport.addFederatorPublicKey(publicKey);
+    }
+
+    public Integer removeFederatorPublicKey(Object[] args)
+    {
+        logger.trace("removeFederatorPublicKey");
+
+        byte[] publicKeyBytes = (byte[]) args[0];
+        BtcECKey publicKey;
+        try {
+            publicKey = BtcECKey.fromPublicOnly(publicKeyBytes);
+        } catch (Exception e) {
+            throw new BridgeIllegalArgumentException("Public key could not be parsed " + Hex.toHexString(publicKeyBytes), e);
+        }
+
+        return bridgeSupport.removeFederatorPublicKey(publicKey);
+    }
+
+    public Integer commitFederation(Object[] args)
+    {
+        logger.trace("commitFederation");
+
+        return bridgeSupport.commitFederation();
+    }
+
+    public Integer rollbackFederation(Object[] args)
+    {
+        logger.trace("rollbackFederation");
+
+        return bridgeSupport.rollbackFederation();
+    }
+
+
+//    "addFederatorPublicKey", new String[]{"bytes"}, new String[]{"uint32"});
+//    "removeFederatorPublicKey", new String[]{"bytes"}, new String[]{"uint32"});
+//    "commitFederation", new String[]{}, new String[]{"uint32"});
+//    "rollbackFederation", new String[]{}, new String[]{"uint32"});
 }

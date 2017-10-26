@@ -666,7 +666,7 @@ public class BridgeSupport {
      * Returns the current federation.
      * @return the current federation.
      */
-    public Federation getFederation() throws IOException {
+    public Federation getFederation() {
         Federation currentFederation = provider.getActiveFederation();
 
         if (currentFederation == null)
@@ -679,7 +679,7 @@ public class BridgeSupport {
      * Returns the federation bitcoin address.
      * @return the federation bitcoin address.
      */
-    public Address getFederationAddress() throws IOException {
+    public Address getFederationAddress() {
         return getFederation().getAddress();
     }
 
@@ -687,7 +687,7 @@ public class BridgeSupport {
      * Returns the federation's size
      * @return the federation size
      */
-    public Integer getFederationSize() throws IOException {
+    public Integer getFederationSize() {
         return getFederation().getPublicKeys().size();
     }
 
@@ -695,7 +695,7 @@ public class BridgeSupport {
      * Returns the federation's minimum required signatures
      * @return the federation minimum required signatures
      */
-    public Integer getFederationThreshold() throws IOException {
+    public Integer getFederationThreshold() {
         return getFederation().getNumberOfSignaturesRequired();
     }
 
@@ -704,7 +704,7 @@ public class BridgeSupport {
      * @param index the federator's index (zero-based)
      * @return the federator's public key
      */
-    public byte[] getFederatorPublicKey(int index) throws IOException {
+    public byte[] getFederatorPublicKey(int index) {
         List<BtcECKey> publicKeys = getFederation().getPublicKeys();
 
         if (index < 0 || index >= publicKeys.size()) {
@@ -718,8 +718,118 @@ public class BridgeSupport {
      * Returns the federation's creation time
      * @return the federation creation time
      */
-    public Instant getFederationCreationTime() throws IOException {
+    public Instant getFederationCreationTime() {
         return getFederation().getCreationTime();
+    }
+
+    /**
+     * Creates a new pending federation and returns its id.
+     * If there's currently no pending federation, a new one is created.
+     * Otherwise, zero is returned.
+     * @param numberOfSignaturesRequired the N in N of M multisig
+     * @return The newly created Pending Federation's id
+     */
+    public Long createFederation(int numberOfSignaturesRequired) {
+        PendingFederation currentPendingFederation = provider.getPendingFederation();
+
+        if (currentPendingFederation != null) {
+            return 0L;
+        }
+
+        currentPendingFederation = new PendingFederation(rskExecutionBlock.getNumber(), numberOfSignaturesRequired, Collections.emptyList());
+
+        provider.setPendingFederation(currentPendingFederation);
+
+        return currentPendingFederation.getId();
+    }
+
+    /**
+     * Adds the given key to the current pending federation
+     * @param key the public key to add
+     * @return 0 upon success, 1 if there was no pending federation, 2 if the key was already in the pending federation
+     */
+    public Integer addFederatorPublicKey(BtcECKey key) {
+        PendingFederation currentPendingFederation = provider.getPendingFederation();
+
+        if (currentPendingFederation == null) {
+            return -1;
+        }
+
+        if (currentPendingFederation.getPublicKeys().contains(key)) {
+            return -2;
+        }
+
+        currentPendingFederation = currentPendingFederation.addPublicKey(key);
+
+        provider.setPendingFederation(currentPendingFederation);
+
+        return 0;
+    }
+
+    /**
+     * Removes the given key from the current pending federation
+     * @param key the public key to remove
+     * @return 0 upon success, 1 if there was no pending federation, 2 if the key was not part of the pending federation
+     */
+    public Integer removeFederatorPublicKey(BtcECKey key) {
+        PendingFederation currentPendingFederation = provider.getPendingFederation();
+
+        if (currentPendingFederation == null) {
+            return -1;
+        }
+
+        if (!currentPendingFederation.getPublicKeys().contains(key)) {
+            return -2;
+        }
+
+        currentPendingFederation = currentPendingFederation.removePublicKey(key);
+
+        provider.setPendingFederation(currentPendingFederation);
+
+        return 0;
+    }
+
+    /**
+     * Commits the currently pending federation
+     * That is, the active federation is replaced with the pending federation, and
+     * the pending federation is wiped out.
+     * @return 0 upon success, 1 if there was no pending federation, 2 if the pending federation was incomplete
+     */
+    public Integer commitFederation() {
+        PendingFederation currentPendingFederation = provider.getPendingFederation();
+
+        if (currentPendingFederation == null) {
+            return -1;
+        }
+
+        if (!currentPendingFederation.isComplete()) {
+            return -2;
+        }
+
+        // Network parameters for the new federation are taken from the bridge constants.
+        // Creation time is the block's timestamp.
+        Instant creationTime = Instant.ofEpochMilli(rskExecutionBlock.getTimestamp());
+        provider.setNewFederation(currentPendingFederation.buildFederation(creationTime, bridgeConstants.getBtcParams()));
+        provider.setPendingFederation(null);
+
+        return 0;
+    }
+
+    /**
+     * Rolls back the currently pending federation
+     * That is, the pending federation is wiped out.
+     * @return 0 upon success, 1 if there was no pending federation
+     */
+    public Integer rollbackFederation() {
+        PendingFederation currentPendingFederation = provider.getPendingFederation();
+
+        if (currentPendingFederation == null) {
+            return -1;
+        }
+
+        provider.setPendingFederation(null);
+
+        return 0;
     }
 
     /**
