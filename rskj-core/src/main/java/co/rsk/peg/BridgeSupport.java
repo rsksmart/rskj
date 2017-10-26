@@ -443,7 +443,7 @@ public class BridgeSupport {
     public void addSignature(long executionBlockNumber, BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash) throws Exception {
         Context.propagate(btcContext);
         if (!getFederation().getPublicKeys().contains(federatorPublicKey)) {
-            logger.warn("Supplied federatory public key {} does not belong to any of the federators.", federatorPublicKey);
+            logger.warn("Supplied federator public key {} does not belong to any of the federators.", federatorPublicKey);
             return;
         }
         BtcTransaction btcTx = provider.getRskTxsWaitingForSignatures().get(new Sha3Hash(rskTxHash));
@@ -830,6 +830,69 @@ public class BridgeSupport {
         provider.setPendingFederation(null);
 
         return 0;
+    }
+
+    /**
+     * Returns the currently pending federation id, or zero if none exists
+     * @return the currently pending federation id, or zero if none exists
+     */
+    public Long getPendingFederationId() {
+        PendingFederation currentPendingFederation = provider.getPendingFederation();
+
+        if (currentPendingFederation == null) {
+            return 0L;
+        }
+
+        return currentPendingFederation.getId();
+    }
+
+    /**
+     * Returns the currently pending federation size, or -1 if none exists
+     * @return the currently pending federation size, or -1 if none exists
+     */
+    public Integer getPendingFederationSize() {
+        PendingFederation currentPendingFederation = provider.getPendingFederation();
+
+        if (currentPendingFederation == null) {
+            return -1;
+        }
+
+        return currentPendingFederation.getPublicKeys().size();
+    }
+
+    /**
+     * Returns the currently pending federation threshold, or -1 if none exists
+     * @return the currently pending federation threshold, or -1 if none exists
+     */
+    public Integer getPendingFederationThreshold() {
+        PendingFederation currentPendingFederation = provider.getPendingFederation();
+
+        if (currentPendingFederation == null) {
+            return -1;
+        }
+
+        return currentPendingFederation.getNumberOfSignaturesRequired();
+    }
+
+    /**
+     * Returns the currently pending federation threshold, or null if none exists
+     * @param index the federator's index (zero-based)
+     * @return the pending federation's federator public key
+     */
+    public byte[] getPendingFederatorPublicKey(int index) {
+        PendingFederation currentPendingFederation = provider.getPendingFederation();
+
+        if (currentPendingFederation == null) {
+            return null;
+        }
+
+        List<BtcECKey> publicKeys = getFederation().getPublicKeys();
+
+        if (index < 0 || index >= publicKeys.size()) {
+            throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and {}", publicKeys.size() - 1));
+        }
+
+        return publicKeys.get(index).getPubKey();
     }
 
     /**

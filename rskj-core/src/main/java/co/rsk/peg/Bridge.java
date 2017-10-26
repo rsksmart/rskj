@@ -104,6 +104,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function COMMIT_FEDERATION = CallTransaction.Function.fromSignature("commitFederation", new String[]{}, new String[]{"uint32"});
     // Rolls back the currently pending federation
     public static final CallTransaction.Function ROLLBACK_FEDERATION = CallTransaction.Function.fromSignature("rollbackFederation", new String[]{}, new String[]{"uint32"});
+    // Returns the number of federates in the currently active federation
+    public static final CallTransaction.Function GET_PENDING_FEDERATION_ID = CallTransaction.Function.fromSignature("getPendingFederationId", new String[]{}, new String[]{"uint64"});
+    // Returns the number of federates in the currently active federation
+    public static final CallTransaction.Function GET_PENDING_FEDERATION_SIZE = CallTransaction.Function.fromSignature("getPendingFederationSize", new String[]{}, new String[]{"uint32"});
+    // Returns the number of minimum required signatures from the currently active federation
+    public static final CallTransaction.Function GET_PENDING_FEDERATION_THRESHOLD = CallTransaction.Function.fromSignature("getPendingFederationThreshold", new String[]{}, new String[]{"uint32"});
+    // Returns the public key of the federator at the specified index
+    public static final CallTransaction.Function GET_PENDING_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getPendingFederatorPublicKey", new String[]{"uint32"}, new String[]{"bytes"});
 
     // Log topics used by the Bridge
     public static final DataWord RELEASE_BTC_TOPIC = new DataWord("release_btc_topic".getBytes(StandardCharsets.UTF_8));
@@ -149,6 +157,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.functions.put(new ByteArrayWrapper(REMOVE_FEDERATOR_PUBLIC_KEY.encodeSignature()), REMOVE_FEDERATOR_PUBLIC_KEY);
         this.functions.put(new ByteArrayWrapper(COMMIT_FEDERATION.encodeSignature()), COMMIT_FEDERATION);
         this.functions.put(new ByteArrayWrapper(ROLLBACK_FEDERATION.encodeSignature()), ROLLBACK_FEDERATION);
+        this.functions.put(new ByteArrayWrapper(GET_PENDING_FEDERATION_ID.encodeSignature()), GET_PENDING_FEDERATION_ID);
+        this.functions.put(new ByteArrayWrapper(GET_PENDING_FEDERATION_SIZE.encodeSignature()), GET_PENDING_FEDERATION_SIZE);
+        this.functions.put(new ByteArrayWrapper(GET_PENDING_FEDERATION_THRESHOLD.encodeSignature()), GET_PENDING_FEDERATION_THRESHOLD);
+        this.functions.put(new ByteArrayWrapper(GET_PENDING_FEDERATOR_PUBLIC_KEY.encodeSignature()), GET_PENDING_FEDERATOR_PUBLIC_KEY);
 
         bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
 
@@ -168,11 +180,16 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         functionCostMap.put(GET_FEDERATION_SIZE,                   50014L);
         functionCostMap.put(GET_FEDERATION_THRESHOLD,              50015L);
         functionCostMap.put(GET_FEDERATOR_PUBLIC_KEY,              50016L);
-        functionCostMap.put(CREATE_FEDERATION,                     50017L);
-        functionCostMap.put(ADD_FEDERATOR_PUBLIC_KEY,              50018L);
-        functionCostMap.put(REMOVE_FEDERATOR_PUBLIC_KEY,           50019L);
-        functionCostMap.put(COMMIT_FEDERATION,                     50020L);
-        functionCostMap.put(ROLLBACK_FEDERATION,                   50021L);
+        functionCostMap.put(GET_FEDERATION_CREATION_TIME,          50017L);
+        functionCostMap.put(CREATE_FEDERATION,                     50018L);
+        functionCostMap.put(ADD_FEDERATOR_PUBLIC_KEY,              50019L);
+        functionCostMap.put(REMOVE_FEDERATOR_PUBLIC_KEY,           50020L);
+        functionCostMap.put(COMMIT_FEDERATION,                     50021L);
+        functionCostMap.put(ROLLBACK_FEDERATION,                   50022L);
+        functionCostMap.put(GET_PENDING_FEDERATION_ID,             50023L);
+        functionCostMap.put(GET_PENDING_FEDERATION_SIZE,           50024L);
+        functionCostMap.put(GET_PENDING_FEDERATION_THRESHOLD,      50025L);
+        functionCostMap.put(GET_PENDING_FEDERATOR_PUBLIC_KEY,      50026L);
 
     }
 
@@ -598,9 +615,32 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.rollbackFederation();
     }
 
+    public Long getPendingFederationId(Object[] args)
+    {
+        logger.trace("getPendingFederationId");
 
-//    "addFederatorPublicKey", new String[]{"bytes"}, new String[]{"uint32"});
-//    "removeFederatorPublicKey", new String[]{"bytes"}, new String[]{"uint32"});
-//    "commitFederation", new String[]{}, new String[]{"uint32"});
-//    "rollbackFederation", new String[]{}, new String[]{"uint32"});
+        return bridgeSupport.getPendingFederationId();
+    }
+
+    public Integer getPendingFederationSize(Object[] args)
+    {
+        logger.trace("getPendingFederationSize");
+
+        return bridgeSupport.getPendingFederationSize();
+    }
+
+    public Integer getPendingFederationThreshold(Object[] args)
+    {
+        logger.trace("getPendingFederationThreshold");
+
+        return bridgeSupport.getPendingFederationThreshold();
+    }
+
+    public byte[] getPendingFederatorPublicKey(Object[] args)
+    {
+        logger.trace("getPendingFederatorPublicKey");
+
+        int index = ((BigInteger) args[0]).intValue();
+        return bridgeSupport.getPendingFederatorPublicKey(index);
+    }
 }
