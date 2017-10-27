@@ -66,22 +66,26 @@ public class SyncProcessor implements SyncEventsHandler {
         this.syncState.newPeerStatus();
     }
 
-    public void processSkeletonResponse(MessageChannel sender, SkeletonResponseMessage message) {
-        logger.trace("Process skeleton response from node {}", sender.getPeerNodeID());
-        peerStatuses.getOrRegisterPeer(sender);
+    public void processSkeletonResponse(MessageChannel peer, SkeletonResponseMessage message) {
+        logger.trace("Process skeleton response from node {}", peer.getPeerNodeID());
+        peerStatuses.getOrRegisterPeer(peer);
 
         if (!pendingMessages.isPending(message))
+            peerScoringManager.recordEvent(peer.getPeerNodeID(), null, EventType.UNEXPECTED_MESSAGE);
             return;
+        }
 
         this.syncState.newSkeleton(message.getBlockIdentifiers());
     }
 
-    public void processBlockHashResponse(MessageChannel sender, BlockHashResponseMessage message) {
-        logger.trace("Process block hash response from node {} hash {}", sender.getPeerNodeID(), HashUtil.shortHash(message.getHash()));
-        peerStatuses.getOrRegisterPeer(sender);
+    public void processBlockHashResponse(MessageChannel peer, BlockHashResponseMessage message) {
+        logger.trace("Process block hash response from node {} hash {}", peer.getPeerNodeID(), HashUtil.shortHash(message.getHash()));
+        peerStatuses.getOrRegisterPeer(peer);
 
         if (!pendingMessages.isPending(message))
+            peerScoringManager.recordEvent(peer.getPeerNodeID(), null, EventType.UNEXPECTED_MESSAGE);
             return;
+        }
 
         this.syncState.newConnectionPointData(message.getHash());
     }
@@ -91,7 +95,9 @@ public class SyncProcessor implements SyncEventsHandler {
         peerStatuses.getOrRegisterPeer(peer);
 
         if (!pendingMessages.isPending(message))
+            peerScoringManager.recordEvent(peer.getPeerNodeID(), null, EventType.UNEXPECTED_MESSAGE);
             return;
+        }
 
         syncState.newBlockHeaders(message.getBlockHeaders());
     }
@@ -101,7 +107,9 @@ public class SyncProcessor implements SyncEventsHandler {
         peerStatuses.getOrRegisterPeer(peer);
 
         if (!pendingMessages.isPending(message))
+            peerScoringManager.recordEvent(peer.getPeerNodeID(), null, EventType.UNEXPECTED_MESSAGE);
             return;
+        }
 
         this.syncState.newBody(message);
     }
@@ -132,14 +140,16 @@ public class SyncProcessor implements SyncEventsHandler {
         sendMessage(channel, message);
     }
 
-    public void processBlockResponse(MessageChannel sender, BlockResponseMessage message) {
-        logger.trace("Process block response from node {} block {} {}", sender.getPeerNodeID(), message.getBlock().getNumber(), message.getBlock().getShortHash());
-        peerStatuses.getOrRegisterPeer(sender);
+    public void processBlockResponse(MessageChannel peer, BlockResponseMessage message) {
+        logger.trace("Process block response from node {} block {} {}", peer.getPeerNodeID(), message.getBlock().getNumber(), message.getBlock().getShortHash());
+        peerStatuses.getOrRegisterPeer(peer);
 
         if (!pendingMessages.isPending(message))
+            peerScoringManager.recordEvent(peer.getPeerNodeID(), null, EventType.UNEXPECTED_MESSAGE);
             return;
+        }
 
-        blockSyncService.processBlock(sender, message.getBlock());
+        blockSyncService.processBlock(peer, message.getBlock());
     }
 
     public Set<NodeID> getKnownPeersNodeIDs() {
@@ -201,7 +211,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @Override
     public void onErrorSyncing(String message, EventType eventType, Object... arguments) {
-        peerScoringManager.recordEvent(this.selectedPeerId, null,eventType);
+        peerScoringManager.recordEvent(this.selectedPeerId, null, eventType);
         logger.trace(message, arguments);
         stopSyncing();
     }

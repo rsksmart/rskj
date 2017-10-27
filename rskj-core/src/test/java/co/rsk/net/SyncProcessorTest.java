@@ -464,7 +464,12 @@ public class SyncProcessorTest {
         BodyResponseMessage response = new BodyResponseMessage(lastRequestId, txs, uncles);
         processor.registerExpectedMessage(response);
 
-        processor.startDownloadingBodies(new ArrayDeque<>(Collections.singletonList(block.getHeader())));
+        ArrayDeque<BlockHeader> pendingHeaders = new ArrayDeque<>();
+        pendingHeaders.add(block.getHeader());
+        pendingHeaders.add(block.getHeader());
+        pendingHeaders.add(block.getHeader());
+
+        processor.startDownloadingBodies(pendingHeaders);
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
 
         processor.processBodyResponse(sender, response);
@@ -500,7 +505,7 @@ public class SyncProcessorTest {
         processor.registerExpectedMessage(response);
 
         processor.startDownloadingBodies(new ArrayDeque<>(Collections.singletonList(block.getHeader())));
-        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
+//        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
 
         processor.processBodyResponse(sender, response);
 
