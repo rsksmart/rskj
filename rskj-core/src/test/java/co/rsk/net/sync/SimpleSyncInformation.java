@@ -38,6 +38,11 @@ public class SimpleSyncInformation implements SyncInformation {
     }
 
     @Override
+    public boolean blockHeaderIsValid(@Nonnull BlockHeader header) {
+        return false;
+    }
+
+    @Override
     public boolean isKnownBlock(byte[] hash) {
         return false;
     }

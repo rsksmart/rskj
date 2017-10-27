@@ -31,4 +31,6 @@ public interface SyncEventsHandler {
     void onErrorSyncing(String message, EventType eventType, Object... arguments);
 
     void onCompletedSyncing();
+
+    void startFindingConnectionPoint();
 }

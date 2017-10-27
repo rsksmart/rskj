@@ -14,6 +14,8 @@ public interface SyncInformation {
 
     BlockProcessResult processBlock(Block block);
 
+    boolean blockHeaderIsValid(@Nonnull BlockHeader header);
+
     boolean blockHeaderIsValid(@Nonnull BlockHeader header, @Nonnull BlockHeader parentHeader);
 
     NodeID getSelectedPeerId();

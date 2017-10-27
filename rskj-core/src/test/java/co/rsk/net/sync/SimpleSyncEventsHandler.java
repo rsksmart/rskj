@@ -31,6 +31,11 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
+    public void startFindingConnectionPoint() {
+
+    }
+
+    @Override
     public long sendBodyRequest(@Nonnull BlockHeader header) { return 0; }
 
     @Override

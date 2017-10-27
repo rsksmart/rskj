@@ -44,6 +44,7 @@ public class PeerScoring {
                 case INVALID_BLOCK:
                 case INVALID_TRANSACTION:
                 case INVALID_MESSAGE:
+                case INVALID_HEADER:
                 case TIMEOUT_MESSAGE:
                     if (score > 0)
                         score = 0;

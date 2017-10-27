@@ -10,6 +10,7 @@ import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.StatusUtils;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.validators.DummyBlockValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -73,11 +74,11 @@ public class SyncProcessorTest {
 
         Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
+        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
 
-        BlockHashRequestMessage request = (BlockHashRequestMessage)message;
+        BlockHeadersRequestMessage request = (BlockHeadersRequestMessage)message;
 
-        Assert.assertEquals(50, request.getHeight());
+        Assert.assertEquals(status.getBestBlockHash(), request.getHash());
     }
 
     @Test
@@ -114,11 +115,11 @@ public class SyncProcessorTest {
 
         Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
+        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
 
-        BlockHashRequestMessage request = (BlockHashRequestMessage)message;
+        BlockHeadersRequestMessage request = (BlockHeadersRequestMessage) message;
 
-        Assert.assertEquals(50, request.getHeight());
+        Assert.assertEquals(status.getBestBlockHash(), request.getHash());
     }
 
     @Test
@@ -203,11 +204,11 @@ public class SyncProcessorTest {
                 .map(SimpleMessageChannel::getMessages)
                 .get().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
+        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
 
-        BlockHashRequestMessage request = (BlockHashRequestMessage)message;
+        BlockHeadersRequestMessage request = (BlockHeadersRequestMessage)message;
 
-        Assert.assertEquals(50, request.getHeight());
+        Assert.assertEquals(status.getBestBlockHash(), request.getHash());
     }
 
     @Test
@@ -435,7 +436,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void doesntprocessInvalidBodyResponse() {
+    public void doesntProcessInvalidBodyResponse() {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(10);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
@@ -481,7 +482,7 @@ public class SyncProcessorTest {
     }
 
     @Test
-    public void doesntprocessUnexpectedBodyResponse() {
+    public void doesntProcessUnexpectedBodyResponse() {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(10);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
@@ -611,15 +612,17 @@ public class SyncProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
 
-        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
+        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new DummyBlockValidationRule());
 
         processor.processStatus(sender, StatusUtils.fromBlockchain(advancedBlockchain));
+        BlockHeadersRequestMessage requestMessage = (BlockHeadersRequestMessage)sender.getMessages().get(0);
+        processor.processBlockHeadersResponse(sender, new BlockHeadersResponseMessage(requestMessage.getId(), Collections.singletonList(advancedBlockchain.getBestBlock().getHeader())));
 
         long[] expectedHeights = new long[] { 50, 25, 12, 6, 3, 1 };
 
         for (int k = 0; k < expectedHeights.length; k++) {
-            Assert.assertEquals( k + 1, sender.getMessages().size());
-            Message message = sender.getMessages().get(k);
+            Assert.assertEquals( k + 2, sender.getMessages().size());
+            Message message = sender.getMessages().get(k + 1);
             Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
             BlockHashRequestMessage request = (BlockHashRequestMessage)message;
             long requestId = request.getId();
@@ -630,7 +633,7 @@ public class SyncProcessorTest {
             processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash()));
         }
 
-        Assert.assertEquals(expectedHeights.length + 1, sender.getMessages().size());
+        Assert.assertEquals(expectedHeights.length + 2, sender.getMessages().size());
 
         Message message = sender.getMessages().get(sender.getMessages().size() - 1);
 
@@ -653,15 +656,17 @@ public class SyncProcessorTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
 
-        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
+        SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new DummyBlockValidationRule());
 
         Status status = StatusUtils.fromBlockchain(advancedBlockchain);
         processor.processStatus(sender, status);
+        BlockHeadersRequestMessage requestMessage = (BlockHeadersRequestMessage)sender.getMessages().get(0);
+        processor.processBlockHeadersResponse(sender, new BlockHeadersResponseMessage(requestMessage.getId(), Collections.singletonList(advancedBlockchain.getBestBlock().getHeader())));
 
         long[] binarySearchHeights = new long[] { 50, 25, 37, 31, 28, 29, 30 };
         for (int k = 0; k < binarySearchHeights.length; k++) {
-            Assert.assertEquals(k + 1, sender.getMessages().size());
-            Message message = sender.getMessages().get(k);
+            Assert.assertEquals(k + 2, sender.getMessages().size());
+            Message message = sender.getMessages().get(k + 1);
             Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, message.getMessageType());
             BlockHashRequestMessage request = (BlockHashRequestMessage)message;
             long requestId = request.getId();
@@ -672,7 +677,7 @@ public class SyncProcessorTest {
             processor.processBlockHashResponse(sender, new BlockHashResponseMessage(requestId, block.getHash()));
         }
 
-        Assert.assertEquals(binarySearchHeights.length + 1, sender.getMessages().size());
+        Assert.assertEquals(binarySearchHeights.length + 2, sender.getMessages().size());
 
         Message message = sender.getMessages().get(sender.getMessages().size() - 1);
 

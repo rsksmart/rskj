@@ -181,10 +181,10 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @Override
     public void startSyncing(MessageChannel peer) {
-        logger.trace("Find connection point with node {}", peer.getPeerNodeID());
         selectedPeerId = peer.getPeerNodeID();
-        long bestBlockNumber = syncInformation.getPeerStatus(selectedPeerId).getStatus().getBestBlockNumber();
-        setSyncState(new FindingConnectionPointSyncState(this.syncConfiguration, this, syncInformation, bestBlockNumber));
+        logger.trace("Start syncing with node {}", peer.getPeerNodeID());
+        byte[] bestBlockHash = syncInformation.getPeerStatus(selectedPeerId).getStatus().getBestBlockHash();
+        setSyncState(new CheckingBestHeaderSyncState(this.syncConfiguration, this, syncInformation, bestBlockHash));
     }
 
     @Override
@@ -220,6 +220,13 @@ public class SyncProcessor implements SyncEventsHandler {
     public void onCompletedSyncing() {
         logger.trace("Completed syncing phase with node {}", selectedPeerId);
         stopSyncing();
+    }
+
+    @Override
+    public void startFindingConnectionPoint() {
+        logger.trace("Find connection point with node {}", selectedPeerId);
+        long bestBlockNumber = syncInformation.getPeerStatus(selectedPeerId).getStatus().getBestBlockNumber();
+        setSyncState(new FindingConnectionPointSyncState(this.syncConfiguration, this, syncInformation, bestBlockNumber));
     }
 
     private void sendMessage(MessageChannel channel, MessageWithId message) {
@@ -306,20 +313,25 @@ public class SyncProcessor implements SyncEventsHandler {
         }
 
         @Override
-        public boolean blockHeaderIsValid(@Nonnull BlockHeader header, @Nonnull BlockHeader parentHeader) {
+        public boolean blockHeaderIsValid(@Nonnull BlockHeader header) {
             if (isKnownBlock(header.getHash()))
                 return false;
 
+            return blockHeaderValidationRule.isValid(header);
+        }
+
+        @Override
+        public boolean blockHeaderIsValid(@Nonnull BlockHeader header, @Nonnull BlockHeader parentHeader) {
             if (!ByteUtil.fastEquals(parentHeader.getHash(), header.getParentHash()))
                 return false;
 
             if (header.getNumber() != parentHeader.getNumber() + 1)
                 return false;
 
-            if (!blockParentValidationRule.validate(header, parentHeader))
+            if (!blockHeaderIsValid(header))
                 return false;
 
-            return blockHeaderValidationRule.isValid(header);
+            return blockParentValidationRule.validate(header, parentHeader);
         }
 
         @CheckForNull
