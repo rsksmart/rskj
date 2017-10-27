@@ -2980,11 +2980,11 @@ public class VMTest {
 
     @Test
     public void decompileDupnSwapn() {
-        String code = "6060a861a962";
+        String code = "6060a8a962";
         String result = Program.stringifyMultiline(Hex.decode(code));
         assertTrue(result.contains("PUSH1 0x60 (96)"));
-        assertTrue(result.contains("DUPN 0x61 (97)"));
-        assertTrue(result.contains("SWAPN 0x62 (98)"));
+        assertTrue(result.contains("DUPN"));
+        assertTrue(result.contains("SWAPN"));
     }
 
     @Test
