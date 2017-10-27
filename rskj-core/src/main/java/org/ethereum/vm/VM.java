@@ -954,7 +954,8 @@ public class VM {
         spendOpCodeGas();
         // EXECUTION PHASE
         program.step();
-        int n = program.getArgument() + 1;
+
+        int n = stack.pop().intValueCheck() + 1;
 
         program.verifyStackSize(n);
         program.verifyStackOverflow(n, n + 1);
@@ -978,7 +979,7 @@ public class VM {
         // EXECUTION PHASE
         program.step();
 
-        int n = program.getArgument() + 2;
+        int n = stack.pop().intValueCheck() + 2;
 
         program.verifyStackSize(n);
         program.verifyStackOverflow(n, n);

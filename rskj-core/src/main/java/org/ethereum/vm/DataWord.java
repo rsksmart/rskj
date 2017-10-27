@@ -577,7 +577,9 @@ public class DataWord implements Comparable<DataWord> {
         if (firstNonZero == -1) {
             return 0;
         }
-        return numberOfTrailingNonZeros(data[firstNonZero]) + (31 - firstNonZero)<<3;
+
+        // TODO Replace/Update this class code with current EthereumJ version
+        return numberOfTrailingNonZeros(data[firstNonZero]) + ((31 - firstNonZero)<<3);
     }
 
     public boolean isHex(String hex) {

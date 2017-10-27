@@ -567,12 +567,12 @@ public enum OpCode {
     /**
      * DUPN
      */
-    DUPN(0xa8, 1, 2, VERY_LOW_TIER),
+    DUPN(0xa8, 2, 2, VERY_LOW_TIER),
 
     /**
      * SWAPN
      */
-    SWAPN(0xa9, 2, 2, VERY_LOW_TIER),
+    SWAPN(0xa9, 3, 2, VERY_LOW_TIER),
 
     /**
      * TXINDEX
