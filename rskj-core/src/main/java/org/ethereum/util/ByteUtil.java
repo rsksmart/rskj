@@ -99,6 +99,21 @@ public class ByteUtil {
         return data;
     }
 
+    /**
+     * Parses fixed number of bytes starting from {@code offset} in {@code input} array.
+     * If {@code input} has not enough bytes return array will be right padded with zero bytes.
+     * I.e. if {@code offset} is higher than {@code input.length} then zero byte array of length {@code len} will be returned
+     */
+    public static byte[] parseBytes(byte[] input, int offset, int len) {
+
+        if (offset >= input.length || len == 0)
+            return EMPTY_BYTE_ARRAY;
+
+        byte[] bytes = new byte[len];
+        System.arraycopy(input, offset, bytes, 0, Math.min(input.length - offset, len));
+        return bytes;
+    }
+
     public static BigInteger bytesToBigInteger(byte[] bb) {
         return new BigInteger(1, bb);
     }
@@ -631,4 +646,21 @@ public class ByteUtil {
     public static byte[] shortToBytes(short n) {
         return ByteBuffer.allocate(2).putShort(n).array();
     }
+
+    /**
+     * Returns a number of zero bits preceding the highest-order ("leftmost") one-bit
+     * interpreting input array as a big-endian integer value
+     */
+    public static int numberOfLeadingZeros(byte[] bytes) {
+
+        int i = firstNonZeroByte(bytes);
+
+        if (i == -1) {
+            return bytes.length * 8;
+        } else {
+            int byteLeadingZeros = Integer.numberOfLeadingZeros((int)bytes[i] & 0xff) - 24;
+            return i * 8 + byteLeadingZeros;
+        }
+    }
+
 }
