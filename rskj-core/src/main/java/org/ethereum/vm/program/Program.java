@@ -407,10 +407,6 @@ public class Program {
         return data;
     }
 
-    public int getArgument() {
-        return ops[pc] & 0xff;
-    }
-
     public DataWord sweepGetDataWord(int n) {
           if (pc + n > ops.length) {
               stop();
@@ -1279,8 +1275,6 @@ public class Program {
 
             if (op.asInt() >= OpCode.PUSH1.asInt() && op.asInt() <= OpCode.PUSH32.asInt())
                 i += op.asInt() - OpCode.PUSH1.asInt() + 1;
-            else if (op == OpCode.DUPN || op == OpCode.SWAPN)
-                i++;
         }
     }
 
@@ -1344,18 +1338,6 @@ public class Program {
                 }
 
                 index += nPush + 1;
-            }
-            else if ("DUPN".equals(op.name()) || "SWAPN".equals(op.name())) {
-                    sb.append(' ').append(op.name()).append(' ');
-
-                    byte[] data = Arrays.copyOfRange(code, index + 1, index + 2);
-                    BigInteger bi = new BigInteger(1, data);
-                    sb.append("0x").append(bi.toString(16));
-                    if (bi.bitLength() <= 32) {
-                        sb.append(" (").append(new BigInteger(1, data).toString()).append(") ");
-                    }
-
-                    index++;
             } else {
                 sb.append(' ').append(op.name());
                 index++;
@@ -1390,20 +1372,10 @@ public class Program {
             return getCurOpcode() != null ? getCurOpcode().name().startsWith("PUSH") : false;
         }
 
-        public boolean isDupN() {
-            return getCurOpcode() != null ? "DUPN".equals(getCurOpcode().name()) : false;
-        }
-
-        public boolean isSwapN() {
-            return getCurOpcode() != null ? "SWAPN".equals(getCurOpcode().name()) : false;
-        }
-
         public byte[] getCurOpcodeArg() {
             if (isPush()) {
                 int nPush = getCurOpcode().val() - OpCode.PUSH1.val() + 1;
                 return Arrays.copyOfRange(code, pc + 1, pc + nPush + 1);
-            } else if (isDupN() || isSwapN()) {
-                return Arrays.copyOfRange(code, pc + 1, pc + 2);
             }
             else {
                 return new byte[0];

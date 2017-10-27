@@ -99,7 +99,7 @@ public class VMExecutionTest {
 
     @Test
     public void dupnFirstItem() {
-        Program program = executeCode("PUSH1 0x01 DUPN 0x00", 2);
+        Program program = executeCode("PUSH1 0x01 PUSH1 0x00 DUPN", 3);
         Stack stack = program.getStack();
 
         Assert.assertEquals(2, stack.size());
@@ -109,7 +109,7 @@ public class VMExecutionTest {
 
     @Test
     public void dupnFourthItem() {
-        Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 DUPN 0x03", 5);
+        Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x03 DUPN", 6);
         Stack stack = program.getStack();
 
         Assert.assertEquals(5, stack.size());
@@ -121,7 +121,7 @@ public class VMExecutionTest {
 
     @Test
     public void dupnTwentiethItem() {
-        Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x14 DUPN 0x13", 21);
+        Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x14 PUSH1 0x13 DUPN", 22);
         Stack stack = program.getStack();
 
         Assert.assertEquals(21, stack.size());
@@ -133,12 +133,12 @@ public class VMExecutionTest {
 
     @Test(expected = Program.StackTooSmallException.class)
     public void dupnTwentiethItemWithoutEnoughItems() {
-        executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 DUPN 0x13", 20);
+        executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x13 DUPN", 21);
     }
 
     @Test
     public void swapnSecondItem() {
-        Program program = executeCode("PUSH1 0x01 PUSH1 0x02 SWAPN 0x00", 3);
+        Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x00 SWAPN", 4);
         Stack stack = program.getStack();
 
         Assert.assertEquals(2, stack.size());
@@ -148,7 +148,7 @@ public class VMExecutionTest {
 
     @Test
     public void swapnFourthItem() {
-        Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 SWAPN 0x02", 5);
+        Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x02 SWAPN", 6);
         Stack stack = program.getStack();
 
         Assert.assertEquals(4, stack.size());
@@ -160,7 +160,7 @@ public class VMExecutionTest {
 
     @Test
     public void swapnTwentiethItem() {
-        Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x14 SWAPN 0x12", 21);
+        Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x14 PUSH1 0x12 SWAPN", 22);
         Stack stack = program.getStack();
 
         Assert.assertEquals(20, stack.size());
@@ -173,7 +173,7 @@ public class VMExecutionTest {
 
     @Test(expected = Program.StackTooSmallException.class)
     public void swapnTwentiethItemWithoutEnoughItems() {
-        executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 SWAPN 0x12", 21);
+        executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x12 SWAPN", 22);
     }
 
     @Test
@@ -241,7 +241,7 @@ public class VMExecutionTest {
         Assert.assertEquals(4, jumpdestSet.size());
         Assert.assertTrue(jumpdestSet.get(0));
         Assert.assertFalse(jumpdestSet.get(1));
-        Assert.assertFalse(jumpdestSet.get(2));
+        Assert.assertTrue(jumpdestSet.get(2));
         Assert.assertTrue(jumpdestSet.get(3));
     }
 
@@ -256,7 +256,7 @@ public class VMExecutionTest {
         Assert.assertEquals(4, jumpdestSet.size());
         Assert.assertTrue(jumpdestSet.get(0));
         Assert.assertFalse(jumpdestSet.get(1));
-        Assert.assertFalse(jumpdestSet.get(2));
+        Assert.assertTrue(jumpdestSet.get(2));
         Assert.assertTrue(jumpdestSet.get(3));
     }
 
