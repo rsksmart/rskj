@@ -724,16 +724,22 @@ public class BridgeSupport {
 
     /**
      * Creates a new pending federation and returns its id.
-     * If there's currently no pending federation, a new one is created.
-     * Otherwise, zero is returned.
+     * If there's currently no pending federation and no funds remain
+     * to be moved from a previous federation, a new one is created.
+     * Otherwise, zero is returned if there's already a pending federation
+     * or -1 is returned if funds are left from a previous one.
      * @param numberOfSignaturesRequired the N in N of M multisig
      * @return The newly created Pending Federation's id
      */
-    public Long createFederation(int numberOfSignaturesRequired) {
+    public Long createFederation(int numberOfSignaturesRequired) throws IOException {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation != null) {
             return 0L;
+        }
+
+        if (provider.getPreviousFederationBtcUTXOs().size() > 0) {
+            return -1L;
         }
 
         currentPendingFederation = new PendingFederation(rskExecutionBlock.getNumber(), numberOfSignaturesRequired, Collections.emptyList());
@@ -795,7 +801,7 @@ public class BridgeSupport {
      * the pending federation is wiped out.
      * @return 0 upon success, 1 if there was no pending federation, 2 if the pending federation was incomplete
      */
-    public Integer commitFederation() {
+    public Integer commitFederation() throws IOException {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
@@ -805,6 +811,14 @@ public class BridgeSupport {
         if (!currentPendingFederation.isComplete()) {
             return -2;
         }
+
+        // Move UTXOs from the active federation into the old federation
+        // and clear the active federation's UTXOs
+        List<UTXO> utxosToMove = new ArrayList<>(provider.getActiveFederationBtcUTXOs());
+        provider.getActiveFederationBtcUTXOs().clear();
+        List<UTXO> previousFederationUTXOs = provider.getPreviousFederationBtcUTXOs();
+        previousFederationUTXOs.clear();
+        utxosToMove.forEach(utxo -> previousFederationUTXOs.add(utxo));
 
         // Network parameters for the new federation are taken from the bridge constants.
         // Creation time is the block's timestamp.

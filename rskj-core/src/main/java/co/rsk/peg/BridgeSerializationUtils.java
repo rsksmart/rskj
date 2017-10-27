@@ -69,22 +69,6 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static byte[] serializeList(List<UTXO> list) throws IOException {
-        int nutxos = list.size();
-
-        byte[][] bytes = new byte[nutxos][];
-        int n = 0;
-
-        for (UTXO utxo : list) {
-            ByteArrayOutputStream ostream = new ByteArrayOutputStream();
-            utxo.serializeToStream(ostream);
-            ostream.close();
-            bytes[n++] = RLP.encodeElement(ostream.toByteArray());
-        }
-
-        return RLP.encodeList(bytes);
-    }
-
     public static SortedMap<Sha3Hash, BtcTransaction> deserializeMap(byte[] data, NetworkParameters networkParameters, boolean noInputsTxs) {
         SortedMap<Sha3Hash, BtcTransaction> map = new TreeMap<>();
 
@@ -132,7 +116,23 @@ public class BridgeSerializationUtils {
         return map;
     }
 
-    public static List<UTXO> deserializeList(byte[] data) throws IOException {
+    public static byte[] serializeUTXOList(List<UTXO> list) throws IOException {
+        int nutxos = list.size();
+
+        byte[][] bytes = new byte[nutxos][];
+        int n = 0;
+
+        for (UTXO utxo : list) {
+            ByteArrayOutputStream ostream = new ByteArrayOutputStream();
+            utxo.serializeToStream(ostream);
+            ostream.close();
+            bytes[n++] = RLP.encodeElement(ostream.toByteArray());
+        }
+
+        return RLP.encodeList(bytes);
+    }
+
+    public static List<UTXO> deserializeUTXOList(byte[] data) throws IOException {
         List<UTXO> list = new ArrayList<>();
 
         if (data == null || data.length == 0)
