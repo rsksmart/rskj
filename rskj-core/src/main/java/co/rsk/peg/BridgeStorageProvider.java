@@ -41,7 +41,7 @@ import java.util.SortedMap;
  * @author Oscar Guindzberg
  */
 public class BridgeStorageProvider {
-    private static final String BTC_UTXOS_KEY = "btcUTXOs";
+    private static final String ACTIVE_FEDERATION_BTC_UTXOS_KEY = "btcUTXOs";
     private static final String BTC_TX_HASHES_ALREADY_PROCESSED_KEY = "btcTxHashesAP";
     private static final String RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY = "rskTxsWaitingFC";
     private static final String RSK_TXS_WAITING_FOR_SIGNATURES_KEY = "rskTxsWaitingFS";
@@ -62,7 +62,7 @@ public class BridgeStorageProvider {
     // key = rsk tx hash, value = btc tx
     private SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForSignatures;
 
-    private List<UTXO> btcUTXOs;
+    private List<UTXO> activeFederationBtcUTXOs;
     private Wallet btcWallet;
 
     // Active federation
@@ -106,13 +106,13 @@ public class BridgeStorageProvider {
      *
      * @throws IOException
      */
-    public Wallet getWallet() throws IOException {
+    public Wallet getActiveFederationWallet() throws IOException {
         if (btcWallet != null)
             return btcWallet;
 
-        List<UTXO> btcUTXOs = this.getBtcUTXOs();
+        List<UTXO> activeFederationBtcUTXOs = this.getActiveFederationBtcUTXOs();
 
-        RskUTXOProvider utxoProvider = new RskUTXOProvider(bridgeConstants.getBtcParams(), btcUTXOs);
+        RskUTXOProvider utxoProvider = new RskUTXOProvider(bridgeConstants.getBtcParams(), activeFederationBtcUTXOs);
 
         Federation federation = getCurrentFederation();
 
@@ -128,26 +128,26 @@ public class BridgeStorageProvider {
         return btcWallet;
     }
 
-    public List<UTXO> getBtcUTXOs() throws IOException {
-        if (btcUTXOs!= null)
-            return btcUTXOs;
+    public List<UTXO> getActiveFederationBtcUTXOs() throws IOException {
+        if (activeFederationBtcUTXOs != null)
+            return activeFederationBtcUTXOs;
 
-        DataWord address = new DataWord(BTC_UTXOS_KEY.getBytes(StandardCharsets.UTF_8));
+        DataWord address = new DataWord(ACTIVE_FEDERATION_BTC_UTXOS_KEY.getBytes(StandardCharsets.UTF_8));
 
         byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
 
-        btcUTXOs = BridgeSerializationUtils.deserializeList(data);
+        activeFederationBtcUTXOs = BridgeSerializationUtils.deserializeList(data);
 
-        return btcUTXOs;
+        return activeFederationBtcUTXOs;
     }
 
-    public void saveBtcUTXOs() throws IOException {
-        if (btcUTXOs == null)
+    public void saveActiveFederationBtcUTXOs() throws IOException {
+        if (activeFederationBtcUTXOs == null)
             return;
 
-        byte[] data = BridgeSerializationUtils.serializeList(btcUTXOs);
+        byte[] data = BridgeSerializationUtils.serializeList(activeFederationBtcUTXOs);
 
-        DataWord address = new DataWord(BTC_UTXOS_KEY.getBytes(StandardCharsets.UTF_8));
+        DataWord address = new DataWord(ACTIVE_FEDERATION_BTC_UTXOS_KEY.getBytes(StandardCharsets.UTF_8));
 
         repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
@@ -295,7 +295,7 @@ public class BridgeStorageProvider {
     }
 
     public void save() throws IOException {
-        saveBtcUTXOs();
+        saveActiveFederationBtcUTXOs();
         saveBtcTxHashesAlreadyProcessed();
         saveRskTxsWaitingForConfirmations();
         saveRskTxsWaitingForSignatures();

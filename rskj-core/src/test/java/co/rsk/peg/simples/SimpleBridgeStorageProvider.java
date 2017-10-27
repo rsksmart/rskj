@@ -34,7 +34,7 @@ public class SimpleBridgeStorageProvider extends BridgeStorageProvider {
     }
 
     @Override
-    public Wallet getWallet() {
+    public Wallet getActiveFederationWallet() {
         return this.wallet;
     }
 }

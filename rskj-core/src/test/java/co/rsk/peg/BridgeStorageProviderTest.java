@@ -79,12 +79,12 @@ public class BridgeStorageProviderTest {
         Assert.assertNotNull(signatures);
         Assert.assertTrue(signatures.isEmpty());
 
-        List<UTXO> utxos = provider.getBtcUTXOs();
+        List<UTXO> utxos = provider.getActiveFederationBtcUTXOs();
 
         Assert.assertNotNull(utxos);
         Assert.assertTrue(utxos.isEmpty());
 
-        Wallet wallet = provider.getWallet();
+        Wallet wallet = provider.getActiveFederationWallet();
 
         Assert.assertNotNull(wallet);
         Assert.assertNotNull(wallet.getCoinSelector());
@@ -99,7 +99,7 @@ public class BridgeStorageProviderTest {
         provider0.getBtcTxHashesAlreadyProcessed();
         provider0.getRskTxsWaitingForConfirmations();
         provider0.getRskTxsWaitingForSignatures();
-        provider0.getBtcUTXOs();
+        provider0.getActiveFederationBtcUTXOs();
         provider0.save();
         track.commit();
 
@@ -130,12 +130,12 @@ public class BridgeStorageProviderTest {
         Assert.assertNotNull(signatures);
         Assert.assertTrue(signatures.isEmpty());
 
-        List<UTXO> utxos = provider.getBtcUTXOs();
+        List<UTXO> utxos = provider.getActiveFederationBtcUTXOs();
 
         Assert.assertNotNull(utxos);
         Assert.assertTrue(utxos.isEmpty());
 
-        Wallet wallet = provider.getWallet();
+        Wallet wallet = provider.getActiveFederationWallet();
 
         Assert.assertNotNull(wallet);
         Assert.assertNotNull(wallet.getCoinSelector());
@@ -253,8 +253,8 @@ public class BridgeStorageProviderTest {
         Federation federation = bridgeConstants.getGenesisFederation();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
-        provider0.getBtcUTXOs().add(new UTXO(hash1, 1, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
-        provider0.getBtcUTXOs().add(new UTXO(hash2, 2, Coin.FIFTY_COINS, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
+        provider0.getActiveFederationBtcUTXOs().add(new UTXO(hash1, 1, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
+        provider0.getActiveFederationBtcUTXOs().add(new UTXO(hash2, 2, Coin.FIFTY_COINS, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
         provider0.save();
         track.commit();
 
@@ -262,7 +262,7 @@ public class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        List<UTXO> utxos = provider.getBtcUTXOs();
+        List<UTXO> utxos = provider.getActiveFederationBtcUTXOs();
 
         Assert.assertTrue(utxos.get(0).getHash().equals(hash1));
         Assert.assertTrue(utxos.get(1).getHash().equals(hash2));

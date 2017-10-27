@@ -44,7 +44,7 @@ public class BridgeStateTest {
         Assert.assertNotNull(clone);
         Assert.assertEquals(42, clone.getBtcBlockchainBestChainHeight());
         Assert.assertTrue(clone.getBtcTxHashesAlreadyProcessed().isEmpty());
-        Assert.assertTrue(clone.getBtcUTXOs().isEmpty());
+        Assert.assertTrue(clone.getActiveFederationBtcUTXOs().isEmpty());
         Assert.assertTrue(clone.getRskTxsWaitingForConfirmations().isEmpty());
         Assert.assertTrue(clone.getRskTxsWaitingForSignatures().isEmpty());
     }

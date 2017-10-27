@@ -274,7 +274,7 @@ public class BridgeSupportTest {
         provider0.getRskTxsWaitingForConfirmations().put(hash1, tx1);
         provider0.getRskTxsWaitingForConfirmations().put(hash2, tx2);
         provider0.getRskTxsWaitingForConfirmations().put(hash3, tx3);
-        provider0.getBtcUTXOs().add(new UTXO(
+        provider0.getActiveFederationBtcUTXOs().add(new UTXO(
                 PegTestUtils.createHash(),
                 1,
                 Coin.valueOf(12,0),
@@ -346,7 +346,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
         provider0.getRskTxsWaitingForConfirmations().put(hash1, tx1);
-        provider0.getBtcUTXOs().add(new UTXO(
+        provider0.getActiveFederationBtcUTXOs().add(new UTXO(
                 PegTestUtils.createHash(),
                 1,
                 Coin.valueOf(1000000),
@@ -409,7 +409,7 @@ public class BridgeSupportTest {
 
         provider0.getRskTxsWaitingForConfirmations().put(hash1, tx1);
         for (int i = 0; i < 2000; i++) {
-            provider0.getBtcUTXOs().add(new UTXO(
+            provider0.getActiveFederationBtcUTXOs().add(new UTXO(
                     PegTestUtils.createHash(),
                     1,
                     Coin.CENT,
@@ -495,7 +495,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
         provider0.getRskTxsWaitingForConfirmations().put(hash1, tx1);
-        provider0.getBtcUTXOs().add(new UTXO(PegTestUtils.createHash(), 1, Coin.COIN.add(Coin.valueOf(100)), 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
+        provider0.getActiveFederationBtcUTXOs().add(new UTXO(PegTestUtils.createHash(), 1, Coin.COIN.add(Coin.valueOf(100)), 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
 
         provider0.save();
 
@@ -731,7 +731,7 @@ public class BridgeSupportTest {
         TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, federation.getAddress());
         prevTx.addOutput(prevOut);
         UTXO utxo = new UTXO(prevTx.getHash(), 0, prevOut.getValue(), 0, false, prevOut.getScriptPubKey());
-        provider.getBtcUTXOs().add(utxo);
+        provider.getActiveFederationBtcUTXOs().add(utxo);
 
         BtcTransaction t = new BtcTransaction(btcParams);
         TransactionOutput output = new TransactionOutput(btcParams, t, Coin.COIN, new BtcECKey().toAddress(btcParams));
@@ -797,7 +797,7 @@ public class BridgeSupportTest {
             Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
             Assert.assertEquals(true, retrievedScriptSig.getChunks().get(1).data.length > 0);
             Assert.assertEquals(true, retrievedScriptSig.getChunks().get(2).data.length > 0);
-            Assert.assertTrue(provider.getBtcUTXOs().isEmpty());
+            Assert.assertTrue(provider.getActiveFederationBtcUTXOs().isEmpty());
         } else {
             Script retrievedScriptSig = provider.getRskTxsWaitingForSignatures().get(sha3Hash).getInput(0).getScriptSig();
             Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
@@ -807,7 +807,7 @@ public class BridgeSupportTest {
             }
             Assert.assertEquals(expectSignatureToBePersisted, retrievedScriptSig.getChunks().get(1).data.length > 0);
             Assert.assertEquals(false, retrievedScriptSig.getChunks().get(2).data.length > 0);
-            Assert.assertFalse(provider.getBtcUTXOs().isEmpty());
+            Assert.assertFalse(provider.getActiveFederationBtcUTXOs().isEmpty());
         }
     }
 
@@ -907,7 +907,7 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertTrue(provider2.getBtcUTXOs().isEmpty());
+        Assert.assertTrue(provider2.getActiveFederationBtcUTXOs().isEmpty());
         Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertFalse(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
@@ -937,7 +937,7 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertTrue(provider2.getBtcUTXOs().isEmpty());
+        Assert.assertTrue(provider2.getActiveFederationBtcUTXOs().isEmpty());
         Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertTrue(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
@@ -967,7 +967,7 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertTrue(provider2.getBtcUTXOs().isEmpty());
+        Assert.assertTrue(provider2.getActiveFederationBtcUTXOs().isEmpty());
         Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertTrue(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
@@ -1001,7 +1001,7 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertTrue(provider2.getBtcUTXOs().isEmpty());
+        Assert.assertTrue(provider2.getActiveFederationBtcUTXOs().isEmpty());
         Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertTrue(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
@@ -1050,7 +1050,7 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertEquals(0, provider2.getBtcUTXOs().size());
+        Assert.assertEquals(0, provider2.getActiveFederationBtcUTXOs().size());
 
         Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
@@ -1131,8 +1131,8 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertEquals(1, provider2.getBtcUTXOs().size());
-        Assert.assertEquals(Coin.COIN, provider2.getBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(1, provider2.getActiveFederationBtcUTXOs().size());
+        Assert.assertEquals(Coin.COIN, provider2.getActiveFederationBtcUTXOs().get(0).getValue());
 
         Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
@@ -1192,8 +1192,8 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertEquals(1, provider2.getBtcUTXOs().size());
-        Assert.assertEquals(Coin.COIN, provider2.getBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(1, provider2.getActiveFederationBtcUTXOs().size());
+        Assert.assertEquals(Coin.COIN, provider2.getActiveFederationBtcUTXOs().get(0).getValue());
 
         Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());

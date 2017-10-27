@@ -224,7 +224,7 @@ public class BridgeSupport {
         }
 
         // Specific code for lock/release/none txs
-        if (BridgeUtils.isLockTx(btcTx, federation, provider.getWallet(), bridgeConstants)) {
+        if (BridgeUtils.isLockTx(btcTx, federation, provider.getActiveFederationWallet(), bridgeConstants)) {
             logger.debug("This is a lock tx {}", btcTx);
             Script scriptSig = btcTx.getInput(0).getScriptSig();
             if (scriptSig.getChunks().size() != 2) {
@@ -237,7 +237,7 @@ public class BridgeSupport {
             byte[] data = scriptSig.getChunks().get(1).data;
             org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
             byte[] sender = key.getAddress();
-            Coin amount = btcTx.getValueSentToMe(provider.getWallet());
+            Coin amount = btcTx.getValueSentToMe(provider.getActiveFederationWallet());
             transfer(rskRepository, Hex.decode(PrecompiledContracts.BRIDGE_ADDR), sender, Denomination.satoshisToWeis(BigInteger.valueOf(amount.getValue())));
         } else if (BridgeUtils.isReleaseTx(btcTx, federation, bridgeConstants)) {
             logger.debug("This is a release tx {}", btcTx);
@@ -270,10 +270,10 @@ public class BridgeSupport {
       Add the btcTx outputs that send btc to the federation to the UTXO list
      */
     private void saveNewUTXOs(BtcTransaction btcTx) throws IOException {
-        List<TransactionOutput> outputsToTheFederation = btcTx.getWalletOutputs(provider.getWallet());
+        List<TransactionOutput> outputsToTheFederation = btcTx.getWalletOutputs(provider.getActiveFederationWallet());
         for (TransactionOutput output : outputsToTheFederation) {
             UTXO utxo = new UTXO(btcTx.getHash(), output.getIndex(), output.getValue(), 0, btcTx.isCoinBase(), output.getScriptPubKey());
-            provider.getBtcUTXOs().add(utxo);
+            provider.getActiveFederationBtcUTXOs().add(utxo);
         }
     }
 
@@ -283,7 +283,7 @@ public class BridgeSupport {
      */
     private void removeUsedUTXOs(BtcTransaction btcTx) throws IOException {
         for (TransactionInput transactionInput : btcTx.getInputs()) {
-            Iterator<UTXO> iter = provider.getBtcUTXOs().iterator();
+            Iterator<UTXO> iter = provider.getActiveFederationBtcUTXOs().iterator();
             while (iter.hasNext()) {
                 UTXO utxo = iter.next();
                 if (utxo.getHash().equals(transactionInput.getOutpoint().getHash()) && utxo.getIndex() == transactionInput.getOutpoint().getIndex()) {
@@ -356,7 +356,7 @@ public class BridgeSupport {
                     sr.changeAddress = getFederation().getAddress();
                     sr.shuffleOutputs = false;
                     sr.recipientsPayFees = true;
-                    provider.getWallet().completeTx(sr);
+                    provider.getActiveFederationWallet().completeTx(sr);
                 } catch (InsufficientMoneyException e) {
                     logger.warn("Not enough confirmed BTC in the federation wallet to complete " + rskTxHash + " " + btcTx, e);
                     // Comment out panic logging for now
