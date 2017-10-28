@@ -48,19 +48,9 @@ public class BridgeBtcWallet extends Wallet {
     @Override
     public RedeemData findRedeemDataFromScriptHash(byte[] payToScriptHash) {
         Context.propagate(this.btcContext);
-//      Oscar: Comment out this line since we now have our own bitcoinj wallet and we disabled this feature
-//      I leave the code here just in case we decide to rollback to use the full original bitcoinj Wallet
-//      "keyChainGroupLock.lock();"
-        try {
-            if (!Arrays.equals(federation.getP2SHScript().getPubKeyHash(), payToScriptHash)) {
-                return null;
-            }
-            Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getPublicKeys());
-            return RedeemData.of(federation.getPublicKeys(), redeemScript);
-        } finally {
-//          Oscar: Comment out this line since we now have our own bitcoinj wallet and we disabled this feature
-//          I leave the code here just in case we decide to rollback to use the full original bitcoinj Wallet
-//          "keyChainGroupLock.unlock();"
+        if (!Arrays.equals(federation.getP2SHScript().getPubKeyHash(), payToScriptHash)) {
+            return null;
         }
+        return RedeemData.of(federation.getPublicKeys(), federation.getRedeemScript());
     }
 }

@@ -40,7 +40,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.spongycastle.util.encoders.Hex;
 
-import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -111,7 +110,7 @@ public class BridgeStorageProviderTest {
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("btcTxHashesAP".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("rskTxsWaitingFC".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("rskTxsWaitingFS".getBytes())));
-        Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("btcUTXOs".getBytes())));
+        Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("activeFederationBtcUTXOs".getBytes())));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
@@ -362,12 +361,12 @@ public class BridgeStorageProviderTest {
             return null;
         }).when(repositoryMock).addStorageBytes(any(byte[].class), any(DataWord.class), any(byte[].class));
 
-        storageProvider.saveNewFederation();
+        storageProvider.saveActiveFederation();
         // Shouldn't have tried to save nor serialize anything
         Assert.assertEquals(0, storageBytesCalls.size());
         Assert.assertEquals(0, serializeCalls.size());
-        storageProvider.setNewFederation(newFederation);
-        storageProvider.saveNewFederation();
+        storageProvider.setActiveFederation(newFederation);
+        storageProvider.saveActiveFederation();
         Assert.assertEquals(1, storageBytesCalls.size());
         Assert.assertEquals(1, serializeCalls.size());
     }

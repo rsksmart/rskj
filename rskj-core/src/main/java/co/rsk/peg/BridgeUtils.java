@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import org.apache.commons.lang3.StringUtils;
@@ -30,6 +31,8 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
+
+import java.util.List;
 
 /**
  * @author Oscar Guindzberg
@@ -62,6 +65,14 @@ public class BridgeUtils {
         }
     }
 
+    public static Wallet getFederationNoSpendWallet(Context btcContext, Federation federation) {
+        Wallet wallet = new BridgeBtcWallet(btcContext, federation);
+//        wallet.setUTXOProvider(new EmptyUTXOProvider(federation.getBtcParams()));
+        wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli());
+//        wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
+        return wallet;
+    }
+
     public static boolean isLockTx(BtcTransaction tx, Federation federation, TransactionBag wallet, BridgeConstants bridgeConstants) {
         // First, check tx is not a typical release tx (tx spending from the federation address and
         // optionally sending some change to the federation address)
@@ -85,6 +96,12 @@ public class BridgeUtils {
         return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue()));
     }
 
+    public static boolean isLockTx(BtcTransaction tx, List<Federation> federations, Context btcContext, BridgeConstants bridgeConstants) {
+        return federations.stream().anyMatch(federation ->
+            isLockTx(tx, federation, getFederationNoSpendWallet(btcContext, federation), bridgeConstants)
+        );
+    }
+
     public static boolean isReleaseTx(BtcTransaction tx, Federation federation, BridgeConstants bridgeConstants) {
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
@@ -99,7 +116,6 @@ public class BridgeUtils {
         }
         return false;
     }
-
 
     public static Address recoverBtcAddressFromEthTransaction(org.ethereum.core.Transaction tx, NetworkParameters networkParameters) {
         org.ethereum.crypto.ECKey key = tx.getKey();

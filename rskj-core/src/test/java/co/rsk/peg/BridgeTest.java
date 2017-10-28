@@ -553,12 +553,12 @@ public class BridgeTest {
 
     @Test
     public void getGasForDataGetFederationAddress() {
-        getGasForDataPaidTx(50018, Bridge.GET_FEDERATION_ADDRESS);
+        getGasForDataPaidTx(50021, Bridge.GET_FEDERATION_ADDRESS);
     }
 
     @Test
     public void getGasForDataGetMinimumLockTxValue() {
-        getGasForDataPaidTx(50019, Bridge.GET_MINIMUM_LOCK_TX_VALUE);
+        getGasForDataPaidTx(50018, Bridge.GET_MINIMUM_LOCK_TX_VALUE);
     }
 
     private void getGasForDataPaidTx(int expected, CallTransaction.Function function, Object... funcArgs) {
