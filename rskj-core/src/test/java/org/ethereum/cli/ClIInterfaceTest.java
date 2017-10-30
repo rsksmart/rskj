@@ -50,7 +50,7 @@ public class ClIInterfaceTest {
     }
 
     @Test
-    public void callTestWithRpcCors() {
+    public void changeAndRestoreRpcCorsConfig() {
         String[] inputParams = { "-rpccors", "*.ethereum.io" };
         Map<String, String> result = CLIInterface.call(inputParams);
         Assert.assertEquals(result.get(SystemProperties.PROPERTY_RPC_CORS), "*.ethereum.io");
