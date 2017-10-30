@@ -196,6 +196,16 @@ public class Block {
         this.parsed = true;
     }
 
+    public static Block fromValidData(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
+        Block block = new Block((byte[])null);
+        block.parsed = true;
+        block.header = header;
+        block.transactionsList = transactionsList;
+        block.uncleList = uncleList;
+        block.seal();
+        return block;
+    }
+
     public void seal() {
         this.sealed = true;
         this.header.seal();
@@ -690,16 +700,14 @@ public class Block {
     }
 
     public static Trie getTxTrie(List<Transaction> transactions){
+        if (transactions == null) {
+            return new TrieImpl();
+        }
+
         Trie txsState = new TrieImpl();
-        int itran = 0;
-
-        if (transactions != null) {
-            for (int i = 0; i < transactions.size(); i++) {
-                Transaction transaction = transactions.get(i);
-
-                txsState.put(RLP.encodeInt(itran), transaction.getEncoded());
-                itran++;
-            }
+        for (int i = 0; i < transactions.size(); i++) {
+            Transaction transaction = transactions.get(i);
+            txsState = txsState.put(RLP.encodeInt(i), transaction.getEncoded());
         }
 
         return txsState;
