@@ -22,6 +22,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import com.google.common.annotations.VisibleForTesting;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
@@ -166,6 +167,36 @@ public class BridgeSupport {
     }
 
     /**
+     * Get the wallet for the currently active federation
+     * @return A BTC wallet for the currently active federation
+     *
+     * @throws IOException
+     */
+    public Wallet getActiveFederationWallet() throws IOException {
+        Federation federation = getActiveFederation();
+        List<UTXO> utxos = provider.getActiveFederationBtcUTXOs();
+
+        return BridgeUtils.getFederationSpendWallet(btcContext, federation, utxos);
+    }
+
+    /**
+     * Get the wallet for the currently retiring federation
+     * or null if there's currently no retiring federation
+     * @return A BTC wallet for the currently active federation
+     *
+     * @throws IOException
+     */
+    public Wallet getRetiringFederationWallet() throws IOException {
+        Federation federation = getRetiringFederation();
+        if (federation == null)
+            return null;
+
+        List<UTXO> utxos = provider.getRetiringFederationBtcUTXOs();
+
+        return BridgeUtils.getFederationSpendWallet(btcContext, federation, utxos);
+    }
+
+    /**
      * In case of a lock tx: Transfers some SBTCs to the sender of the btc tx and keeps track of the new UTXOs available for spending.
      * In case of a release tx: Keeps track of the change UTXOs, now available for spending.
      * @param btcTx The bitcoin transaction
@@ -237,8 +268,23 @@ public class BridgeSupport {
             byte[] data = scriptSig.getChunks().get(1).data;
             org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
             byte[] sender = key.getAddress();
-            Coin amount = btcTx.getValueSentToMe(provider.getActiveFederationWallet());
-            transfer(rskRepository, Hex.decode(PrecompiledContracts.BRIDGE_ADDR), sender, Denomination.satoshisToWeis(BigInteger.valueOf(amount.getValue())));
+
+            // Compute the total amount sent. Value could have been sent both to the
+            // currently active federation as well as to the currently retiring federation.
+            // Add both amounts up in that case.
+            Coin amountToActive = btcTx.getValueSentToMe(getActiveFederationWallet());
+            Coin amountToRetiring = Coin.ZERO;
+            Wallet retiringFederationWallet = getRetiringFederationWallet();
+            if (retiringFederationWallet != null) {
+                amountToRetiring = btcTx.getValueSentToMe(retiringFederationWallet);
+            }
+            long totalValue = amountToActive.getValue() + amountToRetiring.getValue();
+            transfer(
+                    rskRepository,
+                    Hex.decode(PrecompiledContracts.BRIDGE_ADDR),
+                    sender,
+                    Denomination.satoshisToWeis(BigInteger.valueOf(totalValue))
+            );
         } else if (BridgeUtils.isReleaseTx(btcTx, federation, bridgeConstants)) {
             logger.debug("This is a release tx {}", btcTx);
             // do-nothing
@@ -262,21 +308,32 @@ public class BridgeSupport {
         // Mark tx as processed on this block
         provider.getBtcTxHashesAlreadyProcessed().put(btcTxHash, rskExecutionBlock.getNumber());
 
+        // Save UTXOs from the federation(s)
         saveNewUTXOs(btcTx);
         logger.info("BTC Tx {} processed in RSK", btcTxHash);
     }
 
     /*
-      Add the btcTx outputs that send btc to the federation to the UTXO list
+      Add the btcTx outputs that send btc to the federation(s) to the UTXO list
      */
     private void saveNewUTXOs(BtcTransaction btcTx) throws IOException {
-        List<TransactionOutput> outputsToTheFederation = btcTx.getWalletOutputs(provider.getActiveFederationWallet());
-        for (TransactionOutput output : outputsToTheFederation) {
+        // Outputs to the active federation
+        List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(getActiveFederationWallet());
+        for (TransactionOutput output : outputsToTheActiveFederation) {
             UTXO utxo = new UTXO(btcTx.getHash(), output.getIndex(), output.getValue(), 0, btcTx.isCoinBase(), output.getScriptPubKey());
             provider.getActiveFederationBtcUTXOs().add(utxo);
         }
-    }
 
+        // Outputs to the retiring federation (if any)
+        Wallet retiringFederationWallet = getRetiringFederationWallet();
+        if (retiringFederationWallet != null) {
+            List<TransactionOutput> outputsToTheRetiringFederation = btcTx.getWalletOutputs(retiringFederationWallet);
+            for (TransactionOutput output : outputsToTheRetiringFederation) {
+                UTXO utxo = new UTXO(btcTx.getHash(), output.getIndex(), output.getValue(), 0, btcTx.isCoinBase(), output.getScriptPubKey());
+                provider.getRetiringFederationBtcUTXOs().add(utxo);
+            }
+        }
+    }
 
     /*
       Removes the outputs spent by btcTx inputs from the UTXO list
@@ -356,7 +413,7 @@ public class BridgeSupport {
                     sr.changeAddress = getActiveFederation().getAddress();
                     sr.shuffleOutputs = false;
                     sr.recipientsPayFees = true;
-                    provider.getActiveFederationWallet().completeTx(sr);
+                    getActiveFederationWallet().completeTx(sr);
                 } catch (InsufficientMoneyException e) {
                     logger.warn("Not enough confirmed BTC in the federation wallet to complete " + rskTxHash + " " + btcTx, e);
                     // Comment out panic logging for now
@@ -736,24 +793,24 @@ public class BridgeSupport {
 
     /**
      * Returns the retiring federation's size
-     * @return the retiring federation size, null if no retiring federation exists
+     * @return the retiring federation size, -1 if no retiring federation exists
      */
     public Integer getRetiringFederationSize() {
         Federation retiringFederation = provider.getRetiringFederation();
         if (retiringFederation == null)
-            return null;
+            return -1;
 
         return retiringFederation.getPublicKeys().size();
     }
 
     /**
      * Returns the retiring federation's minimum required signatures
-     * @return the retiring federation minimum required signatures, null if no retiring federation exists
+     * @return the retiring federation minimum required signatures, -1 if no retiring federation exists
      */
     public Integer getRetiringFederationThreshold() {
         Federation retiringFederation = provider.getRetiringFederation();
         if (retiringFederation == null)
-            return null;
+            return -1;
 
         return retiringFederation.getNumberOfSignaturesRequired();
     }
@@ -795,7 +852,7 @@ public class BridgeSupport {
      */
     private Federation getRetiringFederation() {
         Integer size = getRetiringFederationSize();
-        if (size == null)
+        if (size == -1)
             return null;
 
         int numberOfSignaturesRequired = getRetiringFederationThreshold();

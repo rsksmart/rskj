@@ -82,11 +82,6 @@ public class BridgeStorageProviderTest {
 
         Assert.assertNotNull(utxos);
         Assert.assertTrue(utxos.isEmpty());
-
-        Wallet wallet = provider.getActiveFederationWallet();
-
-        Assert.assertNotNull(wallet);
-        Assert.assertNotNull(wallet.getCoinSelector());
     }
 
     @Test
@@ -99,6 +94,7 @@ public class BridgeStorageProviderTest {
         provider0.getRskTxsWaitingForConfirmations();
         provider0.getRskTxsWaitingForSignatures();
         provider0.getActiveFederationBtcUTXOs();
+        provider0.getRetiringFederationBtcUTXOs();
         provider0.save();
         track.commit();
 
@@ -111,6 +107,7 @@ public class BridgeStorageProviderTest {
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("rskTxsWaitingFC".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("rskTxsWaitingFS".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("activeFederationBtcUTXOs".getBytes())));
+        Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("retiringFederationBtcUTXOs".getBytes())));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
@@ -129,15 +126,15 @@ public class BridgeStorageProviderTest {
         Assert.assertNotNull(signatures);
         Assert.assertTrue(signatures.isEmpty());
 
-        List<UTXO> utxos = provider.getActiveFederationBtcUTXOs();
+        List<UTXO> activeUtxos = provider.getActiveFederationBtcUTXOs();
 
-        Assert.assertNotNull(utxos);
-        Assert.assertTrue(utxos.isEmpty());
+        Assert.assertNotNull(activeUtxos);
+        Assert.assertTrue(activeUtxos.isEmpty());
 
-        Wallet wallet = provider.getActiveFederationWallet();
+        List<UTXO> retiringUtxos = provider.getActiveFederationBtcUTXOs();
 
-        Assert.assertNotNull(wallet);
-        Assert.assertNotNull(wallet.getCoinSelector());
+        Assert.assertNotNull(retiringUtxos);
+        Assert.assertTrue(retiringUtxos.isEmpty());
     }
 
     @Test

@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.db.ByteArrayWrapper;
 
 import java.time.Instant;
@@ -105,6 +106,19 @@ public final class Federation {
         }
 
         return address;
+    }
+
+    public Integer getPublicKeyIndex(BtcECKey key) {
+        for (int i = 0; i < publicKeys.size(); i++) {
+            if (Arrays.equals(key.getPubKey(), publicKeys.get(i).getPubKey())) {
+                return i;
+            }
+        }
+        return null;
+    }
+
+    public boolean hasPublicKey(BtcECKey key) {
+        return getPublicKeyIndex(key) != null;
     }
 
     @Override

@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.apache.commons.lang3.StringUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
@@ -67,9 +68,17 @@ public class BridgeUtils {
 
     public static Wallet getFederationNoSpendWallet(Context btcContext, Federation federation) {
         Wallet wallet = new BridgeBtcWallet(btcContext, federation);
-//        wallet.setUTXOProvider(new EmptyUTXOProvider(federation.getBtcParams()));
         wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli());
-//        wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
+        return wallet;
+    }
+
+    public static Wallet getFederationSpendWallet(Context btcContext, Federation federation, List<UTXO> utxos) {
+        Wallet wallet = new BridgeBtcWallet(btcContext, federation);
+
+        RskUTXOProvider utxoProvider = new RskUTXOProvider(btcContext.getParams(), utxos);
+        wallet.setUTXOProvider(utxoProvider);
+        wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli());
+        wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
         return wallet;
     }
 

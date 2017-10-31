@@ -66,7 +66,6 @@ public class BridgeStorageProvider {
 
     private List<UTXO> activeFederationBtcUTXOs;
     private List<UTXO> retiringFederationBtcUTXOs;
-    private Wallet activeFederationBtcWallet;
 
     private Federation activeFederation;
     private Federation retiringFederation;
@@ -80,47 +79,6 @@ public class BridgeStorageProvider {
         this.contractAddress = contractAddress;
         bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         btcContext = new Context(bridgeConstants.getBtcParams());
-    }
-
-    /**
-     * The current federation is the one stored at the current best block
-     * otherwise it is the genesis federation from the bridge constants.
-     * @return The currently active federation
-     */
-    private Federation getCurrentFederation() {
-        Federation activeFederation = getActiveFederation();
-
-        if (activeFederation == null)
-            activeFederation = bridgeConstants.getGenesisFederation();
-
-        return activeFederation;
-    }
-
-    /**
-     * Get the wallet for the currently active federation
-     * @return A BTC wallet for the currently active federation
-     *
-     * Ariel Mendelzon, comment: this method has no relation whatsoever with storage.
-     * Consider moving it straight to BridgeSupport and removing getCurrentFederation()
-     * which is already implemented with the same logic there.
-     *
-     * @throws IOException
-     */
-    public Wallet getActiveFederationWallet() throws IOException {
-        if (activeFederationBtcWallet != null)
-            return activeFederationBtcWallet;
-
-        List<UTXO> activeFederationBtcUTXOs = this.getActiveFederationBtcUTXOs();
-
-        RskUTXOProvider utxoProvider = new RskUTXOProvider(bridgeConstants.getBtcParams(), activeFederationBtcUTXOs);
-
-        Federation federation = getCurrentFederation();
-
-        activeFederationBtcWallet = new BridgeBtcWallet(btcContext, federation);
-        activeFederationBtcWallet.setUTXOProvider(utxoProvider);
-        activeFederationBtcWallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli());
-        activeFederationBtcWallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
-        return activeFederationBtcWallet;
     }
 
     public List<UTXO> getActiveFederationBtcUTXOs() throws IOException {

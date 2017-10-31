@@ -290,6 +290,22 @@ public class FederationTest {
     }
 
     @Test
+    public void getPublicKeyIndex() {
+        for (int i = 0; i < federation.getPublicKeys().size(); i++) {
+            Assert.assertEquals(i, federation.getPublicKeyIndex(sortedPublicKeys.get(i)).intValue());
+        }
+        Assert.assertNull(federation.getPublicKeyIndex(BtcECKey.fromPrivate(BigInteger.valueOf(1234))));
+    }
+
+    @Test
+    public void hasPublicKey() {
+        for (int i = 0; i < federation.getPublicKeys().size(); i++) {
+            Assert.assertTrue(federation.hasPublicKey(sortedPublicKeys.get(i)));
+        }
+        Assert.assertFalse(federation.hasPublicKey(BtcECKey.fromPrivate(BigInteger.valueOf(1234))));
+    }
+
+    @Test
     public void testToString() {
         Assert.assertEquals("3 of 6 signatures federation", federation.toString());
     }

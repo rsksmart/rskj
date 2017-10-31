@@ -33,7 +33,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.simples.SimpleBlockChain;
-import co.rsk.peg.simples.SimpleBridgeStorageProvider;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import co.rsk.peg.simples.SimpleWallet;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -51,8 +50,12 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.internal.util.reflection.Whitebox;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.spongycastle.crypto.params.ECPrivateKeyParameters;
 import org.spongycastle.crypto.signers.ECDSASigner;
 import org.spongycastle.util.encoders.Hex;
@@ -66,6 +69,7 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.*;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.hamcrest.Matchers.hasItem;
@@ -77,6 +81,7 @@ import static org.hamcrest.core.IsNot.not;
 /**
  * Created by ajlopez on 6/9/2016.
  */
+@RunWith(PowerMockRunner.class)
 public class BridgeSupportTest {
     private static final String contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
@@ -519,8 +524,17 @@ public class BridgeSupportTest {
         Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(2600)), repository.getBalance(RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress()));
     }
 
+    @PrepareForTest({ BridgeUtils.class })
     @Test
     public void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmationsAndFunds() throws IOException, BlockStoreException {
+        // Bridge constants and btc context
+        BridgeConstants bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        Context context = new Context(bridgeConstants.getBtcParams());
+
+        // Fake wallet returned every time
+        PowerMockito.mockStatic(BridgeUtils.class);
+        PowerMockito.when(BridgeUtils.getFederationSpendWallet(any(Context.class), any(Federation.class), any(List.class))).thenReturn(new SimpleWallet(context));
+
         BtcTransaction tx1 = createTransaction();
         BtcTransaction tx2 = createTransaction();
         BtcTransaction tx3 = createTransaction();
@@ -542,9 +556,7 @@ public class BridgeSupportTest {
         track.commit();
 
         track = repository.startTracking();
-        BridgeConstants bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
-        Context context = new Context(bridgeConstants.getBtcParams());
-        BridgeStorageProvider provider = new SimpleBridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, new SimpleWallet(context));
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
         List<Block> blocks = BlockGenerator.getSimpleBlockChain(BlockGenerator.getGenesisBlock(), 10);
         TransactionReceipt receipt = new TransactionReceipt();
@@ -1330,13 +1342,13 @@ public class BridgeSupportTest {
         when(transactionInfo.getBlockHash()).thenReturn(blockHash);
 
         ReceiptStore receiptStore = mock(ReceiptStore.class);
-        when(receiptStore.get(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(transactionInfo);
+        when(receiptStore.get(any(), any(), any())).thenReturn(transactionInfo);
 
         org.ethereum.core.Block includedBlock = mock(org.ethereum.core.Block.class);
         when(includedBlock.getNumber()).thenReturn(Long.valueOf(10));
 
         org.ethereum.db.BlockStore blockStore = mock(org.ethereum.db.BlockStore.class);
-        when(blockStore.getBlockByHash(Mockito.any())).thenReturn(includedBlock);
+        when(blockStore.getBlockByHash(any())).thenReturn(includedBlock);
 
         org.ethereum.core.Block currentBlock = mock(org.ethereum.core.Block.class);
         when(currentBlock.getNumber()).thenReturn(Long.valueOf(currentBlockNumber));
