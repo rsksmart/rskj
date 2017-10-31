@@ -26,6 +26,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
@@ -145,15 +146,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     private boolean hasHeader(@Nonnull final BlockHeader h) {
-        if (hasBlock(h.getHash())) {
-            return true;
-        }
-
-        if (store.hasHeader(h.getHash())) {
-            return true;
-        }
-        
-        return false;
+        return hasBlock(h.getHash()) || store.hasHeader(h.getHash());
     }
 
     private void processBlockHeader(@Nonnull final MessageSender sender, @Nonnull final BlockHeader header) {
@@ -174,11 +167,6 @@ public class NodeBlockProcessor implements BlockProcessor {
     public BlockProcessResult processBlock(@Nullable final MessageSender sender, @Nonnull final Block block) {
         long bestBlockNumber = this.getBestBlockNumber();
         long blockNumber = block.getNumber();
-
-        if (block == null)  {
-            logger.error("Block not received");
-            return new BlockProcessResult(false, null);
-        }
 
         if ((++processedBlocksCounter % 200) == 0) {
             long minimal = store.minimalHeight();
@@ -215,7 +203,7 @@ public class NodeBlockProcessor implements BlockProcessor {
 
         // already in a blockchain
         if (BlockUtils.blockInSomeBlockChain(block, blockchain)) {
-            logger.trace("Block already in a chain " + blockNumber + " " + block.getShortHash());
+            logger.trace("Block already in a chain {} {}", blockNumber, block.getShortHash());
             return new BlockProcessResult(false, null);
         }
 
@@ -225,7 +213,7 @@ public class NodeBlockProcessor implements BlockProcessor {
 
         // We can't add the block if there are missing ancestors or uncles. Request the missing blocks to the sender.
         if (!unknownHashes.isEmpty()) {
-            logger.trace("Missing hashes for block " + blockNumber + " " + block.getShortHash());
+            logger.trace("Missing hashes for block {} {}", blockNumber, block.getShortHash());
 
             if (!this.store.hasBlock(block))
                 this.store.saveBlock(block);
@@ -258,8 +246,8 @@ public class NodeBlockProcessor implements BlockProcessor {
                 Set<ByteArrayWrapper> missingHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
 
                 if (!missingHashes.isEmpty()) {
-                    logger.trace("Missing hashes for block in process " + block.getNumber() + " " + block.getShortHash());
-                    logger.trace("Missing hashes " + missingHashes.size());
+                    logger.trace("Missing hashes for block in process {} {}", block.getNumber(), block.getShortHash());
+                    logger.trace("Missing hashes {}", missingHashes.size());
                     this.processMissingHashes(sender, missingHashes);
                     continue;
                 }
@@ -278,7 +266,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     private void processMissingHashes(MessageSender sender, Set<ByteArrayWrapper> hashes) {
-        logger.trace("Missing blocks to process " + hashes.size());
+        logger.trace("Missing blocks to process {}", hashes.size());
 
         for (ByteArrayWrapper hash : hashes)
             processMissingHash(sender, hash);
@@ -353,8 +341,8 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @param hash   the requested block's hash.
      */
     @Override
-    public void processGetBlock(@Nonnull final MessageSender sender, @Nullable final byte[] hash) {
-        logger.trace("Processing get block " + Hex.toHexString(hash).substring(0, 10) + " from " + sender.getNodeID().toString());
+    public void processGetBlock(@Nonnull final MessageSender sender, @Nonnull final byte[] hash) {
+        logger.trace("Processing get block {} from {}", HashUtil.shortHash(hash), sender.getNodeID());
         final Block block = this.getBlock(hash);
 
         if (block == null) {
@@ -419,10 +407,10 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     @CheckForNull
-    private Block skipNBlocks(@Nonnull Block block, final int skip) {
-        byte[] hash;
+    private Block skipNBlocks(@Nonnull Block child, final int skip) {
+        Block block = child;
         for (int j = 0; j < skip; j++) {
-            hash = block.getParentHash();
+            byte[] hash = block.getParentHash();
             block = this.getBlock(hash);
             if (block == null) {
                 break;
@@ -484,7 +472,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Nonnull
     private List<Block> getChildrenInStore(@Nonnull final List<Block> blocks) {
-        final List<Block> children = new ArrayList<Block>();
+        final List<Block> children = new ArrayList<>();
 
         for (final Block block : blocks)
             BlockUtils.addBlocksToList(children, this.store.getBlocksByParentHash(block.getHash()));
@@ -579,10 +567,7 @@ public class NodeBlockProcessor implements BlockProcessor {
             long last = this.getLastKnownBlockNumber();
             long current = this.getBestBlockNumber();
 
-            if (last >= current + NBLOCKS_TO_SYNC)
-                return true;
-
-            return false;
+            return last >= current + NBLOCKS_TO_SYNC;
         }
     }
 
@@ -598,10 +583,7 @@ public class NodeBlockProcessor implements BlockProcessor {
 
                 syncing = true;
 
-                if (nsyncs > 1)
-                    return false;
-
-                return true;
+                return nsyncs <= 1;
             }
 
             syncing = false;
