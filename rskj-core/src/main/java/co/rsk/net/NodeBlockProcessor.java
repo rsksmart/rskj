@@ -21,12 +21,12 @@ package co.rsk.net;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.net.messages.*;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,12 +58,11 @@ public class NodeBlockProcessor implements BlockProcessor {
     private static final Logger logger = LoggerFactory.getLogger("blockprocessor");
 
     private final Object statusLock = new Object();
-    @GuardedBy("statusLock")
-    private volatile long lastStatusBestBlock = 0;
 
     private final BlockStore store;
     private final Blockchain blockchain;
     private final ChannelManager channelManager;
+
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
     private long lastKnownBlockNumber = 0;
 
@@ -76,32 +75,26 @@ public class NodeBlockProcessor implements BlockProcessor {
     /**
      * Creates a new NodeBlockProcessor using the given BlockStore and Blockchain.
      *
-     * @param store        A BlockStore to store the blocks that are not ready for the Blockchain.
-     * @param blockchain   The blockchain in which to insert the blocks.
-     * @param worldManager The parent worldManager (used to set the reference)
+     * @param config         RSK Configuration.
+     * @param store          A BlockStore to store the blocks that are not ready for the Blockchain.
+     * @param blockchain     The blockchain in which to insert the blocks.
+     * @param channelManager Allows broadcasting statuses.
      */
-    // TODO define NodeBlockProcessor as a spring component
-    public NodeBlockProcessor(@Nonnull final BlockStore store, @Nonnull final Blockchain blockchain, @Nonnull WorldManager worldManager) {
+    public NodeBlockProcessor(final RskSystemProperties config,
+                              final BlockStore store,
+                              final Blockchain blockchain,
+                              final ChannelManager channelManager) {
         this.store = store;
         this.blockchain = blockchain;
+        this.channelManager = channelManager;
         this.nodeInformation = new BlockNodeInformation();
-        worldManager.setNodeBlockProcessor(this);
-        this.channelManager = worldManager.getChannelManager();
-        this.blocksForPeers = RskSystemProperties.CONFIG.getBlocksForPeers();
+        this.blocksForPeers = config.getBlocksForPeers();
     }
 
-    /**
-     * Creates a new NodeBlockProcessor using the given BlockStore and Blockchain.
-     *
-     * @param store      A BlockStore to store the blocks that are not ready for the Blockchain.
-     * @param blockchain The blockchain in which to insert the blocks.
-     */
-    public NodeBlockProcessor(@Nonnull final BlockStore store, @Nonnull final Blockchain blockchain) {
-        this.store = store;
-        this.blockchain = blockchain;
-        this.nodeInformation = new BlockNodeInformation();
-        this.channelManager = null;
-        this.blocksForPeers = RskSystemProperties.CONFIG.getBlocksForPeers();
+    @VisibleForTesting
+    public NodeBlockProcessor(final BlockStore store,
+                              final Blockchain blockchain) {
+        this(RskSystemProperties.CONFIG, store, blockchain, null);
     }
 
     @Override
@@ -639,8 +632,6 @@ public class NodeBlockProcessor implements BlockProcessor {
                 return;
 
             lastStatusTime = currentTime;
-
-            lastStatusBestBlock = status.getBestBlockNumber();
 
             logger.trace("Sending status best block {} to all", status.getBestBlockNumber());
             this.channelManager.broadcastStatus(status);
