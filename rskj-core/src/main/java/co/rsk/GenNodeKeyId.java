@@ -52,12 +52,14 @@ public class GenNodeKeyId {
 
         String keybytes = Hex.toHexString(key.getPrivKeyBytes());
         String pubkeybytes = Hex.toHexString(key.getPubKey());
+        String compressedpubkeybytes = Hex.toHexString(key.getPubKey(true));
         String address = Hex.toHexString(key.getAddress());
         String nodeid = Hex.toHexString(key.getNodeId());
 
         System.out.println('{');
         System.out.println("   \"privateKey\": \"" + keybytes + "\",");
         System.out.println("   \"publicKey\": \"" + pubkeybytes + "\",");
+        System.out.println("   \"publicKeyCompressed\": \"" + compressedpubkeybytes + "\",");
         System.out.println("   \"address\": \"" + address + "\",");
         System.out.println("   \"nodeId\": \"" + nodeid + "\"");
         System.out.println('}');
