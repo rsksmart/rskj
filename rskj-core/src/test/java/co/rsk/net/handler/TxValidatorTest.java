@@ -120,7 +120,7 @@ public class TxValidatorTest {
         txs = new LinkedList<>();
         txs.addAll(vtxs);
         txs.addAll(itxs);
-        result = txValidator.filterTxs(txs, times, repository, worldManager, txmap);
+        result = txValidator.filterTxs(repository, worldManager.getBlockchain(), txs, times, txmap);
         Assert.assertEquals(vtxs, result);
     }
 
@@ -149,7 +149,7 @@ public class TxValidatorTest {
         times = new HashMap<>();
         txmap = new HashMap<>();
 
-        List<Transaction> result = txValidator.filterTxs(txs, times, repository, worldManager, txmap);
+        List<Transaction> result = txValidator.filterTxs(repository, worldManager.getBlockchain(), txs, times, txmap);
         Assert.assertTrue(result.size() == 1);
 
         RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);

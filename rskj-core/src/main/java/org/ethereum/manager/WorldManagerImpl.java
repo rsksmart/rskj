@@ -83,6 +83,7 @@ public class WorldManagerImpl implements WorldManager {
     @Autowired
     ConfigCapabilities configCapabilities;
 
+    @Autowired
     BlockProcessor nodeBlockProcessor;
 
     @Autowired
@@ -94,57 +95,60 @@ public class WorldManagerImpl implements WorldManager {
     @Autowired
     private SolidityCompiler solidityCompiler;
 
+    @Override
     @PostConstruct
     public void init() {
         BlockChainLoader loader = new BlockChainLoader(this.blockchain, this.config, this.blockStore, this.repository, this.listener);
         loader.loadBlockchain();
     }
 
+    @Override
     public void addListener(EthereumListener listener) {
         logger.info("Ethereum listener added");
         ((CompositeEthereumListener) this.listener).addListener(listener);
     }
 
+    @Override
     public ChannelManager getChannelManager() {
         return channelManager;
     }
 
-   public EthereumListener getListener() {
-        return listener;
-    }
-
+    @Override
     public org.ethereum.facade.Repository getRepository() {
         return (org.ethereum.facade.Repository)repository;
     }
 
+    @Override
     public Blockchain getBlockchain() {
         return blockchain;
     }
 
+    @Override
     public BlockStore getBlockStore() {
         return blockStore;
     }
 
+    @Override
     public PendingState getPendingState() {
         return pendingState;
     }
 
+    @Override
     @PreDestroy
     public void close() {
         repository.close();
         blockchain.close();
     }
 
+    @Override
     public ConfigCapabilities getConfigCapabilities() { return configCapabilities; }
 
-    public void setNodeBlockProcessor(BlockProcessor nodeBlockProcessor){
-        this.nodeBlockProcessor = nodeBlockProcessor;
-    }
-
+    @Override
     public BlockProcessor getNodeBlockProcessor(){
         return this.nodeBlockProcessor;
     }
 
+    @Override
     public HashRateCalculator getHashRateCalculator() { return hashRateCalculator; }
 
     @Override
