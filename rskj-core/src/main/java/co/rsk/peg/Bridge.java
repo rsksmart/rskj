@@ -90,44 +90,44 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     // Returns the federation bitcoin address
     public static final CallTransaction.Function GET_FEDERATION_ADDRESS = CallTransaction.Function.fromSignature("getFederationAddress", new String[]{}, new String[]{"string"});
     // Returns the number of federates in the currently active federation
-    public static final CallTransaction.Function GET_FEDERATION_SIZE = CallTransaction.Function.fromSignature("getFederationSize", new String[]{}, new String[]{"uint32"});
+    public static final CallTransaction.Function GET_FEDERATION_SIZE = CallTransaction.Function.fromSignature("getFederationSize", new String[]{}, new String[]{"int256"});
     // Returns the number of minimum required signatures from the currently active federation
-    public static final CallTransaction.Function GET_FEDERATION_THRESHOLD = CallTransaction.Function.fromSignature("getFederationThreshold", new String[]{}, new String[]{"uint32"});
+    public static final CallTransaction.Function GET_FEDERATION_THRESHOLD = CallTransaction.Function.fromSignature("getFederationThreshold", new String[]{}, new String[]{"int256"});
     // Returns the public key of the federator at the specified index
-    public static final CallTransaction.Function GET_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getFederatorPublicKey", new String[]{"uint32"}, new String[]{"bytes"});
+    public static final CallTransaction.Function GET_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getFederatorPublicKey", new String[]{"int256"}, new String[]{"bytes"});
     // Returns the creation time of the federation
-    public static final CallTransaction.Function GET_FEDERATION_CREATION_TIME = CallTransaction.Function.fromSignature("getFederationCreationTime", new String[]{}, new String[]{"uint64"});
+    public static final CallTransaction.Function GET_FEDERATION_CREATION_TIME = CallTransaction.Function.fromSignature("getFederationCreationTime", new String[]{}, new String[]{"int256"});
 
     // Returns the retiring federation bitcoin address
     public static final CallTransaction.Function GET_RETIRING_FEDERATION_ADDRESS = CallTransaction.Function.fromSignature("getRetiringFederationAddress", new String[]{}, new String[]{"string"});
     // Returns the number of federates in the retiring federation
-    public static final CallTransaction.Function GET_RETIRING_FEDERATION_SIZE = CallTransaction.Function.fromSignature("getRetiringFederationSize", new String[]{}, new String[]{"uint32"});
+    public static final CallTransaction.Function GET_RETIRING_FEDERATION_SIZE = CallTransaction.Function.fromSignature("getRetiringFederationSize", new String[]{}, new String[]{"int256"});
     // Returns the number of minimum required signatures from the retiring federation
-    public static final CallTransaction.Function GET_RETIRING_FEDERATION_THRESHOLD = CallTransaction.Function.fromSignature("getRetiringFederationThreshold", new String[]{}, new String[]{"uint32"});
+    public static final CallTransaction.Function GET_RETIRING_FEDERATION_THRESHOLD = CallTransaction.Function.fromSignature("getRetiringFederationThreshold", new String[]{}, new String[]{"int256"});
     // Returns the public key of the retiring federation's federator at the specified index
-    public static final CallTransaction.Function GET_RETIRING_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getRetiringFederatorPublicKey", new String[]{"uint32"}, new String[]{"bytes"});
+    public static final CallTransaction.Function GET_RETIRING_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getRetiringFederatorPublicKey", new String[]{"int256"}, new String[]{"bytes"});
     // Returns the creation time of the retiring federation
-    public static final CallTransaction.Function GET_RETIRING_FEDERATION_CREATION_TIME = CallTransaction.Function.fromSignature("getRetiringFederationCreationTime", new String[]{}, new String[]{"uint64"});
+    public static final CallTransaction.Function GET_RETIRING_FEDERATION_CREATION_TIME = CallTransaction.Function.fromSignature("getRetiringFederationCreationTime", new String[]{}, new String[]{"int256"});
 
     // Creates a new pending federation and returns its id
-    public static final CallTransaction.Function CREATE_FEDERATION = CallTransaction.Function.fromSignature("createFederation", new String[]{"uint32"}, new String[]{"uint64"});
+    public static final CallTransaction.Function CREATE_FEDERATION = CallTransaction.Function.fromSignature("createFederation", new String[]{"int256"}, new String[]{"int256"});
     // Adds the given key to the current pending federation
-    public static final CallTransaction.Function ADD_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("addFederatorPublicKey", new String[]{"bytes"}, new String[]{"uint32"});
+    public static final CallTransaction.Function ADD_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("addFederatorPublicKey", new String[]{"bytes"}, new String[]{"int256"});
     // Removes the given key from the current pending federation
-    public static final CallTransaction.Function REMOVE_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("removeFederatorPublicKey", new String[]{"bytes"}, new String[]{"uint32"});
+    public static final CallTransaction.Function REMOVE_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("removeFederatorPublicKey", new String[]{"bytes"}, new String[]{"int256"});
     // Commits the currently pending federation
-    public static final CallTransaction.Function COMMIT_FEDERATION = CallTransaction.Function.fromSignature("commitFederation", new String[]{}, new String[]{"uint32"});
+    public static final CallTransaction.Function COMMIT_FEDERATION = CallTransaction.Function.fromSignature("commitFederation", new String[]{}, new String[]{"int256"});
     // Rolls back the currently pending federation
-    public static final CallTransaction.Function ROLLBACK_FEDERATION = CallTransaction.Function.fromSignature("rollbackFederation", new String[]{}, new String[]{"uint32"});
+    public static final CallTransaction.Function ROLLBACK_FEDERATION = CallTransaction.Function.fromSignature("rollbackFederation", new String[]{}, new String[]{"int256"});
 
     // Returns the number of federates in the currently active federation
-    public static final CallTransaction.Function GET_PENDING_FEDERATION_ID = CallTransaction.Function.fromSignature("getPendingFederationId", new String[]{}, new String[]{"uint64"});
+    public static final CallTransaction.Function GET_PENDING_FEDERATION_ID = CallTransaction.Function.fromSignature("getPendingFederationId", new String[]{}, new String[]{"int256"});
     // Returns the number of federates in the currently active federation
-    public static final CallTransaction.Function GET_PENDING_FEDERATION_SIZE = CallTransaction.Function.fromSignature("getPendingFederationSize", new String[]{}, new String[]{"uint32"});
+    public static final CallTransaction.Function GET_PENDING_FEDERATION_SIZE = CallTransaction.Function.fromSignature("getPendingFederationSize", new String[]{}, new String[]{"int256"});
     // Returns the number of minimum required signatures from the currently active federation
-    public static final CallTransaction.Function GET_PENDING_FEDERATION_THRESHOLD = CallTransaction.Function.fromSignature("getPendingFederationThreshold", new String[]{}, new String[]{"uint32"});
+    public static final CallTransaction.Function GET_PENDING_FEDERATION_THRESHOLD = CallTransaction.Function.fromSignature("getPendingFederationThreshold", new String[]{}, new String[]{"int256"});
     // Returns the public key of the federator at the specified index
-    public static final CallTransaction.Function GET_PENDING_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getPendingFederatorPublicKey", new String[]{"uint32"}, new String[]{"bytes"});
+    public static final CallTransaction.Function GET_PENDING_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getPendingFederatorPublicKey", new String[]{"int256"}, new String[]{"bytes"});
 
     // Log topics used by the Bridge
     public static final DataWord RELEASE_BTC_TOPIC = new DataWord("release_btc_topic".getBytes(StandardCharsets.UTF_8));
