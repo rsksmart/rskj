@@ -23,6 +23,7 @@ import co.rsk.blocks.FileBlockRecorder;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.*;
 import co.rsk.net.eth.RskWireProtocol;
+import co.rsk.net.handler.TxHandler;
 import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
@@ -33,6 +34,7 @@ import org.ethereum.core.ImportResult;
 import org.ethereum.core.PendingState;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.EthereumImpl;
+import org.ethereum.facade.Repository;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
@@ -152,15 +154,26 @@ public class RskFactory {
     }
 
     @Bean
-    public NodeBlockProcessor getNodeBlockProcessor(WorldManager worldManager) {
-        return new NodeBlockProcessor(new BlockStore(), worldManager.getBlockchain(), worldManager);
+    public NodeBlockProcessor getNodeBlockProcessor(RskSystemProperties config,
+                                                    Blockchain blockchain,
+                                                    ChannelManager channelManager) {
+        return new NodeBlockProcessor(config, new BlockStore(), blockchain, channelManager);
     }
 
     @Bean
-    public NodeMessageHandler getNodeMessageHandler(NodeBlockProcessor nodeBlockProcessor, ChannelManager channelManager, WorldManager worldManager, PeerScoringManager peerScoringManager) {
-        NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(nodeBlockProcessor, channelManager, worldManager.getPendingState(), new TxHandlerImpl(worldManager), peerScoringManager);
+    public NodeMessageHandler getNodeMessageHandler(NodeBlockProcessor nodeBlockProcessor,
+                                                    ChannelManager channelManager,
+                                                    PendingState pendingState,
+                                                    TxHandler txHandler,
+                                                    PeerScoringManager peerScoringManager) {
+        NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(nodeBlockProcessor, channelManager, pendingState, txHandler, peerScoringManager);
         nodeMessageHandler.start();
         return nodeMessageHandler;
+    }
+
+    @Bean
+    public TxHandler getTxHandler(WorldManager worldManager, Repository repository, Blockchain blockchain) {
+        return new TxHandlerImpl(worldManager, repository, blockchain);
     }
 
     @Bean

@@ -20,9 +20,9 @@ package co.rsk.net.handler;
 
 import co.rsk.net.handler.txvalidator.*;
 import org.ethereum.core.AccountState;
+import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.rpc.TypeConverter;
 import org.spongycastle.util.BigIntegers;
 
@@ -55,8 +55,10 @@ class TxValidator {
     /**
      * Where the magic occurs, will filter out invalid txs, but still remember some of them
      */
-    List<Transaction> filterTxs(List<Transaction> txs, Map<String, TxTimestamp> knownTxs,
-                                Repository repository, WorldManager worldManager,
+    List<Transaction> filterTxs(Repository repository,
+                                Blockchain blockchain,
+                                List<Transaction> txs,
+                                Map<String, TxTimestamp> knownTxs,
                                 Map<String, TxsPerAccount> txsPerAccounts) {
         //FIXME(mmarquez): this method is quite coupled with TxHandlerImpl
         // but it should be fixed when NodeMessageHandler stops managing the wire txs
@@ -76,9 +78,9 @@ class TxValidator {
             if (state == null) {
                 state = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
             }
-            BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(worldManager.getBlockchain().getBestBlock().getGasLimit());
-            BigInteger minimumGasPrice = BigIntegers.fromUnsignedByteArray(worldManager.getBlockchain().getBestBlock().getMinimumGasPrice());
-            long bestBlockNumber = worldManager.getBlockchain().getBestBlock().getNumber();
+            BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(blockchain.getBestBlock().getGasLimit());
+            BigInteger minimumGasPrice = BigIntegers.fromUnsignedByteArray(blockchain.getBestBlock().getMinimumGasPrice());
+            long bestBlockNumber = blockchain.getBestBlock().getNumber();
 
             boolean valid = true;
 
