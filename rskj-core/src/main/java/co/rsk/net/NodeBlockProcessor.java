@@ -137,16 +137,15 @@ public class NodeBlockProcessor implements BlockProcessor {
     public void processBlockHeaders(@Nonnull final MessageSender sender, @Nonnull final List<BlockHeader> blockHeaders) {
         // TODO(mvanotti): Implement missing functionality.
 
-        // sort block headers in ascending order, so we can process them in that order.
-        blockHeaders.sort((a, b) -> Long.compare(a.getNumber(), b.getNumber()));
-
         blockHeaders.stream()
-                .filter(h -> !hasHeader(h))
+                .filter(h -> !hasHeader(h.getHash()))
+                // sort block headers in ascending order, so we can process them in that order.
+                .sorted(Comparator.comparingLong(BlockHeader::getNumber))
                 .forEach(h -> processBlockHeader(sender, h));
     }
 
-    private boolean hasHeader(@Nonnull final BlockHeader h) {
-        return hasBlock(h.getHash()) || store.hasHeader(h.getHash());
+    private boolean hasHeader(@Nonnull final byte[] hash) {
+        return hasBlock(hash) || store.hasHeader(hash);
     }
 
     private void processBlockHeader(@Nonnull final MessageSender sender, @Nonnull final BlockHeader header) {

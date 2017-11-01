@@ -155,12 +155,9 @@ public class RskFactory {
 
     @Bean
     public NodeBlockProcessor getNodeBlockProcessor(RskSystemProperties config,
-                                                    WorldManager worldManager,
                                                     Blockchain blockchain,
                                                     ChannelManager channelManager) {
-        NodeBlockProcessor nodeBlockProcessor = new NodeBlockProcessor(config, new BlockStore(), blockchain, channelManager);
-        worldManager.setNodeBlockProcessor(nodeBlockProcessor);
-        return nodeBlockProcessor;
+        return new NodeBlockProcessor(config, new BlockStore(), blockchain, channelManager);
     }
 
     @Bean

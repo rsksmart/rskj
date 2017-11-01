@@ -122,11 +122,6 @@ public class SimpleWorldManager implements WorldManager {
     }
 
     @Override
-    public void setNodeBlockProcessor(BlockProcessor nodeBlockProcessor) {
-        this.nodeBlockProcessor = nodeBlockProcessor;
-    }
-
-    @Override
     public BlockProcessor getNodeBlockProcessor(){
         return this.nodeBlockProcessor;
     }

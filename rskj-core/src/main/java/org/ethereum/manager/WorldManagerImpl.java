@@ -83,6 +83,7 @@ public class WorldManagerImpl implements WorldManager {
     @Autowired
     ConfigCapabilities configCapabilities;
 
+    @Autowired
     BlockProcessor nodeBlockProcessor;
 
     @Autowired
@@ -141,11 +142,6 @@ public class WorldManagerImpl implements WorldManager {
 
     @Override
     public ConfigCapabilities getConfigCapabilities() { return configCapabilities; }
-
-    @Override
-    public void setNodeBlockProcessor(BlockProcessor nodeBlockProcessor){
-        this.nodeBlockProcessor = nodeBlockProcessor;
-    }
 
     @Override
     public BlockProcessor getNodeBlockProcessor(){

@@ -58,8 +58,6 @@ public interface WorldManager {
 
     ConfigCapabilities getConfigCapabilities();
 
-    void setNodeBlockProcessor(BlockProcessor nodeBlockProcessor);
-
     BlockProcessor getNodeBlockProcessor();
 
     HashRateCalculator getHashRateCalculator();
