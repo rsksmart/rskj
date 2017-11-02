@@ -2,13 +2,15 @@ package co.rsk.net.sync;
 
 
 import co.rsk.net.MessageChannel;
+import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
 import java.util.List;
-import java.util.Queue;
+import java.util.Map;
+import java.util.Stack;
 
 public class SimpleSyncEventsHandler implements SyncEventsHandler {
     private boolean startSyncingWasCalled_;
@@ -39,10 +41,10 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     public long sendBodyRequest(@Nonnull BlockHeader header) { return 0; }
 
     @Override
-    public void sendSkeletonRequest(long height) { }
+    public void sendSkeletonRequest(MessageChannel peer, long height) { }
 
     @Override
-    public void startDownloadingHeaders(List<BlockIdentifier> skeleton, long connectionPoint) { }
+    public void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint) { }
 
     @Override
     public void startSyncing(MessageChannel peer) {
@@ -50,7 +52,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void startDownloadingBodies(Queue<BlockHeader> pendingHeaders) { }
+    public void startDownloadingBodies(List<Stack<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons) { }
 
     @Override
     public void startDownloadingSkeleton(long connectionPoint) { }

@@ -1,16 +1,18 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.MessageChannel;
+import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
 import java.util.List;
-import java.util.Queue;
+import java.util.Map;
+import java.util.Stack;
 
 public interface SyncEventsHandler {
-    void sendSkeletonRequest(long height);
+    void sendSkeletonRequest(MessageChannel peer, long height);
 
     void sendBlockHashRequest(long height);
 
@@ -18,9 +20,9 @@ public interface SyncEventsHandler {
 
     long sendBodyRequest(@Nonnull BlockHeader header);
 
-    void startDownloadingBodies(Queue<BlockHeader> pendingHeaders);
+    void startDownloadingBodies(List<Stack<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons);
 
-    void startDownloadingHeaders(List<BlockIdentifier> skeleton, long connectionPoint);
+    void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint);
 
     void startDownloadingSkeleton(long connectionPoint);
 

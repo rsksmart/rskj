@@ -15,6 +15,7 @@ import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
@@ -36,7 +37,7 @@ public class SyncProcessorTest {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, new SimpleChannelManager());
         PeerScoringManager peerScoringManager = getPeerScoringManager();
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
 
@@ -56,7 +57,7 @@ public class SyncProcessorTest {
         Status status = new Status(100, hash, parentHash, blockchain.getTotalDifficulty().add(BigInteger.TEN));
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, new SimpleChannelManager());
 
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
@@ -91,7 +92,7 @@ public class SyncProcessorTest {
         Status status = new Status(100, hash, parentHash, blockchain.getTotalDifficulty().add(BigInteger.TEN));
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, new SimpleChannelManager());
         SyncConfiguration syncConfiguration = SyncConfiguration.DEFAULT;
 
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), syncConfiguration, new ProofOfWorkRule());
@@ -132,7 +133,7 @@ public class SyncProcessorTest {
         Status status = new Status(0, hash, parentHash, blockchain.getTotalDifficulty());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, new SimpleChannelManager());
 
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.DEFAULT, new ProofOfWorkRule());
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
@@ -163,7 +164,7 @@ public class SyncProcessorTest {
         Status status = new Status(100, hash, parentHash, blockchain.getTotalDifficulty().add(BigInteger.TEN));
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, new SimpleChannelManager());
 
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.DEFAULT, new ProofOfWorkRule());
 
@@ -222,7 +223,7 @@ public class SyncProcessorTest {
         Status status = new Status(blockchain.getStatus().getBestBlockNumber(), hash, parentHash, blockchain.getStatus().getTotalDifficulty());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, new SimpleChannelManager());
 
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
         processor.processStatus(sender, status);
@@ -246,7 +247,7 @@ public class SyncProcessorTest {
         SyncProcessor processor = new SyncProcessor(blockchain, null, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
 
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
-        processor.sendSkeletonRequest(0);
+        processor.sendSkeletonRequest(sender, 0);
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -415,7 +416,7 @@ public class SyncProcessorTest {
         Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, new SimpleChannelManager());
 
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
@@ -425,7 +426,16 @@ public class SyncProcessorTest {
         BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
         processor.registerExpectedMessage(response);
 
-        processor.startDownloadingBodies(new ArrayDeque<>(Collections.singletonList(block.getHeader())));
+        Stack<BlockHeader> headerStack = new Stack<>();
+        headerStack.add(block.getHeader());
+        List<Stack<BlockHeader>> headers = new ArrayList<>();
+        headers.add(headerStack);
+
+        List<BlockIdentifier> bids = new ArrayList<>();
+        bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash(), 0));
+        bids.add(new BlockIdentifier(block.getHash(), 1));
+
+        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids));
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
 
         processor.processBodyResponse(sender, response);
@@ -449,7 +459,7 @@ public class SyncProcessorTest {
         Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, new SimpleChannelManager());
 
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
@@ -465,14 +475,19 @@ public class SyncProcessorTest {
         BodyResponseMessage response = new BodyResponseMessage(lastRequestId, txs, uncles);
         processor.registerExpectedMessage(response);
 
-        ArrayDeque<BlockHeader> pendingHeaders = new ArrayDeque<>();
-        pendingHeaders.add(block.getHeader());
-        pendingHeaders.add(block.getHeader());
-        pendingHeaders.add(block.getHeader());
+        Stack<BlockHeader> headerStack = new Stack<>();
+        headerStack.add(block.getHeader());
+        headerStack.add(block.getHeader());
+        headerStack.add(block.getHeader());
+        List<Stack<BlockHeader>> headers = new ArrayList<>();
+        headers.add(headerStack);
 
-        processor.startDownloadingBodies(pendingHeaders);
+        List<BlockIdentifier> bids = new ArrayList<>();
+        bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash(), 0));
+        bids.add(new BlockIdentifier(block.getHash(), 1));
+
+        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids));
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
-
         processor.processBodyResponse(sender, response);
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
@@ -491,11 +506,14 @@ public class SyncProcessorTest {
 
         Block block = BlockGenerator.createChildBlock(blockchain.getBlockByNumber(10));
 
+        Blockchain extended = BlockChainBuilder.copy(blockchain);
+        extended.tryToConnect(block);
+
         Assert.assertEquals(11, block.getNumber());
         Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, new SimpleChannelManager());
 
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
@@ -505,7 +523,20 @@ public class SyncProcessorTest {
         BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
         processor.registerExpectedMessage(response);
 
-        processor.startDownloadingBodies(new ArrayDeque<>(Collections.singletonList(block.getHeader())));
+        Stack<BlockHeader> headerStack = new Stack<>();
+//        for (int i = 1; i <= blockchain.getBestBlock().getNumber(); i++){
+//            headerStack.add(blockchain.getBlockByNumber(i).getHeader());
+//        }
+        headerStack.add(block.getHeader());
+        List<Stack<BlockHeader>> headers = new ArrayList<>();
+        headers.add(headerStack);
+
+        int connectionPoint = 10;
+        int step = 192;
+        int linkCount = 1;
+        processor.startDownloadingBodies(headers,
+                Collections.singletonMap(sender.getPeerNodeID(),
+                        buildSkeleton(extended, connectionPoint, step, linkCount)));
 //        ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
 
         processor.processBodyResponse(sender, response);
@@ -553,7 +584,7 @@ public class SyncProcessorTest {
         Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, new SimpleChannelManager());
 
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
@@ -563,7 +594,16 @@ public class SyncProcessorTest {
         BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
         processor.registerExpectedMessage(response);
 
-        processor.startDownloadingBodies(new ArrayDeque<>(Collections.singletonList(block.getHeader())));
+        Stack<BlockHeader> headerStack = new Stack<>();
+        headerStack.add(block.getHeader());
+        List<Stack<BlockHeader>> headers = new ArrayList<>();
+        headers.add(headerStack);
+
+        List<BlockIdentifier> bids = new ArrayList<>();
+        bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash(), 0));
+        bids.add(new BlockIdentifier(block.getHash(), 1));
+
+        processor.startDownloadingBodies(headers, Collections.singletonMap(sender.getPeerNodeID(), bids));
         ((DownloadingBodiesSyncState)processor.getSyncState()).expectBodyResponseFor(lastRequestId, sender.getPeerNodeID(), block.getHeader());
 
         processor.processBodyResponse(sender, response);
@@ -587,7 +627,7 @@ public class SyncProcessorTest {
         Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, new SimpleChannelManager());
 
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), 0);
@@ -610,7 +650,7 @@ public class SyncProcessorTest {
 
         BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, new SimpleChannelManager());
 
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new DummyBlockValidationRule());
 
@@ -654,7 +694,7 @@ public class SyncProcessorTest {
 
         BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, new SimpleChannelManager());
 
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new DummyBlockValidationRule());
 
@@ -694,7 +734,7 @@ public class SyncProcessorTest {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, new SimpleChannelManager());
 
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
 
@@ -703,7 +743,7 @@ public class SyncProcessorTest {
 
         int connectionPoint = 0;
         int step = 10;
-        int linkCount = 10;
+        int linkCount = 9;
         processor.setSelectedPeer(sender, StatusUtils.getFakeStatus(), connectionPoint);
         processor.startDownloadingSkeleton(connectionPoint);
         List<BlockIdentifier> blockIdentifiers = buildSkeleton(blockchain, connectionPoint, step, linkCount);
@@ -713,12 +753,10 @@ public class SyncProcessorTest {
         processor.processSkeletonResponse(sender, response);
 
         Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(2, sender.getMessages().size());
+        Assert.assertEquals(1, sender.getMessages().size());
 
-        Message message = sender.getMessages().get(1);
+        Message message = sender.getMessages().get(0);
 
-        // startDownloadingSkeleton tries to send a SKELETON_REQUEST_MESSAGE that is never consumed
-        Assert.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, sender.getMessages().get(0).getMessageType());
         Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
 
         BlockHeadersRequestMessage request = (BlockHeadersRequestMessage)message;
@@ -730,7 +768,7 @@ public class SyncProcessorTest {
         List<BlockIdentifier> skeleton = syncState.getSkeleton();
 
         Assert.assertEquals(10, skeleton.size());
-        Assert.assertEquals(2, processor.getExpectedResponses().size());
+        Assert.assertEquals(1, processor.getExpectedResponses().size());
     }
 
     @Test
@@ -760,8 +798,7 @@ public class SyncProcessorTest {
 
         final BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, new SimpleChannelManager());
 
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, getPeerScoringManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
@@ -778,19 +815,17 @@ public class SyncProcessorTest {
         processor.processSkeletonResponse(sender, response);
 
         Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(2, sender.getMessages().size());
+        Assert.assertEquals(1, sender.getMessages().size());
 
-        Message message = sender.getMessages().get(1);
+        Message message = sender.getMessages().get(0);
 
-        // startDownloadingSkeleton tries to send a SKELETON_REQUEST_MESSAGE that is never consumed
-        Assert.assertEquals(MessageType.SKELETON_REQUEST_MESSAGE, sender.getMessages().get(0).getMessageType());
         Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, message.getMessageType());
 
         BlockHeadersRequestMessage request = (BlockHeadersRequestMessage)message;
 
         Assert.assertEquals(5, request.getCount());
         Assert.assertArrayEquals(blockIdentifiers.get(1).getHash(), request.getHash());
-        Assert.assertEquals(2, processor.getExpectedResponses().size());
+        Assert.assertEquals(1, processor.getExpectedResponses().size());
     }
 
     private List<BlockIdentifier> buildSkeleton(Blockchain blockchain, int connectionPoint, int step, int linkCount) {
@@ -809,6 +844,8 @@ public class SyncProcessorTest {
 
             bids.add(new BlockIdentifier(hash, number));
         }
+        BlockIdentifier bid = new BlockIdentifier(blockchain.getBestBlockHash(), blockchain.getBestBlock().getNumber());
+        bids.add(bid);
         return bids;
     }
 

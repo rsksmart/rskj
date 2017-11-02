@@ -1,26 +1,25 @@
 package co.rsk.net.sync;
 
+import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.util.ByteUtil;
 
-import java.util.ArrayDeque;
-import java.util.List;
-import java.util.Optional;
-import java.util.Queue;
+import java.util.*;
 
 public class DownloadingHeadersSyncState extends BaseSyncState {
 
-    private Queue<BlockHeader> pendingHeaders;
-    private final SkeletonDownloadHelper skeletonDownloadHelper;
+    private final Map<NodeID, List<BlockIdentifier>> skeletons;
+    private List<Stack<BlockHeader>> pendingHeaders;
+    private final ChunksDownloadHelper chunksDownloadHelper;
 
-    public DownloadingHeadersSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation, List<BlockIdentifier> skeleton, long connectionPoint) {
+    public DownloadingHeadersSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation, Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint) {
         super(syncInformation, syncEventsHandler, syncConfiguration);
-
-        this.pendingHeaders = new ArrayDeque<>();
-        this.skeletonDownloadHelper = new SkeletonDownloadHelper(syncConfiguration, skeleton, connectionPoint);
+        this.pendingHeaders = new ArrayList<>();
+        this.skeletons = skeletons;
+        this.chunksDownloadHelper = new ChunksDownloadHelper(syncConfiguration, skeletons.get(syncInformation.getSelectedPeerId()), connectionPoint);
     }
 
     @Override
@@ -30,7 +29,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
 
     @Override
     public void newBlockHeaders(List<BlockHeader> chunk) {
-        Optional<ChunkDescriptor> currentChunk = skeletonDownloadHelper.getCurrentChunk();
+        Optional<ChunkDescriptor> currentChunk = chunksDownloadHelper.getCurrentChunk();
         if (!currentChunk.isPresent()
                 || chunk.size() != currentChunk.get().getCount()
                 || !ByteUtil.fastEquals(chunk.get(0).getHash(), currentChunk.get().getHash())) {
@@ -41,7 +40,8 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
             return;
         }
 
-        pendingHeaders.add(chunk.get(chunk.size() - 1));
+        List<BlockHeader> headers = new ArrayList<>();
+        headers.add(chunk.get(chunk.size() - 1));
 
         for (int k = 1; k < chunk.size(); ++k) {
             BlockHeader parentHeader = chunk.get(chunk.size() - k);
@@ -55,26 +55,30 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
                 return;
             }
 
-            pendingHeaders.add(header);
+            headers.add(header);
         }
+        Stack<BlockHeader> headerStack = new Stack<>();
+        Collections.reverse(headers);
+        headerStack.addAll(headers);
+        pendingHeaders.add(headerStack);
 
-        if (!skeletonDownloadHelper.hasNextChunk()) {
+        if (!chunksDownloadHelper.hasNextChunk()) {
             // Finished verifying headers
-            syncEventsHandler.startDownloadingBodies(pendingHeaders);
+            syncEventsHandler.startDownloadingBodies(pendingHeaders, skeletons);
             return;
         }
 
         resetTimeElapsed();
-        syncEventsHandler.sendBlockHeadersRequest(skeletonDownloadHelper.getNextChunk());
+        syncEventsHandler.sendBlockHeadersRequest(chunksDownloadHelper.getNextChunk());
     }
 
     @Override
     public void onEnter() {
-        syncEventsHandler.sendBlockHeadersRequest(skeletonDownloadHelper.getNextChunk());
+        syncEventsHandler.sendBlockHeadersRequest(chunksDownloadHelper.getNextChunk());
     }
 
     @VisibleForTesting
     public List<BlockIdentifier> getSkeleton() {
-        return skeletonDownloadHelper.getSkeleton();
+        return chunksDownloadHelper.getSkeleton();
     }
 }

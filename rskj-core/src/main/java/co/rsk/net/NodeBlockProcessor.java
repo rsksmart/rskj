@@ -20,6 +20,7 @@ package co.rsk.net;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.messages.*;
+import co.rsk.net.sync.SyncConfiguration;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
@@ -50,6 +51,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     private final Blockchain blockchain;
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
     private final BlockSyncService blockSyncService;
+    private SyncConfiguration syncConfiguration;
     private final Map <Long, byte[]> skeletonCache = new HashMap<>();
 
     private long blocksForPeers;
@@ -68,14 +70,16 @@ public class NodeBlockProcessor implements BlockProcessor {
             @Nonnull final BlockStore store,
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
-            @Nonnull final BlockSyncService blockSyncService) {
+            @Nonnull final BlockSyncService blockSyncService,
+            @Nonnull final SyncConfiguration syncConfiguration) {
+
         this.store = store;
         this.blockchain = blockchain;
         this.nodeInformation = nodeInformation;
         this.blocksForPeers = config.getBlocksForPeers();
         this.blockSyncService = blockSyncService;
+        this.syncConfiguration = syncConfiguration;
     }
-
     @Override
     @Nonnull
     public Blockchain getBlockchain() {

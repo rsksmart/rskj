@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
  */
 public class SimpleAsyncNode extends SimpleNode {
     private ExecutorService executor = Executors.newSingleThreadExecutor();
-    private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(1500);
+    private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(450000);
     private SyncProcessor syncProcessor;
 
     public SimpleAsyncNode(MessageHandler handler) {
@@ -103,12 +103,13 @@ public class SimpleAsyncNode extends SimpleNode {
         final BlockStore store = new BlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
+        SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration, null);
+        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
         PeerScoringManager peerScoringManager = Mockito.mock(PeerScoringManager.class);
         when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
-        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, peerScoringManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockValidationRule);
+        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, blockValidationRule);
         NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, null, null, null, null, blockValidationRule);
         return new SimpleAsyncNode(handler, syncProcessor);
     }

@@ -20,11 +20,9 @@ package co.rsk.net;
 
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.core.bc.BlockUtils;
-import co.rsk.net.messages.GetBlockMessage;
-import co.rsk.net.messages.StatusMessage;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.ImportResult;
+import co.rsk.net.messages.*;
+import co.rsk.net.sync.SyncConfiguration;
+import org.ethereum.core.*;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
@@ -60,6 +58,7 @@ public class BlockSyncService {
     private static final Logger logger = LoggerFactory.getLogger(BlockSyncService.class);
     private final BlockStore store;
     private final Blockchain blockchain;
+    private SyncConfiguration syncConfiguration;
     private final ChannelManager channelManager;
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
 
@@ -69,9 +68,11 @@ public class BlockSyncService {
             @Nonnull final BlockStore store,
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
+            final SyncConfiguration syncConfiguration,
             final ChannelManager channelManager) {
         this.store = store;
         this.blockchain = blockchain;
+        this.syncConfiguration = syncConfiguration;
         this.channelManager = channelManager;
         this.nodeInformation = nodeInformation;
     }
@@ -102,7 +103,8 @@ public class BlockSyncService {
 
         lastKnownBlockNumber = Math.max(blockNumber, lastKnownBlockNumber);
 
-        if (ignoreAdvancedBlocks && blockNumber >= bestBlockNumber + 1000) {
+        int syncMaxDistance = syncConfiguration.getMaxSkeletonChunks() * syncConfiguration.getChunkSize();
+        if (ignoreAdvancedBlocks && blockNumber > bestBlockNumber + syncMaxDistance) {
             logger.trace("Block too advanced {} {} from {} ", blockNumber, block.getShortHash(), sender != null ? sender.getPeerNodeID().toString() : "N/A");
             return new BlockProcessResult(false, null);
         }

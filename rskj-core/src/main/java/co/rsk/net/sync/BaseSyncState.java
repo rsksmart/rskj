@@ -1,5 +1,6 @@
 package co.rsk.net.sync;
 
+import co.rsk.net.MessageChannel;
 import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
 import com.google.common.annotations.VisibleForTesting;
@@ -46,7 +47,7 @@ public abstract class BaseSyncState implements SyncState {
     }
 
     @Override
-    public void newBody(BodyResponseMessage message) {
+    public void newBody(BodyResponseMessage message, MessageChannel peer) {
         // TODO(mc) do peer scoring, banning and logging
         syncEventsHandler.stopSyncing();
     }
@@ -61,7 +62,7 @@ public abstract class BaseSyncState implements SyncState {
     public void newPeerStatus() { }
 
     @Override
-    public void newSkeleton(List<BlockIdentifier> skeleton) {
+    public void newSkeleton(List<BlockIdentifier> skeleton, MessageChannel peer) {
         // TODO(mc) do peer scoring, banning and logging
         syncEventsHandler.stopSyncing();
     }

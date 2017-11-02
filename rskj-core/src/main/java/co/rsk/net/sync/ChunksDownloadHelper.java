@@ -1,25 +1,28 @@
 package co.rsk.net.sync;
 
+import co.rsk.net.NodeID;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-public class SkeletonDownloadHelper {
+public class ChunksDownloadHelper {
     private SyncConfiguration syncConfiguration;
 
     // Block identifiers retrieved in skeleton
+    private Map<NodeID, List<BlockIdentifier>> skeletons;
     private List<BlockIdentifier> skeleton;
     private long connectionPoint;
     private int lastRequestedLinkIndex;
 
-    public SkeletonDownloadHelper(@Nonnull SyncConfiguration syncConfiguration, @Nonnull List<BlockIdentifier> skeleton, long connectionPoint) {
+    public ChunksDownloadHelper(@Nonnull SyncConfiguration syncConfiguration, List<BlockIdentifier> skeleton, long connectionPoint) {
         this.syncConfiguration = syncConfiguration;
-        this.skeleton = skeleton;
         this.connectionPoint = connectionPoint;
         this.lastRequestedLinkIndex = 0;
+        this.skeleton = skeleton;
     }
 
     public boolean hasNextChunk() {

@@ -2,6 +2,7 @@ package co.rsk.net.sync;
 
 import co.rsk.net.BlockProcessResult;
 import co.rsk.net.NodeID;
+import co.rsk.scoring.EventType;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
@@ -21,4 +22,6 @@ public interface SyncInformation {
     NodeID getSelectedPeerId();
 
     boolean hasGoodReputation(NodeID nodeID);
+
+    void reportEvent(String message, EventType eventType, NodeID peerId);
 }

@@ -171,8 +171,9 @@ public class RskFactory {
     }
 
     @Bean
-    public NodeBlockProcessor getNodeBlockProcessor(RskSystemProperties config, Blockchain blockchain, BlockStore blockStore, BlockNodeInformation blockNodeInformation, BlockSyncService blockSyncService, ChannelManager channelManager) {
-        return new NodeBlockProcessor(config, blockStore, blockchain, blockNodeInformation, blockSyncService);
+    public NodeBlockProcessor getNodeBlockProcessor(RskSystemProperties config, Blockchain blockchain, BlockStore blockStore,
+                                                    BlockNodeInformation blockNodeInformation, BlockSyncService blockSyncService, SyncConfiguration syncConfiguration) {
+        return new NodeBlockProcessor(config, blockStore, blockchain, blockNodeInformation, blockSyncService, syncConfiguration);
     }
 
     @Bean
@@ -187,8 +188,9 @@ public class RskFactory {
     public BlockSyncService getBlockSyncService(Blockchain blockchain,
                                                 BlockStore store,
                                                 BlockNodeInformation nodeInformation,
+                                                SyncConfiguration syncConfiguration,
                                                 ChannelManager channelManager) {
-            return new BlockSyncService(store, blockchain, nodeInformation, channelManager);
+            return new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration, channelManager);
     }
 
     @Bean
