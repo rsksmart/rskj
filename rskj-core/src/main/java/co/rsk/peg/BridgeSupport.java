@@ -961,7 +961,7 @@ public class BridgeSupport {
      * and the pending federation is wiped out.
      * Also, UTXOs are moved from active to retiring so that the transfer of funds can
      * begin.
-     * @return 0 upon success, 1 if there was no pending federation, 2 if the pending federation was incomplete
+     * @return 1 upon success, 1 if there was no pending federation, 2 if the pending federation was incomplete
      */
     public Integer commitFederation() throws IOException {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
@@ -985,17 +985,17 @@ public class BridgeSupport {
         // Network parameters for the new federation are taken from the bridge constants.
         // Creation time is the block's timestamp.
         Instant creationTime = Instant.ofEpochMilli(rskExecutionBlock.getTimestamp());
-        provider.setRetiringFederation(provider.getActiveFederation());
+        provider.setRetiringFederation(getActiveFederation());
         provider.setActiveFederation(currentPendingFederation.buildFederation(creationTime, bridgeConstants.getBtcParams()));
         provider.setPendingFederation(null);
 
-        return 0;
+        return 1;
     }
 
     /**
      * Rolls back the currently pending federation
      * That is, the pending federation is wiped out.
-     * @return 0 upon success, 1 if there was no pending federation
+     * @return 1 upon success, 1 if there was no pending federation
      */
     public Integer rollbackFederation() {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
@@ -1006,7 +1006,7 @@ public class BridgeSupport {
 
         provider.setPendingFederation(null);
 
-        return 0;
+        return 1;
     }
 
     /**

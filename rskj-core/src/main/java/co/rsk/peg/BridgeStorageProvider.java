@@ -262,13 +262,10 @@ public class BridgeStorageProvider {
     public void saveRetiringFederation() {
         DataWord address = new DataWord(BRIDGE_RETIRING_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
 
-        if (retiringFederation == null) {
-            repository.addStorageBytes(Hex.decode(contractAddress), address, null);
-            return;
+        byte[] data = null;
+        if (retiringFederation != null) {
+            data = BridgeSerializationUtils.serializeFederation(retiringFederation);
         }
-
-        byte[] data = BridgeSerializationUtils.serializeFederation(retiringFederation);
-
 
         repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
@@ -296,27 +293,30 @@ public class BridgeStorageProvider {
     }
 
     /**
-     * Save the new (pending) federations
-     * Only saved if a pending federation was set with BridgeStorageProvider::setPendingFederation
+     * Save the pending federation
      */
     public void savePendingFederation() {
-        if (pendingFederation == null)
-            return;
-
-        byte[] data = BridgeSerializationUtils.serializePendingFederation(pendingFederation);
-
         DataWord address = new DataWord(BRIDGE_PENDING_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
+
+        byte[] data = null;
+        if (pendingFederation != null)
+            data = BridgeSerializationUtils.serializePendingFederation(pendingFederation);
 
         repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
 
     public void save() throws IOException {
-        saveActiveFederationBtcUTXOs();
-        saveRetiringFederationBtcUTXOs();
         saveBtcTxHashesAlreadyProcessed();
+
         saveRskTxsWaitingForConfirmations();
         saveRskTxsWaitingForSignatures();
+
         saveActiveFederation();
+        saveActiveFederationBtcUTXOs();
+
+        saveRetiringFederation();
+        saveRetiringFederationBtcUTXOs();
+
         savePendingFederation();
     }
 }
