@@ -296,7 +296,7 @@ public class BridgeStorageProvider {
     }
 
     /**
-     * Save the new (pending) federation
+     * Save the new (pending) federations
      * Only saved if a pending federation was set with BridgeStorageProvider::setPendingFederation
      */
     public void savePendingFederation() {

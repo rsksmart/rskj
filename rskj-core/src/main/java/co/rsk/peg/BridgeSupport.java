@@ -885,8 +885,8 @@ public class BridgeSupport {
      * Creates a new pending federation and returns its id.
      * If there's currently no pending federation and no funds remain
      * to be moved from a previous federation, a new one is created.
-     * Otherwise, zero is returned if there's already a pending federation
-     * or -1 is returned if funds are left from a previous one.
+     * Otherwise, -1 is returned if there's already a pending federation
+     * or -2 is returned if funds are left from a previous one.
      * @param numberOfSignaturesRequired the N in N of M multisig
      * @return The newly created Pending Federation's id
      */
@@ -894,11 +894,11 @@ public class BridgeSupport {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation != null) {
-            return 0L;
+            return -1L;
         }
 
         if (provider.getRetiringFederationBtcUTXOs().size() > 0) {
-            return -1L;
+            return -2L;
         }
 
         currentPendingFederation = new PendingFederation(rskExecutionBlock.getNumber(), numberOfSignaturesRequired, Collections.emptyList());
@@ -911,7 +911,7 @@ public class BridgeSupport {
     /**
      * Adds the given key to the current pending federation
      * @param key the public key to add
-     * @return 0 upon success, 1 if there was no pending federation, 2 if the key was already in the pending federation
+     * @return 1 upon success, -1 if there was no pending federation, -2 if the key was already in the pending federation
      */
     public Integer addFederatorPublicKey(BtcECKey key) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
@@ -928,13 +928,13 @@ public class BridgeSupport {
 
         provider.setPendingFederation(currentPendingFederation);
 
-        return 0;
+        return 1;
     }
 
     /**
      * Removes the given key from the current pending federation
      * @param key the public key to remove
-     * @return 0 upon success, 1 if there was no pending federation, 2 if the key was not part of the pending federation
+     * @return 1 upon success, -1 if there was no pending federation, -2 if the key was not part of the pending federation
      */
     public Integer removeFederatorPublicKey(BtcECKey key) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
@@ -951,7 +951,7 @@ public class BridgeSupport {
 
         provider.setPendingFederation(currentPendingFederation);
 
-        return 0;
+        return 1;
     }
 
     /**
@@ -1010,14 +1010,14 @@ public class BridgeSupport {
     }
 
     /**
-     * Returns the currently pending federation id, or zero if none exists
-     * @return the currently pending federation id, or zero if none exists
+     * Returns the currently pending federation id, or -1 if none exists
+     * @return the currently pending federation id, or -1 if none exists
      */
     public Long getPendingFederationId() {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
-            return 0L;
+            return -1L;
         }
 
         return currentPendingFederation.getId();

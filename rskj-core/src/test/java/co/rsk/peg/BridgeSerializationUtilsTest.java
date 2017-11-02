@@ -115,6 +115,7 @@ public class BridgeSerializationUtilsTest {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_encodeBigInteger();
         mock_RLP_encodeList();
+        mock_RLP_encodeElement();
 
         byte[][] publicKeyBytes = new byte[][]{
                 BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
@@ -144,6 +145,7 @@ public class BridgeSerializationUtilsTest {
         expectedBuilder.append("ff00abcdef"); // Creation time
         expectedBuilder.append("ff03"); // Number of sinatures required
         federation.getPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
+            expectedBuilder.append("dd");
             expectedBuilder.append(Hex.toHexString(key.getPubKey()));
         });
         byte[] expected = Hex.decode(expectedBuilder.toString());
