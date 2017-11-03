@@ -36,6 +36,7 @@ import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import co.rsk.util.TestContract;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -877,25 +878,12 @@ public class Web3ImplTest {
         Account acc1 = new AccountBuilder(world).name("default").balance(BigInteger.valueOf(10000000)).build();
 
         Block genesis = world.getBlockByName("g00");
-
-        /* contract compiled in data attribute of tx
-        contract greeter {
-
-            address owner;
-            modifier onlyOwner { if (msg.sender != owner) throw; _ ; }
-
-            function greeter() public {
-                owner = msg.sender;
-            }
-            function greet(string param) onlyOwner constant returns (string) {
-                return param;
-            }
-        } */
+        TestContract greeter = TestContract.greeter();
         Transaction tx = new TransactionBuilder()
                 .sender(acc1)
                 .gasLimit(BigInteger.valueOf(100000))
                 .gasPrice(BigInteger.ONE)
-                .data("60606040525b33600060006101000a81548173ffffffffffffffffffffffffffffffffffffffff02191690836c010000000000000000000000009081020402179055505b610181806100516000396000f360606040526000357c010000000000000000000000000000000000000000000000000000000090048063ead710c41461003c57610037565b610002565b34610002576100956004808035906020019082018035906020019191908080601f016020809104026020016040519081016040528093929190818152602001838380828437820191505050505050909091905050610103565b60405180806020018281038252838181518152602001915080519060200190808383829060006004602084601f0104600302600f01f150905090810190601f1680156100f55780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b6020604051908101604052806000815260200150600060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614151561017357610002565b81905061017b565b5b91905056")
+                .data(greeter.data)
                 .build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
@@ -904,12 +892,9 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3Mocked(world, block1);
 
-        web3.personal_newAccountWithSeed("default");
-        web3.personal_newAccountWithSeed("notDefault");
-
         Web3.CallArguments argsForCall = new Web3.CallArguments();
         argsForCall.to = TypeConverter.toJsonHex(tx.getContractAddress());
-        argsForCall.data = "0xead710c40000000000000000000000000000000000000000000000000000000064617665";
+        argsForCall.data = greeter.functions.get("greet").formatSignature();
 
         String result = web3.eth_call(argsForCall, "latest");
 
@@ -1273,9 +1258,6 @@ public class Web3ImplTest {
     }
 
     private Web3Impl createWeb3() {
-        BigInteger nonce = BigInteger.ONE;
-        PendingState pendingState = Web3Mocks.getMockPendingState(nonce);
-        SimpleWorldManager worldManager = new SimpleWorldManager(pendingState);
         return createWeb3(Web3Mocks.getMockEthereum());
     }
 
@@ -1287,7 +1269,7 @@ public class Web3ImplTest {
         Ethereum ethMock = Mockito.mock(Ethereum.class);
         ProgramResult res = new ProgramResult();
         res.setHReturn(TypeConverter.stringHexToByteArray("0x0000000000000000000000000000000000000000000000000000000064617665"));
-        Mockito.when(ethMock.callConstantCallTransaction(Matchers.any(), Matchers.eq(block1))).thenReturn(res);
+        Mockito.when(ethMock.callConstant(Matchers.any())).thenReturn(res);
         Mockito.when(ethMock.getWorldManager()).thenReturn(worldManager);
         return createWeb3(ethMock);
     }
