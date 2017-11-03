@@ -25,8 +25,13 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     // responses on wait
     private Map<Long, PendingBodyResponse> pendingBodyResponses = new HashMap<>();
+
     // messages on wait from a peer
-    private Map<NodeID, Long> pendingMessages;
+    private Map<NodeID, Long> messagesByPeers;
+    // chunks currently being downloaded
+    private Map<NodeID, Integer> chunksBeingDownloaded;
+    // segments currently being downloaded (many nodes can be downloading same segment)
+    private Map<NodeID, Integer> segmentsBeingDownloaded;
 
     // headers waiting to be completed by bodies divided by chunks
     private List<Stack<BlockHeader>> pendingHeaders;
@@ -37,8 +42,6 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     // segment a peer belongs
     private HashMap<NodeID, Integer> segmentByNode;
 
-    // chunks currently being downloaded
-    private Map<NodeID, Integer> chunksBeingDownloaded;
 
     // time elapse registered for each active peer
     private Map<NodeID, Duration> timeElapsedByPeer;
@@ -57,8 +60,9 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         this.suitablePeers = new ArrayList<>(skeletons.keySet());
         this.chunksBySegment = new ArrayList<>();
         this.chunksBeingDownloaded = new HashMap<>();
+        this.segmentsBeingDownloaded = new HashMap<>();
         this.timeElapsedByPeer = new HashMap<>();
-        this.pendingMessages = new HashMap<>();
+        this.messagesByPeers = new HashMap<>();
     }
 
     @Override
@@ -69,33 +73,40 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
                     "Unexpected body received from node {}",
                     EventType.UNEXPECTED_MESSAGE, peerId);
 
-            suitablePeers.remove(peerId);
+            clearPeersLists(peerId);
             if (suitablePeers.isEmpty()){
                 syncEventsHandler.stopSyncing();
+            } else {
+                // if this peer has another different message pending then its restored to the stack
+                Long messageId = messagesByPeers.get(peerId);
+                if (messageId != null) {
+                    resetChunkAndHeader(peerId, pendingBodyResponses.get(messageId).header);
+                }
             }
+
             return;
         }
 
-        // we know it exists because it was called from a SyncEvent
-        BlockHeader header = pendingBodyResponses.get(message.getId()).header;
+        // we already checked that this message was expected
+        BlockHeader header = pendingBodyResponses.remove(message.getId()).header;
         Block block = Block.fromValidData(header, message.getTransactions(), message.getUncles());
         if (!blockUnclesHashValidationRule.isValid(block) || !blockTransactionsValidationRule.isValid(block)) {
             syncInformation.reportEvent(
                     "Invalid body received from node {}",
                     EventType.INVALID_MESSAGE, peerId);
 
-            suitablePeers.remove(peerId);
+            clearPeersLists(peerId);
+            resetChunkAndHeader(peerId, header);
             if (suitablePeers.isEmpty()){
                 syncEventsHandler.stopSyncing();
             }
             return;
         }
 
-        pendingBodyResponses.remove(message.getId());
-        pendingMessages.remove(peerId);
+        messagesByPeers.remove(peerId);
         syncInformation.processBlock(block);
 
-        Optional<BlockHeader> nextHeader = updateHeadersAndChunks(peerId);
+        Optional<BlockHeader> nextHeader = updateHeadersAndChunks(peerId, chunksBeingDownloaded.get(peerId));
         if (nextHeader.isPresent()){
             requestBody(peerId, nextHeader.get());
         }
@@ -108,23 +119,45 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         }
     }
 
-    private Optional<BlockHeader> updateHeadersAndChunks(NodeID peerId) {
-        Integer chunkNumber = chunksBeingDownloaded.get(peerId);
-        Stack<BlockHeader> headers = pendingHeaders.get(chunkNumber);
+    private void resetChunkAndHeader(NodeID peerId, BlockHeader header) {
+        Integer chunkNumber = chunksBeingDownloaded.remove(peerId);
+        pendingHeaders.get(chunkNumber).push(header);
+        Integer segmentNumber = segmentsBeingDownloaded.remove(peerId);
+        chunksBySegment.get(segmentNumber).push(chunkNumber);
+    }
+
+    private void clearPeersLists(NodeID peerId) {
+        suitablePeers.remove(peerId);
+        timeElapsedByPeer.remove(peerId);
+    }
+
+    private Optional<BlockHeader> updateHeadersAndChunks(NodeID peerId, Integer currentChunk) {
+        Stack<BlockHeader> headers = pendingHeaders.get(currentChunk);
         if (!headers.empty()) {
             return Optional.of(headers.pop());
         }
 
+        Optional<BlockHeader> header = tryFindBlockHeader(peerId);
+        if (!header.isPresent()){
+            chunksBeingDownloaded.remove(peerId);
+            segmentsBeingDownloaded.remove(peerId);
+        }
+
+        return header;
+    }
+
+    private Optional<BlockHeader> tryFindBlockHeader(NodeID peerId) {
         Integer segmentNumber = segmentByNode.get(peerId);
         // we start from the last chunk that can be downloaded
         while (segmentNumber >= 0){
             Stack<Integer> chunks = chunksBySegment.get(segmentNumber);
             // if the segment stack is empty then continue to next segment
             if (!chunks.empty()) {
-                chunkNumber = chunks.pop();
-                headers = pendingHeaders.get(chunkNumber);
+                Integer chunkNumber = chunks.pop();
+                Stack<BlockHeader> headers = pendingHeaders.get(chunkNumber);
                 if (!headers.empty()) {
-                    chunksBeingDownloaded.replace(peerId, chunkNumber);
+                    chunksBeingDownloaded.put(peerId, chunkNumber);
+                    segmentsBeingDownloaded.put(peerId, segmentNumber);
                     return Optional.of(headers.pop());
                 } else {
                     // log something we are in trouble
@@ -132,8 +165,6 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
             }
             segmentNumber--;
         }
-
-        chunksBeingDownloaded.remove(peerId);
         return Optional.empty();
     }
 
@@ -144,20 +175,13 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     private void startDownloading(List<NodeID> peers) {
-        Duration start = Duration.ZERO;
-        for (int i = 0; i < chunksBySegment.size() && i < suitablePeers.size(); i++){
+        for (int i = 0; i < peers.size(); i++){
             NodeID peerId = peers.get(i);
-            BlockHeader header = getStartingHeader(start, peerId);
-            requestBody(peerId, header);
+            Optional<BlockHeader> nextHeader = tryFindBlockHeader(peerId);
+            if (nextHeader.isPresent()){
+                requestBody(peerId, nextHeader.get());
+            }
         }
-    }
-
-    private BlockHeader getStartingHeader(Duration start, NodeID peerId) {
-        Integer segmentNumber = segmentByNode.get(peerId);
-        Integer chunkNumber = chunksBySegment.get(segmentNumber).pop();
-        chunksBeingDownloaded.put(peerId, chunkNumber);
-        timeElapsedByPeer.put(peerId, start);
-        return pendingHeaders.get(chunkNumber).pop();
     }
 
     @Override
@@ -170,10 +194,11 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         for (NodeID peerId: timeoutedNodes){
             syncInformation.reportEvent("Timeout waiting requests from node {}",
                     EventType.TIMEOUT_MESSAGE, peerId);
-            timeElapsedByPeer.remove(peerId);
-            suitablePeers.remove(peerId);
-            Long messageId = pendingMessages.remove(peerId);
-            pendingBodyResponses.remove(messageId);
+
+            clearPeersLists(peerId);
+            Long messageId = messagesByPeers.remove(peerId);
+            BlockHeader header = pendingBodyResponses.remove(messageId).header;
+            resetChunkAndHeader(peerId, header);
         }
 
         if (suitablePeers.size() == 0){
@@ -181,7 +206,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         }
 
         List<NodeID> inactivePeers = suitablePeers.stream()
-                .filter(p -> chunksBeingDownloaded.containsKey(p))
+                .filter(p -> !chunksBeingDownloaded.containsKey(p))
                 .collect(Collectors.toList());
 
         startDownloading(inactivePeers);
@@ -194,40 +219,52 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     private void initializeSegments() {
         Stack<Integer> segmentChunks = new Stack<>();
         Integer segmentNumber = 0;
-        int currentSize = skeletons.size();
+        Integer chunkNumber = 0;
+        List<NodeID> nodes = getAvailableNodesIDSFor(chunkNumber);
+        List<NodeID> prevNodes = nodes;
+        segmentChunks.push(chunkNumber);
+        chunkNumber++;
 
-        for (Integer chunkNumber = 0; chunkNumber < pendingHeaders.size(); chunkNumber++){
-            final Integer currentChunk = chunkNumber;
-            final Integer currentSegment = segmentNumber;
-            segmentChunks.push(chunkNumber);
-            List<NodeID> nodes = skeletons.entrySet().stream()
-                    .filter(e -> ByteUtil.fastEquals(
-                            // the hash of the start of next chunk
-                            e.getValue().get(currentChunk + 1).getHash(),
-                            // the first header of chunk
-                            pendingHeaders.get(currentChunk).get(0).getHash()))
-                    .map(Map.Entry::getKey)
-                    .collect(Collectors.toList());
-
-            if (currentSize != nodes.size() || chunkNumber == pendingHeaders.size() - 1){
+        for (; chunkNumber < pendingHeaders.size(); chunkNumber++){
+            nodes = getAvailableNodesIDSFor(chunkNumber);
+            if (prevNodes.size() != nodes.size()){
+                final List<NodeID> filteringNodes = nodes;
+                List<NodeID> insertedNodes = prevNodes.stream().filter(k -> !filteringNodes.contains(k)).collect(Collectors.toList());
                 Collections.reverse(segmentChunks);
-                insertSegment(segmentChunks, nodes, chunkNumber, currentSegment);
-                segmentChunks = new Stack<>();
+                insertSegment(segmentChunks, insertedNodes, segmentNumber);
                 segmentNumber++;
-                currentSize = nodes.size();
+                prevNodes = nodes;
+                segmentChunks = new Stack<>();
             }
+            segmentChunks.push(chunkNumber);
         }
+
+        // last segment should be added always
+        Collections.reverse(segmentChunks);
+        insertSegment(segmentChunks, nodes, segmentNumber);
     }
 
-    private void insertSegment(Stack<Integer> segmentChunks, List<NodeID> nodes, Integer chunkNumber, Integer segmentIndex) {
+    private List<NodeID> getAvailableNodesIDSFor(Integer chunkNumber) {
+        return skeletons.entrySet().stream()
+                .filter(e -> e.getValue().size() > chunkNumber + 1 && ByteUtil.fastEquals(
+                        // the hash of the start of next chunk
+                        e.getValue().get(chunkNumber + 1).getHash(),
+                        // the first header of chunk
+                        pendingHeaders.get(chunkNumber).get(0).getHash()))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+    }
+
+    private void insertSegment(Stack<Integer> segmentChunks, List<NodeID> nodes, Integer segmentNumber) {
         chunksBySegment.add(segmentChunks);
-        nodes.stream().forEach(nodeID -> segmentByNode.put(nodeID, segmentIndex));
+        nodes.stream().forEach(nodeID -> segmentByNode.put(nodeID, segmentNumber));
     }
 
     private void requestBody(NodeID peerId, BlockHeader header){
         long messageId = syncEventsHandler.sendBodyRequest(header);
+        timeElapsedByPeer.put(peerId, Duration.ZERO);
         pendingBodyResponses.put(messageId, new PendingBodyResponse(peerId, header));
-        pendingMessages.put(peerId, messageId);
+        messagesByPeers.put(peerId, messageId);
     }
 
     public boolean isExpectedBody(long requestId, NodeID peerId) {

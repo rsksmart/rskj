@@ -131,8 +131,7 @@ public class SyncProcessor implements SyncEventsHandler {
     public void sendSkeletonRequest(MessageChannel peer, long height) {
         logger.trace("Send skeleton request to node {} height {}", peer, height);
         MessageWithId message = new SkeletonRequestMessage(pendingMessages.getNextRequestId(), height);
-        MessageChannel channel = peerStatuses.getPeer(selectedPeerId).getMessageChannel();
-        sendMessage(channel, message);
+        sendMessage(peer, message);
     }
 
     @Override

@@ -198,8 +198,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Blockchain b1 = BlockChainBuilder.ofSize(30, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 2000, false);
 
-        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1);
-        SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
         Assert.assertEquals(2030, node2.getBestBlock().getNumber());
@@ -228,8 +228,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Blockchain b1 = BlockChainBuilder.ofSize(300, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 4000, false);
 
-        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1);
-        SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2, SyncConfiguration.IMMEDIATE_FOR_TESTING);
 
         Assert.assertEquals(300, node1.getBestBlock().getNumber());
         Assert.assertEquals(4300, node2.getBestBlock().getNumber());

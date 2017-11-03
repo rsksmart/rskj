@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
  */
 public class SimpleAsyncNode extends SimpleNode {
     private ExecutorService executor = Executors.newSingleThreadExecutor();
-    private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(450000);
+    private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(20000);
     private SyncProcessor syncProcessor;
 
     public SimpleAsyncNode(MessageHandler handler) {
@@ -99,11 +99,16 @@ public class SimpleAsyncNode extends SimpleNode {
         return this.syncProcessor;
     }
 
-    public static SimpleAsyncNode createNode(Blockchain blockchain) {
+
+
+    public static SimpleAsyncNode createDefaultNode(Blockchain blockChain){
+        return createNode(blockChain, SyncConfiguration.DEFAULT);
+    }
+
+    public static SimpleAsyncNode createNode(Blockchain blockchain, SyncConfiguration syncConfiguration) {
         final BlockStore store = new BlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration, null);
         NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
@@ -119,13 +124,13 @@ public class SimpleAsyncNode extends SimpleNode {
     public static SimpleAsyncNode createNodeWithBlockChainBuilder(int size) {
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockChainBuilder.extend(blockchain, size, false, true);
-        return createNode(blockchain);
+        return createNode(blockchain, SyncConfiguration.IMMEDIATE_FOR_TESTING);
     }
 
     public static SimpleAsyncNode createNodeWithWorldBlockChain(int size, boolean withUncles) {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, size, withUncles, true);
-        return createNode(blockchain);
+        return createNode(blockchain, SyncConfiguration.IMMEDIATE_FOR_TESTING);
     }
 }
