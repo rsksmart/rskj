@@ -1063,7 +1063,7 @@ public class BridgeSupport {
             return null;
         }
 
-        List<BtcECKey> publicKeys = getActiveFederation().getPublicKeys();
+        List<BtcECKey> publicKeys = currentPendingFederation.getPublicKeys();
 
         if (index < 0 || index >= publicKeys.size()) {
             throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and {}", publicKeys.size() - 1));

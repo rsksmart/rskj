@@ -1262,10 +1262,11 @@ public class BridgeSupportTest {
                 Instant.ofEpochMilli(1000),
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
-        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(true, activeFederation, genesisFederation);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(true, activeFederation, genesisFederation, null, null);
 
         Assert.assertEquals(6, bridgeSupport.getFederationSize().intValue());
         Assert.assertEquals(4, bridgeSupport.getFederationThreshold().intValue());
+        Assert.assertEquals(genesisFederation.getAddress().toString(), bridgeSupport.getFederationAddress().toString());
         List<BtcECKey> publicKeys = getTestFederationPublicKeys(6);
         for (int i = 0; i < 6; i++) {
             Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
@@ -1286,11 +1287,72 @@ public class BridgeSupportTest {
                 Instant.ofEpochMilli(1000),
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
-        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, activeFederation, genesisFederation);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, activeFederation, genesisFederation, null, null);
 
         Assert.assertEquals(3, bridgeSupport.getFederationSize().intValue());
         Assert.assertEquals(2, bridgeSupport.getFederationThreshold().intValue());
+        Assert.assertEquals(activeFederation.getAddress().toString(), bridgeSupport.getFederationAddress().toString());
+        List<BtcECKey> publicKeys = getTestFederationPublicKeys(3);
+        for (int i = 0; i < 3; i++) {
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getFederatorPublicKey(i)));
+        }
+    }
 
+    @Test
+    public void getRetiringFederationMethods_none() throws IOException {
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, null);
+
+        Assert.assertEquals(-1, bridgeSupport.getRetiringFederationSize().intValue());
+        Assert.assertEquals(-1, bridgeSupport.getRetiringFederationThreshold().intValue());
+        Assert.assertNull(bridgeSupport.getRetiringFederatorPublicKey(0));
+    }
+
+    @Test
+    public void getRetiringFederationMethods_present() throws IOException {
+        Federation mockedRetiringFederation = new Federation(
+                2,
+                getTestFederationPublicKeys(4),
+                Instant.ofEpochMilli(2000),
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, mockedRetiringFederation, null);
+
+        Assert.assertEquals(4, bridgeSupport.getRetiringFederationSize().intValue());
+        Assert.assertEquals(2, bridgeSupport.getRetiringFederationThreshold().intValue());
+        Assert.assertEquals(2000, bridgeSupport.getRetiringFederationCreationTime().toEpochMilli());
+        Assert.assertEquals(mockedRetiringFederation.getAddress().toString(), bridgeSupport.getRetiringFederationAddress().toString());
+        List<BtcECKey> publicKeys = getTestFederationPublicKeys(4);
+        for (int i = 0; i < 4; i++) {
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getRetiringFederatorPublicKey(i)));
+        }
+    }
+
+    @Test
+    public void getPendingFederationMethods_none() throws IOException {
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, null);
+
+        Assert.assertEquals(-1, bridgeSupport.getPendingFederationId().intValue());
+        Assert.assertEquals(-1, bridgeSupport.getPendingFederationSize().intValue());
+        Assert.assertEquals(-1, bridgeSupport.getPendingFederationThreshold().intValue());
+        Assert.assertNull(bridgeSupport.getPendingFederatorPublicKey(0));
+    }
+
+    @Test
+    public void getPendingFederationMethods_present() throws IOException {
+        PendingFederation mockedPendingFederation = new PendingFederation(
+                2,
+                4,
+                getTestFederationPublicKeys(5)
+        );
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, mockedPendingFederation);
+
+        Assert.assertEquals(2, bridgeSupport.getPendingFederationId().intValue());
+        Assert.assertEquals(5, bridgeSupport.getPendingFederationSize().intValue());
+        Assert.assertEquals(4, bridgeSupport.getPendingFederationThreshold().intValue());
+        List<BtcECKey> publicKeys = getTestFederationPublicKeys(5);
+        for (int i = 0; i < 5; i++) {
+            Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getPendingFederatorPublicKey(i)));
+        }
     }
 
     private BridgeStorageProvider getBridgeStorageProviderMockWithProcessedHashes() throws IOException {
@@ -1305,11 +1367,14 @@ public class BridgeSupportTest {
         return providerMock;
     }
 
-    private BridgeSupport getBridgeSupportWithMocksForFederationTests(boolean genesis, Federation mockedActiveFederation, Federation mockedGenesisFederation) throws IOException {
+    private BridgeSupport getBridgeSupportWithMocksForFederationTests(boolean genesis, Federation mockedActiveFederation, Federation mockedGenesisFederation, Federation mockedRetiringFederation, PendingFederation mockedPendingFederation) throws IOException {
         BridgeConstants constantsMock = mock(BridgeConstants.class);
+        when(constantsMock.getGenesisFederation()).thenReturn(mockedGenesisFederation);
+
         BridgeStorageProvider providerMock = mock(BridgeStorageProvider.class);
         when(providerMock.getActiveFederation()).thenReturn(genesis ? null : mockedActiveFederation);
-        when(constantsMock.getGenesisFederation()).thenReturn(mockedGenesisFederation);
+        when(providerMock.getRetiringFederation()).thenReturn(mockedRetiringFederation);
+        when(providerMock.getPendingFederation()).thenReturn(mockedPendingFederation);
 
         BridgeSupport result = new BridgeSupport(
             null,

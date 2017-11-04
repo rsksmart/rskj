@@ -205,9 +205,9 @@ public class BridgeSerializationUtilsTest {
 
         boolean thrown = false;
         try {
-            Federation deserializedFederation = BridgeSerializationUtils.deserializeFederation(sample, new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
+            BridgeSerializationUtils.deserializeFederation(sample, new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
         } catch (Exception e) {
-            Assert.assertTrue(e.getMessage().contains("Expected 3 elements "));
+            Assert.assertTrue(e.getMessage().contains("Expected 3 elements"));
             thrown = true;
         }
         Assert.assertTrue(thrown);
@@ -243,7 +243,7 @@ public class BridgeSerializationUtilsTest {
 
         boolean thrown = false;
         try {
-            Federation deserializedFederation = BridgeSerializationUtils.deserializeFederation(sample, new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
+            BridgeSerializationUtils.deserializeFederation(sample, new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
         } catch (Exception e) {
             Assert.assertTrue(e.getMessage().contains("Invalid serialized Federation # of signatures required"));
             thrown = true;
@@ -277,9 +277,149 @@ public class BridgeSerializationUtilsTest {
 
         boolean thrown = false;
         try {
-            Federation deserializedFederation = BridgeSerializationUtils.deserializeFederation(sample, new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
+            BridgeSerializationUtils.deserializeFederation(sample, new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
         } catch (Exception e) {
             Assert.assertTrue(e.getMessage().contains("Invalid serialized Federation # of public keys"));
+            thrown = true;
+        }
+        Assert.assertTrue(thrown);
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void serializePendingFederation() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_encodeBigInteger();
+        mock_RLP_encodeList();
+        mock_RLP_encodeElement();
+
+        byte[][] publicKeyBytes = new byte[][]{
+                BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
+        };
+
+        PendingFederation pendingFederation = new PendingFederation(
+                12,
+                3,
+                Arrays.asList(new BtcECKey[]{
+                        BtcECKey.fromPublicOnly(publicKeyBytes[0]),
+                        BtcECKey.fromPublicOnly(publicKeyBytes[1]),
+                        BtcECKey.fromPublicOnly(publicKeyBytes[2]),
+                        BtcECKey.fromPublicOnly(publicKeyBytes[3]),
+                        BtcECKey.fromPublicOnly(publicKeyBytes[4]),
+                        BtcECKey.fromPublicOnly(publicKeyBytes[5]),
+                })
+        );
+
+        byte[] result = BridgeSerializationUtils.serializePendingFederation(pendingFederation);
+        StringBuilder expectedBuilder = new StringBuilder();
+        expectedBuilder.append("ff0c"); // Id
+        expectedBuilder.append("ff03"); // Number of sinatures required
+        pendingFederation.getPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
+            expectedBuilder.append("dd");
+            expectedBuilder.append(Hex.toHexString(key.getPubKey()));
+        });
+        byte[] expected = Hex.decode(expectedBuilder.toString());
+        Assert.assertTrue(Arrays.equals(expected, result));
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void desserializePendingFederation_ok() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_decode2_forFederation();
+
+        byte[][] publicKeyBytes = Arrays.asList(100, 200, 300, 400, 500, 600).stream()
+                .map(k -> BtcECKey.fromPrivate(BigInteger.valueOf(k)))
+                .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                .map(k -> k.getPubKey())
+                .toArray(byte[][]::new);
+
+        StringBuilder sampleBuilder = new StringBuilder();
+        sampleBuilder.append("03"); // Length of outer list
+        sampleBuilder.append("01"); // Length of first element
+        sampleBuilder.append("01"); // Length of second element
+        sampleBuilder.append("cd"); // Length of third element
+        sampleBuilder.append("0a"); // First element (id -> 10)
+        sampleBuilder.append("03"); // Second element (# of signatures required - 3)
+        sampleBuilder.append("06212121212121"); // Third element (inner list, public keys). 6 elements of 33 bytes (0x21 bytes) each.
+        for (int i = 0; i < publicKeyBytes.length; i++) {
+            sampleBuilder.append(Hex.toHexString(publicKeyBytes[i]));
+        }
+        byte[] sample = Hex.decode(sampleBuilder.toString());
+
+        PendingFederation deserializedPendingFederation = BridgeSerializationUtils.deserializePendingFederation(sample);
+
+        Assert.assertEquals(10, deserializedPendingFederation.getId());
+        Assert.assertEquals(3, deserializedPendingFederation.getNumberOfSignaturesRequired());
+        Assert.assertEquals(6, deserializedPendingFederation.getPublicKeys().size());
+        for (int i = 0; i < 6; i++) {
+            Assert.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedPendingFederation.getPublicKeys().get(i).getPubKey()));
+        }
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void desserializePendingFederation_wrongListSize() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_decode2_forFederation();
+
+        StringBuilder sampleBuilder = new StringBuilder();
+        sampleBuilder.append("02"); // Length of outer list
+        sampleBuilder.append("01"); // Length of first element
+        sampleBuilder.append("01"); // Length of second element
+        sampleBuilder.append("cd"); // Length of third element
+        sampleBuilder.append("0b"); // First element (id -> 11)
+        sampleBuilder.append("03"); // Second element (# of signatures required - 3)
+        byte[] sample = Hex.decode(sampleBuilder.toString());
+
+        boolean thrown = false;
+        try {
+            BridgeSerializationUtils.deserializePendingFederation(sample);
+        } catch (Exception e) {
+            Assert.assertTrue(e.getMessage().contains("Expected 3 elements"));
+            thrown = true;
+        }
+        Assert.assertTrue(thrown);
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void desserializePendingFederation_wrongNumberOfSignatures() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_decode2_forFederation();
+
+        byte[][] publicKeyBytes = new byte[][]{
+                BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
+        };
+
+        StringBuilder sampleBuilder = new StringBuilder();
+        sampleBuilder.append("03"); // Length of outer list
+        sampleBuilder.append("01"); // Length of first element
+        sampleBuilder.append("01"); // Length of second element
+        sampleBuilder.append("cd"); // Length of third element
+        sampleBuilder.append("0d"); // First element (id -> 13)
+        sampleBuilder.append("00"); // Second element (# of signatures required -> zero, WRONG value, should throw exception)
+        sampleBuilder.append("06212121212121"); // Third element (inner list, public keys). 6 elements of 33 bytes (0x21 bytes) each.
+        for (int i = 0; i < publicKeyBytes.length; i++) {
+            sampleBuilder.append(Hex.toHexString(publicKeyBytes[i]));
+        }
+        byte[] sample = Hex.decode(sampleBuilder.toString());
+
+        boolean thrown = false;
+        try {
+            BridgeSerializationUtils.deserializePendingFederation(sample);
+        } catch (Exception e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid serialized PendingFederation # of signatures required"));
             thrown = true;
         }
         Assert.assertTrue(thrown);
