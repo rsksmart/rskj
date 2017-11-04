@@ -1,0 +1,23 @@
+name: rskj
+version: git
+summary: RSKj is a Java implementation of the RSK protocol
+description: |
+  RskJ is a Java implementation of the RSK node. For more information about
+  RSK, visit www.rsk.co
+
+grade: devel # must be 'stable' to release into candidate/stable channels
+confinement: devmode # use 'strict' once you have the right plugs and slots
+
+apps:
+  rskj:
+    command: java -cp $SNAP/jar/rskj-core-0.2.5-GINGER-all.jar "$@" co.rsk.Start
+  gennodekeyid:
+    command: java -cp $SNAP/jar/rskj-core-0.2.5-GINGER-all.jar co.rsk.GenNodeKeyId
+
+parts:
+  rskj:
+    source: .
+    plugin: gradle
+    prepare: ./configure.sh
+    gradle-options: [build, shadow, -x, test]
+    gradle-output-dir: rskj-core/build/libs
