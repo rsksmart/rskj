@@ -1,5 +1,6 @@
 package co.rsk.net;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.World;
 import co.rsk.validators.BlockValidationRule;
@@ -19,7 +20,7 @@ public class NodeMessageHandlerUtil {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         return new NodeMessageHandler(processor, null, null, null, null, null, validationRule);
     }
@@ -39,7 +40,7 @@ public class NodeMessageHandlerUtil {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
         ProofOfWorkRule blockValidationRule = new ProofOfWorkRule();
         SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, syncConfiguration, blockValidationRule);
         return new NodeMessageHandler(processor, syncProcessor, null, null, null, null, blockValidationRule);

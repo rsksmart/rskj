@@ -44,7 +44,7 @@ public interface WorldManager {
 
     void addListener(EthereumListener listener);
 
-    EthereumListener getListener();
+    ChannelManager getChannelManager();
 
     org.ethereum.facade.Repository getRepository();
 

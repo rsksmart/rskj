@@ -22,7 +22,6 @@ package org.ethereum.manager;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.net.BlockProcessor;
-import co.rsk.net.NodeBlockProcessor;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.PendingState;
@@ -61,9 +60,6 @@ public class WorldManagerImpl implements WorldManager {
     private Blockchain blockchain;
 
     @Autowired
-    private NodeBlockProcessor nodeBlockProcessor;
-
-    @Autowired
     private Repository repository;
 
     @Autowired
@@ -88,6 +84,9 @@ public class WorldManagerImpl implements WorldManager {
     ConfigCapabilities configCapabilities;
 
     @Autowired
+    BlockProcessor nodeBlockProcessor;
+
+    @Autowired
     private HashRateCalculator hashRateCalculator;
 
     @Autowired
@@ -96,49 +95,60 @@ public class WorldManagerImpl implements WorldManager {
     @Autowired
     private SolidityCompiler solidityCompiler;
 
+    @Override
     @PostConstruct
     public void init() {
         BlockChainLoader loader = new BlockChainLoader(this.blockchain, this.config, this.blockStore, this.repository, this.listener);
         loader.loadBlockchain();
     }
 
+    @Override
     public void addListener(EthereumListener listener) {
         logger.info("Ethereum listener added");
         ((CompositeEthereumListener) this.listener).addListener(listener);
     }
 
-   public EthereumListener getListener() {
-        return listener;
+    @Override
+    public ChannelManager getChannelManager() {
+        return channelManager;
     }
 
+    @Override
     public org.ethereum.facade.Repository getRepository() {
         return (org.ethereum.facade.Repository)repository;
     }
 
+    @Override
     public Blockchain getBlockchain() {
         return blockchain;
     }
 
+    @Override
     public BlockStore getBlockStore() {
         return blockStore;
     }
 
+    @Override
     public PendingState getPendingState() {
         return pendingState;
     }
 
+    @Override
     @PreDestroy
     public void close() {
         repository.close();
         blockchain.close();
     }
 
+    @Override
     public ConfigCapabilities getConfigCapabilities() { return configCapabilities; }
 
+    @Override
     public BlockProcessor getNodeBlockProcessor(){
         return this.nodeBlockProcessor;
     }
 
+    @Override
     public HashRateCalculator getHashRateCalculator() { return hashRateCalculator; }
 
     @Override

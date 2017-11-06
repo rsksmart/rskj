@@ -19,11 +19,14 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.simples.SimpleNodeChannel;
 import co.rsk.test.builders.BlockChainBuilder;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockIdentifier;
+import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Assert;
@@ -48,7 +51,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         processor.processBlock(sender, orphan);
         Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(orphan.getHash()).size() == 1);
@@ -67,7 +70,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         processor.processBlock(sender, orphan);
 
@@ -86,7 +89,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
         processor.acceptAnyBlock();
 
         processor.processBlock(sender, block);
@@ -112,7 +115,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         processor.processBlock(null, block);
 
@@ -132,7 +135,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         processor.processBlock(null, genesis);
         Assert.assertEquals(0, store.size());
@@ -154,7 +157,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         processor.processBlock(null, genesis);
         Assert.assertEquals(0, store.size());
@@ -179,7 +182,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         processor.processBlock(null, genesis);
         Assert.assertEquals(0, store.size());
@@ -200,7 +203,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         Assert.assertFalse(processor.isSyncingBlocks());
     }
@@ -213,7 +216,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         Assert.assertFalse(processor.isSyncingBlocks());
 
@@ -231,7 +234,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         Assert.assertFalse(processor.isSyncingBlocks());
 
@@ -249,7 +252,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         Assert.assertFalse(processor.isSyncingBlocks());
 
@@ -282,7 +285,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         for (Block b : blocks)
             processor.processBlock(null, b);
@@ -302,7 +305,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         for (int k = 0; k < 10; k++)
             processor.processBlock(null, blocks.get(9 - k));
@@ -322,7 +325,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         for (int k = 0; k < 10; k++)
             if (k != 5)
@@ -350,7 +353,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         processor.processBlock(null, block);
 
@@ -374,7 +377,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         final Block genesis = BlockGenerator.getGenesisBlock();
@@ -405,7 +408,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         final Block genesis = BlockGenerator.getGenesisBlock();
@@ -434,7 +437,7 @@ public class NodeBlockProcessorTest {
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         final Block genesis = BlockGenerator.getGenesisBlock();
@@ -454,7 +457,7 @@ public class NodeBlockProcessorTest {
         final Blockchain blockchain = BlockChainBuilder.ofSize(2);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -477,7 +480,7 @@ public class NodeBlockProcessorTest {
         final Blockchain blockchain = BlockChainBuilder.ofSize(2);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -505,7 +508,7 @@ public class NodeBlockProcessorTest {
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -531,7 +534,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -552,7 +555,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -581,7 +584,7 @@ public class NodeBlockProcessorTest {
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -611,7 +614,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -633,7 +636,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -666,7 +669,7 @@ public class NodeBlockProcessorTest {
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -696,7 +699,7 @@ public class NodeBlockProcessorTest {
         final BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -725,7 +728,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -747,7 +750,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -776,7 +779,7 @@ public class NodeBlockProcessorTest {
         final BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -793,7 +796,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -823,7 +826,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -842,7 +845,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -876,7 +879,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -912,7 +915,7 @@ public class NodeBlockProcessorTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 

@@ -21,29 +21,16 @@ package org.ethereum.datasource.mapdb;
 
 import co.rsk.config.RskSystemProperties;
 import org.ethereum.config.SystemProperties;
-import org.ethereum.datasource.KeyValueDataSource;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.stereotype.Component;
 
 import java.io.File;
 
 import static java.lang.System.getProperty;
 
-@Component
 public class MapDBFactoryImpl implements MapDBFactory {
 
     private static final SystemProperties config = RskSystemProperties.CONFIG;
-
-    @Autowired
-    private ApplicationContext ctx;
-
-    @Override
-    public KeyValueDataSource createDataSource() {
-        return ctx.getBean(MapDBDataSource.class);
-    }
 
     @Override
     public DB createDB(String name) {

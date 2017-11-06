@@ -18,6 +18,7 @@
 
 package co.rsk.net.simples;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.*;
 import co.rsk.net.messages.Message;
 import co.rsk.net.sync.SyncConfiguration;
@@ -98,7 +99,7 @@ public class SimpleAsyncNode extends SimpleNode {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
         DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
         SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockValidationRule);
         NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, null, null, null, null, blockValidationRule);

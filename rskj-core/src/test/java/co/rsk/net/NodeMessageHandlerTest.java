@@ -227,7 +227,7 @@ public class NodeMessageHandlerTest {
         final BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
@@ -279,7 +279,7 @@ public class NodeMessageHandlerTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
@@ -306,7 +306,7 @@ public class NodeMessageHandlerTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
@@ -339,7 +339,7 @@ public class NodeMessageHandlerTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
@@ -369,7 +369,7 @@ public class NodeMessageHandlerTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new DummyBlockValidationRule());
 
@@ -392,7 +392,7 @@ public class NodeMessageHandlerTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
@@ -425,7 +425,7 @@ public class NodeMessageHandlerTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
@@ -459,7 +459,7 @@ public class NodeMessageHandlerTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
         class TestCase {
@@ -595,7 +595,7 @@ public class NodeMessageHandlerTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
         int baseBlock = 9;
@@ -702,7 +702,7 @@ public class NodeMessageHandlerTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new DummyBlockValidationRule());
 

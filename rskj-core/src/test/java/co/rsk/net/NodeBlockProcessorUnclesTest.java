@@ -18,6 +18,7 @@
 
 package co.rsk.net;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.blockchain.utils.BlockGenerator;
@@ -147,7 +148,7 @@ public class NodeBlockProcessorUnclesTest {
         BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockChain, nodeInformation, null);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService);
+        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockChain, nodeInformation, blockSyncService);
 
         return processor;
     }

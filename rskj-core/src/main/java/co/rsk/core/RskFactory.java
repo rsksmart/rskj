@@ -23,6 +23,7 @@ import co.rsk.blocks.FileBlockRecorder;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.*;
 import co.rsk.net.eth.RskWireProtocol;
+import co.rsk.net.handler.TxHandler;
 import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
@@ -34,6 +35,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.PendingState;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.facade.Repository;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
@@ -81,7 +83,8 @@ public class RskFactory {
                       ReceiptStore receiptStore,
                       PeerScoringManager peerScoringManager,
                       NodeBlockProcessor nodeBlockProcessor,
-                      NodeMessageHandler nodeMessageHandler) {
+                      NodeMessageHandler nodeMessageHandler,
+                      RskSystemProperties rskSystemProperties) {
 
         logger.info("Running {},  core version: {}-{}", config.genesisInfo(), config.projectVersion(), config.projectVersionModifier());
         BuildInfo.printInfo();
@@ -95,9 +98,9 @@ public class RskFactory {
             String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
             logger.info("Capability eth version: [{}]", versions);
         }
-        if (RskSystemProperties.CONFIG.isBlocksEnabled()) {
-            setupRecorder(rsk, RskSystemProperties.CONFIG.blocksRecorder());
-            setupPlayer(rsk, RskSystemProperties.CONFIG.blocksPlayer());
+        if (rskSystemProperties.isBlocksEnabled()) {
+            setupRecorder(rsk, rskSystemProperties.blocksRecorder());
+            setupPlayer(rsk, rskSystemProperties.blocksPlayer());
         }
         return rsk;
     }
@@ -117,18 +120,22 @@ public class RskFactory {
                     Blockchain bc = rsk.getWorldManager().getBlockchain();
                     ChannelManager cm = rsk.getChannelManager();
 
-                    for (Block block = bplayer.readBlock(); block != null; block = bplayer.readBlock()) {
-                        ImportResult tryToConnectResult = bc.tryToConnect(block);
-                        if (BlockProcessResult.importOk(tryToConnectResult)) {
-                            cm.broadcastBlock(block, null);
-                        }
-                    }
+                    connectBlocks(bplayer, bc, cm);
                 } catch (Exception e) {
                     logger.error("Error", e);
                 } finally {
                     rsk.setIsPlayingBlocks(false);
                 }
             }).start();
+        }
+    }
+
+    private void connectBlocks(FileBlockPlayer bplayer, Blockchain bc, ChannelManager cm) {
+        for (Block block = bplayer.readBlock(); block != null; block = bplayer.readBlock()) {
+            ImportResult tryToConnectResult = bc.tryToConnect(block);
+            if (BlockProcessResult.importOk(tryToConnectResult)) {
+                cm.broadcastBlock(block, null);
+            }
         }
     }
 
@@ -149,8 +156,8 @@ public class RskFactory {
     }
 
     @Bean
-    public NodeBlockProcessor getNodeBlockProcessor(Blockchain blockchain, BlockStore blockStore, BlockNodeInformation blockNodeInformation, BlockSyncService blockSyncService, ChannelManager channelManager) {
-        return new NodeBlockProcessor(blockStore, blockchain, blockNodeInformation, blockSyncService);
+    public NodeBlockProcessor getNodeBlockProcessor(RskSystemProperties config, Blockchain blockchain, BlockStore blockStore, BlockNodeInformation blockNodeInformation, BlockSyncService blockSyncService, ChannelManager channelManager) {
+        return new NodeBlockProcessor(config, blockStore, blockchain, blockNodeInformation, blockSyncService);
     }
 
     @Bean
@@ -172,14 +179,15 @@ public class RskFactory {
     public NodeMessageHandler getNodeMessageHandler(NodeBlockProcessor nodeBlockProcessor,
                                                     SyncProcessor syncProcessor,
                                                     ChannelManager channelManager,
-                                                    WorldManager worldManager,
+                                                    PendingState pendingState,
+                                                    TxHandler txHandler,
                                                     PeerScoringManager peerScoringManager) {
 
         NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(nodeBlockProcessor,
                 syncProcessor,
                 channelManager,
-                worldManager.getPendingState(),
-                new TxHandlerImpl(worldManager),
+                pendingState,
+                txHandler,
                 peerScoringManager,
                 new ProofOfWorkRule());
 
@@ -190,6 +198,11 @@ public class RskFactory {
     @Bean
     public SyncPool getSyncPool(EthereumListener ethereumListener, Blockchain blockchain, SystemProperties config, NodeManager nodeManager, SyncPool.PeerClientFactory peerClientFactory) {
         return new SyncPool(ethereumListener, blockchain, config, nodeManager, peerClientFactory);
+    }
+
+    @Bean
+    public TxHandler getTxHandler(WorldManager worldManager, Repository repository, Blockchain blockchain) {
+        return new TxHandlerImpl(worldManager, repository, blockchain);
     }
 
     @Bean

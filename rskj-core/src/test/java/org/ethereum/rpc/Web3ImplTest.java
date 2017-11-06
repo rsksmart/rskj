@@ -121,11 +121,9 @@ public class Web3ImplTest {
     @Test
     public void eth_syncing_returnFalseWhenNotSyncing()  {
         Web3Impl web3 = new Web3Impl(null, WalletFactory.createWallet(), null);
-        web3.worldManager = new SimpleWorldManager();
         SimpleBlockProcessor nodeProcessor = new SimpleBlockProcessor();
+        web3.worldManager = new SimpleWorldManager(nodeProcessor);
         nodeProcessor.lastKnownBlockNumber = 0;
-
-        //web3.worldManager.setNodeBlockProcessor(nodeProcessor); // currently get last known block is 5
 
         Object result = web3.eth_syncing();
 
@@ -136,13 +134,9 @@ public class Web3ImplTest {
     public void eth_syncing_returnSyncingResultWhenSyncing()  {
 
         Web3Impl web3 = new Web3Impl(null, WalletFactory.createWallet(), null);
-        SimpleWorldManager worldManager = new SimpleWorldManager();
         SimpleBlockProcessor nodeProcessor = new SimpleBlockProcessor();
-        worldManager.setNodeBlockProcessor(nodeProcessor);
-        web3.worldManager = worldManager;
+        web3.worldManager = new SimpleWorldManager(nodeProcessor);
         nodeProcessor.lastKnownBlockNumber = 5;
-
-        // currently get last known block is 5
 
         Object result = web3.eth_syncing();
 

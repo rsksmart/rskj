@@ -20,7 +20,10 @@ package co.rsk.net;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.messages.*;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockIdentifier;
+import org.ethereum.core.Blockchain;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +44,8 @@ import java.util.stream.Collectors;
 public class NodeBlockProcessor implements BlockProcessor {
     private static final Logger logger = LoggerFactory.getLogger("blockprocessor");
 
+    private final Object statusLock = new Object();
+
     private final BlockStore store;
     private final Blockchain blockchain;
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
@@ -52,12 +57,14 @@ public class NodeBlockProcessor implements BlockProcessor {
     /**
      * Creates a new NodeBlockProcessor using the given BlockStore and Blockchain.
      *
+     * @param config         RSK Configuration.
      * @param store        A BlockStore to store the blocks that are not ready for the Blockchain.
      * @param blockchain   The blockchain in which to insert the blocks.
      * @param nodeInformation
      * @param blockSyncService
      */
     public NodeBlockProcessor(
+            @Nonnull final RskSystemProperties config,
             @Nonnull final BlockStore store,
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
@@ -65,7 +72,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         this.store = store;
         this.blockchain = blockchain;
         this.nodeInformation = nodeInformation;
-        this.blocksForPeers = RskSystemProperties.CONFIG.getBlocksForPeers();
+        this.blocksForPeers = config.getBlocksForPeers();
         this.blockSyncService = blockSyncService;
     }
 
@@ -103,16 +110,15 @@ public class NodeBlockProcessor implements BlockProcessor {
     public void processBlockHeaders(@Nonnull final MessageChannel sender, @Nonnull final List<BlockHeader> blockHeaders) {
         // TODO(mvanotti): Implement missing functionality.
 
-        // sort block headers in ascending order, so we can process them in that order.
-        blockHeaders.sort((a, b) -> Long.compare(a.getNumber(), b.getNumber()));
-
         blockHeaders.stream()
-                .filter(h -> !hasHeader(h))
+                .filter(h -> !hasHeader(h.getHash()))
+                // sort block headers in ascending order, so we can process them in that order.
+                .sorted(Comparator.comparingLong(BlockHeader::getNumber))
                 .forEach(h -> processBlockHeader(sender, h));
     }
 
-    private boolean hasHeader(@Nonnull final BlockHeader h) {
-        return hasBlock(h.getHash()) || store.hasHeader(h.getHash());
+    private boolean hasHeader(@Nonnull final byte[] hash) {
+        return hasBlock(hash) || store.hasHeader(hash);
     }
 
     private void processBlockHeader(@Nonnull final MessageChannel sender, @Nonnull final BlockHeader header) {
