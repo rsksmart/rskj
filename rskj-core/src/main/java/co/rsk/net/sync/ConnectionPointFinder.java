@@ -26,6 +26,7 @@ public class ConnectionPointFinder {
     }
 
     public long getFindingHeight() {
+        // this is implemented like this to avoid overflow problems
         return this.start + (this.end - this.start) / 2;
     }
 

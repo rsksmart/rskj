@@ -18,13 +18,13 @@
 
 package co.rsk.net;
 
-import co.rsk.core.bc.BlockUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.ByteArrayWrapper;
 
 import javax.annotation.Nonnull;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by ajlopez on 5/11/2016.
@@ -73,25 +73,11 @@ public class BlockStore {
 
         this.blocks.remove(key);
 
-        Set<Block> bynumber = this.blocksbynumber.get(nkey);
+        removeBlockByNumber(key, nkey);
+        removeBlockByParent(key, pkey);
+    }
 
-        if (bynumber != null && !bynumber.isEmpty()) {
-            Block toremove = null;
-
-            for (Block blk : bynumber) {
-                if (new ByteArrayWrapper(blk.getHash()).equals(key)) {
-                    toremove = blk;
-                    break;
-                }
-            }
-
-            if (toremove != null) {
-                bynumber.remove(toremove);
-                if (bynumber.isEmpty())
-                    this.blocksbynumber.remove(nkey);
-            }
-        }
-
+    private void removeBlockByParent(ByteArrayWrapper key, ByteArrayWrapper pkey) {
         Set<Block> byparent = this.blocksbyparent.get(pkey);
 
         if (byparent != null && !byparent.isEmpty()) {
@@ -113,6 +99,27 @@ public class BlockStore {
         }
     }
 
+    private void removeBlockByNumber(ByteArrayWrapper key, Long nkey) {
+        Set<Block> bynumber = this.blocksbynumber.get(nkey);
+
+        if (bynumber != null && !bynumber.isEmpty()) {
+            Block toremove = null;
+
+            for (Block blk : bynumber) {
+                if (new ByteArrayWrapper(blk.getHash()).equals(key)) {
+                    toremove = blk;
+                    break;
+                }
+            }
+
+            if (toremove != null) {
+                bynumber.remove(toremove);
+                if (bynumber.isEmpty())
+                    this.blocksbynumber.remove(nkey);
+            }
+        }
+    }
+
     public synchronized Block getBlockByHash(byte[] hash) {
         ByteArrayWrapper key = new ByteArrayWrapper(hash);
 
@@ -122,27 +129,23 @@ public class BlockStore {
     public synchronized List<Block> getBlocksByNumber(long number) {
         Long nkey = Long.valueOf(number);
 
-        Set<Block> blocks = this.blocksbynumber.get(nkey);
+        Set<Block> blockSet = this.blocksbynumber.get(nkey);
 
-        if (blocks == null)
-            blocks = new HashSet<Block>();
+        if (blockSet == null)
+            blockSet = new HashSet<>();
 
-        List<Block> ls = new ArrayList<Block>(blocks);
-
-        return ls;
+        return new ArrayList<>(blockSet);
     }
 
     public synchronized List<Block> getBlocksByParentHash(byte[] hash) {
         ByteArrayWrapper key = new ByteArrayWrapper(hash);
 
-        Set<Block> blocks = this.blocksbyparent.get(key);
+        Set<Block> blockSet = this.blocksbyparent.get(key);
 
-        if (blocks == null)
-            blocks = new HashSet<Block>();
+        if (blockSet == null)
+            blockSet = new HashSet<>();
 
-        List<Block> ls = new ArrayList<Block>(blocks);
-
-        return ls;
+        return new ArrayList<>(blockSet);
     }
 
     /**
@@ -152,15 +155,12 @@ public class BlockStore {
      * @return A list with all the children of the given list of blocks.
      */
     public List<Block> getChildrenOf(List<Block> blocks) {
-        final List<Block> children = new ArrayList<>();
+        Set<Block> children = blocks.stream()
+                .flatMap(b-> getBlocksByParentHash(new ByteArrayWrapper(b.getHash()).getData()).stream())
+                .collect(Collectors.toSet());
 
-        // TODO(mc) check if we need a better implementation because BlockUtils.addBlocksToList is O(N^2)
-        blocks.stream()
-                .map(Block::getHash)
-                .map(this::getBlocksByParentHash)
-                .forEach(b -> BlockUtils.addBlocksToList(children, b));
-
-        return children;
+        return children.stream()
+                .collect(Collectors.toList());
     }
 
     public synchronized boolean hasBlock(Block block) {

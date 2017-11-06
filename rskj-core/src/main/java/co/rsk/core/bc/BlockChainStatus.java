@@ -50,7 +50,7 @@ public class BlockChainStatus {
         return totalDifficulty;
     }
 
-    public boolean hasLowerDifficulty(Status status) {
+    public boolean hasLowerTotalDifficultyThan(Status status) {
         return BIUtil.isLessThan(this.totalDifficulty, status.getTotalDifficulty());
     }
 }

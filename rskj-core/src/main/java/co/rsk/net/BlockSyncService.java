@@ -44,7 +44,6 @@ import java.util.*;
 public class BlockSyncService {
     private static final int NBLOCKS_TO_SYNC = 30;
 
-    private final Object syncLock = new Object();
     @GuardedBy("syncLock") private volatile int nsyncs = 0;
     @GuardedBy("syncLock") private volatile boolean syncing = false;
 
@@ -91,7 +90,7 @@ public class BlockSyncService {
         }
 
         // On incoming block, refresh status if needed
-        trySendStatusAll();
+        trySendStatusToActivePeers();
 
         store.removeHeader(block.getHeader());
 
@@ -135,34 +134,30 @@ public class BlockSyncService {
                 BlockUtils.sortBlocksByNumber(this.getParentsNotInBlockchain(block))));
 
         // After adding a long blockchain, refresh status if needed
-        trySendStatusAll();
+        trySendStatusToActivePeers();
 
         return result;
     }
 
-    public boolean isSyncingBlocks() {
-        synchronized (syncLock) {
-            if (!hasBetterBlockToSync()) {
-                syncing = false;
-                return false;
-            }
-
-            if (!syncing) {
-                nsyncs++;
-            }
-            syncing = true;
-
-            return nsyncs < 2;
+    public synchronized boolean isSyncingBlocks() {
+        if (!hasBetterBlockToSync()) {
+            syncing = false;
+            return false;
         }
+
+        if (!syncing) {
+            nsyncs++;
+        }
+        syncing = true;
+
+        return nsyncs < 2;
     }
 
     public boolean hasBetterBlockToSync() {
-        synchronized (syncLock) {
-            long last = this.getLastKnownBlockNumber();
-            long current = this.getBestBlockNumber();
+        long last = this.getLastKnownBlockNumber();
+        long current = this.getBestBlockNumber();
 
-            return last >= current + NBLOCKS_TO_SYNC;
-        }
+        return last >= current + NBLOCKS_TO_SYNC;
     }
 
     public long getLastKnownBlockNumber() {
@@ -182,15 +177,12 @@ public class BlockSyncService {
             this.store.saveBlock(block);
     }
 
-    private void trySendStatusAll() {
+    private void trySendStatusToActivePeers() {
         if (this.hasBetterBlockToSync())
-            sendStatusToAll();
+            sendStatusToActivePeers();
     }
 
-    // This does not send status to ALL anymore.
-    // Should be renamed to something like sendStatusToSome.
-    // Not renamed yet to avoid merging hell.
-    public void sendStatusToAll() {
+    public void sendStatusToActivePeers() {
         synchronized (statusLock) {
             if (this.channelManager == null) {
                 return;

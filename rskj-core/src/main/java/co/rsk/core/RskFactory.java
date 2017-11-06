@@ -150,7 +150,7 @@ public class RskFactory {
 
     @Bean
     public NodeBlockProcessor getNodeBlockProcessor(Blockchain blockchain, BlockStore blockStore, BlockNodeInformation blockNodeInformation, BlockSyncService blockSyncService, ChannelManager channelManager) {
-        return new NodeBlockProcessor(blockStore, blockchain, blockNodeInformation, channelManager, blockSyncService);
+        return new NodeBlockProcessor(blockStore, blockchain, blockNodeInformation, blockSyncService);
     }
 
     @Bean
@@ -227,7 +227,7 @@ public class RskFactory {
                                                                                   Blockchain blockchain,
                                                                                   SystemProperties config,
                                                                                   CompositeEthereumListener ethereumListener){
-        // FIXME break MessageHandler circular dependency
+        // TODO: break MessageHandler circular dependency
         return () -> new RskWireProtocol(peerScoringManager, ctx.getBean(MessageHandler.class), blockchain, config, ethereumListener);
     }
 

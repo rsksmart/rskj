@@ -229,7 +229,7 @@ public class SyncProcessor implements SyncEventsHandler {
         if (chainStatus == null)
             return this.peerStatuses.count();
 
-        return this.peerStatuses.countIf(s -> chainStatus.hasLowerDifficulty(s.getStatus()));
+        return this.peerStatuses.countIf(s -> chainStatus.hasLowerTotalDifficultyThan(s.getStatus()));
     }
 
     @VisibleForTesting
@@ -277,7 +277,7 @@ public class SyncProcessor implements SyncEventsHandler {
         @Override
         public boolean hasLowerDifficulty(MessageChannel peer) {
             Status status = getPeerStatus(peer.getPeerNodeID()).getStatus();
-            return blockchain.getStatus().hasLowerDifficulty(status);
+            return blockchain.getStatus().hasLowerTotalDifficultyThan(status);
         }
 
         @Override

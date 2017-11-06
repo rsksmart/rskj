@@ -794,7 +794,7 @@ public class BlockValidatorTest {
 
         @Override
         public List<Block> getChainBlocksByNumber(long blockNumber) {
-            return null;
+            return new ArrayList<>();
         }
 
         @Override

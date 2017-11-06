@@ -150,8 +150,6 @@ public class FamilyUtils {
             List<Block> uncles = store.getChainBlocksByNumber(ancestor.getNumber());
 
             for (Block uncle : uncles) {
-                if (uncle == null)
-                    continue;
                 if (!Arrays.equals(ancestorParent.getHash(), uncle.getParentHash()))
                     continue;
                 if (Arrays.equals(ancestor.getHash(), uncle.getHash()))
