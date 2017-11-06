@@ -61,6 +61,7 @@ public class TransactionExecutor {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private Transaction tx;
+    private int txindex;
     private Repository track;
     private Repository cacheTrack;
     private BlockStore blockStore;
@@ -89,17 +90,18 @@ public class TransactionExecutor {
 
     boolean localCall = false;
 
-    public TransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
+    public TransactionExecutor(Transaction tx, int txindex, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
 
-        this(tx, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0);
+        this(tx, txindex, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0);
     }
 
-    public TransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
+    public TransactionExecutor(Transaction tx, int txindex, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock,
                                EthereumListener listener, long gasUsedInTheBlock) {
 
         this.tx = tx;
+        this.txindex = txindex;
         this.coinbase = coinbase;
         this.track = track;
         this.cacheTrack = track.startTracking();
@@ -118,7 +120,6 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     public boolean init() {
-
         basicTxCost = tx.transactionCost(executionBlock);
 
         if (localCall) {
@@ -272,7 +273,7 @@ public class TransactionExecutor {
                 result.spendGas(basicTxCost);
             } else {
                 ProgramInvoke programInvoke =
-                        programInvokeFactory.createProgramInvoke(tx, executionBlock, cacheTrack, blockStore);
+                        programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
                 this.vm = new VM();
                 this.program = new Program(code, programInvoke, tx);
@@ -291,7 +292,7 @@ public class TransactionExecutor {
             mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
             cacheTrack.createAccount(tx.getContractAddress());
         } else {
-            ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, executionBlock, cacheTrack, blockStore);
+            ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
             this.vm = new VM();
             this.program = new Program(tx.getData(), programInvoke, tx);

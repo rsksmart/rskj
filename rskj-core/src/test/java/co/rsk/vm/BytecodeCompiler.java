@@ -52,12 +52,9 @@ public class BytecodeCompiler {
     }
 
     private byte compileToken(String token) {
-        if ("push1".equals(token))
-            return 0x60;
-        if ("push2".equals(token))
-            return 0x61;
-        if ("push32".equals(token))
-            return 0x7f;
+        if (token.length() > 4 && "push".equals(token.substring(0, 4)))
+            return (byte)(0x60 + Integer.parseInt(token.substring(4)) - 1);
+
         if ("add".equals(token))
             return 0x01;
         if ("mul".equals(token))
@@ -72,38 +69,22 @@ public class BytecodeCompiler {
             return 0x06;
         if ("smod".equals(token))
             return 0x07;
-        if ("dup1".equals(token))
-            return (byte)0x80;
-        if ("dup2".equals(token))
-            return (byte)0x81;
-        if ("dup3".equals(token))
-            return (byte)0x82;
-        if ("dup4".equals(token))
-            return (byte)0x83;
-        if ("dup5".equals(token))
-            return (byte)0x84;
-        if ("dup6".equals(token))
-            return (byte)0x85;
-        if ("dup7".equals(token))
-            return (byte)0x86;
-        if ("dup8".equals(token))
-            return (byte)0x87;
-        if ("dup9".equals(token))
-            return (byte)0x88;
-        if ("dup10".equals(token))
-            return (byte)0x89;
-        if ("dup11".equals(token))
-            return (byte)0x8a;
-        if ("dup12".equals(token))
-            return (byte)0x8b;
-        if ("dup13".equals(token))
-            return (byte)0x8c;
-        if ("dup14".equals(token))
-            return (byte)0x8d;
-        if ("dup15".equals(token))
-            return (byte)0x8e;
-        if ("dup16".equals(token))
-            return (byte)0x8f;
+
+        if ("dupn".equals(token))
+            return (byte)0xa8;
+
+        if (token.length() > 3 && "dup".equals(token.substring(0, 3)))
+            return (byte)(0x80 + Integer.parseInt(token.substring(3)) - 1);
+
+        if ("swapn".equals(token))
+            return (byte)0xa9;
+
+        if (token.length() > 4 && "swap".equals(token.substring(0, 4)))
+            return (byte)(0x90 + Integer.parseInt(token.substring(4)) - 1);
+
+        if ("txindex".equals(token))
+            return (byte)0xaa;
+
         if ("jump".equals(token))
             return (byte)0x56;
         if ("jumpi".equals(token))
@@ -112,8 +93,8 @@ public class BytecodeCompiler {
             return (byte)0x5b;
 
         if (token.startsWith("0x"))
-            return (byte) Integer.parseInt(token.substring(2), 16);
+            return (byte)Integer.parseInt(token.substring(2), 16);
 
-        return (byte) Integer.parseInt(token);
+        return (byte)Integer.parseInt(token);
     }
 }
