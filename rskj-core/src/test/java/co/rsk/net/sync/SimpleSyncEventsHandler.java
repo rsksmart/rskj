@@ -38,7 +38,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public long sendBodyRequest(@Nonnull BlockHeader header) { return 0; }
+    public long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId) { return 0; }
 
     @Override
     public void sendSkeletonRequest(MessageChannel peer, long height) { }

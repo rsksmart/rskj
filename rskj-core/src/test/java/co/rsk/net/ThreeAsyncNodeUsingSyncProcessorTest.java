@@ -18,6 +18,7 @@
 
 package co.rsk.net;
 
+import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.net.messages.NewBlockHashMessage;
 import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.net.sync.SyncConfiguration;
@@ -27,6 +28,8 @@ import org.ethereum.core.Blockchain;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.Random;
 
 public class ThreeAsyncNodeUsingSyncProcessorTest {
 
@@ -255,6 +258,55 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(200, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 200 (extra tasks are from old sync protocol messages)
         node3.waitExactlyNTasksWithTimeout(200 + 774);
+
+        Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assert.assertTrue(node3.getSyncProcessor().getExpectedResponses().isEmpty());
+
+        Assert.assertEquals(200, node3.getBestBlock().getNumber());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node3.getBestBlock().getHash());
+
+        Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
+        Assert.assertTrue(node3.getSyncProcessor().getExpectedResponses().isEmpty());
+
+        node1.joinWithTimeout();
+        node2.joinWithTimeout();
+        node3.joinWithTimeout();
+
+        Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
+        Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node3.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node3.getNodeID()));
+        Assert.assertFalse(node3.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
+        Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
+    }
+
+    @Ignore("Should be activated when old sync is removed")
+    @Test
+    public void synchronizeWithTwoPeers200AndOneFails() {
+        Blockchain b1 = BlockChainBuilder.ofSize(200, true);
+        Blockchain b2 = BlockChainBuilder.ofSize(0, true);
+
+        SimpleAsyncNode node1 = SimpleAsyncNode.createDefaultNode(b1);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createDefaultNode(b1);
+        SyncConfiguration syncConfiguration = new SyncConfiguration(2,1,0,1,20,192);
+        SimpleAsyncNode node3 = SimpleAsyncNode.createNode(b2, syncConfiguration);
+
+        Assert.assertEquals(200, node1.getBestBlock().getNumber());
+        Assert.assertEquals(200, node2.getBestBlock().getNumber());
+        Assert.assertEquals(0, node3.getBestBlock().getNumber());
+
+        node1.sendFullStatusTo(node3);
+        node2.sendFullStatusTo(node3);
+
+        // sync setup
+        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(200, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        node3.waitUntilNTasksWithTimeout(5);
+        // synchronize 200 (extra tasks are from old sync protocol messages)
+        BodyResponseMessage response = new BodyResponseMessage(new Random().nextLong(), null, null);
+        node3.getSyncProcessor().registerExpectedMessage(response);
+        node3.getSyncProcessor().processBodyResponse(node1.getMessageChannel(node3), response);
+        node3.waitExactlyNTasksWithTimeout(200 + 200);
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node3.getSyncProcessor().getExpectedResponses().isEmpty());

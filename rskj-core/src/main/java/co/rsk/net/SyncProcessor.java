@@ -172,10 +172,10 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public long sendBodyRequest(@Nonnull BlockHeader header) {
-        logger.trace("Send body request block {} hash {} to peer {}", header.getNumber(), HashUtil.shortHash(header.getHash()), selectedPeerId);
+    public long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId) {
+        logger.trace("Send body request block {} hash {} to peer {}", header.getNumber(), HashUtil.shortHash(header.getHash()), peerId);
 
-        MessageChannel channel = peerStatuses.getPeer(selectedPeerId).getMessageChannel();
+        MessageChannel channel = peerStatuses.getPeer(peerId).getMessageChannel();
         BodyRequestMessage message = new BodyRequestMessage(pendingMessages.getNextRequestId(), header.getHash());
         sendMessage(channel, message);
         return message.getId();

@@ -69,21 +69,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     public void newBody(BodyResponseMessage message, MessageChannel peer) {
         NodeID peerId = peer.getPeerNodeID();
         if (!isExpectedBody(message.getId(), peerId)) {
-            syncInformation.reportEvent(
-                    "Unexpected body received from node {}",
-                    EventType.UNEXPECTED_MESSAGE, peerId);
-
-            clearPeersLists(peerId);
-            if (suitablePeers.isEmpty()){
-                syncEventsHandler.stopSyncing();
-            } else {
-                // if this peer has another different message pending then its restored to the stack
-                Long messageId = messagesByPeers.get(peerId);
-                if (messageId != null) {
-                    resetChunkAndHeader(peerId, pendingBodyResponses.get(messageId).header);
-                }
-            }
-
+            handleUnexpectedBody(peerId);
             return;
         }
 
@@ -91,32 +77,65 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         BlockHeader header = pendingBodyResponses.remove(message.getId()).header;
         Block block = Block.fromValidData(header, message.getTransactions(), message.getUncles());
         if (!blockUnclesHashValidationRule.isValid(block) || !blockTransactionsValidationRule.isValid(block)) {
-            syncInformation.reportEvent(
-                    "Invalid body received from node {}",
-                    EventType.INVALID_MESSAGE, peerId);
-
-            clearPeersLists(peerId);
-            resetChunkAndHeader(peerId, header);
-            if (suitablePeers.isEmpty()){
-                syncEventsHandler.stopSyncing();
-            }
+            handleInvalidMessage(peerId, header);
             return;
         }
 
-        messagesByPeers.remove(peerId);
+        // handle block
         syncInformation.processBlock(block);
+        // updates peer downloading information
+        tryRequestNextBody(peerId);
+        // check if this was the last block to download
+        verifyDownloadIsFinished();
+    }
 
+    private void verifyDownloadIsFinished() {
+        // all headers have been requested and there is not any chunk still in process
+        if (chunksBeingDownloaded.size() == 0 &&
+                pendingHeaders.stream().allMatch(stack -> stack.empty())) {
+            // Finished syncing
+            syncEventsHandler.onCompletedSyncing();
+        }
+    }
+
+    private void tryRequestNextBody(NodeID peerId) {
         Optional<BlockHeader> nextHeader = updateHeadersAndChunks(peerId, chunksBeingDownloaded.get(peerId));
         if (nextHeader.isPresent()){
             requestBody(peerId, nextHeader.get());
         }
+    }
 
-        // all headers have been requested and there isnt any chunk still in process
-        if (pendingHeaders.stream().allMatch(stack -> stack.empty()) &&
-                chunksBeingDownloaded.size() == 0) {
-            // Finished syncing
-            syncEventsHandler.onCompletedSyncing();
+    private void handleInvalidMessage(NodeID peerId, BlockHeader header) {
+        syncInformation.reportEvent(
+                "Invalid body received from node {}",
+                EventType.INVALID_MESSAGE, peerId);
+
+        clearPeerInfo(peerId);
+        if (suitablePeers.isEmpty()){
+            syncEventsHandler.stopSyncing();
+            return;
         }
+        messagesByPeers.remove(peerId);
+        resetChunkAndHeader(peerId, header);
+        startDownloading(getInactivePeers());
+    }
+
+    private void handleUnexpectedBody(NodeID peerId) {
+        syncInformation.reportEvent(
+                "Unexpected body received from node {}",
+                EventType.UNEXPECTED_MESSAGE, peerId);
+
+        clearPeerInfo(peerId);
+        if (suitablePeers.isEmpty()) {
+            syncEventsHandler.stopSyncing();
+            return;
+        }
+        // if this peer has another different message pending then its restored to the stack
+        Long messageId = messagesByPeers.remove(peerId);
+        if (messageId != null) {
+            resetChunkAndHeader(peerId, pendingBodyResponses.remove(messageId).header);
+        }
+        startDownloading(getInactivePeers());
     }
 
     private void resetChunkAndHeader(NodeID peerId, BlockHeader header) {
@@ -126,7 +145,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         chunksBySegment.get(segmentNumber).push(chunkNumber);
     }
 
-    private void clearPeersLists(NodeID peerId) {
+    private void clearPeerInfo(NodeID peerId) {
         suitablePeers.remove(peerId);
         timeElapsedByPeer.remove(peerId);
     }
@@ -141,6 +160,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         if (!header.isPresent()){
             chunksBeingDownloaded.remove(peerId);
             segmentsBeingDownloaded.remove(peerId);
+            messagesByPeers.remove(peerId);
         }
 
         return header;
@@ -187,7 +207,8 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     @Override
     public void tick(Duration duration) {
         List<NodeID> timeoutedNodes = timeElapsedByPeer.entrySet().stream()
-                .filter(e -> e.getValue().plus(duration).compareTo(syncConfiguration.getTimeoutWaitingRequest()) >= 0)
+                .filter(e -> chunksBeingDownloaded.containsKey(e.getKey()) &&
+                        e.getValue().plus(duration).compareTo(syncConfiguration.getTimeoutWaitingRequest()) >= 0)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
 
@@ -195,25 +216,28 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
             syncInformation.reportEvent("Timeout waiting requests from node {}",
                     EventType.TIMEOUT_MESSAGE, peerId);
 
-            clearPeersLists(peerId);
             Long messageId = messagesByPeers.remove(peerId);
             BlockHeader header = pendingBodyResponses.remove(messageId).header;
+            clearPeerInfo(peerId);
             resetChunkAndHeader(peerId, header);
         }
 
         if (suitablePeers.size() == 0){
             syncEventsHandler.stopSyncing();
+            return;
         }
 
-        List<NodeID> inactivePeers = suitablePeers.stream()
-                .filter(p -> !chunksBeingDownloaded.containsKey(p))
-                .collect(Collectors.toList());
-
-        startDownloading(inactivePeers);
+        startDownloading(getInactivePeers());
 
         if (chunksBeingDownloaded.size() == 0){
             syncEventsHandler.stopSyncing();
         }
+    }
+
+    private List<NodeID> getInactivePeers() {
+        return suitablePeers.stream()
+                .filter(p -> !chunksBeingDownloaded.containsKey(p))
+                .collect(Collectors.toList());
     }
 
     private void initializeSegments() {
@@ -247,10 +271,10 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     private List<NodeID> getAvailableNodesIDSFor(Integer chunkNumber) {
         return skeletons.entrySet().stream()
                 .filter(e -> e.getValue().size() > chunkNumber + 1 && ByteUtil.fastEquals(
-                        // the hash of the start of next chunk
-                        e.getValue().get(chunkNumber + 1).getHash(),
-                        // the first header of chunk
-                        pendingHeaders.get(chunkNumber).get(0).getHash()))
+                    // the hash of the start of next chunk
+                    e.getValue().get(chunkNumber + 1).getHash(),
+                    // the first header of chunk
+                    pendingHeaders.get(chunkNumber).get(0).getHash()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
@@ -261,9 +285,9 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     private void requestBody(NodeID peerId, BlockHeader header){
-        long messageId = syncEventsHandler.sendBodyRequest(header);
-        timeElapsedByPeer.put(peerId, Duration.ZERO);
+        long messageId = syncEventsHandler.sendBodyRequest(header, peerId);
         pendingBodyResponses.put(messageId, new PendingBodyResponse(peerId, header));
+        timeElapsedByPeer.put(peerId, Duration.ZERO);
         messagesByPeers.put(peerId, messageId);
     }
 

@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
  */
 public class SimpleAsyncNode extends SimpleNode {
     private ExecutorService executor = Executors.newSingleThreadExecutor();
-    private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(20000);
+    private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(5000);
     private SyncProcessor syncProcessor;
 
     public SimpleAsyncNode(MessageHandler handler) {
