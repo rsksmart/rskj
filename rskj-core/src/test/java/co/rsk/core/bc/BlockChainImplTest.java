@@ -20,12 +20,12 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blocks.DummyBlockRecorder;
-import co.rsk.core.BlockchainDummy;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
+import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.datasource.HashMapDB;
@@ -43,7 +43,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Semaphore;
 
 /**
  * Created by ajlopez on 29/07/2016.
@@ -730,8 +729,7 @@ public class BlockChainImplTest {
 
     @Test
     public void createWithoutArgumentsAndUnusedMethods() {
-        BlockChainImpl blockChain = new BlockChainImpl();
-        blockChain.init();
+        BlockChainImpl blockChain = new BlockChainImpl(null, null, null, null, null, null, new DummyBlockValidator());
         blockChain.setExitOn(0);
         blockChain.close();
     }

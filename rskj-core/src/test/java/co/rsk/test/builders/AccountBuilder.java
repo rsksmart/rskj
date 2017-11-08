@@ -18,6 +18,7 @@
 
 package co.rsk.test.builders;
 
+import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
 import org.ethereum.core.Account;
 import org.ethereum.core.Block;
@@ -34,14 +35,17 @@ public class AccountBuilder {
     private String name;
     private BigInteger balance;
     private byte[] code;
-    private World world;
+    private BlockChainImpl blockChain;
 
     public AccountBuilder() {
-
     }
 
     public AccountBuilder(World world) {
-        this.world = world;
+        this(world.getBlockChain());
+    }
+
+    public AccountBuilder(BlockChainImpl blockChain) {
+        this.blockChain = blockChain;
     }
 
     public AccountBuilder name(String name) {
@@ -64,10 +68,10 @@ public class AccountBuilder {
         ECKey key = ECKey.fromPrivate(privateKeyBytes);
         Account account = new Account(key);
 
-        if (world != null) {
-            Block best = world.getBlockChain().getStatus().getBestBlock();
-            BigInteger td = world.getBlockChain().getStatus().getTotalDifficulty();
-            Repository repository = world.getBlockChain().getRepository();
+        if (blockChain != null) {
+            Block best = blockChain.getStatus().getBestBlock();
+            BigInteger td = blockChain.getStatus().getTotalDifficulty();
+            Repository repository = blockChain.getRepository();
 
             Repository track = repository.startTracking();
 
@@ -84,7 +88,7 @@ public class AccountBuilder {
             best.setStateRoot(repository.getRoot());
             best.flushRLP();
 
-            world.getBlockChain().getBlockStore().saveBlock(best, td, true);
+            blockChain.getBlockStore().saveBlock(best, td, true);
         }
 
         return account;

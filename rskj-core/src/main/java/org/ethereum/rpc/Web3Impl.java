@@ -25,9 +25,6 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerManager;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
-import co.rsk.peg.Bridge;
-import co.rsk.peg.BridgeState;
-import co.rsk.peg.BridgeStateReader;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
@@ -54,7 +51,6 @@ import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -176,6 +172,7 @@ public class Web3Impl implements Web3 {
         return x;
     }
 
+    @Override
     public String web3_clientVersion() {
 
         String clientVersion = baseClientVersion + "/" + RskSystemProperties.CONFIG.projectVersion() + "/" +
@@ -190,6 +187,7 @@ public class Web3Impl implements Web3 {
 
     }
 
+    @Override
     public String web3_sha3(String data) throws Exception {
         String s = null;
         try {
@@ -202,6 +200,7 @@ public class Web3Impl implements Web3 {
     }
 
 
+    @Override
     public String net_version() {
         String s = null;
         try {
@@ -216,6 +215,7 @@ public class Web3Impl implements Web3 {
     }
 
 
+    @Override
     public String net_peerCount() {
         String s = null;
         try {
@@ -231,6 +231,7 @@ public class Web3Impl implements Web3 {
     }
 
 
+    @Override
     public boolean net_listening() {
         Boolean s = null;
         try {
@@ -242,6 +243,7 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    @Override
     public String rsk_protocolVersion() {
         String s = null;
         try {
@@ -259,10 +261,12 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    @Override
     public String eth_protocolVersion() {
         return rsk_protocolVersion();
     }
 
+    @Override
     public Object eth_syncing() {
         Blockchain blockchain = worldManager.getBlockchain();
 
@@ -289,6 +293,7 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    @Override
     public String eth_coinbase() {
         String s = null;
         try {
@@ -301,6 +306,7 @@ public class Web3Impl implements Web3 {
     }
 
 
+    @Override
     public boolean eth_mining() {
         Boolean s = null;
         try {
@@ -312,6 +318,7 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    @Override
     public String eth_hashrate() {
         BigInteger hashesPerHour = this.worldManager.getHashRateCalculator().calculateNodeHashRate(Duration.ofHours(1));
         BigDecimal hashesPerSecond = new BigDecimal(hashesPerHour)
@@ -326,6 +333,7 @@ public class Web3Impl implements Web3 {
         return result;
     }
 
+    @Override
     public String eth_netHashrate() {
         BigInteger hashesPerHour = this.worldManager.getHashRateCalculator().calculateNetHashRate(Duration.ofHours(1));
         BigDecimal hashesPerSecond = new BigDecimal(hashesPerHour)
@@ -348,6 +356,7 @@ public class Web3Impl implements Web3 {
         return response.stream().toArray(String[]::new);
     }
 
+    @Override
     public String eth_gasPrice() {
         String gasPrice = null;
         try {
@@ -359,10 +368,12 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    @Override
     public String[] eth_accounts() {
         return ethModule.accounts();
     }
 
+    @Override
     public String eth_blockNumber() {
         Blockchain blockchain = worldManager.getBlockchain();
         Block bestBlock;
@@ -381,6 +392,7 @@ public class Web3Impl implements Web3 {
         return toJsonHex(b);
     }
 
+    @Override
     public String eth_getBalance(String address, String block) throws Exception {
         /* HEX String  - an integer block number
         *  String "earliest"  for the earliest/genesis block
@@ -398,6 +410,7 @@ public class Web3Impl implements Web3 {
         return toJsonHex(balance);
     }
 
+    @Override
     public String eth_getBalance(String address) throws Exception {
         byte[] addressAsByteArray = stringHexToByteArray(address);
         BigInteger balance = this.repository.getBalance(addressAsByteArray);
@@ -450,6 +463,7 @@ public class Web3Impl implements Web3 {
         return worldManager.getBlockchain().getBlockByHash(bhash);
     }
 
+    @Override
     public String eth_getBlockTransactionCountByHash(String blockHash) throws Exception {
         String s = null;
         try {
@@ -483,6 +497,7 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    @Override
     public String eth_getBlockTransactionCountByNumber(String bnOrId) throws Exception {
         String s = null;
         try {
@@ -499,18 +514,21 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    @Override
     public String eth_getUncleCountByBlockHash(String blockHash) throws Exception {
         Block b = getBlockByJSonHash(blockHash);
         long n = b.getUncleList().size();
         return toJsonHex(n);
     }
 
+    @Override
     public String eth_getUncleCountByBlockNumber(String bnOrId) throws Exception {
         Block b = getBlockByNumberOrStr(bnOrId);
         long n = b.getUncleList().size();
         return toJsonHex(n);
     }
 
+    @Override
     public String eth_getCode(String address, String blockId) throws Exception {
         if (blockId == null)
             throw new NullPointerException();
@@ -535,14 +553,17 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    @Override
     public String eth_sign(String addr, String data) throws Exception {
         return ethModule.sign(addr, data);
     }
 
+    @Override
     public String eth_sendTransaction(CallArguments args) throws Exception {
         return this.ethModule.sendTransaction(args);
     }
 
+    @Override
     public String eth_sendRawTransaction(String rawData) throws Exception {
         String s = null;
         try {
@@ -564,23 +585,12 @@ public class Web3Impl implements Web3 {
         }
     }
 
-    public ProgramResult createCallTxAndExecute(CallArguments args, byte[] keyToSign) throws Exception {
-        byte[] nonce = new byte[]{0};
-        Transaction tx = Transaction.create(nonce, args);
-
-        byte[] signingKey = (keyToSign == null) ? new byte[32] : keyToSign;
-
-        tx.sign(signingKey);
-
-        Block block = worldManager.getBlockchain().getBestBlock();
-
-        return eth.callConstantCallTransaction(tx, block);
-    }
-
+    @Override
     public String eth_call(CallArguments args, String bnOrId) throws Exception {
         return ethModule.call(args, bnOrId);
     }
 
+    @Override
     public String eth_estimateGas(CallArguments args) throws Exception {
         return ethModule.estimateGas(args);
     }
@@ -663,6 +673,7 @@ public class Web3Impl implements Web3 {
         return result.toArray(new BlockInformationResult[result.size()]);
     }
 
+    @Override
     public BlockResult eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) throws Exception {
         BlockResult s = null;
         try {
@@ -675,6 +686,7 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    @Override
     public BlockResult eth_getBlockByNumber(String bnOrId, Boolean fullTransactionObjects) throws Exception {
         BlockResult s = null;
         try {
@@ -688,6 +700,7 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    @Override
     public TransactionResultDTO eth_getTransactionByHash(String transactionHash) throws Exception {
         TransactionResultDTO s = null;
         try {
@@ -731,6 +744,7 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    @Override
     public TransactionResultDTO eth_getTransactionByBlockHashAndIndex(String blockHash, String index) throws Exception {
         TransactionResultDTO s = null;
         try {
@@ -751,6 +765,7 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    @Override
     public TransactionResultDTO eth_getTransactionByBlockNumberAndIndex(String bnOrId, String index) throws Exception {
         TransactionResultDTO s = null;
         try {
@@ -772,6 +787,7 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    @Override
     public TransactionReceiptDTO eth_getTransactionReceipt(String transactionHash) throws Exception {
         logger.trace("eth_getTransactionReceipt(" + transactionHash + ")");
 
@@ -1188,23 +1204,29 @@ public class Web3Impl implements Web3 {
         return map;
     }
 
+    @Override
     public void db_putString() {
     }
 
+    @Override
     public void db_getString() {
     }
 
+    @Override
     public boolean eth_submitWork(String nonce, String header, String mince) {
         throw new UnsupportedOperationException("Not implemeted yet");
     }
 
+    @Override
     public boolean eth_submitHashrate(String hashrate, String id) {
         throw new UnsupportedOperationException("Not implemeted yet");
     }
 
+    @Override
     public void db_putHex() {
     }
 
+    @Override
     public void db_getHex() {
     }
 
@@ -1287,16 +1309,9 @@ public class Web3Impl implements Web3 {
         return personalModule.lockAccount(address);
     }
 
+    @Override
     public Map<String, Object> eth_bridgeState() throws Exception {
-        CallArguments arguments = new CallArguments();
-        arguments.to = "0x" + PrecompiledContracts.BRIDGE_ADDR;
-        arguments.data = Hex.toHexString(Bridge.GET_STATE_FOR_DEBUGGING.encodeSignature());
-        arguments.gasPrice = "0x0";
-        arguments.value = "0x0";
-        arguments.gas = "0xf4240";
-        ProgramResult res = createCallTxAndExecute(arguments, new byte[32]);
-        BridgeState state = BridgeStateReader.readSate(TypeConverter.removeZeroX(toJsonHex(res.getHReturn())));
-        return state.stateToMap();
+        return ethModule.bridgeState();
     }
 
     @Override

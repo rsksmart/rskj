@@ -48,10 +48,6 @@ public class SimpleWorldManager implements WorldManager {
         this.nodeBlockProcessor = nodeBlockProcessor;
     }
 
-    public SimpleWorldManager(PendingState pendingState) {
-        this.pendingState = pendingState;
-    }
-
     @Override
     public void init() {
 

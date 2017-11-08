@@ -30,7 +30,6 @@ import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.net.NodeManager;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
@@ -47,7 +46,7 @@ import javax.annotation.PreDestroy;
  * @author Roman Mandeleil
  * @since 01.06.2014
  */
-@Component("worldManager")
+@Component
 public class WorldManagerImpl implements WorldManager {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
@@ -56,40 +55,38 @@ public class WorldManagerImpl implements WorldManager {
     private EthereumListener listener;
 
     @Autowired
-    private Blockchain blockchain;
-
-    @Autowired
-    private Repository repository;
-
-    @Autowired
-    private BlockStore blockStore;
-
-    @Autowired
     private ChannelManager channelManager;
 
     @Autowired
-    private AdminInfo adminInfo;
+    private SystemProperties config;
 
     @Autowired
-    private NodeManager nodeManager;
-
-    @Autowired
-    private PendingState pendingState;
-
-    @Autowired
-    SystemProperties config;
-
-    @Autowired
-    ConfigCapabilities configCapabilities;
-
-    @Autowired
-    BlockProcessor nodeBlockProcessor;
+    private ConfigCapabilities configCapabilities;
 
     @Autowired
     private HashRateCalculator hashRateCalculator;
 
     @Autowired
+    private BlockProcessor nodeBlockProcessor;
+
+    @Autowired
     private NetworkStateExporter networkStateExporter;
+
+    private final Blockchain blockchain;
+    private final BlockStore blockStore;
+    private final PendingState pendingState;
+    private final Repository repository;
+
+    @Autowired
+    public WorldManagerImpl(Blockchain blockchain,
+                            BlockStore blockStore,
+                            PendingState pendingState,
+                            Repository repository) {
+        this.blockchain = blockchain;
+        this.blockStore = blockStore;
+        this.pendingState = pendingState;
+        this.repository = repository;
+    }
 
     @Override
     @PostConstruct

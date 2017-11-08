@@ -22,15 +22,14 @@ import co.rsk.Start;
 import co.rsk.blocks.FileBlockPlayer;
 import co.rsk.blocks.FileBlockRecorder;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.*;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.handler.TxHandlerImpl;
-import co.rsk.rpc.modules.eth.EthModuleSolidity;
-import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
-import co.rsk.rpc.modules.eth.EthModuleSolidityEnabled;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.eth.*;
 import co.rsk.rpc.modules.personal.PersonalModule;
@@ -38,11 +37,9 @@ import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
+import co.rsk.validators.BlockValidator;
 import org.ethereum.config.SystemProperties;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.ImportResult;
-import org.ethereum.core.PendingState;
+import org.ethereum.core.*;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.ReceiptStore;
@@ -198,6 +195,38 @@ public class RskFactory {
                                             PersonalModule personalModule,
                                             EthModule ethModule) {
         return () -> new Web3RskImpl(rsk, config, minerClient, minerServer, personalModule, ethModule);
+    }
+
+    @Bean
+    public BlockChainImpl getBlockchain(org.ethereum.core.Repository repository,
+                                        org.ethereum.db.BlockStore blockStore,
+                                        ReceiptStore receiptStore,
+                                        EthereumListener listener,
+                                        AdminInfo adminInfo,
+                                        BlockValidator blockValidator) {
+        return new BlockChainImpl(
+                repository,
+                blockStore,
+                receiptStore,
+                null, // circular dependency
+                listener,
+                adminInfo,
+                blockValidator
+        );
+    }
+
+    @Bean
+    public PendingState getPendingState(BlockChainImpl blockchain,
+                                        org.ethereum.db.BlockStore blockStore,
+                                        org.ethereum.core.Repository repository) {
+        PendingStateImpl pendingState = new PendingStateImpl(
+                blockchain,
+                blockStore,
+                repository
+        );
+        // circular dependency
+        blockchain.setPendingState(pendingState);
+        return pendingState;
     }
 
     @Bean
