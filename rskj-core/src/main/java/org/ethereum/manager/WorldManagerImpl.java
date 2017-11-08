@@ -33,7 +33,6 @@ import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,9 +90,6 @@ public class WorldManagerImpl implements WorldManager {
 
     @Autowired
     private NetworkStateExporter networkStateExporter;
-
-    @Autowired
-    private SolidityCompiler solidityCompiler;
 
     @Override
     @PostConstruct
@@ -154,11 +150,6 @@ public class WorldManagerImpl implements WorldManager {
     @Override
     public NetworkStateExporter getNetworkStateExporter() {
         return networkStateExporter;
-    }
-
-    @Override
-    public SolidityCompiler getSolidityCompiler() {
-        return this.solidityCompiler;
     }
 
 }

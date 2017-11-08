@@ -18,13 +18,24 @@
 
 package co.rsk.core;
 
+import co.rsk.Start;
 import co.rsk.blocks.FileBlockPlayer;
 import co.rsk.blocks.FileBlockRecorder;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.mine.MinerClient;
+import co.rsk.mine.MinerServer;
 import co.rsk.net.*;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.handler.TxHandlerImpl;
+import co.rsk.rpc.modules.eth.EthModuleSolidity;
+import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
+import co.rsk.rpc.modules.eth.EthModuleSolidityEnabled;
+import co.rsk.rpc.Web3RskImpl;
+import co.rsk.rpc.modules.eth.*;
+import co.rsk.rpc.modules.personal.PersonalModule;
+import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
+import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import org.ethereum.config.SystemProperties;
@@ -32,6 +43,8 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.PendingState;
+import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.facade.Repository;
@@ -52,6 +65,7 @@ import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.rlpx.HandshakeHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.server.*;
+import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
@@ -177,6 +191,16 @@ public class RskFactory {
     }
 
     @Bean
+    public Start.Web3Factory getWeb3Factory(Rsk rsk,
+                                            RskSystemProperties config,
+                                            MinerClient minerClient,
+                                            MinerServer minerServer,
+                                            PersonalModule personalModule,
+                                            EthModule ethModule) {
+        return () -> new Web3RskImpl(rsk, config, minerClient, minerServer, personalModule, ethModule);
+    }
+
+    @Bean
     public EthereumImpl.PeerClientFactory getPeerClientFactory(SystemProperties config,
                                                                EthereumListener ethereumListener,
                                                                EthereumChannelInitializerFactory ethereumChannelInitializerFactory) {
@@ -219,5 +243,47 @@ public class RskFactory {
                                     EthereumListener ethereumListener,
                                     EthereumChannelInitializerFactory ethereumChannelInitializerFactory) {
         return new PeerServerImpl(config, ethereumListener, ethereumChannelInitializerFactory);
+    }
+
+    @Bean
+    public Wallet getWallet(RskSystemProperties config) {
+        if (!config.isWalletEnabled()) {
+            logger.info("Local wallet disabled");
+            return null;
+        }
+
+        logger.info("Local wallet enabled");
+        KeyValueDataSource ds = new LevelDbDataSource("wallet");
+        ds.init();
+        return new Wallet(ds);
+    }
+
+    @Bean
+    public PersonalModule getPersonalModuleWallet(Rsk rsk, Wallet wallet) {
+        if (wallet == null) {
+            return new PersonalModuleWalletDisabled();
+        }
+
+        return new PersonalModuleWalletEnabled(rsk, wallet);
+    }
+
+    @Bean
+    public EthModuleWallet getEthModuleWallet(Rsk rsk, Wallet wallet) {
+        if (wallet == null) {
+            return new EthModuleWalletDisabled();
+        }
+
+        return new EthModuleWalletEnabled(rsk, wallet);
+    }
+
+    @Bean
+    public EthModuleSolidity getEthModuleSolidity(RskSystemProperties config) {
+        try {
+            return new EthModuleSolidityEnabled(new SolidityCompiler(config));
+        } catch (RuntimeException e) {
+            // the only way we currently have to check if Solidity is available is catching this exception
+            logger.debug("Solidity compiler unavailable", e);
+            return new EthModuleSolidityDisabled();
+        }
     }
 }

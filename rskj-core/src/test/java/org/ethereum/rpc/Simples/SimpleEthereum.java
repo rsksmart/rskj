@@ -51,6 +51,14 @@ public class SimpleEthereum implements Ethereum {
     public WorldManager worldManager;
     public Repository repository;
 
+    public SimpleEthereum() {
+        this(null);
+    }
+
+    public SimpleEthereum(SimpleWorldManager worldManager) {
+        this.worldManager = worldManager;
+    }
+
     @Override
     public void connect(InetAddress addr, int port, String remoteId) {
 
