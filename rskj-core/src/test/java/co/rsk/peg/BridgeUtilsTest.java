@@ -25,8 +25,10 @@ import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.wallet.CoinSelector;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.CallTransaction;
@@ -37,11 +39,19 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BridgeUtilsTest {
 
@@ -53,8 +63,6 @@ public class BridgeUtilsTest {
     private static final BigInteger GAS_PRICE = new BigInteger("100");
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
-
-
 
     @Test
     public void testIsLock() throws Exception {
@@ -172,6 +180,53 @@ public class BridgeUtilsTest {
         isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, new UnitTestBlockchainNetConfig(), new BtcECKey().getPrivKeyBytes());
     }
 
+    @Test
+    public void getFederationNoSpendWallet() {
+        NetworkParameters regTestParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        Federation federation = new Federation(1, Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
+                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
+        }), Instant.ofEpochMilli(5005L), regTestParameters);
+        Context mockedBtcContext = mock(Context.class);
+        when(mockedBtcContext.getParams()).thenReturn(regTestParameters);
+
+        Wallet wallet = BridgeUtils.getFederationNoSpendWallet(mockedBtcContext, federation);
+        Assert.assertEquals(BridgeBtcWallet.class, wallet.getClass());
+        assertIsWatching(federation.getAddress(), wallet, regTestParameters);
+    }
+
+    @Test
+    public void getFederationSpendWallet() throws UTXOProviderException {
+        NetworkParameters regTestParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        Federation federation = new Federation(1, Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
+                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
+        }), Instant.ofEpochMilli(5005L), regTestParameters);
+        Context mockedBtcContext = mock(Context.class);
+        when(mockedBtcContext.getParams()).thenReturn(regTestParameters);
+
+        List<UTXO> mockedUtxos = new ArrayList<>();
+        mockedUtxos.add(mock(UTXO.class));
+        mockedUtxos.add(mock(UTXO.class));
+        mockedUtxos.add(mock(UTXO.class));
+
+        Wallet wallet = BridgeUtils.getFederationSpendWallet(mockedBtcContext, federation, mockedUtxos);
+        Assert.assertEquals(BridgeBtcWallet.class, wallet.getClass());
+        assertIsWatching(federation.getAddress(), wallet, regTestParameters);
+        CoinSelector selector = wallet.getCoinSelector();
+        Assert.assertEquals(RskAllowUnconfirmedCoinSelector.class, selector.getClass());
+        UTXOProvider utxoProvider = wallet.getUTXOProvider();
+        Assert.assertEquals(RskUTXOProvider.class, utxoProvider.getClass());
+        Assert.assertEquals(mockedUtxos, utxoProvider.getOpenTransactionOutputs(Collections.emptyList()));
+    }
+
+    private void assertIsWatching(Address address, Wallet wallet, NetworkParameters parameters) {
+        List<Script> watchedScripts = wallet.getWatchedScripts();
+        Assert.assertEquals(1, watchedScripts.size());
+        Script watchedScript = watchedScripts.get(0);
+        Assert.assertTrue(watchedScript.isPayToScriptHash());
+        Assert.assertEquals(address.toString(), watchedScript.getToAddress(parameters).toString());
+    }
 
 
     private void isFreeBridgeTx(boolean expected, String destinationAddress, BlockchainNetConfig config, byte[] privKeyBytes) {
