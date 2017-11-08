@@ -120,6 +120,12 @@ public class NodeMessageHandlerTest {
 
         Assert.assertNotNull(sbp.getBlocks());
         Assert.assertEquals(0, sbp.getBlocks().size());
+        Assert.assertTrue(scoring.isEmpty());
+
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getNodeID());
+
+        Assert.assertNotNull(pscoring);
+        Assert.assertTrue(pscoring.isEmpty());
     }
 
     @Test

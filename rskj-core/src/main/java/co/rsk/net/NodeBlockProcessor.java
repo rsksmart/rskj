@@ -164,9 +164,6 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public BlockProcessResult processBlock(@Nullable final MessageSender sender, @Nonnull final Block block) {
-        if (block.isGenesis())
-            return new BlockProcessResult(false, null);
-
         long bestBlockNumber = this.getBestBlockNumber();
         long blockNumber = block.getNumber();
 
