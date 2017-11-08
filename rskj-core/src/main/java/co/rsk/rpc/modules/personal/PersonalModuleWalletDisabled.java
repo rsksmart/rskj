@@ -19,7 +19,7 @@
 package co.rsk.rpc.modules.personal;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.DisabledWalletException;
+import org.ethereum.rpc.exception.DisabledWalletException;
 import org.ethereum.rpc.Web3;
 
 public class PersonalModuleWalletDisabled implements PersonalModule {

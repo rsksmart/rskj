@@ -16,10 +16,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.core;
+package org.ethereum.rpc.exception;
 
-public class DisabledWalletException extends RuntimeException {
+public class DisabledWalletException extends RskJsonRpcRequestException {
+
+    private static final Integer ERROR_CODE = -32604;
+
     public DisabledWalletException() {
-        super("The local wallet feature is disabled");
+        super(ERROR_CODE, "The local wallet feature is disabled");
     }
 }
