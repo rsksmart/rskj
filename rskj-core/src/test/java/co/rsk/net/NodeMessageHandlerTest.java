@@ -108,6 +108,21 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
+    public void skipProcessGenesisBlock() throws UnknownHostException {
+        SimpleMessageSender sender = new SimpleMessageSender();
+        PeerScoringManager scoring = createPeerScoringManager();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, scoring);
+        Block block = BlockGenerator.getGenesisBlock();
+        Message message = new BlockMessage(block);
+
+        processor.processMessage(sender, message);
+
+        Assert.assertNotNull(sbp.getBlocks());
+        Assert.assertEquals(0, sbp.getBlocks().size());
+    }
+
+    @Test
     public void postBlockMessageTwice() throws InterruptedException, UnknownHostException {
         MessageSender sender = new SimpleMessageSender();
         PeerScoringManager scoring = createPeerScoringManager();
