@@ -170,7 +170,8 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public boolean isWalletEnabled() {
-        return configFromFiles.hasPath("wallet.enabled");
+        return configFromFiles.hasPath("wallet.enabled") &&
+                configFromFiles.getBoolean("wallet.enabled");
     }
 
     public List<WalletAccount> walletAccounts() {
