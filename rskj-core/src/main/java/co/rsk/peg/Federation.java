@@ -108,6 +108,10 @@ public final class Federation {
         return address;
     }
 
+    public int getSize() {
+        return publicKeys.size();
+    }
+
     public Integer getPublicKeyIndex(BtcECKey key) {
         for (int i = 0; i < publicKeys.size(); i++) {
             if (Arrays.equals(key.getPubKey(), publicKeys.get(i).getPubKey())) {
@@ -158,7 +162,7 @@ public final class Federation {
                 .toArray(ByteArrayWrapper[]::new);
 
         return this.getNumberOfSignaturesRequired() == other.getNumberOfSignaturesRequired() &&
-                this.getPublicKeys().size() == other.getPublicKeys().size() &&
+                this.getSize() == other.getSize() &&
                 this.getCreationTime().equals(other.getCreationTime()) &&
                 this.btcParams.equals(other.btcParams) &&
                 Arrays.equals(thisPublicKeys, otherPublicKeys);

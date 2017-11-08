@@ -26,18 +26,20 @@ import co.rsk.bitcoinj.wallet.Wallet;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * @author ajlopez
  * @author Oscar Guindzberg
  */
 public class BridgeBtcWallet extends Wallet {
-    private Federation federation;
+    private List<Federation> federations;
     private Context btcContext;
 
-    public BridgeBtcWallet(Context btcContext, Federation federation) {
+    public BridgeBtcWallet(Context btcContext, List<Federation> federations) {
         super(btcContext);
-        this.federation = federation;
+        this.federations = federations;
         this.btcContext = btcContext;
     }
 
@@ -48,9 +50,10 @@ public class BridgeBtcWallet extends Wallet {
     @Override
     public RedeemData findRedeemDataFromScriptHash(byte[] payToScriptHash) {
         Context.propagate(this.btcContext);
-        if (!Arrays.equals(federation.getP2SHScript().getPubKeyHash(), payToScriptHash)) {
+        Optional<Federation> destinationFederation = federations.stream().filter(federation -> Arrays.equals(federation.getP2SHScript().getPubKeyHash(), payToScriptHash)).findFirst();
+        if (!destinationFederation.isPresent()) {
             return null;
         }
-        return RedeemData.of(federation.getPublicKeys(), federation.getRedeemScript());
+        return RedeemData.of(destinationFederation.get().getPublicKeys(), destinationFederation.get().getRedeemScript());
     }
 }

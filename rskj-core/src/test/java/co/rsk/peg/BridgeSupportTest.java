@@ -749,7 +749,7 @@ public class BridgeSupportTest {
         BtcTransaction t = new BtcTransaction(btcParams);
         TransactionOutput output = new TransactionOutput(btcParams, t, Coin.COIN, new BtcECKey().toAddress(btcParams));
         t.addOutput(output);
-        t.addInput(prevOut).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(bridgeConstants));
+        t.addInput(prevOut).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
         provider.getRskTxsWaitingForSignatures().put(sha3Hash, t);
         provider.save();
         track.commit();
@@ -1095,7 +1095,7 @@ public class BridgeSupportTest {
         // Create tx input
         tx.addInput(prevOut);
         // Create tx input base script sig
-        Script scriptSig = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(bridgeConstants);
+        Script scriptSig = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation);
         // Create sighash
         Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getPublicKeys());
         Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
@@ -1825,8 +1825,9 @@ public class BridgeSupportTest {
     private List<BtcECKey> getTestFederationPublicKeys(int amount) {
         List<BtcECKey> result = new ArrayList<>();
         for (int i = 0; i < amount; i++) {
-            result.add(BtcECKey.fromPrivate(BigInteger.valueOf(amount * 100)));
+            result.add(BtcECKey.fromPrivate(BigInteger.valueOf((i+1) * 100)));
         }
+        result.sort(BtcECKey.PUBKEY_COMPARATOR);
         return result;
     }
 

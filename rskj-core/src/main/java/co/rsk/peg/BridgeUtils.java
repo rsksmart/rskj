@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -67,13 +68,17 @@ public class BridgeUtils {
     }
 
     public static Wallet getFederationNoSpendWallet(Context btcContext, Federation federation) {
-        Wallet wallet = new BridgeBtcWallet(btcContext, federation);
-        wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli());
+        return getFederationsNoSpendWallet(btcContext, Arrays.asList(federation));
+    }
+
+    public static Wallet getFederationsNoSpendWallet(Context btcContext, List<Federation> federations) {
+        Wallet wallet = new BridgeBtcWallet(btcContext, federations);
+        federations.forEach(federation -> wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli()));
         return wallet;
     }
 
     public static Wallet getFederationSpendWallet(Context btcContext, Federation federation, List<UTXO> utxos) {
-        Wallet wallet = new BridgeBtcWallet(btcContext, federation);
+        Wallet wallet = new BridgeBtcWallet(btcContext, Arrays.asList(federation));
 
         RskUTXOProvider utxoProvider = new RskUTXOProvider(btcContext.getParams(), utxos);
         wallet.setUTXOProvider(utxoProvider);
@@ -82,21 +87,28 @@ public class BridgeUtils {
         return wallet;
     }
 
-    public static boolean isLockTx(BtcTransaction tx, Federation federation, TransactionBag wallet, BridgeConstants bridgeConstants) {
-        // First, check tx is not a typical release tx (tx spending from the federation address and
-        // optionally sending some change to the federation address)
-        int i = 0;
-        for (TransactionInput transactionInput : tx.getInputs()) {
-            try {
-                transactionInput.getScriptSig().correctlySpends(tx, i, federation.getP2SHScript(), Script.ALL_VERIFY_FLAGS);
-                // There is an input spending from the federation address, this is not a lock tx
-                return false;
-            } catch (ScriptException se) {
-                // do-nothing, input does not spends from the federation address
-            }
-            i++;
+    private static boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {
+        try {
+            TransactionInput txInput = tx.getInput(index);
+            txInput.getScriptSig().correctlySpends(tx, index, script, Script.ALL_VERIFY_FLAGS);
+            return true;
+        } catch (ScriptException se) {
+            return false;
         }
-        Coin valueSentToMe = tx.getValueSentToMe(wallet);
+    }
+
+    public static boolean isLockTx(BtcTransaction tx, List<Federation> federations, Context btcContext, BridgeConstants bridgeConstants) {
+        // First, check tx is not a typical release tx (tx spending from the any of the federation addresses and
+        // optionally sending some change to any of the federation addresses)
+        for (int i = 0; i < tx.getInputs().size(); i++) {
+            final int index = i;
+            if (federations.stream().anyMatch(federation -> scriptCorrectlySpendsTx(tx, index, federation.getP2SHScript()))) {
+                return false;
+            }
+        }
+
+        Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(btcContext, federations);
+        Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
 
         int valueSentToMeSignum = valueSentToMe.signum();
         if (valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue())) {
@@ -105,10 +117,8 @@ public class BridgeUtils {
         return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue()));
     }
 
-    public static boolean isLockTx(BtcTransaction tx, List<Federation> federations, Context btcContext, BridgeConstants bridgeConstants) {
-        return federations.stream().anyMatch(federation ->
-            isLockTx(tx, federation, getFederationNoSpendWallet(btcContext, federation), bridgeConstants)
-        );
+    public static boolean isLockTx(BtcTransaction tx, Federation federation, Context btcContext, BridgeConstants bridgeConstants) {
+        return isLockTx(tx, Arrays.asList(federation), btcContext, bridgeConstants);
     }
 
     public static boolean isReleaseTx(BtcTransaction tx, Federation federation, BridgeConstants bridgeConstants) {
