@@ -47,7 +47,7 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
             args.from = "";
         }
         // Changes in a snapshot won't be persisted.
-        Repository repository = track.getSnapshotTo(executionBlock.getStateRoot());
+        Repository repository = track.getSnapshotTo(executionBlock.getStateRoot()).startTracking();
 
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
         byte[] nonce = repository.getNonce(hexArgs.getFromAddress()).toByteArray();
