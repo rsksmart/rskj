@@ -107,7 +107,7 @@ public class BlockchainTest {
         Blockchain blockchain = createBlockchain();
 
         Block block1 = BlockGenerator.createChildBlock(blockchain.getBestBlock());
-        Block block2 = BlockGenerator.createChildBlock(block1,0,5);
+        Block block2 = BlockGenerator.createChildBlock(block1, 0, 5);
         Block block1b = BlockGenerator.createChildBlock(blockchain.getBestBlock());
         Block block2b = BlockGenerator.createChildBlock(block1b,0,4);
         // genesis <- block1 <- block2

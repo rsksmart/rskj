@@ -20,7 +20,6 @@ package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
 import co.rsk.core.bc.SelectionRule;
-import com.sun.org.apache.bcel.internal.generic.Select;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -28,7 +27,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.BIUtil;
-import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
