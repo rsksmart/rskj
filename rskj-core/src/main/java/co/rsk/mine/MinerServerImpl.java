@@ -509,7 +509,7 @@ public class MinerServerImpl implements MinerServer {
             try {
                 buildBlockToMine(bestBlock, false);
             } catch (Throwable th) {
-                logger.error("Unexpected error: ", th);
+                logger.error("Unexpected error: {}", th);
                 panicProcessor.panic("mserror", th.getMessage());
             }
         }
