@@ -10,6 +10,11 @@ import java.util.List;
 
 public class SelectionRule {
 
+    private static final int BYTE_ARRAY_OFFSET = 0;
+    private static final int BYTE_ARRAY_LENGTH = 32;
+
+    private static final int PAID_FEES_MULTIPLIER_CRITERIA = 2;
+
     public static boolean shouldWeAddThisBlock(BigInteger blockDifficulty, BigInteger currentDifficulty,
         Block block, Block currentBlock) {
         int compareDifficulties = blockDifficulty.compareTo(currentDifficulty);
@@ -19,32 +24,31 @@ public class SelectionRule {
         }
 
         if (compareDifficulties == 0) {
-            if (block.getHeader().getPaidFees() > 2*currentBlock.getHeader().getPaidFees()
-                    || FastByteComparisons.compareTo(block.getHash(), 0, 32,
-                    currentBlock.getHash(), 0, 32) < 0) {
+            if (block.getHeader().getPaidFees() >
+                    PAID_FEES_MULTIPLIER_CRITERIA * currentBlock.getHeader().getPaidFees()
+                    || FastByteComparisons.compareTo(
+                            block.getHash(), BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH,
+                            currentBlock.getHash(), BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH) < 0) {
                 return true;
             }
         }
         return false;
     }
+    
     public static boolean isBrokenSelectionRule(
             BlockHeader processingBlockHeader, List<Sibling> siblings) {
         int maxUncleCount = 0;
-        boolean paidFeesRule = false;
-        boolean hashRule = false;
         for (Sibling sibling : siblings) {
-            maxUncleCount = maxUncleCount<sibling.getUncleCount()?
-                    sibling.getUncleCount():maxUncleCount;
-            if (!paidFeesRule && sibling.getPaidFees() > 2
+            maxUncleCount = Math.max(maxUncleCount, sibling.getUncleCount());
+            if (sibling.getPaidFees() > PAID_FEES_MULTIPLIER_CRITERIA
                     * processingBlockHeader.getPaidFees()) {
-                paidFeesRule = true;
+                return true;
             }
-            if (!hashRule && FastByteComparisons.compareTo(sibling.getHash(), 0, 32,
-                    processingBlockHeader.getHash(), 0, 32) < 0) {
-                hashRule = true;
+            if (FastByteComparisons.compareTo(sibling.getHash(), BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH,
+                    processingBlockHeader.getHash(), BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH) < 0) {
+                return true;
             }
         }
-        return maxUncleCount > processingBlockHeader.getUncleCount() ||
-                paidFeesRule || hashRule;
+        return maxUncleCount > processingBlockHeader.getUncleCount()
     }
 }
