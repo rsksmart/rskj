@@ -24,6 +24,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.net.BlockProcessor;
+import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.BlockValidationRule;
@@ -63,17 +64,18 @@ import static org.ethereum.util.BIUtil.toBI;
 
 @Component("MinerServer")
 public class MinerServerImpl implements MinerServer {
-
     private static final long DELAY_BETWEEN_BUILD_BLOCKS_MS = TimeUnit.MINUTES.toMillis(1);
+
+    private static final Logger logger = LoggerFactory.getLogger("minerserver");
+    private static final PanicProcessor panicProcessor = new PanicProcessor();
+
+    private static final int CACHE_SIZE = 20;
+
     private final Ethereum ethereum;
     private final BlockStore blockStore;
     private final Blockchain blockchain;
     private final PendingState pendingState;
     private final BlockExecutor executor;
-
-    private static final Logger logger = LoggerFactory.getLogger("minerserver");
-
-    private static final int CACHE_SIZE = 20;
 
     @GuardedBy("lock")
     private LinkedHashMap<Sha3Hash, Block> blocksWaitingforPoW;
@@ -504,7 +506,12 @@ public class MinerServerImpl implements MinerServer {
         @Override
         public void run() {
             Block bestBlock = blockchain.getBestBlock();
-            buildBlockToMine(bestBlock, false);
+            try {
+                buildBlockToMine(bestBlock, false);
+            } catch (Throwable th) {
+                logger.error("Unexpected error: {}", th);
+                panicProcessor.panic("mserror", th.getMessage());
+            }
         }
     }
 }
