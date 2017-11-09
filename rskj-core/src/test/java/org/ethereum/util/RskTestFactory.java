@@ -5,18 +5,19 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.AccountBuilder;
+import co.rsk.test.builders.BlockBuilder;
+import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
-import org.ethereum.core.Account;
-import org.ethereum.core.Genesis;
-import org.ethereum.core.PendingState;
-import org.ethereum.core.Repository;
+import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.*;
 import org.ethereum.rpc.TypeConverter;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * This is the test version of {@link co.rsk.core.RskFactory}, but without Spring.
@@ -32,10 +33,18 @@ public class RskTestFactory {
     private PendingState pendingState;
     private RepositoryImpl repository;
 
+    public RskTestFactory() {
+        Genesis genesis = BlockGenerator.getGenesisBlock();
+        genesis.setStateRoot(getRepository().getRoot());
+        genesis.flushRLP();
+        getBlockchain().setBestBlock(genesis);
+        getBlockchain().setTotalDifficulty(genesis.getCumulativeDifficulty());
+    }
+
     public ContractDetails addContract(String runtimeBytecode) {
 
         Account contractAccount = new AccountBuilder(getBlockchain())
-                .name("contract")
+                .name(runtimeBytecode)
                 .balance(BigInteger.TEN)
                 .code(TypeConverter.stringHexToByteArray(runtimeBytecode))
                 .build();
@@ -91,13 +100,5 @@ public class RskTestFactory {
         }
 
         return repository;
-    }
-
-    public void initGenesis() {
-        Genesis genesis = BlockGenerator.getGenesisBlock();
-        genesis.setStateRoot(getRepository().getRoot());
-        genesis.flushRLP();
-        getBlockchain().setBestBlock(genesis);
-        getBlockchain().setTotalDifficulty(genesis.getCumulativeDifficulty());
     }
 }

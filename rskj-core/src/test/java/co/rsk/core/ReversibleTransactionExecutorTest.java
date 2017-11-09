@@ -35,7 +35,6 @@ public class ReversibleTransactionExecutorTest {
     @Test
     public void executeTransactionHello() {
         RskTestFactory factory = new RskTestFactory();
-        factory.initGenesis();
 
         TestContract hello = TestContract.hello();
         CallTransaction.Function helloFn = hello.functions.get("hello");
@@ -67,7 +66,6 @@ public class ReversibleTransactionExecutorTest {
     @Test
     public void executeTransactionGreeter() {
         RskTestFactory factory = new RskTestFactory();
-        factory.initGenesis();
 
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
@@ -99,7 +97,6 @@ public class ReversibleTransactionExecutorTest {
     @Test
     public void executeTransactionGreeterOtherSender() {
         RskTestFactory factory = new RskTestFactory();
-        factory.initGenesis();
 
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
@@ -132,7 +129,6 @@ public class ReversibleTransactionExecutorTest {
     @Test
     public void executeTransactionCountCallsMultipleTimes() {
         RskTestFactory factory = new RskTestFactory();
-        factory.initGenesis();
 
         TestContract countcalls = TestContract.countcalls();
         CallTransaction.Function callsFn = countcalls.functions.get("calls");

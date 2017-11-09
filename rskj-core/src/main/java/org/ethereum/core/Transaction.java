@@ -516,13 +516,15 @@ public class Transaction implements SerializableObject {
     }
 
     public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit){
-        return create(to, amount, nonce, gasPrice, gasLimit, null);
+        return create(to, amount, nonce, gasPrice, gasLimit, (byte[]) null);
     }
 
     public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data){
-
         byte[] decodedData = data == null ? null : Hex.decode(data);
+        return create(to, amount, nonce, gasPrice, gasLimit, decodedData);
+    }
 
+    public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData) {
         return new Transaction(BigIntegers.asUnsignedByteArray(nonce),
                 BigIntegers.asUnsignedByteArray(gasPrice),
                 BigIntegers.asUnsignedByteArray(gasLimit),

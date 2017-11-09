@@ -100,4 +100,42 @@ public class TestContract {
         functions.put("calls", contract.getByName("calls"));
         return new TestContract(code, functions);
     }
+
+    public static TestContract child() {
+        /*
+        contract Child {
+            function validateValue(uint256 val) public payable {
+                assert(msg.value != val);
+            }
+        }
+        */
+
+        String code = "606060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680635525c61d146044575b600080fd5b60586004808035906020019091905050605a565b005b803414151515606557fe5b505600a165627a7a723058200bea5b783219052a9fcfe59af9c4a1cf0343154ff10bda9b87f15f4684ef28dd0029";
+        String abi = "[{\"constant\":false,\"inputs\":[{\"name\":\"val\",\"type\":\"uint256\"}],\"name\":\"validateValue\",\"outputs\":[],\"payable\":true,\"type\":\"function\"}]";
+
+        CallTransaction.Contract contract = new CallTransaction.Contract(abi);
+
+        Map<String, CallTransaction.Function> functions = new HashMap<>();
+        functions.put("validateValue", contract.getByName("validateValue"));
+        return new TestContract(code, functions);
+    }
+
+    public static TestContract parent() {
+        /*
+        contract Parent {
+            function createChild() public payable {
+                new Child().validateValue(msg.value);
+            }
+        }
+        */
+
+        String code = "606060405260043610610041576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063a3a4ba3114610046575b600080fd5b61004e610050565b005b6100586100f1565b604051809103906000f080151561006e57600080fd5b73ffffffffffffffffffffffffffffffffffffffff16635525c61d346040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b15156100db57600080fd5b6102c65a03f115156100ec57600080fd5b505050565b60405160b08061010183390190560060606040523415600e57600080fd5b60948061001c6000396000f300606060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680635525c61d146044575b600080fd5b60586004808035906020019091905050605a565b005b803414151515606557fe5b505600a165627a7a723058200bea5b783219052a9fcfe59af9c4a1cf0343154ff10bda9b87f15f4684ef28dd0029a165627a7a723058200e99eccb76732af4236048b30d20e0385dbe572b1286e5560472e57a3a6104630029";
+        String abi = "[{\"constant\":false,\"inputs\":[],\"name\":\"createChild\",\"outputs\":[],\"payable\":true,\"type\":\"function\"}]";
+
+        CallTransaction.Contract contract = new CallTransaction.Contract(abi);
+
+        Map<String, CallTransaction.Function> functions = new HashMap<>();
+        functions.put("createChild", contract.getByName("createChild"));
+        return new TestContract(code, functions);
+    }
 }
