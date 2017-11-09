@@ -1154,8 +1154,24 @@ public class BridgeSupportTest {
 
     @Test
     public void registerBtcTransactionLockTx() throws BlockStoreException, AddressFormatException, IOException {
-        // Federation is the genesis federation ATM
-        Federation federation = bridgeConstants.getGenesisFederation();
+        BridgeConstants bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        NetworkParameters parameters = bridgeConstants.getBtcParams();
+
+        List<BtcECKey> federation1Keys = Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPrivate(Hex.decode("fa01")),
+                BtcECKey.fromPrivate(Hex.decode("fa02")),
+        });
+        federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        Federation federation1 = new Federation(1, federation1Keys, Instant.ofEpochMilli(1000L), parameters);
+
+        List<BtcECKey> federation2Keys = Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPrivate(Hex.decode("fb01")),
+                BtcECKey.fromPrivate(Hex.decode("fb02")),
+                BtcECKey.fromPrivate(Hex.decode("fb03")),
+        });
+        federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        Federation federation2 = new Federation(2, federation2Keys, Instant.ofEpochMilli(2000L), parameters);
+
         Repository repository = new RepositoryImpl();
         repository.addBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
         Block executionBlock = Mockito.mock(Block.class);
@@ -1163,28 +1179,44 @@ public class BridgeSupportTest {
 
         Repository track = repository.startTracking();
 
-        BridgeConstants bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        // First transaction goes only to the first federation
+        BtcTransaction tx1 = new BtcTransaction(this.btcParams);
+        tx1.addOutput(Coin.COIN.multiply(5), federation1.getAddress());
+        BtcECKey srcKey1 = new BtcECKey();
+        tx1.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey1));
 
-        BtcTransaction tx = new BtcTransaction(this.btcParams);
-        Address address = federation.getAddress();
-        tx.addOutput(Coin.COIN, address);
-        BtcECKey srcKey = new BtcECKey();
-        tx.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey));
+        // Second transaction goes only to the second federation
+        BtcTransaction tx2 = new BtcTransaction(this.btcParams);
+        tx2.addOutput(Coin.COIN.multiply(10), federation2.getAddress());
+        BtcECKey srcKey2 = new BtcECKey();
+        tx2.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey2));
+
+        // Third transaction has one output to each federation
+        // Lock is expected to be done accordingly and utxos assigned accordingly as well
+        BtcTransaction tx3 = new BtcTransaction(this.btcParams);
+        tx3.addOutput(Coin.COIN.multiply(2), federation1.getAddress());
+        tx3.addOutput(Coin.COIN.multiply(3), federation2.getAddress());
+        BtcECKey srcKey3 = new BtcECKey();
+        tx3.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey3));
 
         Context btcContext = new Context(bridgeConstants.getBtcParams());
         BtcBlockStore btcBlockStore = new RepositoryBlockStore(track, contractAddress);
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress);
+        provider.setActiveFederation(federation1);
+        provider.setRetiringFederation(federation2);
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, provider, btcBlockStore, btcBlockChain);
         Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
         byte[] bits = new byte[1];
-        bits[0] = 0x01;
-        List<Sha256Hash> hashes = new ArrayList<>();
-        hashes.add(tx.getHash());
+        bits[0] = 0x3f;
 
-        PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 1);
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(tx1.getHash());
+        hashes.add(tx2.getHash());
+        hashes.add(tx3.getHash());
+        PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 3);
         List<Sha256Hash> hashlist = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
 
@@ -1193,24 +1225,41 @@ public class BridgeSupportTest {
         btcBlockChain.add(block);
 
         ((SimpleBlockChain)btcBlockChain).useHighBlock();
-        bridgeSupport.registerBtcTransaction(tx, 1, pmt);
+        bridgeSupport.registerBtcTransaction(tx1, 1, pmt);
+        bridgeSupport.registerBtcTransaction(tx2, 1, pmt);
+        bridgeSupport.registerBtcTransaction(tx3, 1, pmt);
         bridgeSupport.save();
         ((SimpleBlockChain)btcBlockChain).useBlock();
 
         track.commit();
 
-        byte[] srcKeyRskAddress = org.ethereum.crypto.ECKey.fromPrivate(srcKey.getPrivKey()).getAddress();
-        Assert.assertEquals(Denomination.SBTC.value(), repository.getBalance(srcKeyRskAddress));
-        Assert.assertEquals(BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()).subtract(Denomination.SBTC.value()), repository.getBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR)));
+        BigInteger amountToHaveBeenCreditedToSrc1 = Denomination.SBTC.value().multiply(BigInteger.valueOf(5));
+        BigInteger amountToHaveBeenCreditedToSrc2 = Denomination.SBTC.value().multiply(BigInteger.valueOf(10));
+        BigInteger amountToHaveBeenCreditedToSrc3 = Denomination.SBTC.value().multiply(BigInteger.valueOf(5));
+        BigInteger totalAmountExpectedToHaveBeenLocked = amountToHaveBeenCreditedToSrc1
+                .add(amountToHaveBeenCreditedToSrc2)
+                .add(amountToHaveBeenCreditedToSrc3);
+        byte[] srcKey1RskAddress = org.ethereum.crypto.ECKey.fromPrivate(srcKey1.getPrivKey()).getAddress();
+        byte[] srcKey2RskAddress = org.ethereum.crypto.ECKey.fromPrivate(srcKey2.getPrivKey()).getAddress();
+        byte[] srcKey3RskAddress = org.ethereum.crypto.ECKey.fromPrivate(srcKey3.getPrivKey()).getAddress();
+
+        Assert.assertEquals(amountToHaveBeenCreditedToSrc1, repository.getBalance(srcKey1RskAddress));
+        Assert.assertEquals(amountToHaveBeenCreditedToSrc2, repository.getBalance(srcKey2RskAddress));
+        Assert.assertEquals(amountToHaveBeenCreditedToSrc3, repository.getBalance(srcKey3RskAddress));
+        Assert.assertEquals(BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()).subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR)));
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertEquals(1, provider2.getActiveFederationBtcUTXOs().size());
-        Assert.assertEquals(Coin.COIN, provider2.getActiveFederationBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(2, provider2.getActiveFederationBtcUTXOs().size());
+        Assert.assertEquals(2, provider2.getRetiringFederationBtcUTXOs().size());
+        Assert.assertEquals(Coin.COIN.multiply(5), provider2.getActiveFederationBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(Coin.COIN.multiply(2), provider2.getActiveFederationBtcUTXOs().get(1).getValue());
+        Assert.assertEquals(Coin.COIN.multiply(10), provider2.getRetiringFederationBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(Coin.COIN.multiply(3), provider2.getRetiringFederationBtcUTXOs().get(1).getValue());
 
         Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertEquals(1, provider2.getBtcTxHashesAlreadyProcessed().size());
+        Assert.assertEquals(3, provider2.getBtcTxHashesAlreadyProcessed().size());
     }
 
     @Test
