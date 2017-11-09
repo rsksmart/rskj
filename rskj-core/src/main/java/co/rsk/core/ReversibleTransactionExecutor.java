@@ -33,6 +33,28 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
 
     private ReversibleTransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore, ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
         super(tx, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock);
+        setLocalCall(true);
+    }
+
+    public static TransactionExecutor executeTransaction(byte[] coinbase,
+                                                         Repository track,
+                                                         BlockStore blockStore,
+                                                         ReceiptStore receiptStore,
+                                                         ProgramInvokeFactory programInvokeFactory,
+                                                         Block executionBlock,
+                                                         byte[] gasPrice,
+                                                         byte[] gasLimit,
+                                                         byte[] toAddress,
+                                                         byte[] value,
+                                                         byte[] data,
+                                                         byte[] fromAddress) {
+        Repository repository = track.getSnapshotTo(executionBlock.getStateRoot()).startTracking();
+
+        byte[] nonce = repository.getNonce(fromAddress).toByteArray();
+        UnsignedTransaction tx = new UnsignedTransaction(nonce, gasPrice, gasLimit, toAddress, value, data, fromAddress);
+
+        ReversibleTransactionExecutor executor = new ReversibleTransactionExecutor(tx, coinbase, repository, blockStore, receiptStore, programInvokeFactory, executionBlock);
+        return executor.executeTransaction();
     }
 
     public static TransactionExecutor executeTransaction(byte[] coinbase,
@@ -45,27 +67,26 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
         if (args.from == null) {
             args.from = "";
         }
-        // Changes in a snapshot won't be persisted.
-        Repository repository = track.getSnapshotTo(executionBlock.getStateRoot());
-
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
-        byte[] nonce = repository.getNonce(hexArgs.getFromAddress()).toByteArray();
-        Transaction tx = new UnsignedTransaction(nonce, hexArgs);
-        TransactionExecutor executor = new ReversibleTransactionExecutor(tx, coinbase, repository, blockStore, receiptStore, programInvokeFactory, executionBlock);
 
-        executor.init();
-        executor.execute();
-        executor.go();
-        executor.finalization();
+        return executeTransaction(coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock,
+                hexArgs.getGasPrice(), hexArgs.getGasLimit(), hexArgs.getToAddress(), hexArgs.getValue(), hexArgs.getData(),
+                hexArgs.getFromAddress());
+    }
 
-        return executor;
+    private TransactionExecutor executeTransaction() {
+        init();
+        execute();
+        go();
+        finalization();
+        return this;
     }
 
     private static class UnsignedTransaction extends Transaction {
 
-        private UnsignedTransaction(byte[] nonce, CallArgumentsToByteArray hexArgs) {
-            super(nonce, hexArgs.getGasPrice(), hexArgs.getGasLimit(), hexArgs.getToAddress(), hexArgs.getValue(), hexArgs.getData());
-            sendAddress = hexArgs.getFromAddress();
+        private UnsignedTransaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] fromAddress) {
+            super(nonce, gasPrice, gasLimit, receiveAddress, value, data);
+            this.sendAddress = fromAddress;
         }
 
         @Override
