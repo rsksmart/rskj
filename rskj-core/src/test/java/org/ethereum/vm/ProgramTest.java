@@ -19,62 +19,17 @@
 
 package org.ethereum.vm;
 
-import co.rsk.test.builders.AccountBuilder;
-import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.TestContract;
-import org.ethereum.core.Account;
-import org.ethereum.core.Block;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ContractDetails;
-import org.ethereum.util.RskTestFactory;
-import org.ethereum.vm.program.Program;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
 public class ProgramTest {
     @Test
     public void childContractDoesntInheritMsgValue() {
-        RskTestFactory factory = new RskTestFactory();
-
-        TestContract parent = TestContract.parent();
-        TestContract child = TestContract.child();
-        ContractDetails parentContractDetails = factory.addContract(parent.data);
-        factory.addContract(child.data);
-
-        ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
-        Account sender = new AccountBuilder(factory.getBlockchain())
-                .name("sender")
-                .balance(BigInteger.valueOf(1000000))
-                .build();
-        Transaction transaction = new TransactionBuilder()
-                .gasLimit(BigInteger.valueOf(100000))
-                .sender(sender)
-                .receiverAddress(parentContractDetails.getAddress())
-                .data(parent.functions.get("createChild").encode())
-                .value(BigInteger.TEN)
-                .build();
-        Block block = factory.getBlockchain().getBestBlock();
-        Repository repository = factory.getRepository();
-        BlockStore blockStore = factory.getBlockStore();
-
-        byte[] bytes = Hex.decode(parent.data);
-
-        ProgramInvoke programInvoke =
-                programInvokeFactory.createProgramInvoke(transaction, block, repository, blockStore);
-
-        VM vm = new VM();
-        Program program = new Program(bytes, programInvoke, transaction);
-
-        vm.play(program);
-        Assert.assertNull(program.getResult().getException());
+        ProgramResult result = TestContract.parent().executeFunction("createChild", BigInteger.TEN);
+        Assert.assertNull(result.getException());
     }
 }
-

@@ -1,7 +1,11 @@
 package co.rsk.util;
 
 import org.ethereum.core.CallTransaction;
+import org.ethereum.util.RskTestFactory;
+import org.ethereum.vm.program.ProgramResult;
+import org.spongycastle.util.encoders.Hex;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -137,5 +141,12 @@ public class TestContract {
         Map<String, CallTransaction.Function> functions = new HashMap<>();
         functions.put("createChild", contract.getByName("createChild"));
         return new TestContract(code, functions);
+    }
+
+    public ProgramResult executeFunction(String functionName, BigInteger value, Object... args) {
+        byte[] runtimeBytecode = Hex.decode(this.data);
+        byte[] encodedCall = this.functions.get(functionName).encode(args);
+
+        return new RskTestFactory().executeRawContract(runtimeBytecode, encodedCall, value);
     }
 }
