@@ -908,7 +908,7 @@ public class TrieImpl implements Trie {
 
         if(putResult.sonToDeleteNumberOfSons() == 0) {
             // a leaf will be deleted
-            if (grandParent.getNumberOfChildren() == 2) {
+            if (parent.getNumberOfChildren() == 2) {
                 // leaf to be deleted has one sibling. As a consequence, there is no need
                 // for a bifurcation at this level so the parent is merged with the survivor son.
                 newTrie = grandParent.deleteSonAndCompress(parent, putResult.getSonToDelete());
