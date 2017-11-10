@@ -118,9 +118,7 @@ public class BridgeUtils {
         // must be the genesis federation.
         // Once the original federation changes, txs are always paid.
         return StringUtils.equals(Hex.toHexString(receiveAddress), PrecompiledContracts.BRIDGE_ADDR) &&
-                blockchainConfig.getConfigForBlock(blockNumber).areBridgeTxsFree() &&
-                rskTx.getSignature() != null &&
-                blockchainConfig.getCommonConstants().getBridgeConstants().getGenesisFederation()
-                        .getPublicKeys().contains(co.rsk.bitcoinj.core.BtcECKey.fromPublicOnly(rskTx.getKey().getPubKey()));
+               blockchainConfig.getConfigForBlock(blockNumber).areBridgeTxsFree() &&
+               rskTx.acceptTransactionSignature();
     }
 }
