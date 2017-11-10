@@ -196,6 +196,17 @@ public class Block {
         this.parsed = true;
     }
 
+    public static Block fromValidData(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
+
+        Block block = new Block((byte[])null);
+        block.parsed = true;
+        block.header = header;
+        block.transactionsList = transactionsList;
+        block.uncleList = uncleList;
+        block.seal();
+        return block;
+    }
+
     public void seal() {
         this.sealed = true;
         this.header.seal();
@@ -478,20 +489,20 @@ public class Block {
         this.transactionsList = Collections.unmodifiableList(parsedTxs);
     }
 
-    private boolean isRemascTransaction(Transaction tx, int txPosition, int txsSize) {
+    public static boolean isRemascTransaction(Transaction tx, int txPosition, int txsSize) {
 
         return isLastTx(txPosition, txsSize) && checkRemascAddress(tx) && checkRemascTxZeroValues(tx);
     }
 
-    private boolean isLastTx(int txPosition, int txsSize) {
+    private static boolean isLastTx(int txPosition, int txsSize) {
         return txPosition == (txsSize - 1);
     }
 
-    private boolean checkRemascAddress(Transaction tx) {
+    private static boolean checkRemascAddress(Transaction tx) {
         return Arrays.areEqual(Hex.decode(PrecompiledContracts.REMASC_ADDR), tx.getReceiveAddress());
     }
 
-    private boolean checkRemascTxZeroValues(Transaction tx) {
+    private static boolean checkRemascTxZeroValues(Transaction tx) {
         if(null != tx.getData() || null != tx.getSignature()){
             return false;
         }
@@ -535,6 +546,10 @@ public class Block {
 
     public boolean isEqual(Block block) {
         return Arrays.areEqual(this.getHash(), block.getHash());
+    }
+
+    public boolean fastEquals(Block block) {
+        return block != null && ByteUtil.fastEquals(this.getHash(), block.getHash());
     }
 
     private byte[] getTransactionsEncoded() {
@@ -651,6 +666,9 @@ public class Block {
         /* A sealed block is immutable, cannot be changed */
         if (this.sealed)
             throw new SealedBlockException("trying to alter bitcoin merged mining header");
+
+        if (!parsed)
+            parseRLP();
 
         this.header.setBitcoinMergedMiningHeader(bitcoinMergedMiningHeader);
         rlpEncoded = null;

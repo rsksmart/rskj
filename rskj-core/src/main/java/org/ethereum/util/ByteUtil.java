@@ -631,4 +631,10 @@ public class ByteUtil {
     public static byte[] shortToBytes(short n) {
         return ByteBuffer.allocate(2).putShort(n).array();
     }
+
+    public static boolean fastEquals(byte[] left, byte[] right) {
+        return FastByteComparisons.compareTo(
+                left, 0, left.length,
+                right, 0, right.length) == 0;
+    }
 }

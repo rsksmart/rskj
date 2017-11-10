@@ -18,12 +18,12 @@
 
 package co.rsk.rpc;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.core.Rsk;
+import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.peg.PegTestUtils;
-import co.rsk.config.RskSystemProperties;
-import co.rsk.core.Wallet;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
@@ -74,7 +74,7 @@ public class Web3RskImplTest {
         Wallet wallet = WalletFactory.createWallet();
         PersonalModule pm = new PersonalModuleWalletEnabled(rsk, wallet);
         EthModule em = new EthModule(rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(rsk, wallet));
-        Web3RskImpl web3 = new Web3RskImpl(rsk, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em);
+        Web3RskImpl web3 = new Web3RskImpl(rsk, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager());
         web3.ext_dumpState();
     }
 

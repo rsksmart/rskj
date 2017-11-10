@@ -65,6 +65,8 @@ public interface ChannelManager {
     @Nonnull
     Set<NodeID> broadcastBlock(@Nonnull final Block block, @Nullable final Set<NodeID> skip);
 
+    @Nonnull
+    Set<NodeID> broadcastBlockHash(@Nonnull final byte[] hash, @Nullable final Set<NodeID> targets);
 
     /**
      * broadcastTransaction Propagates a transaction message across active peers with exclusion of

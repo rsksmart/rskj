@@ -117,6 +117,11 @@ public class BlockUtils {
         blocks.add(block);
     }
 
+    /**
+     * Adds blocks to a list of blocks if they are not already in there.
+     * This method performs expensive operations, so you should be careful
+     * with performance-sensitive code.
+     */
     public static void addBlocksToList(List<Block> blocks, List<Block> newBlocks) {
         for (Block newBlock : newBlocks)
             addBlockToList(blocks, newBlock);

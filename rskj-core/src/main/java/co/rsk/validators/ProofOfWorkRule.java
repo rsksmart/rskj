@@ -17,12 +17,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.validator;
+package co.rsk.validators;
 
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.PartialMerkleTree;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.util.DifficultyUtils;
-import co.rsk.validators.BlockValidationRule;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -37,23 +39,23 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Checks proof value against its boundary for the block header
- *
- * @author Mikhail Kalinin
- * @since 02.09.2015
+ * Checks proof value against its boundary for the block header.
  */
-public class ProofOfWorkRule implements BlockValidationRule {
+public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
     @Override
     public boolean isValid(Block block) {
+        return isValid(block.getHeader());
+    }
 
-        BlockHeader header = block.getHeader();
+    @Override
+    public boolean isValid(BlockHeader header) {
         co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
         byte[] bitcoinMergedMiningCoinbaseTransactionCompressed = header.getBitcoinMergedMiningCoinbaseTransaction();
-        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = bitcoinNetworkParameters.getDefaultSerializer().makeBlock(header.getBitcoinMergedMiningHeader());
-        co.rsk.bitcoinj.core.PartialMerkleTree bitcoinMergedMiningMerkleBranch  = new co.rsk.bitcoinj.core.PartialMerkleTree(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof(), 0);
+        BtcBlock bitcoinMergedMiningBlock = bitcoinNetworkParameters.getDefaultSerializer().makeBlock(header.getBitcoinMergedMiningHeader());
+        PartialMerkleTree bitcoinMergedMiningMerkleBranch  = new PartialMerkleTree(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof(), 0);
 
         BigInteger target = DifficultyUtils.difficultyToTarget(header.getDifficultyBI());
 
@@ -63,7 +65,7 @@ public class ProofOfWorkRule implements BlockValidationRule {
             logger.warn("Hash {} is higher than target {}", bitcoinMergedMiningBlockHashBI.toString(16), target.toString(16));
             return false;
         }
-        
+
         byte[] bitcoinMergedMiningCoinbaseTransactionMidstate = new byte[RskMiningConstants.MIDSTATE_SIZE];
         System.arraycopy(bitcoinMergedMiningCoinbaseTransactionCompressed, 0, bitcoinMergedMiningCoinbaseTransactionMidstate, 8, RskMiningConstants.MIDSTATE_SIZE_TRIMMED);
 
@@ -74,8 +76,8 @@ public class ProofOfWorkRule implements BlockValidationRule {
         byte[] expectedCoinbaseMessageBytes = org.spongycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, header.getHashForMergedMining());
 
 
-        List<Byte> bitcoinMergedMiningCoinbaseTransactionTailAsList = java.util.Arrays.asList(ArrayUtils.toObject(bitcoinMergedMiningCoinbaseTransactionTail));
-        List<Byte> expectedCoinbaseMessageBytesAsList = java.util.Arrays.asList(ArrayUtils.toObject(expectedCoinbaseMessageBytes));
+        List<Byte> bitcoinMergedMiningCoinbaseTransactionTailAsList = Arrays.asList(ArrayUtils.toObject(bitcoinMergedMiningCoinbaseTransactionTail));
+        List<Byte> expectedCoinbaseMessageBytesAsList = Arrays.asList(ArrayUtils.toObject(expectedCoinbaseMessageBytes));
 
         int rskTagPosition = Collections.lastIndexOfSubList(bitcoinMergedMiningCoinbaseTransactionTailAsList, expectedCoinbaseMessageBytesAsList);
         if (rskTagPosition == -1) {
@@ -93,7 +95,7 @@ public class ProofOfWorkRule implements BlockValidationRule {
             return false;
         }
 
-        List<Byte> rskTagAsList = java.util.Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
+        List<Byte> rskTagAsList = Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
         if (rskTagPosition !=
                 Collections.lastIndexOfSubList(bitcoinMergedMiningCoinbaseTransactionTailAsList, rskTagAsList)) {
             logger.warn("The valid RSK tag is not the last RSK tag. Tail: {}.", Arrays.toString(bitcoinMergedMiningCoinbaseTransactionTail));
@@ -113,10 +115,10 @@ public class ProofOfWorkRule implements BlockValidationRule {
         digest.update(bitcoinMergedMiningCoinbaseTransactionTail,0,bitcoinMergedMiningCoinbaseTransactionTail.length);
         byte[] bitcoinMergedMiningCoinbaseTransactionOneRoundOfHash = new byte[32];
         digest.doFinal(bitcoinMergedMiningCoinbaseTransactionOneRoundOfHash, 0);
-        co.rsk.bitcoinj.core.Sha256Hash bitcoinMergedMiningCoinbaseTransactionHash = co.rsk.bitcoinj.core.Sha256Hash.wrapReversed(co.rsk.bitcoinj.core.Sha256Hash.hash(bitcoinMergedMiningCoinbaseTransactionOneRoundOfHash));
+        Sha256Hash bitcoinMergedMiningCoinbaseTransactionHash = Sha256Hash.wrapReversed(Sha256Hash.hash(bitcoinMergedMiningCoinbaseTransactionOneRoundOfHash));
 
-        List<co.rsk.bitcoinj.core.Sha256Hash> txHashesInTheMerkleBranch = new ArrayList<>();
-        co.rsk.bitcoinj.core.Sha256Hash merkleRoot = bitcoinMergedMiningMerkleBranch.getTxnHashAndMerkleRoot(txHashesInTheMerkleBranch);
+        List<Sha256Hash> txHashesInTheMerkleBranch = new ArrayList<>();
+        Sha256Hash merkleRoot = bitcoinMergedMiningMerkleBranch.getTxnHashAndMerkleRoot(txHashesInTheMerkleBranch);
         if (!merkleRoot.equals(bitcoinMergedMiningBlock.getMerkleRoot())) {
             logger.warn("bitcoin merkle root of bitcoin block does not match the merkle root of merkle branch");
             return false;

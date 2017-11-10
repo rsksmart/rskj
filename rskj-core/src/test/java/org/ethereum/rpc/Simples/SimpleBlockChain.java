@@ -150,4 +150,10 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     public List<BlockInformation> getBlocksInformationByNumber(long number) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public boolean hasBlockInSomeBlockchain(byte[] hash) {
+        return false;
+    }
+
 }

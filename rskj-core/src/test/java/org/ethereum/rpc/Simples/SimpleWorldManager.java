@@ -97,6 +97,8 @@ public class SimpleWorldManager implements WorldManager {
         this.blockStore = blockStore;
     }
 
+    public void setNodeBlockProcessor(BlockProcessor nodeBlockProcessor) { this.nodeBlockProcessor = nodeBlockProcessor;}
+
     @Override
     public PendingState getPendingState() {
         return pendingState;

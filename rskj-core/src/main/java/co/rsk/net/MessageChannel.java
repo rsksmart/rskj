@@ -16,10 +16,20 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.test.builders;
+package co.rsk.net;
 
-/**
- * Created by ajlopez on 8/6/2016.
- */
-public class WorldBuilder {
+import co.rsk.net.messages.Message;
+
+import java.net.InetAddress;
+
+public interface MessageChannel {
+    void sendMessage(Message message);
+
+    NodeID getPeerNodeID();
+
+    void setPeerNodeID(byte[] peerNodeId);
+
+    InetAddress getAddress();
+
+    void setAddress(InetAddress address);
 }

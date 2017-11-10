@@ -18,36 +18,46 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.net.MessageSender;
+import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
 import org.ethereum.db.ByteArrayWrapper;
+import org.junit.Assert;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 /**
  * Created by ajlopez on 5/11/2016.
  */
-public class SimpleMessageSender implements MessageSender {
+public class SimpleMessageChannel implements MessageChannel {
     private static Random random = new Random();
-
     private List<Message> messages = new ArrayList<>();
     private NodeID nodeID;
     private InetAddress address;
 
-    public SimpleMessageSender() throws UnknownHostException {
+    public SimpleMessageChannel() {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         this.nodeID = new NodeID(bytes);
-        byte[] addressBytes = new byte[4];
-        random.nextBytes(bytes);
-        this.address = InetAddress.getByAddress(addressBytes);
+
+        try {
+            byte[] addressBytes = new byte[4];
+            random.nextBytes(bytes);
+            this.address = InetAddress.getByAddress(addressBytes);
+        } catch (UnknownHostException e) {
+            Assert.fail("SimpleMessageChannel creation failed");
+        }
+    }
+
+    public SimpleMessageChannel(byte[] nodeID) {
+        this.nodeID = new NodeID(nodeID);
     }
 
     public void sendMessage(Message message) {
@@ -59,32 +69,25 @@ public class SimpleMessageSender implements MessageSender {
     }
 
     public List<Message> getGetBlockMessages() {
-        List<Message> result = new ArrayList<>();
-
-        for (Message message : this.messages)
-            if (message.getMessageType() == MessageType.GET_BLOCK_MESSAGE)
-                result.add(message);
-
-        return result;
+        return this.messages.stream()
+                .filter(message -> message.getMessageType() == MessageType.GET_BLOCK_MESSAGE)
+                .collect(Collectors.toList());
     }
 
     public List<ByteArrayWrapper> getGetBlockMessagesHashes() {
-        List<ByteArrayWrapper> result = new ArrayList<>();
-
-        for (Message message : this.messages)
-            if (message.getMessageType() == MessageType.GET_BLOCK_MESSAGE)
-                result.add(new ByteArrayWrapper(((GetBlockMessage)message).getBlockHash()));
-
-        return result;
+        return this.messages.stream()
+                .filter(message -> message.getMessageType() == MessageType.GET_BLOCK_MESSAGE)
+                .map(message -> new ByteArrayWrapper(((GetBlockMessage) message).getBlockHash()))
+                .collect(Collectors.toList());
     }
 
-    public NodeID getNodeID() {
+    public NodeID getPeerNodeID() {
         return nodeID;
     }
 
     @Override
-    public void setNodeID(byte[] nodeID) {
-        this.nodeID = new NodeID(nodeID);
+    public void setPeerNodeID(byte[] peerNodeId) {
+        this.nodeID = new NodeID(peerNodeId);
     }
 
     @Override

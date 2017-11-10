@@ -30,6 +30,7 @@ import co.rsk.net.*;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.handler.TxHandlerImpl;
+import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.eth.*;
 import co.rsk.rpc.modules.personal.PersonalModule;
@@ -38,12 +39,15 @@ import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.validators.BlockValidator;
+import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.SystemProperties;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.PendingState;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.facade.EthereumImpl;
 import org.ethereum.facade.Repository;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
@@ -63,10 +67,12 @@ import org.ethereum.net.rlpx.HandshakeHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.server.*;
 import org.ethereum.solidity.compiler.SolidityCompiler;
+import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -89,7 +95,6 @@ public class RskFactory {
                       SystemProperties config,
                       CompositeEthereumListener compositeEthereumListener,
                       ReceiptStore receiptStore,
-                      EthereumImpl.PeerClientFactory peerClientFactory,
                       PeerScoringManager peerScoringManager,
                       NodeBlockProcessor nodeBlockProcessor,
                       NodeMessageHandler nodeMessageHandler,
@@ -99,7 +104,7 @@ public class RskFactory {
         BuildInfo.printInfo();
 
         RskImpl rsk = new RskImpl(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory,
-                pendingState, config, compositeEthereumListener, receiptStore, peerScoringManager, nodeBlockProcessor, nodeMessageHandler, peerClientFactory);
+                pendingState, config, compositeEthereumListener, receiptStore, peerScoringManager, nodeBlockProcessor, nodeMessageHandler);
 
         rsk.init();
         rsk.getBlockchain().setRsk(true);  //TODO: check if we can remove this field from org.ethereum.facade.Blockchain
@@ -165,21 +170,48 @@ public class RskFactory {
     }
 
     @Bean
-    public NodeBlockProcessor getNodeBlockProcessor(RskSystemProperties config,
-                                                    Blockchain blockchain,
-                                                    ChannelManager channelManager) {
-        return new NodeBlockProcessor(config, new BlockStore(), blockchain, channelManager);
+    public NodeBlockProcessor getNodeBlockProcessor(RskSystemProperties config, Blockchain blockchain, BlockStore blockStore, BlockNodeInformation blockNodeInformation, BlockSyncService blockSyncService, ChannelManager channelManager) {
+        return new NodeBlockProcessor(config, blockStore, blockchain, blockNodeInformation, blockSyncService);
+    }
+
+    @Bean
+    public SyncProcessor getSyncProcessor(WorldManager worldManager,
+                                          BlockSyncService blockSyncService,
+                                          SyncConfiguration syncConfiguration) {
+        return new SyncProcessor(worldManager.getBlockchain(), blockSyncService, syncConfiguration, new ProofOfWorkRule());
+    }
+
+    @Bean
+    public BlockSyncService getBlockSyncService(Blockchain blockchain,
+                                                BlockStore store,
+                                                BlockNodeInformation nodeInformation,
+                                                ChannelManager channelManager) {
+            return new BlockSyncService(store, blockchain, nodeInformation, channelManager);
     }
 
     @Bean
     public NodeMessageHandler getNodeMessageHandler(NodeBlockProcessor nodeBlockProcessor,
+                                                    SyncProcessor syncProcessor,
                                                     ChannelManager channelManager,
                                                     PendingState pendingState,
                                                     TxHandler txHandler,
                                                     PeerScoringManager peerScoringManager) {
-        NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(nodeBlockProcessor, channelManager, pendingState, txHandler, peerScoringManager);
+
+        NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(nodeBlockProcessor,
+                syncProcessor,
+                channelManager,
+                pendingState,
+                txHandler,
+                peerScoringManager,
+                new ProofOfWorkRule());
+
         nodeMessageHandler.start();
         return nodeMessageHandler;
+    }
+
+    @Bean
+    public SyncPool getSyncPool(EthereumListener ethereumListener, Blockchain blockchain, SystemProperties config, NodeManager nodeManager, SyncPool.PeerClientFactory peerClientFactory) {
+        return new SyncPool(ethereumListener, blockchain, config, nodeManager, peerClientFactory);
     }
 
     @Bean
@@ -193,8 +225,9 @@ public class RskFactory {
                                             MinerClient minerClient,
                                             MinerServer minerServer,
                                             PersonalModule personalModule,
-                                            EthModule ethModule) {
-        return () -> new Web3RskImpl(rsk, config, minerClient, minerServer, personalModule, ethModule);
+                                            EthModule ethModule,
+                                            ChannelManager channelManager) {
+        return () -> new Web3RskImpl(rsk, config, minerClient, minerServer, personalModule, ethModule, channelManager);
     }
 
     @Bean
@@ -230,9 +263,9 @@ public class RskFactory {
     }
 
     @Bean
-    public EthereumImpl.PeerClientFactory getPeerClientFactory(SystemProperties config,
-                                                               EthereumListener ethereumListener,
-                                                               EthereumChannelInitializerFactory ethereumChannelInitializerFactory) {
+    public SyncPool.PeerClientFactory getPeerClientFactory(SystemProperties config,
+                                                           EthereumListener ethereumListener,
+                                                           EthereumChannelInitializerFactory ethereumChannelInitializerFactory) {
         return () -> new PeerClient(config, ethereumListener, ethereumChannelInitializerFactory);
     }
 
@@ -259,12 +292,13 @@ public class RskFactory {
     }
 
     @Bean
-    public EthHandlerFactoryImpl.RskWireProtocolFactory getRskWireProtocolFactory (PeerScoringManager peerScoringManager,
-                                                                                   MessageHandler messageHandler,
-                                                                                   Blockchain blockchain,
-                                                                                   SystemProperties config,
-                                                                                   CompositeEthereumListener ethereumListener){
-        return () -> new RskWireProtocol(peerScoringManager, messageHandler, blockchain, config, ethereumListener);
+    public EthHandlerFactoryImpl.RskWireProtocolFactory getRskWireProtocolFactory(ApplicationContext ctx,
+                                                                                  PeerScoringManager peerScoringManager,
+                                                                                  Blockchain blockchain,
+                                                                                  SystemProperties config,
+                                                                                  CompositeEthereumListener ethereumListener){
+        // TODO: break MessageHandler circular dependency
+        return () -> new RskWireProtocol(peerScoringManager, ctx.getBean(MessageHandler.class), blockchain, config, ethereumListener);
     }
 
     @Bean
@@ -314,5 +348,22 @@ public class RskFactory {
             logger.debug("Solidity compiler unavailable", e);
             return new EthModuleSolidityDisabled();
         }
+    }
+
+    @Bean
+    public SyncConfiguration getSyncConfiguration() {
+        int expectedPeers = RskSystemProperties.CONFIG.getExpectedPeers();
+        int timeoutWaitingPeers = RskSystemProperties.CONFIG.getTimeoutWaitingPeers();
+        int timeoutWaitingRequest = RskSystemProperties.CONFIG.getTimeoutWaitingRequest();
+        int expirationTimePeerStatus = RskSystemProperties.CONFIG.getExpirationTimePeerStatus();
+        int maxSkeletonChunks = RskSystemProperties.CONFIG.getMaxSkeletonChunks();
+        int chunkSize = RskSystemProperties.CONFIG.getChunkSize();
+        return new SyncConfiguration(expectedPeers, timeoutWaitingPeers, timeoutWaitingRequest,
+                expirationTimePeerStatus, maxSkeletonChunks, chunkSize);
+    }
+
+    @Bean
+    public BlockStore getBlockStore(){
+        return new BlockStore();
     }
 }

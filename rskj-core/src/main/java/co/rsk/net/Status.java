@@ -18,16 +18,28 @@
 
 package co.rsk.net;
 
+import javax.annotation.Nullable;
+import java.math.BigInteger;
+
 /**
  * Created by ajlopez on 5/11/2016.
  */
 public class Status {
     private long bestBlockNumber;
     private byte[] bestBlockHash;
+    private byte[] bestBlockParentHash;
+    private BigInteger totalDifficulty;
 
     public Status(long bestBlockNumber, byte[] bestBlockHash) {
         this.bestBlockNumber = bestBlockNumber;
         this.bestBlockHash = bestBlockHash;
+    }
+
+    public Status(long bestBlockNumber, byte[] bestBlockHash, byte[] bestBlockParentHash, BigInteger totalDifficulty) {
+        this.bestBlockNumber = bestBlockNumber;
+        this.bestBlockHash = bestBlockHash;
+        this.bestBlockParentHash = bestBlockParentHash;
+        this.totalDifficulty = totalDifficulty;
     }
 
     public long getBestBlockNumber() {
@@ -37,4 +49,10 @@ public class Status {
     public byte[] getBestBlockHash() {
         return this.bestBlockHash;
     }
+
+    @Nullable
+    public byte[] getBestBlockParentHash() { return this.bestBlockParentHash; }
+
+    @Nullable
+    public BigInteger getTotalDifficulty() { return this.totalDifficulty; }
 }

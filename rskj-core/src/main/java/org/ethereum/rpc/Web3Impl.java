@@ -51,7 +51,6 @@ import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
-import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -89,7 +88,8 @@ public class Web3Impl implements Web3 {
     private final Object filterLock = new Object();
 
     private MinerClient minerClient;
-    private MinerServer minerServer;
+    protected MinerServer minerServer;
+    private ChannelManager channelManager;
 
     private PeerScoringManager peerScoringManager;
 
@@ -101,7 +101,8 @@ public class Web3Impl implements Web3 {
                        MinerClient minerClient,
                        MinerServer minerServer,
                        PersonalModule personalModule,
-                       EthModule ethModule) {
+                       EthModule ethModule,
+                       ChannelManager channelManager) {
         this.eth = eth;
         this.worldManager = eth.getWorldManager();
         this.repository = eth.getRepository();
@@ -109,6 +110,7 @@ public class Web3Impl implements Web3 {
         this.minerServer = minerServer;
         this.personalModule = personalModule;
         this.ethModule = ethModule;
+        this.channelManager = channelManager;
 
         if (eth instanceof Rsk)
             this.peerScoringManager = ((Rsk) eth).getPeerScoringManager();
@@ -172,6 +174,15 @@ public class Web3Impl implements Web3 {
         return x;
     }
 
+    public String[] toJsonHexArray(Collection<String> c) {
+        String[] arr = new String[c.size()];
+        int i = 0;
+        for (String item : c) {
+            arr[i++] = toJsonHex(item);
+        }
+        return arr;
+    }
+
     @Override
     public String web3_clientVersion() {
 
@@ -219,8 +230,6 @@ public class Web3Impl implements Web3 {
     public String net_peerCount() {
         String s = null;
         try {
-
-            ChannelManager channelManager = worldManager.getChannelManager();
             int n = channelManager.getActivePeers().size();
             return s = TypeConverter.toJsonHex(n);
         } finally {
@@ -268,18 +277,19 @@ public class Web3Impl implements Web3 {
 
     @Override
     public Object eth_syncing() {
-        Blockchain blockchain = worldManager.getBlockchain();
-
-        long currentBlock = worldManager.getBlockchain().getBestBlock().getNumber();
         BlockProcessor processor = worldManager.getNodeBlockProcessor();
-        if (processor == null) {
-            // TODO(raltman): processor should never be null. Change Web3Impl to request BlockProcessor from Roostock.
+        // TODO(raltman): processor should never be null. Change Web3Impl to request BlockProcessor from Roostock.
+        //if (processor == null || !processor.hasBetterBlockToSync()) {
+        if (processor == null){
             return false;
         }
+
+        long currentBlock = worldManager.getBlockchain().getBestBlock().getNumber();
         long highestBlock = processor.getLastKnownBlockNumber();
 
-        if (currentBlock >= highestBlock)
+        if (highestBlock <= currentBlock){
             return false;
+        }
 
         SyncingResult s = new SyncingResult();
         try {
@@ -350,7 +360,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String[] net_peerList() {
-        Collection<Channel> peers = worldManager.getChannelManager().getActivePeers();
+        Collection<Channel> peers = channelManager.getActivePeers();
         List<String> response = new ArrayList<>();
         peers.forEach(channel -> response.add(channel.toString()));
         return response.stream().toArray(String[]::new);

@@ -26,22 +26,24 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.BlockInformation;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.TransactionInfo;
+import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -385,6 +387,25 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         synchronized (accessLock) {
             return this.blockStore.getBlocksInformationByNumber(number);
         }
+    }
+
+    @Override
+    public boolean hasBlockInSomeBlockchain(@Nonnull final byte[] hash) {
+        final Block block = this.getBlockByHash(hash);
+        return block != null && this.blockIsInIndex(block);
+    }
+
+    /**
+     * blockIsInIndex returns true if a given block is indexed in the blockchain (it might not be the in the
+     * canonical branch).
+     *
+     * @param block the block to check for.
+     * @return true if there is a block in the blockchain with that hash.
+     */
+    private boolean blockIsInIndex(@Nonnull final Block block) {
+        final List<Block> blocks = this.getBlocksByNumber(block.getNumber());
+
+        return blocks.stream().anyMatch(block::fastEquals);
     }
 
     @Override

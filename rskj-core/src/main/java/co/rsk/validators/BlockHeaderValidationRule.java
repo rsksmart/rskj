@@ -1,7 +1,6 @@
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,18 +16,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.validator;
+package co.rsk.validators;
 
 import org.ethereum.core.BlockHeader;
 
 /**
- * @author Mikhail Kalinin
- * @since 25.09.2015
+ * Validates a block header.
+ * For example, we can validate the PoW using only the header information.
  */
-public class DependentBlockHeaderRuleAdapter extends DependentBlockHeaderRule {
-
-    @Override
-    public boolean validate(BlockHeader header, BlockHeader dependency) {
-        return true;
-    }
+public interface BlockHeaderValidationRule {
+    boolean isValid(BlockHeader header);
 }
