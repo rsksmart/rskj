@@ -20,8 +20,11 @@ package co.rsk.net;
 
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.core.bc.BlockUtils;
-import co.rsk.net.messages.*;
-import org.ethereum.core.*;
+import co.rsk.net.messages.GetBlockMessage;
+import co.rsk.net.messages.StatusMessage;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
@@ -31,7 +34,6 @@ import org.spongycastle.util.encoders.Hex;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.concurrent.GuardedBy;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -39,13 +41,13 @@ import java.util.*;
  * BlockSyncService processes blocks to add into a blockchain.
  * If a block is not ready to be added to the blockchain, it will be on hold in a BlockStore.
  * <p>
- * This class is tightly coupled with
+ * This class is tightly coupled with NodeBlockProcessor
  */
 public class BlockSyncService {
     private static final int NBLOCKS_TO_SYNC = 30;
 
-    @GuardedBy("syncLock") private volatile int nsyncs = 0;
-    @GuardedBy("syncLock") private volatile boolean syncing = false;
+    private volatile int nsyncs = 0;
+    private volatile boolean syncing = false;
 
     private Map<ByteArrayWrapper, Integer> unknownBlockHashes = new HashMap<>();
     private long processedBlocksCounter;

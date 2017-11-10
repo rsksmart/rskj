@@ -20,11 +20,12 @@ public class PendingMessages {
         return ++lastRequestId;
     }
 
-    public boolean isPending(long responseId, MessageType type) {
-        if (!this.messages.containsKey(responseId) || this.messages.get(responseId) != type)
+    public boolean isPending(MessageWithId message) {
+        long messageId = message.getId();
+        if (!this.messages.containsKey(messageId) || this.messages.get(messageId) != message.getMessageType())
             return false;
 
-        this.messages.remove(responseId);
+        this.messages.remove(messageId);
 
         return true;
     }

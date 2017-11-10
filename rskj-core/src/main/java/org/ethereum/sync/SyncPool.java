@@ -99,9 +99,9 @@ public class SyncPool implements Iterable<Channel> {
                             updateLowerUsefulDifficulty();
                             fillUp();
                             prepareActive();
-                        } catch (Exception e) {
-                            logger.error("Unhandled exception", e);
-                            panicProcessor.panic("syncpool", String.format("Unhandled exception {}", e.getMessage()));
+                        } catch (Throwable t) {
+                            logger.error("Unhandled exception", t);
+                            panicProcessor.panic("syncpool", String.format("Unhandled exception {}", t.getMessage()));
                         }
                     }
                 }, WORKER_TIMEOUT, WORKER_TIMEOUT, TimeUnit.SECONDS

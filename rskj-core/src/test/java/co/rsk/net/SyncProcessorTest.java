@@ -33,7 +33,7 @@ public class SyncProcessorTest {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
 
-        Assert.assertEquals(0, processor.getNoPeers());
+        Assert.assertEquals(0, processor.getPeersCount());
         Assert.assertEquals(0, processor.getNoAdvancedPeers());
 
         Assert.assertTrue(processor.getKnownPeersNodeIDs().isEmpty());
@@ -54,7 +54,7 @@ public class SyncProcessorTest {
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
         processor.processStatus(sender, status);
 
-        Assert.assertEquals(1, processor.getNoPeers());
+        Assert.assertEquals(1, processor.getPeersCount());
         Assert.assertEquals(1, processor.getNoAdvancedPeers());
 
         Set<NodeID> ids = processor.getKnownPeersNodeIDs();
@@ -89,7 +89,7 @@ public class SyncProcessorTest {
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
         processor.processStatus(sender, status);
 
-        Assert.assertEquals(1, processor.getNoPeers());
+        Assert.assertEquals(1, processor.getPeersCount());
         Assert.assertEquals(1, processor.getNoAdvancedPeers());
 
         Set<NodeID> ids = processor.getKnownPeersNodeIDs();
@@ -128,7 +128,7 @@ public class SyncProcessorTest {
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[]{0x01});
         processor.processStatus(sender, status);
 
-        Assert.assertEquals(1, processor.getNoPeers());
+        Assert.assertEquals(1, processor.getPeersCount());
         Assert.assertEquals(0, processor.getNoAdvancedPeers());
 
         Set<NodeID> ids = processor.getKnownPeersNodeIDs();
@@ -215,7 +215,7 @@ public class SyncProcessorTest {
         SyncProcessor processor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING, new ProofOfWorkRule());
         processor.processStatus(sender, status);
 
-        Assert.assertEquals(1, processor.getNoPeers());
+        Assert.assertEquals(1, processor.getPeersCount());
         Assert.assertEquals(0, processor.getNoAdvancedPeers());
 
         Assert.assertTrue(sender.getMessages().isEmpty());

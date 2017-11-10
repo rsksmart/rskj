@@ -66,7 +66,7 @@ public class SyncProcessor implements SyncEventsHandler {
         logger.trace("Process skeleton response from node {}", sender.getPeerNodeID());
         peerStatuses.getOrRegisterPeer(sender);
 
-        if (!pendingMessages.isPending(message.getId(), message.getMessageType()))
+        if (!pendingMessages.isPending(message))
             return;
 
         this.syncState.newSkeleton(message.getBlockIdentifiers());
@@ -76,7 +76,7 @@ public class SyncProcessor implements SyncEventsHandler {
         logger.trace("Process block hash response from node {} hash {}", sender.getPeerNodeID(), HashUtil.shortHash(message.getHash()));
         peerStatuses.getOrRegisterPeer(sender);
 
-        if (!pendingMessages.isPending(message.getId(), message.getMessageType()))
+        if (!pendingMessages.isPending(message))
             return;
 
         this.syncState.newConnectionPointData(message.getHash());
@@ -86,7 +86,7 @@ public class SyncProcessor implements SyncEventsHandler {
         logger.trace("Process block headers response from node {}", peer.getPeerNodeID());
         peerStatuses.getOrRegisterPeer(peer);
 
-        if (!pendingMessages.isPending(message.getId(), message.getMessageType()))
+        if (!pendingMessages.isPending(message))
             return;
 
         syncState.newBlockHeaders(message.getBlockHeaders());
@@ -96,7 +96,7 @@ public class SyncProcessor implements SyncEventsHandler {
         logger.trace("Process body response from node {}", peer.getPeerNodeID());
         peerStatuses.getOrRegisterPeer(peer);
 
-        if (!pendingMessages.isPending(message.getId(), message.getMessageType()))
+        if (!pendingMessages.isPending(message))
             return;
 
         this.syncState.newBody(message);
@@ -132,7 +132,7 @@ public class SyncProcessor implements SyncEventsHandler {
         logger.trace("Process block response from node {} block {} {}", sender.getPeerNodeID(), message.getBlock().getNumber(), message.getBlock().getShortHash());
         peerStatuses.getOrRegisterPeer(sender);
 
-        if (!pendingMessages.isPending(message.getId(), message.getMessageType()))
+        if (!pendingMessages.isPending(message))
             return;
 
         blockSyncService.processBlock(sender, message.getBlock());
@@ -218,7 +218,7 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @VisibleForTesting
-    int getNoPeers() {
+    int getPeersCount() {
         return this.peerStatuses.count();
     }
 

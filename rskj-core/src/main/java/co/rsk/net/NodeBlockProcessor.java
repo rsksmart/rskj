@@ -137,7 +137,8 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processStatus(@Nonnull final MessageChannel sender, @Nonnull final Status status) {
-        logger.trace("Processing status " + status.getBestBlockNumber() + " " + Hex.toHexString(status.getBestBlockHash()).substring(0, 10) + " from " + sender.getPeerNodeID().toString());
+        logger.trace("Processing status {} {} from {}", status.getBestBlockNumber(),
+                Hex.toHexString(status.getBestBlockHash()).substring(0, 10), sender.getPeerNodeID().toString());
 
         final byte[] hash = status.getBestBlockHash();
         nodeInformation.addBlockToNode(new ByteArrayWrapper(hash), sender.getPeerNodeID());
@@ -173,7 +174,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processGetBlock(@Nonnull final MessageChannel sender, @Nonnull final byte[] hash) {
-        logger.trace("Processing get block " + Hex.toHexString(hash).substring(0, 10) + " from " + sender.getPeerNodeID().toString());
+        logger.trace("Processing get block {} from {}", Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID().toString());
         final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null) {
@@ -266,6 +267,10 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public void processBlockHashRequest(@Nonnull final MessageChannel sender, long requestId, long height) {
         logger.trace("Processing block hash request {} {} from {}", requestId, height, sender.getPeerNodeID().toString());
+        if (height == 0){
+            return;
+        }
+
         final Block block = this.getBlockFromBlockchainStore(height);
 
         if (block == null) {

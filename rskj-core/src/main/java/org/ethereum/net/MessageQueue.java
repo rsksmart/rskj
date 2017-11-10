@@ -105,11 +105,6 @@ public class MessageQueue {
 
         Queue<MessageRoundtrip> queue = msg.getAnswerMessage() != null ? requestQueue : respondQueue;
         queue.add(new MessageRoundtrip(msg));
-
-        int queueSize = queue.size();
-        if (queueSize > 0 && queueSize % 100 == 0) {
-            logger.trace("MessageQueue size: {}", queueSize);
-        }
     }
 
     public void disconnect() {
