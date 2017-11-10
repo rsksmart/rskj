@@ -34,6 +34,7 @@ import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.PrecompiledContracts;
+import org.h2.command.dml.Select;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.Arrays;
@@ -302,9 +303,7 @@ public class BlockChainImplTest {
         Block block1 = BlockGenerator.createChildBlock(genesis);
         Block block1b = BlockGenerator.createChildBlock(genesis);
 
-        boolean block1bBigger = FastByteComparisons.compareTo(
-                block1.getHash(), 0, 32,
-                block1b.getHash(), 0, 32) < 0;
+        boolean block1bBigger = SelectionRule.isThisBlockHashSmaller(block1.getHash(), block1b.getHash());
 
         BlockExecutorTest.SimpleEthereumListener listener = (BlockExecutorTest.SimpleEthereumListener) blockChain.getListener();
 

@@ -26,9 +26,7 @@ public class SelectionRule {
         if (compareDifficulties == 0) {
             if (block.getHeader().getPaidFees() >
                     PAID_FEES_MULTIPLIER_CRITERIA * currentBlock.getHeader().getPaidFees()
-                    || FastByteComparisons.compareTo(
-                            block.getHash(), BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH,
-                            currentBlock.getHash(), BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH) < 0) {
+                    || isThisBlockHashSmaller(block.getHash(), currentBlock.getHash())) {
                 return true;
             }
         }
@@ -44,11 +42,16 @@ public class SelectionRule {
                     * processingBlockHeader.getPaidFees()) {
                 return true;
             }
-            if (FastByteComparisons.compareTo(sibling.getHash(), BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH,
-                    processingBlockHeader.getHash(), BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH) < 0) {
+            if (isThisBlockHashSmaller(sibling.getHash(), processingBlockHeader.getHash())) {
                 return true;
             }
         }
-        return maxUncleCount > processingBlockHeader.getUncleCount()
+        return maxUncleCount > processingBlockHeader.getUncleCount();
+    }
+
+    public static boolean isThisBlockHashSmaller(byte[] thisBlockHash, byte[] compareBlockHash) {
+        return FastByteComparisons.compareTo(
+                thisBlockHash, BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH,
+                compareBlockHash, BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH) < 0;
     }
 }

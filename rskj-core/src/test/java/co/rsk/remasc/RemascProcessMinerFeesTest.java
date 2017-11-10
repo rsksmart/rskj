@@ -255,12 +255,6 @@ public class RemascProcessMinerFeesTest {
         assertEquals(0, remascStorageProvider.getSiblings().size());
     }
 
-
-    /**
-     * From RSKIP15, one of the three selection rules difficulty
-     * @throws IOException
-     * @throws ClassNotFoundException
-     */
     @Test
     public void processMinersFeesWithOneSiblingDoesNotBrokeSelectionRuleBlockWithLowerDifficulty() throws IOException, ClassNotFoundException {
         doNotBrokeSelectionRuleDifferentDifficulty(-3l);

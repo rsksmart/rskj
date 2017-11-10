@@ -371,13 +371,12 @@ public class BlockGenerator {
             for (int ntx = 0; ntx < ntxs; ntx++)
                 txs.add(new SimpleRskTransaction(null));
 
-            long diff = ByteUtil.bytesToBigInteger(parent.getDifficulty()).longValue();
-            if (difficulty != null) {
-                diff = difficulty;
+            if (difficulty == null) {
+                difficulty = ByteUtil.bytesToBigInteger(parent.getDifficulty()).longValue();
             }
             Block newblock = BlockGenerator.createChildBlock(
                     parent, txs, uncles,
-                    diff,
+                    difficulty,
                     null);
             chain.add(newblock);
 
