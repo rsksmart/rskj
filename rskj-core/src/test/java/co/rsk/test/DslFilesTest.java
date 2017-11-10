@@ -18,9 +18,12 @@
 
 package co.rsk.test;
 
+import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import org.ethereum.core.Block;
+import org.ethereum.db.TransactionInfo;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -99,6 +102,26 @@ public class DslFilesTest {
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
+    }
+
+    @Test
+    public void runLogs01Resource() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/logs01.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        // the transaction receipt should have three logs
+        BlockChainStatus status = world.getBlockChain().getStatus();
+        Assert.assertEquals(1, status.getBestBlockNumber());
+
+        Block block = status.getBestBlock();
+
+        Assert.assertEquals(1, block.getTransactionsList().size());
+        byte[] txhash = block.getTransactionsList().get(0).getHash();
+        TransactionInfo txinfo = world.getBlockChain().getTransactionInfo(txhash);
+
+        Assert.assertEquals(3, txinfo.getReceipt().getLogInfoList().size());
     }
 
     @Test

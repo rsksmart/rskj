@@ -633,8 +633,6 @@ public class Program {
             Program program = new Program(programCode, programInvoke, internalTx);
             vm.play(program);
             result = program.getResult();
-
-            getResult().merge(result);
         }
 
         // 4. CREATE THE CONTRACT OUT OF RETURN
