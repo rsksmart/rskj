@@ -37,7 +37,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -80,66 +79,44 @@ import java.util.List;
  *
  */
 
-@Component
 public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchain {
     private static final Logger logger = LoggerFactory.getLogger("blockchain");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    @Autowired
-    private Repository repository;
 
-    @Autowired
-    private BlockStore blockStore;
-
-    @Autowired
-    private ReceiptStore receiptStore;
-
-    @Autowired
+    private final Repository repository;
+    private final BlockStore blockStore;
+    private final ReceiptStore receiptStore;
     private PendingState pendingState;
-
-    @Autowired
     private EthereumListener listener;
-
-    @Autowired
+    private final AdminInfo adminInfo;
     private BlockValidator blockValidator;
-
-    @Autowired
-    private AdminInfo adminInfo;
 
     private volatile BlockChainStatus status = new BlockChainStatus(null, BigInteger.ZERO);
     private final Object connectLock = new Object();
     private final Object accessLock = new Object();
-    private BlockExecutor blockExecutor;
+    private final BlockExecutor blockExecutor;
     private BlockRecorder blockRecorder;
     private boolean isrsk;
     private boolean noValidation;
 
-    public BlockChainImpl() {
-
-    }
-
-    @VisibleForTesting
-    public BlockChainImpl(Repository repository, BlockStore blockStore, ReceiptStore receiptStore, PendingState pendingState, EthereumListener listener, AdminInfo adminInfo, BlockValidator blockValidator)
-    {
+    @Autowired
+    public BlockChainImpl(Repository repository,
+                          BlockStore blockStore,
+                          ReceiptStore receiptStore,
+                          PendingState pendingState,
+                          EthereumListener listener,
+                          AdminInfo adminInfo,
+                          BlockValidator blockValidator) {
         this.repository = repository;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
-        this.pendingState = pendingState;
         this.listener = listener;
         this.adminInfo = adminInfo;
-
         this.blockValidator = blockValidator;
-
-        init();
-    }
-
-    @PostConstruct
-    public void init() {
-
         this.blockExecutor = new BlockExecutor(repository, this, blockStore, listener);
 
-        if (this.pendingState != null)
-            this.pendingState.start();
+        setPendingState(pendingState);
     }
 
     @Override
@@ -150,8 +127,12 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     @Override
     public PendingState getPendingState() { return pendingState; }
 
-    @VisibleForTesting
-    public void setPendingState(PendingState pendingState) { this.pendingState = pendingState; }
+    // circular dependency
+    public void setPendingState(PendingState pendingState) {
+        this.pendingState = pendingState;
+        if (this.pendingState != null)
+            this.pendingState.start();
+    }
 
     @Override
     public BlockStore getBlockStore() { return blockStore; }
@@ -435,6 +416,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
             blockStore.removeBlock(block);
     }
 
+    @Override
     public Block getBlockByNumber(long number) { return blockStore.getChainBlockByNumber(number); }
 
     @Override

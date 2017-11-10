@@ -18,19 +18,25 @@
 
 package co.rsk.rpc;
 
-import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerServer;
-import co.rsk.peg.PegTestUtils;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.core.Rsk;
+import co.rsk.core.Wallet;
+import co.rsk.core.WalletFactory;
+import co.rsk.peg.PegTestUtils;
+import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
+import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
+import co.rsk.rpc.modules.personal.PersonalModule;
+import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.manager.WorldManager;
-import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.LogFilterElement;
 import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.Web3Mocks;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.junit.Test;
@@ -65,7 +71,10 @@ public class Web3RskImplTest {
         Mockito.when(blockchain.getBestBlock()).thenReturn(block);
         Mockito.when(rsk.getWorldManager()).thenReturn(worldManager);
 
-        Web3RskImpl web3 = new Web3RskImpl(rsk, Mockito.mock(MinerServer.class), Mockito.mock(MinerClient.class), Mockito.mock(ChannelManager.class));
+        Wallet wallet = WalletFactory.createWallet();
+        PersonalModule pm = new PersonalModuleWalletEnabled(rsk, wallet);
+        EthModule em = new EthModule(rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(rsk, wallet));
+        Web3RskImpl web3 = new Web3RskImpl(rsk, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager());
         web3.ext_dumpState();
     }
 

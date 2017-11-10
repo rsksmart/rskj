@@ -40,7 +40,6 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.*;
 import org.ethereum.net.rlpx.Node;
-import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.util.FileUtil;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -240,11 +239,5 @@ public class DefaultConfig {
         PeerExplorer peerExplorer = appCtx.getBean(PeerExplorer.class);
         RskSystemProperties rskConfig = RskSystemProperties.CONFIG;
         return new UDPServer(rskConfig.bindIp(), rskConfig.listenPort(), peerExplorer);
-    }
-
-    @Bean
-    public SolidityCompiler solidityCompiler() {
-        RskSystemProperties rskConfig = RskSystemProperties.CONFIG;
-        return new SolidityCompiler(rskConfig);
     }
 }

@@ -21,7 +21,6 @@ package co.rsk.test.builders;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
-import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.core.*;

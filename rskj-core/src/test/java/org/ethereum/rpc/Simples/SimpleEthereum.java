@@ -33,6 +33,7 @@ import org.ethereum.manager.WorldManager;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
+import org.ethereum.rpc.Web3;
 import org.ethereum.vm.program.ProgramResult;
 
 import javax.annotation.Nonnull;
@@ -50,6 +51,14 @@ public class SimpleEthereum implements Ethereum {
     public Transaction tx;
     public WorldManager worldManager;
     public Repository repository;
+
+    public SimpleEthereum() {
+        this(null);
+    }
+
+    public SimpleEthereum(SimpleWorldManager worldManager) {
+        this.worldManager = worldManager;
+    }
 
     @Override
     public Blockchain getBlockchain() {
@@ -150,7 +159,7 @@ public class SimpleEthereum implements Ethereum {
     }
 
     @Override
-    public ProgramResult callConstantCallTransaction(Transaction tx, Block block) {
+    public ProgramResult callConstant(Web3.CallArguments args) {
         return null;
     }
 

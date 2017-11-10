@@ -112,6 +112,27 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
+    public void skipProcessGenesisBlock() throws UnknownHostException {
+        SimpleMessageChannel sender = new SimpleMessageChannel();
+        PeerScoringManager scoring = createPeerScoringManager();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null,null, scoring, new DummyBlockValidationRule());
+        Block block = BlockGenerator.getGenesisBlock();
+        Message message = new BlockMessage(block);
+
+        processor.processMessage(sender, message);
+
+        Assert.assertNotNull(sbp.getBlocks());
+        Assert.assertEquals(0, sbp.getBlocks().size());
+        Assert.assertTrue(scoring.isEmpty());
+
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
+
+        Assert.assertNotNull(pscoring);
+        Assert.assertTrue(pscoring.isEmpty());
+    }
+
+    @Test
     public void postBlockMessageTwice() throws InterruptedException, UnknownHostException {
         MessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();
@@ -183,18 +204,16 @@ public class NodeMessageHandlerTest {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, scoring, new DummyBlockValidationRule());
         Block block = BlockGenerator.getGenesisBlock();
-        Message message = new BlockMessage(block);
-        processor.processMessage(sender, message);
 
         for (int i = 0; i < 50; i++) {
             block = BlockGenerator.createChildBlock(block);
         }
 
-        message = new BlockMessage(block);
+        Message message = new BlockMessage(block);
         processor.processMessage(sender, message);
 
         Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(2, sbp.getBlocks().size());
+        Assert.assertEquals(1, sbp.getBlocks().size());
 
         Assert.assertFalse(scoring.isEmpty());
 
@@ -202,8 +221,8 @@ public class NodeMessageHandlerTest {
 
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(2, pscoring.getTotalEventCounter());
-        Assert.assertEquals(2, pscoring.getEventCounter(EventType.VALID_BLOCK));
+        Assert.assertEquals(1, pscoring.getTotalEventCounter());
+        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
         Assert.assertEquals(0, pscoring.getEventCounter(EventType.INVALID_BLOCK));
     }
 

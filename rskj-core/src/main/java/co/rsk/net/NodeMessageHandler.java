@@ -270,6 +270,12 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private void processBlockMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockMessage message) {
         final Block block = message.getBlock();
         logger.trace("Process block {} {}", block.getNumber(), block.getShortHash());
+
+        if (block.isGenesis()) {
+            logger.trace("Skip block processing {} {}", block.getNumber(), block.getShortHash());
+            return;
+        }
+
         Metrics.processBlockMessage("start", block, sender.getPeerNodeID());
 
         boolean wasOrphan = !this.blockProcessor.hasBlockInSomeBlockchain(block.getHash());

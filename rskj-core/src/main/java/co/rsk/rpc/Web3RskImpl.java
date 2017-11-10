@@ -18,20 +18,20 @@
 
 package co.rsk.rpc;
 
+import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
-import co.rsk.config.RskMiningConstants;
-import co.rsk.core.Rsk;
-import co.rsk.core.Wallet;
-import co.rsk.core.WalletFactory;
 import co.rsk.mine.MinerWork;
+import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.personal.PersonalModule;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.BlockStore;
 import org.ethereum.net.server.ChannelManager;
+import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3Impl;
 import org.slf4j.Logger;
@@ -51,11 +51,15 @@ import java.util.List;
  */
 public class Web3RskImpl extends Web3Impl {
     private static final Logger logger = LoggerFactory.getLogger("web3");
-    private final MinerServer minerServer;
 
-    public Web3RskImpl(Rsk rsk, MinerServer minerServer, MinerClient minerClient, ChannelManager channelManager) {
-        super(rsk, RskSystemProperties.CONFIG, WalletFactory.createPersistentWallet(), minerClient, minerServer, channelManager);
-        this.minerServer = minerServer;
+    public Web3RskImpl(Ethereum eth,
+                       RskSystemProperties properties,
+                       MinerClient minerClient,
+                       MinerServer minerServer,
+                       PersonalModule personalModule,
+                       EthModule ethModule,
+                       ChannelManager channelManager) {
+        super(eth, properties, minerClient, minerServer, personalModule, ethModule, channelManager);
     }
 
     public MinerWork mnr_getWork() {

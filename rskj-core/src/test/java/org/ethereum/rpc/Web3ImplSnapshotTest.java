@@ -19,33 +19,25 @@
 package org.ethereum.rpc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
-import co.rsk.core.WalletFactory;
 import co.rsk.config.ConfigUtils;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.mine.MinerClientImpl;
 import co.rsk.mine.MinerManagerTest;
 import co.rsk.mine.MinerServer;
 import co.rsk.mine.MinerServerImpl;
+import co.rsk.rpc.modules.personal.PersonalModule;
+import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.test.World;
 import co.rsk.validators.BlockValidationRule;
 import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
-import org.ethereum.facade.Ethereum;
-import org.ethereum.manager.WorldManager;
-import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.rpc.Simples.SimpleWorldManager;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.util.List;
-
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 15/04/2017.
@@ -173,9 +165,10 @@ public class Web3ImplSnapshotTest {
         Assert.assertEquals(32, minerServer.increaseTime(0));
     }
 
-    private Web3Impl createWeb3(World world, SimpleEthereum ethereum, MinerServer minerServer) {
+    private static Web3Impl createWeb3(World world, SimpleEthereum ethereum, MinerServer minerServer) {
         MinerClientImpl minerClient = new MinerClientImpl();
-        Web3Impl web3 = new Web3Impl(getMockEthereum(), getMockProperties(), WalletFactory.createWallet(), minerClient, minerServer, Mockito.mock(ChannelManager.class));
+        PersonalModule pm = new PersonalModuleWalletDisabled();
+        Web3Impl web3 = new Web3Impl(Web3Mocks.getMockEthereum(), Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, Web3Mocks.getMockChannelManager());
 
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
@@ -189,24 +182,12 @@ public class Web3ImplSnapshotTest {
         return web3;
     }
 
-    private Ethereum getMockEthereum() {
-        WorldManager mockWorldManager = mock(WorldManager.class, RETURNS_DEEP_STUBS);
-        when(mockWorldManager.getBlockchain().getBestBlock().getNumber()).thenReturn(0L);
-        Ethereum ethMock = mock(Ethereum.class);
-        when(ethMock.getWorldManager()).thenReturn(mockWorldManager);
-        return ethMock;
-    }
-
-    private RskSystemProperties getMockProperties() {
-        return mock(RskSystemProperties.class);
-    }
-
-    private Web3Impl createWeb3(World world) {
+    private static Web3Impl createWeb3(World world) {
         SimpleEthereum ethereum = new SimpleEthereum();
         return createWeb3(world, ethereum, getMinerServerForTest(world, ethereum));
     }
 
-    private MinerServer getMinerServerForTest(World world, SimpleEthereum ethereum) {
+    static MinerServer getMinerServerForTest(World world, SimpleEthereum ethereum) {
         BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
         return new MinerServerImpl(ethereum, world.getBlockChain(), world.getBlockChain().getBlockStore(),
                 world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), ConfigUtils.getDefaultMiningConfig(), rule);
