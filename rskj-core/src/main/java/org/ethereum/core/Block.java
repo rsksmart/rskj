@@ -471,7 +471,7 @@ public class Block {
         return Collections.unmodifiableList(parsedTxs);
     }
 
-    private static boolean isRemascTransaction(Transaction tx, int txPosition, int txsSize) {
+    public static boolean isRemascTransaction(Transaction tx, int txPosition, int txsSize) {
 
         return isLastTx(txPosition, txsSize) && checkRemascAddress(tx) && checkRemascTxZeroValues(tx);
     }
@@ -522,6 +522,10 @@ public class Block {
 
     public boolean isEqual(Block block) {
         return Arrays.areEqual(this.getHash(), block.getHash());
+    }
+
+    public boolean fastEquals(Block block) {
+        return block != null && ByteUtil.fastEquals(this.getHash(), block.getHash());
     }
 
     private byte[] getTransactionsEncoded() {
@@ -638,6 +642,9 @@ public class Block {
         /* A sealed block is immutable, cannot be changed */
         if (this.sealed)
             throw new SealedBlockException("trying to alter bitcoin merged mining header");
+
+        if (!parsed)
+            parseRLP();
 
         this.header.setBitcoinMergedMiningHeader(bitcoinMergedMiningHeader);
         rlpEncoded = null;

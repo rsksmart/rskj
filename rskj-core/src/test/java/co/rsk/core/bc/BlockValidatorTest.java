@@ -28,7 +28,7 @@ import org.ethereum.core.*;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.validator.ProofOfWorkRule;
+import co.rsk.validators.ProofOfWorkRule;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -794,7 +794,7 @@ public class BlockValidatorTest {
 
         @Override
         public List<Block> getChainBlocksByNumber(long blockNumber) {
-            return null;
+            return new ArrayList<>();
         }
 
         @Override

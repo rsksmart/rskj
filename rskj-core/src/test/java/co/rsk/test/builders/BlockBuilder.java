@@ -19,6 +19,7 @@
 package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.test.World;
 import org.ethereum.core.Block;
@@ -32,19 +33,21 @@ import java.util.List;
  * Created by ajlopez on 8/6/2016.
  */
 public class BlockBuilder {
-    private World world;
+    private BlockChainImpl blockChain;
     private Block parent;
     private long difficulty;
     private List<Transaction> txs;
     private List<BlockHeader> uncles;
     private BigInteger minGasPrice;
 
-    public BlockBuilder() {
-
-    }
+    public BlockBuilder() { }
 
     public BlockBuilder(World world) {
-        this.world = world;
+        this(world.getBlockChain());
+    }
+
+    public BlockBuilder(BlockChainImpl blockChain) {
+        this.blockChain = blockChain;
     }
 
     public BlockBuilder parent(Block parent) {
@@ -75,8 +78,8 @@ public class BlockBuilder {
     public Block build() {
         Block block = BlockGenerator.createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice);
 
-        if (world != null) {
-            BlockExecutor executor = new BlockExecutor(world.getRepository(), world.getBlockChain(), world.getBlockChain().getBlockStore(), null);
+        if (blockChain != null) {
+            BlockExecutor executor = new BlockExecutor(blockChain.getRepository(), blockChain, blockChain.getBlockStore(), blockChain.getListener());
             executor.executeAndFill(block, parent);
         }
 

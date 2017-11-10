@@ -16,10 +16,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.test.builders;
+package co.rsk.rpc.modules.eth;
 
-/**
- * Created by ajlopez on 8/6/2016.
- */
-public class WorldBuilder {
+import org.ethereum.rpc.dto.CompilationResultDTO;
+
+import java.util.Map;
+
+public interface EthModuleSolidity {
+
+    Map<String, CompilationResultDTO> compileSolidity(String contract) throws Exception;
 }

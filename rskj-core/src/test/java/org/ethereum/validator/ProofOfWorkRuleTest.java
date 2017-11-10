@@ -19,6 +19,7 @@
 
 package org.ethereum.validator;
 
+import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Ignore;

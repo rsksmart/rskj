@@ -201,11 +201,12 @@ public class Remasc {
         // Find out if main chain block selection rule was broken
         for (Sibling sibling : siblings) {
             // Sibling pays significant more fees than block in the main chain OR Sibling has lower hash than block in the main chain
-            if (sibling.getPaidFees() > 2 * processingBlockHeader.getPaidFees() ||
+            if (sibling.getPaidFees() > remascConstants.getPaidFeesMultiplier() * processingBlockHeader.getPaidFees() / remascConstants.getPaidFeesDivisor() ||
                     FastByteComparisons.compareTo(sibling.getHash(), 0, 32, processingBlockHeader.getHash(), 0, 32) < 0) {
                 return true;
             }
         }
+
         return false;
     }
 

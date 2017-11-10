@@ -19,6 +19,7 @@
 
 package org.ethereum.facade;
 
+import co.rsk.core.ReversibleTransactionExecutor;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.core.PendingState;
@@ -35,6 +36,7 @@ import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.net.submit.TransactionExecutor;
 import org.ethereum.net.submit.TransactionTask;
+import org.ethereum.rpc.Web3;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
@@ -65,7 +67,6 @@ public class EthereumImpl implements Ethereum {
     private final SystemProperties config;
     private final CompositeEthereumListener compositeEthereumListener;
     private final ReceiptStore receiptStore;
-    private final PeerClientFactory peerClientFactory;
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
 
@@ -77,8 +78,7 @@ public class EthereumImpl implements Ethereum {
                         PendingState pendingState,
                         SystemProperties config,
                         CompositeEthereumListener compositeEthereumListener,
-                        ReceiptStore receiptStore,
-                        PeerClientFactory peerClientFactory) {
+                        ReceiptStore receiptStore) {
         this.worldManager = worldManager;
         this.adminInfo = adminInfo;
         this.channelManager = channelManager;
@@ -88,9 +88,9 @@ public class EthereumImpl implements Ethereum {
         this.config = config;
         this.compositeEthereumListener = compositeEthereumListener;
         this.receiptStore = receiptStore;
-        this.peerClientFactory = peerClientFactory;
     }
 
+    @Override
     public void init() {
         if (config.listenPort() > 0) {
             Executors.newSingleThreadExecutor(runnable -> {
@@ -104,23 +104,6 @@ public class EthereumImpl implements Ethereum {
         compositeEthereumListener.addListener(gasPriceTracker);
 
         gLogger.info("RskJ node started: enode://" + Hex.toHexString(config.nodeId()) + "@" + config.externalIp() + ":" + config.listenPort());
-    }
-
-    @Override
-    public void connect(InetAddress addr, int port, String remoteId) {
-        connect(addr.getHostName(), port, remoteId);
-    }
-
-    @Override
-    public void connect(final String ip, final int port, final String remoteId) {
-        logger.info("Connecting to: {}:{}", ip, port);
-        PeerClient peerClient = peerClientFactory.newInstance();
-        peerClient.connectAsync(ip, port, remoteId, false);
-    }
-
-    @Override
-    public void connect(Node node) {
-        connect(node.getHost(), node.getPort(), Hex.toHexString(node.getId()));
     }
 
     @Override
@@ -183,6 +166,19 @@ public class EthereumImpl implements Ethereum {
         };
     }
 
+    @Override
+    public ProgramResult callConstant(Web3.CallArguments args) {
+        Block bestBlock = getBlockchain().getBestBlock();
+        return ReversibleTransactionExecutor.executeTransaction(
+                bestBlock.getCoinbase(),
+                (Repository) getRepository(),
+                worldManager.getBlockStore(),
+                receiptStore,
+                programInvokeFactory,
+                bestBlock,
+                args
+        ).getResult();
+    }
 
     @Override
     public ProgramResult callConstantFunction(String receiveAddress, CallTransaction.Function function,
@@ -261,45 +257,17 @@ public class EthereumImpl implements Ethereum {
     public void exitOn(long number) {
         worldManager.getBlockchain().setExitOn(number);
     }
-
     // TODO Review world manager expose
+
     @Override
     public WorldManager getWorldManager() { return worldManager; }
-
     // TODO Review peer server expose
+
     @Override
     public PeerServer getPeerServer() { return peerServer; }
-
-    // TODO added method, to review
-    @Override
-    public ProgramResult callConstantCallTransaction(Transaction tx, Block block) {
-        Repository repository = ((Repository) worldManager.getRepository()).getSnapshotTo(block.getStateRoot()).startTracking();
-
-        try {
-            Block bestBlock = worldManager.getBlockchain().getBestBlock();
-            org.ethereum.core.TransactionExecutor executor = new org.ethereum.core.TransactionExecutor
-                    (tx, bestBlock.getCoinbase(), repository,
-                            worldManager.getBlockStore(), receiptStore, programInvokeFactory, block)
-                    .setLocalCall(true);
-
-            executor.init();
-            executor.execute();
-            executor.go();
-            executor.finalization();
-
-            return executor.getResult();
-        } finally {
-            repository.rollback();
-        }
-
-    }
 
     @Override
     public SystemProperties getSystemProperties() {
         return this.config;
-    }
-
-    public interface PeerClientFactory {
-        PeerClient newInstance();
     }
 }

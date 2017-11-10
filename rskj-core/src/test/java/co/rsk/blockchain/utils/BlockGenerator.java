@@ -18,28 +18,26 @@
 
 package co.rsk.blockchain.utils;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.peg.PegTestUtils;
-import co.rsk.peg.simples.SimpleRskTransaction;
 import co.rsk.mine.MinimumGasPriceCalculator;
+import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleBlock;
-
+import co.rsk.peg.simples.SimpleRskTransaction;
+import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.InitialAddressState;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
-import co.rsk.trie.Trie;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 import org.spongycastle.util.encoders.Hex;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
-
 import java.util.List;
 import java.util.Map;
 
@@ -314,15 +312,23 @@ public class BlockGenerator {
         return getBlockChain(parent, size, 0);
     }
 
+    public static List<Block> getMinedBlockChain(Block parent, int size) {
+        return getBlockChain(parent, size, 0, false, true);
+    }
+
     public static List<Block> getSimpleBlockChain(Block parent, int size) {
         return getSimpleBlockChain(parent, size, 0);
     }
 
     public static List<Block> getBlockChain(Block parent, int size, int ntxs) {
-        return getBlockChain(parent, size, ntxs, false);
+        return getBlockChain(parent, size, ntxs, false, false);
     }
 
     public static List<Block> getBlockChain(Block parent, int size, int ntxs, boolean withUncles) {
+        return getBlockChain(parent, size, ntxs, withUncles, false);
+    }
+
+    public static List<Block> getBlockChain(Block parent, int size, int ntxs, boolean withUncles, boolean withMining) {
         List<Block> chain = new ArrayList<Block>();
         List<BlockHeader> uncles = new ArrayList<>();
         int chainSize = 0;
@@ -333,7 +339,11 @@ public class BlockGenerator {
             for (int ntx = 0; ntx < ntxs; ntx++)
                 txs.add(new SimpleRskTransaction(null));
 
-            Block newblock = BlockGenerator.createChildBlock(parent, txs, uncles, ByteUtil.bytesToBigInteger(parent.getDifficulty()).longValue(), null);
+            Block newblock = BlockGenerator.createChildBlock(parent, txs, uncles, 0, null);
+
+            if (withMining)
+                newblock = BlockMiner.mineBlock(newblock);
+
             chain.add(newblock);
 
             if (withUncles) {

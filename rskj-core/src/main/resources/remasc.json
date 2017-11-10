@@ -15,7 +15,9 @@
       "punishmentDivisor" : 10,
       "publishersDivisor" : 10,
       "rskLabsAddress" : "dabadabadabadabadabadabadabadabadaba0001",
-      "lateUncleInclusionPunishmentDivisor": 20
+      "lateUncleInclusionPunishmentDivisor": 20,
+      "paidFeesMultiplier": 2,
+      "paidFeesDivisor": 1
    },
    "main": {
       "maturity" : 50,
@@ -24,7 +26,9 @@
       "punishmentDivisor" : 10,
       "publishersDivisor" : 10,
       "rskLabsAddress" : "dabadabadabadabadabadabadabadabadaba0004",
-      "lateUncleInclusionPunishmentDivisor": 20
+      "lateUncleInclusionPunishmentDivisor": 20,
+      "paidFeesMultiplier": 2,
+      "paidFeesDivisor": 1
    },
    "testnet": {
       "maturity" : 50,
@@ -33,6 +37,8 @@
       "punishmentDivisor" : 10,
       "publishersDivisor" : 10,
       "rskLabsAddress" : "dabadabadabadabadabadabadabadabadaba0003",
-      "lateUncleInclusionPunishmentDivisor": 20
+      "lateUncleInclusionPunishmentDivisor": 20,
+      "paidFeesMultiplier": 2,
+      "paidFeesDivisor": 1
    }
 }

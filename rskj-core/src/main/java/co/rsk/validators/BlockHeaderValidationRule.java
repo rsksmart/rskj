@@ -16,31 +16,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.core;
+package co.rsk.validators;
 
-import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.core.BlockHeader;
 
 /**
- * Created by mario on 06/12/16.
+ * Validates a block header.
+ * For example, we can validate the PoW using only the header information.
  */
-public class WalletFactory {
-
-    public static Wallet createPersistentWallet() {
-        return createPersistentWallet("wallet");
-    }
-
-    public static Wallet createPersistentWallet(String storeName) {
-        Wallet wallet = new Wallet();
-        KeyValueDataSource ds = new LevelDbDataSource(storeName);
-        ds.init();
-        wallet.setStore(ds);
-        return wallet;
-    }
-
-    public static Wallet createWallet() {
-        return new Wallet();
-    }
-
-
+public interface BlockHeaderValidationRule {
+    boolean isValid(BlockHeader header);
 }

@@ -35,12 +35,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.ethereum.crypto.HashUtil.sha3;
 import static org.ethereum.util.BIUtil.toBI;
@@ -48,7 +50,6 @@ import static org.ethereum.util.BIUtil.toBI;
 /**
  * Created by ajlopez on 08/08/2016.
  */
-@Component
 public class PendingStateImpl implements PendingState {
     private static final Logger logger = LoggerFactory.getLogger("pendingstate");
     private static final byte[] emptyUncleHashList = sha3(RLP.encodeList(new byte[0]));
@@ -65,12 +66,6 @@ public class PendingStateImpl implements PendingState {
     private ScheduledFuture<?> cleanerFuture;
 
     @Autowired
-    private Repository repository;
-
-    @Autowired
-    private Blockchain blockChain;
-
-    @Autowired
     private BlockStore blockStore;
 
     @Autowired
@@ -79,19 +74,31 @@ public class PendingStateImpl implements PendingState {
     @Autowired
     private EthereumListener listener;
 
+    private final Blockchain blockChain;
+    private final Repository repository;
+
     private Block bestBlock;
 
     private Repository pendingStateRepository;
     private TxPendingValidator validator = new TxPendingValidator();
 
-    public PendingStateImpl() {
-        // Used by Spring framework
+    @Autowired
+    public PendingStateImpl(Blockchain blockChain,
+                            BlockStore blockStore,
+                            Repository repository) {
+        this.blockChain = blockChain;
+        this.blockStore = blockStore;
+        this.repository = repository;
     }
 
-    public PendingStateImpl(Blockchain blockChain, Repository repository, BlockStore blockStore, ProgramInvokeFactory programInvokeFactory, EthereumListener listener, int outdatedThreshold, int outdatedTimeout) {
-        this.blockChain = blockChain;
-        this.repository = repository;
-        this.blockStore = blockStore;
+    public PendingStateImpl(Blockchain blockChain,
+                            Repository repository,
+                            BlockStore blockStore,
+                            ProgramInvokeFactory programInvokeFactory,
+                            EthereumListener listener,
+                            int outdatedThreshold,
+                            int outdatedTimeout) {
+        this(blockChain, blockStore, repository);
         this.programInvokeFactory = programInvokeFactory;
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
@@ -100,6 +107,7 @@ public class PendingStateImpl implements PendingState {
         init();
     }
 
+    @Override
     @PostConstruct
     public final void init() {
         if (this.repository != null)
@@ -200,14 +208,17 @@ public class PendingStateImpl implements PendingState {
         return added;
     }
 
+    @Override
     public synchronized Repository getRepository() { return this.pendingStateRepository; }
 
+    @Override
     public synchronized List<Transaction> getWireTransactions() {
         List<Transaction> txs = new ArrayList<>();
         txs.addAll(wireTransactions.values());
         return txs;
     }
 
+    @Override
     public synchronized List<Transaction> getPendingTransactions() {
         List<Transaction> txs = new ArrayList<>();
 
