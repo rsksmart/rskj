@@ -18,7 +18,7 @@
 
 package co.rsk.mine;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigUtils;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
 import co.rsk.test.World;
@@ -149,7 +149,7 @@ public class MinerManagerTest {
 
         minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
 
-        minerClient.setRsk(new RskImpl() {
+        minerClient.setRsk(new RskImplForTest() {
             @Override
             public boolean isSyncingBlocks() {
                 return true;
@@ -173,7 +173,7 @@ public class MinerManagerTest {
 
         minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
 
-        minerClient.setRsk(new RskImpl() {
+        minerClient.setRsk(new RskImplForTest() {
             @Override
             public boolean isSyncingBlocks() {
                 return false;
@@ -329,7 +329,7 @@ public class MinerManagerTest {
     private static MinerClientImpl getMinerClient(MinerServerImpl minerServer) {
         MinerClientImpl minerClient = new MinerClientImpl();
         minerClient.setMinerServer(minerServer);
-        minerClient.setRsk(new RskImpl() {
+        minerClient.setRsk(new RskImplForTest() {
             @Override
             public boolean isSyncingBlocks() {
                 return false;
@@ -349,13 +349,20 @@ public class MinerManagerTest {
         worldManager.setBlockchain(blockchain);
         ethereum.repository = (org.ethereum.facade.Repository)blockchain.getRepository();
         ethereum.worldManager = worldManager;
-        return new MinerServerImpl(ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(), blockchain.getRepository(), RskSystemProperties.CONFIG, new BlockValidationRuleDummy());
+        return new MinerServerImpl(ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), new BlockValidationRuleDummy());
     }
 
     public static class BlockValidationRuleDummy implements BlockValidationRule {
         @Override
         public boolean isValid(Block block) {
             return true;
+        }
+    }
+
+    private static class RskImplForTest extends RskImpl {
+        public RskImplForTest() {
+            super(null, null, null, null, null,
+                    null, null, null, null, null, null, null, null);
         }
     }
 }

@@ -27,10 +27,10 @@ import org.ethereum.core.Transaction;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.manager.WorldManager;
-import org.ethereum.net.client.PeerClient;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
+import org.ethereum.rpc.Web3;
 import org.ethereum.vm.program.ProgramResult;
 
 import java.math.BigInteger;
@@ -55,10 +55,6 @@ public interface Ethereum {
     void addListener(EthereumListener listener);
 
     ImportResult addNewMinedBlock(Block block);
-
-    PeerClient getDefaultPeer();
-
-    boolean isConnected();
 
     void close();
 
@@ -153,7 +149,7 @@ public interface Ethereum {
     PeerServer getPeerServer();
 
     // TODO added method, to review
-    ProgramResult callConstantCallTransaction(Transaction tx, Block block);
+    ProgramResult callConstant(Web3.CallArguments args);
 
     SystemProperties getSystemProperties();
 }

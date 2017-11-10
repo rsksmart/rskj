@@ -19,11 +19,12 @@
 
 package org.ethereum.net.rlpx;
 
-import co.rsk.core.Rsk;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
+import co.rsk.scoring.PeerScoringManager;
 import com.google.common.io.ByteStreams;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import org.ethereum.config.SystemProperties;
@@ -40,7 +41,6 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.InvalidCipherTextException;
 import org.spongycastle.math.ec.ECPoint;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -66,15 +66,10 @@ import static org.ethereum.util.ByteUtil.bigEndianToShort;
  * which installs further handlers depending on the protocol parameters.
  * This handler is finally removed from the pipeline.
  */
-@Component
-@Scope("prototype")
 public class HandshakeHandler extends ByteToMessageDecoder {
 
-    @Autowired
-    SystemProperties config;
-
-    @Autowired
-    Rsk rsk;
+    private final SystemProperties config;
+    private final PeerScoringManager peerScoringManager;
 
     private static final Logger loggerWire = LoggerFactory.getLogger("wire");
     private static final Logger loggerNet = LoggerFactory.getLogger("net");
@@ -88,12 +83,10 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     private Channel channel;
     private boolean isHandshakeDone;
 
-    public HandshakeHandler() {
-    }
-
-    @PostConstruct
-    private void init() {
-        myKey = config.getMyKey();
+    public HandshakeHandler(SystemProperties config, PeerScoringManager peerScoringManager) {
+        this.config = config;
+        this.peerScoringManager = peerScoringManager;
+        this.myKey = config.getMyKey();
     }
 
     @Override
@@ -375,7 +368,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
             NodeID nodeID = nid != null ? new NodeID(nid) : null;
             InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
 
-            this.rsk.getPeerScoringManager().recordEvent(nodeID, address, event);
+            peerScoringManager.recordEvent(nodeID, address, event);
         }
     }
 }

@@ -16,31 +16,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.core;
+package org.ethereum.rpc.exception;
 
-import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.datasource.LevelDbDataSource;
+public class DisabledWalletException extends RskJsonRpcRequestException {
 
-/**
- * Created by mario on 06/12/16.
- */
-public class WalletFactory {
+    private static final Integer ERROR_CODE = -32604;
 
-    public static Wallet createPersistentWallet() {
-        return createPersistentWallet("wallet");
+    public DisabledWalletException() {
+        super(ERROR_CODE, "The local wallet feature is disabled");
     }
-
-    public static Wallet createPersistentWallet(String storeName) {
-        Wallet wallet = new Wallet();
-        KeyValueDataSource ds = new LevelDbDataSource(storeName);
-        ds.init();
-        wallet.setStore(ds);
-        return wallet;
-    }
-
-    public static Wallet createWallet() {
-        return new Wallet();
-    }
-
-
 }

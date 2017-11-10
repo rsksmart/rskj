@@ -19,11 +19,14 @@
 package org.ethereum.rpc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigUtils;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.mine.MinerClientImpl;
 import co.rsk.mine.MinerManagerTest;
+import co.rsk.mine.MinerServer;
 import co.rsk.mine.MinerServerImpl;
+import co.rsk.rpc.modules.personal.PersonalModule;
+import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.test.World;
 import co.rsk.validators.BlockValidationRule;
 import org.ethereum.core.Block;
@@ -123,8 +126,9 @@ public class Web3ImplSnapshotTest {
     @Test
     public void mine() {
         World world = new World();
-
-        Web3Impl web3 = createWeb3(world);
+        SimpleEthereum ethereum = new SimpleEthereum();
+        MinerServer minerServer = getMinerServerForTest(world, ethereum);
+        Web3Impl web3 = createWeb3(world, ethereum, minerServer);
 
         Assert.assertEquals(0, world.getBlockChain().getBestBlock().getNumber());
 
@@ -136,50 +140,56 @@ public class Web3ImplSnapshotTest {
     @Test
     public void increaseTime() {
         World world = new World();
-
-        Web3Impl web3 = createWeb3(world);
+        SimpleEthereum ethereum = new SimpleEthereum();
+        MinerServer minerServer = getMinerServerForTest(world, ethereum);
+        Web3Impl web3 = createWeb3(world, ethereum, minerServer);
 
         String result = web3.evm_increaseTime("0x10");
 
         Assert.assertEquals("0x10", result);
-        Assert.assertEquals(16, web3.worldManager.getMinerServer().increaseTime(0));
+        Assert.assertEquals(16, minerServer.increaseTime(0));
     }
 
     @Test
     public void increaseTimeTwice() {
         World world = new World();
-
-        Web3Impl web3 = createWeb3(world);
+        SimpleEthereum ethereum = new SimpleEthereum();
+        MinerServer minerServer = getMinerServerForTest(world, ethereum);
+        Web3Impl web3 = createWeb3(world, ethereum, minerServer);
 
         web3.evm_increaseTime("0x10");
         String result = web3.evm_increaseTime("0x10");
 
         Assert.assertEquals("0x20", result);
-        Assert.assertEquals(32, web3.worldManager.getMinerServer().increaseTime(0));
+        Assert.assertEquals(32, minerServer.increaseTime(0));
     }
 
-    private Web3Impl createWeb3(World world) {
-        Web3Impl web3 = new Web3Impl(null, null);
-        SimpleEthereum ethereum = new SimpleEthereum();
+    private static Web3Impl createWeb3(World world, SimpleEthereum ethereum, MinerServer minerServer) {
         MinerClientImpl minerClient = new MinerClientImpl();
+        PersonalModule pm = new PersonalModuleWalletDisabled();
+        Web3Impl web3 = new Web3Impl(Web3Mocks.getMockEthereum(), Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null);
 
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
-        worldManager.minerClient = minerClient;
         ethereum.repository = (org.ethereum.facade.Repository) world.getRepository();
         ethereum.worldManager = worldManager;
 
         BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
 
-        MinerServerImpl minerServer;
-        minerServer = new MinerServerImpl(ethereum, world.getBlockChain(), world.getBlockChain().getBlockStore(), world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), RskSystemProperties.CONFIG, rule);
         minerClient.setMinerServer(minerServer);
-
-        worldManager.minerClient = minerClient;
-        worldManager.minerServer = minerServer;
-
         web3.worldManager = worldManager;
         return web3;
+    }
+
+    private static Web3Impl createWeb3(World world) {
+        SimpleEthereum ethereum = new SimpleEthereum();
+        return createWeb3(world, ethereum, getMinerServerForTest(world, ethereum));
+    }
+
+    static MinerServer getMinerServerForTest(World world, SimpleEthereum ethereum) {
+        BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
+        return new MinerServerImpl(ethereum, world.getBlockChain(), world.getBlockChain().getBlockStore(),
+                world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), ConfigUtils.getDefaultMiningConfig(), rule);
     }
 
     private static void addBlocks(Blockchain blockchain, int size) {

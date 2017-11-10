@@ -16,11 +16,22 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.util;
+package co.rsk.core;
 
-/**
- * Created by adrian.eidelman on 3/16/2016.
- */
-public interface AccountUtils {
-    byte[] getCoinbaseAddress();
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.LevelDbDataSource;
+
+public class WalletFactory {
+
+    public static Wallet createPersistentWallet(String storeName) {
+        KeyValueDataSource ds = new LevelDbDataSource(storeName);
+        ds.init();
+        return new Wallet(ds);
+    }
+
+    public static Wallet createWallet() {
+        return new Wallet(new HashMapDB());
+    }
+
 }

@@ -19,11 +19,9 @@
 
 package org.ethereum.net.eth.handler;
 
-import co.rsk.core.Rsk;
 import co.rsk.net.eth.RskWireProtocol;
 import org.ethereum.net.eth.EthVersion;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 /**
@@ -35,19 +33,24 @@ import org.springframework.stereotype.Component;
 @Component
 public class EthHandlerFactoryImpl implements EthHandlerFactory {
 
-    @Autowired
-    private ApplicationContext ctx;
+    private final RskWireProtocolFactory rskWireProtocolFactory;
 
     @Autowired
-    private Rsk rsk;
+    public EthHandlerFactoryImpl(RskWireProtocolFactory rskWireProtocolFactory) {
+        this.rskWireProtocolFactory = rskWireProtocolFactory;
+    }
 
     @Override
     public EthHandler create(EthVersion version) {
         switch (version) {
             case V62:
-                return ctx.getBean(RskWireProtocol.class);
+                return rskWireProtocolFactory.newInstance();
 
             default:    throw new IllegalArgumentException("Eth " + version + " is not supported");
         }
+    }
+
+    public interface RskWireProtocolFactory {
+        RskWireProtocol newInstance();
     }
 }

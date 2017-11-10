@@ -340,7 +340,14 @@ public class Transaction implements SerializableObject {
         if (!parsed)
             rlpParse();
 
-        return this.receiveAddress == null || Arrays.equals(this.receiveAddress,ByteUtil.EMPTY_BYTE_ARRAY);
+        if (this.receiveAddress == null)
+            return true;
+
+        for (int k = 0; k < this.receiveAddress.length; k++)
+            if (this.receiveAddress[k] != 0)
+                return false;
+
+        return true;
     }
 
     /*

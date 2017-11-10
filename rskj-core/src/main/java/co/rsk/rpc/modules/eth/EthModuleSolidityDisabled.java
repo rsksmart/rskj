@@ -16,27 +16,22 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.util;
+package co.rsk.rpc.modules.eth;
 
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
-import org.springframework.stereotype.Component;
+import org.ethereum.rpc.dto.CompilationResultDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
-import static co.rsk.config.RskSystemProperties.CONFIG;
+public class EthModuleSolidityDisabled implements EthModuleSolidity {
 
-/**
- * Created by adrian.eidelman on 3/16/2016.
- */
-@Component
-public class AccountUtilsImpl implements AccountUtils {
+    private static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
-    public byte[] getCoinbaseAddress()
-    {
-        String secret = CONFIG.coinbaseSecret();
-        byte[] privKey = HashUtil.sha3(secret.getBytes(StandardCharsets.UTF_8));
-        return ECKey.fromPrivate(privKey).getAddress();
+    @Override
+    public Map<String, CompilationResultDTO> compileSolidity(String contract) throws Exception {
+        LOGGER.debug("eth_compileSolidity(): Solidity compiler not enabled");
+        return new HashMap<>();
     }
-
 }

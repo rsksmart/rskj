@@ -27,12 +27,13 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
-import org.ethereum.datasource.mapdb.MapDBFactory;
 import org.ethereum.validator.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
 
 import java.util.*;
 
@@ -47,9 +48,6 @@ public class CommonConfig {
     private static final Logger logger = LoggerFactory.getLogger("general");
 
     @Autowired
-    private MapDBFactory mapDBFactory;
-
-    @Autowired
     SystemProperties config = RskSystemProperties.CONFIG;
 
     @Bean
@@ -61,23 +59,9 @@ public class CommonConfig {
     }
 
     private KeyValueDataSource makeDataSource(String name) {
-        KeyValueDataSource ds = keyValueDataSource();
-        ds.setName(name);
+        KeyValueDataSource ds = new LevelDbDataSource(name);
         ds.init();
-
         return ds;
-    }
-
-    @Bean
-    @Scope("prototype")
-    public KeyValueDataSource keyValueDataSource() {
-        String dataSource = config.getKeyValueDataSource();
-        try {
-            dataSource = "leveldb";
-            return new LevelDbDataSource();
-        } finally {
-            logger.info(dataSource + " key-value data source created.");
-        }
     }
 
     @Bean
@@ -87,7 +71,7 @@ public class CommonConfig {
             storage = "In memory";
             return Collections.synchronizedSet(new HashSet<PendingTransaction>());
         } finally {
-            logger.info(storage + " 'wireTransactions' storage created.");
+            logger.info("{} 'wireTransactions' storage created.", storage);
         }
     }
 

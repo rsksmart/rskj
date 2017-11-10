@@ -16,14 +16,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.util;
+package co.rsk.rpc.modules.eth;
 
-/**
- * Created by adrian.eidelman on 3/16/2016.
- */
-public class AccountUtilsDummy implements AccountUtils {
-    public byte[] getCoinbaseAddress()
-    {
-        return new byte[0];
-    }
+import org.ethereum.rpc.dto.CompilationResultDTO;
+
+import java.util.Map;
+
+public interface EthModuleSolidity {
+
+    Map<String, CompilationResultDTO> compileSolidity(String contract) throws Exception;
 }
