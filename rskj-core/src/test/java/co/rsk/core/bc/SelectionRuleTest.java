@@ -3,15 +3,19 @@ package co.rsk.core.bc;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.test.World;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.junit.Test;
+
+import java.util.ArrayList;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class SelectionRuleTest {
 
     @Test
-    public void smallerBlockTest() {
+    public void smallerBlockHashTest() {
         byte[] lowerHash = new byte[]{0};
         byte[] biggerHash = new byte[]{1};
 
@@ -23,10 +27,20 @@ public class SelectionRuleTest {
     public void addBlockTest() {
         Blockchain blockchain = createBlockchain();
 
-        Block block1 = BlockGenerator.createChildBlock(blockchain.getBestBlock());
-        Block block2 = BlockGenerator.createChildBlock(block1, 0, 5);
-        assertTrue(SelectionRule.shouldWeAddThisBlock(block1.getDifficultyBI(),
-                block2.getDifficultyBI(), block1, block2));
+        Block lowDifficultyBlock = BlockGenerator.createChildBlock(blockchain.getBestBlock());
+        Block highDifficultyBlock = BlockGenerator.createChildBlock(lowDifficultyBlock, 0, 5);
+        Block highDifficultyBlockWithMoreFees = BlockGenerator.createChildBlock(lowDifficultyBlock, 10l, new ArrayList<>(), highDifficultyBlock.getDifficulty());
+        Block highDifficultyBlock2 = BlockGenerator.createChildBlock(lowDifficultyBlock, 0, 5);
+
+        //diff test
+        assertFalse(SelectionRule.shouldWeAddThisBlock(lowDifficultyBlock.getDifficultyBI(),
+                highDifficultyBlock.getDifficultyBI(), lowDifficultyBlock, highDifficultyBlock));
+        assertTrue(SelectionRule.shouldWeAddThisBlock(highDifficultyBlock.getDifficultyBI(),
+                lowDifficultyBlock.getDifficultyBI(), highDifficultyBlock, lowDifficultyBlock));
+        // At same difficulty, more fees
+        assertFalse(SelectionRule.shouldWeAddThisBlock(highDifficultyBlockWithMoreFees.getDifficultyBI(),
+                highDifficultyBlock.getDifficultyBI(), highDifficultyBlockWithMoreFees, highDifficultyBlock));
+        //Low hash is proved in smallerBlockHashTest
     }
 
     private static BlockChainImpl createBlockchain() {
