@@ -18,32 +18,30 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.config.RskSystemProperties;
-import com.google.common.annotations.VisibleForTesting;
 import co.rsk.blocks.BlockRecorder;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.Metrics;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.validators.BlockValidator;
-import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.*;
-import org.ethereum.listener.EthereumListener;
-import org.ethereum.manager.AdminInfo;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
-import org.ethereum.util.ByteUtil;
+import co.rsk.validators.BlockValidator;
+import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.core.*;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.BlockInformation;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.TransactionInfo;
+import org.ethereum.listener.EthereumListener;
+import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.annotation.PostConstruct;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -191,9 +189,9 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
                 logger.info("block: num: [{}] hash: [{}], processed after: [{}]nano, result {}", block.getNumber(), block.getShortHash(), totalTime, result);
                 return result;
             }
-        } catch (Exception e) {
-            logger.error("Unexpected error: ", e);
-            panicProcessor.panic("bcerror", e.toString());
+        } catch (Throwable t) {
+            logger.error("Unexpected error: ", t);
+            panicProcessor.panic("bcerror", t.toString());
             return ImportResult.INVALID_BLOCK;
         }
     }
