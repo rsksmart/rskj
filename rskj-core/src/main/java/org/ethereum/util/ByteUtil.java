@@ -37,6 +37,9 @@ import java.util.Set;
 
 public class ByteUtil {
 
+    private ByteUtil() {
+    }
+
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
@@ -66,7 +69,7 @@ public class ByteUtil {
      */
     public static byte[] bigIntegerToBytes(BigInteger b, int numBytes) {
         if (b == null)
-            return null;
+            return EMPTY_BYTE_ARRAY;
         byte[] bytes = new byte[numBytes];
         byte[] biBytes = b.toByteArray();
         int start = (biBytes.length == numBytes + 1) ? 1 : 0;
@@ -87,7 +90,7 @@ public class ByteUtil {
      */
     public static byte[] bigIntegerToBytes(BigInteger value) {
         if (value == null)
-            return null;
+            return EMPTY_BYTE_ARRAY;
 
         byte[] data = value.toByteArray();
 
@@ -422,8 +425,9 @@ public class ByteUtil {
     public static byte[] copyToArray(BigInteger value) {
         byte[] src = ByteUtil.bigIntegerToBytes(value);
 
-        if (src == null)
+        if (Arrays.equals(src, EMPTY_BYTE_ARRAY)) {
             throw new NullPointerException();
+        }
 
         byte[] dest = ByteBuffer.allocate(32).array();
         System.arraycopy(src, 0, dest, dest.length - src.length, src.length);
@@ -502,13 +506,13 @@ public class ByteUtil {
      */
     public static byte[] xorAlignRight(byte[] b1, byte[] b2) {
         if (b1.length > b2.length) {
-            byte[] b2_ = new byte[b1.length];
-            System.arraycopy(b2, 0, b2_, b1.length - b2.length, b2.length);
-            b2 = b2_;
+            byte[] b2Replacement = new byte[b1.length];
+            System.arraycopy(b2, 0, b2Replacement, b1.length - b2.length, b2.length);
+            b2 = b2Replacement;
         } else if (b2.length > b1.length) {
-            byte[] b1_ = new byte[b2.length];
-            System.arraycopy(b1, 0, b1_, b2.length - b1.length, b1.length);
-            b1 = b1_;
+            byte[] b1Replacement = new byte[b2.length];
+            System.arraycopy(b1, 0, b1Replacement, b2.length - b1.length, b1.length);
+            b1 = b1Replacement;
         }
 
         return xor(b1, b2);
@@ -518,13 +522,9 @@ public class ByteUtil {
      * @param arrays - arrays to merge
      * @return - merged array
      */
-    public static byte[] merge(byte[]... arrays)
-    {
-        int arrCount = 0;
+    public static byte[] merge(byte[]... arrays) {
         int count = 0;
-        for (byte[] array: arrays)
-        {
-            arrCount++;
+        for (byte[] array: arrays) {
             count += array.length;
         }
 
