@@ -111,7 +111,7 @@ public class WorldDslProcessor {
 
     private void processAssertBalanceCommand(DslCommand cmd) throws DslProcessorException {
         String accountName = cmd.getArgument(0);
-        BigInteger accountBalance = new BigInteger(cmd.getArgument(1));
+        BigInteger expected = new BigInteger(cmd.getArgument(1));
 
         byte[] accountAddress;
 
@@ -128,10 +128,11 @@ public class WorldDslProcessor {
                 accountAddress = Hex.decode(accountName);
         }
 
-        if (accountBalance.equals(world.getRepository().getBalance(accountAddress)))
+        BigInteger accountBalance = world.getRepository().getBalance(accountAddress);
+        if (expected.equals(accountBalance))
             return;
 
-        throw new DslProcessorException(String.format("Expected account '%s' with balance '%s'", accountName, accountBalance));
+        throw new DslProcessorException(String.format("Expected account '%s' with balance '%s', but got '%s'", accountName, expected, accountBalance));
     }
 
     private void processAssertBestCommand(DslCommand cmd) throws DslProcessorException {
