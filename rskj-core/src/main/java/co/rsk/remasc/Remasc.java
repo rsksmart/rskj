@@ -120,7 +120,7 @@ public class Remasc {
             // Block has siblings, reward distribution is more complex
             boolean previousBrokenSelectionRule = provider.getBrokenSelectionRule();
             this.payWithSiblings(processingBlockHeader, fullBlockReward, siblings, previousBrokenSelectionRule);
-            boolean brokenSelectionRule = this.isBrokenSelectionRule(processingBlockHeader, siblings);
+            boolean brokenSelectionRule = SelectionRule.isBrokenSelectionRule(processingBlockHeader, siblings);
             provider.setBrokenSelectionRule(brokenSelectionRule);
         } else {
             if (provider.getBrokenSelectionRule()) {
@@ -195,12 +195,6 @@ public class Remasc {
             transfer(sibling.getCoinbase(), topReward.subtract(lateInclusionPunishment));
             provider.addToBurnBalance(lateInclusionPunishment);
         }
-    }
-
-    private boolean isBrokenSelectionRule(BlockHeader processingBlockHeader,
-                                            List<Sibling> siblings) {
-        // Find out if main chain block selection rule was broken
-        return SelectionRule.isBrokenSelectionRule(processingBlockHeader, siblings);
     }
 
     private void transfer(byte[] toAddr, BigInteger value) {

@@ -5,6 +5,7 @@ import co.rsk.test.World;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
+import org.ethereum.util.RskTestFactory;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -27,10 +28,10 @@ public class SelectionRuleTest {
     public void addBlockTest() {
         Blockchain blockchain = createBlockchain();
 
-        Block lowDifficultyBlock = BlockGenerator.createChildBlock(blockchain.getBestBlock());
+
+        Block lowDifficultyBlock = BlockGenerator.createChildBlock(blockchain.getBestBlock(), 0, 1);
         Block highDifficultyBlock = BlockGenerator.createChildBlock(lowDifficultyBlock, 0, 5);
         Block highDifficultyBlockWithMoreFees = BlockGenerator.createChildBlock(lowDifficultyBlock, 10l, new ArrayList<>(), highDifficultyBlock.getDifficulty());
-        Block highDifficultyBlock2 = BlockGenerator.createChildBlock(lowDifficultyBlock, 0, 5);
 
         //diff test
         assertFalse(SelectionRule.shouldWeAddThisBlock(lowDifficultyBlock.getDifficultyBI(),
@@ -38,14 +39,14 @@ public class SelectionRuleTest {
         assertTrue(SelectionRule.shouldWeAddThisBlock(highDifficultyBlock.getDifficultyBI(),
                 lowDifficultyBlock.getDifficultyBI(), highDifficultyBlock, lowDifficultyBlock));
         // At same difficulty, more fees
-        assertFalse(SelectionRule.shouldWeAddThisBlock(highDifficultyBlockWithMoreFees.getDifficultyBI(),
+        assertTrue(SelectionRule.shouldWeAddThisBlock(highDifficultyBlockWithMoreFees.getDifficultyBI(),
                 highDifficultyBlock.getDifficultyBI(), highDifficultyBlockWithMoreFees, highDifficultyBlock));
         //Low hash is proved in smallerBlockHashTest
     }
 
     private static BlockChainImpl createBlockchain() {
-        World world = new World();
-
-        return world.getBlockChain();
+        RskTestFactory factory = new RskTestFactory();
+        factory.initGenesis();
+        return factory.getBlockchain();
     }
 }

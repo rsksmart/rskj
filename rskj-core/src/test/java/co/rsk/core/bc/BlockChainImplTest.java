@@ -35,7 +35,6 @@ import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.PrecompiledContracts;
-import org.h2.command.dml.Select;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.Arrays;
