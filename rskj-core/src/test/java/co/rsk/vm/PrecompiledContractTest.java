@@ -18,12 +18,14 @@
 
 package co.rsk.vm;
 
+import co.rsk.peg.Bridge;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
 import org.junit.Assert;
 import org.junit.Test;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -98,5 +100,25 @@ public class PrecompiledContractTest {
         BigInteger a = new BigInteger(1, decoded);
 
         Assert.assertTrue(a.compareTo(b) == 0);
+    }
+
+    @Test
+    public void getBridgeContract() {
+        DataWord bridgeAddress = new DataWord(Hex.decode(PrecompiledContracts.BRIDGE_ADDR));
+        PrecompiledContract bridge = PrecompiledContracts.getContractForAddress(bridgeAddress);
+
+        Assert.assertNotNull(bridge);
+        Assert.assertEquals(Bridge.class, bridge.getClass());
+    }
+
+    @Test
+    public void getBridgeContractTwice() {
+        DataWord bridgeAddress = new DataWord(Hex.decode(PrecompiledContracts.BRIDGE_ADDR));
+        PrecompiledContract bridge1 = PrecompiledContracts.getContractForAddress(bridgeAddress);
+        PrecompiledContract bridge2 = PrecompiledContracts.getContractForAddress(bridgeAddress);
+
+        Assert.assertNotNull(bridge1);
+        Assert.assertNotNull(bridge2);
+        Assert.assertNotSame(bridge1, bridge2);
     }
 }
