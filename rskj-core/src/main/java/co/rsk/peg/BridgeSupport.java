@@ -49,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
+import javax.annotation.Nullable;
 import java.io.*;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -861,6 +862,7 @@ public class BridgeSupport {
      * Builds and returns the retiring federation (if one exists)
      * @return the retiring federation, null if none exists
      */
+    @Nullable
     private Federation getRetiringFederation() {
         Integer size = getRetiringFederationSize();
         if (size == -1)
