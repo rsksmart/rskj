@@ -206,32 +206,38 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     @Override
     public void tick(Duration duration) {
-        List<NodeID> timeoutedNodes = timeElapsedByPeer.entrySet().stream()
-                .filter(e -> chunksBeingDownloaded.containsKey(e.getKey()) &&
-                        e.getValue().plus(duration).compareTo(syncConfiguration.getTimeoutWaitingRequest()) >= 0)
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+        // first we update all the nodes that are expected to be working
+        List<NodeID> updatedNodes = timeElapsedByPeer.keySet().stream()
+            .filter(e -> chunksBeingDownloaded.containsKey(e))
+            .collect(Collectors.toList());
 
-        for (NodeID peerId: timeoutedNodes){
-            syncInformation.reportEvent("Timeout waiting requests from node {}",
-                    EventType.TIMEOUT_MESSAGE, peerId);
+        updatedNodes.forEach(k -> timeElapsedByPeer.put(k, timeElapsedByPeer.get(k).plus(duration)));
 
-            Long messageId = messagesByPeers.remove(peerId);
-            BlockHeader header = pendingBodyResponses.remove(messageId).header;
-            clearPeerInfo(peerId);
-            resetChunkAndHeader(peerId, header);
-        }
+        // we get the nodes that got beyond timeout limit and ban them
+        Duration limit = syncConfiguration.getTimeoutWaitingRequest();
+        updatedNodes.stream()
+            .filter(k -> timeElapsedByPeer.get(k).compareTo(limit) >= 0)
+            .forEach(k -> handleTimeoutMessage(k));
 
-        if (suitablePeers.size() == 0){
+        if (suitablePeers.isEmpty()){
             syncEventsHandler.stopSyncing();
             return;
         }
 
         startDownloading(getInactivePeers());
 
-        if (chunksBeingDownloaded.size() == 0){
+        if (chunksBeingDownloaded.isEmpty()){
             syncEventsHandler.stopSyncing();
         }
+    }
+
+    private void handleTimeoutMessage(NodeID peerId) {
+        syncInformation.reportEvent("Timeout waiting requests from node {}",
+                EventType.TIMEOUT_MESSAGE, peerId);
+        Long messageId = messagesByPeers.remove(peerId);
+        BlockHeader header = pendingBodyResponses.remove(messageId).header;
+        clearPeerInfo(peerId);
+        resetChunkAndHeader(peerId, header);
     }
 
     private List<NodeID> getInactivePeers() {
