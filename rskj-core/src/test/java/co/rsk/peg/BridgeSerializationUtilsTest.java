@@ -138,6 +138,7 @@ public class BridgeSerializationUtilsTest {
                     BtcECKey.fromPublicOnly(publicKeyBytes[5]),
             }),
             Instant.ofEpochMilli(0xabcdef), //
+            42L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 

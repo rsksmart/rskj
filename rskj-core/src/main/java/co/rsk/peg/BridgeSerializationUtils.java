@@ -253,7 +253,7 @@ public class BridgeSerializationUtils {
                 .map(pubKeyBytes -> BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
                 .collect(Collectors.toList());
 
-        return new Federation(pubKeys, creationTime, btcContext.getParams());
+        return new Federation(pubKeys, creationTime, 0L, btcContext.getParams());
     }
 
     // A pending federation is serialized as the

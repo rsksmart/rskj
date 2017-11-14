@@ -64,6 +64,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
         genesisFederation = new Federation(
                 federatorPublicKeys,
                 genesisFederationCreatedAt,
+                1L,
                 getBtcParams()
         );
 

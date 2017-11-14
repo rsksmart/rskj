@@ -190,12 +190,13 @@ public class PendingFederationTest {
                 BtcECKey.fromPrivate(BigInteger.valueOf(400)),
                 BtcECKey.fromPrivate(BigInteger.valueOf(500)),
                 BtcECKey.fromPrivate(BigInteger.valueOf(600)),
-        }), Instant.ofEpochMilli(1234L), NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        }), Instant.ofEpochMilli(1234L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
 
         Assert.assertEquals(
                 expectedFederation,
                 otherPendingFederation.buildFederation(
                         Instant.ofEpochMilli(1234L),
+                        0L,
                         NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
                 )
         );
@@ -227,12 +228,13 @@ public class PendingFederationTest {
                 BtcECKey.fromPrivate(BigInteger.valueOf(700)),
                 BtcECKey.fromPrivate(BigInteger.valueOf(800)),
                 BtcECKey.fromPrivate(BigInteger.valueOf(900)),
-        }), Instant.ofEpochMilli(1234L), NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        }), Instant.ofEpochMilli(1234L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
 
         Assert.assertEquals(
                 expectedFederation,
                 otherPendingFederation.buildFederation(
                         Instant.ofEpochMilli(1234L),
+                        0L,
                         NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
                 )
         );
@@ -247,7 +249,7 @@ public class PendingFederationTest {
         );
 
         try {
-            otherPendingFederation.buildFederation(Instant.ofEpochMilli(12L), NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            otherPendingFederation.buildFederation(Instant.ofEpochMilli(12L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         } catch (Exception e) {
             Assert.assertEquals("PendingFederation is incomplete", e.getMessage());
             return;

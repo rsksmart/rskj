@@ -1164,7 +1164,7 @@ public class BridgeSupportTest {
                 BtcECKey.fromPrivate(Hex.decode("fa02")),
         });
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation federation1 = new Federation(federation1Keys, Instant.ofEpochMilli(1000L), parameters);
+        Federation federation1 = new Federation(federation1Keys, Instant.ofEpochMilli(1000L), 0L, parameters);
 
         List<BtcECKey> federation2Keys = Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPrivate(Hex.decode("fb01")),
@@ -1172,7 +1172,7 @@ public class BridgeSupportTest {
                 BtcECKey.fromPrivate(Hex.decode("fb03")),
         });
         federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation federation2 = new Federation(federation2Keys, Instant.ofEpochMilli(2000L), parameters);
+        Federation federation2 = new Federation(federation2Keys, Instant.ofEpochMilli(2000L), 0L, parameters);
 
         Repository repository = new RepositoryImpl();
         repository.addBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
@@ -1305,11 +1305,13 @@ public class BridgeSupportTest {
         Federation activeFederation = new Federation(
                 getTestFederationPublicKeys(3),
                 Instant.ofEpochMilli(1000),
+                0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Federation genesisFederation = new Federation(
                 getTestFederationPublicKeys(6),
                 Instant.ofEpochMilli(1000),
+                0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(true, activeFederation, genesisFederation, null, null, null, null);
@@ -1328,11 +1330,13 @@ public class BridgeSupportTest {
         Federation activeFederation = new Federation(
                 getTestFederationPublicKeys(3),
                 Instant.ofEpochMilli(1000),
+                0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Federation genesisFederation = new Federation(
                 getTestFederationPublicKeys(6),
                 Instant.ofEpochMilli(1000),
+                0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, activeFederation, genesisFederation, null, null, null, null);
@@ -1360,6 +1364,7 @@ public class BridgeSupportTest {
         Federation mockedRetiringFederation = new Federation(
                 getTestFederationPublicKeys(4),
                 Instant.ofEpochMilli(2000),
+                0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, mockedRetiringFederation, null, null, null);
@@ -1773,7 +1778,7 @@ public class BridgeSupportTest {
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
                 BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12")),
                 BtcECKey.fromPublicOnly(Hex.decode("03c67ad63527012fd4776ae892b5dc8c56f80f1be002dc65cd520a2efb64e37b49")),
-        }), Instant.ofEpochMilli(5005L), NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        }), Instant.ofEpochMilli(5005L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
 
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
@@ -1930,7 +1935,7 @@ public class BridgeSupportTest {
         Federation expectedFederation = new Federation(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
-        }), Instant.ofEpochMilli(5005L), NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        }), Instant.ofEpochMilli(5005L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 expectedFederation,
@@ -1963,7 +1968,7 @@ public class BridgeSupportTest {
         Federation expectedFederation = new Federation(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
-        }), Instant.ofEpochMilli(5005L), NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        }), Instant.ofEpochMilli(5005L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 null,

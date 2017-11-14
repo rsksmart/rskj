@@ -874,7 +874,7 @@ public class BridgeSupport {
         }
         Instant creationTime = getRetiringFederationCreationTime();
 
-        return new Federation(publicKeys, creationTime, bridgeConstants.getBtcParams());
+        return new Federation(publicKeys, creationTime, 0L, bridgeConstants.getBtcParams());
     }
 
     /**
@@ -996,7 +996,7 @@ public class BridgeSupport {
         // Creation time is the block's timestamp.
         Instant creationTime = Instant.ofEpochMilli(rskExecutionBlock.getTimestamp());
         provider.setRetiringFederation(getActiveFederation());
-        provider.setActiveFederation(currentPendingFederation.buildFederation(creationTime, bridgeConstants.getBtcParams()));
+        provider.setActiveFederation(currentPendingFederation.buildFederation(creationTime, rskExecutionBlock.getNumber(), bridgeConstants.getBtcParams()));
         provider.setPendingFederation(null);
 
         // Clear votes on election
