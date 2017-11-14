@@ -18,36 +18,39 @@
 
 package co.rsk.peg;
 
-import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.crypto.Sha3Hash;
-import co.rsk.peg.bitcoin.SimpleBtcTransaction;
-import co.rsk.peg.simples.SimpleRskTransaction;
-import co.rsk.config.BridgeConstants;
-import co.rsk.test.World;
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.crypto.Sha3Hash;
+import co.rsk.db.RepositoryImpl;
+import co.rsk.peg.bitcoin.SimpleBtcTransaction;
+import co.rsk.peg.simples.SimpleRskTransaction;
+import co.rsk.test.World;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
-import org.ethereum.core.Block;
-import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ReceiptStore;
-import co.rsk.db.RepositoryImpl;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.internal.util.reflection.Whitebox;
+import org.mockito.invocation.InvocationOnMock;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.Instant;
+import java.util.*;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 6/8/2016.
@@ -55,22 +58,22 @@ import java.util.List;
 public class BridgeTest {
 
 
-    private static NetworkParameters networkParameters = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+    private static NetworkParameters networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
     private static BlockchainNetConfig blockchainNetConfigOriginal;
     private static BridgeConstants bridgeConstants;
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
-        bridgeConstants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
+        bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         networkParameters = bridgeConstants.getBtcParams();
     }
 
     @AfterClass
     public static void tearDownAfterClass() throws Exception {
-        SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @Test
@@ -81,7 +84,7 @@ public class BridgeTest {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, track, null, null, null);
 
-        bridge.execute(Bridge.UPDATE_COLLECTIONS.encode(new Object[0]));
+        bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
 
         track.commit();
 
@@ -119,7 +122,7 @@ public class BridgeTest {
         World world = new World();
         bridge.init(null, world.getBlockChain().getBestBlock(), track, world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null);
 
-        bridge.execute(Bridge.UPDATE_COLLECTIONS.encode(new Object[0]));
+        bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
 
         track.commit();
 
@@ -172,14 +175,12 @@ public class BridgeTest {
         for (TransactionInfo txi: tis)
             receiptStore.add(txi.getBlockHash(), txi.getIndex(), txi.getReceipt());
 
-        blocks.get(1).getTransactionsList().add(tx);
-        blocks.get(1).flushRLP();
         world.getBlockChain().getBlockStore().saveBlock(blocks.get(1), BigInteger.ONE, true);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, world.getBlockChain().getBlockStore().getBestBlock(), track, world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null);
 
-        bridge.execute(Bridge.UPDATE_COLLECTIONS.encode(new Object[0]));
+        bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
 
         track.commit();
 
@@ -197,7 +198,7 @@ public class BridgeTest {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, track, null, null, null);
 
-        bridge.execute(Bridge.RECEIVE_HEADERS.encode(new co.rsk.bitcoinj.core.BtcBlock[0]));
+        bridge.execute(Bridge.RECEIVE_HEADERS.encode());
 
         track.commit();
     }
@@ -210,7 +211,7 @@ public class BridgeTest {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, track, null, null, null);
 
-        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(networkParameters, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, Utils.encodeCompactBits(networkParameters.getMaxTarget()), 1, new ArrayList<BtcTransaction>());
+        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(networkParameters, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, Utils.encodeCompactBits(networkParameters.getMaxTarget()), 1, new ArrayList<>());
         co.rsk.bitcoinj.core.BtcBlock[] headers = new co.rsk.bitcoinj.core.BtcBlock[1];
         headers[0] = block;
 
@@ -264,7 +265,7 @@ public class BridgeTest {
         bridge.init(null, null, track, null, null, null);
 
 
-        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(new Object[]{new byte[3], 1, new byte[30]});
+        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(new byte[3], 1, new byte[30]);
 
         Assert.assertNull(bridge.execute(data));
     }
@@ -282,7 +283,7 @@ public class BridgeTest {
         tx.addOutput(Coin.COIN, new BtcECKey().toAddress(btcParams));
         tx.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, new BtcECKey()));
 
-        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(new Object[]{tx.bitcoinSerialize(), 1, new byte[3]});
+        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(tx.bitcoinSerialize(), 1, new byte[3]);
 
         Assert.assertNull(bridge.execute(data));
     }
@@ -300,35 +301,24 @@ public class BridgeTest {
         tx.addOutput(Coin.COIN, new BtcECKey().toAddress(btcParams));
         tx.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, new BtcECKey()));
 
-        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(new Object[]{tx.bitcoinSerialize(), 1, new byte[30]});
+        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(tx.bitcoinSerialize(), 1, new byte[30]);
 
         Assert.assertNull(bridge.execute(data));
     }
 
     @Test
-    public void getBtcTxHashesAlreadyProcessed() throws Exception{
+    public void getFederationAddress() throws Exception {
+        // Case with genesis federation
+        Federation federation = bridgeConstants.getGenesisFederation();
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, track, null, null, null);
 
-        byte[] data = Bridge.GET_BTC_TX_HASHES_ALREADY_PROCESSED.encode(new Object[0]);
+        byte[] data = Bridge.GET_FEDERATION_ADDRESS.encode();
 
-        Assert.assertNotNull(bridge.execute(data));
-    }
-
-    @Test
-    public void getFederationAddress() throws Exception{
-        Repository repository = new RepositoryImpl();
-        Repository track = repository.startTracking();
-
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, track, null, null, null);
-
-        byte[] data = Bridge.GET_FEDERATION_ADDRESS.encode(new Object[0]);
-
-        Assert.assertArrayEquals(Bridge.GET_FEDERATION_ADDRESS.encodeOutputs(bridgeConstants.getFederationAddress().toString()), bridge.execute(data));
+        Assert.assertArrayEquals(Bridge.GET_FEDERATION_ADDRESS.encodeOutputs(federation.getAddress().toString()), bridge.execute(data));
     }
 
     @Test
@@ -340,7 +330,7 @@ public class BridgeTest {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, track, null, null, null);
 
-        byte[] data = Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode(new Object[0]);
+        byte[] data = Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode();
 
         Assert.assertArrayEquals(Bridge.GET_MINIMUM_LOCK_TX_VALUE.encodeOutputs(bridgeConstants.getMinimumLockTxValue().value), bridge.execute(data));
     }
@@ -355,7 +345,7 @@ public class BridgeTest {
         byte[] federatorPublicKeySerialized = new byte[3];
         Object[] signaturesObjectArray = new Object[0];
         byte[] rskTxHash = new byte[32];
-        byte[] data = Bridge.ADD_SIGNATURE.encode(new Object[]{federatorPublicKeySerialized, signaturesObjectArray, rskTxHash});
+        byte[] data = Bridge.ADD_SIGNATURE.encode(federatorPublicKeySerialized, signaturesObjectArray, rskTxHash);
 
         Assert.assertNull(bridge.execute(data));
     }
@@ -370,7 +360,7 @@ public class BridgeTest {
         byte[] federatorPublicKeySerialized = new BtcECKey().getPubKey();
         Object[] signaturesObjectArray = new Object[0];
         byte[] rskTxHash = new byte[32];
-        byte[] data = Bridge.ADD_SIGNATURE.encode(new Object[]{federatorPublicKeySerialized, signaturesObjectArray, rskTxHash});
+        byte[] data = Bridge.ADD_SIGNATURE.encode(federatorPublicKeySerialized, signaturesObjectArray, rskTxHash);
 
         Assert.assertNull(bridge.execute(data));
     }
@@ -386,7 +376,7 @@ public class BridgeTest {
         byte[] federatorPublicKeySerialized = new BtcECKey().getPubKey();
         Object[] signaturesObjectArray = new Object[]{new byte[3]};
         byte[] rskTxHash = new byte[32];
-        byte[] data = Bridge.ADD_SIGNATURE.encode(new Object[]{federatorPublicKeySerialized, signaturesObjectArray, rskTxHash});
+        byte[] data = Bridge.ADD_SIGNATURE.encode(federatorPublicKeySerialized, signaturesObjectArray, rskTxHash);
 
         Assert.assertNull(bridge.execute(data));
     }
@@ -402,7 +392,7 @@ public class BridgeTest {
         byte[] federatorPublicKeySerialized = new BtcECKey().getPubKey();
         Object[] signaturesObjectArray = new Object[]{new BtcECKey().sign(Sha256Hash.ZERO_HASH).encodeToDER()};
         byte[] rskTxHash = new byte[3];
-        byte[] data = Bridge.ADD_SIGNATURE.encode(new Object[]{federatorPublicKeySerialized, signaturesObjectArray, rskTxHash});
+        byte[] data = Bridge.ADD_SIGNATURE.encode(federatorPublicKeySerialized, signaturesObjectArray, rskTxHash);
 
         Assert.assertNull(bridge.execute(data));
     }
@@ -485,27 +475,14 @@ public class BridgeTest {
         }
     }
 
-    @Test
-    public void exceptionInGetBtcTxHashesAlreadyProcessed() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-
-        try {
-            bridge.getBtcTxHashesAlreadyProcessed(null);
-            Assert.fail();
-        }
-        catch (RuntimeException ex) {
-            Assert.assertEquals("Exception in getBtcTxHashesAlreadyProcessed", ex.getMessage());
-        }
-    }
-
     private BtcTransaction createTransaction() {
         return new SimpleBtcTransaction(networkParameters, PegTestUtils.createHash());
     }
 
     @Test
     public void getGasForDataFreeTx() {
-        BlockchainNetConfig blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(new UnitTestBlockchainNetConfig());
+        BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(new UnitTestBlockchainNetConfig());
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
 
@@ -518,11 +495,11 @@ public class BridgeTest {
                 Bridge.UPDATE_COLLECTIONS);
         rskTx.sign(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0).getPrivKeyBytes());
 
-        org.ethereum.core.Block rskExecutionBlock = BlockGenerator.createChildBlock(Genesis.getInstance(SystemProperties.CONFIG));
+        org.ethereum.core.Block rskExecutionBlock = BlockGenerator.createChildBlock(Genesis.getInstance(RskSystemProperties.CONFIG));
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
         Assert.assertEquals(0, bridge.getGasForData(rskTx.getData()));
 
-        SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @Test
@@ -575,25 +552,18 @@ public class BridgeTest {
     }
 
     @Test
-    public void getGasForDataGBTHAP() {
-        getGasForDataPaidTx(50018, Bridge.GET_BTC_TX_HASHES_ALREADY_PROCESSED);
-    }
-
-    @Test
     public void getGasForDataGetFederationAddress() {
-        getGasForDataPaidTx(50019, Bridge.GET_FEDERATION_ADDRESS);
+        getGasForDataPaidTx(50018, Bridge.GET_FEDERATION_ADDRESS);
     }
 
     @Test
     public void getGasForDataGetMinimumLockTxValue() {
-        getGasForDataPaidTx(50020, Bridge.GET_MINIMUM_LOCK_TX_VALUE);
+        getGasForDataPaidTx(50019, Bridge.GET_MINIMUM_LOCK_TX_VALUE);
     }
 
-
-
-    public void getGasForDataPaidTx(int expected, CallTransaction.Function function, Object ... funcArgs) {
-        BlockchainNetConfig blockchainNetConfigOriginal = SystemProperties.CONFIG.getBlockchainConfig();
-        SystemProperties.CONFIG.setBlockchainConfig(new UnitTestBlockchainNetConfig());
+    private void getGasForDataPaidTx(int expected, CallTransaction.Function function, Object... funcArgs) {
+        BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
+        RskSystemProperties.CONFIG.setBlockchainConfig(new UnitTestBlockchainNetConfig());
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         org.ethereum.core.Transaction rskTx;
@@ -618,16 +588,137 @@ public class BridgeTest {
 
         rskTx.sign(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0).getPrivKeyBytes());
 
-        org.ethereum.core.Block rskExecutionBlock = BlockGenerator.createChildBlock(Genesis.getInstance(SystemProperties.CONFIG));
+        org.ethereum.core.Block rskExecutionBlock = BlockGenerator.createChildBlock(Genesis.getInstance(RskSystemProperties.CONFIG));
         for (int i = 0; i < 20; i++) {
             rskExecutionBlock = BlockGenerator.createChildBlock(rskExecutionBlock);
         }
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
         Assert.assertEquals(expected, bridge.getGasForData(rskTx.getData()));
 
-        SystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
+    @Test
+    public void isBtcTxHashAlreadyProcessed_normalFlow() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        Set<Sha256Hash> hashes = new HashSet<>();
+        when(bridgeSupportMock.isBtcTxHashAlreadyProcessed(any(Sha256Hash.class))).then((InvocationOnMock invocation) -> hashes.contains(invocation.getArgumentAt(0, Sha256Hash.class)));
 
+        hashes.add(Sha256Hash.of("hash_1".getBytes()));
+        hashes.add(Sha256Hash.of("hash_2".getBytes()));
+        hashes.add(Sha256Hash.of("hash_3".getBytes()));
+        hashes.add(Sha256Hash.of("hash_4".getBytes()));
 
+        for (Sha256Hash hash : hashes) {
+            Assert.assertTrue(bridge.isBtcTxHashAlreadyProcessed(new Object[]{hash.toString()}));
+            verify(bridgeSupportMock).isBtcTxHashAlreadyProcessed(hash);
+        }
+        Assert.assertFalse(bridge.isBtcTxHashAlreadyProcessed(new Object[]{Sha256Hash.of("anything".getBytes()).toString()}));
+        Assert.assertFalse(bridge.isBtcTxHashAlreadyProcessed(new Object[]{Sha256Hash.of("yetanotheranything".getBytes()).toString()}));
+    }
+
+    @Test
+    public void isBtcTxHashAlreadyProcessed_exception() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+
+        boolean thrown = false;
+        try {
+            bridge.isBtcTxHashAlreadyProcessed(new Object[]{"notahash"});
+        } catch (RuntimeException e) {
+            thrown = true;
+        }
+        Assert.assertTrue(thrown);
+        verify(bridgeSupportMock, never()).isBtcTxHashAlreadyProcessed(any());
+    }
+
+    @Test
+    public void getBtcTxHashProcessedHeight_normalFlow() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        Map<Sha256Hash, Long> hashes = new HashMap<>();
+        when(bridgeSupportMock.getBtcTxHashProcessedHeight(any(Sha256Hash.class))).then((InvocationOnMock invocation) -> hashes.get(invocation.getArgumentAt(0, Sha256Hash.class)));
+
+        hashes.put(Sha256Hash.of("hash_1".getBytes()), 1L);
+        hashes.put(Sha256Hash.of("hash_2".getBytes()), 2L);
+        hashes.put(Sha256Hash.of("hash_3".getBytes()), 3L);
+        hashes.put(Sha256Hash.of("hash_4".getBytes()), 4L);
+
+        for (Map.Entry<Sha256Hash, Long> entry : hashes.entrySet()) {
+            Assert.assertEquals(entry.getValue(), bridge.getBtcTxHashProcessedHeight(new Object[]{entry.getKey().toString()}));
+            verify(bridgeSupportMock).getBtcTxHashProcessedHeight(entry.getKey());
+        }
+        Assert.assertNull(bridge.getBtcTxHashProcessedHeight(new Object[]{Sha256Hash.of("anything".getBytes()).toString()}));
+    }
+
+    @Test
+    public void getBtcTxHashProcessedHeight_exception() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+
+        boolean thrown = false;
+        try {
+            bridge.getBtcTxHashProcessedHeight(new Object[]{"notahash"});
+        } catch (RuntimeException e) {
+            thrown = true;
+        }
+        Assert.assertTrue(thrown);
+        verify(bridgeSupportMock, never()).getBtcTxHashProcessedHeight(any());
+    }
+
+    @Test
+    public void getFederationSize() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        when(bridgeSupportMock.getFederationSize()).thenReturn(1234);
+
+        Assert.assertEquals(1234, bridge.getFederationSize(new Object[]{}).intValue());
+    }
+
+    @Test
+    public void getFederationThreshold() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        when(bridgeSupportMock.getFederationThreshold()).thenReturn(5678);
+
+        Assert.assertEquals(5678, bridge.getFederationThreshold(new Object[]{}).intValue());
+    }
+
+    @Test
+    public void getFederationCreationTime() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        when(bridgeSupportMock.getFederationCreationTime()).thenReturn(Instant.ofEpochMilli(5000));
+
+        Assert.assertEquals(5000, bridge.getFederationCreationTime(new Object[]{}).intValue());
+    }
+
+    @Test
+    public void getFederatorPublicKey() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        when(bridgeSupportMock.getFederatorPublicKey(any(int.class))).then((InvocationOnMock invocation) ->
+                BigInteger.valueOf(invocation.getArgumentAt(0, int.class)).toByteArray());
+
+        Assert.assertTrue(Arrays.equals(new byte[]{10}, bridge.getFederatorPublicKey(new Object[]{BigInteger.valueOf(10)})));
+        Assert.assertTrue(Arrays.equals(new byte[]{20}, bridge.getFederatorPublicKey(new Object[]{BigInteger.valueOf(20)})));
+        Assert.assertTrue(Arrays.equals(new byte[]{1, 0}, bridge.getFederatorPublicKey(new Object[]{BigInteger.valueOf(256)})));
+    }
 }

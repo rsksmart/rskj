@@ -18,9 +18,10 @@
 
 package co.rsk.net;
 
+import co.rsk.config.RskSystemProperties;
+import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.net.simples.SimpleMessageSender;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -30,6 +31,7 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,7 +54,7 @@ public class NodeBlockProcessorUnclesTest {
     }
 
     @Test
-    public void addBlockWithTwoKnownUncles() {
+    public void addBlockWithTwoKnownUncles() throws UnknownHostException {
         NodeBlockProcessor processor = createNodeBlockProcessor();
 
         Block genesis = processor.getBlockchain().getBestBlock();
@@ -71,7 +73,7 @@ public class NodeBlockProcessorUnclesTest {
         processor.processBlock(null, uncle1);
         processor.processBlock(null, uncle2);
 
-        SimpleMessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
 
         processor.processBlock(sender, block2);
 
@@ -81,7 +83,7 @@ public class NodeBlockProcessorUnclesTest {
     }
 
     @Test
-    public void addBlockWithTwoUnknownUncles() {
+    public void addBlockWithTwoUnknownUncles() throws UnknownHostException {
         NodeBlockProcessor processor = createNodeBlockProcessor();
 
         Block genesis = processor.getBlockchain().getBestBlock();
@@ -98,7 +100,7 @@ public class NodeBlockProcessorUnclesTest {
 
         processor.processBlock(null, block1);
 
-        SimpleMessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
 
         processor.processBlock(sender, block2);
 
@@ -109,7 +111,7 @@ public class NodeBlockProcessorUnclesTest {
     }
 
     @Test
-    public void rejectBlockWithTwoUnknownUnclesAndUnknownParent() {
+    public void rejectBlockWithTwoUnknownUnclesAndUnknownParent() throws UnknownHostException {
         NodeBlockProcessor processor = createNodeBlockProcessor();
 
         Block genesis = processor.getBlockchain().getBestBlock();
@@ -124,7 +126,7 @@ public class NodeBlockProcessorUnclesTest {
 
         Block block2 = new BlockBuilder().parent(block1).uncles(uncles).build();
 
-        SimpleMessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
 
         processor.processBlock(sender, block2);
 
@@ -143,7 +145,10 @@ public class NodeBlockProcessorUnclesTest {
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
-        NodeBlockProcessor processor = new NodeBlockProcessor(new BlockStore(), blockChain);
+        BlockStore store = new BlockStore();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockChain, nodeInformation, null);
+        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockChain, nodeInformation, blockSyncService);
 
         return processor;
     }

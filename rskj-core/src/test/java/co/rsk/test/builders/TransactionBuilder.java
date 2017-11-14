@@ -19,6 +19,7 @@
 package co.rsk.test.builders;
 
 import org.ethereum.core.Account;
+import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
 import org.spongycastle.util.encoders.Hex;
 
@@ -31,11 +32,12 @@ public class TransactionBuilder {
     private Account sender;
     private Account receiver;
     private byte[] receiverAddress;
-    private String data;
+    private byte[] data;
     private BigInteger value = BigInteger.ZERO;
     private BigInteger gasPrice = BigInteger.ONE;
     private BigInteger gasLimit = BigInteger.valueOf(21000);
     private BigInteger nonce = BigInteger.ZERO;
+    private boolean immutable;
 
     public TransactionBuilder sender(Account sender) {
         this.sender = sender;
@@ -53,7 +55,17 @@ public class TransactionBuilder {
     }
 
     public TransactionBuilder data(String data) {
+        this.data = Hex.decode(data);
+        return this;
+    }
+
+    public TransactionBuilder data(byte[] data) {
         this.data = data;
+        return this;
+    }
+
+    public TransactionBuilder immutable() {
+        this.immutable = true;
         return this;
     }
 
@@ -78,8 +90,14 @@ public class TransactionBuilder {
     }
 
     public Transaction build() {
-        Transaction tx = Transaction.create(receiver != null ? Hex.toHexString(receiver.getAddress()) : (receiverAddress != null ? Hex.toHexString(receiverAddress) : null), value, nonce, gasPrice, gasLimit, data);
+        Transaction tx = Transaction.create(
+                receiver != null ? Hex.toHexString(receiver.getAddress()) : (receiverAddress != null ? Hex.toHexString(receiverAddress) : null),
+                value, nonce, gasPrice, gasLimit, data);
         tx.sign(sender.getEcKey().getPrivKeyBytes());
+
+        if (this.immutable)
+            return new ImmutableTransaction(tx.getEncoded());
+
         return tx;
     }
 }

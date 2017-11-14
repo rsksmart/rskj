@@ -75,4 +75,12 @@ public class CallArgumentsToByteArray {
 
         return data;
     }
+
+    public byte[] getFromAddress() {
+        byte[] fromAddress = null;
+        if (args.from != null)
+            fromAddress = stringHexToByteArray(args.from);
+
+        return fromAddress;
+    }
 }

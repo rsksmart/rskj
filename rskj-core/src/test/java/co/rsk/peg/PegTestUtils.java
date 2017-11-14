@@ -19,18 +19,18 @@
 package co.rsk.peg;
 
 import co.rsk.config.BridgeConstants;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
-import org.ethereum.config.SystemProperties;
 
 /**
  * Created by oscar on 05/08/2016.
  */
 public class PegTestUtils {
-    private static BridgeConstants bridgeConstants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+    private static BridgeConstants bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
 
     public static void main(String[] args) {
         for (int i = 0; i < 257; i++) {
@@ -58,15 +58,17 @@ public class PegTestUtils {
     }
 
     public static Script createBaseInputScriptThatSpendsFromTheFederation(BridgeConstants bridgeConstants) {
-        Script scriptPubKey = bridgeConstants.getFederationPubScript();
-        Script redeemScript = createBaseRedeemScriptThatSpendsFromTheFederation(bridgeConstants);
-        RedeemData redeemData = RedeemData.of(bridgeConstants.getFederatorPublicKeys(), redeemScript);
+        // Spending is from the genesis federation ATM
+        Federation federation = bridgeConstants.getGenesisFederation();
+        Script scriptPubKey = federation.getP2SHScript();
+        Script redeemScript = createBaseRedeemScriptThatSpendsFromTheFederation(federation);
+        RedeemData redeemData = RedeemData.of(federation.getPublicKeys(), redeemScript);
         Script inputScript = scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
         return inputScript;
     }
 
-    public static Script createBaseRedeemScriptThatSpendsFromTheFederation(BridgeConstants bridgeConstants) {
-        Script redeemScript = ScriptBuilder.createRedeemScript(bridgeConstants.getFederatorsRequiredToSign(), bridgeConstants.getFederatorPublicKeys());
+    public static Script createBaseRedeemScriptThatSpendsFromTheFederation(Federation federation) {
+        Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getPublicKeys());
         return redeemScript;
     }
 }

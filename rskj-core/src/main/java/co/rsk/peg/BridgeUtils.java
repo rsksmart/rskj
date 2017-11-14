@@ -19,13 +19,13 @@
 package co.rsk.peg;
 
 import co.rsk.config.BridgeConstants;
+import co.rsk.config.RskSystemProperties;
 import org.apache.commons.lang3.StringUtils;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import org.ethereum.config.BlockchainNetConfig;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,13 +62,13 @@ public class BridgeUtils {
         }
     }
 
-    public static boolean isLockTx(BtcTransaction tx, TransactionBag wallet, BridgeConstants bridgeConstants) {
+    public static boolean isLockTx(BtcTransaction tx, Federation federation, TransactionBag wallet, BridgeConstants bridgeConstants) {
         // First, check tx is not a typical release tx (tx spending from the federation address and
         // optionally sending some change to the federation address)
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
             try {
-                transactionInput.getScriptSig().correctlySpends(tx, i, bridgeConstants.getFederationPubScript(), Script.ALL_VERIFY_FLAGS);
+                transactionInput.getScriptSig().correctlySpends(tx, i, federation.getP2SHScript(), Script.ALL_VERIFY_FLAGS);
                 // There is an input spending from the federation address, this is not a lock tx
                 return false;
             } catch (ScriptException se) {
@@ -85,11 +85,11 @@ public class BridgeUtils {
         return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue()));
     }
 
-    public static boolean isReleaseTx(BtcTransaction tx, BridgeConstants bridgeConstants) {
+    public static boolean isReleaseTx(BtcTransaction tx, Federation federation, BridgeConstants bridgeConstants) {
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
             try {
-                transactionInput.getScriptSig().correctlySpends(tx, i, bridgeConstants.getFederationPubScript(), Script.ALL_VERIFY_FLAGS);
+                transactionInput.getScriptSig().correctlySpends(tx, i, federation.getP2SHScript(), Script.ALL_VERIFY_FLAGS);
                 // There is an input spending from the federation address, this is a release tx
                 return true;
             } catch (ScriptException se) {
@@ -108,15 +108,17 @@ public class BridgeUtils {
     }
 
     public static boolean isFreeBridgeTx(org.ethereum.core.Transaction rskTx, long blockNumber) {
-        BlockchainNetConfig blockchainConfig = SystemProperties.CONFIG.getBlockchainConfig();
+        BlockchainNetConfig blockchainConfig = RskSystemProperties.CONFIG.getBlockchainConfig();
         byte[] receiveAddress = rskTx.getReceiveAddress();
 
         if (receiveAddress == null)
             return false;
 
+        // Temporary assumption: if areBridgeTxsFree() is true then the current federation
+        // must be the genesis federation.
+        // Once the original federation changes, txs are always paid.
         return StringUtils.equals(Hex.toHexString(receiveAddress), PrecompiledContracts.BRIDGE_ADDR) &&
                blockchainConfig.getConfigForBlock(blockNumber).areBridgeTxsFree() &&
-               rskTx.getSignature() != null &&
-               blockchainConfig.getCommonConstants().getBridgeConstants().getFederatorPublicKeys().contains(co.rsk.bitcoinj.core.BtcECKey.fromPublicOnly(rskTx.getKey().getPubKey()));
+               rskTx.acceptTransactionSignature();
     }
 }

@@ -19,11 +19,11 @@
 
 package org.ethereum.core;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.config.Constants;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.ECDSASignature;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
@@ -32,6 +32,7 @@ import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
@@ -43,6 +44,7 @@ import org.spongycastle.util.encoders.Hex;
 import java.math.BigInteger;
 import java.security.SignatureException;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -111,7 +113,7 @@ public class Transaction implements SerializableObject {
      * from the RLP-encoded data */
     private boolean parsed = false;
 
-    public Transaction(byte[] rawData) {
+    protected Transaction(byte[] rawData) {
         this.rlpEncoded = rawData;
         parsed = false;
     }
@@ -152,6 +154,10 @@ public class Transaction implements SerializableObject {
         parsed = true;
     }
 
+    public Transaction toImmutableTransaction() {
+        return new ImmutableTransaction(this.getEncoded());
+    }
+
     private byte extractChainIdFromV(byte v) {
         if (v == LOWER_REAL_V || v == (LOWER_REAL_V + 1))
             return 0;
@@ -175,7 +181,7 @@ public class Transaction implements SerializableObject {
         if (!parsed)
             rlpParse();
 
-		//Federators txs to the bridge are free during system setup
+		// Federators txs to the bridge are free during system setup
         if (BridgeUtils.isFreeBridgeTx(this, block.getNumber())) {
             return 0;
         }
@@ -187,9 +193,7 @@ public class Transaction implements SerializableObject {
     }
 
     public void rlpParse() {
-
-        RLPList decodedTxList = RLP.decode2(rlpEncoded);
-        RLPList transaction = (RLPList) decodedTxList.get(0);
+        List<RLPElement> transaction = (RLPList)RLP.decode2(rlpEncoded).get(0);
 
         this.nonce = transaction.get(0).getRLPData();
         this.gasPrice = transaction.get(1).getRLPData();
@@ -312,7 +316,7 @@ public class Transaction implements SerializableObject {
 
         byte chId = this.getChainId();
 
-        if (chId !=0 && chId != SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId())
+        if (chId !=0 && chId != RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId())
             return false;
 
         return true;
@@ -336,7 +340,14 @@ public class Transaction implements SerializableObject {
         if (!parsed)
             rlpParse();
 
-        return this.receiveAddress == null || Arrays.equals(this.receiveAddress,ByteUtil.EMPTY_BYTE_ARRAY);
+        if (this.receiveAddress == null)
+            return true;
+
+        for (int k = 0; k < this.receiveAddress.length; k++)
+            if (this.receiveAddress[k] != 0)
+                return false;
+
+        return true;
     }
 
     /*
@@ -505,13 +516,15 @@ public class Transaction implements SerializableObject {
     }
 
     public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit){
-        return create(to, amount, nonce, gasPrice, gasLimit, null);
+        return create(to, amount, nonce, gasPrice, gasLimit, (byte[]) null);
     }
 
     public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data){
-
         byte[] decodedData = data == null ? null : Hex.decode(data);
+        return create(to, amount, nonce, gasPrice, gasLimit, decodedData);
+    }
 
+    public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData) {
         return new Transaction(BigIntegers.asUnsignedByteArray(nonce),
                 BigIntegers.asUnsignedByteArray(gasPrice),
                 BigIntegers.asUnsignedByteArray(gasLimit),
@@ -522,7 +535,7 @@ public class Transaction implements SerializableObject {
     }
 
     public static byte getConfigChainId() {
-        return SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId();
+        return RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId();
     }
 
     public static Transaction create(byte[] nonce, Web3.CallArguments args){

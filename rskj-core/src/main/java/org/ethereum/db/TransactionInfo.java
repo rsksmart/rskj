@@ -22,8 +22,11 @@ package org.ethereum.db;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
+
+import java.util.ArrayList;
 
 /**
  * Created by Ruben on 8/1/2016.
@@ -41,7 +44,7 @@ public class TransactionInfo {
     }
 
     public TransactionInfo(byte[] rlp) {
-        RLPList params = RLP.decode2(rlp);
+        ArrayList<RLPElement> params = RLP.decode2(rlp);
         RLPList txInfo = (RLPList) params.get(0);
         RLPList receiptRLP = (RLPList) txInfo.get(0);
         RLPItem blockHashRLP  = (RLPItem) txInfo.get(1);

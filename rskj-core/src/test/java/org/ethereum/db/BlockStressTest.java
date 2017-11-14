@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import org.ethereum.config.SystemProperties;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockWrapper;
 import org.ethereum.datasource.mapdb.MapDBFactory;
@@ -62,7 +62,7 @@ public class BlockStressTest {
 
     @Before
     public void setup() {
-        SystemProperties.CONFIG.setDataBaseDir(TEST_DB_DIR);
+        RskSystemProperties.CONFIG.setDataBaseDir(TEST_DB_DIR);
 
         mapDBFactory = new MapDBFactoryImpl();
         blockSourceDB = mapDBFactory.createDB(BLOCK_SOURCE);

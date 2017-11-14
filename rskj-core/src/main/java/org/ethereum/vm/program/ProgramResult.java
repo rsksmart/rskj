@@ -38,6 +38,7 @@ public class ProgramResult {
     private long gasUsed;
     private byte[] hReturn = EMPTY_BYTE_ARRAY;
     private RuntimeException exception;
+    private boolean revert;
 
     // Important:
     // DataWord is used as a ByteArrayWrapper, because Java data Maps/Sets cannot distiguish duplicate
@@ -62,6 +63,14 @@ public class ProgramResult {
 
     public void spendGas(long gas) {
         gasUsed += gas;
+    }
+
+    public void setRevert() {
+        this.revert = true;
+    }
+
+    public boolean isRevert() {
+        return revert;
     }
 
     public void refundGas(long gas) {
@@ -202,9 +211,11 @@ public class ProgramResult {
 
     public void merge(ProgramResult another) {
         addInternalTransactions(another.getInternalTransactions());
-        addDeleteAccounts(another.getDeleteAccounts());
-        addLogInfos(another.getLogInfoList());
-        addFutureRefund(another.getFutureRefund());
+        if (another.getException() == null && !another.isRevert()) {
+            addDeleteAccounts(another.getDeleteAccounts());
+            addLogInfos(another.getLogInfoList());
+            addFutureRefund(another.getFutureRefund());
+        }
     }
     
     public static ProgramResult empty() {

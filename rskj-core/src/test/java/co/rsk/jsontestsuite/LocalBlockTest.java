@@ -28,7 +28,7 @@ import org.junit.runners.MethodSorters;
 import java.io.IOException;
 import java.util.Collections;
 
-import static org.ethereum.config.SystemProperties.CONFIG;
+import static co.rsk.config.RskSystemProperties.CONFIG;
 
 /**
  * @author Angel J Lopez
@@ -40,7 +40,7 @@ public class LocalBlockTest {
 
     @BeforeClass
     public static void init() {
-        RskSystemProperties.RSKCONFIG.disableRemasc();
+        RskSystemProperties.CONFIG.disableRemasc();
     }
 
     private void run(String name) throws IOException, ParseException {
@@ -150,7 +150,7 @@ public class LocalBlockTest {
 
     @AfterClass
     public static void destroy() {
-        RskSystemProperties.RSKCONFIG.enableRemasc();
+        RskSystemProperties.CONFIG.enableRemasc();
     }
 
 

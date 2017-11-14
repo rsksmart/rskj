@@ -18,61 +18,59 @@
 
 package co.rsk.core;
 
-import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerServer;
-import co.rsk.net.BlockStore;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.NodeMessageHandler;
-import co.rsk.net.handler.TxHandlerImpl;
+import co.rsk.scoring.PeerScoringManager;
+import org.ethereum.config.SystemProperties;
+import org.ethereum.core.PendingState;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.EthereumImpl;
-import org.springframework.stereotype.Component;
+import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.manager.AdminInfo;
+import org.ethereum.manager.WorldManager;
+import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.PeerServer;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
-/**
- * Created by ajlopez on 3/3/2016.
- */
-@Component
 public class RskImpl extends EthereumImpl implements Rsk {
-    private boolean isplaying;
 
+    private boolean isplaying;
     private NodeBlockProcessor nodeBlockProcessor;
 
     private MessageHandler messageHandler;
-    private static final Object NMH_LOCK = new Object();
+    private PeerScoringManager peerScoringManager;
 
-
-    @Override
-    public MinerClient getMinerClient() {
-        return getWorldManager().getMinerClient();
+    public RskImpl(WorldManager worldManager,
+                   AdminInfo adminInfo,
+                   ChannelManager channelManager,
+                   PeerServer peerServer,
+                   ProgramInvokeFactory programInvokeFactory,
+                   PendingState pendingState,
+                   SystemProperties config,
+                   CompositeEthereumListener compositeEthereumListener,
+                   ReceiptStore receiptStore,
+                   PeerScoringManager peerScoringManager,
+                   NodeBlockProcessor nodeBlockProcessor,
+                   NodeMessageHandler messageHandler) {
+        super(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore);
+        this.peerScoringManager = peerScoringManager;
+        this.nodeBlockProcessor = nodeBlockProcessor;
+        this.messageHandler = messageHandler;
     }
 
     @Override
-    public MinerServer getMinerServer() {
-        return getWorldManager().getMinerServer();
+    public PeerScoringManager getPeerScoringManager() {
+        return this.peerScoringManager;
     }
 
     @Override
     public MessageHandler getMessageHandler() {
-        if (this.messageHandler == null) {
-            synchronized (NMH_LOCK) {
-                if (this.messageHandler == null) {
-                    this.nodeBlockProcessor = getNodeBlockProcessor(); // Initialize nodeBlockProcessor if not done already.
-                    NodeMessageHandler handler = new NodeMessageHandler(this.nodeBlockProcessor, getChannelManager(),
-                            getWorldManager().getPendingState(), new TxHandlerImpl(getWorldManager()));
-                    handler.start();
-                    this.messageHandler = handler;
-                }
-            }
-        }
-
         return this.messageHandler;
     }
 
     @Override
     public NodeBlockProcessor getNodeBlockProcessor() {
-        if (this.nodeBlockProcessor == null) {
-            this.nodeBlockProcessor = new NodeBlockProcessor(new BlockStore(), this.getWorldManager().getBlockchain(), this.getWorldManager());
-        }
         return this.nodeBlockProcessor;
     }
 

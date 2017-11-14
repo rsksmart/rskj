@@ -18,15 +18,16 @@
 
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import com.google.common.annotations.VisibleForTesting;
-import co.rsk.bitcoinj.core.*;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
@@ -34,10 +35,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
-import java.io.*;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -76,12 +78,25 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     // The goal of this function is to help synchronize bridge and federators blockchains.
     // Protocol inspired by bitcoin sync protocol, see block locator in https://en.bitcoin.it/wiki/Protocol_documentation#getheaders
     public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR = CallTransaction.Function.fromSignature("getBtcBlockchainBlockLocator", new String[]{}, new String[]{"string[]"});
-    // Returns an array of btc txs hashes the bridge already knows about
-    public static final CallTransaction.Function GET_BTC_TX_HASHES_ALREADY_PROCESSED = CallTransaction.Function.fromSignature("getBtcTxHashesAlreadyProcessed", new String[]{}, new String[]{"string[]"});
     // Returns the federation bitcoin address
     public static final CallTransaction.Function GET_FEDERATION_ADDRESS = CallTransaction.Function.fromSignature("getFederationAddress", new String[]{}, new String[]{"string"});
     // Returns the minimum amount of satoshis a user should send to the federation.
     public static final CallTransaction.Function GET_MINIMUM_LOCK_TX_VALUE = CallTransaction.Function.fromSignature("getMinimumLockTxValue", new String[]{}, new String[]{"int"});
+    // Returns whether a given btc tx hash was already processed by the bridge
+    public static final CallTransaction.Function IS_BTC_TX_HASH_ALREADY_PROCESSED = CallTransaction.Function.fromSignature("isBtcTxHashAlreadyProcessed", new String[]{"string"}, new String[]{"bool"});
+    // Returns whether a given btc tx hash was already processed by the bridge
+    public static final CallTransaction.Function GET_BTC_TX_HASH_PROCESSED_HEIGHT = CallTransaction.Function.fromSignature("getBtcTxHashProcessedHeight", new String[]{"string"}, new String[]{"int64"});
+    // Returns the number of federates in the currently active federation
+    public static final CallTransaction.Function GET_FEDERATION_SIZE = CallTransaction.Function.fromSignature("getFederationSize", new String[]{}, new String[]{"uint"});
+    // Returns the number of minimum required signatures from the currently active federation
+    public static final CallTransaction.Function GET_FEDERATION_THRESHOLD = CallTransaction.Function.fromSignature("getFederationThreshold", new String[]{}, new String[]{"uint"});
+    // Returns the public key of the federator at the specified index
+    public static final CallTransaction.Function GET_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getFederatorPublicKey", new String[]{"uint"}, new String[]{"bytes"});
+    // Returns the creation time of the federation
+    public static final CallTransaction.Function GET_FEDERATION_CREATION_TIME = CallTransaction.Function.fromSignature("getFederationCreationTime", new String[]{}, new String[]{"uint64"});
+
+    // Log topics used by the Bridge
+    public static final DataWord RELEASE_BTC_TOPIC = new DataWord("release_btc_topic".getBytes(StandardCharsets.UTF_8));
 
     private static Map<CallTransaction.Function, Long> functionCostMap = new HashMap<>();
 
@@ -111,11 +126,16 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.functions.put(new ByteArrayWrapper(GET_STATE_FOR_DEBUGGING.encodeSignature()), GET_STATE_FOR_DEBUGGING);
         this.functions.put(new ByteArrayWrapper(GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT.encodeSignature()), GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT);
         this.functions.put(new ByteArrayWrapper(GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR.encodeSignature()),     GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR);
-        this.functions.put(new ByteArrayWrapper(GET_BTC_TX_HASHES_ALREADY_PROCESSED.encodeSignature()),  GET_BTC_TX_HASHES_ALREADY_PROCESSED);
         this.functions.put(new ByteArrayWrapper(GET_FEDERATION_ADDRESS.encodeSignature()),      GET_FEDERATION_ADDRESS);
         this.functions.put(new ByteArrayWrapper(GET_MINIMUM_LOCK_TX_VALUE.encodeSignature()),   GET_MINIMUM_LOCK_TX_VALUE);
+        this.functions.put(new ByteArrayWrapper(IS_BTC_TX_HASH_ALREADY_PROCESSED.encodeSignature()),  IS_BTC_TX_HASH_ALREADY_PROCESSED);
+        this.functions.put(new ByteArrayWrapper(GET_BTC_TX_HASH_PROCESSED_HEIGHT.encodeSignature()),  GET_BTC_TX_HASH_PROCESSED_HEIGHT);
+        this.functions.put(new ByteArrayWrapper(GET_FEDERATION_SIZE.encodeSignature()), GET_FEDERATION_SIZE);
+        this.functions.put(new ByteArrayWrapper(GET_FEDERATION_THRESHOLD.encodeSignature()), GET_FEDERATION_THRESHOLD);
+        this.functions.put(new ByteArrayWrapper(GET_FEDERATOR_PUBLIC_KEY.encodeSignature()), GET_FEDERATOR_PUBLIC_KEY);
+        this.functions.put(new ByteArrayWrapper(GET_FEDERATION_CREATION_TIME.encodeSignature()), GET_FEDERATION_CREATION_TIME);
 
-        bridgeConstants = SystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
 
         functionCostMap.put(UPDATE_COLLECTIONS,                    50001L);
         functionCostMap.put(RECEIVE_HEADERS,                       50002L);
@@ -126,17 +146,23 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         functionCostMap.put(GET_STATE_FOR_DEBUGGING,               50007L);
         functionCostMap.put(GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT,  50008L);
         functionCostMap.put(GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR,      50009L);
-        functionCostMap.put(GET_BTC_TX_HASHES_ALREADY_PROCESSED,   50010L);
-        functionCostMap.put(GET_FEDERATION_ADDRESS,                50011L);
-        functionCostMap.put(GET_MINIMUM_LOCK_TX_VALUE,             50012L);
+        functionCostMap.put(GET_FEDERATION_ADDRESS,                50010L);
+        functionCostMap.put(GET_MINIMUM_LOCK_TX_VALUE,             50011L);
+        functionCostMap.put(IS_BTC_TX_HASH_ALREADY_PROCESSED,      50012L);
+        functionCostMap.put(GET_BTC_TX_HASH_PROCESSED_HEIGHT,      50013L);
+        functionCostMap.put(GET_FEDERATION_SIZE,                   50014L);
+        functionCostMap.put(GET_FEDERATION_THRESHOLD,              50015L);
+        functionCostMap.put(GET_FEDERATOR_PUBLIC_KEY,              50016L);
+        functionCostMap.put(GET_FEDERATION_CREATION_TIME,          50017L);
+
     }
 
     @Override
     public long getGasForData(byte[] data) {
-        // Required gas is arbitrary
         if (BridgeUtils.isFreeBridgeTx(rskTx, rskExecutionBlock.getNumber())) {
             return 0;
         }
+
         BridgeParsedData bridgeParsedData = parseData(data);
 
         Long functionCost;
@@ -248,8 +274,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     private BridgeSupport setup() throws Exception {
-        BridgeSupport bridgeSupport = new BridgeSupport(repository, contractAddress, rskExecutionBlock, rskReceiptStore, rskBlockStore);
-        return bridgeSupport;
+        return new BridgeSupport(repository, contractAddress, rskExecutionBlock, rskReceiptStore, rskBlockStore, logs);
     }
 
     private void teardown() throws IOException {
@@ -432,29 +457,15 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public Object[] getBtcTxHashesAlreadyProcessed(Object[] args)
-    {
-        logger.trace("getBtcTxHashesAlreadyProcessed");
-
-        try {
-            Set<Sha256Hash> txHashSet = bridgeSupport.getBtcTxHashesAlreadyProcessed();
-            Object[] txHashArray = new Object[txHashSet.size()];
-            int i = 0;
-            for (Sha256Hash txHash: txHashSet) {
-                txHashArray[i] = txHash.toString();
-                i++;
-            }
-            return txHashArray;
-        } catch (Exception e) {
-            logger.warn("Exception in getBtcTxHashesAlreadyProcessed", e);
-            throw new RuntimeException("Exception in getBtcTxHashesAlreadyProcessed", e);
-        }
-    }
-
     public String getFederationAddress(Object[] args)
     {
         logger.trace("getFederationAddress");
-        return bridgeSupport.getFederationAddress().toString();
+        try {
+            return bridgeSupport.getFederationAddress().toString();
+        } catch (IOException e) {
+            logger.warn("Exception in getFederationAddress", e);
+            throw new RuntimeException("Exception in getFederationAddress", e);
+        }
     }
 
 
@@ -464,4 +475,79 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getMinimumLockTxValue().getValue();
     }
 
+    public Boolean isBtcTxHashAlreadyProcessed(Object[] args)
+    {
+        logger.trace("isBtcTxHashAlreadyProcessed");
+
+        try {
+            Sha256Hash btcTxHash = Sha256Hash.wrap((String) args[0]);
+            return bridgeSupport.isBtcTxHashAlreadyProcessed(btcTxHash);
+        } catch (Exception e) {
+            logger.warn("Exception in isBtcTxHashAlreadyProcessed", e);
+            throw new RuntimeException("Exception in isBtcTxHashAlreadyProcessed", e);
+        }
+    }
+
+    public Long getBtcTxHashProcessedHeight(Object[] args)
+    {
+        logger.trace("getBtcTxHashProcessedHeight");
+
+        try {
+            Sha256Hash btcTxHash = Sha256Hash.wrap((String) args[0]);
+            return bridgeSupport.getBtcTxHashProcessedHeight(btcTxHash);
+        } catch (Exception e) {
+            logger.warn("Exception in getBtcTxHashProcessedHeight", e);
+            throw new RuntimeException("Exception in getBtcTxHashProcessedHeight", e);
+        }
+    }
+
+    public Integer getFederationSize(Object[] args)
+    {
+        logger.trace("getFederationSize");
+
+        try {
+            return bridgeSupport.getFederationSize();
+        } catch (IOException e) {
+            logger.warn("Exception in getFederationSize", e);
+            throw new RuntimeException("Exception in getFederationSize", e);
+        }
+    }
+
+    public Integer getFederationThreshold(Object[] args)
+    {
+        logger.trace("getFederationThreshold");
+
+        try {
+            return bridgeSupport.getFederationThreshold();
+        } catch (IOException e) {
+            logger.warn("Exception in getFederationThreshold", e);
+            throw new RuntimeException("Exception in getFederationThreshold", e);
+        }
+    }
+
+    public byte[] getFederatorPublicKey(Object[] args)
+    {
+        logger.trace("getFederatorPublicKey");
+
+        try {
+            int index = ((BigInteger) args[0]).intValue();
+            return bridgeSupport.getFederatorPublicKey(index);
+        } catch (Exception e) {
+            logger.warn("Exception in getFederatorPublicKey", e);
+            throw new RuntimeException("Exception in getFederatorPublicKey", e);
+        }
+    }
+
+    public Long getFederationCreationTime(Object[] args)
+    {
+        logger.trace("getFederationCreationTime");
+
+        try {
+            // Return the creation time in milliseconds from the epoch
+            return bridgeSupport.getFederationCreationTime().toEpochMilli();
+        } catch (IOException e) {
+            logger.warn("Exception in getFederationCreationTime", e);
+            throw new RuntimeException("Exception in getFederationCreationTime", e);
+        }
+    }
 }

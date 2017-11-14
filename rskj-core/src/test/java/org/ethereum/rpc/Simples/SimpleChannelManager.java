@@ -60,6 +60,12 @@ public class SimpleChannelManager implements ChannelManager {
 
     @Nonnull
     @Override
+    public Set<NodeID> broadcastBlockHash(@Nonnull byte[] hash, @Nullable Set<NodeID> skip) {
+        return null;
+    }
+
+    @Nonnull
+    @Override
     public Set<NodeID> broadcastTransaction(@Nonnull Transaction transaction, @Nullable Set<NodeID> skip) {
         this.transactions.add(transaction);
         this.lastSkip = skip;
@@ -94,8 +100,8 @@ public class SimpleChannelManager implements ChannelManager {
     @Override
     public Collection<Channel> getActivePeers() {
         Collection<Channel> channels = new ArrayList<Channel>();
-        channels.add(new Channel());
-        channels.add(new Channel());
+        channels.add(new Channel(null, null, null, null, null, null, null, null));
+        channels.add(new Channel(null, null, null, null, null, null, null, null));
         return channels;
     }
 

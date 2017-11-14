@@ -21,17 +21,13 @@ package org.ethereum.manager;
 
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.metrics.HashRateCalculator;
-import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.PendingState;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.client.PeerClient;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.solidity.compiler.SolidityCompiler;
 
 /**
  * WorldManager is a singleton containing references to different parts of the system.
@@ -49,19 +45,9 @@ public interface WorldManager {
 
     ChannelManager getChannelManager();
 
-    EthereumListener getListener();
-
-    MinerClient getMinerClient();
-
-    MinerServer getMinerServer();
-
     org.ethereum.facade.Repository getRepository();
 
     Blockchain getBlockchain();
-
-    void setActivePeer(PeerClient peer);
-
-    PeerClient getActivePeer();
 
     BlockStore getBlockStore();
 
@@ -71,13 +57,10 @@ public interface WorldManager {
 
     ConfigCapabilities getConfigCapabilities();
 
-    void setNodeBlockProcessor(BlockProcessor nodeBlockProcessor);
-
     BlockProcessor getNodeBlockProcessor();
 
     HashRateCalculator getHashRateCalculator();
 
     NetworkStateExporter getNetworkStateExporter();
 
-    SolidityCompiler getSolidityCompiler();
 }

@@ -18,20 +18,19 @@
 
 package co.rsk.mine;
 
+import co.rsk.config.MiningConfig;
 import co.rsk.config.RskMiningConstants;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.net.BlockProcessor;
+import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
-import co.rsk.util.AccountUtilsImpl;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -39,7 +38,7 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.validator.ProofOfWorkRule;
+import co.rsk.validators.ProofOfWorkRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.digests.SHA256Digest;
@@ -65,17 +64,18 @@ import static org.ethereum.util.BIUtil.toBI;
 
 @Component("MinerServer")
 public class MinerServerImpl implements MinerServer {
-
     private static final long DELAY_BETWEEN_BUILD_BLOCKS_MS = TimeUnit.MINUTES.toMillis(1);
+
+    private static final Logger logger = LoggerFactory.getLogger("minerserver");
+    private static final PanicProcessor panicProcessor = new PanicProcessor();
+
+    private static final int CACHE_SIZE = 20;
+
     private final Ethereum ethereum;
     private final BlockStore blockStore;
     private final Blockchain blockchain;
     private final PendingState pendingState;
     private final BlockExecutor executor;
-
-    private static final Logger logger = LoggerFactory.getLogger("minerserver");
-
-    private static final int CACHE_SIZE = 20;
 
     @GuardedBy("lock")
     private LinkedHashMap<Sha3Hash, Block> blocksWaitingforPoW;
@@ -100,21 +100,23 @@ public class MinerServerImpl implements MinerServer {
 
     private ProofOfWorkRule powRule;
 
-    private RskSystemProperties properties;
+    private MiningConfig miningConfig;
 
     private BlockValidationRule validationRules;
 
     private long timeAdjustment;
 
     @Autowired
-    public MinerServerImpl(Ethereum ethereum, Blockchain blockchain, BlockStore blockStore, PendingState pendingState, Repository repository, RskSystemProperties properties, @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules) {
+    public MinerServerImpl(Ethereum ethereum, Blockchain blockchain, BlockStore blockStore, PendingState pendingState, Repository repository, MiningConfig miningConfig, @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules) {
         this.ethereum = ethereum;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.pendingState = pendingState;
+        this.miningConfig = miningConfig;
+        this.validationRules = validationRules;
+
         executor = new BlockExecutor(repository, blockchain, blockStore, null);
 
-        coinbaseAddress = new AccountUtilsImpl().getCoinbaseAddress();
         blocksWaitingforPoW = new LinkedHashMap<Sha3Hash, Block>(CACHE_SIZE) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<Sha3Hash, Block> eldest) {
@@ -124,12 +126,11 @@ public class MinerServerImpl implements MinerServer {
 
         latestPaidFeesWithNotify = 0;
         latestParentHash = null;
-        this.properties = properties;
-        minFeesNotifyInDollars = this.properties.minerMinFeesNotifyInDollars();
-        gasUnitInDollars = this.properties.minerGasUnitInDollars();
-        minerMinGasPriceTarget = toBI(this.properties.minerMinGasPrice());
+        coinbaseAddress = miningConfig.getCoinbaseAddress();
+        minFeesNotifyInDollars = miningConfig.getMinFeesNotifyInDollars();
+        gasUnitInDollars = miningConfig.getGasUnitInDollars();
+        minerMinGasPriceTarget = toBI(miningConfig.getMinGasPriceTarget());
         powRule = new ProofOfWorkRule();
-        this.validationRules = validationRules;
     }
 
     @VisibleForTesting
@@ -201,7 +202,7 @@ public class MinerServerImpl implements MinerServer {
         return true;
     }
 
-    private byte[] compressCoinbase(byte[] bitcoinMergedMiningCoinbaseTransactionSerialized) {
+    public static byte[] compressCoinbase(byte[] bitcoinMergedMiningCoinbaseTransactionSerialized) {
         int rskTagPosition = Collections.lastIndexOfSubList(java.util.Arrays.asList(ArrayUtils.toObject(bitcoinMergedMiningCoinbaseTransactionSerialized)),
                 java.util.Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG)));
         int remainingByteCount = bitcoinMergedMiningCoinbaseTransactionSerialized.length - rskTagPosition - RskMiningConstants.RSK_TAG.length - RskMiningConstants.BLOCK_HEADER_HASH_SIZE;
@@ -227,7 +228,7 @@ public class MinerServerImpl implements MinerServer {
      * @param bitcoinMergedMiningBlock the bitcoin block that includes all the txs.
      * @return A Partial Merkle Branch in which you can validate the coinbase tx.
      */
-    private co.rsk.bitcoinj.core.PartialMerkleTree getBitcoinMergedMerkleBranch(co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
+    public static co.rsk.bitcoinj.core.PartialMerkleTree getBitcoinMergedMerkleBranch(co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
         List<co.rsk.bitcoinj.core.BtcTransaction> txs = bitcoinMergedMiningBlock.getTransactions();
         List<co.rsk.bitcoinj.core.Sha256Hash> txHashes = new ArrayList<>(txs.size());
         for (co.rsk.bitcoinj.core.BtcTransaction tx : txs) {
@@ -318,13 +319,13 @@ public class MinerServerImpl implements MinerServer {
 
         List<BlockHeader> uncles;
         if (blockStore != null) {
-            uncles = FamilyUtils.getUnclesHeaders(blockStore, newBlockParent.getNumber() + 1, newBlockParent.getHash(), this.properties.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit());
+            uncles = FamilyUtils.getUnclesHeaders(blockStore, newBlockParent.getNumber() + 1, newBlockParent.getHash(), this.miningConfig.getUncleGenerationLimit());
         } else {
             uncles = new ArrayList<>();
         }
 
-        if (uncles.size() > this.properties.getBlockchainConfig().getCommonConstants().getUncleListLimit()) {
-            uncles = uncles.subList(0, this.properties.getBlockchainConfig().getCommonConstants().getUncleListLimit());
+        if (uncles.size() > this.miningConfig.getUncleListLimit()) {
+            uncles = uncles.subList(0, this.miningConfig.getUncleListLimit());
         }
 
         final List<Transaction> txsToRemove = new ArrayList<>();
@@ -420,15 +421,6 @@ public class MinerServerImpl implements MinerServer {
         return new MinerUtils().filterTransactions(txsToRemove, txs, accountNonces, originalRepo, minGasPrice);
     }
 
-    private boolean isSyncing() {
-        BlockProcessor processor = ethereum.getWorldManager().getNodeBlockProcessor();
-
-        if (processor == null)
-            return false;
-
-        return processor.isSyncingBlocks();
-    }
-
     class NewBlockListener extends EthereumListenerAdapter {
 
         @Override
@@ -455,6 +447,15 @@ public class MinerServerImpl implements MinerServer {
 
             logger.trace("End onBlock");
         }
+
+        private boolean isSyncing() {
+            BlockProcessor processor = ethereum.getWorldManager().getNodeBlockProcessor();
+
+            if (processor == null)
+                return false;
+
+            return processor.isSyncingBlocks();
+        }
     }
 
     private BlockHeader createHeader(Block newBlockParent, List<BlockHeader> uncles, List<Transaction> txs, BigInteger minimumGasPrice) {
@@ -463,11 +464,11 @@ public class MinerServerImpl implements MinerServer {
         final long timestampSeconds = this.getCurrentTimeInSeconds();
 
         // Set gas limit before executing block
-        BigInteger minGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getMinGasLimit());
-        BigInteger targetGasLimit = BigInteger.valueOf(properties.getBlockchainConfig().getCommonConstants().getTargetGasLimit());
+        BigInteger minGasLimit = BigInteger.valueOf(miningConfig.getGasLimit().getMininimum());
+        BigInteger targetGasLimit = BigInteger.valueOf(miningConfig.getGasLimit().getTarget());
         BigInteger parentGasLimit = new BigInteger(1, newBlockParent.getGasLimit());
         BigInteger gasUsed = BigInteger.valueOf(newBlockParent.getGasUsed());
-        boolean forceLimit = RskSystemProperties.RSKCONFIG.getForceTargetGasLimit();
+        boolean forceLimit = miningConfig.getGasLimit().isTargetForced();
         BigInteger gasLimit = new GasLimitCalculator().calculateBlockGasLimit(parentGasLimit,
                 gasUsed, minGasLimit, targetGasLimit, forceLimit);
 
@@ -505,7 +506,12 @@ public class MinerServerImpl implements MinerServer {
         @Override
         public void run() {
             Block bestBlock = blockchain.getBestBlock();
-            buildBlockToMine(bestBlock, false);
+            try {
+                buildBlockToMine(bestBlock, false);
+            } catch (Throwable th) {
+                logger.error("Unexpected error: {}", th);
+                panicProcessor.panic("mserror", th.getMessage());
+            }
         }
     }
 }

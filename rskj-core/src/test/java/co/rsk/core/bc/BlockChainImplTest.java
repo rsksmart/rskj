@@ -20,17 +20,21 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blocks.DummyBlockRecorder;
-import co.rsk.core.BlockchainDummy;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
+import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.*;
+import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -43,7 +47,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Semaphore;
 
 /**
  * Created by ajlopez on 29/07/2016.
@@ -291,6 +294,30 @@ public class BlockChainImplTest {
         Block block1 = BlockGenerator.createChildBlock(genesis);
 
         block1.getHeader().setPaidFees(block1.getHeader().getPaidFees() - 1);
+
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
+        Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
+    }
+
+    @Test
+    public void addInvalidBlockBadStateRoot() {
+        BlockChainImpl blockChain = createBlockChain();
+        Block genesis = getGenesisBlock(blockChain);
+        Block block1 = BlockGenerator.createChildBlock(genesis);
+
+        block1.getHeader().setTransactionsRoot(HashUtil.randomHash());
+
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
+        Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
+    }
+
+    @Test
+    public void addInvalidBlockBadUnclesHash() {
+        BlockChainImpl blockChain = createBlockChain();
+        Block genesis = getGenesisBlock(blockChain);
+        Block block1 = BlockGenerator.createChildBlock(genesis);
+
+        block1.getHeader().setUnclesHash(HashUtil.randomHash());
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
@@ -730,8 +757,7 @@ public class BlockChainImplTest {
 
     @Test
     public void createWithoutArgumentsAndUnusedMethods() {
-        BlockChainImpl blockChain = new BlockChainImpl();
-        blockChain.init();
+        BlockChainImpl blockChain = new BlockChainImpl(null, null, null, null, null, null, new DummyBlockValidator());
         blockChain.setExitOn(0);
         blockChain.close();
     }

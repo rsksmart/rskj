@@ -32,6 +32,6 @@ public class TxValidatorGasLimitValidator implements TxValidatorStep {
     @Override
     public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber) {
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
-        return gasLimit.compareTo(txGasLimit) >= 0;
+        return  txGasLimit.compareTo(gasLimit) <= 0;
     }
 }

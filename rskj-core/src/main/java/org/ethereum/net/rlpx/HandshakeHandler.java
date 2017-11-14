@@ -19,8 +19,12 @@
 
 package org.ethereum.net.rlpx;
 
+import co.rsk.net.NodeID;
+import co.rsk.scoring.EventType;
+import co.rsk.scoring.PeerScoringManager;
 import com.google.common.io.ByteStreams;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import org.ethereum.config.SystemProperties;
@@ -37,13 +41,14 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.InvalidCipherTextException;
 import org.spongycastle.math.ec.ECPoint;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.List;
 
 import static org.ethereum.net.rlpx.FrameCodec.Frame;
@@ -61,12 +66,10 @@ import static org.ethereum.util.ByteUtil.bigEndianToShort;
  * which installs further handlers depending on the protocol parameters.
  * This handler is finally removed from the pipeline.
  */
-@Component
-@Scope("prototype")
 public class HandshakeHandler extends ByteToMessageDecoder {
 
-    @Autowired
-    SystemProperties config;
+    private final SystemProperties config;
+    private final PeerScoringManager peerScoringManager;
 
     private static final Logger loggerWire = LoggerFactory.getLogger("wire");
     private static final Logger loggerNet = LoggerFactory.getLogger("net");
@@ -80,12 +83,10 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     private Channel channel;
     private boolean isHandshakeDone;
 
-    public HandshakeHandler() {
-    }
-
-    @PostConstruct
-    private void init() {
-        myKey = config.getMyKey();
+    public HandshakeHandler(SystemProperties config, PeerScoringManager peerScoringManager) {
+        this.config = config;
+        this.peerScoringManager = peerScoringManager;
+        this.myKey = config.getMyKey();
     }
 
     @Override
@@ -192,6 +193,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
                         loggerNet.info("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), helloMessage);
                     isHandshakeDone = true;
                     this.channel.publicRLPxHandshakeFinished(ctx, frameCodec, helloMessage);
+                    recordSuccessfulHandshake(ctx);
                 } else {
                     DisconnectMessage message = new DisconnectMessage(payload);
                     if (loggerNet.isInfoEnabled())
@@ -288,6 +290,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
                 channel.sendHelloMessage(ctx, frameCodec, Hex.toHexString(nodeId), inboundHelloMessage);
                 isHandshakeDone = true;
                 this.channel.publicRLPxHandshakeFinished(ctx, frameCodec, inboundHelloMessage);
+                recordSuccessfulHandshake(ctx);
             }
         }
         channel.getNodeStatistics().rlpxInHello.add();
@@ -333,6 +336,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        recordFailedHandshake(ctx);
         if (channel.isDiscoveryMode()) {
             loggerNet.debug("Handshake failed: " + ctx.channel().remoteAddress() + "(" + cause.getMessage() + ")");
         } else {
@@ -344,5 +348,27 @@ public class HandshakeHandler extends ByteToMessageDecoder {
             }
         }
         ctx.close();
+    }
+
+    private void recordFailedHandshake(ChannelHandlerContext ctx) {
+        recordEvent(ctx, EventType.FAILED_HANDSHAKE);
+    }
+
+    private void recordSuccessfulHandshake(ChannelHandlerContext ctx) {
+        recordEvent(ctx, EventType.SUCCESSFUL_HANDSHAKE);
+    }
+
+    private void recordEvent(ChannelHandlerContext ctx, EventType event) {
+        SocketAddress socketAddress = ctx.channel().remoteAddress();
+
+        //TODO(mmarquez): what if it is not ??
+        if (socketAddress instanceof InetSocketAddress) {
+            byte[] nid = channel.getNodeId();
+
+            NodeID nodeID = nid != null ? new NodeID(nid) : null;
+            InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
+
+            peerScoringManager.recordEvent(nodeID, address, event);
+        }
     }
 }

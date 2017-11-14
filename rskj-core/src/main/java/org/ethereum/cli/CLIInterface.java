@@ -19,6 +19,7 @@
 
 package org.ethereum.cli;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.config.SystemProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,7 +114,7 @@ public class CLIInterface {
             }
 
             logger.info("Overriding config file with CLI options: " + cliOptions);
-            SystemProperties.CONFIG.overrideParams(cliOptions);
+            RskSystemProperties.CONFIG.overrideParams(cliOptions);
 
         } catch (Exception e) {
             logger.error("Error parsing command line", e);

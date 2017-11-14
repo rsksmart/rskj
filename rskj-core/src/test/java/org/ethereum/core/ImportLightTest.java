@@ -19,12 +19,12 @@
 
 package org.ethereum.core;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.datasource.HashMapDB;
@@ -48,7 +48,7 @@ public class ImportLightTest {
 
     @BeforeClass
     public static void setup() {
-        SystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig(new GenesisConfig.GenesisConstants() {
+        RskSystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig(new GenesisConfig.GenesisConstants() {
             @Override
             public BigInteger getMinimumDifficulty() {
                 return BigInteger.ONE;
@@ -58,7 +58,7 @@ public class ImportLightTest {
 
     @AfterClass
     public static void cleanup() {
-        SystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+        RskSystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
     }
 
     public static BlockChainImpl createBlockchain(Genesis genesis) {
@@ -86,7 +86,6 @@ public class ImportLightTest {
         blockchain.setNoValidation(true);
 
         PendingStateImpl pendingState = new PendingStateImpl(blockchain, null, null, null, listener, 10, 100);
-        pendingState.init();
 
         blockchain.setPendingState(pendingState);
 

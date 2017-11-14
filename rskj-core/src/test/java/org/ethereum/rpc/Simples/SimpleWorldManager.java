@@ -20,9 +20,8 @@ package org.ethereum.rpc.Simples;
 
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.metrics.HashRateCalculator;
-import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
+import co.rsk.net.simples.SimpleBlockProcessor;
 import org.ethereum.core.PendingState;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Repository;
@@ -30,9 +29,7 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.client.PeerClient;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.solidity.compiler.SolidityCompiler;
 
 /**
  * Created by Ruben Altman on 09/06/2016.
@@ -40,12 +37,16 @@ import org.ethereum.solidity.compiler.SolidityCompiler;
 public class SimpleWorldManager implements WorldManager {
 
     BlockProcessor nodeBlockProcessor;
-    public MinerClient minerClient = new SimpleMinerClient();
-    public MinerServer minerServer = null;
     org.ethereum.core.Blockchain blockChain;
     PendingState pendingState;
     BlockStore blockStore;
     EthereumListener listener;
+
+    public SimpleWorldManager() { }
+
+    public SimpleWorldManager(SimpleBlockProcessor nodeBlockProcessor) {
+        this.nodeBlockProcessor = nodeBlockProcessor;
+    }
 
     @Override
     public void init() {
@@ -70,11 +71,6 @@ public class SimpleWorldManager implements WorldManager {
     }
 
     @Override
-    public EthereumListener getListener() {
-        return null;
-    }
-
-    @Override
     public Repository getRepository() {
         return null;
     }
@@ -93,16 +89,6 @@ public class SimpleWorldManager implements WorldManager {
     }
 
     @Override
-    public void setActivePeer(PeerClient peer) {
-
-    }
-
-    @Override
-    public PeerClient getActivePeer() {
-        return null;
-    }
-
-    @Override
     public BlockStore getBlockStore() {
         return blockStore;
     }
@@ -110,6 +96,8 @@ public class SimpleWorldManager implements WorldManager {
     public void setBlockStore(BlockStore blockStore) {
         this.blockStore = blockStore;
     }
+
+    public void setNodeBlockProcessor(BlockProcessor nodeBlockProcessor) { this.nodeBlockProcessor = nodeBlockProcessor;}
 
     @Override
     public PendingState getPendingState() {
@@ -133,11 +121,6 @@ public class SimpleWorldManager implements WorldManager {
     }
 
     @Override
-    public void setNodeBlockProcessor(BlockProcessor nodeBlockProcessor) {
-        this.nodeBlockProcessor = nodeBlockProcessor;
-    }
-
-    @Override
     public BlockProcessor getNodeBlockProcessor(){
         return this.nodeBlockProcessor;
     }
@@ -151,18 +134,5 @@ public class SimpleWorldManager implements WorldManager {
     public NetworkStateExporter getNetworkStateExporter() {
         return null;
     }
-
-    @Override
-    public SolidityCompiler getSolidityCompiler() {
-        return null;
-    }
-
-    @Override
-    public MinerClient getMinerClient(){
-        return this.minerClient;
-    }
-
-    @Override
-    public MinerServer getMinerServer() { return this.minerServer; }
 
 }

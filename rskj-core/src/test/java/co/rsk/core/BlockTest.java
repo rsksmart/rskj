@@ -34,6 +34,7 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class BlockTest {
@@ -89,8 +90,8 @@ public class BlockTest {
         );
 
         Block parsedBlock = new Block(block.getEncoded());
-        Assert.assertEquals(Transaction.class, parsedBlock.getTransactionsList().get(0).getClass());
-        Assert.assertEquals(Transaction.class, parsedBlock.getTransactionsList().get(1).getClass());
+        Assert.assertEquals(ImmutableTransaction.class, parsedBlock.getTransactionsList().get(0).getClass());
+        Assert.assertEquals(ImmutableTransaction.class, parsedBlock.getTransactionsList().get(1).getClass());
         Assert.assertEquals(RemascTransaction.class, parsedBlock.getTransactionsList().get(2).getClass());
     }
 
@@ -156,7 +157,7 @@ public class BlockTest {
         block.seal();
 
         try {
-            block.setTransactionsList(null);
+            block.setTransactionsList(Collections.emptyList());
             Assert.fail();
         }
         catch (SealedBlockException ex) {
@@ -447,5 +448,22 @@ public class BlockTest {
         catch (SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter bitcoin merged mining coinbase transaction", ex.getMessage());
         }
+    }
+
+    @Test
+    public void checkTxTrieShouldBeDifferentForDifferentBlock() {
+        Block block1 = BlockGenerator.createBlock(10, 1);
+        Block block2 = BlockGenerator.createBlock(10, 2);
+        String trieHash1 = Hex.toHexString(block1.getTxTrieRoot());
+        String trieHash2 = Hex.toHexString(block2.getTxTrieRoot());
+        Assert.assertNotEquals(trieHash1, trieHash2);
+    }
+
+    @Test
+    public void checkTxTrieShouldBeEqualForHeaderAndBody() {
+        Block block = BlockGenerator.createBlock(10, 5);
+        String trieHash = Hex.toHexString(block.getTxTrieRoot());
+        String trieListHash = Hex.toHexString(Block.getTxTrie(block.getTransactionsList()).getHash());
+        Assert.assertEquals(trieHash, trieListHash);
     }
 }

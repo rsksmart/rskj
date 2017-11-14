@@ -69,7 +69,7 @@ public class ChannelManagerImpl implements ChannelManager {
     // then we ban that peer IP on any connections for some time to protect from
     // too active peers
     private static final int INBOUND_CONNECTION_BAN_TIMEOUT = 10 * 1000;
-    private final Map<ByteArrayWrapper, Channel> activePeers = Collections.synchronizedMap(new HashMap<ByteArrayWrapper, Channel>());
+    private final Map<ByteArrayWrapper, Channel> activePeers = Collections.synchronizedMap(new HashMap<>());
     @Autowired
     SystemProperties config;
     @Autowired
@@ -208,6 +208,25 @@ public class ChannelManagerImpl implements ChannelManager {
                 logger.trace("RSK announce: {}", peer);
                 peer.sendMessage(newBlockHashes);
             }
+        }
+
+        return res;
+    }
+
+    @Nonnull
+    public Set<NodeID> broadcastBlockHash(@Nonnull final byte[] hash, @Nullable final Set<NodeID> targets) {
+        final Set<NodeID> res = new HashSet<>();
+        final EthMessage newBlockHash = new RskMessage(new NewBlockHashesMessage(hash));
+
+        synchronized (activePeers) {
+            activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
+
+            activePeers.values().stream()
+                    .filter(p -> targets == null || targets.contains(new NodeID(p.getNodeId())))
+                    .forEach(peer -> {
+                        logger.trace("RSK announce hash: {}", peer);
+                        peer.sendMessage(newBlockHash);
+                    });
         }
 
         return res;

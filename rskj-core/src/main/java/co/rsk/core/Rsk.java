@@ -22,17 +22,18 @@ import co.rsk.mine.MinerServer;
 import co.rsk.mine.MinerClient;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.NodeBlockProcessor;
+import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.facade.Ethereum;
 
 /**
  * Created by ajlopez on 3/3/2016.
  */
 public interface Rsk extends Ethereum {
-    MinerClient getMinerClient();
-
-    MinerServer getMinerServer();
 
     MessageHandler getMessageHandler();
+
+    PeerScoringManager getPeerScoringManager();
 
     NodeBlockProcessor getNodeBlockProcessor();
 

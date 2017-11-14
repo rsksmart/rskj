@@ -34,20 +34,19 @@ import org.ethereum.jsontestsuite.validators.BlockHeaderValidator;
 import org.ethereum.jsontestsuite.validators.RepositoryValidator;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.math.BigInteger;
@@ -229,7 +228,7 @@ public class TestRunner {
             VM vm = new VM();
             Program program = new Program(exec.getCode(), programInvoke);
             boolean vmDidThrowAnEception = false;
-            RuntimeException e = null;
+            Exception e = null;
             ThreadMXBean thread;
             Boolean oldMode;
             long startTime =0;
@@ -250,8 +249,13 @@ public class TestRunner {
                 long deltaTime = (endTime - startTime) / 1000; // de nano a micro.
                 logger.info("Time elapsed [uS]: " + Long.toString(deltaTime));
             }
-            String content = program.getTrace().asJsonString(true);
-            saveProgramTraceFile(testCase.getName(), content);
+
+            try {
+                saveProgramTraceFile(testCase.getName(), false, program.getTrace());
+            } catch (IOException ioe) {
+                vmDidThrowAnEception = true;
+                e = ioe;
+            }
 
             if (testCase.getPost().size() == 0) {
                 if (vmDidThrowAnEception != true) {

@@ -36,7 +36,7 @@ sonarqube {
         property "sonar.java.source", "1.8"
 
         def libs = "build/libs/*.jar"
-        def bins = "build/classes/main"
+        def bins = "build/classes/java/main"
         property "sonar.sourceEncoding", "UTF-8"
         property "sonar.sources", "src/main/java,src/main/resources"
         property "sonar.binaries", bins
@@ -45,7 +45,7 @@ sonarqube {
         property "sonar.java.libraries", libs
 
         property "sonar.tests", "src/test/java,src/test/resources"
-        property "sonar.java.test.binaries", "build/classes/test"
+        property "sonar.java.test.binaries", "build/classes/java/test"
         property "sonar.java.test.libraries", libs
         property "sonar.java.coveragePlugin", "jacoco"
         property "sonar.jacoco.reportPaths", "build/reports/jacoco/jacoco.exec"
@@ -107,7 +107,7 @@ tasks.withType(AbstractArchiveTask) {
 }
 
 ext {
-    slf4jVersion = '1.7.24'
+    slf4jVersion = '1.7.25'
     leveldbVersion = '0.9'
     scastleVersion = '1.52.0.0'
     springVersion = '4.2.9.RELEASE'
@@ -131,29 +131,28 @@ dependencies {
     compile "org.iq80.leveldb:leveldb:${leveldbVersion}"
     compile "org.fusesource.leveldbjni:leveldbjni:1.8"
     compile "org.ethereum:leveldbjni-all:1.18.3"
-    compile "com.cedarsoftware:java-util:1.26.0" // for deep equals
+    compile ('com.cedarsoftware:java-util:1.26.0') { // for deep equals
+        exclude group: 'org.apache.logging.log4j'
+    }
     compile "org.slf4j:slf4j-api:${slf4jVersion}"
-    compile "ch.qos.logback:logback-classic:${logbackVersion}"
-    compile "ch.qos.logback:logback-core:${logbackVersion}"
     compile "com.fasterxml.jackson.core:jackson-databind:2.8.7"
     compile "org.apache.commons:commons-collections4:4.1"
     compile "org.apache.commons:commons-lang3:3.5"
-    compile "commons-codec:commons-codec:1.10"
-    compile "org.springframework:spring-context:${springVersion}"
+    compile ("org.springframework:spring-context:${springVersion}") {
+        exclude group: 'commons-logging', module: 'commons-logging'
+    }
     compile "com.typesafe:config:1.3.1"
     compile "org.mapdb:mapdb:2.0-beta13"
     compile "co.rsk.bitcoinj:bitcoinj-thin:${bitcoinjVersion}"
-    compile "org.eclipse.jetty:jetty-server:9.3.16.v20170120"
-    compile "org.eclipse.jetty:jetty-servlet:9.3.16.v20170120"
-    compile "javax.portlet:portlet-api:2.0"
-    compile "com.github.briandilley.jsonrpc4j:jsonrpc4j:1.2.0"
+    compile 'com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.0'
     compile("com.googlecode.json-simple:json-simple:1.1.1") {
         exclude group: 'junit', module: 'junit'
     }
-    compile "com.googlecode.json-simple:json-simple:1.1.1"
-    compile "commons-io:commons-io:2.5"
 
     runtime "org.slf4j:jcl-over-slf4j:${slf4jVersion}"
+    runtime "org.slf4j:log4j-over-slf4j:${slf4jVersion}"
+    runtime "ch.qos.logback:logback-classic:${logbackVersion}"
+    runtime "ch.qos.logback:logback-core:${logbackVersion}"
 
     testCompile "junit:junit:${junitVersion}"
     testCompile "org.springframework:spring-test:${springVersion}"
@@ -161,87 +160,83 @@ dependencies {
     testCompile "org.powermock:powermock-core:${powermockitoVersion}"
     testCompile "org.powermock:powermock-module-testng:${powermockitoVersion}"
     testCompile "org.powermock:powermock-module-junit4:${powermockitoVersion}"
+    testCompile "org.powermock:powermock-api-mockito:${powermockitoVersion}"
     testCompile "co.rsk:lll-compiler:${rskLllVersion}"
     testCompile "org.springframework:spring-tx:${springVersion}"
     testCompile "org.springframework:spring-orm:${springVersion}"
     testCompile "com.h2database:h2:1.4.193"
-	testCompile "org.awaitility:awaitility:3.0.0"
+    testCompile "org.awaitility:awaitility:3.0.0"
+    testCompile 'commons-io:commons-io:2.5'
+    testCompile 'commons-codec:commons-codec:1.10'
 }
 
 dependencyVerification {
     verify = [
-        'junit:junit:59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a',
-        'io.netty:netty-all:1578cbb1354f02951c6ce5d374962e703afb882321164db9e3a2cfb141a1ebeb',
-        'com.madgag.spongycastle:core:07a401edbe26e1028e2324754557b741cc57306008df7b71a9e12ec32d65be8f',
-        'com.madgag.spongycastle:prov:becbb70797b0103517693d2a97ce93174cc4d1f732897ed965a24e32dd99503e',
-        'org.iq80.leveldb:leveldb:0dcc623fcb8450e736b9d2b1b8d91b980e44920d6a22cec8c00f703548b3747f',
-        'org.fusesource.leveldbjni:leveldbjni:05fe3a006d030aaf8d1e43f6c640a85f9f6b967c4499ce1ad5055ac236c3b944',
-        'org.ethereum:leveldbjni-all:18da00444c77080d4422b16c9d4750c4addabda350b702b4a6d628b86658e585',
-        'com.cedarsoftware:java-util:3c9122fbc0cacb54ab4b436ea072c37fdc27e0d094d2a9a374ec7112a5e7ab3b',
+        'aopalliance:aopalliance:0addec670fedcd3f113c5c8091d783280d23f75e3acb841b61a9cdb079376a08',
         'ch.qos.logback:logback-classic:48ade385bbae0222b2934b65738892117d8cb8366b3a3df442d3826c11cedff1',
         'ch.qos.logback:logback-core:280be7a9327e7434d214d6b9eb881c083c3e057a22d0ed7663a7ce81a718a494',
+        'co.rsk.bitcoinj:bitcoinj-thin:83c0296752a2d50cc543831a808a2964c659a5830b5a565ff313e58b5ca1d591',
+        'co.rsk:lll-compiler:a645fdb272f56721761f65dd32caa952453efc07d98d292259d99353b6f647d0',
+        'com.beust:jcommander:0b7873f51a5f292637f49423d9a83b19de15c4be3dc092decbd6afeff56263fa',
+        'com.cedarsoftware:java-util:3c9122fbc0cacb54ab4b436ea072c37fdc27e0d094d2a9a374ec7112a5e7ab3b',
+        'com.fasterxml.jackson.core:jackson-annotations:4caf3936315439b509b8c3ef494d4e47eaa6d25c3b5299aadb0eafb3944ed32f',
+        'com.fasterxml.jackson.core:jackson-core:256ff34118ab292d1b4f3ee4d2c3e5e5f0f609d8e07c57e8ad1f51c46d4fbb46',
         'com.fasterxml.jackson.core:jackson-databind:4f74337b6d18664be0f5b15c6664b17aa3972c9c175092328b139b894ff66f19',
+        'com.github.briandilley.jsonrpc4j:jsonrpc4j:a53a275f6eea85859070086414bdb8913644ff7951b878065a05afd4e155be54',
+        'com.google.code.findbugs:jsr305:1e7f53fa5b8b5c807e986ba335665da03f18d660802d8bf061823089d1bee468',
+        'com.google.guava:guava:d664fbfc03d2e5ce9cab2a44fb01f1d0bf9dfebeccc1a473b1f9ea31f79f6f99',
+        'com.google.protobuf:protobuf-java:55aa554843983f431df5616112cf688d38aa17c132357afd1c109435bfdac4e6',
+        'com.googlecode.json-simple:json-simple:4e69696892b88b41c55d49ab2fdcc21eead92bf54acc588c0050596c3b75199c',
+        'com.h2database:h2:b1cf34c64871014aa73580281cc464dfa72450d8860cc0752fc175e87edd6544',
+        'com.lambdaworks:scrypt:9a82d218099fb14c10c0e86e7eefeebd8c104de920acdc47b8b4b7a686fb73b4',
+        'com.madgag.spongycastle:core:07a401edbe26e1028e2324754557b741cc57306008df7b71a9e12ec32d65be8f',
+        'com.madgag.spongycastle:prov:becbb70797b0103517693d2a97ce93174cc4d1f732897ed965a24e32dd99503e',
+        'com.squareup.okhttp:okhttp:b4c943138fcef2bcc9d2006b2250c4aabbedeafc5947ed7c0af7fd103ceb2707',
+        'com.squareup.okio:okio:114bdc1f47338a68bcbc95abf2f5cdc72beeec91812f2fcd7b521c1937876266',
+        'com.typesafe:config:e6fadfc6108220d3a6b86aa7e4e16c9e7bb857ba58955886308bb13972264af0',
+        'commons-codec:commons-codec:4241dfa94e711d435f29a4604a3e2de5c4aa3c165e23bd066be6fc1fc4309569',
+        'commons-io:commons-io:a10418348d234968600ccb1d988efcbbd08716e1d96936ccc1880e7d22513474',
+        'commons-logging:commons-logging:daddea1ea0be0f56978ab3006b8ac92834afeefbd9b7e4e6316fca57df0fa636',
+        'io.netty:netty-all:1578cbb1354f02951c6ce5d374962e703afb882321164db9e3a2cfb141a1ebeb',
+        'junit:junit:59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a',
+        'net.iharder:base64:f1a0e359eee29a5939c35e5fdedc574dd7e8ca065b056fc14b2b29e3ed3cd54d',
+        'net.jcip:jcip-annotations:be5805392060c71474bf6c9a67a099471274d30b83eef84bfc4e0889a4f1dcc0',
         'org.apache.commons:commons-collections4:b1fe8b5968b57d8465425357ed2d9dc695504518bed2df5b565c4b8e68c1c8a5',
         'org.apache.commons:commons-lang3:8ac96fc686512d777fca85e144f196cd7cfe0c0aec23127229497d1a38ff651c',
-        'commons-codec:commons-codec:4241dfa94e711d435f29a4604a3e2de5c4aa3c165e23bd066be6fc1fc4309569',
-        'org.springframework:spring-context:72b862c9a4220064f1b3bb2b4d4e30a4ab6a45b5c90c559dd6d16c645d6e25aa',
-        'com.typesafe:config:e6fadfc6108220d3a6b86aa7e4e16c9e7bb857ba58955886308bb13972264af0',
-        'org.mapdb:mapdb:1268e9ec22ff770ef7e63d7cc72563406ad239422c791acc8b9ee4fdfba0bb1e',
-        'co.rsk.bitcoinj:bitcoinj-thin:83c0296752a2d50cc543831a808a2964c659a5830b5a565ff313e58b5ca1d591',
-        'org.eclipse.jetty:jetty-server:076fd4115db4bfd19545ada017fd7cc18545b5a521a5b3282a3b2590fb8a9a50',
-        'org.eclipse.jetty:jetty-servlet:d34807edd30b144c75867f9cbcdc1d1e5bb52153b720f42382599be79f83d9cd',
-        'javax.portlet:portlet-api:c990cb5ece82f97e18847ab07fa1569d1dd5f80f166f27c979a075c60bb361d0',
-        'com.github.briandilley.jsonrpc4j:jsonrpc4j:59f592e3a096cef77239c75c9095d7ed01ac19aa41a86015b8cdb688f314838f',
-        'com.googlecode.json-simple:json-simple:4e69696892b88b41c55d49ab2fdcc21eead92bf54acc588c0050596c3b75199c',
-        'commons-io:commons-io:a10418348d234968600ccb1d988efcbbd08716e1d96936ccc1880e7d22513474',
-        'org.slf4j:jcl-over-slf4j:53c6d81ae92ab7a67abf03439b0a2c3872cfe04bab3bf8db9c58fd03f5e71948',
-        'org.springframework:spring-test:5659b135bd6f32e11ea00ae5411a206fd6ae7754bc0a749da9e4722cf354f018',
-        'org.mockito:mockito-core:d5831ee4f71055800821a34a3051cf1ed5b3702f295ffebd50f65fb5d81a71b8',
-        'org.powermock:powermock-core:9b4da42d513500dda03f4d90e303647f6a7b50c6bc5ed88cd39118680f6b329f',
-        'org.powermock:powermock-module-testng:c668057772b6970ba27b6bc5acc5dd7f7d1cc468854e288779fca839e2b55013',
-        'org.powermock:powermock-module-junit4:a90e4bc135e349852eaebed9f1a14d404e14c5a8a7248b4e20e062879a97e63f',
-        'co.rsk:lll-compiler:a645fdb272f56721761f65dd32caa952453efc07d98d292259d99353b6f647d0',
-        'org.springframework:spring-tx:63d0a80c5c87008eb958ee6d8c121d175d5fb69523a1aec91959682c1a4202a7',
-        'org.springframework:spring-orm:32557ae0c762d842097bc1383f9b98d9264870f047f67618ac6a195c88e2a831',
-        'com.h2database:h2:b1cf34c64871014aa73580281cc464dfa72450d8860cc0752fc175e87edd6544',
         'org.awaitility:awaitility:a02982e89585a52c1c84296a895bfeb86ea250cca1a53bcfc8a14092fffa87c4',
-        'org.hamcrest:hamcrest-core:66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9',
-        'org.iq80.leveldb:leveldb-api:279e3a5649cde0bf0d4e09fd1369ec0e9ee80344ec06527c37148c9a58684140',
-        'com.google.guava:guava:d664fbfc03d2e5ce9cab2a44fb01f1d0bf9dfebeccc1a473b1f9ea31f79f6f99',
+        'org.beanshell:bsh:91395c07885839a8c6986d5b7c577cd9bacf01bf129c89141f35e8ea858427b6',
+        'org.ethereum:leveldbjni-all:18da00444c77080d4422b16c9d4750c4addabda350b702b4a6d628b86658e585',
         'org.fusesource.hawtjni:hawtjni-runtime:74fe9764e1fb1ef20b159dbca2d29abd6de292082ce3fcf538f81ac912390416',
-        'org.apache.logging.log4j:log4j-api:9452e85177f69535ca093cbe2df3e8604344d58f729db70fb9e3009e80684251',
-        'org.apache.logging.log4j:log4j-core:4f53e4d52efcccdc446017426c15001bb0fe444c7a6cdc9966f8741cf210d997',
-        'com.fasterxml.jackson.core:jackson-annotations:e61b7343aceeb6ecda291d4ef133cd3e765f178c631c357ffd081abab7f15db8',
-        'com.fasterxml.jackson.core:jackson-core:256ff34118ab292d1b4f3ee4d2c3e5e5f0f609d8e07c57e8ad1f51c46d4fbb46',
+        'org.fusesource.leveldbjni:leveldbjni:05fe3a006d030aaf8d1e43f6c640a85f9f6b967c4499ce1ad5055ac236c3b944',
+        'org.hamcrest:hamcrest-core:66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9',
+        'org.hamcrest:hamcrest-library:711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c',
+        'org.iq80.leveldb:leveldb-api:279e3a5649cde0bf0d4e09fd1369ec0e9ee80344ec06527c37148c9a58684140',
+        'org.iq80.leveldb:leveldb:0dcc623fcb8450e736b9d2b1b8d91b980e44920d6a22cec8c00f703548b3747f',
+        'org.javassist:javassist:d7691062fb779c2381640c8f72acba2c23873b01c243866d41c15dc4c8848ea2',
+        'org.mapdb:mapdb:1268e9ec22ff770ef7e63d7cc72563406ad239422c791acc8b9ee4fdfba0bb1e',
+        'org.mockito:mockito-core:d5831ee4f71055800821a34a3051cf1ed5b3702f295ffebd50f65fb5d81a71b8',
+        'org.objenesis:objenesis:b043f03e466752f7f03e2326a3b13a49b7c649f8f2a2dc87715827e24f73d9c6',
+        'org.powermock:powermock-api-mockito:68667e82c0e5d8c65e7030403c56ddc8595bbd723bf04719976106c03a022b85',
+        'org.powermock:powermock-api-support:ade74743df908ebd859591c2136ce400443e57bbd8abdc0703871ac7309ac09b',
+        'org.powermock:powermock-core:9b4da42d513500dda03f4d90e303647f6a7b50c6bc5ed88cd39118680f6b329f',
+        'org.powermock:powermock-module-junit4-common:1b4928d42a8e6f0aa196d0f6fcf7831e0bc29b8a925ce755479b4bd29b3643bb',
+        'org.powermock:powermock-module-junit4:a90e4bc135e349852eaebed9f1a14d404e14c5a8a7248b4e20e062879a97e63f',
+        'org.powermock:powermock-module-testng-common:e26f4d047bdfe5cee329ebbf54ee878e40b42eec4a07eaf8a64b36dedd4da3c5',
+        'org.powermock:powermock-module-testng:c668057772b6970ba27b6bc5acc5dd7f7d1cc468854e288779fca839e2b55013',
+        'org.powermock:powermock-reflect:14e3b046621ddb6a39113f145c5c129709d3af3d36caad2df7d547778d271c3e',
+        'org.slf4j:jcl-over-slf4j:5e938457e79efcbfb3ab64bc29c43ec6c3b95fffcda3c155f4a86cc320c11e14',
+        'org.slf4j:log4j-over-slf4j:c84c5ce4bbb661369ccd4c7b99682027598a0fb2e3d63a84259dbe5c0bf1f949',
+        'org.slf4j:slf4j-api:18c4a0095d5c1da6b817592e767bb23d29dd2f560ad74df75ff3961dbde25b79',
         'org.springframework:spring-aop:e501581222d2f29e422e45ca862d34d38ee5d7b6f30665ce19415e40b09dc479',
         'org.springframework:spring-beans:ed93f62fc9df76f156181b272f318c34a842ce725211c680faf3bfa3f2912e60',
+        'org.springframework:spring-context:72b862c9a4220064f1b3bb2b4d4e30a4ab6a45b5c90c559dd6d16c645d6e25aa',
         'org.springframework:spring-core:bda8947716100a3fc3e6017e16a9592a0216b14fed83ee63dc9a015444e88b0d',
         'org.springframework:spring-expression:0c471def6efa20b66c9ef182182747ba41ec9f02b519b0b301caf5c0c9e49641',
-        'com.google.protobuf:protobuf-java:55aa554843983f431df5616112cf688d38aa17c132357afd1c109435bfdac4e6',
-        'com.google.code.findbugs:jsr305:1e7f53fa5b8b5c807e986ba335665da03f18d660802d8bf061823089d1bee468',
-        'net.jcip:jcip-annotations:be5805392060c71474bf6c9a67a099471274d30b83eef84bfc4e0889a4f1dcc0',
-        'com.lambdaworks:scrypt:9a82d218099fb14c10c0e86e7eefeebd8c104de920acdc47b8b4b7a686fb73b4',
-        'com.squareup.okhttp:okhttp:b4c943138fcef2bcc9d2006b2250c4aabbedeafc5947ed7c0af7fd103ceb2707',
-        'javax.servlet:javax.servlet-api:af456b2dd41c4e82cf54f3e743bc678973d9fe35bd4d3071fa05c7e5333b8482',
-        'org.eclipse.jetty:jetty-http:5e2516f104809f7b8d7b4e5c7a71b8e8013272abf491b9b71ff9e667459a59a3',
-        'org.eclipse.jetty:jetty-io:be6688927ccb350bc00e4b98987df69c333b726b9d0698e02f1dc3eb14abcd47',
-        'org.eclipse.jetty:jetty-security:0143547dd07bdc988b91f7ebc21572c67caf806cd98c256297f7be6f8966a2e6',
-        'net.iharder:base64:bbf41fda22877a538f6bc2d5ad0aa372a7ddf4a756af3386aa09d3d4eea84f7f',
-        'org.powermock:powermock-reflect:14e3b046621ddb6a39113f145c5c129709d3af3d36caad2df7d547778d271c3e',
-        'org.javassist:javassist:d7691062fb779c2381640c8f72acba2c23873b01c243866d41c15dc4c8848ea2',
-        'org.testng:testng:0811dcf08fe329ef5d4d37d51a6a00032697e7f54ba84c6687bbf7cd39d29fec',
-        'org.powermock:powermock-module-testng-common:e26f4d047bdfe5cee329ebbf54ee878e40b42eec4a07eaf8a64b36dedd4da3c5',
-        'org.powermock:powermock-module-junit4-common:1b4928d42a8e6f0aa196d0f6fcf7831e0bc29b8a925ce755479b4bd29b3643bb',
         'org.springframework:spring-jdbc:b2f2c988c22744441f422ddfd7880bbe6d6d73148b9df76835921f533ca9e430',
-        'org.hamcrest:hamcrest-library:711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c',
-        'aopalliance:aopalliance:0addec670fedcd3f113c5c8091d783280d23f75e3acb841b61a9cdb079376a08',
-        'commons-logging:commons-logging:daddea1ea0be0f56978ab3006b8ac92834afeefbd9b7e4e6316fca57df0fa636',
-        'com.squareup.okio:okio:114bdc1f47338a68bcbc95abf2f5cdc72beeec91812f2fcd7b521c1937876266',
-        'org.eclipse.jetty:jetty-util:f0cee2d68b68509a35231472a6f09046b0a0dbe75416b866e611e139c7a62d10',
-        'org.beanshell:bsh:91395c07885839a8c6986d5b7c577cd9bacf01bf129c89141f35e8ea858427b6',
-        'com.beust:jcommander:0b7873f51a5f292637f49423d9a83b19de15c4be3dc092decbd6afeff56263fa',
-        'org.slf4j:slf4j-api:18c4a0095d5c1da6b817592e767bb23d29dd2f560ad74df75ff3961dbde25b79',
-        'org.objenesis:objenesis:b043f03e466752f7f03e2326a3b13a49b7c649f8f2a2dc87715827e24f73d9c6',
+        'org.springframework:spring-orm:32557ae0c762d842097bc1383f9b98d9264870f047f67618ac6a195c88e2a831',
+        'org.springframework:spring-test:5659b135bd6f32e11ea00ae5411a206fd6ae7754bc0a749da9e4722cf354f018',
+        'org.springframework:spring-tx:63d0a80c5c87008eb958ee6d8c121d175d5fb69523a1aec91959682c1a4202a7',
+        'org.testng:testng:0811dcf08fe329ef5d4d37d51a6a00032697e7f54ba84c6687bbf7cd39d29fec',
     ]
 }
 
@@ -280,7 +275,7 @@ task reproducible(dependsOn: 'shadowJar') {
         }
         zos.finish()
         jf.close()
-    // -- Enable this line to debug -- // 
+    // -- Enable this line to debug -- //
         //compareJars(archivePath, newJar, fixDateJar)
     // -- Remove old Jar -- //
         Files.deleteIfExists(Paths.get(shadowJar.archivePath.getAbsolutePath()));
