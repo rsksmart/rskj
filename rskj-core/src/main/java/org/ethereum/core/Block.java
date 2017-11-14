@@ -225,6 +225,7 @@ public class Block {
         this.header = new BlockHeader(header, this.sealed);
 
         // Parse Transactions
+        // The element cannot be empty/null. It can however be an empty list.
         RLPList txTransactions = (RLPList) block.get(1);
         this.parseTxs(this.header.getTxTrieRoot(), txTransactions);
 
@@ -408,6 +409,9 @@ public class Block {
 
     @Override
     public String toString() {
+        if (!parsed)
+            return "unparsed:"+super.toString();
+
         if (!parsed)
             parseRLP();
 

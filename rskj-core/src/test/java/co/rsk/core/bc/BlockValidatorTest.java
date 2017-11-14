@@ -362,7 +362,7 @@ public class BlockValidatorTest {
 
         Block genesis = BlockGenerator.getGenesisBlock();
 
-        Block uncle1a = BlockGenerator.getBlock(1);
+        Block uncle1a = BlockGenerator.getBlockBadlyEncoded(1);
         List<BlockHeader> uncles1 = new ArrayList<>();
         uncles1.add(uncle1a.getHeader());
         Block block1 = BlockGenerator.createChildBlock(genesis, null, uncles1, 1, null);
