@@ -287,7 +287,7 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
         if (this.detailsDataStore != null)
             this.detailsDataStore.flush();
 
-        if (this.store != null)
+        if (this.trie != null)
             this.trie.save();
     }
 
