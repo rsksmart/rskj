@@ -159,6 +159,7 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     public void onTimePassed(Duration timePassed) {
+        logger.trace("Time passed on node {}", timePassed);
         this.syncState.tick(timePassed);
     }
 
