@@ -19,6 +19,7 @@
 package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
+import co.rsk.peg.Bridge;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -115,6 +116,19 @@ public class Remasc {
         BigInteger payToRskLabs = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
         feesPayer.payMiningFees(processingBlockHeader.getHash(), payToRskLabs, remascConstants.getRskLabsAddress(), logs);
         fullBlockReward = fullBlockReward.subtract(payToRskLabs);
+
+        // Pay Federation labs cut
+        /* WIP
+        Repository processingRepository = repository.getSnapshotTo(processingBlockHeader.getStateRoot());
+        Bridge bridge = (Bridge)PrecompiledContracts.getContractForAddress(new DataWord(Hex.decode(PrecompiledContracts.BRIDGE_ADDR)));
+        bridge.init(null, null, repository, null, null, null);
+
+        if (bridge.getFederationSize(null).intValue() != 0) {
+            BigInteger payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
+            // TODO transfer to federators
+            fullBlockReward = fullBlockReward.subtract(payToFederation);
+        }
+        */
 
         List<Sibling> siblings = provider.getSiblings().get(processingBlockNumber);
 

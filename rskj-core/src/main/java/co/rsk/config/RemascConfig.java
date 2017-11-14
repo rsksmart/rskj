@@ -37,6 +37,9 @@ public class RemascConfig {
     // RSK labs cut. Available reward / rskLabsDivisor is what RSK gets.
     private long rskLabsDivisor = 5;
 
+    // Federation cut. Available reward / rskFederationDivisor is what Federation gets.
+    private long federationDivisor = 5;
+
     // Punishment in case of broken selection rule. The punishment applied is available reward / punishmentDivisor.
     private long punishmentDivisor = 10;
 
@@ -67,6 +70,10 @@ public class RemascConfig {
 
     public long getRskLabsDivisor() {
         return rskLabsDivisor;
+    }
+
+    public long getFederationDivisor() {
+        return federationDivisor;
     }
 
     public long getPunishmentDivisor() {
