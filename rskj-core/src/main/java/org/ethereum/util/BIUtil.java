@@ -116,11 +116,6 @@ public class BIUtil {
         repository.addBalance(toAddr, value);
     }
 
-    public static boolean exitLong(BigInteger value){
-
-        return (value.compareTo(new BigInteger(Long.MAX_VALUE + ""))) > -1;
-    }
-
     public static boolean isIn20PercentRange(BigInteger first, BigInteger second) {
         BigInteger five = BigInteger.valueOf(5);
         BigInteger limit = first.add(first.divide(five));
@@ -129,14 +124,6 @@ public class BIUtil {
 
     public static BigInteger max(BigInteger first, BigInteger second) {
         return first.compareTo(second) < 0 ? second : first;
-    }
-    /**
-    * Returns a result of safe addition of two {@code int} values
-    * {@code Integer.MAX_VALUE} is returned if overflow occurs
-    */
-    public static int addSafely(int a, int b) {
-        long res = (long) a + (long) b;
-        return res > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) res;
     }
 
 }

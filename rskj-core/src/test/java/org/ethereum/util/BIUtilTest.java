@@ -23,9 +23,7 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 
-import static org.ethereum.util.BIUtil.addSafely;
 import static org.ethereum.util.BIUtil.isIn20PercentRange;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -63,11 +61,5 @@ public class BIUtilTest {
         assertTrue(isIn20PercentRange(BigInteger.valueOf(5), BigInteger.ONE));
         assertTrue(isIn20PercentRange(BigInteger.valueOf(5), BigInteger.valueOf(6)));
         assertFalse(isIn20PercentRange(BigInteger.valueOf(5), BigInteger.valueOf(7)));
-    }
-
-    @Test
-    public void testAddSafely() {
-        assertEquals(Integer.MAX_VALUE, addSafely(Integer.MAX_VALUE, Integer.MAX_VALUE));
-        assertEquals(7, addSafely(3,4));
     }
 }

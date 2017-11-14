@@ -19,18 +19,15 @@
 
 package org.ethereum.vm;
 
-import org.ethereum.core.CallTransaction;
+import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
-import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.util.ByteUtil.bytesToBigInteger;
 import static org.junit.Assert.*;
 
 /**
@@ -139,7 +136,7 @@ public class PrecompiledContractTest {
 
         byte[] res1 = contract.execute(data1);
         assertEquals(32, res1.length);
-        assertEquals(BigInteger.ONE, bytesToBigInteger(res1));
+        assertEquals(BigInteger.ONE, BIUtil.toBI(res1));
 
         byte[] data2 = Hex.decode(
                 "0000000000000000000000000000000000000000000000000000000000000000" +
@@ -152,7 +149,7 @@ public class PrecompiledContractTest {
 
         byte[] res2 = contract.execute(data2);
         assertEquals(32, res2.length);
-        assertEquals(BigInteger.ZERO, bytesToBigInteger(res2));
+        assertEquals(BigInteger.ZERO, BIUtil.toBI(res2));
 
         byte[] data3 = Hex.decode(
                 "0000000000000000000000000000000000000000000000000000000000000000" +
@@ -177,7 +174,7 @@ public class PrecompiledContractTest {
 
         byte[] res4 = contract.execute(data4);
         assertEquals(32, res4.length);
-        assertEquals(new BigInteger("26689440342447178617115869845918039756797228267049433585260346420242739014315"), bytesToBigInteger(res4));
+        assertEquals(new BigInteger("26689440342447178617115869845918039756797228267049433585260346420242739014315"), BIUtil.toBI(res4));
 
         byte[] data5 = Hex.decode(
                 "0000000000000000000000000000000000000000000000000000000000000001" +
@@ -192,7 +189,7 @@ public class PrecompiledContractTest {
 
         byte[] res5 = contract.execute(data5);
         assertEquals(32, res5.length);
-        assertEquals(new BigInteger("26689440342447178617115869845918039756797228267049433585260346420242739014315"), bytesToBigInteger(res5));
+        assertEquals(new BigInteger("26689440342447178617115869845918039756797228267049433585260346420242739014315"), BIUtil.toBI(res5));
 
         // check overflow handling in gas calculation
         byte[] data6 = Hex.decode(

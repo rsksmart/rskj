@@ -31,19 +31,13 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
 import java.util.List;
 
-import static org.ethereum.util.BIUtil.addSafely;
-import static org.ethereum.util.BIUtil.isLessThan;
-import static org.ethereum.util.BIUtil.isZero;
-import static org.ethereum.util.ByteUtil.bytesToBigInteger;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.util.ByteUtil.parseBytes;
-import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
-import static org.ethereum.util.ByteUtil.numberOfLeadingZeros;
+import static org.ethereum.util.ByteUtil.*;
 
 
 
@@ -267,9 +261,17 @@ public class PrecompiledContracts {
             int expLen = parseLen(safeData, EXPONENT);
             int modLen = parseLen(safeData, MODULUS);
 
-            byte[] expHighBytes = parseBytes(safeData, addSafely(ARGS_OFFSET, baseLen), Math.min(expLen, 32));
-
             long multComplexity = getMultComplexity(Math.max(baseLen, modLen));
+
+            byte[] expHighBytes;
+            try {
+                int offset = Math.addExact(ARGS_OFFSET, baseLen);
+                expHighBytes = parseBytes(safeData, offset, Math.min(expLen, 32));
+            }
+            catch (ArithmeticException e) {
+                expHighBytes = ByteUtil.EMPTY_BYTE_ARRAY;
+            }
+
             long adjExpLen = getAdjustedExponentLength(expHighBytes, expLen);
 
             // use big numbers to stay safe in case of overflow
@@ -277,7 +279,8 @@ public class PrecompiledContracts {
                     .multiply(BigInteger.valueOf(Math.max(adjExpLen, 1)))
                     .divide(GQUAD_DIVISOR);
 
-            return isLessThan(gas, BigInteger.valueOf(Long.MAX_VALUE)) ? gas.longValue() : Long.MAX_VALUE;
+
+            return gas.min(BigInteger.valueOf(Long.MAX_VALUE)).longValueExact();
         }
 
         @Override
@@ -286,30 +289,28 @@ public class PrecompiledContracts {
             if (data == null)
                 return EMPTY_BYTE_ARRAY;
 
-            int baseLen = parseLen(data, BASE);
-            int expLen  = parseLen(data, EXPONENT);
-            int modLen  = parseLen(data, MODULUS);
+            try {
+                int baseLen = parseLen(data, BASE);
+                int expLen = parseLen(data, EXPONENT);
+                int modLen = parseLen(data, MODULUS);
 
-            BigInteger base = parseArg(data, ARGS_OFFSET, baseLen);
-            BigInteger exp  = parseArg(data, addSafely(ARGS_OFFSET, baseLen), expLen);
-            BigInteger mod  = parseArg(data, addSafely(addSafely(ARGS_OFFSET, baseLen), expLen), modLen);
+                int expOffset = Math.addExact(ARGS_OFFSET, baseLen);
+                int modOffset = Math.addExact(expOffset, expLen);
 
-            // check if modulus is zero
-            if (isZero(mod))
-                return EMPTY_BYTE_ARRAY;
+                // whenever an offset gets too big we will get BigInteger.ZERO back
+                BigInteger base = parseArg(data, ARGS_OFFSET, baseLen);
+                BigInteger exp = parseArg(data, expOffset, expLen);
+                BigInteger mod = parseArg(data, modOffset, modLen);
 
-            byte[] res = stripLeadingZeroes(base.modPow(exp, mod).toByteArray());
+                if (mod.equals(BigInteger.ZERO)) {
+                    // Modulo 0 is undefined, return zero
+                    return ByteUtil.leftPadBytes(ByteUtil.EMPTY_BYTE_ARRAY, modLen);
+                }
 
-            // adjust result to the same length as the modulus has
-            if (res.length < modLen) {
-
-                byte[] adjRes = new byte[modLen];
-                System.arraycopy(res, 0, adjRes, modLen - res.length, res.length);
-
-                return adjRes;
-
-            } else {
-                return res;
+                byte[] res = stripLeadingZeroes(base.modPow(exp, mod).toByteArray());
+                return ByteUtil.leftPadBytes(res, modLen);
+            } catch (ArithmeticException e) {
+                return ByteUtil.EMPTY_BYTE_ARRAY;
             }
         }
 
@@ -351,7 +352,7 @@ public class PrecompiledContracts {
 
         private BigInteger parseArg(byte[] data, int offset, int len) {
             byte[] bytes = parseBytes(data, offset, len);
-            return bytesToBigInteger(bytes);
+            return BIUtil.toBI(bytes);
         }
 
     }

@@ -23,6 +23,7 @@ import org.ethereum.db.ByteArrayWrapper;
 
 import org.spongycastle.util.encoders.Hex;
 
+import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -115,10 +116,6 @@ public class ByteUtil {
         byte[] bytes = new byte[len];
         System.arraycopy(input, offset, bytes, 0, Math.min(input.length - offset, len));
         return bytes;
-    }
-
-    public static BigInteger bytesToBigInteger(byte[] bb) {
-        return new BigInteger(1, bb);
     }
 
     /**
@@ -490,34 +487,6 @@ public class ByteUtil {
         return ret;
     }
 
-    public static byte[] xor(byte[] b1, byte[] b2) {
-        if (b1.length != b2.length) {
-            throw new RuntimeException("Array sizes differ");
-        }
-        byte[] ret = new byte[b1.length];
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = (byte) (b1[i] ^ b2[i]);
-        }
-        return ret;
-    }
-
-    /**
-     * XORs byte arrays of different lengths by aligning length of the shortest via adding zeros at beginning
-     */
-    public static byte[] xorAlignRight(byte[] b1, byte[] b2) {
-        if (b1.length > b2.length) {
-            byte[] b2Replacement = new byte[b1.length];
-            System.arraycopy(b2, 0, b2Replacement, b1.length - b2.length, b2.length);
-            b2 = b2Replacement;
-        } else if (b2.length > b1.length) {
-            byte[] b1Replacement = new byte[b2.length];
-            System.arraycopy(b1, 0, b1Replacement, b2.length - b1.length, b1.length);
-            b1 = b1Replacement;
-        }
-
-        return xor(b1, b2);
-    }
-
     /**
      * @param arrays - arrays to merge
      * @return - merged array
@@ -576,62 +545,6 @@ public class ByteUtil {
         return result;
     }
 
-    public static byte[] intsToBytes(int[] arr, boolean bigEndian) {
-        byte[] ret = new byte[arr.length * 4];
-        intsToBytes(arr,ret, bigEndian);
-        return ret;
-    }
-
-    public static int[] bytesToInts(byte[] arr, boolean bigEndian) {
-        int[] ret = new int[arr.length / 4];
-        bytesToInts(arr, ret, bigEndian);
-        return ret;
-    }
-
-    public static void bytesToInts(byte[] b, int[] arr, boolean bigEndian) {
-        if (!bigEndian) {
-            int off = 0;
-            for (int i = 0; i < arr.length; i++) {
-                int ii = b[off++] & 0x000000FF;
-                ii |= (b[off++] << 8) & 0x0000FF00;
-                ii |= (b[off++] << 16) & 0x00FF0000;
-                ii |= (b[off++] << 24);
-                arr[i] = ii;
-            }
-        } else {
-            int off = 0;
-            for (int i = 0; i < arr.length; i++) {
-                int ii = b[off++] << 24;
-                ii |= (b[off++] << 16) & 0x00FF0000;
-                ii |= (b[off++] << 8) & 0x0000FF00;
-                ii |= b[off++] & 0x000000FF;
-                arr[i] = ii;
-            }
-        }
-    }
-
-    public static void intsToBytes(int[] arr, byte[] b, boolean bigEndian) {
-        if (!bigEndian) {
-            int off = 0;
-            for (int i = 0; i < arr.length; i++) {
-                int ii = arr[i];
-                b[off++] = (byte) (ii & 0xFF);
-                b[off++] = (byte) ((ii >> 8) & 0xFF);
-                b[off++] = (byte) ((ii >> 16) & 0xFF);
-                b[off++] = (byte) ((ii >> 24) & 0xFF);
-            }
-        } else {
-            int off = 0;
-            for (int i = 0; i < arr.length; i++) {
-                int ii = arr[i];
-                b[off++] = (byte) ((ii >> 24) & 0xFF);
-                b[off++] = (byte) ((ii >> 16) & 0xFF);
-                b[off++] = (byte) ((ii >> 8) & 0xFF);
-                b[off++] = (byte) (ii & 0xFF);
-            }
-        }
-    }
-
     public static short bigEndianToShort(byte[] bs) {
         return bigEndianToShort(bs, 0);
     }
@@ -663,4 +576,20 @@ public class ByteUtil {
         }
     }
 
+    /**
+     * Returns a copy of original padded to the left with zeroes,
+     * or original if {@code original.length >= newLength}
+     */
+    public static byte[] leftPadBytes(@Nonnull byte[] original, int newLength) {
+        // the result array is larger than the modulus length,
+        // but this should never happen.
+        if (original.length >= newLength) {
+            return original;
+        }
+
+        // otherwise adjust result to the same length as the modulus has
+        byte[] copy = new byte[newLength];
+        System.arraycopy(original, 0, copy, newLength - original.length, original.length);
+        return copy;
+    }
 }
