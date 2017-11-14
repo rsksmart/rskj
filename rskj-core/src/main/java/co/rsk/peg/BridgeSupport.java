@@ -791,6 +791,19 @@ public class BridgeSupport {
         return getActiveFederation().getCreationTime();
     }
 
+
+    public long getFederationCreationBlockNumber() {
+        return getActiveFederation().getCreationBlockNumber();
+    }
+
+    public long getRetiringFederationCreationBlockNumber() {
+        Federation retiringFederation = provider.getRetiringFederation();
+        if (retiringFederation == null) {
+            return -1L;
+        }
+        return retiringFederation.getCreationBlockNumber();
+    }
+
     /**
      * Returns the retiring federation bitcoin address.
      * @return the retiring federation bitcoin address, null if no retiring federation exists
@@ -873,8 +886,9 @@ public class BridgeSupport {
             publicKeys.add(BtcECKey.fromPublicOnly(getRetiringFederatorPublicKey(i)));
         }
         Instant creationTime = getRetiringFederationCreationTime();
+        long creationBlockNumber = getRetiringFederationCreationBlockNumber();
 
-        return new Federation(publicKeys, creationTime, 0L, bridgeConstants.getBtcParams());
+        return new Federation(publicKeys, creationTime, creationBlockNumber, bridgeConstants.getBtcParams());
     }
 
     /**

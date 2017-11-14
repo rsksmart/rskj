@@ -49,6 +49,7 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
@@ -709,6 +710,16 @@ public class BridgeTest {
     }
 
     @Test
+    public void getFederationCreationBlockNumber() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        when(bridgeSupportMock.getFederationCreationBlockNumber()).thenReturn(42L);
+
+        Assert.assertThat(bridge.getFederationCreationBlockNumber(new Object[]{}), is(42L));
+    }
+
+    @Test
     public void getFederatorPublicKey() throws IOException {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, null, null, null, null);
@@ -753,6 +764,16 @@ public class BridgeTest {
         when(bridgeSupportMock.getRetiringFederationCreationTime()).thenReturn(Instant.ofEpochMilli(5000));
 
         Assert.assertEquals(5000, bridge.getRetiringFederationCreationTime(new Object[]{}).intValue());
+    }
+
+    @Test
+    public void getRetiringFederationCreationBlockNumber() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        when(bridgeSupportMock.getRetiringFederationCreationBlockNumber()).thenReturn(42L);
+
+        Assert.assertThat(bridge.getRetiringFederationCreationBlockNumber(new Object[]{}), is(42L));
     }
 
     @Test
