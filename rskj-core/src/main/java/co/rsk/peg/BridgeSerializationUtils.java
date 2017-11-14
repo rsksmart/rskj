@@ -41,9 +41,10 @@ import java.util.stream.Collectors;
  */
 public class BridgeSerializationUtils {
 
-    private static final int FEDERATION_RLP_LIST_SIZE = 2;
+    private static final int FEDERATION_RLP_LIST_SIZE = 3;
     private static final int FEDERATION_CREATION_TIME_INDEX = 0;
-    private static final int FEDERATION_PUB_KEYS_INDEX = 1;
+    private static final int FEDERATION_CREATION_BLOCK_NUMBER_INDEX = 1;
+    private static final int FEDERATION_PUB_KEYS_INDEX = 2;
 
     private BridgeSerializationUtils(){}
 
@@ -238,6 +239,7 @@ public class BridgeSerializationUtils {
                 .collect(Collectors.toList());
         byte[][] rlpElements = new byte[FEDERATION_RLP_LIST_SIZE][];
         rlpElements[FEDERATION_CREATION_TIME_INDEX] = RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationTime().toEpochMilli()));
+        rlpElements[FEDERATION_CREATION_BLOCK_NUMBER_INDEX] = RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationBlockNumber()));
         rlpElements[FEDERATION_PUB_KEYS_INDEX] = RLP.encodeList((byte[][])publicKeys.toArray(new byte[publicKeys.size()][]));
         return RLP.encodeList(rlpElements);
     }
@@ -257,7 +259,10 @@ public class BridgeSerializationUtils {
                 .map(pubKeyBytes -> BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
                 .collect(Collectors.toList());
 
-        return new Federation(pubKeys, creationTime, 0L, btcContext.getParams());
+        byte[] creationBlockNumberBytes = rlpList.get(FEDERATION_CREATION_BLOCK_NUMBER_INDEX).getRLPData();
+        long creationBlockNumber = new BigInteger(creationBlockNumberBytes).longValue();
+
+        return new Federation(pubKeys, creationTime, creationBlockNumber, btcContext.getParams());
     }
 
     // A pending federation is serialized as the
