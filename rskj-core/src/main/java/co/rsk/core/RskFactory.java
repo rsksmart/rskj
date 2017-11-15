@@ -38,7 +38,8 @@ import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
-import co.rsk.validators.*;
+import co.rsk.validators.BlockValidator;
+import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -183,10 +184,10 @@ public class RskFactory {
                                           SyncConfiguration syncConfiguration) {
 
         // some more rules for header validation
-        int validPeriod = config.getBlockchainConfig().getCommonConstants().getNewBlockMaxMinInTheFuture();
-        BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod);
-        BlockHeaderValidationRule rule = (BlockHeaderValidationRule) new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
-        return new SyncProcessor(worldManager.getBlockchain(), blockSyncService, peerScoringManager, syncConfiguration, rule);
+//        int validPeriod = config.getBlockchainConfig().getCommonConstants().getNewBlockMaxMinInTheFuture();
+//        BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod);
+//        BlockHeaderValidationRule rule = (BlockHeaderValidationRule) new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
+        return new SyncProcessor(worldManager.getBlockchain(), blockSyncService, peerScoringManager, syncConfiguration, new ProofOfWorkRule());
     }
 
     @Bean
