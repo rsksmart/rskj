@@ -7,7 +7,7 @@ import java.time.Duration;
 
 @Immutable
 public final class SyncConfiguration {
-    public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 10, 10, 20, 192);
+    public static final SyncConfiguration DEFAULT = new SyncConfiguration(5, 60, 30, 10, 20, 192);
 
     @VisibleForTesting
     public static final SyncConfiguration IMMEDIATE_FOR_TESTING = new SyncConfiguration(1, 1, 3, 1, 5, 192);
