@@ -58,7 +58,8 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private final ChannelManager channelManager;
     private final PendingState pendingState;
     private final PeerScoringManager peerScoringManager;
-    private long lastStatusSent = System.currentTimeMillis();
+    private volatile long lastStatusSent = System.currentTimeMillis();
+    private volatile long lastTickSent = System.currentTimeMillis();
 
     @Nonnull
     private BlockValidationRule blockValidationRule;
@@ -215,9 +216,12 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                 }
 
                 Long now = System.currentTimeMillis();
-                Duration timePassed = Duration.ofMillis(now - lastStatusSent);
-                this.syncProcessor.onTimePassed(timePassed);
-                if (timePassed.getSeconds() > 10) {
+                Duration timeTick = Duration.ofMillis(now - lastTickSent);
+                this.syncProcessor.onTimePassed(timeTick);
+                lastTickSent = now;
+
+                Duration timeStatus = Duration.ofMillis(now - lastStatusSent);
+                if (timeStatus.getSeconds() > 10) {
                     lastStatusSent = now;
 
                     //Refresh status to peers every 10 seconds or so
@@ -228,7 +232,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                 }
             }
             catch (Exception ex) {
-                logger.error("Error {}", ex.getMessage());
+                logger.error("Error {}", ex);
             }
         }
     }
