@@ -294,8 +294,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public void processSkeletonRequest(@Nonnull final MessageChannel sender, long requestId, long startNumber) {
         logger.trace("Processing block hash request {} {} {} from {}", requestId, startNumber, sender.getPeerNodeID().toString());
-        // TODO(mc) move this to configuration
-        int skeletonStep = 192;
+        int skeletonStep = syncConfiguration.getChunkSize();
         Block blockStart = this.getBlockFromBlockchainStore(startNumber);
 
         // If we don't have a block with the requested number, we ignore the message
@@ -488,11 +487,6 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public boolean hasBetterBlockToSync() {
         return blockSyncService.hasBetterBlockToSync();
-    }
-
-    @Override
-    public void sendStatusToAll() {
-        blockSyncService.sendStatusToActivePeers();
     }
 
     @Override

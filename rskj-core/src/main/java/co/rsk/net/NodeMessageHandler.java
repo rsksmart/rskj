@@ -18,11 +18,13 @@
 
 package co.rsk.net;
 
+import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.validators.BlockValidationRule;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Transaction;
@@ -31,6 +33,7 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -199,7 +202,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             try {
                 logger.trace("Get task");
 
-                final MessageTask task = this.queue.poll(10, TimeUnit.SECONDS);
+                final MessageTask task = this.queue.poll(1, TimeUnit.SECONDS);
 
                 loggerMessageProcess.debug("Queued Messages: {}", this.queue.size());
 
@@ -213,21 +216,31 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
                 Long now = System.currentTimeMillis();
                 Duration timePassed = Duration.ofMillis(now - lastStatusSent);
+                this.syncProcessor.onTimePassed(timePassed);
                 if (timePassed.getSeconds() > 10) {
                     lastStatusSent = now;
 
                     //Refresh status to peers every 10 seconds or so
-                    this.blockProcessor.sendStatusToAll();
+                    sendStatusToAll();
 
                     // Notify SyncProcessor that some time has passed.
                     // This will allow to perform cleanup and other time-dependant tasks.
-                    this.syncProcessor.onTimePassed(timePassed);
                 }
             }
             catch (Exception ex) {
                 logger.error("Error {}", ex.getMessage());
             }
         }
+    }
+
+    private synchronized void sendStatusToAll() {
+        BlockChainStatus blockChainStatus = this.blockProcessor.getBlockchain().getStatus();
+        Block block = blockChainStatus.getBestBlock();
+        BigInteger totalDifficulty = blockChainStatus.getTotalDifficulty();
+
+        Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), totalDifficulty);
+        logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(), Hex.toHexString(status.getBestBlockHash()).substring(0, 8));
+        this.channelManager.broadcastStatus(status);
     }
 
     @CheckForNull
@@ -528,6 +541,11 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             return;
 
         this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
+    }
+
+    @VisibleForTesting
+    public BlockProcessor getBlockProcessor() {
+        return blockProcessor;
     }
 
     private static class MessageTask {
