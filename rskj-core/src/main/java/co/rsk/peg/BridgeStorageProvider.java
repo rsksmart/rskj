@@ -26,6 +26,8 @@ import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
@@ -69,7 +71,9 @@ public class BridgeStorageProvider {
 
     private Federation activeFederation;
     private Federation retiringFederation;
+    private boolean shouldSaveRetiringFederation = false;
     private PendingFederation pendingFederation;
+    private boolean shouldSavePendingFederation = false;
 
     private BridgeConstants bridgeConstants;
     private Context btcContext;
@@ -253,6 +257,7 @@ public class BridgeStorageProvider {
     }
 
     public void setRetiringFederation(Federation federation) {
+        shouldSaveRetiringFederation = true;
         retiringFederation = federation;
     }
 
@@ -260,14 +265,16 @@ public class BridgeStorageProvider {
      * Save the retiring federation
      */
     public void saveRetiringFederation() {
-        DataWord address = new DataWord(BRIDGE_RETIRING_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
+        if (shouldSaveRetiringFederation) {
+            DataWord address = new DataWord(BRIDGE_RETIRING_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
 
-        byte[] data = null;
-        if (retiringFederation != null) {
-            data = BridgeSerializationUtils.serializeFederation(retiringFederation);
+            byte[] data = null;
+            if (retiringFederation != null) {
+                data = BridgeSerializationUtils.serializeFederation(retiringFederation);
+            }
+
+            repository.addStorageBytes(Hex.decode(contractAddress), address, data);
         }
-
-        repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
 
 
@@ -280,8 +287,9 @@ public class BridgeStorageProvider {
 
         byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
 
-        if (data == null)
+        if (data == null) {
             return null;
+        }
 
         pendingFederation = BridgeSerializationUtils.deserializePendingFederation(data);
 
@@ -289,6 +297,7 @@ public class BridgeStorageProvider {
     }
 
     public void setPendingFederation(PendingFederation federation) {
+        shouldSavePendingFederation = true;
         pendingFederation = federation;
     }
 
@@ -296,13 +305,15 @@ public class BridgeStorageProvider {
      * Save the pending federation
      */
     public void savePendingFederation() {
-        DataWord address = new DataWord(BRIDGE_PENDING_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
+        if (shouldSavePendingFederation) {
+            DataWord address = new DataWord(BRIDGE_PENDING_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
 
-        byte[] data = null;
-        if (pendingFederation != null)
-            data = BridgeSerializationUtils.serializePendingFederation(pendingFederation);
+            byte[] data = null;
+            if (pendingFederation != null)
+                data = BridgeSerializationUtils.serializePendingFederation(pendingFederation);
 
-        repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+            repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+        }
     }
 
     public void save() throws IOException {
