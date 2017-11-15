@@ -120,10 +120,7 @@ public class ReversibleTransactionExecutorTest {
                 bestBlock,
                 args);
 
-        Assert.assertNotNull(executor.getResult().getException());
-        Assert.assertEquals(
-                "Invalid operation code: opCode[fd];", // throw with opcode 0xfd, to be changed to revert
-                executor.getResult().getException().getMessage());
+        Assert.assertTrue(executor.getResult().isRevert());
     }
 
     @Test
