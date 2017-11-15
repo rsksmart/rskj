@@ -299,7 +299,6 @@ public class SyncProcessor implements SyncEventsHandler {
             this.blockHeaderValidationRule = blockHeaderValidationRule;
         }
 
-        @Override
         public boolean isKnownBlock(byte[] hash) {
             return blockchain.getBlockByHash(hash) != null;
         }
@@ -320,9 +319,6 @@ public class SyncProcessor implements SyncEventsHandler {
 
         @Override
         public boolean blockHeaderIsValid(@Nonnull BlockHeader header) {
-            if (isKnownBlock(header.getHash()))
-                return false;
-
             return blockHeaderValidationRule.isValid(header);
         }
 

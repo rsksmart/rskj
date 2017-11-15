@@ -48,7 +48,6 @@ public class SimpleSyncInformation implements SyncInformation {
         return false;
     }
 
-    @Override
     public boolean isKnownBlock(byte[] hash) {
         return false;
     }

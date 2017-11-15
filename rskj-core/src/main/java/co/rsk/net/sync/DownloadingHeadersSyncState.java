@@ -50,7 +50,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
             if (!syncInformation.blockHeaderIsValid(header, parentHeader)) {
                 syncEventsHandler.onErrorSyncing(
                         "Invalid header received from node {}",
-                        EventType.INVALID_MESSAGE,
+                        EventType.INVALID_HEADER,
                         syncInformation.getSelectedPeerId());
                 return;
             }
