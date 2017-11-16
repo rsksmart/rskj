@@ -1256,6 +1256,10 @@ public class VM {
         DataWord callGasWord = stack.get(stack.size() - 1);
         long callGasWordLong = Program.limitToMaxLong(callGasWord);
 
+        if (!value.isZero()) {
+            callGasWordLong += GasCost.STIPEND_CALL;
+        }
+
         if (computeGas) {
             gasCost = GasCost.CALL;
 
@@ -1284,10 +1288,6 @@ public class VM {
         }
 
         long requiredGas = gasCost;
-
-        if (!value.isZero()) {
-            requiredGas +=GasCost.STIPEND_CALL; // This is decremented later in message call
-         }
 
         // The following is an important gas check. DO NOT REMOVE.
         // If callGasWordLong is higher than available gas, then move all gas to callee.
