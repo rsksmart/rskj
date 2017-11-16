@@ -23,6 +23,7 @@ import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.mine.MinerClient;
+import co.rsk.mine.MinerServer;
 import co.rsk.net.simples.SimpleBlockProcessor;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.eth.EthModule;
@@ -986,16 +987,17 @@ public class Web3ImplTest {
 
     @Test
     public void eth_coinbase()  {
-        String originalCoibase = "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347";
-        SimpleMinerServer minerServer= new SimpleMinerServer();
-        minerServer.coinbase = originalCoibase;
+        String originalCoinbase = "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347";
+        MinerServer minerServerMock = Mockito.mock(MinerServer.class);
+        Mockito.when(minerServerMock.getCoinbaseAddress()).thenReturn(Hex.decode(originalCoinbase));
 
         Ethereum ethMock = Web3Mocks.getMockEthereum();
         RskSystemProperties mockProperties = Web3Mocks.getMockProperties();
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
-        Web3 web3 = new Web3Impl(ethMock, mockProperties, null, minerServer, personalModule, null, Web3Mocks.getMockChannelManager());
+		Web3 web3 = new Web3Impl(ethMock, mockProperties, null, minerServerMock, personalModule, null, Web3Mocks.getMockChannelManager());
 
-        Assert.assertTrue("Not returning coinbase specified on miner server", web3.eth_coinbase().compareTo("0x" + originalCoibase) == 0);
+        Assert.assertEquals("0x" + originalCoinbase, web3.eth_coinbase());
+        Mockito.verify(minerServerMock, Mockito.times(1)).getCoinbaseAddress();
     }
 
     @Test
