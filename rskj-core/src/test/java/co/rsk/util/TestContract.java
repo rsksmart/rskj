@@ -143,6 +143,34 @@ public class TestContract {
         return new TestContract(code, functions);
     }
 
+    public static TestContract sendTest() {
+        /*
+        contract SendTest {
+            function test() payable returns (uint128) {
+                // send will fail and return false
+                BadReceiver rec = new BadReceiver();
+                assert(!rec.send(1));
+                return 42;
+            }
+        }
+
+        contract BadReceiver {
+            function () payable {
+                require(false);
+            }
+        }
+        */
+
+        String code = "606060405260043610610041576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063f8a8fd6d14610046575b600080fd5b61004e610088565b60405180826fffffffffffffffffffffffffffffffff166fffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6000806100936100f2565b604051809103906000f08015156100a957600080fd5b90508073ffffffffffffffffffffffffffffffffffffffff166108fc60019081150290604051600060405180830381858888f193505050501515156100ea57fe5b602a91505090565b60405160598061010283390190560060606040523415600e57600080fd5b603e80601b6000396000f300606060405260001515601057600080fd5b0000a165627a7a7230582061bb24cc4de5ab87b765f29445c63b927247fc249806572e30ff80aa346ac7030029a165627a7a723058207cc80a079a9012c50a71178622bdcfc38d08a600de4c4fcdf3868a5bd4b01dcc0029";
+        String abi = "[{\"constant\":false,\"inputs\":[],\"name\":\"test\",\"outputs\":[{\"name\":\"\",\"type\":\"uint128\"}],\"payable\":true,\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"type\":\"constructor\"}]";
+
+        CallTransaction.Contract contract = new CallTransaction.Contract(abi);
+
+        Map<String, CallTransaction.Function> functions = new HashMap<>();
+        functions.put("test", contract.getByName("test"));
+        return new TestContract(code, functions);
+    }
+
     public ProgramResult executeFunction(String functionName, BigInteger value, Object... args) {
         byte[] runtimeBytecode = Hex.decode(this.data);
         byte[] encodedCall = this.functions.get(functionName).encode(args);

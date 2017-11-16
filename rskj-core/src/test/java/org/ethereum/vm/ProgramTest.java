@@ -30,6 +30,17 @@ public class ProgramTest {
     @Test
     public void childContractDoesntInheritMsgValue() {
         ProgramResult result = TestContract.parent().executeFunction("createChild", BigInteger.TEN);
+        Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
+    }
+
+    @Test
+    public void sendFailsAndReturnsFalseThenExecutionContinuesNormally() {
+        ProgramResult result = TestContract.sendTest().executeFunction("test", BigInteger.TEN);
+        Assert.assertFalse(result.isRevert());
+        Assert.assertNull(result.getException());
+        Assert.assertArrayEquals(
+                new Object[] { BigInteger.valueOf(42) },
+                TestContract.sendTest().functions.get("test").decodeResult(result.getHReturn()));
     }
 }
