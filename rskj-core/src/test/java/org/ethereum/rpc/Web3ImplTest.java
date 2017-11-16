@@ -885,7 +885,7 @@ public class Web3ImplTest {
                 .sender(acc1)
                 .gasLimit(BigInteger.valueOf(100000))
                 .gasPrice(BigInteger.ONE)
-                .data(greeter.data)
+                .data(greeter.runtimeBytecode)
                 .build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
