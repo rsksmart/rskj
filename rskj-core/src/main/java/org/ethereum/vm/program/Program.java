@@ -869,7 +869,8 @@ public class Program {
         getTrace().merge(program.getTrace());
         getResult().merge(childResult );
 
-        if (childResult .getException() != null || result.isRevert()) {
+        boolean childCallSuccessful = true;
+        if (childResult.getException() != null || childResult.isRevert()) {
             if (isGasLogEnabled)
                 gasLogger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
                     Hex.toHexString(contextAddress),
@@ -880,9 +881,13 @@ public class Program {
             childResult.rejectLogInfos();
 
             track.rollback();
-            if (result.getException() != null) {
+            // when there's an exception we skip applying results and refunding gas,
+            // and we only do that when the call is successful or there's a REVERT operation.
+            if (childResult.getException() != null) {
                 return false;
             }
+
+            childCallSuccessful = false;
         } else {
             // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
             track.commit();
@@ -890,7 +895,7 @@ public class Program {
 
 
         // 3. APPLY RESULTS: childResult.getHReturn() into out_memory allocated
-        byte[] buffer = childResult .getHReturn();
+        byte[] buffer = childResult.getHReturn();
         int offset = msg.getOutDataOffs().intValue();
         int size = msg.getOutDataSize().intValue();
 
@@ -911,7 +916,7 @@ public class Program {
                         Hex.toHexString(senderAddress),
                         refundGas.toString());
         }
-        return true;
+        return childCallSuccessful;
     }
 
     public void spendGas(long gasValue, String cause) {
