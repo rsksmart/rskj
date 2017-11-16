@@ -172,12 +172,10 @@ public class FederationTest {
     @Test
     public void testEquals_a() {
         Assert.assertTrue(federation.equals(federation));
-        Assert.assertTrue(federation.equalsFederation(federation));
 
         Assert.assertFalse(federation.equals(null));
         Assert.assertFalse(federation.equals(new Object()));
         Assert.assertFalse(federation.equals("something else"));
-        Assert.assertFalse(federation.equalsFederation(null));
     }
 
     @Test

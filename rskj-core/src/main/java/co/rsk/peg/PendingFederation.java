@@ -25,6 +25,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.program.Program;
+import org.spongycastle.util.encoders.Hex;
 
 import java.lang.reflect.Array;
 import java.time.Instant;
@@ -116,4 +117,46 @@ public final class PendingFederation {
         return String.format("%d of %d signatures pending federation (%s)", numberOfSignaturesRequired, publicKeys.size(), isComplete() ? "complete" : "incomplete");
     }
 
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (other instanceof PendingFederation) {
+            PendingFederation otherFederation = (PendingFederation) other;
+            ByteArrayWrapper[] thisPublicKeys = this.getPublicKeys().stream()
+                    .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                    .map(k -> new ByteArrayWrapper(k.getPubKey()))
+                    .toArray(ByteArrayWrapper[]::new);
+            ByteArrayWrapper[] otherPublicKeys = otherFederation.getPublicKeys().stream()
+                    .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                    .map(k -> new ByteArrayWrapper(k.getPubKey()))
+                    .toArray(ByteArrayWrapper[]::new);
+
+            return this.getId() == ((PendingFederation) other).getId() &&
+                    this.getNumberOfSignaturesRequired() == otherFederation.getNumberOfSignaturesRequired() &&
+                    this.getPublicKeys().size() == otherFederation.getPublicKeys().size() &&
+                    Arrays.equals(thisPublicKeys, otherPublicKeys);
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return getStringRepresentation().hashCode();
+    }
+
+    private String getStringRepresentation() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("#%d - ", getId()));
+        sb.append(getNumberOfSignaturesRequired());
+        sb.append("of <");
+        for (BtcECKey pk : getPublicKeys()) {
+            sb.append(Hex.toHexString(pk.getPubKey()));
+        }
+        sb.append(">");
+        return sb.toString();
+    }
 }

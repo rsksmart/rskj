@@ -25,6 +25,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.db.ByteArrayWrapper;
+import org.spongycastle.util.encoders.Hex;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -143,7 +144,12 @@ public final class Federation {
         return false;
     }
 
-    public boolean equalsFederation(Federation other) {
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    private boolean equalsFederation(Federation other) {
         if (other == null) {
             return false;
         }
@@ -166,5 +172,17 @@ public final class Federation {
                 this.getCreationTime().equals(other.getCreationTime()) &&
                 this.btcParams.equals(other.btcParams) &&
                 Arrays.equals(thisPublicKeys, otherPublicKeys);
+    }
+
+    private String getStringRepresentation() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("@%d - ", getCreationTime().toEpochMilli()));
+        sb.append(getNumberOfSignaturesRequired());
+        sb.append("of <");
+        for (BtcECKey pk : getPublicKeys()) {
+            sb.append(Hex.toHexString(pk.getPubKey()));
+        }
+        sb.append(">");
+        return sb.toString();
     }
 }
