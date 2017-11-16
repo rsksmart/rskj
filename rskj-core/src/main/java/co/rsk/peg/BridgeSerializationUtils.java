@@ -123,10 +123,10 @@ public class BridgeSerializationUtils {
         int n = 0;
 
         for (UTXO utxo : list) {
-            ByteArrayOutputStream ostream = new ByteArrayOutputStream();
-            utxo.serializeToStream(ostream);
-            ostream.close();
-            bytes[n++] = RLP.encodeElement(ostream.toByteArray());
+            try (ByteArrayOutputStream ostream = new ByteArrayOutputStream()) {
+                utxo.serializeToStream(ostream);
+                bytes[n++] = RLP.encodeElement(ostream.toByteArray());
+            }
         }
 
         return RLP.encodeList(bytes);
