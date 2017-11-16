@@ -46,7 +46,6 @@ public class SelectionRuleTest {
 
     private static BlockChainImpl createBlockchain() {
         RskTestFactory factory = new RskTestFactory();
-        factory.initGenesis();
         return factory.getBlockchain();
     }
 }

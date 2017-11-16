@@ -216,7 +216,7 @@ public class BlockChainBuilder {
 
     public static void extend(Blockchain blockchain, int size, boolean withUncles, boolean mining) {
         Block initial = blockchain.getBestBlock();
-        List<Block> blocks = BlockGenerator.getBlockChain(initial, size, 0, withUncles, mining);
+        List<Block> blocks = BlockGenerator.getBlockChain(initial, size, 0, withUncles, mining, null);
 
         for (Block block: blocks)
             blockchain.tryToConnect(block);
