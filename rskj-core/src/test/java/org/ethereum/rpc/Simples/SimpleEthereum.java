@@ -61,21 +61,6 @@ public class SimpleEthereum implements Ethereum {
     }
 
     @Override
-    public void connect(InetAddress addr, int port, String remoteId) {
-
-    }
-
-    @Override
-    public void connect(String ip, int port, String remoteId) {
-
-    }
-
-    @Override
-    public void connect(Node node) {
-
-    }
-
-    @Override
     public Blockchain getBlockchain() {
         return null;
     }

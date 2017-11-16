@@ -43,6 +43,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.Repository;
+import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.*;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
@@ -104,11 +105,11 @@ public class Web3ImplTest {
     @Test
     public void net_peerCount() throws Exception {
         Web3Impl web3 = createWeb3();
-        web3.worldManager = new SimpleWorldManager();
 
         String peerCount  = web3.net_peerCount();
 
-        Assert.assertTrue("Different number of peers than expected", peerCount.compareTo("0x2") == 0);
+        Assert.assertEquals("Different number of peers than expected",
+                "0x2", peerCount);
     }
 
 
@@ -260,7 +261,7 @@ public class Web3ImplTest {
         RskSystemProperties mockProperties = Web3Mocks.getMockProperties();
         MinerClient minerClient = new SimpleMinerClient();
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
-        Web3 web3 = new Web3Impl(ethMock, mockProperties, minerClient, null, personalModule, null);
+        Web3 web3 = new Web3Impl(ethMock, mockProperties, minerClient, null, personalModule, null, Web3Mocks.getMockChannelManager());
 
         Assert.assertTrue("Node is not mining", !web3.eth_mining());
 
@@ -993,7 +994,7 @@ public class Web3ImplTest {
         Ethereum ethMock = Web3Mocks.getMockEthereum();
         RskSystemProperties mockProperties = Web3Mocks.getMockProperties();
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
-        Web3 web3 = new Web3Impl(ethMock, mockProperties, null, minerServer, personalModule, null);
+        Web3 web3 = new Web3Impl(ethMock, mockProperties, null, minerServer, personalModule, null, Web3Mocks.getMockChannelManager());
 
         Assert.assertTrue("Not returning coinbase specified on miner server", web3.eth_coinbase().compareTo("0x" + originalCoibase) == 0);
     }
@@ -1280,7 +1281,8 @@ public class Web3ImplTest {
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(eth, wallet);
         EthModule ethModule = new EthModule(eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(eth, wallet));
         MinerClient minerClient = new SimpleMinerClient();
-        return new Web3RskImpl(eth, RskSystemProperties.CONFIG, minerClient, Web3Mocks.getMockMinerServer(), personalModule, ethModule);
+        ChannelManager channelManager = new SimpleChannelManager();
+        return new Web3RskImpl(eth, RskSystemProperties.CONFIG, minerClient, Web3Mocks.getMockMinerServer(), personalModule, ethModule, channelManager);
     }
 
     @Test
@@ -1295,7 +1297,7 @@ public class Web3ImplTest {
         Ethereum eth = Mockito.mock(Ethereum.class);
         EthModule ethModule = new EthModule(eth, new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)), null);
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
-        Web3Impl web3 = new Web3RskImpl(eth, systemProperties, null, null, personalModule, ethModule);
+        Web3Impl web3 = new Web3RskImpl(eth, systemProperties, null, null, personalModule, ethModule, Web3Mocks.getMockChannelManager());
         String contract = "pragma solidity ^0.4.1; contract rsk { function multiply(uint a) returns(uint d) {   return a * 7;   } }";
 
         Map<String, CompilationResultDTO> result = web3.eth_compileSolidity(contract);
@@ -1323,7 +1325,7 @@ public class Web3ImplTest {
         Ethereum eth = Mockito.mock(Ethereum.class, Mockito.RETURNS_DEEP_STUBS);
         Mockito.when(eth.getWorldManager().getBlockchain().getBestBlock().getNumber()).thenReturn(1L);
         EthModule ethModule = new EthModule(eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(eth, wallet));
-        Web3Impl web3 = new Web3RskImpl(eth, RskSystemProperties.CONFIG, null, null, new PersonalModuleWalletDisabled(), ethModule);
+        Web3Impl web3 = new Web3RskImpl(eth, RskSystemProperties.CONFIG, null, null, new PersonalModuleWalletDisabled(), ethModule, Web3Mocks.getMockChannelManager());
 
         String contract = "pragma solidity ^0.4.1; contract rsk { function multiply(uint a) returns(uint d) {   return a * 7;   } }";
 

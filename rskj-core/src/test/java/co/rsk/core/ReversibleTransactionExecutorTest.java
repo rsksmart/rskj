@@ -35,7 +35,6 @@ public class ReversibleTransactionExecutorTest {
     @Test
     public void executeTransactionHello() {
         RskTestFactory factory = new RskTestFactory();
-        factory.initGenesis();
 
         TestContract hello = TestContract.hello();
         CallTransaction.Function helloFn = hello.functions.get("hello");
@@ -67,7 +66,6 @@ public class ReversibleTransactionExecutorTest {
     @Test
     public void executeTransactionGreeter() {
         RskTestFactory factory = new RskTestFactory();
-        factory.initGenesis();
 
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
@@ -99,7 +97,6 @@ public class ReversibleTransactionExecutorTest {
     @Test
     public void executeTransactionGreeterOtherSender() {
         RskTestFactory factory = new RskTestFactory();
-        factory.initGenesis();
 
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
@@ -123,16 +120,12 @@ public class ReversibleTransactionExecutorTest {
                 bestBlock,
                 args);
 
-        Assert.assertNotNull(executor.getResult().getException());
-        Assert.assertEquals(
-                "Invalid operation code: opCode[fd];", // throw with opcode 0xfd, to be changed to revert
-                executor.getResult().getException().getMessage());
+        Assert.assertTrue(executor.getResult().isRevert());
     }
 
     @Test
     public void executeTransactionCountCallsMultipleTimes() {
         RskTestFactory factory = new RskTestFactory();
-        factory.initGenesis();
 
         TestContract countcalls = TestContract.countcalls();
         CallTransaction.Function callsFn = countcalls.functions.get("calls");

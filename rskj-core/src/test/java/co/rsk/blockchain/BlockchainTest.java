@@ -168,6 +168,21 @@ public class BlockchainTest {
         Assert.assertEquals(chain2.size() + 1, newblock.getNumber());
     }
 
+    @Test
+    public void checkItDoesntAddAnInvalidBlock() {
+        Blockchain blockchain = createBlockchain();
+
+        Block block1 = BlockGenerator.createChildBlock(blockchain.getBestBlock());
+        ImportResult importResult1 = blockchain.tryToConnect(block1);
+        Assert.assertTrue(importResult1.isSuccessful());
+
+        Block block2 = BlockGenerator.createChildBlock(blockchain.getBestBlock());
+        Block block2b = BlockGenerator.createBlock(10, 5);
+        Block block3 = Block.fromValidData(block2.getHeader(), block2b.getTransactionsList(), block2b.getUncleList());
+        ImportResult importResult2 = blockchain.tryToConnect(block3);
+        Assert.assertFalse(importResult2.isSuccessful());
+    }
+
     private static BlockChainImpl createBlockchain() {
         World world = new World();
 

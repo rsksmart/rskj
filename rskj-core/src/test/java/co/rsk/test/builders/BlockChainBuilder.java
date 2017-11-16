@@ -18,21 +18,23 @@
 
 package co.rsk.test.builders;
 
+import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
+import org.ethereum.core.*;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Block;
-import org.ethereum.core.Genesis;
-import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.junit.Assert;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
 
@@ -151,5 +153,72 @@ public class BlockChainBuilder {
         }
 
         return blockChain;
+    }
+
+    public static Blockchain ofSize(int size) {
+        return ofSize(size, false);
+    }
+
+    public static Blockchain ofSize(int size, boolean mining) {
+        return ofSize(size, mining, null, null);
+    }
+
+    public static Blockchain ofSize(int size, boolean mining, List<Account> accounts, List<BigInteger> balances) {
+        BlockChainBuilder builder = new BlockChainBuilder();
+        BlockChainImpl blockChain = builder.build();
+
+        Block genesis = BlockGenerator.getGenesisBlock();
+
+        if (accounts != null)
+            for (int k = 0; k < accounts.size(); k++) {
+                Account account = accounts.get(k);
+                BigInteger balance = balances.get(k);
+                blockChain.getRepository().createAccount(account.getAddress());
+                blockChain.getRepository().addBalance(account.getAddress(), balance);
+            }
+
+        genesis.setStateRoot(blockChain.getRepository().getRoot());
+        genesis.flushRLP();
+
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
+
+        if (size > 0) {
+            List<Block> blocks = mining ? BlockGenerator.getMinedBlockChain(genesis, size) : BlockGenerator.getBlockChain(genesis, size);
+
+            for (Block block: blocks)
+                blockChain.tryToConnect(block);
+        }
+
+        return blockChain;
+    }
+
+    public static Blockchain copy(Blockchain original) {
+        BlockChainBuilder builder = new BlockChainBuilder();
+        BlockChainImpl blockChain = builder.build();
+
+        long height = original.getStatus().getBestBlockNumber();
+
+        for (long k = 0; k <= height; k++)
+            blockChain.tryToConnect(original.getBlockByNumber(k));
+
+        return blockChain;
+    }
+
+    public static Blockchain copyAndExtend(Blockchain original, int size) {
+        return copyAndExtend(original, size, false);
+    }
+
+    public static Blockchain copyAndExtend(Blockchain original, int size, boolean mining) {
+        Blockchain blockchain = copy(original);
+        extend(blockchain, size, false, mining);
+        return blockchain;
+    }
+
+    public static void extend(Blockchain blockchain, int size, boolean withUncles, boolean mining) {
+        Block initial = blockchain.getBestBlock();
+        List<Block> blocks = BlockGenerator.getBlockChain(initial, size, 0, withUncles, mining);
+
+        for (Block block: blocks)
+            blockchain.tryToConnect(block);
     }
 }

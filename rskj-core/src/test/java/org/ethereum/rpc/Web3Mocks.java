@@ -24,6 +24,7 @@ import co.rsk.mine.MinerServer;
 import org.ethereum.core.PendingState;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.manager.WorldManager;
+import org.ethereum.net.server.ChannelManager;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
@@ -49,6 +50,10 @@ public class Web3Mocks {
 
     public static MinerServer getMockMinerServer() {
         return mock(MinerServer.class);
+    }
+
+    public static ChannelManager getMockChannelManager() {
+        return mock(ChannelManager.class);
     }
 
     public static PendingState getMockPendingState(BigInteger nonce) {

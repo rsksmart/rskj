@@ -30,6 +30,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.BlockStore;
+import org.ethereum.net.server.ChannelManager;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3Impl;
@@ -50,16 +51,15 @@ import java.util.List;
  */
 public class Web3RskImpl extends Web3Impl {
     private static final Logger logger = LoggerFactory.getLogger("web3");
-    private final MinerServer minerServer;
 
     public Web3RskImpl(Ethereum eth,
                        RskSystemProperties properties,
                        MinerClient minerClient,
                        MinerServer minerServer,
                        PersonalModule personalModule,
-                       EthModule ethModule) {
-        super(eth, properties, minerClient, minerServer, personalModule, ethModule);
-        this.minerServer = minerServer;
+                       EthModule ethModule,
+                       ChannelManager channelManager) {
+        super(eth, properties, minerClient, minerServer, personalModule, ethModule, channelManager);
     }
 
     public MinerWork mnr_getWork() {

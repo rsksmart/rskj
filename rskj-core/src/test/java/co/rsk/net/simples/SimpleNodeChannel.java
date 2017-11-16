@@ -18,7 +18,7 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.net.MessageSender;
+import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.Message;
 
@@ -27,26 +27,30 @@ import java.net.InetAddress;
 /**
  * Created by ajlopez on 5/14/2016.
  */
-public class SimpleNodeSender implements MessageSender {
-    private SimpleNode source;
-    private SimpleNode target;
+public class SimpleNodeChannel implements MessageChannel {
+    private SimpleNode sender;
+    private SimpleNode receiver;
+    private NodeID nodeID = new NodeID(new byte[]{});
 
-    public SimpleNodeSender(SimpleNode source, SimpleNode target) {
-        this.source = source;
-        this.target = target;
+    public SimpleNodeChannel(SimpleNode sender, SimpleNode receiver) {
+        this.sender = sender;
+        this.receiver = receiver;
+
+        if (receiver != null)
+            this.nodeID = receiver.getNodeID();
     }
 
     public void sendMessage(Message message) {
-        if (this.target != null)
-            this.target.sendMessage(this.source, message);
+        if (this.receiver != null)
+            this.receiver.receiveMessageFrom(this.sender, message);
     }
 
-    public NodeID getNodeID() {
-        return new NodeID(new byte[]{});
+    public NodeID getPeerNodeID() {
+        return this.nodeID;
     }
 
     @Override
-    public void setNodeID(byte[] nodeId) {
+    public void setPeerNodeID(byte[] peerNodeId) {
 
     }
 

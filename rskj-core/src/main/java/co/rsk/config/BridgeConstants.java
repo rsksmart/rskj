@@ -20,6 +20,7 @@ package co.rsk.config;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.peg.Federation;
 
 import java.util.List;
 
@@ -27,14 +28,10 @@ public class BridgeConstants {
 
     protected String btcParamsString;
 
-    protected List<BtcECKey> federatorPublicKeys;
-    protected int federatorsRequiredToSign;
-    protected Script federationPubScript;
-    protected Address federationAddress;
-    // We ignore txs to the federation before this time
-    protected long federationAddressCreationTime;
+    protected Federation genesisFederation;
 
     protected int btc2RskMinimumAcceptableConfirmations;
+    protected int btc2RskMinimumAcceptableConfirmationsOnRsk;
     protected int rsk2BtcMinimumAcceptableConfirmations;
     protected int btcBroadcastingMinimumAcceptableBlocks;
 
@@ -53,26 +50,14 @@ public class BridgeConstants {
         return btcParamsString;
     }
 
-    public List<BtcECKey> getFederatorPublicKeys() {
-        return federatorPublicKeys;
-    }
-
-    public int getFederatorsRequiredToSign() {
-        return federatorsRequiredToSign;
-    }
-
-    public Script getFederationPubScript() {
-        return federationPubScript;
-    }
-
-    public Address getFederationAddress() {
-        return federationAddress;
-    }
-
-    public long getFederationAddressCreationTime() { return federationAddressCreationTime; }
+    public Federation getGenesisFederation() { return genesisFederation; }
 
     public int getBtc2RskMinimumAcceptableConfirmations() {
         return btc2RskMinimumAcceptableConfirmations;
+    }
+
+    public int getBtc2RskMinimumAcceptableConfirmationsOnRsk() {
+        return btc2RskMinimumAcceptableConfirmationsOnRsk;
     }
 
     public int getRsk2BtcMinimumAcceptableConfirmations() {
@@ -83,7 +68,6 @@ public class BridgeConstants {
         return btcBroadcastingMinimumAcceptableBlocks;
     }
 
-    
     public int getUpdateBridgeExecutionPeriod() { return updateBridgeExecutionPeriod; }
 
     public int getMaxBtcHeadersPerRskBlock() { return maxBtcHeadersPerRskBlock; }

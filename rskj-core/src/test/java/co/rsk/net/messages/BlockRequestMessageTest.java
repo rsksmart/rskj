@@ -16,20 +16,23 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net;
+package co.rsk.net.messages;
 
-import co.rsk.net.messages.Message;
+import co.rsk.blockchain.utils.BlockGenerator;
+import org.junit.Assert;
+import org.junit.Test;
 
-import java.net.InetAddress;
+/**
+ * Created by ajlopez on 5/11/2016.
+ */
+public class BlockRequestMessageTest {
+    @Test
+    public void createWithBlockHash() {
+        byte[] hash = BlockGenerator.getGenesisBlock().getHash();
+        BlockRequestMessage message = new BlockRequestMessage(100, hash);
 
-public interface MessageSender {
-    void sendMessage(Message message);
-
-    NodeID getNodeID();
-
-    void setNodeID(byte[] nodeId);
-
-    InetAddress getAddress();
-
-    void setAddress(InetAddress address);
+        Assert.assertEquals(100, message.getId());
+        Assert.assertArrayEquals(hash, message.getBlockHash());
+        Assert.assertEquals(MessageType.BLOCK_REQUEST_MESSAGE, message.getMessageType());
+    }
 }

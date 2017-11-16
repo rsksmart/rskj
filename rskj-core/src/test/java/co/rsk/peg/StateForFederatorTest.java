@@ -62,7 +62,7 @@ public class StateForFederatorTest {
         rskTxsWaitingForBroadcasting.put(sha3Hash3, Pair.of(tx3, 3L));
         rskTxsWaitingForBroadcasting.put(sha3Hash4, Pair.of(tx4, 4L));
 
-        StateForFederator stateForFederator = new StateForFederator(rskTxsWaitingForSignatures, rskTxsWaitingForBroadcasting);
+        StateForFederator stateForFederator = new StateForFederator(rskTxsWaitingForSignatures);
 
         byte[] encoded = stateForFederator.getEncoded();
 
@@ -71,18 +71,12 @@ public class StateForFederatorTest {
         StateForFederator reverseResult = new StateForFederator(encoded, NETWORK_PARAMETERS);
 
         Assert.assertNotNull(reverseResult);
-        Assert.assertEquals(2, reverseResult.getRskTxsWaitingForBroadcasting().size());
         Assert.assertEquals(2, reverseResult.getRskTxsWaitingForSignatures().size());
 
         Assert.assertEquals(tx1, reverseResult.getRskTxsWaitingForSignatures().get(sha3Hash1));
         Assert.assertEquals(tx2, reverseResult.getRskTxsWaitingForSignatures().get(sha3Hash2));
 
         Assert.assertTrue(checkKeys(reverseResult.getRskTxsWaitingForSignatures().keySet(), sha3Hash1, sha3Hash2));
-
-        Assert.assertEquals(Pair.of(tx3, 3L), reverseResult.getRskTxsWaitingForBroadcasting().get(sha3Hash3));
-        Assert.assertEquals(Pair.of(tx4, 4L), reverseResult.getRskTxsWaitingForBroadcasting().get(sha3Hash4));
-
-        Assert.assertTrue(checkKeys(reverseResult.getRskTxsWaitingForBroadcasting().keySet(), sha3Hash3, sha3Hash4));
     }
 
     private boolean checkKeys(Set<Sha3Hash> sha3Hashes, Sha3Hash ... keys) {

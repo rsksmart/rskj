@@ -1,7 +1,6 @@
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,29 +16,40 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum.validator;
+package co.rsk.net.messages;
 
-import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Block;
+import org.ethereum.util.RLP;
 
 /**
- * Parent class for {@link BlockHeader} validators
- *
- * @author Mikhail Kalinin
- * @since 02.09.2015
+ * Created by ajlopez on 5/10/2016.
  */
-public abstract class BlockHeaderRule extends AbstractValidationRule {
+public class BlockResponseMessage extends MessageWithId {
+    private long id;
+    private Block block;
 
-    @Override
-    public Class getEntityClass() {
-        return BlockHeader.class;
+    public BlockResponseMessage(long id, Block block) {
+        this.id = id;
+        this.block = block;
     }
 
-    /**
-     * Runs header validation and returns its result
-     *
-     * @param header block header
-     * @return true if validation passed, false otherwise
-     */
-    public abstract boolean validate(BlockHeader header);
+    public long getId() {
+        return this.id;
+    }
 
+    public Block getBlock() {
+        return this.block;
+    }
+
+    @Override
+    public MessageType getMessageType() {
+        return MessageType.BLOCK_RESPONSE_MESSAGE;
+    }
+
+    @Override
+    public byte[] getEncodedMessageWithoutId() {
+        byte[] rlpBlock = RLP.encode(this.block.getEncoded());
+
+        return RLP.encodeList(rlpBlock);
+    }
 }

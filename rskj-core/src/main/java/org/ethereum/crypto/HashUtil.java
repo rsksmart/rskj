@@ -26,6 +26,7 @@ import org.spongycastle.crypto.Digest;
 import org.spongycastle.crypto.digests.RIPEMD160Digest;
 import org.spongycastle.util.encoders.Hex;
 
+import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -175,7 +176,8 @@ public class HashUtil {
         return randomHash;
     }
 
-    public static String shortHash(byte[] hash){
-        return Hex.toHexString(hash).substring(0, 6);
+    @Nonnull
+    public static String shortHash(@Nonnull final byte[] hash){
+        return Hex.toHexString(hash).substring(0, Math.min(hash.length, 6));
     }
 }

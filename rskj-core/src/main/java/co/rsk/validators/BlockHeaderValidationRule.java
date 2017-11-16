@@ -16,10 +16,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.test.builders;
+package co.rsk.validators;
+
+import org.ethereum.core.BlockHeader;
 
 /**
- * Created by ajlopez on 8/6/2016.
+ * Validates a block header.
+ * For example, we can validate the PoW using only the header information.
  */
-public class WorldBuilder {
+public interface BlockHeaderValidationRule {
+    boolean isValid(BlockHeader header);
 }
