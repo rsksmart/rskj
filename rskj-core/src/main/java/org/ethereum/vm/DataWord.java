@@ -571,31 +571,6 @@ public class DataWord implements Comparable<DataWord> {
     public static int numberOfTrailingNonZeros(byte i) {
         return 8 - numberOfLeadingZeros(i);
     }
-        public static int numberOfTrailingZeros(byte i) {
-            // UNTESTED
-
-            if (i == 0) {
-                return 8;
-            }
-            int y;
-            int v = i;
-            int n = 7;
-            y = (v << 4);
-            if (y != 0) {
-                n = n - 4;
-                v = y;
-            }
-            y = (v << 2);
-            if (y != 0) {
-                n = n - 2;
-                v = y;
-            }
-            y = (v << 1);
-            if (y != 0) {
-                n = n - 1;
-            }
-            return n;
-        }
 
     public int bitsOccupied() {
         int firstNonZero = ByteUtil.firstNonZeroByte(data);
@@ -609,7 +584,4 @@ public class DataWord implements Comparable<DataWord> {
         return Hex.toHexString(data).equals(hex);
     }
 
-    public String asString(){
-        return new String(getNoLeadZeroesData());
-    }
 }

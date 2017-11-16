@@ -16,26 +16,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.mine;
+package co.rsk.rpc.exception;
 
-import org.ethereum.core.Block;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
-import javax.annotation.Nonnull;
+/**
+ * Designed to be used only when an error occurs at MinerServer.SubmitBitcoinBlock() method.
+ *
+ * @author martin.medina
+ */
+public class JsonRpcSubmitBlockException extends RskJsonRpcRequestException {
 
-
-public interface MinerServer {
-
-    void start();
-
-    SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock);
-
-    byte[] getCoinbaseAddress();
-
-    MinerWork getWork();
-
-    void buildBlockToMine(@Nonnull Block newParent, boolean createCompetitiveBlock);
-
-    long getCurrentTimeInSeconds();
-
-    long increaseTime(long seconds);
+    public JsonRpcSubmitBlockException(String message) {
+        super(JsonRpcApplicationDefinedErrorCodes.SUBMIT_BLOCK, message);
+    }
 }

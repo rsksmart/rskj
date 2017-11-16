@@ -16,26 +16,20 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.mine;
+package co.rsk.rpc.exception;
 
-import org.ethereum.core.Block;
+/**
+ * Holds error codes defined as determined by JSON-RPC standard.
+ * For more information please refer to http://www.jsonrpc.org/specification (section 5.1)
+ *
+ * @author martin.medina
+ * @since  10.23.17
+ */
+class JsonRpcApplicationDefinedErrorCodes {
 
-import javax.annotation.Nonnull;
+    static final Integer SUBMIT_BLOCK = -33000;
 
-
-public interface MinerServer {
-
-    void start();
-
-    SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock);
-
-    byte[] getCoinbaseAddress();
-
-    MinerWork getWork();
-
-    void buildBlockToMine(@Nonnull Block newParent, boolean createCompetitiveBlock);
-
-    long getCurrentTimeInSeconds();
-
-    long increaseTime(long seconds);
+    private JsonRpcApplicationDefinedErrorCodes() {
+        throw new IllegalAccessError("Utility class");
+    }
 }
