@@ -35,9 +35,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void synchronizeNewNodesInAChain() throws InterruptedException {
-        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithBlockChainBuilder(100);
-        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithBlockChainBuilder(0);
-        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithBlockChainBuilder(0);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(100,false, true);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, true);
+        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, true);
 
         Assert.assertEquals(100, node1.getBestBlock().getNumber());
         Assert.assertEquals(0, node2.getBestBlock().getNumber());
@@ -87,9 +87,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void synchronizeNewNodeWithBestChain() throws InterruptedException {
-        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithBlockChainBuilder(30);
-        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithBlockChainBuilder(50);
-        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithBlockChainBuilder(0);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(30,false, true);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(50,false, true);
+        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, true);
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
         Assert.assertEquals(50, node2.getBestBlock().getNumber());
@@ -426,9 +426,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void dontSynchronizeNodeWithShorterChain() throws InterruptedException {
-        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithBlockChainBuilder(50);
-        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithBlockChainBuilder(30);
-        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithBlockChainBuilder(0);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(50, false, true);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(30,false, true);
+        SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, true);
 
         Assert.assertEquals(50, node1.getBestBlock().getNumber());
         Assert.assertEquals(30, node2.getBestBlock().getNumber());

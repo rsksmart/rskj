@@ -127,10 +127,10 @@ public class SimpleAsyncNode extends SimpleNode {
         return createNode(blockchain, SyncConfiguration.IMMEDIATE_FOR_TESTING);
     }
 
-    public static SimpleAsyncNode createNodeWithWorldBlockChain(int size, boolean withUncles) {
+    public static SimpleAsyncNode createNodeWithWorldBlockChain(int size, boolean withUncles, boolean mining) {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        BlockChainBuilder.extend(blockchain, size, withUncles, true);
+        BlockChainBuilder.extend(blockchain, size, withUncles, mining);
         return createNode(blockchain, SyncConfiguration.IMMEDIATE_FOR_TESTING);
     }
 }
