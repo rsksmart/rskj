@@ -59,7 +59,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     public void processStatus(MessageChannel sender, Status status) {
         logger.trace("Receiving syncState from node {} block {} {}", sender.getPeerNodeID(), status.getBestBlockNumber(), HashUtil.shortHash(status.getBestBlockHash()), status.getBestBlockHash());
-        this.peerStatuses.getOrRegisterPeer(sender).setStatus(status);
+        this.peerStatuses.registerPeer(sender).setStatus(status);
         this.syncState.newPeerStatus();
     }
 
@@ -153,7 +153,7 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     public void onTimePassed(Duration timePassed) {
-        logger.trace("Time passed on node {}", timePassed);
+//        logger.trace("Time passed on node {}", timePassed);
         this.syncState.tick(timePassed);
     }
 

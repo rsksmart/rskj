@@ -209,7 +209,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     public void tick(Duration duration) {
         // first we update all the nodes that are expected to be working
         List<NodeID> updatedNodes = timeElapsedByPeer.keySet().stream()
-            .filter(e -> chunksBeingDownloaded.containsKey(e))
+            .filter(chunksBeingDownloaded::containsKey)
             .collect(Collectors.toList());
 
         updatedNodes.forEach(k -> timeElapsedByPeer.put(k, timeElapsedByPeer.get(k).plus(duration)));
@@ -218,7 +218,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         Duration limit = syncConfiguration.getTimeoutWaitingRequest();
         updatedNodes.stream()
             .filter(k -> timeElapsedByPeer.get(k).compareTo(limit) >= 0)
-            .forEach(k -> handleTimeoutMessage(k));
+            .forEach(this::handleTimeoutMessage);
 
         if (suitablePeers.isEmpty()){
             syncEventsHandler.stopSyncing();

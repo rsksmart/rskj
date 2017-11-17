@@ -26,8 +26,7 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
         if (!ByteUtil.fastEquals(header.getHash(), miniChunk.getHash()) ||
                 !syncInformation.blockHeaderIsValid(header)) {
             syncEventsHandler.onErrorSyncing(
-                    "Invalid chunk received from node {}",
-                    EventType.INVALID_HEADER,
+                    "Invalid chunk received from node {}", EventType.INVALID_HEADER, this.getClass(),
                     syncInformation.getSelectedPeerId());
             return;
         }

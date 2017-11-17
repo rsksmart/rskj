@@ -34,8 +34,8 @@ public abstract class BaseSyncState implements SyncState {
         timeElapsed = timeElapsed.plus(duration);
         if (timeElapsed.compareTo(syncConfiguration.getTimeoutWaitingRequest()) >= 0) {
             syncEventsHandler.onErrorSyncing(
-                    "Timeout waiting requests from node {}",
-                    EventType.TIMEOUT_MESSAGE,
+                    "Timeout waiting requests {} from node {}",
+                    EventType.TIMEOUT_MESSAGE, this.getClass(),
                     syncInformation.getSelectedPeerId());
         }
     }

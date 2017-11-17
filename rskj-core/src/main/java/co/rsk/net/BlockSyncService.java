@@ -223,7 +223,7 @@ public class BlockSyncService {
 
     public void acceptAnyBlock()
     {
-        this.ignoreAdvancedBlocks = false;
+//        this.ignoreAdvancedBlocks = false;
     }
 
     private static void sendStatus(Blockchain blockchain, MessageChannel sender) {

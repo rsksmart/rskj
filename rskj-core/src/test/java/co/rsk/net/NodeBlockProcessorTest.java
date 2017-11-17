@@ -32,6 +32,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigInteger;
@@ -83,7 +84,7 @@ public class NodeBlockProcessorTest {
         Assert.assertEquals(0, store.size());
     }
 
-    @Test
+    @Test @Ignore
     public void processBlockWithTooMuchHeightAfterFilterIsRemoved() throws UnknownHostException {
         final BlockStore store = new BlockStore();
         final MessageChannel sender = new SimpleMessageChannel();

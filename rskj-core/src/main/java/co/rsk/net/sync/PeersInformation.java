@@ -37,6 +37,7 @@ public class PeersInformation {
     public SyncPeerStatus getOrRegisterPeer(MessageChannel messageChannel) {
         SyncPeerStatus peerStatus = this.peerStatuses.get(messageChannel.getPeerNodeID());
 
+
         if (peerStatus != null && !peerStatus.isExpired(syncConfiguration.getExpirationTimePeerStatus()))
             return peerStatus;
 
