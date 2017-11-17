@@ -26,6 +26,7 @@ import org.ethereum.crypto.HashUtil;
 import java.math.BigInteger;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -122,7 +123,7 @@ public class BlockStoreDummy implements BlockStore {
 
     @Override
     public List<Block> getChainBlocksByNumber(long blockNumber) {
-        return null;
+        return new ArrayList<>();
     }
 
     @Override

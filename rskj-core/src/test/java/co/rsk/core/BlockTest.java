@@ -449,4 +449,21 @@ public class BlockTest {
             Assert.assertEquals("Sealed block header: trying to alter bitcoin merged mining coinbase transaction", ex.getMessage());
         }
     }
+
+    @Test
+    public void checkTxTrieShouldBeDifferentForDifferentBlock() {
+        Block block1 = BlockGenerator.createBlock(10, 1);
+        Block block2 = BlockGenerator.createBlock(10, 2);
+        String trieHash1 = Hex.toHexString(block1.getTxTrieRoot());
+        String trieHash2 = Hex.toHexString(block2.getTxTrieRoot());
+        Assert.assertNotEquals(trieHash1, trieHash2);
+    }
+
+    @Test
+    public void checkTxTrieShouldBeEqualForHeaderAndBody() {
+        Block block = BlockGenerator.createBlock(10, 5);
+        String trieHash = Hex.toHexString(block.getTxTrieRoot());
+        String trieListHash = Hex.toHexString(Block.getTxTrie(block.getTransactionsList()).getHash());
+        Assert.assertEquals(trieHash, trieListHash);
+    }
 }

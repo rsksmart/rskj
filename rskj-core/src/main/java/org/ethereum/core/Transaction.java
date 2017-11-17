@@ -181,7 +181,7 @@ public class Transaction implements SerializableObject {
         if (!parsed)
             rlpParse();
 
-		//Federators txs to the bridge are free during system setup
+		// Federators txs to the bridge are free during system setup
         if (BridgeUtils.isFreeBridgeTx(this, block.getNumber())) {
             return 0;
         }
@@ -340,7 +340,14 @@ public class Transaction implements SerializableObject {
         if (!parsed)
             rlpParse();
 
-        return this.receiveAddress == null || Arrays.equals(this.receiveAddress,ByteUtil.EMPTY_BYTE_ARRAY);
+        if (this.receiveAddress == null)
+            return true;
+
+        for (int k = 0; k < this.receiveAddress.length; k++)
+            if (this.receiveAddress[k] != 0)
+                return false;
+
+        return true;
     }
 
     /*
@@ -509,13 +516,15 @@ public class Transaction implements SerializableObject {
     }
 
     public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit){
-        return create(to, amount, nonce, gasPrice, gasLimit, null);
+        return create(to, amount, nonce, gasPrice, gasLimit, (byte[]) null);
     }
 
     public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data){
-
         byte[] decodedData = data == null ? null : Hex.decode(data);
+        return create(to, amount, nonce, gasPrice, gasLimit, decodedData);
+    }
 
+    public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData) {
         return new Transaction(BigIntegers.asUnsignedByteArray(nonce),
                 BigIntegers.asUnsignedByteArray(gasPrice),
                 BigIntegers.asUnsignedByteArray(gasLimit),

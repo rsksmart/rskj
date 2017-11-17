@@ -18,61 +18,106 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.net.MessageHandler;
-import co.rsk.net.MessageSender;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.net.*;
 import co.rsk.net.messages.Message;
+import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.test.World;
+import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.validators.DummyBlockValidationRule;
+import org.ethereum.core.Blockchain;
+import org.junit.Assert;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.*;
 
 /**
  * Created by ajlopez on 5/15/2016.
  */
-public class SimpleAsyncNode extends SimpleNode implements Runnable {
-    private BlockingQueue<MessageTask> messages = new ArrayBlockingQueue<MessageTask>(1000);
-    private volatile boolean stopped = false;
+public class SimpleAsyncNode extends SimpleNode {
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(1500);
+    private SyncProcessor syncProcessor;
 
     public SimpleAsyncNode(MessageHandler handler) {
         super(handler);
-        (new Thread(this)).start();
+    }
+
+    public SimpleAsyncNode(MessageHandler handler, SyncProcessor syncProcessor) {
+        super(handler);
+        this.syncProcessor = syncProcessor;
     }
 
     @Override
-    public void processMessage(MessageSender sender, Message message) {
-        if (this.stopped)
-            return;
-
-        this.messages.add(new MessageTask(sender, message));
+    public void receiveMessageFrom(SimpleNode peer, Message message) {
+        SimpleNodeChannel senderToPeer = new SimpleNodeChannel(this, peer);
+        futures.add(
+                executor.submit(() -> this.getHandler().processMessage(senderToPeer, message)));
     }
 
-    public void stop() {
-        this.stopped = true;
+    public void joinWithTimeout() {
+        try {
+            executor.shutdown();
+            executor.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+            throw new RuntimeException("Join operation timed out. Remaining tasks: " + this.futures.size() + " .");
+        }
     }
 
-    public void run() {
-        while (!this.stopped || !this.messages.isEmpty()) {
-            MessageTask task = null;
-            try {
-                task = this.messages.take();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                return;
+    public void waitUntilNTasksWithTimeout(int number) {
+        try {
+            for (int i = 0; i < number; i++) {
+                Future task = this.futures.poll(10, TimeUnit.SECONDS);
+                if (task == null) {
+                    throw new RuntimeException("Exceeded waiting time. Expected " + (number - i) + " more tasks.");
+                }
+                task.get();
             }
-            task.execute(this.getHandler());
+        } catch (ExecutionException ex) {
+            ex.printStackTrace();
+            Assert.fail();
+        } catch (InterruptedException ignored) {
         }
     }
 
-    private class MessageTask {
-        private MessageSender sender;
-        private Message message;
+    public void waitExactlyNTasksWithTimeout(int number) {
+        waitUntilNTasksWithTimeout(number);
+        int remaining = this.futures.size();
+        if (remaining > 0)
+            throw new RuntimeException("Too many tasks. Expected " + number + " but got " + (number + remaining));
+    }
 
-        public MessageTask(MessageSender sender, Message message) {
-            this.sender = sender;
-            this.message = message;
-        }
+    public void clearQueue() {
+        this.futures.clear();
+    }
 
-        public void execute(MessageHandler handler) {
-            handler.processMessage(sender, message);
-        }
+    public SyncProcessor getSyncProcessor() {
+        return this.syncProcessor;
+    }
+
+    public static SimpleAsyncNode createNode(Blockchain blockchain) {
+        final BlockStore store = new BlockStore();
+
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
+        DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
+        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockValidationRule);
+        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, null, null, null, null, blockValidationRule);
+        return new SimpleAsyncNode(handler, syncProcessor);
+    }
+
+    // TODO(mc) find out why the following two work differently
+
+    public static SimpleAsyncNode createNodeWithBlockChainBuilder(int size) {
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        BlockChainBuilder.extend(blockchain, size, false, true);
+        return createNode(blockchain);
+    }
+
+    public static SimpleAsyncNode createNodeWithWorldBlockChain(int size, boolean withUncles) {
+        final World world = new World();
+        final Blockchain blockchain = world.getBlockChain();
+        BlockChainBuilder.extend(blockchain, size, withUncles, true);
+        return createNode(blockchain);
     }
 }

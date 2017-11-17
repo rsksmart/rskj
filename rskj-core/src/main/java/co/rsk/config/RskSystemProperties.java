@@ -169,6 +169,11 @@ public class RskSystemProperties extends SystemProperties {
                 configFromFiles.getInt("rpc.port") : 4444;
     }
 
+    public boolean isWalletEnabled() {
+        return configFromFiles.hasPath("wallet.enabled") &&
+                configFromFiles.getBoolean("wallet.enabled");
+    }
+
     public List<WalletAccount> walletAccounts() {
         if (!configFromFiles.hasPath("wallet.accounts"))
             return Collections.emptyList();
@@ -350,5 +355,32 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean getForceTargetGasLimit() {
         return getBooleanProperty("forcegaslimit", true);
+    }
+
+    /**
+     * SYNC CONFIG PROPERTIES
+     * **/
+    public int getExpectedPeers() {
+        return getInt("sync.expectedPeers", 5);
+    }
+
+    public int getTimeoutWaitingPeers() {
+        return getInt("sync.timeoutWaitingPeers", 1);
+    }
+
+    public int getTimeoutWaitingRequest() {
+        return getInt("sync.timeoutWaitingRequest", 30);
+    }
+
+    public int getExpirationTimePeerStatus() {
+        return getInt("sync.expirationTimePeerStatus", 10);
+    }
+
+    public int getMaxSkeletonChunks() {
+        return getInt("sync.maxSkeletonChunks", 20);
+    }
+
+    public int getChunkSize() {
+        return getInt("sync.chunkSize", 192);
     }
 }

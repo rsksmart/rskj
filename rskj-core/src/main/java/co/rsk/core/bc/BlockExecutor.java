@@ -151,7 +151,7 @@ public class BlockExecutor {
 
         if (paidFees != feesPaidToMiner)  {
             logger.error("Block's given paidFees doesn't match: {} != {} Block {} {}", feesPaidToMiner, paidFees, block.getNumber(), block.getShortHash());
-            panicProcessor.panic("invalidpaidfees", String.format("Block's given logBloom Hash doesn't match: %s != %s", feesPaidToMiner, paidFees));
+            panicProcessor.panic("invalidpaidfees", String.format("Block's paid fees doesn't match: %s != %s", feesPaidToMiner, paidFees));
             return false;
         }
 

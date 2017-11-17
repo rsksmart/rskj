@@ -25,7 +25,7 @@ package co.rsk.net;
 import co.rsk.net.messages.Message;
 
 public interface MessageHandler {
-    void processMessage(MessageSender sender, Message message);
+    void processMessage(MessageChannel sender, Message message);
 
-    void postMessage(MessageSender sender, Message message) throws InterruptedException;
+    void postMessage(MessageChannel sender, Message message) throws InterruptedException;
 }

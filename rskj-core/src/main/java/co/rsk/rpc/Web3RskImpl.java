@@ -18,19 +18,23 @@
 
 package co.rsk.rpc;
 
+import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
-import co.rsk.config.RskMiningConstants;
-import co.rsk.core.Rsk;
-import co.rsk.core.Wallet;
-import co.rsk.core.WalletFactory;
 import co.rsk.mine.MinerWork;
+import co.rsk.mine.SubmittedBlockInfo;
+import co.rsk.mine.SubmitBlockResult;
+import co.rsk.rpc.exception.JsonRpcSubmitBlockException;
+import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.personal.PersonalModule;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.BlockStore;
+import org.ethereum.net.server.ChannelManager;
+import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3Impl;
 import org.slf4j.Logger;
@@ -50,11 +54,15 @@ import java.util.List;
  */
 public class Web3RskImpl extends Web3Impl {
     private static final Logger logger = LoggerFactory.getLogger("web3");
-    private final MinerServer minerServer;
 
-    public Web3RskImpl(Rsk rsk, MinerServer minerServer, MinerClient minerClient) {
-        super(rsk, RskSystemProperties.CONFIG, WalletFactory.createPersistentWallet(), minerClient, minerServer);
-        this.minerServer = minerServer;
+    public Web3RskImpl(Ethereum eth,
+                       RskSystemProperties properties,
+                       MinerClient minerClient,
+                       MinerServer minerServer,
+                       PersonalModule personalModule,
+                       EthModule ethModule,
+                       ChannelManager channelManager) {
+        super(eth, properties, minerClient, minerServer, personalModule, ethModule, channelManager);
     }
 
     public MinerWork mnr_getWork() {
@@ -64,9 +72,9 @@ public class Web3RskImpl extends Web3Impl {
         return minerServer.getWork();
     }
 
-    public void mnr_submitBitcoinBlock(String bitcoinBlockHex) {
+    public SubmittedBlockInfo mnr_submitBitcoinBlock(String bitcoinBlockHex) {
         if (logger.isDebugEnabled()) {
-            logger.debug("mnr_submitBitcoinBlock(): " + bitcoinBlockHex.length());
+            logger.debug("mnr_submitBitcoinBlock(): {}", bitcoinBlockHex.length());
         }
         
         co.rsk.bitcoinj.core.NetworkParameters params = co.rsk.bitcoinj.params.RegTestParams.get();
@@ -84,7 +92,13 @@ public class Web3RskImpl extends Web3Impl {
         System.arraycopy(coinbaseAsByteArray, rskTagPosition+ RskMiningConstants.RSK_TAG.length, blockHashForMergedMiningArray, 0, blockHashForMergedMiningArray.length);
         String blockHashForMergedMining = TypeConverter.toJsonHex(blockHashForMergedMiningArray);
 
-        minerServer.submitBitcoinBlock(blockHashForMergedMining, bitcoinBlock);
+        SubmitBlockResult result = minerServer.submitBitcoinBlock(blockHashForMergedMining, bitcoinBlock);
+
+        if("OK".equals(result.getStatus())) {
+            return result.getBlockInfo();
+        } else {
+            throw new JsonRpcSubmitBlockException(result.getMessage());
+        }
     }
 
     public void ext_dumpState()  {

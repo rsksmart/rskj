@@ -592,4 +592,10 @@ public class ByteUtil {
         System.arraycopy(original, 0, copy, newLength - original.length, original.length);
         return copy;
     }
+
+    public static boolean fastEquals(byte[] left, byte[] right) {
+        return FastByteComparisons.compareTo(
+                left, 0, left.length,
+                right, 0, right.length) == 0;
+    }
 }

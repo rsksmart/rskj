@@ -18,15 +18,20 @@
 
 package org.ethereum.rpc;
 
+import org.ethereum.util.ByteUtil;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Created by Ruben on 19/11/2015.
  */
 public class TypeConverter {
-    private static byte[] emptyByteArray = new byte[0];
+
+    private TypeConverter() {
+        throw new IllegalAccessError("Utility class");
+    }
 
     public static BigInteger stringNumberAsBigInt(String input) {
         if (input.startsWith("0x"))
@@ -45,20 +50,22 @@ public class TypeConverter {
     }
 
     public static byte[] stringHexToByteArray(String x) {
+        String result = x;
         if (x.startsWith("0x")) {
-            x = x.substring(2);
+            result = x.substring(2);
         }
-        if (x.length() % 2 != 0) {
-            x = "0" + x;
+        if (result.length() % 2 != 0) {
+            result = "0" + result;
         }
-        return Hex.decode(x);
+        return Hex.decode(result);
+    }
+
+    public static byte[] stringToByteArray(String input) {
+        return input.getBytes(StandardCharsets.UTF_8);
     }
 
     public static String toJsonHex(byte[] x) {
-        if (x == null)
-            x = emptyByteArray;
-
-        String result = "0x" + Hex.toHexString(x);
+        String result = "0x" + Hex.toHexString(x == null ? ByteUtil.EMPTY_BYTE_ARRAY : x);
 
         if ("0x".equals(result))
             return "0x00";

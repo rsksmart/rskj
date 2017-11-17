@@ -1,0 +1,46 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2017 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package org.ethereum.vm;
+
+import co.rsk.util.TestContract;
+import org.ethereum.vm.program.ProgramResult;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.math.BigInteger;
+
+public class ProgramTest {
+    @Test
+    public void childContractDoesntInheritMsgValue() {
+        ProgramResult result = TestContract.parent().executeFunction("createChild", BigInteger.TEN);
+        Assert.assertFalse(result.isRevert());
+        Assert.assertNull(result.getException());
+    }
+
+    @Test
+    public void sendFailsAndReturnsFalseThenExecutionContinuesNormally() {
+        ProgramResult result = TestContract.sendTest().executeFunction("test", BigInteger.TEN);
+        Assert.assertFalse(result.isRevert());
+        Assert.assertNull(result.getException());
+        Assert.assertArrayEquals(
+                new Object[] { BigInteger.valueOf(42) },
+                TestContract.sendTest().functions.get("test").decodeResult(result.getHReturn()));
+    }
+}

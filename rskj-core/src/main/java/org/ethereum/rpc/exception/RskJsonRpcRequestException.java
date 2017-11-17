@@ -12,7 +12,7 @@ public class RskJsonRpcRequestException extends RuntimeException{
         this.code = code;
     }
 
-    protected RskJsonRpcRequestException(Integer code, String message) {
+    public RskJsonRpcRequestException(Integer code, String message) {
         super(message);
         this.code = code;
     }

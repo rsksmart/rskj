@@ -22,21 +22,24 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
-import co.rsk.net.simples.SimpleMessageSender;
-import co.rsk.net.utils.TransactionUtils;
 import co.rsk.net.simples.SimpleBlockProcessor;
+import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.simples.SimplePendingState;
+import co.rsk.net.utils.TransactionUtils;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoring;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.test.World;
+import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
+import co.rsk.validators.ProofOfWorkRule;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -45,6 +48,7 @@ import org.mockito.Mockito;
 import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
+import java.math.BigInteger;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -77,10 +81,10 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processBlockMessageUsingProcessor() throws UnknownHostException {
-        SimpleMessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, scoring);
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, scoring, new ProofOfWorkRule());
         Block block = new Block(Hex.decode(rlp));
         Message message = new BlockMessage(block);
 
@@ -92,7 +96,7 @@ public class NodeMessageHandlerTest {
 
         Assert.assertFalse(scoring.isEmpty());
 
-        PeerScoring pscoring = scoring.getPeerScoring(sender.getNodeID());
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
 
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
@@ -108,18 +112,39 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
-    public void postBlockMessageTwice() throws InterruptedException, UnknownHostException {
-        MessageSender sender = new SimpleMessageSender();
+    public void skipProcessGenesisBlock() throws UnknownHostException {
+        SimpleMessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, scoring);
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null,null, scoring, new DummyBlockValidationRule());
+        Block block = BlockGenerator.getGenesisBlock();
+        Message message = new BlockMessage(block);
+
+        processor.processMessage(sender, message);
+
+        Assert.assertNotNull(sbp.getBlocks());
+        Assert.assertEquals(0, sbp.getBlocks().size());
+        Assert.assertTrue(scoring.isEmpty());
+
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
+
+        Assert.assertNotNull(pscoring);
+        Assert.assertTrue(pscoring.isEmpty());
+    }
+
+    @Test
+    public void postBlockMessageTwice() throws InterruptedException, UnknownHostException {
+        MessageChannel sender = new SimpleMessageChannel();
+        PeerScoringManager scoring = createPeerScoringManager();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, scoring, new ProofOfWorkRule());
         Block block = new Block(Hex.decode(rlp));
         Message message = new BlockMessage(block);
 
         processor.postMessage(sender, message);
         processor.postMessage(sender, message);
 
-        PeerScoring pscoring = scoring.getPeerScoring(sender.getNodeID());
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
 
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
@@ -130,12 +155,12 @@ public class NodeMessageHandlerTest {
     @Test
     public void postBlockMessageUsingProcessor() throws InterruptedException, UnknownHostException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null);
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, null, new ProofOfWorkRule());
         Block block = new Block(Hex.decode(rlp));
         Message message = new BlockMessage(block);
 
         processor.start();
-        processor.postMessage(new SimpleMessageSender(), message);
+        processor.postMessage(new SimpleMessageChannel(), message);
 
         Thread.sleep(1000);
 
@@ -148,10 +173,10 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processInvalidPoWMessageUsingProcessor() throws UnknownHostException {
-        MessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, scoring);
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, scoring, new ProofOfWorkRule());
         Block block = new Block(Hex.decode(rlp));
         byte[] mergedMiningHeader = block.getBitcoinMergedMiningHeader();
         mergedMiningHeader[76] += 3; //change merged mining nonce.
@@ -164,7 +189,7 @@ public class NodeMessageHandlerTest {
 
         Assert.assertFalse(scoring.isEmpty());
 
-        PeerScoring pscoring = scoring.getPeerScoring(sender.getNodeID());
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
 
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
@@ -174,42 +199,40 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processMissingPoWBlockMessageUsingProcessor() throws UnknownHostException {
-        MessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, scoring).disablePoWValidation();
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, scoring, new DummyBlockValidationRule());
         Block block = BlockGenerator.getGenesisBlock();
-        Message message = new BlockMessage(block);
-        processor.processMessage(sender, message);
 
         for (int i = 0; i < 50; i++) {
             block = BlockGenerator.createChildBlock(block);
         }
 
-        message = new BlockMessage(block);
+        Message message = new BlockMessage(block);
         processor.processMessage(sender, message);
 
         Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(2, sbp.getBlocks().size());
+        Assert.assertEquals(1, sbp.getBlocks().size());
 
         Assert.assertFalse(scoring.isEmpty());
 
-        PeerScoring pscoring = scoring.getPeerScoring(sender.getNodeID());
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
 
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(2, pscoring.getTotalEventCounter());
-        Assert.assertEquals(2, pscoring.getEventCounter(EventType.VALID_BLOCK));
+        Assert.assertEquals(1, pscoring.getTotalEventCounter());
+        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
         Assert.assertEquals(0, pscoring.getEventCounter(EventType.INVALID_BLOCK));
     }
 
     @Test
     public void processFutureBlockMessageUsingProcessor() throws UnknownHostException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null);
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, null, new ProofOfWorkRule());
         Block block = BlockGenerator.getGenesisBlock();
         Message message = new BlockMessage(block);
-        SimpleMessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
         processor.processMessage(sender, message);
 
         Assert.assertNotNull(sbp.getBlocks());
@@ -219,11 +242,13 @@ public class NodeMessageHandlerTest {
     @Test
     public void processStatusMessageUsingNodeBlockProcessor() throws UnknownHostException {
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
-        final SimpleMessageSender sender = new SimpleMessageSender();
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
+        final BlockStore store = new BlockStore();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
         final Block block = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock());
         final Status status = new Status(block.getNumber(), block.getHash());
@@ -244,14 +269,38 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
+    public void processStatusMessageUsingSyncProcessor() throws UnknownHostException {
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final NodeMessageHandler handler = NodeMessageHandlerUtil.createHandlerWithSyncProcessor();
+
+        final Block block = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock());
+        final Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), BigInteger.TEN);
+        final Message message = new StatusMessage(status);
+
+        handler.processMessage(sender, message);
+
+        Assert.assertNotNull(sender.getGetBlockMessages());
+        Assert.assertTrue(sender.getGetBlockMessages().isEmpty());
+        Assert.assertNotNull(sender.getMessages());
+        Assert.assertEquals(1, sender.getMessages().size());
+
+        Message request = sender.getMessages().get(0);
+
+        Assert.assertNotNull(request);
+        Assert.assertEquals(MessageType.BLOCK_HASH_REQUEST_MESSAGE, request.getMessageType());
+    }
+
+    @Test
     public void processStatusMessageWithKnownBestBlock() throws UnknownHostException {
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
 
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
-        final SimpleMessageSender sender = new SimpleMessageSender();
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
         final Block block = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock());
         final Status status = new Status(block.getNumber(), block.getHash());
@@ -268,16 +317,19 @@ public class NodeMessageHandlerTest {
     public void processGetBlockMessageUsingBlockInStore() throws UnknownHostException {
         final Block block = BlockGenerator.getBlock(3);
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
+
 
         store.saveBlock(block);
 
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
-        final SimpleMessageSender sender = new SimpleMessageSender();
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         handler.processMessage(sender, new GetBlockMessage(block.getHash()));
 
@@ -296,19 +348,21 @@ public class NodeMessageHandlerTest {
     @Test
     public void processGetBlockMessageUsingBlockInBlockchain() throws UnknownHostException {
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
 
         List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), 10);
 
         for (Block b: blocks)
             blockchain.tryToConnect(b);
 
-        NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
-        NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
+        NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
-        SimpleMessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
 
         handler.processMessage(sender, new GetBlockMessage(blocks.get(4).getHash()));
 
@@ -329,15 +383,16 @@ public class NodeMessageHandlerTest {
         final Block block = BlockGenerator.getBlock(3);
 
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
 
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
-        handler.disablePoWValidation();
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new DummyBlockValidationRule());
 
-        final SimpleMessageSender sender = new SimpleMessageSender();
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         handler.processMessage(sender, new GetBlockMessage(block.getHash()));
 
@@ -349,16 +404,18 @@ public class NodeMessageHandlerTest {
         final Block block = BlockGenerator.getBlock(3);
 
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
 
         store.saveBlock(block);
 
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
-        final SimpleMessageSender sender = new SimpleMessageSender();
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         handler.processMessage(sender, new GetBlockHeadersMessage(block.getHash(), 1));
 
@@ -377,19 +434,21 @@ public class NodeMessageHandlerTest {
     @Test
     public void processGetBlockHeaderMessageUsingBlockInBlockchain() throws UnknownHostException {
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
 
         List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), 10);
 
         for (Block b: blocks)
             blockchain.tryToConnect(b);
 
-        NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
-        NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
+        NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
-        SimpleMessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
 
         handler.processMessage(sender, new GetBlockHeadersMessage(blocks.get(4).getHash(), 1));
 
@@ -408,8 +467,8 @@ public class NodeMessageHandlerTest {
     @Test
     public void processNewBlockHashesMessage() throws UnknownHostException {
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
 
         final List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), 15);
         final List<Block> bcBlocks = blocks.subList(0, 10);
@@ -417,8 +476,10 @@ public class NodeMessageHandlerTest {
         for (Block b: bcBlocks)
             blockchain.tryToConnect(b);
 
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
         class TestCase {
             protected final NewBlockHashesMessage message;
@@ -482,7 +543,7 @@ public class NodeMessageHandlerTest {
 
         for (int i = 0; i < testCases.length; i += 1) {
             final TestCase testCase = testCases[i];
-            final SimpleMessageSender sender = new SimpleMessageSender();
+            final SimpleMessageChannel sender = new SimpleMessageChannel();
 
             handler.processMessage(sender, testCase.message);
 
@@ -527,7 +588,7 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, null, txHandler, null);
+        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, null, null, txHandler, null, new ProofOfWorkRule());
 
         Message message = Mockito.mock(Message.class);
         Mockito.when(message.getMessageType()).thenReturn(MessageType.NEW_BLOCK_HASHES);
@@ -540,8 +601,8 @@ public class NodeMessageHandlerTest {
     @Test
     public void processGetBlockHeadersMessage() throws UnknownHostException {
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
 
         final List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), 10);
 
@@ -551,8 +612,10 @@ public class NodeMessageHandlerTest {
         }
 
 
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
         int baseBlock = 9;
 
@@ -621,7 +684,7 @@ public class NodeMessageHandlerTest {
 
         for (int i = 0; i < testCases.length; i += 1) {
             final TestCase testCase = testCases[i];
-            final SimpleMessageSender sender = new SimpleMessageSender();
+            final SimpleMessageChannel sender = new SimpleMessageChannel();
 
             handler.processMessage(sender, testCase.gbhMessage);
 
@@ -653,15 +716,16 @@ public class NodeMessageHandlerTest {
         final Block block = BlockGenerator.getBlock(3);
 
         final World world = new World();
-        final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
+        final BlockStore store = new BlockStore();
 
-        final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain);
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
+        final NodeBlockProcessor bp = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null);
-        handler.disablePoWValidation();
+        final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new DummyBlockValidationRule());
 
-        final SimpleMessageSender sender = new SimpleMessageSender();
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         handler.processMessage(sender, new GetBlockHeadersMessage(block.getHash(), 1));
 
@@ -676,10 +740,12 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, channelManager, null, txmock, scoring);
+        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, null, txmock, scoring, new ProofOfWorkRule());
 
-        final SimpleMessageSender sender = new SimpleMessageSender();
-        final SimpleMessageSender sender2 = new SimpleMessageSender();
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        sender.setPeerNodeID(new byte[] {1});
+        final SimpleMessageChannel sender2 = new SimpleMessageChannel();
+        sender2.setPeerNodeID(new byte[] {2});
 
         final List<Transaction> txs = TransactionUtils.getTransactions(10);
         Mockito.when(txmock.retrieveValidTxs(any(List.class))).thenReturn(txs);
@@ -695,25 +761,25 @@ public class NodeMessageHandlerTest {
 
         Assert.assertNotNull(channelManager.getLastSkip());
         Assert.assertEquals(1, channelManager.getLastSkip().size());
-        Assert.assertTrue(channelManager.getLastSkip().contains(sender.getNodeID()));
+        Assert.assertTrue(channelManager.getLastSkip().contains(sender.getPeerNodeID()));
 
         handler.processMessage(sender2, message);
 
         Assert.assertNotNull(channelManager.getLastSkip());
         Assert.assertEquals(2, channelManager.getLastSkip().size());
-        Assert.assertTrue(channelManager.getLastSkip().contains(sender.getNodeID()));
-        Assert.assertTrue(channelManager.getLastSkip().contains(sender2.getNodeID()));
+        Assert.assertTrue(channelManager.getLastSkip().contains(sender.getPeerNodeID()));
+        Assert.assertTrue(channelManager.getLastSkip().contains(sender2.getPeerNodeID()));
 
         Assert.assertFalse(scoring.isEmpty());
 
-        PeerScoring pscoring = scoring.getPeerScoring(sender.getNodeID());
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
 
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
         Assert.assertEquals(10, pscoring.getTotalEventCounter());
         Assert.assertEquals(10, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
 
-        pscoring = scoring.getPeerScoring(sender2.getNodeID());
+        pscoring = scoring.getPeerScoring(sender2.getPeerNodeID());
 
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
@@ -729,9 +795,9 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, channelManager, null, txmock, scoring);
+        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, null, txmock, scoring, new ProofOfWorkRule());
 
-        final SimpleMessageSender sender = new SimpleMessageSender();
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         final List<Transaction> txs = TransactionUtils.getTransactions(0);
         Mockito.when(txmock.retrieveValidTxs(any(List.class))).thenReturn(txs);
@@ -744,7 +810,7 @@ public class NodeMessageHandlerTest {
 
         Assert.assertTrue(scoring.isEmpty());
 
-        PeerScoring pscoring = scoring.getPeerScoring(sender.getNodeID());
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
 
         Assert.assertNotNull(pscoring);
         Assert.assertTrue(pscoring.isEmpty());
@@ -759,7 +825,7 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, channelManager, null, txHandler, null);
+        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, null, txHandler, null, new ProofOfWorkRule());
 
         Message message = Mockito.mock(Message.class);
         Mockito.when(message.getMessageType()).thenReturn(MessageType.TRANSACTIONS);
@@ -777,12 +843,12 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, channelManager, pendingState, txmock, null);
+        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, pendingState, txmock, null, new ProofOfWorkRule());
 
-        final SimpleMessageSender sender = new SimpleMessageSender();
-        sender.setNodeID(new byte[] {1});
-        final SimpleMessageSender sender2 = new SimpleMessageSender();
-        sender2.setNodeID(new byte[] {2});
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
+        sender.setPeerNodeID(new byte[] {1});
+        final SimpleMessageChannel sender2 = new SimpleMessageChannel();
+        sender2.setPeerNodeID(new byte[] {2});
 
         final List<Transaction> txs = TransactionUtils.getTransactions(10);
         Mockito.when(txmock.retrieveValidTxs(any(List.class))).thenReturn(txs);
@@ -798,12 +864,38 @@ public class NodeMessageHandlerTest {
 
         Assert.assertNotNull(channelManager.getLastSkip());
         Assert.assertEquals(1, channelManager.getLastSkip().size());
-        Assert.assertTrue(channelManager.getLastSkip().contains(sender.getNodeID()));
+        Assert.assertTrue(channelManager.getLastSkip().contains(sender.getPeerNodeID()));
 
         channelManager.setLastSkip(null);
         handler.processMessage(sender2, message);
 
         Assert.assertNull(channelManager.getLastSkip());
+    }
+
+    @Test
+    public void processBlockByHashRequestMessageUsingProcessor() throws UnknownHostException {
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, null, new ProofOfWorkRule());
+        Block block = new Block(Hex.decode(rlp));
+        Message message = new BlockRequestMessage(100, block.getHash());
+
+        processor.processMessage(new SimpleMessageChannel(), message);
+
+        Assert.assertEquals(100, sbp.getRequestId());
+        Assert.assertArrayEquals(block.getHash(), sbp.getHash());
+    }
+
+    @Test
+    public void processBlockHeadersRequestMessageUsingProcessor() throws UnknownHostException {
+        byte[] hash = HashUtil.randomHash();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, null, new ProofOfWorkRule());
+        Message message = new BlockHeadersRequestMessage(100, hash, 50);
+
+        processor.processMessage(new SimpleMessageChannel(), message);
+
+        Assert.assertEquals(100, sbp.getRequestId());
+        Assert.assertArrayEquals(hash, sbp.getHash());
     }
 
     private static PeerScoringManager createPeerScoringManager() {

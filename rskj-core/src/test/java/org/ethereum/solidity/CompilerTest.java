@@ -36,6 +36,7 @@ import java.io.IOException;
 public class CompilerTest {
 
     @Test
+    @Ignore
     public void simpleTest() throws IOException {
         SystemProperties systemProperties = Mockito.mock(SystemProperties.class);
         String solc = System.getProperty("solc");
