@@ -23,11 +23,6 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
     }
 
     @Override
-    public boolean isSyncing() {
-        return true;
-    }
-
-    @Override
     public void newBlockHeaders(List<BlockHeader> chunk) {
         Optional<ChunkDescriptor> currentChunk = chunksDownloadHelper.getCurrentChunk();
         if (!currentChunk.isPresent()

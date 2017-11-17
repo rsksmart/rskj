@@ -293,7 +293,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processSkeletonRequest(@Nonnull final MessageChannel sender, long requestId, long startNumber) {
-        logger.trace("Processing block hash request {} {} {} from {}", requestId, startNumber, sender.getPeerNodeID().toString());
+        logger.trace("Processing block hash request {} {} {} from {}", requestId, startNumber, sender.getPeerNodeID());
         int skeletonStep = syncConfiguration.getChunkSize();
         Block blockStart = this.getBlockFromBlockchainStore(startNumber);
 
@@ -306,13 +306,19 @@ public class NodeBlockProcessor implements BlockProcessor {
         // We always include the skeleton block immediately before blockStart, even if it's Genesis
         long skeletonStartHeight = (blockStart.getNumber() / skeletonStep) * skeletonStep;
         List<BlockIdentifier> blockIdentifiers = new ArrayList<>();
-        for (long skeletonNumber = skeletonStartHeight; skeletonNumber < this.getBestBlockNumber(); skeletonNumber += skeletonStep) {
+        long skeletonNumber = skeletonStartHeight;
+        int maxSkeletonChunks = syncConfiguration.getMaxSkeletonChunks();
+        long maxSkeletonNumber = Math.min(this.getBestBlockNumber(), skeletonStartHeight + skeletonStep * maxSkeletonChunks);
+
+        for (; skeletonNumber < maxSkeletonNumber; skeletonNumber += skeletonStep) {
             byte[] skeletonHash = getSkeletonHash(skeletonNumber);
             blockIdentifiers.add(new BlockIdentifier(skeletonHash, skeletonNumber));
         }
 
         // We always include the best block as part of the Skeleton response
-        blockIdentifiers.add(new BlockIdentifier(this.getBestBlockHash(), this.getBestBlockNumber()));
+        skeletonNumber = Math.min(this.getBestBlockNumber(), skeletonNumber + skeletonStep);
+        byte[] skeletonHash = getSkeletonHash(skeletonNumber);
+        blockIdentifiers.add(new BlockIdentifier(skeletonHash, skeletonNumber));
         SkeletonResponseMessage responseMessage = new SkeletonResponseMessage(requestId, blockIdentifiers);
 
         sender.sendMessage(responseMessage);

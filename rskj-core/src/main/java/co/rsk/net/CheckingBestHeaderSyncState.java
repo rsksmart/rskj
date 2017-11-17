@@ -21,11 +21,6 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
     }
 
     @Override
-    public boolean isSyncing() {
-        return true;
-    }
-
-    @Override
     public void newBlockHeaders(List<BlockHeader> chunk){
         BlockHeader header = chunk.get(0);
         if (!ByteUtil.fastEquals(header.getHash(), miniChunk.getHash()) ||

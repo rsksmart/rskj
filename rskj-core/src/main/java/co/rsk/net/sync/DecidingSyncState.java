@@ -12,11 +12,6 @@ public class DecidingSyncState extends BaseSyncState {
     }
 
     @Override
-    public boolean isSyncing() {
-        return false;
-    }
-
-    @Override
     public void newPeerStatus() {
         if (knownPeers.count() >= syncConfiguration.getExpectedPeers()) {
             tryStartSyncing();

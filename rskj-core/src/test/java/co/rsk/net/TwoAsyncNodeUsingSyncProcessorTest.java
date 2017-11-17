@@ -208,12 +208,12 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         // sync setup
         node1.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(2030, 30, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // request bodies
-        node1.waitExactlyNTasksWithTimeout(930);
+        node1.waitExactlyNTasksWithTimeout(1122);
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
 
-        Assert.assertEquals(960, node1.getBestBlock().getNumber());
+        Assert.assertEquals(1152, node1.getBestBlock().getNumber());
         Assert.assertEquals(2030, node2.getBestBlock().getNumber());
 
         node1.joinWithTimeout();
@@ -236,7 +236,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         for (int i = 0; i < 5; i++) {
             int skippedChunks = 300 / 192;
-            int expectedBestBlockNumber = Math.min(4300, 192 * skippedChunks + 192 * 5 * (i + 1));
+            int expectedBestBlockNumber = Math.min(4300, 192 * skippedChunks + 192 * 6 * (i + 1));
             long currentBestBlock = node1.getBestBlock().getNumber();
             // at the beginning and the end we might have different number of blocks to download
             int blocksToDownload = Math.toIntExact(expectedBestBlockNumber - currentBestBlock);

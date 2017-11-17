@@ -31,11 +31,6 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
     }
 
     @Override
-    public boolean isSyncing() {
-        return true;
-    }
-
-    @Override
     public void newSkeleton(List<BlockIdentifier> skeleton, MessageChannel peer) {
         NodeID peerId = peer.getPeerNodeID();
         boolean isSelectedPeer = peerId == syncInformation.getSelectedPeerId();

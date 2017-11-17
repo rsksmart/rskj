@@ -70,6 +70,11 @@ public abstract class BaseSyncState implements SyncState {
     @Override
     public void onEnter() { }
 
+    @Override
+    public boolean isSyncing(){
+        return false;
+    }
+
     @VisibleForTesting
     public void messageSent() {
         resetTimeElapsed();

@@ -59,12 +59,6 @@ public class SyncProcessor implements SyncEventsHandler {
 
     public void processStatus(MessageChannel sender, Status status) {
         logger.trace("Receiving syncState from node {} block {} {}", sender.getPeerNodeID(), status.getBestBlockNumber(), HashUtil.shortHash(status.getBestBlockHash()), status.getBestBlockHash());
-        // we keep track of best known block
-        final long peerBestBlockNumber = status.getBestBlockNumber();
-
-        if (peerBestBlockNumber > blockSyncService.getLastKnownBlockNumber())
-            blockSyncService.setLastKnownBlockNumber(peerBestBlockNumber);
-
         this.peerStatuses.getOrRegisterPeer(sender).setStatus(status);
         this.syncState.newPeerStatus();
     }
@@ -121,7 +115,7 @@ public class SyncProcessor implements SyncEventsHandler {
         logger.trace("Process new block hash from node {} hash {}", sender.getPeerNodeID(), HashUtil.shortHash(message.getBlockHash()));
         byte[] hash = message.getBlockHash();
 
-        if (!syncState.isSyncing() && blockSyncService.getBlockFromStoreOrBlockchain(hash) == null) {
+        if (syncState instanceof DecidingSyncState && blockSyncService.getBlockFromStoreOrBlockchain(hash) == null) {
             sendMessage(sender, new BlockRequestMessage(pendingMessages.getNextRequestId(), hash));
             peerStatuses.getOrRegisterPeer(sender);
         }
@@ -192,6 +186,13 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @Override
     public void startDownloadingBodies(List<Stack<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons) {
+        // we keep track of best known block and we start to trust it when all headers are validated
+        List<BlockIdentifier> selectedSkeleton = skeletons.get(selectedPeerId);
+        final long peerBestBlockNumber = selectedSkeleton.get(selectedSkeleton.size() - 1).getNumber();
+
+        if (peerBestBlockNumber > blockSyncService.getLastKnownBlockNumber())
+            blockSyncService.setLastKnownBlockNumber(peerBestBlockNumber);
+
         setSyncState(new DownloadingBodiesSyncState(this.syncConfiguration, this, syncInformation, pendingHeaders, skeletons));
     }
 
@@ -209,6 +210,8 @@ public class SyncProcessor implements SyncEventsHandler {
     public void stopSyncing() {
         selectedPeerId = null;
         this.pendingMessages.clear();
+        // always that a syncing process ends unexpectedly the best block number is reset
+        blockSyncService.setLastKnownBlockNumber(blockchain.getBestBlock().getNumber());
         setSyncState(new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses));
     }
 
@@ -306,6 +309,7 @@ public class SyncProcessor implements SyncEventsHandler {
         @Override
         public boolean hasLowerDifficulty(NodeID nodeID) {
             Status status = getPeerStatus(nodeID).getStatus();
+
             boolean hasTotalDifficulty = status.getTotalDifficulty() != null;
             return  (hasTotalDifficulty && blockchain.getStatus().hasLowerTotalDifficultyThan(status)) ||
                     // this works only for testing purposes, real status without difficulty dont reach this far
