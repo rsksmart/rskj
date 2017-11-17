@@ -569,6 +569,8 @@ public enum OpCode {
      */
     CODEREPLACE(0xa8, 2, 1, SPECIAL_TIER,1),   //       [in_size] [in_offs] CODEREPLACE -> success
 
+    LASTEVENTBLOCKNUMBER(0xac,0, 1, BASE_TIER),
+
     /*  System operations   */
 
     /**

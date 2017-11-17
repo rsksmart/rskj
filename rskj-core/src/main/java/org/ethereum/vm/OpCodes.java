@@ -556,6 +556,8 @@ public class OpCodes {
     /*  System operations   */
     static final byte OP_CODEREPLACE =(byte)0xa8  ;
 
+    static final byte OP_LASTEVENTBLOCKNUMBER =(byte)0xac  ;
+
     /**
      * (0xf0) Create a new account with associated code
      */

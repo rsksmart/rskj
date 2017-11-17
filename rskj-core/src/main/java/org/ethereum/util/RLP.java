@@ -500,7 +500,7 @@ public class RLP {
 
     public static byte[] encodeByte(byte singleByte) {
         if ((singleByte & 0xFF) == 0) {
-            return new byte[]{(byte) OFFSET_SHORT_ITEM};
+            return new byte[]{(byte) OFFSET_SHORT_ITEM}; // this decodes to null
         } else if ((singleByte & 0xFF) <= 0x7F) {
             return new byte[]{singleByte};
         } else {

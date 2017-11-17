@@ -121,6 +121,8 @@ public interface Repository {
      */
     public void setBlockNumberOfLastEvent(byte[] addr, long value);
 
+    public long getBlockNumberOfLastEvent(byte[] addr);
+
         /**
          * Put a value in storage of an account at a given key
          *

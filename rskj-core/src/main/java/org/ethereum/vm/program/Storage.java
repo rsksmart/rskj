@@ -114,6 +114,11 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public long getBlockNumberOfLastEvent(byte[] addr) {
+        return repository.getBlockNumberOfLastEvent(addr);
+    }
+
+    @Override
     public void addStorageRow(byte[] addr, DataWord key, DataWord value) {
         if (canListenTrace(addr)) {
             traceListener.onStoragePut(key, value);

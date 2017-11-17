@@ -36,16 +36,22 @@ public class LogOpcodeTest {
 
     @Test
     public void testLogNewAccountTree() {
-        runCode(
+        testCode(
         "PUSH1 0x00 "
             +"NOT " // 1st topic: Topic 0xff......0xff
             +"PUSH1 0x12 " // 2nd topic: Sample topic
+            +"LASTEVENTBLOCKNUMBER "  // 3rd topic
             +"PUSH1 0x00 " // memOffset
             +"PUSH1 0x00 " // memStart
-            +"LOG2", 6);
+            +"LOG3 "
+            +"LASTEVENTBLOCKNUMBER", 8,
+                "0000000000000000000000000000000000000000000000000000000000000021"); // 0x21 = 33 is the mock block number
+
       // Now check that the last event has been set to 33.
         // This means that a light client must always fetch two consecutive headers, in the first
         // it finds the previous event block number. In the second, the logged event
+
+
     }
 
     private void testCode(String code, int nsteps, String expected) {

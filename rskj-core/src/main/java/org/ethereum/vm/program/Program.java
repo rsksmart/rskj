@@ -1006,6 +1006,11 @@ public class Program {
             return DataWord.ZERO.clone();
     }
 
+    public DataWord getLastEventBlockNumber() {
+        long lebn = getStorage().getBlockNumberOfLastEvent(getOwnerAddressLast20Bytes());
+        return new DataWord(lebn);
+    }
+
     public DataWord getBalance(DataWord address) {
         BigInteger balance = getStorage().getBalance(address.getLast20Bytes());
         return new DataWord(balance.toByteArray());

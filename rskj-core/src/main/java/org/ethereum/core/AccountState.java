@@ -101,9 +101,9 @@ public class AccountState {
         this.stateRoot = items.get(2).getRLPData();
         this.codeHash = items.get(3).getRLPData();
         if (items.size() > 4) {
-            this.stateFlags = RLP.decodeInt(items.get(4).getRLPData(), 0);
+            this.stateFlags =  items.get(4).getRLPData() == null ? 0 :RLP.decodeInt(items.get(4).getRLPData(), 0);
             if (items.size() > 5) {
-                this.blockNumberOfLastEvent = RLP.decodeLong(items.get(5).getRLPData(), 0);
+                this.blockNumberOfLastEvent = items.get(5).getRLPData() == null ? 0 : RLP.decodeLong(items.get(5).getRLPData(), 0);
             }
         }
 
@@ -129,6 +129,7 @@ public class AccountState {
     }
 
     public void setBlockNumberOfLastEvent(long bnum) {
+        rlpEncoded = null;
         blockNumberOfLastEvent = bnum;
     }
 
@@ -189,7 +190,7 @@ public class AccountState {
             if ((stateFlags != 0) || (blockNumberOfLastEvent!=0)) {
                 byte[] stateFlags = RLP.encodeInt(this.stateFlags);
                 byte[] blockNumberOfLastEvent =RLP.encodeLong(this.blockNumberOfLastEvent);
-                this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash, stateFlags);
+                this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash, stateFlags,blockNumberOfLastEvent);
             } else
                 // do not serialize if zero to keep compatibility
             this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash);
@@ -198,6 +199,7 @@ public class AccountState {
     }
 
     public void setDirty(boolean dirty) {
+
         this.dirty = dirty;
     }
 

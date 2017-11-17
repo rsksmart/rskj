@@ -889,6 +889,18 @@ public class VM {
         program.stackPush(timestamp);
         program.step();
     }
+    protected void doLASTEVENTBLOCKNUMBER() {
+        spendOpCodeGas();
+
+        // EXECUTION PHASE
+        DataWord number = program.getLastEventBlockNumber();
+
+        if (isLogEnabled)
+            hint = "lasteventblocknumber: " + number.value();
+
+        program.stackPush(number);
+        program.step();
+    }
 
     protected void doNUMBER(){
         spendOpCodeGas();
@@ -1571,6 +1583,8 @@ public class VM {
             case OpCodes.OP_EXTCODECOPY: doCODECOPY();
             break;
             case OpCodes.OP_GASPRICE: doGASPRICE();
+            break;
+            case OpCodes.OP_LASTEVENTBLOCKNUMBER: doLASTEVENTBLOCKNUMBER();
             break;
 
             /**
