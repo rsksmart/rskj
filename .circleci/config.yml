@@ -1,0 +1,20 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: openjdk:8-jdk
+    environment:
+      _JAVA_OPTIONS: "-Xmx3G -Xms2G"
+      SONAR_VERSION: "3.0.3.778"
+    steps:
+      - checkout
+      - run: apt-get update -y && apt-get install -y apt gnupg2
+      - run: curl -sSL https://secchannel.rsk.co/release.asc | gpg2 --import -
+      - run: curl https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_VERSION-linux.zip | unzip
+      - run: gpg2 --verify SHA256SUMS.asc && sha256sum --check SHA256SUMS.asc
+      - run: ./configure.sh
+      - run: ./gradlew dependencies
+      - run: ./gradlew shadow test
+      - run: if [ ! -z $CI_PULL_REQUEST ]; then  export PULL_REQUEST=$(echo $CI_PULL_REQUEST | awk '{print substr($1,39)}') && ./sonar-scanner-$SONAR_VERSION-linux/bin/sonar-scanner -Dsonar.analysis.mode=preview -Dsonar.github.pullRequest=$PULL_REQUEST -Dsonar.github.repository=rsksmart/rskj -Dsonar.github.oauth=$GITHUB_ACCESS_TOKEN -Dsonar.host.url=$SONAR_HOST -Dsonar.login=$SONARQUBE_ACCESS_TOKEN -Dsonar.projectKey="co.rsk:rskJ" -Dsonar.sources="rskj-core/src/main/java,rskj-core/src/main/resources" -Dsonar.java.binaries="rskj-core/build/classes/java/main"; fi
+
