@@ -882,15 +882,15 @@ public class BridgeSupport {
     }
 
     /**
-     * Creates a new pending federation and returns its id.
+     * Creates a new pending federation
      * If there's currently no pending federation and no funds remain
      * to be moved from a previous federation, a new one is created.
      * Otherwise, -1 is returned if there's already a pending federation
      * or -2 is returned if funds are left from a previous one.
-     * @param numberOfSignaturesRequired the N in N of M multisig
-     * @return The newly created Pending Federation's id
+     * @return 1 upon success, -1 when a pending federation is present, -2 when funds are still
+     * to be moved between federations.
      */
-    public Long createFederation(int numberOfSignaturesRequired) throws IOException {
+    public Long createFederation() throws IOException {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation != null) {
@@ -901,11 +901,11 @@ public class BridgeSupport {
             return -2L;
         }
 
-        currentPendingFederation = new PendingFederation(rskExecutionBlock.getNumber(), numberOfSignaturesRequired, Collections.emptyList());
+        currentPendingFederation = new PendingFederation(Collections.emptyList());
 
         provider.setPendingFederation(currentPendingFederation);
 
-        return currentPendingFederation.getId();
+        return 1L;
     }
 
     /**
@@ -932,38 +932,17 @@ public class BridgeSupport {
     }
 
     /**
-     * Removes the given key from the current pending federation
-     * @param key the public key to remove
-     * @return 1 upon success, -1 if there was no pending federation, -2 if the key was not part of the pending federation
-     */
-    public Integer removeFederatorPublicKey(BtcECKey key) {
-        PendingFederation currentPendingFederation = provider.getPendingFederation();
-
-        if (currentPendingFederation == null) {
-            return -1;
-        }
-
-        if (!currentPendingFederation.getPublicKeys().contains(key)) {
-            return -2;
-        }
-
-        currentPendingFederation = currentPendingFederation.removePublicKey(key);
-
-        provider.setPendingFederation(currentPendingFederation);
-
-        return 1;
-    }
-
-    /**
-     * Commits the currently pending federation
-     * That is,  the retiring federation is set to be the currently active federation,
+     * Commits the currently pending federation.
+     * That is, the retiring federation is set to be the currently active federation,
      * the active federation is replaced with a new federation generated from the pending federation,
      * and the pending federation is wiped out.
      * Also, UTXOs are moved from active to retiring so that the transfer of funds can
      * begin.
-     * @return 1 upon success, 1 if there was no pending federation, 2 if the pending federation was incomplete
+     * @param hash the pending federation's hash. This is checked the execution block's pending federation hash for equality.
+     * @return 1 upon success, -1 if there was no pending federation, -2 if the pending federation was incomplete,
+     * -3 if the given hash doesn't match the current pending federation's hash.
      */
-    public Integer commitFederation() throws IOException {
+    public Integer commitFederation(Sha3Hash hash) throws IOException {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
@@ -972,6 +951,10 @@ public class BridgeSupport {
 
         if (!currentPendingFederation.isComplete()) {
             return -2;
+        }
+
+        if (!hash.equals(currentPendingFederation.getHash())) {
+            return -3;
         }
 
         // Move UTXOs from the active federation into the retiring federation
@@ -1010,20 +993,6 @@ public class BridgeSupport {
     }
 
     /**
-     * Returns the currently pending federation id, or -1 if none exists
-     * @return the currently pending federation id, or -1 if none exists
-     */
-    public Long getPendingFederationId() {
-        PendingFederation currentPendingFederation = provider.getPendingFederation();
-
-        if (currentPendingFederation == null) {
-            return -1L;
-        }
-
-        return currentPendingFederation.getId();
-    }
-
-    /**
      * Returns the currently pending federation size, or -1 if none exists
      * @return the currently pending federation size, or -1 if none exists
      */
@@ -1035,20 +1004,6 @@ public class BridgeSupport {
         }
 
         return currentPendingFederation.getPublicKeys().size();
-    }
-
-    /**
-     * Returns the currently pending federation threshold, or -1 if none exists
-     * @return the currently pending federation threshold, or -1 if none exists
-     */
-    public Integer getPendingFederationThreshold() {
-        PendingFederation currentPendingFederation = provider.getPendingFederation();
-
-        if (currentPendingFederation == null) {
-            return -1;
-        }
-
-        return currentPendingFederation.getNumberOfSignaturesRequired();
     }
 
     /**

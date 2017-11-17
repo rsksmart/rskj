@@ -42,6 +42,7 @@ import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.core.*;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.util.RLP;
@@ -1381,24 +1382,18 @@ public class BridgeSupportTest {
     public void getPendingFederationMethods_none() throws IOException {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, null,  null);
 
-        Assert.assertEquals(-1, bridgeSupport.getPendingFederationId().intValue());
         Assert.assertEquals(-1, bridgeSupport.getPendingFederationSize().intValue());
-        Assert.assertEquals(-1, bridgeSupport.getPendingFederationThreshold().intValue());
         Assert.assertNull(bridgeSupport.getPendingFederatorPublicKey(0));
     }
 
     @Test
     public void getPendingFederationMethods_present() throws IOException {
         PendingFederation mockedPendingFederation = new PendingFederation(
-                2,
-                4,
                 getTestFederationPublicKeys(5)
         );
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, mockedPendingFederation, null);
 
-        Assert.assertEquals(2, bridgeSupport.getPendingFederationId().intValue());
         Assert.assertEquals(5, bridgeSupport.getPendingFederationSize().intValue());
-        Assert.assertEquals(4, bridgeSupport.getPendingFederationThreshold().intValue());
         List<BtcECKey> publicKeys = getTestFederationPublicKeys(5);
         for (int i = 0; i < 5; i++) {
             Assert.assertTrue(Arrays.equals(publicKeys.get(i).getPubKey(), bridgeSupport.getPendingFederatorPublicKey(i)));
@@ -1407,20 +1402,16 @@ public class BridgeSupportTest {
 
     @Test
     public void createFederation_ok() throws IOException {
-        Block executionBlock = mock(Block.class);
-        when(executionBlock.getNumber()).thenReturn(456L);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 null,
                 null,
                 null,
                 null,
-                executionBlock
+                null
         );
 
-        Assert.assertEquals(456L, bridgeSupport.createFederation(2).longValue());
-        Assert.assertEquals(456L, bridgeSupport.getPendingFederationId().longValue());
-        Assert.assertEquals(2, bridgeSupport.getPendingFederationThreshold().intValue());
+        Assert.assertEquals(1L, bridgeSupport.createFederation().longValue());
         Assert.assertEquals(0, bridgeSupport.getPendingFederationSize().intValue());
     }
 
@@ -1431,12 +1422,11 @@ public class BridgeSupportTest {
                 null,
                 null,
                 null,
-                new PendingFederation(23L, 1, Collections.emptyList()),
+                new PendingFederation(Collections.emptyList()),
                 null
         );
 
-        Assert.assertEquals(-1L, bridgeSupport.createFederation(2).longValue());
-        Assert.assertEquals(23L, bridgeSupport.getPendingFederationId().longValue());
+        Assert.assertEquals(-1L, bridgeSupport.createFederation().longValue());
     }
 
     @Test
@@ -1451,13 +1441,12 @@ public class BridgeSupportTest {
         );
         ((BridgeStorageProvider) Whitebox.getInternalState(bridgeSupport, "provider")).getRetiringFederationBtcUTXOs().add(mock(UTXO.class));
 
-        Assert.assertEquals(-2L, bridgeSupport.createFederation(2).longValue());
-        Assert.assertEquals(-1L, bridgeSupport.getPendingFederationId().longValue());
+        Assert.assertEquals(-2L, bridgeSupport.createFederation().longValue());
     }
 
     @Test
     public void addFederatorPublicKey_okNoKeys() throws IOException {
-        PendingFederation pendingFederation = new PendingFederation(123L, 2, Collections.emptyList());
+        PendingFederation pendingFederation = new PendingFederation(Collections.emptyList());
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 null,
@@ -1469,14 +1458,12 @@ public class BridgeSupportTest {
 
         Assert.assertEquals(0, bridgeSupport.getPendingFederationSize().intValue());
         Assert.assertEquals(1, bridgeSupport.addFederatorPublicKey(BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))).intValue());
-        Assert.assertEquals(123L, bridgeSupport.getPendingFederationId().longValue());
-        Assert.assertEquals(2, bridgeSupport.getPendingFederationThreshold().intValue());
         Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
     }
 
     @Test
     public void addFederatorPublicKey_okKeys() throws IOException {
-        PendingFederation pendingFederation = new PendingFederation(123L, 2, Arrays.asList(new BtcECKey[]{
+        PendingFederation pendingFederation = new PendingFederation(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
         }));
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
@@ -1490,8 +1477,6 @@ public class BridgeSupportTest {
 
         Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
         Assert.assertEquals(1, bridgeSupport.addFederatorPublicKey(BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"))).intValue());
-        Assert.assertEquals(123L, bridgeSupport.getPendingFederationId().longValue());
-        Assert.assertEquals(2, bridgeSupport.getPendingFederationThreshold().intValue());
         Assert.assertEquals(2, bridgeSupport.getPendingFederationSize().intValue());
     }
 
@@ -1507,12 +1492,11 @@ public class BridgeSupportTest {
         );
 
         Assert.assertEquals(-1, bridgeSupport.addFederatorPublicKey(BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"))).intValue());
-        Assert.assertEquals(-1L, bridgeSupport.getPendingFederationId().longValue());
     }
 
     @Test
     public void addFederatorPublicKey_keyExists() throws IOException {
-        PendingFederation pendingFederation = new PendingFederation(123L, 2, Arrays.asList(new BtcECKey[]{
+        PendingFederation pendingFederation = new PendingFederation(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
         }));
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
@@ -1526,93 +1510,12 @@ public class BridgeSupportTest {
 
         Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
         Assert.assertEquals(-2, bridgeSupport.addFederatorPublicKey(BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))).intValue());
-        Assert.assertEquals(123L, bridgeSupport.getPendingFederationId().longValue());
-        Assert.assertEquals(2, bridgeSupport.getPendingFederationThreshold().intValue());
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
-    }
-
-    @Test
-    public void removeFederatorPublicKey_okOneKey() throws IOException {
-        PendingFederation pendingFederation = new PendingFederation(123L, 2, Arrays.asList(new BtcECKey[]{
-                BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"))
-        }));
-        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
-                false,
-                null,
-                null,
-                null,
-                pendingFederation,
-                null
-        );
-
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
-        Assert.assertEquals(1, bridgeSupport.removeFederatorPublicKey(BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"))).intValue());
-        Assert.assertEquals(123L, bridgeSupport.getPendingFederationId().longValue());
-        Assert.assertEquals(2, bridgeSupport.getPendingFederationThreshold().intValue());
-        Assert.assertEquals(0, bridgeSupport.getPendingFederationSize().intValue());
-    }
-
-    @Test
-    public void removeFederatorPublicKey_okMoreThanOneKey() throws IOException {
-        PendingFederation pendingFederation = new PendingFederation(123L, 2, Arrays.asList(new BtcECKey[]{
-                BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
-                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
-        }));
-        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
-                false,
-                null,
-                null,
-                null,
-                pendingFederation,
-                null
-        );
-
-        Assert.assertEquals(2, bridgeSupport.getPendingFederationSize().intValue());
-        Assert.assertEquals(1, bridgeSupport.removeFederatorPublicKey(BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"))).intValue());
-        Assert.assertEquals(123L, bridgeSupport.getPendingFederationId().longValue());
-        Assert.assertEquals(2, bridgeSupport.getPendingFederationThreshold().intValue());
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
-    }
-
-    @Test
-    public void removeFederatorPublicKey_noPendingFederation() throws IOException {
-        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
-                false,
-                null,
-                null,
-                null,
-                null,
-                null
-        );
-
-        Assert.assertEquals(-1, bridgeSupport.removeFederatorPublicKey(BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"))).intValue());
-        Assert.assertEquals(-1L, bridgeSupport.getPendingFederationId().longValue());
-    }
-
-    @Test
-    public void removeFederatorPublicKey_keyDoesntExist() throws IOException {
-        PendingFederation pendingFederation = new PendingFederation(123L, 2, Arrays.asList(new BtcECKey[]{
-                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
-        }));
-        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
-                false,
-                null,
-                null,
-                null,
-                pendingFederation,
-                null
-        );
-
-        Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
-        Assert.assertEquals(-2, bridgeSupport.removeFederatorPublicKey(BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a"))).intValue());
-        Assert.assertEquals(123L, bridgeSupport.getPendingFederationId().longValue());
-        Assert.assertEquals(2, bridgeSupport.getPendingFederationThreshold().intValue());
         Assert.assertEquals(1, bridgeSupport.getPendingFederationSize().intValue());
     }
 
     @Test
     public void rollbackFederation_ok() throws IOException {
-        PendingFederation pendingFederation = new PendingFederation(123L, 1, Arrays.asList(new BtcECKey[]{
+        PendingFederation pendingFederation = new PendingFederation(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
         }));
@@ -1643,20 +1546,23 @@ public class BridgeSupportTest {
         );
 
         Assert.assertEquals(-1, bridgeSupport.rollbackFederation().intValue());
-        Assert.assertEquals(-1L, bridgeSupport.getPendingFederationId().longValue());
     }
 
     @Test
     public void commitFederation_ok() throws IOException {
         Block executionBlock = mock(Block.class);
         when(executionBlock.getTimestamp()).thenReturn(5005L);
-        PendingFederation pendingFederation = new PendingFederation(456L, 1, Arrays.asList(new BtcECKey[]{
+        PendingFederation pendingFederation = new PendingFederation(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
-                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
+                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
+                BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12")),
+                BtcECKey.fromPublicOnly(Hex.decode("03c67ad63527012fd4776ae892b5dc8c56f80f1be002dc65cd520a2efb64e37b49")),
         }));
-        Federation expectedFederation = new Federation(1, Arrays.asList(new BtcECKey[]{
+        Federation expectedFederation = new Federation(3, Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
-                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
+                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
+                BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12")),
+                BtcECKey.fromPublicOnly(Hex.decode("03c67ad63527012fd4776ae892b5dc8c56f80f1be002dc65cd520a2efb64e37b49")),
         }), Instant.ofEpochMilli(5005L), NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
@@ -1681,7 +1587,7 @@ public class BridgeSupportTest {
 
         Assert.assertNotNull(provider.getPendingFederation());
 
-        Assert.assertEquals(1, bridgeSupport.commitFederation().intValue());
+        Assert.assertEquals(1, bridgeSupport.commitFederation(pendingFederation.getHash()).intValue());
 
         Assert.assertNull(provider.getPendingFederation());
 
@@ -1710,13 +1616,13 @@ public class BridgeSupportTest {
                 null
         );
 
-        Assert.assertEquals(-1, bridgeSupport.commitFederation().intValue());
-        Assert.assertEquals(-1L, bridgeSupport.getPendingFederationId().longValue());
+        Sha3Hash hash = new Sha3Hash(HashUtil.sha3(Hex.decode("aabbcc")));
+        Assert.assertEquals(-1, bridgeSupport.commitFederation(hash).intValue());
     }
 
     @Test
     public void commitFederation_incompleteFederation() throws IOException {
-        PendingFederation pendingFederation = new PendingFederation(123L, 2, Arrays.asList(new BtcECKey[]{
+        PendingFederation pendingFederation = new PendingFederation(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
         }));
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
@@ -1728,8 +1634,27 @@ public class BridgeSupportTest {
                 null
         );
 
-        Assert.assertEquals(-2, bridgeSupport.commitFederation().intValue());
-        Assert.assertEquals(123L, bridgeSupport.getPendingFederationId().longValue());
+        Sha3Hash hash = new Sha3Hash(HashUtil.sha3(Hex.decode("aabbcc")));
+        Assert.assertEquals(-2, bridgeSupport.commitFederation(hash).intValue());
+    }
+
+    @Test
+    public void commitFederation_hashMismatch() throws IOException {
+        PendingFederation pendingFederation = new PendingFederation(Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
+                BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12")),
+        }));
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
+                false,
+                null,
+                null,
+                null,
+                pendingFederation,
+                null
+        );
+
+        Sha3Hash hash = new Sha3Hash(HashUtil.sha3(Hex.decode("aabbcc")));
+        Assert.assertEquals(-3, bridgeSupport.commitFederation(hash).intValue());
     }
 
     @PrepareForTest({ BridgeUtils.class })

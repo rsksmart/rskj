@@ -18,16 +18,12 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.crypto.Sha3Hash;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.vm.program.Program;
-import org.spongycastle.util.encoders.Hex;
 
-import java.lang.reflect.Array;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -41,33 +37,23 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 public final class PendingFederation {
-    private long id;
-    private int numberOfSignaturesRequired;
+    private static final int MIN_FEDERATORS_REQUIRED = 2;
+
     private List<BtcECKey> publicKeys;
 
-    public PendingFederation(long id, int numberOfSignaturesRequired, List<BtcECKey> publicKeys) {
-        this.id = id;
-        this.numberOfSignaturesRequired = numberOfSignaturesRequired;
+    public PendingFederation(List<BtcECKey> publicKeys) {
         // Sorting public keys ensures same order of federators for same public keys
         // Immutability provides protection unless unwanted modification, thus making the Pending Federation instance
         // effectively immutable
         this.publicKeys = Collections.unmodifiableList(publicKeys.stream().sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList()));
     }
 
-    public long getId() {
-        return id;
-    }
-
     public List<BtcECKey> getPublicKeys() {
         return publicKeys;
     }
 
-    public int getNumberOfSignaturesRequired() {
-        return this.numberOfSignaturesRequired;
-    }
-
     public boolean isComplete() {
-        return this.publicKeys.size() >= this.numberOfSignaturesRequired;
+        return this.publicKeys.size() >= MIN_FEDERATORS_REQUIRED;
     }
 
     /**
@@ -78,40 +64,35 @@ public final class PendingFederation {
     public PendingFederation addPublicKey(BtcECKey key) {
         List<BtcECKey> newKeys = new ArrayList<>(publicKeys);
         newKeys.add(key);
-        return new PendingFederation(this.id, this.numberOfSignaturesRequired, newKeys);
+        return new PendingFederation(newKeys);
     }
 
     /**
-     * Creates a new PendingFederation without the specified public key
-     * @param key the public key to remove
-     * @return a new PendingFederation without the given public key
+     * Builds a Federation from this PendingFederation
+     * @param creationTime the creation time for the new Federation
+     * @param btcParams the bitcoin parameters for the new Federation
+     * @return a Federation
      */
-    public PendingFederation removePublicKey(BtcECKey key) {
-        if (!publicKeys.contains(key)) {
-            throw new IllegalStateException("PendingFederation doesn't contain the given public key");
-        }
-
-        List<BtcECKey> newKeys = new ArrayList<>(publicKeys);
-        newKeys.remove(key);
-        return new PendingFederation(this.id, this.numberOfSignaturesRequired, newKeys);
-    }
-
     public Federation buildFederation(Instant creationTime, NetworkParameters btcParams) {
         if (!this.isComplete()) {
             throw new IllegalStateException("PendingFederation is incomplete");
         }
 
         return new Federation(
-                numberOfSignaturesRequired,
+                calculateThreshold(),
                 publicKeys,
                 creationTime,
                 btcParams
         );
     }
 
+    private int calculateThreshold() {
+        return this.publicKeys.size() / 2 + 1;
+    }
+
     @Override
     public String toString() {
-        return String.format("%d of %d signatures pending federation (%s)", numberOfSignaturesRequired, publicKeys.size(), isComplete() ? "complete" : "incomplete");
+        return String.format("%d of %d signatures pending federation (%s)", calculateThreshold(), publicKeys.size(), isComplete() ? "complete" : "incomplete");
     }
 
     @Override
@@ -131,23 +112,22 @@ public final class PendingFederation {
                     .map(k -> new ByteArrayWrapper(k.getPubKey()))
                     .toArray(ByteArrayWrapper[]::new);
 
-            return this.getId() == ((PendingFederation) other).getId() &&
-                    this.getNumberOfSignaturesRequired() == otherFederation.getNumberOfSignaturesRequired() &&
-                    this.getPublicKeys().size() == otherFederation.getPublicKeys().size() &&
+            return this.getPublicKeys().size() == otherFederation.getPublicKeys().size() &&
                     Arrays.equals(thisPublicKeys, otherPublicKeys);
         }
 
         return false;
     }
 
+    public Sha3Hash getHash() {
+        byte[] encoded = BridgeSerializationUtils.serializePendingFederation(this);
+        return new Sha3Hash(HashUtil.sha3(encoded));
+    }
+
     @Override
     public int hashCode() {
-        // Can use java.util.Objects.hash since all of long, int and List<BtcECKey> have
-        // well-defined hashCode()s
-        return Objects.hash(
-                getId(),
-                getNumberOfSignaturesRequired(),
-                getPublicKeys()
-        );
+        // Can use java.util.Objects.hash since List<BtcECKey> has a
+        // well-defined hashCode()
+        return Objects.hash(getPublicKeys());
     }
 }

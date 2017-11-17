@@ -771,17 +771,6 @@ public class BridgeTest {
     }
 
     @Test
-    public void getPendingFederationId() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, null, null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.getPendingFederationId()).thenReturn(25L);
-
-        Assert.assertEquals(25L, bridge.getPendingFederationId(new Object[]{}).longValue());
-    }
-
-    @Test
     public void getPendingFederationSize() throws IOException {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, null, null, null, null);
@@ -790,17 +779,6 @@ public class BridgeTest {
         when(bridgeSupportMock.getPendingFederationSize()).thenReturn(1234);
 
         Assert.assertEquals(1234, bridge.getPendingFederationSize(new Object[]{}).intValue());
-    }
-
-    @Test
-    public void getPendingFederationThreshold() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, null, null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.getPendingFederationThreshold()).thenReturn(5678);
-
-        Assert.assertEquals(5678, bridge.getPendingFederationThreshold(new Object[]{}).intValue());
     }
 
     @Test
@@ -823,9 +801,9 @@ public class BridgeTest {
         bridge.init(null, null, null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.createFederation(456)).thenReturn(789L);
+        when(bridgeSupportMock.createFederation()).thenReturn(123L);
 
-        Assert.assertEquals(789L, bridge.createFederation(new Object[]{BigInteger.valueOf(456)}).longValue());
+        Assert.assertEquals(123L, bridge.createFederation(new Object[]{}).longValue());
     }
 
     @Test
@@ -834,10 +812,10 @@ public class BridgeTest {
         bridge.init(null, null, null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.createFederation(123)).thenThrow(new IOException("I am an exception"));
+        when(bridgeSupportMock.createFederation()).thenThrow(new IOException("I am an exception"));
 
         try {
-            bridge.createFederation(new Object[]{BigInteger.valueOf(123)});
+            bridge.createFederation(new Object[]{});
             Assert.fail();
         }
         catch (RuntimeException ex) {
@@ -875,43 +853,21 @@ public class BridgeTest {
     }
 
     @Test
-    public void removeFederatorPublicKey_ok() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, null, null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.removeFederatorPublicKey(BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))))
-                .thenReturn(456);
-
-        Assert.assertEquals(456, bridge.removeFederatorPublicKey(new Object[]{Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")}).intValue());
-    }
-
-    @Test
-    public void removeFederatorPublicKey_error() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, null, null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        verify(bridgeSupportMock, never()).removeFederatorPublicKey(any());
-
-        try {
-            bridge.removeFederatorPublicKey(new Object[]{Hex.decode("abcdef")});
-            Assert.fail();
-        }
-        catch (RuntimeException ex) {
-            Assert.assertEquals("Public key could not be parsed abcdef", ex.getMessage());
-        }
-    }
-
-    @Test
     public void commitFederation_ok() throws IOException {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.commitFederation()).thenReturn(123);
 
-        Assert.assertEquals(123, bridge.commitFederation(new Object[]{}).intValue());
+        StringBuilder hashHexBuilder = new StringBuilder(64);
+        for (int i = 0; i < 32; i++) {
+            hashHexBuilder.append("55");
+        }
+        Sha3Hash hash = new Sha3Hash(Hex.decode(hashHexBuilder.toString()));
+
+        when(bridgeSupportMock.commitFederation(hash)).thenReturn(123);
+
+        Assert.assertEquals(123, bridge.commitFederation(new Object[]{ hash.getBytes() }).intValue());
     }
 
     @Test
@@ -920,15 +876,37 @@ public class BridgeTest {
         bridge.init(null, null, null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.commitFederation()).thenThrow(new IOException("I am an exception"));
+
+        StringBuilder hashHexBuilder = new StringBuilder(64);
+        for (int i = 0; i < 32; i++) {
+            hashHexBuilder.append("55");
+        }
+        Sha3Hash hash = new Sha3Hash(Hex.decode(hashHexBuilder.toString()));
+
+        when(bridgeSupportMock.commitFederation(hash)).thenThrow(new IOException("I am an exception"));
 
         try {
-            bridge.commitFederation(new Object[]{});
+            bridge.commitFederation(new Object[]{ hash.getBytes() });
             Assert.fail();
         }
         catch (RuntimeException ex) {
             Assert.assertEquals("Exception in commitFederation", ex.getMessage());
         }
+    }
+
+    @Test
+    public void commitFederation_invalidHash() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        when(bridgeSupportMock.commitFederation(any())).thenThrow(new IOException("I am an exception"));
+
+        try {
+            bridge.commitFederation(new Object[]{ new byte[]{ (byte) 0xab } });
+            Assert.fail();
+        }
+        catch (IllegalArgumentException ex) {}
     }
 
     @Test
