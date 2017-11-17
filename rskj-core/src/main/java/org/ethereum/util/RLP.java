@@ -154,20 +154,34 @@ public class RLP {
     }
 
     public static int decodeInt(byte[] data, int index) {
-        int value = 0;
+        // This cast will rise an exception if the input value is not in the int range
+        return (int) decodeLong(data,index);
+
+    }
+
+    public static long decodeLong(byte[] data, int index) {
+        long value = 0;
         // NOTE: there are two ways zero can be encoded - 0x00 and OFFSET_SHORT_ITEM
-
-        if ((data[index] & 0xFF) < OFFSET_SHORT_ITEM) {
+        int tag = (data[index] & 0xFF);
+        if (tag < OFFSET_SHORT_ITEM) {
             return data[index];
-        } else if ((data[index] & 0xFF) >= OFFSET_SHORT_ITEM
-                && (data[index] & 0xFF) < OFFSET_LONG_ITEM) {
-
+        } else if (tag >= OFFSET_SHORT_ITEM
+                && (tag < OFFSET_LONG_ITEM)) {
+            // Note: encoding will FAIL if most significant bit is 1 because
+            // java interprets this as a negative number.
+            // The yellowpaper states that:
+            // "If RLP is used to encode a scalar, defined only as a positive integer, it must be specified as the
+            //  shortest byte array such that the big-endian interpretation of it is equal."
+            // So we don't support negative numbers
             byte length = (byte) (data[index] - OFFSET_SHORT_ITEM);
-            byte pow = (byte) (length - 1);
+            byte pow = (byte) (length - 1); // pow can be -1 if length==0
             for (int i = 1; i <= length; ++i) {
-                value += (data[index + i] & 0xFF) << (8 * pow);
+                long v = ((long) (data[index + i] & 0xFF)) << (8 * pow);
+                value += v;
                 pow--;
             }
+            if (value<0)
+                throw new RuntimeException("word overflow");
         } else {
             throw new RuntimeException("wrong decode attempt");
         }
@@ -505,7 +519,7 @@ public class RLP {
     }
 
 
-    public static byte[] encodeInt(int singleInt) {
+    public static byte[] encodeIntOld(int singleInt) {
         if ((singleInt & 0xFF) == singleInt)
             return encodeByte((byte) singleInt);
         else if ((singleInt & 0xFFFF) == singleInt)
@@ -522,6 +536,50 @@ public class RLP {
                     (byte) (singleInt >>> 8),
                     (byte) singleInt};
         }
+    }
+
+    public static byte[] encodeInt(int singleInt) {
+        return encodeLong(singleInt);
+    }
+
+    public static byte[] encodeLong(long value) {
+        if ((value & 0xFF) == value)
+            return encodeByte((byte) value);
+        else if ((value & 0xFFFF) == value)
+            return encodeShort((short) value);
+        else
+        {
+            int bytes  = getMinimumBytesOfRepresentation(value);
+            return encodeLongSize(value,bytes);
+        }
+    }
+
+    public static int getMinimumBytesOfRepresentation(long value) {
+        long tmp = value;
+        int bytes = 0;
+
+        // negative values are not allowed
+        if (value < 0)
+            throw new RuntimeException("word overflow");
+
+        while (tmp != 0) {
+            tmp >>>= 8;
+            bytes++;
+        }
+
+        return bytes;
+    }
+
+    public static byte[] encodeLongSize(long value,int bytes) {
+        byte[] array = new byte[bytes + 1];
+        array[0] = (byte) (OFFSET_SHORT_ITEM + bytes);
+        int i = bytes;
+        while (i > 0) {
+            array[i] = (byte) (value & 0xff);
+            i--;
+            value >>>= 8;
+        }
+        return array;
     }
 
     public static byte[] encodeString(String srcString) {

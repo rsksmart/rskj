@@ -982,10 +982,13 @@ public class VM {
         DataWord memStart = stack.pop();
         DataWord memOffset = stack.pop();
 
+        boolean isContractlog = false;
         List<DataWord> topics = new ArrayList<>();
         for (int i = 0; i < nTopics; ++i) {
             DataWord topic = stack.pop();
             topics.add(topic);
+            if (topic.equalValue(DataWord.MAX_DATAWORD_VALUE))
+                isContractlog = true;
         }
 
         // Int32 address values guaranteed by previous MAX_MEMORY checks
@@ -998,6 +1001,8 @@ public class VM {
             hint = logInfo.toString();
 
         program.getResult().addLogInfo(logInfo);
+        if (isContractlog)
+            program.markBlockNumberOfLastEvent();
         // Log topics taken from the stack are lost and never returned to the DataWord pool
         program.disposeWord(memStart);
         program.disposeWord(memOffset);

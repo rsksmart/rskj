@@ -1344,6 +1344,12 @@ public class Program {
         return sb.toString();
     }
 
+    public void markBlockNumberOfLastEvent() {
+        // This can be optimized by replacing invoke.getNumber().longValueCheck() by invoke.getNumberAsLong() and allow
+        // invoke to keep the value as long internally.
+        getStorage().setBlockNumberOfLastEvent(getOwnerAddressLast20Bytes(),invoke.getNumber().longValueCheck());
+    }
+
     static class ByteCodeIterator {
         byte[] code;
         int pc;

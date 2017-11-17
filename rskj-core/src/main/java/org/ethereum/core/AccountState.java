@@ -65,6 +65,8 @@ public class AccountState {
      * retrieval */
     private byte[] codeHash = EMPTY_DATA_HASH;
 
+    private long blockNumberOfLastEvent =0;
+
     /* Account state flags*/
     private int stateFlags;
 
@@ -75,12 +77,17 @@ public class AccountState {
 
 
     public AccountState() {
-        this(RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce(), BigInteger.ZERO);
+        this(RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce(), BigInteger.ZERO,0);
     }
 
     public AccountState(BigInteger nonce, BigInteger balance) {
         this.nonce = nonce;
         this.balance = balance;
+    }
+    public AccountState(BigInteger nonce, BigInteger balance,long blockNumberOfLastEvent) {
+        this.nonce = nonce;
+        this.balance = balance;
+        this.blockNumberOfLastEvent = blockNumberOfLastEvent;
     }
 
     public AccountState(byte[] rlpData) {
@@ -95,9 +102,14 @@ public class AccountState {
         this.codeHash = items.get(3).getRLPData();
         if (items.size() > 4) {
             this.stateFlags = RLP.decodeInt(items.get(4).getRLPData(), 0);
-
+            if (items.size() > 5) {
+                this.blockNumberOfLastEvent = RLP.decodeLong(items.get(5).getRLPData(), 0);
+            }
         }
+
     }
+
+    public long getBlockNumberOfLastEvent() { return blockNumberOfLastEvent; }
 
     public int getStateFlags() {
         return stateFlags;
@@ -114,6 +126,10 @@ public class AccountState {
     public void setNonce(BigInteger nonce) {
         rlpEncoded = null;
         this.nonce = nonce;
+    }
+
+    public void setBlockNumberOfLastEvent(long bnum) {
+        blockNumberOfLastEvent = bnum;
     }
 
     public byte[] getStateRoot() {
@@ -170,8 +186,9 @@ public class AccountState {
             byte[] balance = RLP.encodeBigInteger(this.balance);
             byte[] stateRoot = RLP.encodeElement(this.stateRoot);
             byte[] codeHash = RLP.encodeElement(this.codeHash);
-            if (stateFlags != 0) {
+            if ((stateFlags != 0) || (blockNumberOfLastEvent!=0)) {
                 byte[] stateFlags = RLP.encodeInt(this.stateFlags);
+                byte[] blockNumberOfLastEvent =RLP.encodeLong(this.blockNumberOfLastEvent);
                 this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash, stateFlags);
             } else
                 // do not serialize if zero to keep compatibility
@@ -205,6 +222,7 @@ public class AccountState {
         accountState.setStateRoot(this.getStateRoot());
         accountState.setDirty(false);
         accountState.setStateFlags(this.stateFlags);
+        accountState.setBlockNumberOfLastEvent(this.blockNumberOfLastEvent);
         return accountState;
     }
 
@@ -212,6 +230,7 @@ public class AccountState {
         String ret = "  Nonce: " + this.getNonce().toString() + "\n" +
                 "  Balance: " + getBalance() + "\n" +
                 "  StateFlags: " + getStateFlags() + "\n" +
+                "  blockNumberOfLastEvent: " + getBlockNumberOfLastEvent() + "\n" +
                 "  State Root: " + Hex.toHexString(this.getStateRoot()) + "\n" +
                 "  Code Hash: " + Hex.toHexString(this.getCodeHash());
         return ret;
