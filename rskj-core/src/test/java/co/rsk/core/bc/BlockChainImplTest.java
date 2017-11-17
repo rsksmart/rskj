@@ -551,8 +551,8 @@ public class BlockChainImplTest {
     public void switchToOtherChainInvalidBadGasUsed() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.createChildBlock(genesis);
-        Block block1b = BlockGenerator.createChildBlock(genesis);
+        Block block1 = BlockGenerator.createChildBlock(genesis,0,2);
+        Block block1b = BlockGenerator.createChildBlock(genesis,0,1);
         Block block2b = BlockGenerator.createChildBlock(block1b);
 
         block2b.getHeader().setGasUsed(block2b.getGasUsed() + 1);
