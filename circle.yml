@@ -12,7 +12,9 @@ dependencies:
     - sudo apt-get install -y solc
     - echo manual | sudo tee /etc/init/mongod.override
     - sudo service mongod stop
+    - echo manual | sudo tee /etc/init/mysql.override
     - sudo service mysql stop
+    - echo manual | sudo tee /etc/init/postgresql.override
     - sudo service postgresql stop
     - gpg2 --keyserver https://secchannel.rsk.co/release.asc --recv-keys 5DECF4415E3B8FA4
     - wget https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_VERSION-linux.zip
