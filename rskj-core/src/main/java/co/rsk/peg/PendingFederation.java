@@ -29,10 +29,7 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.lang.reflect.Array;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -145,18 +142,10 @@ public final class PendingFederation {
 
     @Override
     public int hashCode() {
-        return getStringRepresentation().hashCode();
-    }
-
-    private String getStringRepresentation() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("#%d - ", getId()));
-        sb.append(getNumberOfSignaturesRequired());
-        sb.append("of <");
-        for (BtcECKey pk : getPublicKeys()) {
-            sb.append(Hex.toHexString(pk.getPubKey()));
-        }
-        sb.append(">");
-        return sb.toString();
+        return Objects.hash(
+                getId(),
+                getNumberOfSignaturesRequired(),
+                getPublicKeys()
+        );
     }
 }

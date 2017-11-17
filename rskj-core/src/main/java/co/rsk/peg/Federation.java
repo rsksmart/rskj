@@ -31,6 +31,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -144,11 +145,6 @@ public final class Federation {
         return false;
     }
 
-    @Override
-    public int hashCode() {
-        return super.hashCode();
-    }
-
     private boolean equalsFederation(Federation other) {
         if (other == null) {
             return false;
@@ -174,15 +170,12 @@ public final class Federation {
                 Arrays.equals(thisPublicKeys, otherPublicKeys);
     }
 
-    private String getStringRepresentation() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("@%d - ", getCreationTime().toEpochMilli()));
-        sb.append(getNumberOfSignaturesRequired());
-        sb.append("of <");
-        for (BtcECKey pk : getPublicKeys()) {
-            sb.append(Hex.toHexString(pk.getPubKey()));
-        }
-        sb.append(">");
-        return sb.toString();
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                getCreationTime(),
+                getNumberOfSignaturesRequired(),
+                getPublicKeys()
+        );
     }
 }
