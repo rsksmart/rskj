@@ -23,6 +23,7 @@ import co.rsk.test.builders.BlockBuilder;
 import com.google.common.collect.Lists;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Bloom;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -207,6 +208,55 @@ public class BlockStoreTest {
 
         Assert.assertNotNull(blocks);
         Assert.assertEquals(0, blocks.size());
+    }
+
+    @Test
+    public void saveHeader() {
+        BlockStore store = new BlockStore();
+        BlockHeader blockHeader = new BlockHeader(new byte[]{},
+                new byte[]{},
+                new byte[]{},
+                new Bloom().getData(),
+                new byte[]{},
+                1,
+                new byte[]{},
+                0,
+                0,
+                new byte[]{},
+                new byte[]{},
+                new byte[]{},
+                new byte[]{},
+                new byte[]{},
+                0
+        );
+
+        store.saveHeader(blockHeader);
+        Assert.assertTrue(store.hasHeader(blockHeader.getHash()));
+    }
+
+    @Test
+    public void removeHeader() {
+        BlockStore store = new BlockStore();
+        BlockHeader blockHeader = new BlockHeader(new byte[]{},
+                new byte[]{},
+                new byte[]{},
+                new Bloom().getData(),
+                new byte[]{},
+                1,
+                new byte[]{},
+                0,
+                0,
+                new byte[]{},
+                new byte[]{},
+                new byte[]{},
+                new byte[]{},
+                new byte[]{},
+                0
+        );
+
+        store.saveHeader(blockHeader);
+        store.removeHeader(blockHeader);
+        Assert.assertFalse(store.hasHeader(blockHeader.getHash()));
     }
 }
 
