@@ -980,6 +980,14 @@ public class VM {
             if (dataCost > program.MAX_GAS)
                 throw Program.Exception.notEnoughOpGas(op, dataCost, program.getRemainingGas());
 
+            // LOG command take too much gas compared to the 2300 default stipend for transfers()
+            // Two possible solutions:
+            // 1) The contractLog should be subsidized. (tag,value,sender,0xff..ff)
+            // requires normally 1500 gas. If the 0xff.. tag is present, then it is NOT considered
+            // as a new topic, only as a flag.(but in reality the ecost is high, because
+            // the BlockNumberOfLastEvent field in the account is modified.
+            // 2) We change that when CALL sends 2300 gas, it automatically sends more, say 5000 gas.
+            // (but it prevents the contract from calling other contracts).
             gasCost = GasCost.LOG_GAS +
                     GasCost.LOG_TOPIC_GAS * nTopics +
                     dataCost;

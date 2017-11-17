@@ -37,16 +37,20 @@ public class LogOpcodeTest {
     @Test
     public void testLogNewAccountTree() {
         testCode(
-        "PUSH1 0x00 "
+                "CALLVALUE "   // Store value in memory position 0
+                +"PUSH1 0x00 " // Offset in memory to store
+                +"MSTORE " // store in memory
+        +"PUSH1 0x00 "
             +"NOT " // 1st topic: Topic 0xff......0xff
             +"PUSH1 0x12 " // 2nd topic: Sample topic
-            +"LASTEVENTBLOCKNUMBER "  // 3rd topic
-            +"PUSH1 0x00 " // memOffset
+            +"CALLER " // 3nd topic: source address
+            +"LASTEVENTBLOCKNUMBER "  // 4th topic
+            +"PUSH1 0x20 " // memSize
             +"PUSH1 0x00 " // memStart
-            +"LOG3 "
-            +"LASTEVENTBLOCKNUMBER", 8,
+            +"LOG4 "
+            +"LASTEVENTBLOCKNUMBER", 12,
                 "0000000000000000000000000000000000000000000000000000000000000021"); // 0x21 = 33 is the mock block number
-
+    // Gasused = 2163
       // Now check that the last event has been set to 33.
         // This means that a light client must always fetch two consecutive headers, in the first
         // it finds the previous event block number. In the second, the logged event
