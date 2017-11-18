@@ -379,7 +379,7 @@ public class BlockGenerator {
                 txs.add(new SimpleRskTransaction(null));
 
             if (difficulty == null) {
-                difficulty = ByteUtil.bytesToBigInteger(parent.getDifficulty()).longValue();
+                difficulty = 0l;
             }
             Block newblock = BlockGenerator.createChildBlock(
                     parent, txs, uncles,
