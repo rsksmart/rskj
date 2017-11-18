@@ -993,6 +993,20 @@ public class BridgeSupport {
     }
 
     /**
+     * Returns the currently pending federation hash, or null if none exists
+     * @return the currently pending federation hash, or null if none exists
+     */
+    public byte[] getPendingFederationHash() {
+        PendingFederation currentPendingFederation = provider.getPendingFederation();
+
+        if (currentPendingFederation == null) {
+            return null;
+        }
+
+        return currentPendingFederation.getHash().getBytes();
+    }
+
+    /**
      * Returns the currently pending federation size, or -1 if none exists
      * @return the currently pending federation size, or -1 if none exists
      */

@@ -119,9 +119,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     // Rolls back the currently pending federation
     public static final CallTransaction.Function ROLLBACK_FEDERATION = CallTransaction.Function.fromSignature("rollbackFederation", new String[]{}, new String[]{"int256"});
 
-    // Returns the number of federates in the currently active federation
+    // Returns the current pending federation's hash
+    public static final CallTransaction.Function GET_PENDING_FEDERATION_HASH = CallTransaction.Function.fromSignature("getPendingFederationHash", new String[]{}, new String[]{"bytes"});
+    // Returns the number of federates in the current pending federation
     public static final CallTransaction.Function GET_PENDING_FEDERATION_SIZE = CallTransaction.Function.fromSignature("getPendingFederationSize", new String[]{}, new String[]{"int256"});
-    // Returns the public key of the federator at the specified index
+    // Returns the public key of the federator at the specified index for the current pending federation
     public static final CallTransaction.Function GET_PENDING_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getPendingFederatorPublicKey", new String[]{"int256"}, new String[]{"bytes"});
 
     // Log topics used by the Bridge
@@ -184,6 +186,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             ADD_FEDERATOR_PUBLIC_KEY,
             COMMIT_FEDERATION,
             ROLLBACK_FEDERATION,
+            GET_PENDING_FEDERATION_HASH,
             GET_PENDING_FEDERATION_SIZE,
             GET_PENDING_FEDERATOR_PUBLIC_KEY,
         }).forEach((CallTransaction.Function func) -> {
@@ -667,6 +670,20 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("rollbackFederation");
 
         return bridgeSupport.rollbackFederation();
+    }
+
+    public byte[] getPendingFederationHash(Object[] args)
+    {
+        logger.trace("getPendingFederationHash");
+
+        byte[] hash = bridgeSupport.getPendingFederationHash();
+
+        if (hash == null) {
+            // Empty array is returned when pending federation is not present
+            return new byte[]{};
+        }
+
+        return hash;
     }
 
     public Integer getPendingFederationSize(Object[] args)
