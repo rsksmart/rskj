@@ -340,7 +340,7 @@ public class BlockGenerator {
                 txs.add(new SimpleRskTransaction(null));
 
 
-            Block newblock = BlockGenerator.createChildBlock(parent, txs, uncles, BIUtil.toBI(parent.getDifficulty()).longValue(), null);
+            Block newblock = BlockGenerator.createChildBlock(parent, txs, uncles, 0, null);
 
             if (withMining)
                 newblock = BlockMiner.mineBlock(newblock);
