@@ -316,7 +316,7 @@ public class RskForksBridgeTest {
                 blockChain.getBestBlock().getCoinbase(),  repository,
                 blockChain.getBlockStore(),
                 blockChain.getReceiptStore(),
-                blockChain.getPerContractLogStore(),
+                blockChain.getEventsStore(),
                 new ProgramInvokeFactoryImpl(), blockChain.getBestBlock())
                 .setLocalCall(true);
 

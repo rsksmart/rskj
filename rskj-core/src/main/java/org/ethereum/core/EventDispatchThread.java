@@ -27,7 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * The class intended to serve as an 'Event Bus' where all EthereumJ events are
+ * The class intended to serve as an 'EventsPerAccount Bus' where all EthereumJ events are
  * dispatched asynchronously from component to component or from components to
  * the user event handlers.
  *

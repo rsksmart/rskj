@@ -102,7 +102,7 @@ public class BlockChainBuilder {
 
         KeyValueDataSource dsp = new HashMapDB();
         dsp.init();
-        PerContractLogStore perContractLogStore = new PerContractLogStoreImpl(dsp);
+        EventsStore eventsStore = new EventsStoreImpl(dsp);
 
         if (txinfos != null && !txinfos.isEmpty())
             for (TransactionInfo txinfo : txinfos)
@@ -120,7 +120,7 @@ public class BlockChainBuilder {
         if (this.adminInfo == null)
             this.adminInfo = new AdminInfo();
 
-        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, perContractLogStore, null, listener, this.adminInfo, blockValidator);
+        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, eventsStore, null, listener, this.adminInfo, blockValidator);
 
         if (this.testing && this.rsk) {
             blockChain.setBlockValidator(new DummyBlockValidator());

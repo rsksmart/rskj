@@ -889,6 +889,7 @@ public class VM {
         program.stackPush(timestamp);
         program.step();
     }
+
     protected void doLASTEVENTBLOCKNUMBER() {
         spendOpCodeGas();
 
@@ -969,6 +970,16 @@ public class VM {
         long copySize;
         int nTopics = op.val() - OpCode.LOG0.val();
 
+        boolean isEventslog = false;
+
+
+        for (int i = 0; i < nTopics; ++i) {
+            DataWord topic =  stack.get(stack.size() - 3-i);
+            if (topic.equalValue(DataWord.MAX_DATAWORD_VALUE))
+                isEventslog = true;
+        }
+
+
         if (computeGas) {
             size = stack.get(stack.size() - 2);
             sizeLong = Program.limitToMaxLong(size);
@@ -988,7 +999,25 @@ public class VM {
             // the BlockNumberOfLastEvent field in the account is modified.
             // 2) We change that when CALL sends 2300 gas, it automatically sends more, say 5000 gas.
             // (but it prevents the contract from calling other contracts).
-            gasCost = GasCost.LOG_GAS +
+            //
+            // What we decided is that the first LOG call, when there is a value transfer
+            // and when there are no arguments (it's de default payable function)
+            // the LOG will be subsidized.
+            // The value transfer costs 9000, so the caller has already paid a high cost.
+            // One could also require that the passed amount of gas is exactly 2300, but if the call
+            // is exernal (in a tx) then this depends on how the wallet assign the gascount.
+            if ((isEventslog) &&
+                    (program.getDataSizeReadOnly().isZero()) &&
+                    (!program.getCallValueReadOnly().isZero() &&
+                            (!program.wasLogDiscountApplied()))) {
+                        gasCost = GasCost.LOG_GAS +
+                        GasCost.LOG_TOPIC_GAS * (nTopics -1) +
+                        dataCost;
+
+                program.applyLogDiscount();
+
+            } else
+             gasCost = GasCost.LOG_GAS +
                     GasCost.LOG_TOPIC_GAS * nTopics +
                     dataCost;
 
@@ -1002,13 +1031,10 @@ public class VM {
         DataWord memStart = stack.pop();
         DataWord memOffset = stack.pop();
 
-        boolean isContractlog = false;
         List<DataWord> topics = new ArrayList<>();
         for (int i = 0; i < nTopics; ++i) {
             DataWord topic = stack.pop();
             topics.add(topic);
-            if (topic.equalValue(DataWord.MAX_DATAWORD_VALUE))
-                isContractlog = true;
         }
 
         // Int32 address values guaranteed by previous MAX_MEMORY checks
@@ -1021,8 +1047,9 @@ public class VM {
             hint = logInfo.toString();
 
         program.getResult().addLogInfo(logInfo);
-        if (isContractlog)
+        if (isEventslog)
             program.markBlockNumberOfLastEvent();
+
         // Log topics taken from the stack are lost and never returned to the DataWord pool
         program.disposeWord(memStart);
         program.disposeWord(memOffset);

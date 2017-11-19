@@ -133,7 +133,7 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     public ReceiptStore getReceiptStore() { return null; }
 
     @Override
-    public PerContractLogStore getPerContractLogStore() { return null; }
+    public EventsStore getEventsStore() { return null; }
 
     @Override
     public BlockStore getBlockStore() { return null; }

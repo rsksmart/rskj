@@ -68,7 +68,7 @@ public interface Blockchain {
 
     ReceiptStore getReceiptStore();
 
-    PerContractLogStore getPerContractLogStore();
+    EventsStore getEventsStore();
 
     BlockStore getBlockStore();
 

@@ -70,7 +70,7 @@ public class BlockHeader implements SerializableObject {
     * list portion, the trie is populate by
     *[key, val] --> [rlp(srcTxIndex,logNum), rlp(LogInfo)]
     * of the block */
-    private byte[] contractsLogRoot;
+    private byte[] eventsRoot;
 
     /* The bloom filter for the logs of the block */
     private byte[] logsBloom;
@@ -168,11 +168,11 @@ public class BlockHeader implements SerializableObject {
         }
 
         if ((rlpHdrSize  == 20) || (rlpHdrSize  == 17)) {
-            this.contractsLogRoot = rlpHeader.get(r++).getRLPData();
+            this.eventsRoot = rlpHeader.get(r++).getRLPData();
          }
 
-        if (this.contractsLogRoot == null)
-            this.contractsLogRoot = EMPTY_TRIE_HASH;
+        if (this.eventsRoot == null)
+            this.eventsRoot = EMPTY_TRIE_HASH;
 
         if (rlpHeader.size() > r) {
             this.bitcoinMergedMiningHeader = rlpHeader.get(r++).getRLPData();
@@ -203,7 +203,7 @@ public class BlockHeader implements SerializableObject {
         this.stateRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
         this.minimumGasPrice = minimumGasPrice;
         this.receiptTrieRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
-        this.contractsLogRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
+        this.eventsRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
         this.uncleCount = uncleCount;
     }
 
@@ -231,7 +231,7 @@ public class BlockHeader implements SerializableObject {
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
         this.minimumGasPrice = minimumGasPrice;
         this.receiptTrieRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
-        this.contractsLogRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
+        this.eventsRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
         this.uncleCount = uncleCount;
     }
 
@@ -308,16 +308,16 @@ public class BlockHeader implements SerializableObject {
         this.receiptTrieRoot = receiptTrieRoot;
     }
 
-    public void setContractsLogRoot(byte[] contractsLogRoot) {
-        this.contractsLogRoot = contractsLogRoot;
+    public void setEventsRoot(byte[] eventsRoot) {
+        this.eventsRoot = eventsRoot;
     }
 
     public byte[] getReceiptsRoot() {
         return receiptTrieRoot;
     }
 
-    public byte[] getContractsLogRoot() {
-        return contractsLogRoot;
+    public byte[] getEventsRoot() {
+        return eventsRoot;
     }
 
     public void setTransactionsRoot(byte[] stateRoot) {
@@ -490,8 +490,8 @@ public class BlockHeader implements SerializableObject {
         byte[] uncleCount = RLP.encodeBigInteger(BigInteger.valueOf(this.uncleCount));
         fieldToEncodeList.add(uncleCount);
 
-        if (contractsLogRoot == null) this.contractsLogRoot = EMPTY_TRIE_HASH;
-        byte[] contractsLogRoot = RLP.encodeElement(this.contractsLogRoot);
+        if (eventsRoot == null) this.eventsRoot = EMPTY_TRIE_HASH;
+        byte[] contractsLogRoot = RLP.encodeElement(this.eventsRoot);
         fieldToEncodeList.add(contractsLogRoot);
 
         if (withMergedMiningFields && hasMiningFields()) {

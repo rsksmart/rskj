@@ -104,9 +104,9 @@ public class TestRunner {
 
         KeyValueDataSource dsp = new HashMapDB();
         dsp.init();
-        PerContractLogStore perContractLogStore = new PerContractLogStoreImpl(dsp);
+        EventsStore eventsStore = new EventsStoreImpl(dsp);
 
-        BlockChainImpl blockchain = new BlockChainImpl(repository, blockStore, receiptStore, perContractLogStore,null, null, null, new DummyBlockValidator());
+        BlockChainImpl blockchain = new BlockChainImpl(repository, blockStore, receiptStore, eventsStore,null, null, null, new DummyBlockValidator());
         //BlockchainImpl blockchain = new BlockchainImpl(blockStore, repository, wallet, adminInfo, listener,
         //        new CommonConfig().parentHeaderValidator(), receiptStore);
 

@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.PostConstruct;
 import java.math.BigInteger;
 import java.util.List;
 
@@ -82,7 +81,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     private final Repository repository;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
-    private final PerContractLogStore perContractLogStore;
+    private final EventsStore eventsStore;
     private PendingState pendingState;
     private EthereumListener listener;
     private final AdminInfo adminInfo;
@@ -100,7 +99,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     public BlockChainImpl(Repository repository,
                           BlockStore blockStore,
                           ReceiptStore receiptStore,
-                          PerContractLogStore perContractLogStore,
+                          EventsStore eventsStore,
                           PendingState pendingState,
                           EthereumListener listener,
                           AdminInfo adminInfo,
@@ -108,7 +107,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         this.repository = repository;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
-        this.perContractLogStore =perContractLogStore;
+        this.eventsStore =eventsStore;
         this.listener = listener;
         this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
@@ -470,7 +469,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     public ReceiptStore getReceiptStore() { return receiptStore; }
 
     @Override
-    public PerContractLogStore getPerContractLogStore() { return perContractLogStore; }
+    public EventsStore getEventsStore() { return eventsStore; }
 
     private void switchToBlockChain(Block block, BigInteger totalDifficulty) {
         synchronized (accessLock) {
@@ -500,14 +499,14 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         receiptStore.saveMultiple(block.getHash(), result.getTransactionReceipts());
     }
 
-    private void savePerContractLog(Block block, BlockResult result) {
+    private void saveEvents(Block block, BlockResult result) {
         if (result == null)
             return;
 
-        if (result.getPerContractLog().isEmpty())
+        if (result.getEvents().isEmpty())
             return;
 
-        perContractLogStore.save(block.getHash(), result.getPerContractLog());
+        eventsStore.save(block.getHash(), result.getEvents());
     }
 
     private void processBest(final Block block) {
@@ -552,14 +551,6 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts) {
-        Trie receiptsTrie = new TrieImpl();
-
-        if (receipts == null || receipts.isEmpty())
-            return HashUtil.EMPTY_TRIE_HASH;
-
-        for (int i = 0; i < receipts.size(); i++)
-            receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
-
-        return receiptsTrie.getHash();
+        return BlockResult.calculateReceiptsTrie(receipts);
     }
 }

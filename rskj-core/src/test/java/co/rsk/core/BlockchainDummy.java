@@ -126,7 +126,7 @@ public class BlockchainDummy implements Blockchain {
     public ReceiptStore getReceiptStore() { return null; }
 
     @Override
-    public PerContractLogStore getPerContractLogStore() { return null; }
+    public EventsStore getEventsStore() { return null; }
 
     @Override
     public Repository getRepository() { return null; }

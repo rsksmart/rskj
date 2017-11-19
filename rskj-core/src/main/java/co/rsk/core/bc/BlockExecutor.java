@@ -80,7 +80,7 @@ public class BlockExecutor {
         BlockHeader header = block.getHeader();
         header.setTransactionsRoot(Block.getTxTrie(block.getTransactionsList()).getHash());
         header.setReceiptsRoot(result.getReceiptsRoot());
-        header.setContractsLogRoot(result.getPerContractLogRoot());
+        header.setEventsRoot(result.getEventsRoot());
         header.setGasUsed(result.getGasUsed());
         header.setPaidFees(result.getPaidFees());
         block.setStateRoot(result.getStateRoot());
@@ -128,7 +128,12 @@ public class BlockExecutor {
             panicProcessor.panic("invalidreceipt", String.format("Block's given Receipt Hash doesn't match: %s != %s", Hex.toHexString(block.getReceiptsRoot()), Hex.toHexString(result.getReceiptsRoot())));
             return false;
         }
-
+        if (!Arrays.equals(result.getEventsRoot(), block.getEventsRoot())) {
+            logger.error("Block's given events Hash doesn't match: {} {} != {}", block.getNumber(), block.getShortHash(), Hex.toHexString(block.getEventsRoot()));
+            panicProcessor.panic("invalid events",
+                    String.format("Block's given events Hash doesn't match: %s != %s", Hex.toHexString(block.getEventsRoot()), Hex.toHexString(result.getEventsRoot())));
+            return false;
+        }
         byte[] resultLogsBloom = result.getLogsBloom();
         byte[] blockLogsBloom = block.getLogBloom();
 
@@ -191,22 +196,22 @@ public class BlockExecutor {
         byte[] lastStateRootHash = initialRepository.getRoot();
 
         Repository track = initialRepository.startTracking();
-        int i = 1;
+        int i = 0;
         long totalGasUsed = 0;
         long totalPaidFees = 0;
         List<TransactionReceipt> receipts = new ArrayList<>();
         // Maps and address to its logs.
-        PerContractLog perContractLog;
+        Events events;
 
-        perContractLog = new PerContractLog();
+        events = new Events();
 
         List<Transaction> executedTransactions = new ArrayList<>();
 
         for (Transaction tx : block.getTransactionsList()) {
-            logger.info("apply block: [{}] tx: [{}] ", block.getNumber(), i);
+            logger.info("apply block: [{}] tx: [{}] ", block.getNumber(), i+1);
             TransactionExecutor txExecutor = new TransactionExecutor(tx, block.getCoinbase(), track, blockStore,
                     blockChain.getReceiptStore(),
-                    blockChain.getPerContractLogStore(),
+                    blockChain.getEventsStore(),
                     programInvokeFactory, block, listener, totalGasUsed);
 
             boolean readyToExecute = txExecutor.init();
@@ -247,12 +252,12 @@ public class BlockExecutor {
 
 
             if (txExecutor.getVMLogs()!=null)
-                AddToPerContractLog(i,perContractLog,txExecutor);
+                AddToEvents(i,events,txExecutor);
 
             logger.info("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()),
                     Hex.toHexString(lastStateRootHash));
 
-            logger.info("tx[{}].receipt", i);
+            logger.info("tx[{}].receipt", i+1);
 
             i++;
 
@@ -261,22 +266,25 @@ public class BlockExecutor {
             logger.info("tx done");
         }
 
-        return new BlockResult(executedTransactions, receipts, perContractLog,lastStateRootHash, totalGasUsed, totalPaidFees);
+        return new BlockResult(executedTransactions, receipts, events,lastStateRootHash, totalGasUsed, totalPaidFees);
     }
 
-    public void AddToPerContractLog(int i,PerContractLog perContractLog,TransactionExecutor txExecutor ) {
+    public static void AddToEvents(int i,Events events,TransactionExecutor txExecutor ) {
         // For every log that contains the 0xff..ff logged topic
-        // it must also be logged in the PerContractLog
+        // it must also be logged in the Events
         int logN = 0;
         for (LogInfo log : txExecutor.getVMLogs()) {
-            for (DataWord topic : log.getTopics()) {
+            for (int t=0;t<log.getTopics().size();t++) {
+                DataWord topic =log.getTopics().get(t);
                 if (topic.equalValue(DataWord.MAX_DATAWORD_VALUE)) {
-                    ContractLog amap = perContractLog.get(log.getAddress());
+                    EventsPerAccount amap = events.get(log.getAddress());
                     if (amap == null) {
-                        amap = new ContractLog();
-                        perContractLog.put(log.getAddress(), amap);
+                        amap = new EventsPerAccount();
+                        events.put(log.getAddress(), amap);
                     }
-                    amap.put(i, logN, log);
+                    List<DataWord> topicsForEvent = new ArrayList<>(log.getTopics());
+                    topicsForEvent.remove(t); // remove the 0xff...ff topic
+                    amap.put(i, logN, new EventInfo(topicsForEvent,log.getData(),i));
                     break;
                 }
 

@@ -23,7 +23,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ContractDetails;
-import org.ethereum.db.PerContractLogStore;
+import org.ethereum.db.EventsStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
@@ -66,7 +66,7 @@ public class TransactionExecutor {
     private Repository cacheTrack;
     private BlockStore blockStore;
     private ReceiptStore receiptStore;
-    private PerContractLogStore perContractLogStore;
+    private EventsStore eventsStore;
     private final long gasUsedInTheBlock;
     private long paidFees;
     private boolean readyToExecute = false;
@@ -93,15 +93,15 @@ public class TransactionExecutor {
 
     public TransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore,
                                ReceiptStore receiptStore,
-                               PerContractLogStore perContractLogStore,
+                               EventsStore eventsStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
 
-        this(tx, coinbase, track, blockStore, receiptStore, perContractLogStore,programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0);
+        this(tx, coinbase, track, blockStore, receiptStore, eventsStore,programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0);
     }
 
     public TransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore,
                                ReceiptStore receiptStore,
-                               PerContractLogStore perContractLogStore,
+                               EventsStore eventsStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock,
                                EthereumListener listener, long gasUsedInTheBlock) {
 
@@ -111,7 +111,7 @@ public class TransactionExecutor {
         this.cacheTrack = track.startTracking();
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
-        this.perContractLogStore = perContractLogStore;
+        this.eventsStore = eventsStore;
         this.programInvokeFactory = programInvokeFactory;
         this.executionBlock = executionBlock;
         this.listener = listener;

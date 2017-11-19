@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.test.World;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.db.BlockStore;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -48,9 +49,11 @@ public class BlockchainVMTest {
 
     public static class NewBlockChainInfo {
         public Blockchain blockchain;
+        public BlockStore blockstore;
         public ECKey faucetKey;
         public Repository repository;
     }
+
     static long addrCounter =1;
 
     byte[] randomAddress() {
@@ -84,7 +87,7 @@ public class BlockchainVMTest {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block1));
 
         MinerHelper mh = new MinerHelper(
-                binfo.repository, binfo.blockchain);
+                binfo.repository, binfo.blockchain,binfo.blockstore);
 
         mh.completeBlock(block2, block1);
 
@@ -115,7 +118,7 @@ public class BlockchainVMTest {
 
         faucetAddress = binfo.faucetKey.getAddress();
         preMineMap.put(faucetAddress,faucetAmount);
-
+        binfo.blockstore = world.getBlockChain().getBlockStore();
         binfo.blockchain = world.getBlockChain();
         binfo.repository = world.getRepository();
         return binfo;

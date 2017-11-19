@@ -25,9 +25,7 @@ import org.ethereum.crypto.HashUtil;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.ethereum.util.RLP;
-import org.ethereum.vm.LogInfo;
 
-import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
@@ -40,10 +38,10 @@ public class BlockResult {
     private boolean interruptedExecution;
     private List<Transaction> executedTransactions;
     private List<TransactionReceipt> transactionReceipts;
-    private PerContractLog perContractLog;
+    private Events events;
     private byte[] stateRoot;
     private byte[] receiptsRoot;
-    private byte[] perContractLogRoot;
+    private byte[] eventsRoot;
     private long gasUsed;
     private long paidFees;
     private byte[] logsBloom;
@@ -55,17 +53,17 @@ public class BlockResult {
 
     public BlockResult(List<Transaction> executedTransactions,
                        List<TransactionReceipt> transactionReceipts,
-                       PerContractLog contractLogs,
+                       Events events,
                        byte[] stateRoot, long gasUsed, long paidFees) {
         interruptedExecution = false;
         this.executedTransactions = executedTransactions;
         this.transactionReceipts = transactionReceipts;
-        this.perContractLog = contractLogs;
+        this.events = events;
         this.stateRoot = stateRoot;
         this.gasUsed = gasUsed;
         this.paidFees = paidFees;
 
-        this.perContractLogRoot = calculatePerContractLogTrie(contractLogs);
+        this.eventsRoot = calculateEventsTrie(events);
         this.receiptsRoot = calculateReceiptsTrie(transactionReceipts);
 
         this.logsBloom = calculateLogsBloom(transactionReceipts);
@@ -77,16 +75,16 @@ public class BlockResult {
         return this.transactionReceipts;
     }
 
-    public PerContractLog getPerContractLog() {
-        return this.perContractLog;
+    public Events getEvents() {
+        return this.events;
     }
 
     public byte[] getStateRoot() {
         return this.stateRoot;
     }
 
-    public byte[] getPerContractLogRoot() {
-        return this.perContractLogRoot;
+    public byte[] getEventsRoot() {
+        return this.eventsRoot;
     }
 
     public byte[] getReceiptsRoot() {
@@ -107,7 +105,7 @@ public class BlockResult {
 
     // from original BlockchainImpl
 
-    private static byte[] calculateReceiptsTrie(List<TransactionReceipt> receipts) {
+    public static byte[] calculateReceiptsTrie(List<TransactionReceipt> receipts) {
         //TODO Fix Trie hash for receipts - doesnt match cpp
         Trie receiptsTrie = new TrieImpl();
 
@@ -121,44 +119,45 @@ public class BlockResult {
     }
 
 
-    private static byte[] calculateContractLogTrie(ContractLog cl) {
+    public static byte[] calculateEventsPerAccountTrie(EventsPerAccount cl) {
 
         if (cl == null )
             return HashUtil.EMPTY_TRIE_HASH;
 
-        Map<byte[], LogInfo> t = cl.getMap();
+        Map<byte[], EventInfo> t = cl.getMap();
 
         if (t == null || t.isEmpty())
             return HashUtil.EMPTY_TRIE_HASH;
 
         Trie aTrie = new TrieImpl();
         for (byte[] index : t.keySet()) {
+            // index is logNum
             aTrie = aTrie.put(index, t.get(index).getEncoded());
         }
         return aTrie.getHash();
     }
 
-    private static byte[] calculatePerContractLogTrie(PerContractLog pcl) {
+    public static byte[] calculateEventsTrie(Events pcl) {
         Trie clTrie = new TrieImpl();
 
         if (pcl == null)
             return HashUtil.EMPTY_TRIE_HASH;
 
 
-        Map<byte[],ContractLog> contractLogs = pcl.getMap();
+        Map<byte[],EventsPerAccount> eventsPerAccountMap = pcl.getMap();
 
-        if (contractLogs == null || contractLogs.isEmpty())
+        if (eventsPerAccountMap == null || eventsPerAccountMap.isEmpty())
             return HashUtil.EMPTY_TRIE_HASH;
 
-        for (byte[] addr : contractLogs.keySet()) {
-            ContractLog t = contractLogs.get(addr);
+        for (byte[] addr : eventsPerAccountMap.keySet()) {
+            EventsPerAccount t = eventsPerAccountMap.get(addr);
 
-            clTrie = clTrie.put(RLP.encodeElement(addr), calculateContractLogTrie(t));
+            clTrie = clTrie.put(RLP.encodeElement(addr), calculateEventsPerAccountTrie(t));
         }
         return clTrie.getHash();
     }
 
-    private static byte[] calculateLogsBloom(List<TransactionReceipt> receipts) {
+    public static byte[] calculateLogsBloom(List<TransactionReceipt> receipts) {
         Bloom logBloom = new Bloom();
 
         for (TransactionReceipt receipt : receipts) {

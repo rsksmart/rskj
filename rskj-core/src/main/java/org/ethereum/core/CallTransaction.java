@@ -463,7 +463,7 @@ public class CallTransaction {
 
     /**
      * Represents either function invocation with its arguments
-     * or Event instance with its data members
+     * or EventsPerAccount instance with its data members
      */
     public static class Invocation {
         public final Contract contract;

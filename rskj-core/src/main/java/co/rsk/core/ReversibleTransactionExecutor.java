@@ -19,13 +19,13 @@
 
 package co.rsk.core;
 
-import co.rsk.core.bc.PerContractLog;
+import co.rsk.core.bc.Events;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.PerContractLogStore;
+import org.ethereum.db.EventsStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
@@ -35,9 +35,9 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
 
     private ReversibleTransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore,
                                           ReceiptStore receiptStore,
-                                          PerContractLogStore perContractLogStore,
+                                          EventsStore eventsStore,
                                           ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
-        super(tx, coinbase, track, blockStore, receiptStore, perContractLogStore, programInvokeFactory, executionBlock);
+        super(tx, coinbase, track, blockStore, receiptStore, eventsStore, programInvokeFactory, executionBlock);
         setLocalCall(true);
     }
 
@@ -45,7 +45,7 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
                                                          Repository track,
                                                          BlockStore blockStore,
                                                          ReceiptStore receiptStore,
-                                                         PerContractLogStore perContractLogStore,
+                                                         EventsStore eventsStore,
                                                          ProgramInvokeFactory programInvokeFactory,
                                                          Block executionBlock,
                                                          byte[] gasPrice,
@@ -59,7 +59,7 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
         byte[] nonce = repository.getNonce(fromAddress).toByteArray();
         UnsignedTransaction tx = new UnsignedTransaction(nonce, gasPrice, gasLimit, toAddress, value, data, fromAddress);
 
-        ReversibleTransactionExecutor executor = new ReversibleTransactionExecutor(tx, coinbase, repository, blockStore, receiptStore, perContractLogStore,programInvokeFactory, executionBlock);
+        ReversibleTransactionExecutor executor = new ReversibleTransactionExecutor(tx, coinbase, repository, blockStore, receiptStore, eventsStore,programInvokeFactory, executionBlock);
         return executor.executeTransaction();
     }
 
@@ -67,7 +67,7 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
                                                          Repository track,
                                                          BlockStore blockStore,
                                                          ReceiptStore receiptStore,
-                                                         PerContractLogStore perContractLogStore,
+                                                         EventsStore eventsStore,
                                                          ProgramInvokeFactory programInvokeFactory,
                                                          Block executionBlock,
                                                          Web3.CallArguments args) {
@@ -76,7 +76,7 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
         }
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
 
-        return executeTransaction(coinbase, track, blockStore, receiptStore, perContractLogStore,programInvokeFactory, executionBlock,
+        return executeTransaction(coinbase, track, blockStore, receiptStore, eventsStore,programInvokeFactory, executionBlock,
                 hexArgs.getGasPrice(), hexArgs.getGasLimit(), hexArgs.getToAddress(), hexArgs.getValue(), hexArgs.getData(),
                 hexArgs.getFromAddress());
     }

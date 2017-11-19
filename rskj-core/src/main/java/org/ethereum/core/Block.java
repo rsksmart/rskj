@@ -109,7 +109,7 @@ public class Block {
                 header.getBitcoinMergedMiningMerkleProof(),
                 header.getBitcoinMergedMiningCoinbaseTransaction(),
                 header.getReceiptsRoot(),
-                header.getContractsLogRoot(),
+                header.getEventsRoot(),
                 header.getTxTrieRoot(),
                 header.getStateRoot(),
                 transactionsList,
@@ -145,7 +145,7 @@ public class Block {
 
         this.header.setStateRoot(stateRoot);
         this.header.setReceiptsRoot(receiptsRoot);
-        this.header.setContractsLogRoot(contractsLogRoot);
+        this.header.setEventsRoot(contractsLogRoot);
 
         this.flushRLP();
     }
@@ -171,7 +171,7 @@ public class Block {
 
         this.header.setStateRoot(stateRoot);
         this.header.setReceiptsRoot(receiptsRoot);
-        this.header.setContractsLogRoot(contractsLogRoot);
+        this.header.setEventsRoot(contractsLogRoot);
         this.flushRLP();
     }
 
@@ -284,6 +284,12 @@ public class Block {
         if (!parsed)
             parseRLP();
         return this.header.getStateRoot();
+    }
+
+    public byte[] getEventsRoot() {
+        if (!parsed)
+            parseRLP();
+        return this.header.getEventsRoot();
     }
 
     public void setStateRoot(byte[] stateRoot) {

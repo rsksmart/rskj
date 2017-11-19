@@ -72,13 +72,13 @@ public class ImportLightTest {
 
         KeyValueDataSource dsp = new HashMapDB();
         dsp.init();
-        PerContractLogStore perContractLogStore = new PerContractLogStoreImpl(dsp);
+        EventsStore eventsStore = new EventsStoreImpl(dsp);
 
         BlockChainImpl blockchain = new BlockChainImpl(
                 repository,
                 blockStore,
                 receiptStore,
-                perContractLogStore,
+                eventsStore,
                 null,
                 listener,
                 new AdminInfo(),

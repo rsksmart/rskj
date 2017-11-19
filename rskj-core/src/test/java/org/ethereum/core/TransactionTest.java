@@ -695,7 +695,7 @@ public class TransactionTest {
         TransactionExecutor executor = new TransactionExecutor(tx, new byte[32], blockchain.getRepository(),
                 blockchain.getBlockStore(),
                 blockchain.getReceiptStore(),
-                blockchain.getPerContractLogStore(),
+                blockchain.getEventsStore(),
                 new ProgramInvokeFactoryImpl(), blockchain.getBestBlock());
 
         executor.init();

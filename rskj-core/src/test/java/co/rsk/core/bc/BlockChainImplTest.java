@@ -841,13 +841,13 @@ public class BlockChainImplTest {
 
         KeyValueDataSource dsp = new HashMapDB();
         dsp.init();
-        PerContractLogStore perContractLogStore = new PerContractLogStoreImpl(dsp);
+        EventsStore eventsStore = new EventsStoreImpl(dsp);
 
         AdminInfo adminInfo = new SimpleAdminInfo();
 
         EthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
 
-        BlockChainImpl blockChain = new BlockChainImpl(repository, blockStore, receiptStore, perContractLogStore,null, listener, adminInfo, blockValidator);
+        BlockChainImpl blockChain = new BlockChainImpl(repository, blockStore, receiptStore, eventsStore,null, listener, adminInfo, blockValidator);
         PendingStateImpl pendingState = new PendingStateImpl(blockChain, repository, null, null, listener, 10, 100);
         pendingState.init();
         blockChain.setPendingState(pendingState);

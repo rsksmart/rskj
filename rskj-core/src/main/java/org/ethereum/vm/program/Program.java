@@ -174,6 +174,7 @@ public class Program {
 
     boolean isLogEnabled;
     boolean isGasLogEnabled;
+    boolean logDiscountApplied = false;
 
     public Program(byte[] ops, ProgramInvoke programInvoke) {
         isLogEnabled = logger.isInfoEnabled();
@@ -1036,8 +1037,25 @@ public class Program {
             return invoke.getCallValue().clone();
     }
 
+    // Optimization, returns a reference to the CallValue object.
+    // Use only for read access.
+    public DataWord getCallValueReadOnly() {
+        return invoke.getCallValue();
+    }
+
+    public void applyLogDiscount() {
+        logDiscountApplied =true;
+    }
+    public boolean wasLogDiscountApplied() {
+        return logDiscountApplied;
+    }
+
     public DataWord getDataSize() {
         return invoke.getDataSize().clone();
+    }
+
+    public DataWord getDataSizeReadOnly() {
+        return invoke.getDataSize();
     }
 
     public DataWord getDataValue(DataWord index) {

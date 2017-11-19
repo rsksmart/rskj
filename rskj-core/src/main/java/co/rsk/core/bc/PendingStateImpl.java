@@ -389,7 +389,7 @@ public class PendingStateImpl implements PendingState {
         TransactionExecutor executor = new TransactionExecutor(
                 tx, best.getCoinbase(), pendingStateRepository,
                 blockStore, blockChain.getReceiptStore(),
-                blockChain.getPerContractLogStore(),
+                blockChain.getEventsStore(),
                 programInvokeFactory, createFakePendingBlock(best)
         );
 
