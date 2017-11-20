@@ -19,7 +19,7 @@
 package co.rsk.trie;
 
 import org.junit.Test;
-import org.testng.Assert;
+import org.junit.Assert;
 
 /**
  * Created by ajlopez on 03/04/2017.

@@ -19,8 +19,8 @@
 package co.rsk.core;
 
 import org.junit.Assert;
+import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
-import org.testng.annotations.Test;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;

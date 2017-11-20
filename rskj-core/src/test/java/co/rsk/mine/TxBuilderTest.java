@@ -22,9 +22,9 @@ import co.rsk.net.BlockProcessor;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.rpc.Simples.SimpleEthereum;
+import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.testng.Assert;
 
 import java.math.BigInteger;
 

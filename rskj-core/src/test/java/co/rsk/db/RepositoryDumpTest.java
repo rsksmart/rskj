@@ -19,7 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.test.World;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 /**
  * Created by ajlopez on 17/02/2017.
