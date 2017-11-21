@@ -24,9 +24,10 @@ public class SelectionRule {
         }
 
         if (compareDifficulties == 0) {
-            if (block.getHeader().getPaidFees() >
-                    PAID_FEES_MULTIPLIER_CRITERIA * currentBlock.getHeader().getPaidFees()
-                    || isThisBlockHashSmaller(block.getHash(), currentBlock.getHash())) {
+            if (block.getHeader().getPaidFees() > PAID_FEES_MULTIPLIER_CRITERIA * currentBlock.getHeader().getPaidFees()) {
+                return true;
+            }
+            if (isThisBlockHashSmaller(block.getHash(), currentBlock.getHash())) {
                 return true;
             }
         }
