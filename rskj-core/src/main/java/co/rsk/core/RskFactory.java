@@ -237,8 +237,10 @@ public class RskFactory {
                                             EthModule ethModule,
                                             ChannelManager channelManager,
                                             Repository repository,
-                                            PeerScoringManager peerScoringManager) {
-        return () -> new Web3RskImpl(rsk, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager);
+                                            PeerScoringManager peerScoringManager,
+                                            NetworkStateExporter networkStateExporter,
+                                            org.ethereum.db.BlockStore blockStore) {
+        return () -> new Web3RskImpl(rsk, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, networkStateExporter, blockStore);
     }
 
     @Bean

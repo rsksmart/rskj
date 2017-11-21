@@ -19,7 +19,6 @@
 package org.ethereum.rpc;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.Rsk;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.PendingStateImpl;
@@ -203,7 +202,7 @@ public class Web3ImplLogsTest {
     @Test
     public void getLogsFromBlockchainWithCallContractAndFilterByContractAddress() throws Exception {
         Web3Impl web3 = getWeb3WithContractCall();
-        Block block1 = web3.worldManager.getBlockchain().getBlockByNumber(1l);
+        Block block1 = web3.getBlockchain().getBlockByNumber(1l);
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         fr.address = Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress());
@@ -250,7 +249,7 @@ public class Web3ImplLogsTest {
     @Test
     public void getLogsFromBlockchainWithCallContractAndFilterByKnownTopic() throws Exception {
         Web3Impl web3 = getWeb3WithContractCall();
-        Block block1 = web3.worldManager.getBlockchain().getBlockByNumber(1l);
+        Block block1 = web3.getBlockchain().getBlockByNumber(1l);
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         fr.topics = new Object[1];
@@ -266,7 +265,7 @@ public class Web3ImplLogsTest {
     @Test
     public void getLogsFromBlockchainWithCallContractAndFilterByKnownTopicInList() throws Exception {
         Web3Impl web3 = getWeb3WithContractCall();
-        Block block1 = web3.worldManager.getBlockchain().getBlockByNumber(1l);
+        Block block1 = web3.getBlockchain().getBlockByNumber(1l);
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         fr.topics = new Object[1];
@@ -444,33 +443,33 @@ public class Web3ImplLogsTest {
         }
     }
 
-    private Web3Impl createWeb3() {
-        return createWeb3(Web3Mocks.getMockEthereum(), WalletFactory.createWallet());
+    private Web3Impl createWeb3(SimpleWorldManager worldManager) {
+        return createWeb3(Web3Mocks.getMockEthereum(worldManager), WalletFactory.createWallet());
     }
 
     private Web3Impl createWeb3(Ethereum eth, Wallet wallet) {
         PersonalModule personalModule = new PersonalModuleWalletEnabled(eth, wallet);
         EthModule ethModule = new EthModule(eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(eth, wallet));
-        return new Web3RskImpl(eth, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), personalModule, ethModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null);
+        return new Web3RskImpl(eth, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), personalModule, ethModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, null);
     }
 
     private Web3Impl getWeb3() {
         World world = new World();
-        Web3Impl web3 = createWeb3();
+        SimpleWorldManager worldManager = new SimpleWorldManager();
+        worldManager.setBlockchain(world.getBlockChain());
+        Web3Impl web3 = createWeb3(worldManager);
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
 
         Block genesis = world.getBlockByName("g00");
 
-        web3.repository = (Repository) world.getBlockChain().getRepository();
-        SimpleWorldManager worldManager = new SimpleWorldManager();
-        worldManager.setBlockchain(world.getBlockChain());
-        web3.worldManager = worldManager;
         return web3;
     }
 
     private Web3Impl getWeb3WithThreeEmptyBlocks() {
         World world = new World();
-        Web3Impl web3 = createWeb3();
+        SimpleWorldManager worldManager = new SimpleWorldManager();
+        worldManager.setBlockchain(world.getBlockChain());
+        Web3Impl web3 = createWeb3(worldManager);
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
 
         Block genesis = world.getBlockByName("g00");
@@ -479,10 +478,6 @@ public class Web3ImplLogsTest {
         Block block2 = new BlockBuilder().parent(block1).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2));
 
-        web3.repository = (Repository) world.getBlockChain().getRepository();
-        SimpleWorldManager worldManager = new SimpleWorldManager();
-        worldManager.setBlockchain(world.getBlockChain());
-        web3.worldManager = worldManager;
         return web3;
     }
 
@@ -517,15 +512,14 @@ public class Web3ImplLogsTest {
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         world.getBlockChain().tryToConnect(block1);
 
-        Web3Impl web3 = createWeb3();
-        web3.personal_newAccountWithSeed("notDefault");
-
-        web3.repository = (Repository) world.getBlockChain().getRepository();
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
         PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
         worldManager.setPendingState(pendingState);
-        web3.worldManager = worldManager;
+
+        Web3Impl web3 = createWeb3(worldManager);
+        web3.personal_newAccountWithSeed("notDefault");
+
         return web3;
     }
 
@@ -542,16 +536,14 @@ public class Web3ImplLogsTest {
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         world.getBlockChain().tryToConnect(block1);
 
-        Web3Impl web3 = createWeb3();
-        web3.personal_newAccountWithSeed("notDefault");
-
-        web3.repository = (Repository) world.getBlockChain().getRepository();
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
         worldManager.setBlockStore(world.getBlockChain().getBlockStore());
         PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
         worldManager.setPendingState(pendingState);
-        web3.worldManager = worldManager;
+
+        Web3Impl web3 = createWeb3(worldManager);
+        web3.personal_newAccountWithSeed("notDefault");
         return web3;
     }
 
@@ -576,17 +568,15 @@ public class Web3ImplLogsTest {
         Block block2 = new BlockBuilder(world).parent(block1).transactions(tx2s).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2));
 
-        Web3Impl web3 = createWeb3();
-        web3.personal_newAccountWithSeed("default");
-        web3.personal_newAccountWithSeed("notDefault");
-
-        web3.repository = (Repository) world.getBlockChain().getRepository();
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
         worldManager.setBlockStore(world.getBlockChain().getBlockStore());
         PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
         worldManager.setPendingState(pendingState);
-        web3.worldManager = worldManager;
+
+        Web3Impl web3 = createWeb3(worldManager);
+        web3.personal_newAccountWithSeed("default");
+        web3.personal_newAccountWithSeed("notDefault");
         return web3;
     }
 
@@ -617,17 +607,16 @@ public class Web3ImplLogsTest {
         Block block3 = new BlockBuilder(world).parent(block2).transactions(tx3s).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block3));
 
-        Web3Impl web3 = createWeb3();
-        web3.personal_newAccountWithSeed("default");
-        web3.personal_newAccountWithSeed("notDefault");
-
-        web3.repository = (Repository) world.getBlockChain().getRepository();
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
         worldManager.setBlockStore(world.getBlockChain().getBlockStore());
         PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
         worldManager.setPendingState(pendingState);
-        web3.worldManager = worldManager;
+
+        Web3Impl web3 = createWeb3(worldManager);
+        web3.personal_newAccountWithSeed("default");
+        web3.personal_newAccountWithSeed("notDefault");
+
         return web3;
     }
 

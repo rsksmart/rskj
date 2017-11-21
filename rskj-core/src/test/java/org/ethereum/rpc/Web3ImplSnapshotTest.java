@@ -29,7 +29,6 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.test.World;
 import co.rsk.validators.BlockValidationRule;
-import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.Simples.SimpleEthereum;
@@ -168,18 +167,14 @@ public class Web3ImplSnapshotTest {
     private static Web3Impl createWeb3(World world, SimpleEthereum ethereum, MinerServer minerServer) {
         MinerClientImpl minerClient = new MinerClientImpl();
         PersonalModule pm = new PersonalModuleWalletDisabled();
-        Web3Impl web3 = new Web3Impl(Web3Mocks.getMockEthereum(), Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null);
 
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
         ethereum.repository = (org.ethereum.facade.Repository) world.getRepository();
         ethereum.worldManager = worldManager;
-
-        BlockValidationRule rule = new DummyBlockValidationRule();
-
         minerClient.setMinerServer(minerServer);
-        web3.worldManager = worldManager;
-        return web3;
+
+        return new Web3Impl(ethereum, Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, Web3Mocks.getMockChannelManager(), ethereum.repository, null);
     }
 
     private static Web3Impl createWeb3(World world) {
