@@ -24,7 +24,6 @@ import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.WorldManager;
-import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Web3;
 import org.ethereum.vm.program.ProgramResult;
@@ -83,8 +82,6 @@ public interface Ethereum {
 
 
     void init();
-
-    ChannelManager getChannelManager();
 
     /**
      * @return - currently pending transactions received from the net

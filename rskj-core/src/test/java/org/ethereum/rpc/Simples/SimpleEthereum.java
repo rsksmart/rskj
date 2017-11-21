@@ -27,7 +27,6 @@ import org.ethereum.facade.Repository;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.manager.WorldManager;
-import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Web3;
 import org.ethereum.vm.program.ProgramResult;
@@ -96,11 +95,6 @@ public class SimpleEthereum implements Ethereum {
     @Override
     public void init() {
 
-    }
-
-    @Override
-    public ChannelManager getChannelManager() {
-        return null;
     }
 
     @Override

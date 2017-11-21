@@ -178,11 +178,6 @@ public class EthereumImpl implements Ethereum {
         return worldManager.getRepository();
     }
 
-    @Override
-    public ChannelManager getChannelManager() {
-        return channelManager;
-    }
-
 
     @Override
     public List<Transaction> getWireTransactions() {
