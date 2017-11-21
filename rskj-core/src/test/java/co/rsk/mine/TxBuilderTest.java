@@ -18,6 +18,7 @@
 
 package co.rsk.mine;
 
+import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.junit.Test;
@@ -30,7 +31,7 @@ public class TxBuilderTest {
     @Test
     public void createBasicTransaction() {
         SimpleEthereum rsk = new SimpleEthereum();
-        TxBuilder builder = new TxBuilder(rsk);
+        TxBuilder builder = new TxBuilder(rsk, (Repository) rsk.repository);
 
         BigInteger gasPrice = BigInteger.ONE;
         BigInteger gasLimit = BigInteger.valueOf(21000);
@@ -46,7 +47,7 @@ public class TxBuilderTest {
     @Test
     public void createAndBroadcastTransaction() {
         SimpleEthereum rsk = new SimpleEthereum();
-        TxBuilder builder = new TxBuilder(rsk);
+        TxBuilder builder = new TxBuilder(rsk, (Repository) rsk.repository);
 
         BigInteger nonce = BigInteger.TEN;
 

@@ -41,6 +41,7 @@ import java.security.SecureRandom;
 public class TxBuilder {
 
     private Ethereum ethereum;
+    private final Repository repository;
 
     private static final Logger logger = LoggerFactory.getLogger("txbuilder");
     private volatile boolean stop = false;
@@ -48,8 +49,9 @@ public class TxBuilder {
     private byte[] privateKeyBytes  = HashUtil.sha3("this is a seed".getBytes(StandardCharsets.UTF_8));
     private ECKey key;
 
-    public TxBuilder(Ethereum ethereum){
+    public TxBuilder(Ethereum ethereum, Repository repository) {
         this.ethereum = ethereum;
+        this.repository = repository;
     }
 
     public void simulateTxs( ) {
@@ -66,8 +68,6 @@ public class TxBuilder {
                         Thread.sleep(60000);
                     }
 
-                    Repository repository = (Repository) ethereum.getRepository();
-
                     SecureRandom random = new SecureRandom();
 
                     AccountState accountState = repository.getAccountState(key.getAddress());
@@ -75,7 +75,7 @@ public class TxBuilder {
 
                     while (!stop) {
                         if ((random.nextInt() % 10) == 0)
-                            nonce = ((Repository) ethereum.getRepository()).getAccountState(key.getAddress()).getNonce();
+                            nonce = repository.getAccountState(key.getAddress()).getNonce();
 
                         TxBuilder.this.createNewTx(nonce);
                         

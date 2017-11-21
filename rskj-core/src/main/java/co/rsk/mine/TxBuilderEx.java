@@ -44,18 +44,11 @@ import java.security.SecureRandom;
 @Component
 public class TxBuilderEx {
 
-    private Ethereum ethereum;
-
-    protected org.ethereum.facade.Blockchain blockchain;
-
     private static final Logger logger = LoggerFactory.getLogger("txbuilderex");
     private volatile boolean stop = false;
     private SecureRandom random = new SecureRandom();
 
-    public void simulateTxs(final Ethereum ethereum, RskSystemProperties properties) {
-        this.ethereum = ethereum;
-        this.blockchain = ethereum.getBlockchain();
-
+    public void simulateTxs(final Ethereum ethereum, RskSystemProperties properties, final Repository repository) {
         final byte[] privateKeyBytes = HashUtil.sha3(properties.simulateTxsExAccountSeed().getBytes(StandardCharsets.UTF_8));
         final ECKey key = ECKey.fromPrivate(privateKeyBytes);
 
@@ -90,11 +83,10 @@ public class TxBuilderEx {
                     } catch (InterruptedException e) {
                         logger.error("Interrupted", e);
                     }
-                    Repository repository = (Repository) ethereum.getRepository();
                     AccountState fromAccountState = repository.getAccountState(key.getAddress());
 
                     Transaction tx = createNewTransaction(privateKeyBytes, targetAddress, BigInteger.valueOf(properties.simulateTxsExFounding()), fromAccountState.getNonce());
-                    sendTransaction(tx);
+                    sendTransaction(tx, ethereum);
                     logger.trace("Funding tx {} nonce {}", 10000000000L, getNonce(tx));
                 }
 
@@ -111,7 +103,7 @@ public class TxBuilderEx {
 
                 while (!stop) {
                     Transaction tx = createNewTransaction(targetAcc.getEcKey().getPrivKeyBytes(), target2Address, BigInteger.valueOf(value), nonce);
-                    sendTransaction(tx);
+                    sendTransaction(tx, ethereum);
                     logger.trace("Send tx value {} nonce {}", value, getNonce(tx));
                     value += 2;
                     lastNonce = nonce;
@@ -130,7 +122,7 @@ public class TxBuilderEx {
                         if (accnonce.compareTo(lastNonce) < 0) {
                             tx = createNewTransaction(targetAcc.getEcKey().getPrivKeyBytes(), target2Address, BigInteger.valueOf(accnonce.intValue() * 2 + 1), accnonce);
                             logger.trace("Resend tx value {} nonce {}", accnonce.intValue() * 2 + 1, getNonce(tx));
-                            sendTransaction(tx);
+                            sendTransaction(tx, ethereum);
                         }
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
@@ -149,10 +141,9 @@ public class TxBuilderEx {
         return new BigInteger(1, bytes).longValue();
     }
 
-    private void sendTransaction(Transaction tx) {
+    private static void sendTransaction(Transaction tx, Ethereum ethereum) {
         //Adds created transaction to the local node's memory pool
         ethereum.submitTransaction(tx);
-
         logger.info("Added pending tx: " + tx.getHash());
     }
 

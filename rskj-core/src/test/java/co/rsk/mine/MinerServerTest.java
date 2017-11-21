@@ -64,8 +64,6 @@ public class MinerServerTest {
         Mockito.when(repository.getSnapshotTo(Mockito.any())).thenReturn(repository);
         Mockito.when(repository.getRoot()).thenReturn(blockchain.getRepository().getRoot());
         Mockito.when(repository.startTracking()).thenReturn(repository);
-        Mockito.when(ethereumImpl.getRepository()).thenReturn((org.ethereum.facade.Repository)
-                blockchain.getRepository());
 
         Transaction tx1 = Tx.create(0, 21000, 100, 0, 0, 0, new Random(0));
         byte[] s1 = new byte[32];
@@ -103,12 +101,11 @@ public class MinerServerTest {
     @Test
     public void submitBitcoinBlock() {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.getRepository()).thenReturn((org.ethereum.facade.Repository) blockchain.getRepository());
         Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, blockchain, null, blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule);
+        MinerServer minerServer = new MinerServerImpl(ethereumImpl, blockchain, null, blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule);
 
         minerServer.start();
         MinerWork work = minerServer.getWork();
@@ -143,11 +140,10 @@ public class MinerServerTest {
         blockchain = world.getBlockChain();
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.getRepository()).thenReturn((org.ethereum.facade.Repository) blockchain.getRepository());
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule);
+        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule);
 
         minerServer.start();
         MinerWork work = minerServer.getWork();
@@ -180,12 +176,11 @@ public class MinerServerTest {
         blockchain = world.getBlockChain();
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.getRepository()).thenReturn((org.ethereum.facade.Repository) blockchain.getRepository());
         Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule);
+        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule);
 
         minerServer.start();
         MinerWork work = minerServer.getWork();
@@ -221,11 +216,10 @@ public class MinerServerTest {
     @Test
     public void workWithNoTransactionsZeroFees() {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.getRepository()).thenReturn((org.ethereum.facade.Repository) blockchain.getRepository());
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule);
+        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule);
 
         minerServer.start();
 
@@ -237,11 +231,10 @@ public class MinerServerTest {
     @Test
     public void initialWorkTurnsNotifyFlagOn() {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.getRepository()).thenReturn((org.ethereum.facade.Repository) blockchain.getRepository());
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule);
+        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule);
 
         minerServer.start();
 
@@ -253,11 +246,10 @@ public class MinerServerTest {
     @Test
     public void secondWorkWithNoChangesTurnsNotifyFlagOff() {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.getRepository()).thenReturn((org.ethereum.facade.Repository) blockchain.getRepository());
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule);
+        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule);
 
         minerServer.start();
 
@@ -273,11 +265,10 @@ public class MinerServerTest {
     @Test
     public void secondBuildBlockToMineTurnsNotifyFlagOff() {
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
-        Mockito.when(ethereumImpl.getRepository()).thenReturn((org.ethereum.facade.Repository) blockchain.getRepository());
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), (Repository) ethereumImpl.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule);
+        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule);
 
         minerServer.start();
 

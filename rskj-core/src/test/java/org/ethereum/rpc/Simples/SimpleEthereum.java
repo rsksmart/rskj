@@ -87,7 +87,6 @@ public class SimpleEthereum implements Ethereum {
         return null;
     }
 
-    @Override
     public Repository getRepository() {
         return repository;
     }

@@ -21,13 +21,10 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
-import org.ethereum.core.PendingState;
 import org.ethereum.facade.Ethereum;
+import org.ethereum.facade.Repository;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
-import org.mockito.Mockito;
-
-import java.math.BigInteger;
 
 import static org.mockito.Mockito.*;
 
@@ -56,11 +53,7 @@ public class Web3Mocks {
         return mock(ChannelManager.class);
     }
 
-    public static PendingState getMockPendingState(BigInteger nonce) {
-        org.ethereum.core.Repository repository = Mockito.mock(org.ethereum.core.Repository.class);
-        Mockito.when(repository.getNonce(Mockito.any())).thenReturn(nonce);
-        PendingState pendingState = Mockito.mock(PendingState.class);
-        Mockito.when(pendingState.getRepository()).thenReturn(repository);
-        return pendingState;
+    public static Repository getMockRepository() {
+        return mock(Repository.class);
     }
 }

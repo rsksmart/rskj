@@ -99,13 +99,14 @@ public class RskFactory {
                       PeerScoringManager peerScoringManager,
                       NodeBlockProcessor nodeBlockProcessor,
                       NodeMessageHandler nodeMessageHandler,
-                      RskSystemProperties rskSystemProperties) {
+                      RskSystemProperties rskSystemProperties,
+                      org.ethereum.core.Repository repository) {
 
         logger.info("Running {},  core version: {}-{}", config.genesisInfo(), config.projectVersion(), config.projectVersionModifier());
         BuildInfo.printInfo();
 
         RskImpl rsk = new RskImpl(worldManager, channelManager, peerServer, programInvokeFactory,
-                pendingState, config, compositeEthereumListener, receiptStore, peerScoringManager, nodeBlockProcessor, nodeMessageHandler);
+                pendingState, config, compositeEthereumListener, receiptStore, peerScoringManager, nodeBlockProcessor, nodeMessageHandler, repository);
 
         rsk.init();
         rsk.getBlockchain().setRsk(true);  //TODO: check if we can remove this field from org.ethereum.facade.Blockchain
@@ -234,8 +235,9 @@ public class RskFactory {
                                             MinerServer minerServer,
                                             PersonalModule personalModule,
                                             EthModule ethModule,
-                                            ChannelManager channelManager) {
-        return () -> new Web3RskImpl(rsk, config, minerClient, minerServer, personalModule, ethModule, channelManager);
+                                            ChannelManager channelManager,
+                                            Repository repository) {
+        return () -> new Web3RskImpl(rsk, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository);
     }
 
     @Bean

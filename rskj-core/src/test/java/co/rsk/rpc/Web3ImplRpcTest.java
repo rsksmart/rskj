@@ -21,6 +21,7 @@ package co.rsk.rpc;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import org.ethereum.facade.Ethereum;
+import org.ethereum.facade.Repository;
 import org.ethereum.rpc.Web3Impl;
 import org.ethereum.rpc.Web3Mocks;
 import org.junit.Assert;
@@ -36,7 +37,8 @@ public class Web3ImplRpcTest {
     public void getRpcModules() {
         Ethereum eth = Web3Mocks.getMockEthereum();
         PersonalModule pm = new PersonalModuleWalletDisabled();
-        Web3Impl web3 = new Web3RskImpl(eth, null, null, null, pm, null, null);
+        Repository repository = Web3Mocks.getMockRepository();
+        Web3Impl web3 = new Web3RskImpl(eth, null, null, null, pm, null, null, repository);
 
         Map<String, String> result = web3.rpc_modules();
 

@@ -450,7 +450,7 @@ public class Web3ImplLogsTest {
     private Web3Impl createWeb3(Ethereum eth, Wallet wallet) {
         PersonalModule personalModule = new PersonalModuleWalletEnabled(eth, wallet);
         EthModule ethModule = new EthModule(eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(eth, wallet));
-        return new Web3RskImpl(eth, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), personalModule, ethModule, Web3Mocks.getMockChannelManager());
+        return new Web3RskImpl(eth, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), personalModule, ethModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository());
     }
 
     private Web3Impl getWeb3() {

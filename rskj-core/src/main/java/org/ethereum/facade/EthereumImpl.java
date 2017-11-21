@@ -64,6 +64,7 @@ public class EthereumImpl implements Ethereum {
     private final ReceiptStore receiptStore;
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
+    private final Repository repository;
 
     public EthereumImpl(WorldManager worldManager,
                         ChannelManager channelManager,
@@ -72,7 +73,8 @@ public class EthereumImpl implements Ethereum {
                         PendingState pendingState,
                         SystemProperties config,
                         CompositeEthereumListener compositeEthereumListener,
-                        ReceiptStore receiptStore) {
+                        ReceiptStore receiptStore,
+                        Repository repository) {
         this.worldManager = worldManager;
         this.channelManager = channelManager;
         this.peerServer = peerServer;
@@ -81,6 +83,7 @@ public class EthereumImpl implements Ethereum {
         this.config = config;
         this.compositeEthereumListener = compositeEthereumListener;
         this.receiptStore = receiptStore;
+        this.repository = repository;
     }
 
     @Override
@@ -164,7 +167,7 @@ public class EthereumImpl implements Ethereum {
         Block bestBlock = getBlockchain().getBestBlock();
         return ReversibleTransactionExecutor.executeTransaction(
                 bestBlock.getCoinbase(),
-                (Repository) getRepository(),
+                repository,
                 worldManager.getBlockStore(),
                 receiptStore,
                 programInvokeFactory,
@@ -172,12 +175,6 @@ public class EthereumImpl implements Ethereum {
                 args
         ).getResult();
     }
-
-    @Override
-    public org.ethereum.facade.Repository getRepository() {
-        return worldManager.getRepository();
-    }
-
 
     @Override
     public List<Transaction> getWireTransactions() {

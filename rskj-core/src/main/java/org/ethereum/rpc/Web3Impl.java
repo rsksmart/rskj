@@ -102,10 +102,11 @@ public class Web3Impl implements Web3 {
                        MinerServer minerServer,
                        PersonalModule personalModule,
                        EthModule ethModule,
-                       ChannelManager channelManager) {
+                       ChannelManager channelManager,
+                       org.ethereum.facade.Repository repository) {
         this.eth = eth;
         this.worldManager = eth.getWorldManager();
-        this.repository = eth.getRepository();
+        this.repository = repository;
         this.minerClient = minerClient;
         this.minerServer = minerServer;
         this.personalModule = personalModule;

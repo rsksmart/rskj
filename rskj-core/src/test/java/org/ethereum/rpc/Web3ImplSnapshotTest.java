@@ -168,7 +168,7 @@ public class Web3ImplSnapshotTest {
     private static Web3Impl createWeb3(World world, SimpleEthereum ethereum, MinerServer minerServer) {
         MinerClientImpl minerClient = new MinerClientImpl();
         PersonalModule pm = new PersonalModuleWalletDisabled();
-        Web3Impl web3 = new Web3Impl(Web3Mocks.getMockEthereum(), Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, Web3Mocks.getMockChannelManager());
+        Web3Impl web3 = new Web3Impl(Web3Mocks.getMockEthereum(), Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository());
 
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());

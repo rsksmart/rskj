@@ -29,6 +29,7 @@ import co.rsk.net.discovery.UDPServer;
 import co.rsk.rpc.CorsConfiguration;
 import org.ethereum.cli.CLIInterface;
 import org.ethereum.config.DefaultConfig;
+import org.ethereum.core.Repository;
 import org.ethereum.rpc.JsonRpcNettyServer;
 import org.ethereum.rpc.JsonRpcWeb3FilterHandler;
 import org.ethereum.rpc.JsonRpcWeb3ServerHandler;
@@ -50,6 +51,7 @@ public class Start {
     private MinerClient minerClient;
     private RskSystemProperties rskSystemProperties;
     private final Web3Factory web3Factory;
+    private final Repository repository;
 
     public static void main(String[] args) throws Exception {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
@@ -58,13 +60,20 @@ public class Start {
     }
 
     @Autowired
-    public Start(Rsk rsk, UDPServer udpServer, MinerServer minerServer, MinerClient minerClient, RskSystemProperties rskSystemProperties, Web3Factory web3Factory) {
+    public Start(Rsk rsk,
+                 UDPServer udpServer,
+                 MinerServer minerServer,
+                 MinerClient minerClient,
+                 RskSystemProperties rskSystemProperties,
+                 Web3Factory web3Factory,
+                 Repository repository) {
         this.rsk = rsk;
         this.udpServer = udpServer;
         this.minerServer = minerServer;
         this.minerClient = minerClient;
         this.rskSystemProperties = rskSystemProperties;
         this.web3Factory = web3Factory;
+        this.repository = repository;
     }
 
     public void startNode(String[] args) throws Exception {
@@ -131,11 +140,11 @@ public class Start {
     }
 
     private void enableSimulateTxs(Rsk rsk) {
-        new TxBuilder(rsk).simulateTxs();
+        new TxBuilder(rsk, repository).simulateTxs();
     }
 
     private void enableSimulateTxsEx(Rsk rsk) {
-        new TxBuilderEx().simulateTxs(rsk, rskSystemProperties);
+        new TxBuilderEx().simulateTxs(rsk, rskSystemProperties, repository);
     }
 
     private void waitRskSyncDone(Rsk rsk) throws InterruptedException {

@@ -33,6 +33,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.BlockStore;
+import org.ethereum.facade.Repository;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.TypeConverter;
@@ -61,8 +62,9 @@ public class Web3RskImpl extends Web3Impl {
                        MinerServer minerServer,
                        PersonalModule personalModule,
                        EthModule ethModule,
-                       ChannelManager channelManager) {
-        super(eth, properties, minerClient, minerServer, personalModule, ethModule, channelManager);
+                       ChannelManager channelManager,
+                       Repository repository) {
+        super(eth, properties, minerClient, minerServer, personalModule, ethModule, channelManager, repository);
     }
 
     public MinerWork mnr_getWork() {

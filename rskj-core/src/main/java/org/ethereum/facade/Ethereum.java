@@ -75,12 +75,6 @@ public interface Ethereum {
      */
     Future<Transaction> submitTransaction(Transaction transaction);
 
-    /**
-     * @return - repository for all state data.
-     */
-    Repository getRepository();
-
-
     void init();
 
     /**
