@@ -250,10 +250,11 @@ public class Web3ImplTest {
     @Test
     public void eth_mining()  {
         Ethereum ethMock = Web3Mocks.getMockEthereum();
+        WorldManager worldManager = Web3Mocks.getMockWorldManager();
         RskSystemProperties mockProperties = Web3Mocks.getMockProperties();
         MinerClient minerClient = new SimpleMinerClient();
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
-        Web3 web3 = new Web3Impl(ethMock, mockProperties, minerClient, null, personalModule, null, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null);
+        Web3 web3 = new Web3Impl(ethMock, worldManager, mockProperties, minerClient, null, personalModule, null, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null);
 
         Assert.assertTrue("Node is not mining", !web3.eth_mining());
 
@@ -959,9 +960,10 @@ public class Web3ImplTest {
         Mockito.when(minerServerMock.getCoinbaseAddress()).thenReturn(Hex.decode(originalCoinbase));
 
         Ethereum ethMock = Web3Mocks.getMockEthereum();
+        WorldManager wmMock = Web3Mocks.getMockWorldManager();
         RskSystemProperties mockProperties = Web3Mocks.getMockProperties();
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
-        Web3 web3 = new Web3Impl(ethMock, mockProperties, null, minerServerMock, personalModule, null, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null);
+        Web3 web3 = new Web3Impl(ethMock, wmMock, mockProperties, null, minerServerMock, personalModule, null, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null);
 
         Assert.assertEquals("0x" + originalCoinbase, web3.eth_coinbase());
         Mockito.verify(minerServerMock, Mockito.times(1)).getCoinbaseAddress();
@@ -1228,11 +1230,11 @@ public class Web3ImplTest {
     }
 
     private Web3Impl createWeb3() {
-        return createWeb3(Web3Mocks.getMockEthereum());
+        return createWeb3(Web3Mocks.getMockEthereum(), Web3Mocks.getMockWorldManager());
     }
 
     private Web3Impl createWeb3(WorldManager worldManager) {
-        return createWeb3(Web3Mocks.getMockEthereum(worldManager));
+        return createWeb3(Web3Mocks.getMockEthereum(), worldManager);
     }
 
     private Web3Impl createWeb3Mocked(World world, Block block1) {
@@ -1244,26 +1246,26 @@ public class Web3ImplTest {
         ProgramResult res = new ProgramResult();
         res.setHReturn(TypeConverter.stringHexToByteArray("0x0000000000000000000000000000000000000000000000000000000064617665"));
         Mockito.when(ethMock.callConstant(Matchers.any())).thenReturn(res);
-        Mockito.when(ethMock.getWorldManager()).thenReturn(worldManager);
-        return createWeb3(ethMock);
+        return createWeb3(ethMock, worldManager);
     }
 
     private Web3Impl createWeb3(SimpleEthereum eth, PeerServer peerServer) {
         wallet = WalletFactory.createWallet();
-        PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(eth, wallet);
-        EthModule ethModule = new EthModule(eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(eth, wallet));
+        WorldManager worldManager = Web3Mocks.getMockWorldManager();
+        PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(eth, wallet, null);
+        EthModule ethModule = new EthModule(eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(eth, wallet, null));
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
-        return new Web3RskImpl(eth, RskSystemProperties.CONFIG, minerClient, Web3Mocks.getMockMinerServer(), personalModule, ethModule, channelManager, Web3Mocks.getMockRepository(), null, null, null, peerServer);
+        return new Web3RskImpl(eth, worldManager, RskSystemProperties.CONFIG, minerClient, Web3Mocks.getMockMinerServer(), personalModule, ethModule, channelManager, Web3Mocks.getMockRepository(), null, null, null, peerServer);
     }
 
-    private Web3Impl createWeb3(Ethereum eth) {
+    private Web3Impl createWeb3(Ethereum eth, WorldManager worldManager) {
         wallet = WalletFactory.createWallet();
-        PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(eth, wallet);
-        EthModule ethModule = new EthModule(eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(eth, wallet));
+        PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(eth, wallet, worldManager.getPendingState());
+        EthModule ethModule = new EthModule(eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(eth, wallet, worldManager.getPendingState()));
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
-        return new Web3RskImpl(eth, RskSystemProperties.CONFIG, minerClient, Web3Mocks.getMockMinerServer(), personalModule, ethModule, channelManager, Web3Mocks.getMockRepository(), null, null, null, null);
+        return new Web3RskImpl(eth, worldManager, RskSystemProperties.CONFIG, minerClient, Web3Mocks.getMockMinerServer(), personalModule, ethModule, channelManager, Web3Mocks.getMockRepository(), null, null, null, null);
     }
 
     @Test
@@ -1278,7 +1280,7 @@ public class Web3ImplTest {
         Ethereum eth = Mockito.mock(Ethereum.class);
         EthModule ethModule = new EthModule(eth, new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)), null);
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
-        Web3Impl web3 = new Web3RskImpl(eth, systemProperties, null, null, personalModule, ethModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, null, null);
+        Web3Impl web3 = new Web3RskImpl(eth, null, systemProperties, null, null, personalModule, ethModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, null, null);
         String contract = "pragma solidity ^0.4.1; contract rsk { function multiply(uint a) returns(uint d) {   return a * 7;   } }";
 
         Map<String, CompilationResultDTO> result = web3.eth_compileSolidity(contract);
@@ -1303,10 +1305,10 @@ public class Web3ImplTest {
         Mockito.when(systemProperties.customSolcPath()).thenReturn(solc);
 
         Wallet wallet = WalletFactory.createWallet();
-        Ethereum eth = Mockito.mock(Ethereum.class, Mockito.RETURNS_DEEP_STUBS);
-        Mockito.when(eth.getWorldManager().getBlockchain().getBestBlock().getNumber()).thenReturn(1L);
-        EthModule ethModule = new EthModule(eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(eth, wallet));
-        Web3Impl web3 = new Web3RskImpl(eth, RskSystemProperties.CONFIG, null, null, new PersonalModuleWalletDisabled(), ethModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, null, null);
+        Ethereum eth = Web3Mocks.getMockEthereum();
+        WorldManager worldManager = Web3Mocks.getMockWorldManager();
+        EthModule ethModule = new EthModule(eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(eth, wallet, null));
+        Web3Impl web3 = new Web3RskImpl(eth, worldManager, RskSystemProperties.CONFIG, null, null, new PersonalModuleWalletDisabled(), ethModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, null, null);
 
         String contract = "pragma solidity ^0.4.1; contract rsk { function multiply(uint a) returns(uint d) {   return a * 7;   } }";
 

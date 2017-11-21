@@ -27,7 +27,6 @@ import org.ethereum.facade.Repository;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.manager.WorldManager;
-import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Web3;
 import org.ethereum.vm.program.ProgramResult;
 
@@ -41,7 +40,6 @@ import java.util.concurrent.Future;
  */
 public class SimpleEthereum implements Ethereum {
 
-    public PeerServer peerServer;
     public Transaction tx;
     public WorldManager worldManager;
     public Repository repository;
@@ -104,11 +102,6 @@ public class SimpleEthereum implements Ethereum {
     @Override
     public long getGasPrice() {
         return new GasPriceTracker().getGasPrice();
-    }
-
-    @Override
-    public WorldManager getWorldManager() {
-        return worldManager;
     }
 
     @Override

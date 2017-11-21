@@ -18,6 +18,7 @@
 
 package co.rsk.mine;
 
+import co.rsk.net.BlockProcessor;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -40,7 +41,8 @@ import java.security.SecureRandom;
 
 public class TxBuilder {
 
-    private Ethereum ethereum;
+    private final Ethereum ethereum;
+    private final BlockProcessor blockProcessor;
     private final Repository repository;
 
     private static final Logger logger = LoggerFactory.getLogger("txbuilder");
@@ -49,8 +51,9 @@ public class TxBuilder {
     private byte[] privateKeyBytes  = HashUtil.sha3("this is a seed".getBytes(StandardCharsets.UTF_8));
     private ECKey key;
 
-    public TxBuilder(Ethereum ethereum, Repository repository) {
+    public TxBuilder(Ethereum ethereum, BlockProcessor blockProcessor, Repository repository) {
         this.ethereum = ethereum;
+        this.blockProcessor = blockProcessor;
         this.repository = repository;
     }
 
@@ -64,7 +67,7 @@ public class TxBuilder {
                 try {
                     Thread.sleep(60000);
 
-                    while (ethereum.getWorldManager().getNodeBlockProcessor().isSyncingBlocks()) {
+                    while (blockProcessor.isSyncingBlocks()) {
                         Thread.sleep(60000);
                     }
 

@@ -174,7 +174,7 @@ public class Web3ImplSnapshotTest {
         ethereum.worldManager = worldManager;
         minerClient.setMinerServer(minerServer);
 
-        return new Web3Impl(ethereum, Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, Web3Mocks.getMockChannelManager(), ethereum.repository, null, null);
+        return new Web3Impl(ethereum, worldManager, Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, Web3Mocks.getMockChannelManager(), ethereum.repository, null, null);
     }
 
     private static Web3Impl createWeb3(World world) {
@@ -185,7 +185,7 @@ public class Web3ImplSnapshotTest {
     static MinerServer getMinerServerForTest(World world, SimpleEthereum ethereum) {
         BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
         return new MinerServerImpl(ethereum, world.getBlockChain(), world.getBlockChain().getBlockStore(),
-                world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), ConfigUtils.getDefaultMiningConfig(), rule);
+                world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), ConfigUtils.getDefaultMiningConfig(), rule, world.getBlockProcessor());
     }
 
     private static void addBlocks(Blockchain blockchain, int size) {

@@ -41,6 +41,7 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
+import org.ethereum.manager.WorldManager;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.Channel;
@@ -105,6 +106,7 @@ public class Web3Impl implements Web3 {
     private EthModule ethModule;
 
     protected Web3Impl(Ethereum eth,
+                       WorldManager worldManager,
                        RskSystemProperties properties,
                        MinerClient minerClient,
                        MinerServer minerServer,
@@ -123,12 +125,12 @@ public class Web3Impl implements Web3 {
         this.channelManager = channelManager;
         this.peerScoringManager = peerScoringManager;
         this.peerServer = peerServer;
-        this.blockchain = eth.getWorldManager().getBlockchain();
-        this.nodeBlockProcessor = eth.getWorldManager().getNodeBlockProcessor();
-        this.hashRateCalculator = eth.getWorldManager().getHashRateCalculator();
-        this.configCapabilities = eth.getWorldManager().getConfigCapabilities();
-        this.blockStore = eth.getWorldManager().getBlockStore();
-        this.pendingState = eth.getWorldManager().getPendingState();
+        this.blockchain = worldManager.getBlockchain();
+        this.nodeBlockProcessor = worldManager.getNodeBlockProcessor();
+        this.hashRateCalculator = worldManager.getHashRateCalculator();
+        this.configCapabilities = worldManager.getConfigCapabilities();
+        this.blockStore = worldManager.getBlockStore();
+        this.pendingState = worldManager.getPendingState();
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 
         compositeEthereumListener = new CompositeEthereumListener();

@@ -230,6 +230,7 @@ public class RskFactory {
 
     @Bean
     public Start.Web3Factory getWeb3Factory(Rsk rsk,
+                                            WorldManager worldManager,
                                             RskSystemProperties config,
                                             MinerClient minerClient,
                                             MinerServer minerServer,
@@ -241,7 +242,7 @@ public class RskFactory {
                                             NetworkStateExporter networkStateExporter,
                                             org.ethereum.db.BlockStore blockStore,
                                             PeerServer peerServer) {
-        return () -> new Web3RskImpl(rsk, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, networkStateExporter, blockStore, peerServer);
+        return () -> new Web3RskImpl(rsk, worldManager, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, networkStateExporter, blockStore, peerServer);
     }
 
     @Bean
@@ -336,21 +337,21 @@ public class RskFactory {
     }
 
     @Bean
-    public PersonalModule getPersonalModuleWallet(Rsk rsk, Wallet wallet) {
+    public PersonalModule getPersonalModuleWallet(Rsk rsk, Wallet wallet, PendingState pendingState) {
         if (wallet == null) {
             return new PersonalModuleWalletDisabled();
         }
 
-        return new PersonalModuleWalletEnabled(rsk, wallet);
+        return new PersonalModuleWalletEnabled(rsk, wallet, pendingState);
     }
 
     @Bean
-    public EthModuleWallet getEthModuleWallet(Rsk rsk, Wallet wallet) {
+    public EthModuleWallet getEthModuleWallet(Rsk rsk, Wallet wallet, PendingState pendingState) {
         if (wallet == null) {
             return new EthModuleWalletDisabled();
         }
 
-        return new EthModuleWalletEnabled(rsk, wallet);
+        return new EthModuleWalletEnabled(rsk, wallet, pendingState);
     }
 
     @Bean

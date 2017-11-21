@@ -30,15 +30,13 @@ import static org.mockito.Mockito.*;
 
 public class Web3Mocks {
     public static Ethereum getMockEthereum() {
-        WorldManager mockWorldManager = mock(WorldManager.class, RETURNS_DEEP_STUBS);
-        when(mockWorldManager.getBlockchain().getBestBlock().getNumber()).thenReturn(0L);
-        return getMockEthereum(mockWorldManager);
+        return mock(Ethereum.class);
     }
 
-    public static Ethereum getMockEthereum(WorldManager worldManager) {
-        Ethereum ethMock = mock(Ethereum.class);
-        when(ethMock.getWorldManager()).thenReturn(worldManager);
-        return ethMock;
+    public static WorldManager getMockWorldManager() {
+        WorldManager mockWorldManager = mock(WorldManager.class, RETURNS_DEEP_STUBS);
+        when(mockWorldManager.getBlockchain().getBestBlock().getNumber()).thenReturn(0L);
+        return mockWorldManager;
     }
 
     public static RskSystemProperties getMockProperties() {

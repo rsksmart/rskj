@@ -67,12 +67,11 @@ public class Web3RskImplTest {
 
         Mockito.when(worldManager.getBlockchain()).thenReturn(blockchain);
         Mockito.when(blockchain.getBestBlock()).thenReturn(block);
-        Mockito.when(rsk.getWorldManager()).thenReturn(worldManager);
 
         Wallet wallet = WalletFactory.createWallet();
-        PersonalModule pm = new PersonalModuleWalletEnabled(rsk, wallet);
-        EthModule em = new EthModule(rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(rsk, wallet));
-        Web3RskImpl web3 = new Web3RskImpl(rsk, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, networkStateExporter, blockStore, null);
+        PersonalModule pm = new PersonalModuleWalletEnabled(rsk, wallet, null);
+        EthModule em = new EthModule(rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(rsk, wallet, null));
+        Web3RskImpl web3 = new Web3RskImpl(rsk, worldManager, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, networkStateExporter, blockStore, null);
         web3.ext_dumpState();
     }
 

@@ -185,9 +185,4 @@ public class EthereumImpl implements Ethereum {
     public long getGasPrice() {
         return gasPriceTracker.getGasPrice();
     }
-
-    // TODO Review world manager expose
-    @Override
-    public WorldManager getWorldManager() { return worldManager; }
-
 }

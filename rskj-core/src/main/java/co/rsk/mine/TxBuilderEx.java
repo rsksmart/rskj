@@ -26,6 +26,7 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.facade.Ethereum;
+import org.ethereum.manager.WorldManager;
 import org.ethereum.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +49,10 @@ public class TxBuilderEx {
     private volatile boolean stop = false;
     private SecureRandom random = new SecureRandom();
 
-    public void simulateTxs(final Ethereum ethereum, RskSystemProperties properties, final Repository repository) {
+    public void simulateTxs(final Ethereum ethereum,
+                            WorldManager worldManager,
+                            RskSystemProperties properties,
+                            final Repository repository) {
         final byte[] privateKeyBytes = HashUtil.sha3(properties.simulateTxsExAccountSeed().getBytes(StandardCharsets.UTF_8));
         final ECKey key = ECKey.fromPrivate(privateKeyBytes);
 
@@ -69,7 +73,7 @@ public class TxBuilderEx {
                     logger.error("Interrupted", e);
                 }
 
-                while (ethereum.getWorldManager().getNodeBlockProcessor() != null && ethereum.getWorldManager().getNodeBlockProcessor().isSyncingBlocks()) {
+                while (worldManager.getNodeBlockProcessor() != null && worldManager.getNodeBlockProcessor().isSyncingBlocks()) {
                     try {
                         Thread.sleep(60000);
                     } catch (InterruptedException e) {
@@ -112,7 +116,7 @@ public class TxBuilderEx {
                         SecureRandom r = new SecureRandom();
                         Thread.sleep(10000 + (long)r.nextInt(20000));
 
-                        Repository prepository = ethereum.getWorldManager().getPendingState().getRepository();
+                        Repository prepository = worldManager.getPendingState().getRepository();
                         AccountState accountState;
 
                         accountState = prepository.getAccountState(targetAcc.getAddress());
