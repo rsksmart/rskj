@@ -50,9 +50,22 @@ public class PeersInformation {
 
     public Optional<MessageChannel> getBestPeer() {
         return getCandidates()
+                .max(this::peerComparator)
                 .map(Map.Entry::getValue)
-                .max(SyncPeerStatus::peerTotalDifficultyComparator)
                 .map(SyncPeerStatus::getMessageChannel);
+    }
+
+    private int peerComparator(Map.Entry<NodeID, SyncPeerStatus> entry, Map.Entry<NodeID, SyncPeerStatus> other) {
+        int score = syncInformation.getScore(entry.getKey());
+        int otherScore = syncInformation.getScore(other.getKey());
+        if (score >= 0 && otherScore >= 0) {
+            return entry.getValue().peerTotalDifficultyComparator(other.getValue());
+        } else if (score < otherScore){
+            return -1;
+        } else if (score > otherScore){
+            return 1;
+        }
+        return entry.getValue().peerTotalDifficultyComparator(other.getValue());
     }
 
     private Stream<Map.Entry<NodeID,SyncPeerStatus>> getCandidates(){

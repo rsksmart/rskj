@@ -357,6 +357,11 @@ public class SyncProcessor implements SyncEventsHandler {
             peerScoringManager.recordEvent(peerId, null, eventType);
         }
 
+        @Override
+        public int getScore(NodeID peerId) {
+            return peerScoringManager.getPeerScoring(peerId).getScore();
+        }
+
         public MessageChannel getSelectedPeerChannel() {
             return peerStatuses.getPeer(selectedPeerId).getMessageChannel();
         }

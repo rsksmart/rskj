@@ -34,6 +34,11 @@ public class SimpleSyncInformation implements SyncInformation {
     }
 
     @Override
+    public int getScore(NodeID key) {
+        return 1;
+    }
+
+    @Override
     public boolean hasLowerDifficulty(NodeID nodeID) {
         return hasLowerDifficulty;
     }

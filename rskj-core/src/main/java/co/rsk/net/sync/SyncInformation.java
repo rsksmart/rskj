@@ -24,4 +24,6 @@ public interface SyncInformation {
     boolean hasGoodReputation(NodeID nodeID);
 
     void reportEvent(String message, EventType eventType, NodeID peerId);
+
+    int getScore(NodeID key);
 }
