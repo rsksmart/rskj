@@ -184,18 +184,18 @@ public class RLPTest {
         byte[] expectedL1 = {(byte) 0x88, (byte) 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,(byte) 0xFF, (byte) 0xFF, (byte) 0xFF,(byte) 0xFF};
         testEncodeDecodeLong(expectedL1 ,Long.MAX_VALUE);
 
-        byte[] expectedL2 = {(byte) 0x88, (byte) 0x80, (byte) 0x00, (byte) 0x00, (byte) 0x00,(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
-        testEncodeDecodeLong(expectedL2 ,Long.MIN_VALUE);
+        byte[] expectedL2 = {(byte) 0x88, (byte) 0x08, (byte) 0x00, (byte) 0x00, (byte) 0x00,(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+        testEncodeDecodeLong(expectedL2 ,0x0800000000000000L);
 
         byte[] expectedL3 = {(byte) 0x87, (byte) 0x80, (byte) 0x00, (byte) 0x00,(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
-        testEncodeDecodeLong(expectedL3 ,-((long) 1<<55));
+        testEncodeDecodeLong(expectedL3 ,0x80000000000000L);
 
 
         byte[] expectedL4 = {(byte) 0x87, (byte) 0x01, (byte) 0x00, (byte) 0x00,(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
         testEncodeDecodeLong(expectedL4 ,(1L<<48));
 
         byte[] expectedL5 = {(byte) 0x87, (byte) 0xFF, (byte) 0x00, (byte) 0x00,(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
-        testEncodeDecodeLong(expectedL5 ,-((long) 1<<48));
+        testEncodeDecodeLong(expectedL5 ,0xff000000000000L);
 
     }
 

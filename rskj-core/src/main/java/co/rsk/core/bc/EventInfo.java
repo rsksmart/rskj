@@ -20,12 +20,23 @@ public class EventInfo {
     List<DataWord> topics = new ArrayList<>();
     byte[] data = new byte[]{};
 
-    /* Log info in encoded form */
+    /* Eventinfo in encoded form */
     private byte[] rlpEncoded;
 
     public EventInfo(byte[] rlp) {
+        decode(rlp);
+    }
 
-        ArrayList<RLPElement> params = RLP.decode2(rlp);
+    public EventInfo() {
+    }
+
+    public void decode(byte[] rlp) {
+        RLPList params = (RLPList) RLP.decode2(rlp);
+        decode(params);
+        rlpEncoded = rlp;
+    }
+
+    public void decode(RLPList params){
         RLPList logInfo = (RLPList) params.get(0);
 
         RLPList topics = (RLPList) logInfo.get(0);
@@ -38,9 +49,8 @@ public class EventInfo {
             byte[] topic = topic1.getRLPData();
             this.topics.add(new DataWord(topic));
         }
-
-        rlpEncoded = rlp;
     }
+
 
     public EventInfo(List<DataWord> topics, byte[] data,int txindex) {
         this.topics = (topics != null) ? topics : new ArrayList<DataWord>();

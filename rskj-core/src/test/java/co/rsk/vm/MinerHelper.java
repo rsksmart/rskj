@@ -74,9 +74,7 @@ public class MinerHelper {
         gasLimitCalculator = new GasLimitCalculator();
     }
 
-    public void AddToEvents(int i,Events events,TransactionExecutor txExecutor ) {
-        BlockExecutor.AddToEvents(i,events,txExecutor );
-    }
+
 
     public void processBlock( Block block, Block parent) {
         latestStateRootHash = null;
@@ -133,8 +131,8 @@ public class MinerHelper {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(executor.getVMLogs());
 
-            if (executor.getVMLogs()!=null)
-                AddToEvents(i,events,executor);
+            if (executor.getVMEvents()!=null)
+                events.addAll(executor.getVMEvents());
 
             txReceipts.add(receipt);
             i++;
@@ -146,13 +144,17 @@ public class MinerHelper {
         processBlock(newBlock, parent);
 
         newBlock.getHeader().setReceiptsRoot(BlockChainImpl.calcReceiptsTrie(txReceipts));
-        newBlock.getHeader().setEventsRoot(BlockResult.calculateEventsTrie(events));
+        newBlock.getHeader().setEventsRoot(BlockResult.calculateEventsTrie(events.getList()));
         newBlock.getHeader().setStateRoot(latestStateRootHash);
         newBlock.getHeader().setGasUsed(totalGasUsed);
 
         Bloom logBloom = new Bloom();
         for (TransactionReceipt receipt : txReceipts) {
             logBloom.or(receipt.getBloomFilter());
+        }
+
+        for (EventInfoItem item : events.getList()) {
+            logBloom.or(item.getBloomFilter());
         }
 
         newBlock.getHeader().setLogsBloom(logBloom.getData());

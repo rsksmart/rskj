@@ -1,5 +1,6 @@
 package co.rsk.core.bc;
 
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.LogInfo;
 
@@ -13,45 +14,38 @@ import java.util.Map;
  * a List of events that belong to a single contract address in a block.
  */
 public class EventsPerAccount {
-    Map<byte[], EventInfo> map;
+    // The key is the lognum
+    List<EventInfo> list;
 
     public EventsPerAccount() {
-        map = new HashMap<>();
+        list = new ArrayList<>();
     }
 
-    // The key is the transaction index and log number
-    public Map<byte[], EventInfo> getMap() {
-        return map;
+    public List<EventInfo> getList() {
+        return list;
     }
 
-    // Important: The key of the trie is the txIndex plus logNum
-    // to be able to paralellize transaction processing and make
-    // the EventTree independant on the order of processing.
-    public byte[] encodeKey(int txIndex, int logNum) {
-        byte[] _txIndex = RLP.encodeInt(txIndex);
-        byte[] _logNum = RLP.encodeInt(logNum);
-        return RLP.encodeList(_txIndex,_logNum);
+    public int size() {
+        return list.size();
     }
 
-    public void put(int txIndex,int logNum,EventInfo li) {
-        byte[] key = encodeKey(txIndex,logNum);
-        map.put(key,li);
+    public void add(EventInfo li) {
+        list.add(li);
     }
 
-    public EventInfo get(int txIndex,int logNum) {
-        byte[] key = encodeKey(txIndex,logNum);
-        return map.get(key);
+    public EventInfo get(int logNum) {
+        return list.get(logNum);
     }
 
     public boolean isEmpty() {
-        return map.isEmpty();
+        return list.isEmpty();
     }
 
     public byte[] getEncoded() {
         List<byte[]> payloads = new ArrayList<>();
 
-        for (byte[] key : map.keySet()){
-            byte[] payload = map.get(key).getEncoded();
+        for (int i=0;i<list.size();i++){
+            byte[] payload = list.get(i).getEncoded();
             payloads.add(payload);
         }
         return RLP.encodeList(payloads);

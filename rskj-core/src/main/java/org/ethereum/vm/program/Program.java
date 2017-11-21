@@ -53,6 +53,7 @@ import static java.math.BigInteger.ZERO;
 import static org.apache.commons.lang3.ArrayUtils.*;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.ethereum.util.ByteUtil.byteArrayToInt;
 
 /**
  * @author Roman Mandeleil
@@ -79,6 +80,10 @@ public class Program {
 
     //Max size for stack checks
     private static final int MAX_STACKSIZE = 1024;
+
+    private DataWord configurationRegister = new DataWord();
+
+    public static final DataWord CONFIG_MEMORY_OFFSET = new DataWord().setMax().setByte(31,(byte) 0xE0);
 
     private Transaction transaction;
 
@@ -205,6 +210,24 @@ public class Program {
     public Program(byte[] ops, ProgramInvoke programInvoke, Transaction transaction) {
         this(ops, programInvoke);
         this.transaction = transaction;
+    }
+
+    // An address less than the base address of the configuration register could have an overlap
+    // with the 32 byte configuration register.
+    // E.g. the address could be 0xff...0xd0.
+    // However, we do not support this mixed access. All accesses must start after 0xff...0xe0.
+    // MSTORE8 accesses are allowed starting from 0xff...0xe0.
+
+    public static boolean isExactMatchInternalConfigurationRegister(DataWord addr) {
+        // Internal configuration memory is stored in the last 32 bytes
+        // of memory.
+        return addr.equalValue(CONFIG_MEMORY_OFFSET);
+    }
+
+    public static boolean isByteInsideInternalConfigurationRegister(DataWord addr) {
+        // Internal configuration memory is stored in the last 32 bytes
+        // of memory.
+        return addr.containsMask(CONFIG_MEMORY_OFFSET);
     }
 
     public static void setUseDataWordPool(Boolean value) {
@@ -451,8 +474,38 @@ public class Program {
         return memory.size();
     }
 
+    public int getTxIndex() {
+     // TODO: when ajlopez code is merged, this should point to that code
+        return 0;
+    }
+
+    public boolean isEventModeLoggingSet() {
+        return (configurationRegister.getByte(31) & 0x01)!=0;
+    }
+
+    public DataWord getConfigurationRegister() {
+        return configurationRegister.clone();
+    }
+
+    public void setConfigurationRegisterByte(int offset,byte val) {
+        configurationRegister.setByte(offset,val);
+    }
+
+    public int byteAsUnisgnedToInt(byte v) {
+        if (v<0) return (256+v);
+        return v;
+    }
+
+    public int getOffsetInInternalConfigurationRegister(DataWord addr) {
+     // Assumes the addr is effectively in the register memory space
+        return byteAsUnisgnedToInt(addr.getByte(31))-0xe0;
+    }
+
+    public void setConfigurationRegister(DataWord value) {
+        configurationRegister.assign(value);
+    }
+
     public void memorySave(DataWord addrB, DataWord value) {
-        //
         memory.write(addrB.intValue(), value.getData(), value.getData().length, false);
     }
 
@@ -483,7 +536,8 @@ public class Program {
 
 
     public DataWord memoryLoad(DataWord addr) {
-        return memory.readWord(addr.intValue());
+
+            return memory.readWord(addr.intValue());
     }
 
     public DataWord memoryLoad(int address) {
@@ -672,6 +726,7 @@ public class Program {
         track.commit();
         getResult().addDeleteAccounts(result.getDeleteAccounts());
         getResult().addLogInfos(result.getLogInfoList());
+        getResult().addEventInfos(result.getEventInfoItemList());
 
         // IN SUCCESS PUSH THE ADDRESS INTO THE STACK
         stackPush(new DataWord(newAddress));
@@ -870,7 +925,7 @@ public class Program {
 
             internalTx.reject();
             childResult .rejectInternalTransactions();
-            childResult.rejectLogInfos();
+            childResult.rejectLogInfos(); // is this really necessary?
 
             track.rollback();
             return false;

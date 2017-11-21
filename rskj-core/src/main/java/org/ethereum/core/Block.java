@@ -123,19 +123,19 @@ public class Block {
                  byte[] mixHash,
                  byte[] nonce, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                  byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] receiptsRoot,
-                 byte[] contractsLogRoot,
+                 byte[] eventsRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
-                gasUsed, timestamp, extraData, mixHash, nonce, receiptsRoot, contractsLogRoot, transactionsRoot,
+                gasUsed, timestamp, extraData, mixHash, nonce, receiptsRoot, eventsRoot, transactionsRoot,
                 stateRoot, transactionsList, uncleList, minimumGasPrice, 0L);
 
         this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
         this.header.setBitcoinMergedMiningHeader(bitcoinMergedMiningHeader);
         this.header.setBitcoinMergedMiningMerkleProof(bitcoinMergedMiningMerkleProof);
 
-        this.header.setTransactionsRoot(calcTxTrie(getTransactionsList()));
+
         if (!Hex.toHexString(transactionsRoot).
                 equals(Hex.toHexString(this.header.getTxTrieRoot()))){
             logger.error("Transaction root miss-calculate, block: {}", getNumber());
@@ -145,7 +145,7 @@ public class Block {
 
         this.header.setStateRoot(stateRoot);
         this.header.setReceiptsRoot(receiptsRoot);
-        this.header.setEventsRoot(contractsLogRoot);
+        this.header.setEventsRoot(eventsRoot);
 
         this.flushRLP();
     }
@@ -154,7 +154,7 @@ public class Block {
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp, byte[] extraData,
                  byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
-                 byte[] contractsLogRoot,
+                 byte[] eventsRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, long paidFees) {
 
@@ -162,7 +162,8 @@ public class Block {
                 gasUsed, timestamp, extraData, mixHash, nonce, transactionsList, uncleList, minimumGasPrice);
 
         this.header.setPaidFees(paidFees);
-        this.header.setTransactionsRoot(Block.getTxTrie(transactionsList).getHash());
+        this.header.setTransactionsRoot(calcTxTrie(transactionsList));
+
         if (!Hex.toHexString(transactionsRoot).
                 equals(Hex.toHexString(this.header.getTxTrieRoot()))) {
             logger.error("Transaction root miss-calculate, block: {}", getNumber());
@@ -171,7 +172,7 @@ public class Block {
 
         this.header.setStateRoot(stateRoot);
         this.header.setReceiptsRoot(receiptsRoot);
-        this.header.setEventsRoot(contractsLogRoot);
+        this.header.setEventsRoot(eventsRoot);
         this.flushRLP();
     }
 

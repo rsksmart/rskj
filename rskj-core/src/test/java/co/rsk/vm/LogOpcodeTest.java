@@ -4,7 +4,7 @@ package co.rsk.vm;
 import co.rsk.asm.EVMAssembler;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.*;
 import co.rsk.test.World;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -12,6 +12,8 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.Utils;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -22,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
+import java.awt.*;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -30,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -57,15 +61,19 @@ public class LogOpcodeTest {
                 "CALLVALUE "   // Store value in memory position 0
                 +"PUSH1 0x00 " // Offset in memory to store
                 +"MSTORE " // store in memory
-        +"PUSH1 0x00 "
-            +"NOT " // 1st topic: Topic 0xff......0xff
-            +"PUSH1 0x12 " // 2nd topic: Sample topic
-            +"CALLER " // 3nd topic: source address
-            +"LASTEVENTBLOCKNUMBER "  // 4th topic
-            +"PUSH1 0x08 " // memSize, only 8 bytes, blocknumber firs in 64-bit.
-            +"PUSH1 0x18 " // memStart, offset 24 (last 8 LSBs)
-            +"LOG4 "
-            +"LASTEVENTBLOCKNUMBER", 12,
+
+            +"PUSH1 0x01 " // change configurationRegister
+            +"PUSH1 0x00 " //
+            +"NOT "        // 0xff......0xff
+            +"MSTORE8 "    // config register changed
+
+            +"PUSH1 0x12 " // 1st topic: Sample topic
+            +"CALLER "     // 2nd topic: source address
+
+            +"PUSH1 0x20 " // memSize, only 8 bytes, blocknumber firs in 64-bit.
+            +"PUSH1 0x00 " // memStart, offset 24 (last 8 LSBs)
+            +"LOG2 "
+            +"LASTEVENTBLOCKNUMBER", 13,
                 "0000000000000000000000000000000000000000000000000000000000000021"); // 0x21 = 33 is the mock block number
     // Gasused = 2163
       // Now check that the last event has been set to 33.
@@ -120,27 +128,53 @@ public class LogOpcodeTest {
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
 
         String asm =
-                         "PUSH1 0x10 " // size = 20
+                         "PUSH1 0x55 " // size will be set later
                         +"PUSH1 0x0C " // offset = 12
                         +"PUSH1 0x00 CODECOPY " // (7b) Extract real code into address 0, skip first 12 bytes, copy 20 bytes
-                        +"PUSH1 0x10 PUSH1 0x00 RETURN " // (5b) offset 0, size 0x14, now return the first code
+                        +"PUSH1 0x55 PUSH1 0x00 RETURN " // (5b) offset 0, size 0x55, now return the first code
+
                         +"CALLVALUE "   // Store value in memory position 0
-                        +"PUSH1 0x00 " // Offset in memory to store
+                        +"PUSH1 0x20 " // Offset 32 in memory to store
                         +"MSTORE " // store in memory
-                        +"PUSH1 0x00 "
-                        +"NOT " // 1st topic: Topic 0xff......0xff
-                        +"PUSH1 0x12 " // 2nd topic: Sample topic
-                        +"CALLER " // 3nd topic: source address
-                        +"LASTEVENTBLOCKNUMBER "  // 4th topic
-                        +"PUSH1 0x08 " // memSize, only 8 bytes, blocknumber firs in 64-bit.
-                        +"PUSH1 0x18 " // memStart, offset 24 (last 8 LSBs)
-                        +"LOG4 ";
+
+                        /*-------------------------------
+                        // change configurationRegister, using full 32-byte access
+                        +"PUSH1 0x01 " // set LSB
+                        +"PUSH1 0x20 " //
+                        +"PUSH1 0x00 " // 0x00 - 0x20
+                        +"SUB "        // computes 0xff .... 0xe0
+                        +"MSTORE "
+                        ---------------------------------*/
+
+                        // change configurationRegister
+                        // Alternative, using MSTORE8
+                        +"PUSH1 0x01 " // set LSB
+                        +"PUSH1 0x00 " //
+                        +"NOT "        // 0xff .. x0ff
+                        +"MSTORE8 "    // config register changed
+
+
+                        +"LASTEVENTBLOCKNUMBER "
+                        +"PUSH1 0x00 " // Offset 0x00 in memory, last 8 bytes will end up in offs 24..31
+                        +"MSTORE " // store in memory
+
+                        +"PUSH1 0x12 " // 1st topic: Sample topic
+                        +"CALLER " // 2nd topic: source address
+
+                        +"PUSH1 0x28 " // memSize, 40 bytes, 32 bytes value + 8 bytes blocknumber first 64-bits.
+                        +"PUSH1 0x18 " // memStart, offset 24 (last 8 LSBs of LASTEVENT...)
+                        +"LOG2 ";
 
         /*
         EVMAssembler assembler = new EVMAssembler();
         byte[] code = assembler.assemble(asm); */
 
         byte[] code = compiler.compile(asm);
+        assertEquals(code[1],0x55);
+        assertEquals(code[8],0x55);
+        code[1] = (byte) (code.length-12); // set code size
+        code[8] = code[1];
+
         // Creates a contract
         Transaction tx1 = createTx(world.getRepository(), sender, new byte[0], code);
 
@@ -154,6 +188,7 @@ public class LogOpcodeTest {
 
         // block1 has no transactions
         mh.completeBlock(block1,blockchain.getBestBlock());
+        long initialBlockNum = block1.getNumber();
         assertEquals(ImportResult.IMPORTED_BEST,blockchain.tryToConnect(block1));
 
         // block2 has one transaction tx1 that creates a contract
@@ -161,28 +196,64 @@ public class LogOpcodeTest {
         assertEquals(ImportResult.IMPORTED_BEST,blockchain.tryToConnect(block2));
 
         // Now we can directly check the store and see the new code.
-        byte[] createdContract = tx1.getContractAddress();
-        byte[] expectedCode  = Arrays.copyOfRange(code, 12, 12+16);
-        ContractDetails details = blockchain.getRepository().getContractDetails(createdContract);
+        byte[] createdContractAddress = tx1.getContractAddress();
+        byte[] expectedCode  = Arrays.copyOfRange(code, 12, code.length);
+        ContractDetails details = blockchain.getRepository().getContractDetails(createdContractAddress);
         byte[] installedCode = details.getCode();
         // assert the contract has been created
         Assert.assertTrue(Arrays.equals(expectedCode, installedCode));
 
         // Now check the block2 Events...
 
-       // Now send money to the contract
+        long bnum0 = world.getRepository().getBlockNumberOfLastEvent(createdContractAddress);
+        assertEquals(0,bnum0); // no change yet.
 
-        Transaction tx2 = createTx(world.getRepository(), sender, tx1.getContractAddress(), new byte[0] );
-        txs.clear();
-        txs.add(tx2);
-        Block block3 = BlockGenerator.createChildBlock(block2,txs);
 
-        // Single transaction paying the contract
-        mh.completeBlock(block3,blockchain.getBestBlock());
-        assertEquals(ImportResult.IMPORTED_BEST,blockchain.tryToConnect(block3));
+        // Now send money to the contract
+        Block block3 = sendMoney(world,mh,sender,createdContractAddress);
+        long moneySentBlockNum = block3.getNumber();
+        // Now we'll check that the blocknumberoflastevent has been updated
+        long bnum = world.getRepository().getBlockNumberOfLastEvent(createdContractAddress);
+
+        assertEquals(moneySentBlockNum,bnum);
+        // Now we'll check that
+
+        // Once more we send money
+        Block block4 = sendMoney(world,mh,sender,createdContractAddress);
+        long bnum4 = world.getRepository().getBlockNumberOfLastEvent(createdContractAddress);
+        assertEquals(4,bnum4);
+        // Now we'll check that the EventsLog contains the correct data
+        // Let's build it by hand!
+        List<DataWord> topics = new ArrayList<>();
+        topics.add(new DataWord(sender.getAddress()));
+        topics.add(new DataWord(0x12)); // sample topic
+        byte[] data = new byte[0x28];
+        new DataWord(3).copyLastNBytes(data,0,8);
+        new DataWord(valueToSend).copyTo(data,8);
+
+        EventInfo eventInfo = new EventInfo(topics,data,0);
+        List<EventInfoItem> events= new ArrayList<>();
+        events.add(new EventInfoItem(eventInfo,createdContractAddress));
+        byte[] eventsTrieRoot = BlockResult.calculateEventsTrie(events);
+        assertArrayEquals(eventsTrieRoot,block4.getEventsRoot());
+
+
     }
+    static final int valueToSend = 1000;
 
+    protected Block sendMoney(World world,MinerHelper mh,ECKey sender,byte[] createdContractAddress) throws IOException, InterruptedException{
+        Transaction tx2 = createTx(world.getRepository(), sender, createdContractAddress, new byte[0],valueToSend );
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx2);
+        Block parent = world.getBlockChain().getBestBlock();
+        Block block = BlockGenerator.createChildBlock(parent, txs);
+        // Single transaction paying the contract
+        mh.completeBlock(block,parent);
 
+        ImportResult  importResult =world.getBlockChain().tryToConnect(block);
+        assertEquals(ImportResult.IMPORTED_BEST,importResult);
+        return block;
+    }
 
     protected Transaction createTx(Repository repository, ECKey sender, byte[] receiveAddress, byte[] data) throws InterruptedException {
         return createTx(repository, sender, receiveAddress, data, 0);

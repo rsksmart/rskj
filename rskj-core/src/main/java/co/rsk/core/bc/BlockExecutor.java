@@ -201,9 +201,8 @@ public class BlockExecutor {
         long totalPaidFees = 0;
         List<TransactionReceipt> receipts = new ArrayList<>();
         // Maps and address to its logs.
-        Events events;
-
-        events = new Events();
+        List<EventInfoItem> events;
+        events = new ArrayList<>();
 
         List<Transaction> executedTransactions = new ArrayList<>();
 
@@ -250,9 +249,8 @@ public class BlockExecutor {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(txExecutor.getVMLogs());
 
-
-            if (txExecutor.getVMLogs()!=null)
-                AddToEvents(i,events,txExecutor);
+            if (txExecutor.getVMEvents()!=null)
+                events.addAll(txExecutor.getVMEvents());
 
             logger.info("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()),
                     Hex.toHexString(lastStateRootHash));
@@ -269,27 +267,4 @@ public class BlockExecutor {
         return new BlockResult(executedTransactions, receipts, events,lastStateRootHash, totalGasUsed, totalPaidFees);
     }
 
-    public static void AddToEvents(int i,Events events,TransactionExecutor txExecutor ) {
-        // For every log that contains the 0xff..ff logged topic
-        // it must also be logged in the Events
-        int logN = 0;
-        for (LogInfo log : txExecutor.getVMLogs()) {
-            for (int t=0;t<log.getTopics().size();t++) {
-                DataWord topic =log.getTopics().get(t);
-                if (topic.equalValue(DataWord.MAX_DATAWORD_VALUE)) {
-                    EventsPerAccount amap = events.get(log.getAddress());
-                    if (amap == null) {
-                        amap = new EventsPerAccount();
-                        events.put(log.getAddress(), amap);
-                    }
-                    List<DataWord> topicsForEvent = new ArrayList<>(log.getTopics());
-                    topicsForEvent.remove(t); // remove the 0xff...ff topic
-                    amap.put(i, logN, new EventInfo(topicsForEvent,log.getData(),i));
-                    break;
-                }
-
-            }
-            logN++;
-        }
-    }
 }

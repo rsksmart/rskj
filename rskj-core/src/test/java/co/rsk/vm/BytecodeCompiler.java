@@ -20,6 +20,7 @@ package co.rsk.vm;
 
 import org.ethereum.vm.OpCode;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -128,4 +129,5 @@ public class BytecodeCompiler {
 
         return (byte) Integer.parseInt(token);
     }
+
 }
