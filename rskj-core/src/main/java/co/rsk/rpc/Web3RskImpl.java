@@ -28,6 +28,7 @@ import co.rsk.mine.SubmitBlockResult;
 import co.rsk.rpc.exception.JsonRpcSubmitBlockException;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
+import co.rsk.scoring.PeerScoringManager;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -63,8 +64,9 @@ public class Web3RskImpl extends Web3Impl {
                        PersonalModule personalModule,
                        EthModule ethModule,
                        ChannelManager channelManager,
-                       Repository repository) {
-        super(eth, properties, minerClient, minerServer, personalModule, ethModule, channelManager, repository);
+                       Repository repository,
+                       PeerScoringManager peerScoringManager) {
+        super(eth, properties, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager);
     }
 
     public MinerWork mnr_getWork() {

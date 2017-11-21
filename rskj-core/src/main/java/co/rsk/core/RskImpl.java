@@ -60,16 +60,6 @@ public class RskImpl extends EthereumImpl implements Rsk {
     }
 
     @Override
-    public PeerScoringManager getPeerScoringManager() {
-        return this.peerScoringManager;
-    }
-
-    @Override
-    public MessageHandler getMessageHandler() {
-        return this.messageHandler;
-    }
-
-    @Override
     public NodeBlockProcessor getNodeBlockProcessor() {
         return this.nodeBlockProcessor;
     }

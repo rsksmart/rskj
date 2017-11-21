@@ -19,7 +19,6 @@
 package org.ethereum.rpc;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.Rsk;
 import co.rsk.core.SnapshotManager;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerManager;
@@ -91,7 +90,7 @@ public class Web3Impl implements Web3 {
     protected MinerServer minerServer;
     private ChannelManager channelManager;
 
-    private PeerScoringManager peerScoringManager;
+    private final PeerScoringManager peerScoringManager;
 
     private PersonalModule personalModule;
     private EthModule ethModule;
@@ -103,7 +102,8 @@ public class Web3Impl implements Web3 {
                        PersonalModule personalModule,
                        EthModule ethModule,
                        ChannelManager channelManager,
-                       org.ethereum.facade.Repository repository) {
+                       org.ethereum.facade.Repository repository,
+                       PeerScoringManager peerScoringManager) {
         this.eth = eth;
         this.worldManager = eth.getWorldManager();
         this.repository = repository;
@@ -112,9 +112,7 @@ public class Web3Impl implements Web3 {
         this.personalModule = personalModule;
         this.ethModule = ethModule;
         this.channelManager = channelManager;
-
-        if (eth instanceof Rsk)
-            this.peerScoringManager = ((Rsk) eth).getPeerScoringManager();
+        this.peerScoringManager = peerScoringManager;
 
         initialBlockNumber = this.worldManager.getBlockchain().getBestBlock().getNumber();
 

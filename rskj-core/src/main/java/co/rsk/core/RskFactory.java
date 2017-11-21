@@ -236,8 +236,9 @@ public class RskFactory {
                                             PersonalModule personalModule,
                                             EthModule ethModule,
                                             ChannelManager channelManager,
-                                            Repository repository) {
-        return () -> new Web3RskImpl(rsk, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository);
+                                            Repository repository,
+                                            PeerScoringManager peerScoringManager) {
+        return () -> new Web3RskImpl(rsk, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager);
     }
 
     @Bean
