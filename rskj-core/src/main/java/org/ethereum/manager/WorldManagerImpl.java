@@ -86,11 +86,7 @@ public class WorldManagerImpl implements WorldManager {
         this.channelManager = channelManager;
         this.listener = listener;
         this.nodeBlockProcessor = nodeBlockProcessor;
-    }
 
-    @Override
-    @PostConstruct
-    public void init() {
         BlockChainLoader loader = new BlockChainLoader(this.blockchain, this.config, this.blockStore, this.repository, this.listener);
         loader.loadBlockchain();
     }
@@ -99,16 +95,6 @@ public class WorldManagerImpl implements WorldManager {
     public void addListener(EthereumListener listener) {
         logger.info("Ethereum listener added");
         ((CompositeEthereumListener) this.listener).addListener(listener);
-    }
-
-    @Override
-    public ChannelManager getChannelManager() {
-        return channelManager;
-    }
-
-    @Override
-    public org.ethereum.facade.Repository getRepository() {
-        return (org.ethereum.facade.Repository)repository;
     }
 
     @Override
@@ -143,10 +129,5 @@ public class WorldManagerImpl implements WorldManager {
 
     @Override
     public HashRateCalculator getHashRateCalculator() { return hashRateCalculator; }
-
-    @Override
-    public NetworkStateExporter getNetworkStateExporter() {
-        return networkStateExporter;
-    }
 
 }
