@@ -142,6 +142,8 @@ public final class PendingFederation {
 
     @Override
     public int hashCode() {
+        // Can use java.util.Objects.hash since all of long, int and List<BtcECKey> have
+        // well-defined hashCode()s
         return Objects.hash(
                 getId(),
                 getNumberOfSignaturesRequired(),

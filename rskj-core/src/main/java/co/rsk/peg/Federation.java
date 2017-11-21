@@ -172,6 +172,8 @@ public final class Federation {
 
     @Override
     public int hashCode() {
+        // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
+        // well-defined hashCode()s
         return Objects.hash(
                 getCreationTime(),
                 getNumberOfSignaturesRequired(),
