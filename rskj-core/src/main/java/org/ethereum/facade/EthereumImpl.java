@@ -28,10 +28,7 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
-import org.ethereum.manager.AdminInfo;
 import org.ethereum.manager.WorldManager;
-import org.ethereum.net.client.PeerClient;
-import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.net.submit.TransactionExecutor;
@@ -47,7 +44,6 @@ import org.springframework.util.concurrent.FutureAdapter;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
-import java.net.InetAddress;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -59,7 +55,6 @@ public class EthereumImpl implements Ethereum {
     private static final Logger gLogger = LoggerFactory.getLogger("general");
 
     private final WorldManager worldManager;
-    private final AdminInfo adminInfo;
     private final ChannelManager channelManager;
     private final PeerServer peerServer;
     private final ProgramInvokeFactory programInvokeFactory;
@@ -71,7 +66,6 @@ public class EthereumImpl implements Ethereum {
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
 
     public EthereumImpl(WorldManager worldManager,
-                        AdminInfo adminInfo,
                         ChannelManager channelManager,
                         PeerServer peerServer,
                         ProgramInvokeFactory programInvokeFactory,
@@ -80,7 +74,6 @@ public class EthereumImpl implements Ethereum {
                         CompositeEthereumListener compositeEthereumListener,
                         ReceiptStore receiptStore) {
         this.worldManager = worldManager;
-        this.adminInfo = adminInfo;
         this.channelManager = channelManager;
         this.peerServer = peerServer;
         this.programInvokeFactory = programInvokeFactory;
@@ -181,55 +174,8 @@ public class EthereumImpl implements Ethereum {
     }
 
     @Override
-    public ProgramResult callConstantFunction(String receiveAddress, CallTransaction.Function function,
-                                              Object... funcArgs) {
-        Transaction tx = CallTransaction.createCallTransaction(0, 0, 100000000000000L,
-                receiveAddress, 0, function, funcArgs);
-        tx.sign(new byte[32]);
-
-        Block bestBlock = worldManager.getBlockchain().getBestBlock();
-
-        Repository repository = ((Repository) worldManager.getRepository()).startTracking();
-
-        try {
-            org.ethereum.core.TransactionExecutor executor = new org.ethereum.core.TransactionExecutor
-                    (tx, bestBlock.getCoinbase(), repository, worldManager.getBlockStore(), receiptStore,
-                    programInvokeFactory, bestBlock)
-                    .setLocalCall(true);
-
-            executor.init();
-            executor.execute();
-            executor.go();
-            executor.finalization();
-
-            return executor.getResult();
-        } finally {
-            repository.rollback();
-        }
-    }
-
-    @Override
     public org.ethereum.facade.Repository getRepository() {
         return worldManager.getRepository();
-    }
-
-    @Override
-    public org.ethereum.facade.Repository getPendingState() {
-        return (org.ethereum.facade.Repository) worldManager.getPendingState().getRepository();
-    }
-
-    @Override
-    public org.ethereum.facade.Repository getSnapshootTo(byte[] root){
-
-        Repository repository = (Repository) worldManager.getRepository();
-        org.ethereum.facade.Repository snapshot = (org.ethereum.facade.Repository) repository.getSnapshotTo(root);
-
-        return snapshot;
-    }
-
-    @Override
-    public AdminInfo getAdminInfo() {
-        return adminInfo;
     }
 
     @Override
@@ -244,30 +190,15 @@ public class EthereumImpl implements Ethereum {
     }
 
     @Override
-    public List<Transaction> getPendingStateTransactions() {
-        return worldManager.getPendingState().getPendingTransactions();
-    }
-
-    @Override
     public long getGasPrice() {
         return gasPriceTracker.getGasPrice();
     }
 
-    @Override
-    public void exitOn(long number) {
-        worldManager.getBlockchain().setExitOn(number);
-    }
     // TODO Review world manager expose
-
     @Override
     public WorldManager getWorldManager() { return worldManager; }
-    // TODO Review peer server expose
 
+    // TODO Review peer server expose
     @Override
     public PeerServer getPeerServer() { return peerServer; }
-
-    @Override
-    public SystemProperties getSystemProperties() {
-        return this.config;
-    }
 }

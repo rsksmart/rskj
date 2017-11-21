@@ -42,7 +42,6 @@ public class RskImpl extends EthereumImpl implements Rsk {
     private PeerScoringManager peerScoringManager;
 
     public RskImpl(WorldManager worldManager,
-                   AdminInfo adminInfo,
                    ChannelManager channelManager,
                    PeerServer peerServer,
                    ProgramInvokeFactory programInvokeFactory,
@@ -53,7 +52,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
                    PeerScoringManager peerScoringManager,
                    NodeBlockProcessor nodeBlockProcessor,
                    NodeMessageHandler messageHandler) {
-        super(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore);
+        super(worldManager, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore);
         this.peerScoringManager = peerScoringManager;
         this.nodeBlockProcessor = nodeBlockProcessor;
         this.messageHandler = messageHandler;

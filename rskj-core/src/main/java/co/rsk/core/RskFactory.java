@@ -88,7 +88,6 @@ public class RskFactory {
 
     @Bean
     public Rsk getRsk(WorldManager worldManager,
-                      AdminInfo adminInfo,
                       ChannelManager channelManager,
                       PeerServer peerServer,
                       ProgramInvokeFactory programInvokeFactory,
@@ -104,7 +103,7 @@ public class RskFactory {
         logger.info("Running {},  core version: {}-{}", config.genesisInfo(), config.projectVersion(), config.projectVersionModifier());
         BuildInfo.printInfo();
 
-        RskImpl rsk = new RskImpl(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory,
+        RskImpl rsk = new RskImpl(worldManager, channelManager, peerServer, programInvokeFactory,
                 pendingState, config, compositeEthereumListener, receiptStore, peerScoringManager, nodeBlockProcessor, nodeMessageHandler);
 
         rsk.init();

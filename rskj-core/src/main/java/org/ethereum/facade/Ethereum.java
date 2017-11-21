@@ -19,22 +19,17 @@
 
 package org.ethereum.facade;
 
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
-import org.ethereum.core.CallTransaction;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.manager.AdminInfo;
 import org.ethereum.manager.WorldManager;
-import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Web3;
 import org.ethereum.vm.program.ProgramResult;
 
 import java.math.BigInteger;
-import java.net.InetAddress;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -81,37 +76,13 @@ public interface Ethereum {
      */
     Future<Transaction> submitTransaction(Transaction transaction);
 
-
-    /**
-     * Call a contract function locally without sending transaction to the network
-     * and without changing contract storage.
-     * @param receiveAddress hex encoded contract address
-     * @param function  contract function
-     * @param funcArgs  function arguments
-     * @return function result. The return value can be fetched via {@link ProgramResult#getHReturn()}
-     * and decoded with {@link org.ethereum.core.CallTransaction.Function#decodeResult(byte[])}.
-     */
-    ProgramResult callConstantFunction(String receiveAddress, CallTransaction.Function function,
-                                       Object... funcArgs);
-
-
     /**
      * @return - repository for all state data.
      */
     Repository getRepository();
 
-    /**
-     * @return - pending state repository
-     */
-    Repository getPendingState();
 
-
-    public void init();
-//  2.   // is blockchain still loading - if buffer is not empty
-
-    Repository getSnapshootTo(byte[] root);
-
-    AdminInfo getAdminInfo();
+    void init();
 
     ChannelManager getChannelManager();
 
@@ -119,11 +90,6 @@ public interface Ethereum {
      * @return - currently pending transactions received from the net
      */
     List<Transaction> getWireTransactions();
-
-    /**
-     * @return - currently pending transactions sent to the net
-     */
-    List<Transaction> getPendingStateTransactions();
 
     /**
      * Calculates a 'reasonable' Gas price based on statistics of the latest transaction's Gas prices
@@ -134,8 +100,6 @@ public interface Ethereum {
      */
     long getGasPrice();
 
-    void exitOn(long number);
-
     // TODO review world manager expose
     WorldManager getWorldManager();
 
@@ -144,6 +108,4 @@ public interface Ethereum {
 
     // TODO added method, to review
     ProgramResult callConstant(Web3.CallArguments args);
-
-    SystemProperties getSystemProperties();
 }

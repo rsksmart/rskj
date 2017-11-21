@@ -23,7 +23,6 @@ import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
 import co.rsk.test.World;
 import co.rsk.validators.BlockValidationRule;
-import co.rsk.validators.DummyBlockValidationRule;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.ethereum.core.Block;
@@ -362,7 +361,7 @@ public class MinerManagerTest {
 
     private static class RskImplForTest extends RskImpl {
         public RskImplForTest() {
-            super(null, null, null, null, null,
+            super(null, null, null, null,
                     null, null, null, null, null, null, null);
         }
     }
