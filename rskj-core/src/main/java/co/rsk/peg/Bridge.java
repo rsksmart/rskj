@@ -624,52 +624,60 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return creationTime.toEpochMilli();
     }
 
-    public Long createFederation(Object[] args)
+    public Integer createFederation(Object[] args)
     {
         logger.trace("createFederation");
 
-        try {
-            return bridgeSupport.createFederation();
-        } catch (IOException e) {
-            logger.warn("Exception in createFederation", e);
-            throw new RuntimeException("Exception in createFederation", e);
-        }
-
+        return bridgeSupport.voteFederationChange(
+                rskTx,
+                new ABICallSpec("create", new byte[][]{})
+        );
     }
 
     public Integer addFederatorPublicKey(Object[] args)
     {
         logger.trace("addFederatorPublicKey");
 
-        byte[] publicKeyBytes = (byte[]) args[0];
-        BtcECKey publicKey;
+        byte[] publicKeyBytes;
         try {
-            publicKey = BtcECKey.fromPublicOnly(publicKeyBytes);
+            publicKeyBytes = (byte[]) args[0];
         } catch (Exception e) {
-            throw new BridgeIllegalArgumentException("Public key could not be parsed " + Hex.toHexString(publicKeyBytes), e);
+            logger.warn("Exception in addFederatorPublicKey: {}", e.getMessage());
+            return -10;
         }
 
-        return bridgeSupport.addFederatorPublicKey(publicKey);
+        return bridgeSupport.voteFederationChange(
+                rskTx,
+                new ABICallSpec("add", new byte[][]{ publicKeyBytes })
+        );
     }
 
     public Integer commitFederation(Object[] args)
     {
         logger.trace("commitFederation");
 
+        byte[] hash;
         try {
-            Sha3Hash hash = new Sha3Hash((byte[]) args[0]);
-            return bridgeSupport.commitFederation(hash);
-        } catch (IOException e) {
-            logger.warn("Exception in commitFederation", e);
-            throw new RuntimeException("Exception in commitFederation", e);
+            hash = (byte[]) args[0];
+        } catch (Exception e) {
+            logger.warn("Exception in commitFederation: {}", e.getMessage());
+            return -10;
         }
+
+        return bridgeSupport.voteFederationChange(
+                rskTx,
+                new ABICallSpec("commit", new byte[][]{ hash })
+        );
     }
 
     public Integer rollbackFederation(Object[] args)
     {
         logger.trace("rollbackFederation");
 
-        return bridgeSupport.rollbackFederation();
+        return bridgeSupport.voteFederationChange(
+                rskTx,
+                new ABICallSpec("rollback", new byte[][]{})
+        );
     }
 
     public byte[] getPendingFederationHash(Object[] args)

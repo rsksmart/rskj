@@ -21,16 +21,22 @@ package co.rsk.config;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.ABICallAuthorizer;
 import co.rsk.peg.Federation;
 import com.google.common.collect.Lists;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 public class BridgeRegTestConstants extends BridgeConstants {
@@ -72,6 +78,17 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         minimumLockTxValue = Coin.COIN;
         minimumReleaseTxValue = Coin.valueOf(500000);
+
+        // Keys generated with GenNodeKey using generators 'auth-a' through 'auth-e'
+        List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
+                "04dde17c5fab31ffc53c91c2390136c325bb8690dc135b0840075dd7b86910d8ab9e88baad0c32f3eea8833446a6bc5ff1cd2efa99ecb17801bcb65fc16fc7d991",
+                "04af886c67231476807e2a8eee9193878b9d94e30aa2ee469a9611d20e1e1c1b438e5044148f65e6e61bf03e9d72e597cb9cdea96d6fc044001b22099f9ec403e2",
+                "045d4dedf9c69ab3ea139d0f0da0ad00160b7663d01ce7a6155cd44a3567d360112b0480ab6f31cac7345b5f64862205ea7ccf555fcf218f87fa0d801008fecb61",
+                "04709f002ac4642b6a87ea0a9dc76eeaa93f71b3185985817ec1827eae34b46b5d869320efb5c5cbe2a5c13f96463fe0210710b53352a4314188daffe07bd54154",
+                "04aff62315e9c18004392a5d9e39496ff5794b2d9f43ab4e8ade64740d7fdfe896969be859b43f26ef5aa4b5a0d11808277b4abfa1a07cc39f2839b89cc2bc6b4c"
+        }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+
+        federationChangeAuthorizer = new ABICallAuthorizer(federationChangeAuthorizedKeys);
     }
 
     public List<BtcECKey> getFederatorPrivateKeys() {

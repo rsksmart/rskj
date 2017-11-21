@@ -20,6 +20,7 @@ package co.rsk.config;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.peg.ABICallAuthorizer;
 import co.rsk.peg.Federation;
 
 import java.util.List;
@@ -41,6 +42,8 @@ public class BridgeConstants {
 
     protected Coin minimumLockTxValue;
     protected Coin minimumReleaseTxValue;
+
+    protected ABICallAuthorizer federationChangeAuthorizer;
 
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
@@ -75,4 +78,6 @@ public class BridgeConstants {
     public Coin getMinimumLockTxValue() { return minimumLockTxValue; }
 
     public Coin getMinimumReleaseTxValue() { return minimumReleaseTxValue; }
+
+    public ABICallAuthorizer getFederationChangeAuthorizer() { return federationChangeAuthorizer; }
 }

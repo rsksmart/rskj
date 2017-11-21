@@ -801,9 +801,9 @@ public class BridgeTest {
         bridge.init(null, null, null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.createFederation()).thenReturn(123L);
+        when(bridgeSupportMock.createFederation(false)).thenReturn(123);
 
-        Assert.assertEquals(123L, bridge.createFederation(new Object[]{}).longValue());
+        Assert.assertEquals(123, bridge.createFederation(new Object[]{}).longValue());
     }
 
     @Test
@@ -812,7 +812,7 @@ public class BridgeTest {
         bridge.init(null, null, null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.createFederation()).thenThrow(new IOException("I am an exception"));
+        when(bridgeSupportMock.createFederation(false)).thenThrow(new IOException("I am an exception"));
 
         try {
             bridge.createFederation(new Object[]{});
@@ -829,7 +829,7 @@ public class BridgeTest {
         bridge.init(null, null, null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.addFederatorPublicKey(BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))))
+        when(bridgeSupportMock.addFederatorPublicKey(false, BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))))
                 .thenReturn(123);
 
         Assert.assertEquals(123, bridge.addFederatorPublicKey(new Object[]{Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")}).intValue());
@@ -841,7 +841,7 @@ public class BridgeTest {
         bridge.init(null, null, null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        verify(bridgeSupportMock, never()).addFederatorPublicKey(any());
+        verify(bridgeSupportMock, never()).addFederatorPublicKey(false, any());
 
         try {
             bridge.addFederatorPublicKey(new Object[]{Hex.decode("abcdef")});
@@ -865,7 +865,7 @@ public class BridgeTest {
         }
         Sha3Hash hash = new Sha3Hash(Hex.decode(hashHexBuilder.toString()));
 
-        when(bridgeSupportMock.commitFederation(hash)).thenReturn(123);
+        when(bridgeSupportMock.commitFederation(false, hash)).thenReturn(123);
 
         Assert.assertEquals(123, bridge.commitFederation(new Object[]{ hash.getBytes() }).intValue());
     }
@@ -883,7 +883,7 @@ public class BridgeTest {
         }
         Sha3Hash hash = new Sha3Hash(Hex.decode(hashHexBuilder.toString()));
 
-        when(bridgeSupportMock.commitFederation(hash)).thenThrow(new IOException("I am an exception"));
+        when(bridgeSupportMock.commitFederation(false, hash)).thenThrow(new IOException("I am an exception"));
 
         try {
             bridge.commitFederation(new Object[]{ hash.getBytes() });
@@ -900,7 +900,7 @@ public class BridgeTest {
         bridge.init(null, null, null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.commitFederation(any())).thenThrow(new IOException("I am an exception"));
+        when(bridgeSupportMock.commitFederation(false, any())).thenThrow(new IOException("I am an exception"));
 
         try {
             bridge.commitFederation(new Object[]{ new byte[]{ (byte) 0xab } });
@@ -915,7 +915,7 @@ public class BridgeTest {
         bridge.init(null, null, null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.rollbackFederation()).thenReturn(456);
+        when(bridgeSupportMock.rollbackFederation(false)).thenReturn(456);
 
         Assert.assertEquals(456, bridge.rollbackFederation(new Object[]{}).intValue());
     }

@@ -18,11 +18,10 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.BtcECKey;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Representation of a given state of the election
@@ -32,17 +31,35 @@ import java.util.Map;
  * @author Ariel Mendelzon
  */
 public class ABICallAuthorizer {
-    private List<BtcECKey> authorizedKeys;
+    private List<ECKey> authorizedKeys;
 
-    public ABICallAuthorizer(List<BtcECKey> authorizedKeys) {
+    public ABICallAuthorizer(List<ECKey> authorizedKeys) {
         this.authorizedKeys = authorizedKeys;
     }
 
-    public boolean isAuthorized(BtcECKey key) {
+    public boolean isAuthorized(Transaction tx) {
+        if (tx.getSignature() == null)
+            return false;
+
+        return isAuthorized(getVoter(tx));
+    }
+
+    public boolean isAuthorized(ECKey key) {
         return authorizedKeys.contains(key);
+    }
+
+    public ECKey getVoter(Transaction tx) {
+        if (tx.getSignature() == null)
+            return null;
+
+        return tx.getKey();
     }
 
     public int getNumberOfAuthorizedKeys() {
         return authorizedKeys.size();
+    }
+
+    public int getRequiredAuthorizedKeys() {
+        return getNumberOfAuthorizedKeys() / 2 + 1;
     }
 }

@@ -20,8 +20,9 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.crypto.Sha3Hash;
-import com.sun.xml.internal.bind.api.impl.NameConverter;
+import com.google.common.primitives.UnsignedBytes;
 import org.apache.commons.lang3.tuple.Pair;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
@@ -271,13 +272,13 @@ public class BridgeSerializationUtils {
     // public keys conforming it.
     // See BridgeSerializationUtils::serializePublicKeys
     public static byte[] serializePendingFederation(PendingFederation pendingFederation) {
-        return serializePublicKeys(pendingFederation.getPublicKeys());
+        return serializeBtcPublicKeys(pendingFederation.getPublicKeys());
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializePendingFederation
     // and serializePublicKeys::deserializePublicKeys
     public static PendingFederation deserializePendingFederation(byte[] data) {
-        return new PendingFederation(deserializePublicKeys(data));
+        return new PendingFederation(deserializeBtcPublicKeys(data));
     }
 
     // An ABI call spec is serialized as:
@@ -309,9 +310,23 @@ public class BridgeSerializationUtils {
 
     // A list of public keys is serialized as
     // [pubkey1, pubkey2, ..., pubkeyn], sorted
+    // using the lexicographical order of the public keys' unsigned bytes
+    // (see BtcECKey.PUBKEY_COMPARATOR).
+    public static byte[] serializePublicKeys(List<ECKey> keys) {
+        List<byte[]> encodedKeys = keys.stream()
+                .sorted((ECKey k1, ECKey k2) ->
+                        UnsignedBytes.lexicographicalComparator().compare(k1.getPubKey(), k2.getPubKey())
+                )
+                .map(key -> RLP.encodeElement(key.getPubKey()))
+                .collect(Collectors.toList());
+        return RLP.encodeList((byte[][])encodedKeys.toArray());
+    }
+
+    // A list of btc public keys is serialized as
+    // [pubkey1, pubkey2, ..., pubkeyn], sorted
     // using the lexicographical order of the public keys
     // (see BtcECKey.PUBKEY_COMPARATOR).
-    public static byte[] serializePublicKeys(List<BtcECKey> keys) {
+    public static byte[] serializeBtcPublicKeys(List<BtcECKey> keys) {
         List<byte[]> encodedKeys = keys.stream()
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .map(key -> RLP.encodeElement(key.getPubKey()))
@@ -320,7 +335,16 @@ public class BridgeSerializationUtils {
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializePublicKeys
-    public static List<BtcECKey> deserializePublicKeys(byte[] data) {
+    public static List<ECKey> deserializePublicKeys(byte[] data) {
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+
+        return rlpList.stream()
+                .map(pubKeyBytes -> ECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
+                .collect(Collectors.toList());
+    }
+
+    // For the serialization format, see BridgeSerializationUtils::serializePublicKeys
+    public static List<BtcECKey> deserializeBtcPublicKeys(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         return rlpList.stream()
@@ -335,7 +359,7 @@ public class BridgeSerializationUtils {
         byte[][] bytes = new byte[election.getVotes().size() * 2][];
         int n = 0;
 
-        Map<ABICallSpec, List<BtcECKey>> votes = election.getVotes();
+        Map<ABICallSpec, List<ECKey>> votes = election.getVotes();
         ABICallSpec[] specs = votes.keySet().toArray(new ABICallSpec[votes.size()]);
         Arrays.sort(specs, ABICallSpec.byBytesComparator);
 
@@ -361,11 +385,11 @@ public class BridgeSerializationUtils {
 
         int numEntries = rlpList.size() / 2;
 
-        Map<ABICallSpec, List<BtcECKey>> votes = new HashMap<>();
+        Map<ABICallSpec, List<ECKey>> votes = new HashMap<>();
 
         for (int k = 0; k < numEntries; k++) {
             ABICallSpec spec = deserializeABICallSpec(rlpList.get(k * 2).getRLPData());
-            List<BtcECKey> specVotes = deserializePublicKeys(rlpList.get(k * 2 + 1).getRLPData());
+            List<ECKey> specVotes = deserializePublicKeys(rlpList.get(k * 2 + 1).getRLPData());
             votes.put(spec, specVotes);
         }
 

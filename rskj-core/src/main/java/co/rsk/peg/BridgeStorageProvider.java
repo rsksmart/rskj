@@ -77,7 +77,6 @@ public class BridgeStorageProvider {
     private boolean shouldSavePendingFederation = false;
 
     private ABICallElection federationElection;
-    private boolean shouldSaveFederationElection = false;
 
     private BridgeConstants bridgeConstants;
     private Context btcContext;
@@ -322,15 +321,14 @@ public class BridgeStorageProvider {
      * Save the federation election
      */
     public void saveFederationElection() {
-        if (shouldSaveFederationElection) {
-            DataWord address = new DataWord(BRIDGE_FEDERATION_ELECTION_KEY.getBytes(StandardCharsets.UTF_8));
+        if (federationElection == null)
+            return;
 
-            byte[] data = null;
-            if (federationElection != null)
-                data = BridgeSerializationUtils.serializeElection(federationElection);
+        DataWord address = new DataWord(BRIDGE_FEDERATION_ELECTION_KEY.getBytes(StandardCharsets.UTF_8));
 
-            repository.addStorageBytes(Hex.decode(contractAddress), address, data);
-        }
+        byte[] data = BridgeSerializationUtils.serializeElection(federationElection);
+
+        repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
 
     public ABICallElection getFederationElection(ABICallAuthorizer authorizer) {
@@ -342,17 +340,13 @@ public class BridgeStorageProvider {
         byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
 
         if (data == null) {
-            return null;
+            federationElection = new ABICallElection(authorizer);
+            return federationElection;
         }
 
         federationElection = BridgeSerializationUtils.deserializeElection(data, authorizer);
 
         return federationElection;
-    }
-
-    public void setFederationElection(ABICallElection election) {
-        shouldSaveFederationElection = true;
-        federationElection = election;
     }
 
     public void save() throws IOException {
