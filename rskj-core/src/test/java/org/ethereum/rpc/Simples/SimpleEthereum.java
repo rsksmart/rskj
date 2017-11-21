@@ -112,11 +112,6 @@ public class SimpleEthereum implements Ethereum {
     }
 
     @Override
-    public PeerServer getPeerServer() {
-        return peerServer;
-    }
-
-    @Override
     public ProgramResult callConstant(Web3.CallArguments args) {
         return null;
     }

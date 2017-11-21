@@ -321,7 +321,7 @@ public class Web3ImplScoringTest {
         Wallet wallet = WalletFactory.createWallet();
         PersonalModule pm = new PersonalModuleWalletEnabled(rsk, wallet);
         EthModule em = new EthModule(rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(rsk, wallet));
-        return new Web3RskImpl(rsk, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), rsk.getRepository(), peerScoringManager, null, null);
+        return new Web3RskImpl(rsk, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), rsk.getRepository(), peerScoringManager, null, null, null);
     }
 
     private static NodeID generateNodeID() {

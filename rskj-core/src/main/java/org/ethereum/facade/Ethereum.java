@@ -24,7 +24,6 @@ import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.WorldManager;
-import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Web3;
 import org.ethereum.vm.program.ProgramResult;
 
@@ -93,9 +92,6 @@ public interface Ethereum {
 
     // TODO review world manager expose
     WorldManager getWorldManager();
-
-    // TODO review peer server expose
-    PeerServer getPeerServer();
 
     // TODO added method, to review
     ProgramResult callConstant(Web3.CallArguments args);

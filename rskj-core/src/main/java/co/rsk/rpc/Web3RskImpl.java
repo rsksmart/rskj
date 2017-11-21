@@ -34,6 +34,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.Repository;
 import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3Impl;
 import org.slf4j.Logger;
@@ -66,8 +67,9 @@ public class Web3RskImpl extends Web3Impl {
                        Repository repository,
                        PeerScoringManager peerScoringManager,
                        NetworkStateExporter networkStateExporter,
-                       BlockStore blockStore) {
-        super(eth, properties, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager);
+                       BlockStore blockStore,
+                       PeerServer peerServer) {
+        super(eth, properties, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, peerServer);
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;
     }

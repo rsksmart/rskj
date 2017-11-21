@@ -45,6 +45,7 @@ import org.ethereum.net.client.Capability;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
@@ -90,8 +91,9 @@ public class Web3Impl implements Web3 {
     private MinerClient minerClient;
     protected MinerServer minerServer;
     private ChannelManager channelManager;
-
     private final PeerScoringManager peerScoringManager;
+    private final PeerServer peerServer;
+
     private final Blockchain blockchain;
     private final BlockProcessor nodeBlockProcessor;
     private final HashRateCalculator hashRateCalculator;
@@ -110,7 +112,8 @@ public class Web3Impl implements Web3 {
                        EthModule ethModule,
                        ChannelManager channelManager,
                        org.ethereum.facade.Repository repository,
-                       PeerScoringManager peerScoringManager) {
+                       PeerScoringManager peerScoringManager,
+                       PeerServer peerServer) {
         this.eth = eth;
         this.repository = repository;
         this.minerClient = minerClient;
@@ -119,6 +122,7 @@ public class Web3Impl implements Web3 {
         this.ethModule = ethModule;
         this.channelManager = channelManager;
         this.peerScoringManager = peerScoringManager;
+        this.peerServer = peerServer;
         this.blockchain = eth.getWorldManager().getBlockchain();
         this.nodeBlockProcessor = eth.getWorldManager().getNodeBlockProcessor();
         this.hashRateCalculator = eth.getWorldManager().getHashRateCalculator();
@@ -254,7 +258,7 @@ public class Web3Impl implements Web3 {
     public boolean net_listening() {
         Boolean s = null;
         try {
-            return s = eth.getPeerServer().isListening();
+            return s = peerServer.isListening();
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("net_listening(): " + s);

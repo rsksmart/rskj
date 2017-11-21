@@ -190,7 +190,4 @@ public class EthereumImpl implements Ethereum {
     @Override
     public WorldManager getWorldManager() { return worldManager; }
 
-    // TODO Review peer server expose
-    @Override
-    public PeerServer getPeerServer() { return peerServer; }
 }
