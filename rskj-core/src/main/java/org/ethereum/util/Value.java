@@ -19,8 +19,6 @@
 
 package org.ethereum.util;
 
-import com.cedarsoftware.util.DeepEquals;
-
 import org.ethereum.crypto.HashUtil;
 import org.spongycastle.util.encoders.Hex;
 
@@ -29,6 +27,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Class to encapsulate an object and provide utilities for conversion
@@ -165,7 +164,8 @@ public class Value {
     }
 
     public boolean cmp(Value o) {
-        return DeepEquals.deepEquals(this, o);
+        // we don't need to check rlp or sha3 because they're lazy values
+        return Objects.deepEquals(asObj(), o.asObj());
     }
 
     /* *****************
