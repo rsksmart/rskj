@@ -82,7 +82,7 @@ public class Remasc {
         if (!(executionTx instanceof RemascTransaction)) {
             //Detect
             // 1) tx to remasc that is not the latest tx in a block
-            // 2) invocation to remasc from another contract (ie call opcode)
+            // 2) invocation to remasc from another contract (ie call code)
             throw new RemascInvalidInvocationException("Invoked Remasc outside last tx of the block");
         }
         this.addNewSiblings();

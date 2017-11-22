@@ -130,7 +130,7 @@ public class DataWord implements Comparable<DataWord> {
             this.data = ByteUtil.EMPTY_BYTE_ARRAY;
         else if (len <= 32) {
             //if there is not enough data
-            // trailing zeros are assumed (this is required  for PUSH opcode semantic
+            // trailing zeros are assumed (this is required  for PUSH code semantic
             Arrays.fill(this.data, (byte) 0); // first clear
             int dlen =Integer.min(len,data.length-ofs);
             System.arraycopy(data, ofs, this.data, 32 - len ,dlen );

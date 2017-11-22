@@ -55,7 +55,7 @@ public class OffchainTransactionExecutor {
     // It seems that the ONLY use of blockStore is in Program.java:
     // .. getBlockHash(int index) {
     //.. this.invoke.getBlockStore().getBlockHashByNumber(index)
-    // This is because the VM (VM.java) has the opcode BLOCKHASH
+    // This is because the VM (VM.java) has the code BLOCKHASH
     @Autowired
     private BlockStore blockStore;
 

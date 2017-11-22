@@ -420,7 +420,7 @@ public enum OpCode {
 
     /*  Duplicate Nth item from the stack   */
 
-    /* DUPn opcode "consumes" n elements from stack and pushes (n+1) elements */
+    /* DUPn code "consumes" n elements from stack and pushes (n+1) elements */
 
     /**
      * (0x80) Duplicate 1st item on stack
@@ -609,7 +609,7 @@ public enum OpCode {
      * (0xf4)  similar in idea to CALLCODE, except that it propagates the sender and value
      *  from the parent scope to the child scope, ie. the call created has the same sender
      *  and value as the original call.
-     *  also the Value parameter is omitted for this opCode
+     *  also the Value parameter is omitted for this code
      */
     DELEGATECALL(0xf4, 6, 1, SPECIAL_TIER),
     /**
