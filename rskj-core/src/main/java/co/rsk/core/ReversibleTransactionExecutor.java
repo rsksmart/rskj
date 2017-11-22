@@ -90,6 +90,11 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
         }
 
         @Override
+        public boolean isOnReversibleExecution() {
+            return true;
+        }
+
+        @Override
         public byte[] getSender() {
             return sendAddress;
         }

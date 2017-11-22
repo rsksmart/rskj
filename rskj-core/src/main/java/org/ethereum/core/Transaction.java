@@ -499,6 +499,10 @@ public class Transaction implements SerializableObject {
         return (this.getNonce() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getNonce());
     }
 
+    public boolean isOnReversibleExecution() {
+        return false;
+    }
+
     @Override
     public int hashCode() {
         return java.util.Arrays.hashCode(this.getHash());

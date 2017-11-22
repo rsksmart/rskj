@@ -21,6 +21,7 @@ package co.rsk.peg;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -46,6 +47,14 @@ public class ABICallAuthorizer {
 
     public boolean isAuthorized(ECKey key) {
         return authorizedKeys.contains(key);
+    }
+
+    public boolean isSenderAuthorized(Transaction tx) {
+        byte[] sender = tx.getSender();
+
+        return authorizedKeys.stream()
+                .map(key -> key.getAddress())
+                .anyMatch(address -> Arrays.equals(address, sender));
     }
 
     public ECKey getVoter(Transaction tx) {

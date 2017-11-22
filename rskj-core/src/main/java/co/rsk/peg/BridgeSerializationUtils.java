@@ -285,9 +285,9 @@ public class BridgeSerializationUtils {
     // function name encoded in UTF-8
     // arg_1, ..., arg_n
     public static byte[] serializeABICallSpec(ABICallSpec spec) {
-        byte[][] encodedArguments = (byte[][]) Arrays.stream(spec.getArguments())
+        byte[][] encodedArguments = Arrays.stream(spec.getArguments())
                 .map(arg -> RLP.encodeElement(arg))
-                .toArray();
+                .toArray(byte[][]::new);
         return RLP.encodeList(
             RLP.encodeElement(spec.getFunction().getBytes(StandardCharsets.UTF_8)),
             RLP.encodeList(encodedArguments)
@@ -303,7 +303,7 @@ public class BridgeSerializationUtils {
         }
 
         String function = new String(rlpList.get(0).getRLPData(), StandardCharsets.UTF_8);
-        byte[][] arguments = (byte[][]) ((RLPList)rlpList.get(1)).stream().map(rlpElement -> rlpElement.getRLPData()).toArray();
+        byte[][] arguments = ((RLPList)rlpList.get(1)).stream().map(rlpElement -> rlpElement.getRLPData()).toArray(byte[][]::new);
 
         return new ABICallSpec(function, arguments);
     }
@@ -319,7 +319,7 @@ public class BridgeSerializationUtils {
                 )
                 .map(key -> RLP.encodeElement(key.getPubKey()))
                 .collect(Collectors.toList());
-        return RLP.encodeList((byte[][])encodedKeys.toArray());
+        return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
     }
 
     // A list of btc public keys is serialized as
@@ -331,7 +331,7 @@ public class BridgeSerializationUtils {
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .map(key -> RLP.encodeElement(key.getPubKey()))
                 .collect(Collectors.toList());
-        return RLP.encodeList((byte[][])encodedKeys.toArray());
+        return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializePublicKeys
@@ -360,7 +360,7 @@ public class BridgeSerializationUtils {
         int n = 0;
 
         Map<ABICallSpec, List<ECKey>> votes = election.getVotes();
-        ABICallSpec[] specs = votes.keySet().toArray(new ABICallSpec[votes.size()]);
+        ABICallSpec[] specs = votes.keySet().toArray(new ABICallSpec[0]);
         Arrays.sort(specs, ABICallSpec.byBytesComparator);
 
         for (ABICallSpec spec : specs) {

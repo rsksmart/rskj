@@ -67,7 +67,12 @@ public class ABICallElection {
         if (!authorizer.isAuthorized(voter))
             return false;
 
-        List<ECKey> callVotes = votes.getOrDefault(callSpec, new ArrayList<>());
+        if (!votes.containsKey(callSpec)) {
+            votes.put(callSpec, new ArrayList<>());
+        }
+
+        List<ECKey> callVotes = votes.get(callSpec);
+
         if (callVotes.contains(voter))
             return false;
 
@@ -90,6 +95,16 @@ public class ABICallElection {
         }
 
         return null;
+    }
+
+    /**
+     * Removes the entry votes for the current winner of the election
+     */
+    public void clearWinners() {
+        ABICallSpec winner = getWinner();
+        if (winner != null) {
+            votes.remove(winner);
+        }
     }
 
     private void validate() {

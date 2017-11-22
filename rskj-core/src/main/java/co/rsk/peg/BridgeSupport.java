@@ -1036,9 +1036,16 @@ public class BridgeSupport {
 
         ABICallAuthorizer authorizer = bridgeConstants.getFederationChangeAuthorizer();
 
-        // Must be authorized to vote
-        if (!authorizer.isAuthorized(tx)) {
-            return VOTE_GENERIC_ERROR_CODE;
+        if (tx.isOnReversibleExecution()) {
+            // Must be authorized (only checking for sender address)
+            if (!authorizer.isSenderAuthorized(tx)) {
+                return VOTE_GENERIC_ERROR_CODE;
+            }
+        } else {
+            // Must be authorized to vote (checking for signature)
+            if (!authorizer.isAuthorized(tx)) {
+                return VOTE_GENERIC_ERROR_CODE;
+            }
         }
 
         // Try to do a dry-run and only register the vote if the
@@ -1050,8 +1057,8 @@ public class BridgeSupport {
             result = new ABICallVoteResult(false, VOTE_GENERIC_ERROR_CODE);
         }
 
-        // Return if the dry run failed
-        if (!result.wasSuccessful()) {
+        // Return if the dry run failed or we are on a reversible execution
+        if (!result.wasSuccessful() || tx.isOnReversibleExecution()) {
             return (Integer) result.getResult();
         }
 
@@ -1070,6 +1077,9 @@ public class BridgeSupport {
             } catch (IOException e) {
                 logger.warn("Unexpected federation change vote exception: {}", e.getMessage());
                 return VOTE_GENERIC_ERROR_CODE;
+            } finally {
+                // Clear the winner so that we don't repeat ourselves
+                election.clearWinners();
             }
         }
 

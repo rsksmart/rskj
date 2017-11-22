@@ -95,8 +95,8 @@ public final class ABICallSpec {
 
         if (other instanceof ABICallSpec) {
             ABICallSpec otherSpec = ((ABICallSpec) other);
-            return otherSpec.getFunction() == getFunction()
-                    && areEqual(arguments, otherSpec.arguments);
+            return otherSpec.getFunction().equals(getFunction()) &&
+                    areEqual(arguments, otherSpec.arguments);
         }
 
         return false;
@@ -104,7 +104,8 @@ public final class ABICallSpec {
 
     @Override
     public int hashCode() {
-        return Objects.hash(function, arguments);
+        int[] argumentsHashes = Arrays.stream(arguments).map(argument -> Arrays.hashCode(argument)).mapToInt(Integer::intValue).toArray();
+        return Objects.hash(function, Arrays.hashCode(argumentsHashes));
     }
 
     private boolean areEqual(byte[][] first, byte[][] second) {
