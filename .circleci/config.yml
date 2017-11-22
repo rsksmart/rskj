@@ -11,9 +11,9 @@ jobs:
       - checkout
       - run: apt update -y && apt install -y gnupg2
       - run: curl -sSL https://secchannel.rsk.co/release.asc | gpg2 --import -
-      - run: curl -O -J -L https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_VERSION-linux.zip
-      - run: unzip sonar-scanner-cli-$SONAR_VERSION-linux.zip
       - run: gpg2 --verify SHA256SUMS.asc && sha256sum --check SHA256SUMS.asc
+      - run: curl -OJL https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_VERSION-linux.zip
+      - run: unzip sonar-scanner-cli-$SONAR_VERSION-linux.zip
       - run: ./configure.sh
       - run: ./gradlew --no-daemon dependencies
       - run: ./gradlew --no-daemon shadow test
