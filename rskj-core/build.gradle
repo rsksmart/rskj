@@ -131,9 +131,6 @@ dependencies {
     compile "org.iq80.leveldb:leveldb:${leveldbVersion}"
     compile "org.fusesource.leveldbjni:leveldbjni:1.8"
     compile "org.ethereum:leveldbjni-all:1.18.3"
-    compile ('com.cedarsoftware:java-util:1.26.0') { // for deep equals
-        exclude group: 'org.apache.logging.log4j'
-    }
     compile "org.slf4j:slf4j-api:${slf4jVersion}"
     compile "com.fasterxml.jackson.core:jackson-databind:2.8.7"
     compile "org.apache.commons:commons-collections4:4.1"
@@ -178,7 +175,6 @@ dependencyVerification {
         'co.rsk.bitcoinj:bitcoinj-thin:83c0296752a2d50cc543831a808a2964c659a5830b5a565ff313e58b5ca1d591',
         'co.rsk:lll-compiler:a645fdb272f56721761f65dd32caa952453efc07d98d292259d99353b6f647d0',
         'com.beust:jcommander:0b7873f51a5f292637f49423d9a83b19de15c4be3dc092decbd6afeff56263fa',
-        'com.cedarsoftware:java-util:3c9122fbc0cacb54ab4b436ea072c37fdc27e0d094d2a9a374ec7112a5e7ab3b',
         'com.fasterxml.jackson.core:jackson-annotations:4caf3936315439b509b8c3ef494d4e47eaa6d25c3b5299aadb0eafb3944ed32f',
         'com.fasterxml.jackson.core:jackson-core:256ff34118ab292d1b4f3ee4d2c3e5e5f0f609d8e07c57e8ad1f51c46d4fbb46',
         'com.fasterxml.jackson.core:jackson-databind:4f74337b6d18664be0f5b15c6664b17aa3972c9c175092328b139b894ff66f19',
