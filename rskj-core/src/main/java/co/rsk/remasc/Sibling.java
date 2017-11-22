@@ -47,13 +47,14 @@ public class Sibling {
     // Number of uncles
     private int uncleCount;
 
-    public Sibling(BlockHeader blockHeader, byte[]  includedBlockCoinbase, long includedHeight) {
-        this.hash = blockHeader.getHash();
-        this.uncleCount = blockHeader.getUncleCount();
-        this.coinbase = blockHeader.getCoinbase();
-        this.paidFees = blockHeader.getPaidFees();
-        this.includedBlockCoinbase = includedBlockCoinbase;
-        this.includedHeight = includedHeight;
+
+    public Sibling(BlockHeader blockHeader, byte[]  includedBlockCoinbase, long includedHeight){
+        this(blockHeader.getHash(),
+                blockHeader.getCoinbase(),
+                includedBlockCoinbase,
+                blockHeader.getPaidFees(),
+                includedHeight,
+                blockHeader.getUncleCount());
     }
 
     private Sibling(byte[] hash, byte[] coinbase, byte[] includedBlockCoinbase, long paidFees, long includedHeight, int uncleCount) {
@@ -94,7 +95,7 @@ public class Sibling {
 
         byte[] rlpPaidFees = RLP.encodeBigInteger(BigInteger.valueOf(this.paidFees));
         byte[] rlpIncludedHeight = RLP.encodeBigInteger(BigInteger.valueOf(this.includedHeight));
-        byte[] rlpUncleCount = RLP.encodeBigInteger(BigInteger.valueOf(((long) this.uncleCount)));
+        byte[] rlpUncleCount = RLP.encodeBigInteger(BigInteger.valueOf((this.uncleCount)));
 
         return RLP.encodeList(rlpHash, rlpCoinbase, rlpIncludedBlockCoinbase, rlpPaidFees, rlpIncludedHeight, rlpUncleCount);
     }
