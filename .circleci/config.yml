@@ -15,8 +15,8 @@ jobs:
       - run: unzip sonar-scanner-cli-$SONAR_VERSION-linux.zip
       - run: gpg2 --verify SHA256SUMS.asc && sha256sum --check SHA256SUMS.asc
       - run: ./configure.sh
-      - run: ./gradlew dependencies
-      - run: ./gradlew shadow test
+      - run: ./gradlew --no-daemon dependencies
+      - run: ./gradlew --no-daemon shadow test
       - run:
           name: Save test results
           command: |
