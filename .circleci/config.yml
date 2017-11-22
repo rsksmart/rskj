@@ -9,7 +9,7 @@ jobs:
       SONAR_VERSION: "3.0.3.778"
     steps:
       - checkout
-      - run: apt-get update -y && apt-get install -y apt gnupg2
+      - run: apt update -y && apt install -y gnupg2
       - run: curl -sSL https://secchannel.rsk.co/release.asc | gpg2 --import -
       - run: curl -O -J -L https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_VERSION-linux.zip
       - run: unzip sonar-scanner-cli-$SONAR_VERSION-linux.zip
