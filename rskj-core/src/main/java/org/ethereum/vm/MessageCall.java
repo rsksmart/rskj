@@ -45,7 +45,7 @@ public class MessageCall {
                 case CALLCODE: return CALLCODE;
                 case DELEGATECALL: return DELEGATECALL;
                 default:
-                    throw new RuntimeException("Invalid call code: " + opCode);
+                    throw new RuntimeException("Invalid call opcode: " + opCode);
             }
         }
     }

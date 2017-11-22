@@ -101,7 +101,7 @@ public class EVMAssembler {
                         block.writer().write(0);
 
                     }
-                    // Data can be inserted by prefixing by '!' (e.g. !0x00 inserts a STOP code)
+                    // Data can be inserted by prefixing by '!' (e.g. !0x00 inserts a STOP opcode)
                     String aBin = extractInsertBinary(tok);
                     if (aBin != null) {
                         byte[] value = bigUIntToByteArray(parseValue(aBin));

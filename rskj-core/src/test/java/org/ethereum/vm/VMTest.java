@@ -3014,7 +3014,7 @@ public class VMTest {
         VM vm = new VM();
         program = new Program(Hex.decode(
                 "FC000000" + //header
-                "FC" // invalid code
+                "FC" // invalid opcode
         ), invoke);
         try {
             // Only one step needs to be exeecuted because header is not.

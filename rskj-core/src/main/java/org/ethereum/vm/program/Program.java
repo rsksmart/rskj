@@ -1591,7 +1591,7 @@ public class Program {
             return new OutOfGasException("Gas value overflow: actualGas[%d], gasLimit[%d];", actualGas, gasLimit.longValue());
         }
         public static IllegalOperationException invalidOpCode(byte... opCode) {
-            return new IllegalOperationException("Invalid operation code: code[%s];", Hex.toHexString(opCode, 0, 1));
+            return new IllegalOperationException("Invalid operation code: opcode[%s];", Hex.toHexString(opCode, 0, 1));
         }
 
         public static BadJumpDestinationException badJumpDestination(int pc) {
