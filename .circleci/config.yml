@@ -17,4 +17,14 @@ jobs:
       - run: ./configure.sh
       - run: ./gradlew dependencies
       - run: ./gradlew shadow test
+      - run:
+          name: Save test results
+          command: |
+            mkdir -p ~/junit/
+            find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} ~/junit/ \;
+          when: always
+      - store_test_results:
+          path: ~/junit
+      - store_artifacts:
+          path: ~/junit
       - run: if [ ! -z $CI_PULL_REQUEST ]; then  export PULL_REQUEST=$(echo $CI_PULL_REQUEST | awk '{print substr($1,39)}') && ./sonar-scanner-$SONAR_VERSION-linux/bin/sonar-scanner -Dsonar.analysis.mode=preview -Dsonar.github.pullRequest=$PULL_REQUEST -Dsonar.github.repository=rsksmart/rskj -Dsonar.github.oauth=$GITHUB_ACCESS_TOKEN -Dsonar.host.url=$SONAR_HOST -Dsonar.login=$SONARQUBE_ACCESS_TOKEN -Dsonar.projectKey="co.rsk:rskJ" -Dsonar.sources="rskj-core/src/main/java,rskj-core/src/main/resources" -Dsonar.java.binaries="rskj-core/build/classes/java/main"; fi
