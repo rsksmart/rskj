@@ -30,6 +30,7 @@ import co.rsk.rpc.CorsConfiguration;
 import org.ethereum.cli.CLIInterface;
 import org.ethereum.config.DefaultConfig;
 import org.ethereum.rpc.JsonRpcNettyServer;
+import org.ethereum.rpc.JsonRpcWeb3FilterHandler;
 import org.ethereum.rpc.JsonRpcWeb3ServerHandler;
 import org.ethereum.rpc.Web3;
 import org.slf4j.Logger;
@@ -118,11 +119,13 @@ public class Start {
     private void enableRpc() throws InterruptedException {
         Web3 web3Service = web3Factory.newInstance();
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, rskSystemProperties.getRpcModules());
+        JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler(rskSystemProperties.corsDomains());
         new JsonRpcNettyServer(
             rskSystemProperties.rpcPort(),
             rskSystemProperties.soLingerTime(),
             true,
             new CorsConfiguration(),
+            filterHandler,
             serverHandler
         ).start();
     }
