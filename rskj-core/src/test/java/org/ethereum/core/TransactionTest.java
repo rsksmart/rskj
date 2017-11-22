@@ -373,14 +373,14 @@ public class TransactionTest {
                 "                } " +
                 "            }, " +
                 "            '0000000000000000000000000000000001000008' : { " +
-                "                'balance' : '0x67c3', " +
+                "                'balance' : '0x67EB', " +
                 "                'code' : '0x', " +
                 "                'nonce' : '0x00', " +
                 "                'storage' : { " +
                 "                } " +
                 "            }, " +
                 "            'a94f5374fce5edbc8e2a8697c15331677e6ebf0b' : { " +
-                "                'balance' : '0x0DE0B6B3A762119D', " +
+                "                'balance' : '0x0DE0B6B3A7621175', " +
                 "                'code' : '0x', " +
                 "                'nonce' : '0x01', " +
                 "                'storage' : { " +
