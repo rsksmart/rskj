@@ -56,6 +56,11 @@ public class BlockProcessResult {
                 && this.result.containsValue(ImportResult.IMPORTED_BEST);
     }
 
+    public boolean isInvalidBlock() {
+        return this.result != null
+                && this.result.containsValue(ImportResult.INVALID_BLOCK);
+    }
+
     public void logResult(String blockHash, long time) {
         if(result == null || result.isEmpty()) {
             logger.debug("[MESSAGE PROCESS] Block[{}] After[{}] nano, process result. No block connections were made", time, blockHash);

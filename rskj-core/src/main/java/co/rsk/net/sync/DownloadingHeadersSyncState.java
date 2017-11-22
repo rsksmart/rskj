@@ -12,7 +12,7 @@ import java.util.*;
 public class DownloadingHeadersSyncState extends BaseSyncState {
 
     private final Map<NodeID, List<BlockIdentifier>> skeletons;
-    private List<Stack<BlockHeader>> pendingHeaders;
+    private final List<Deque<BlockHeader>> pendingHeaders;
     private final ChunksDownloadHelper chunksDownloadHelper;
 
     public DownloadingHeadersSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation, Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint) {
@@ -34,7 +34,9 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
             return;
         }
 
-        List<BlockHeader> headers = new ArrayList<>();
+        Deque<BlockHeader> headers = new ArrayDeque<>();
+        // the headers come ordered by block number desc
+        // we start adding the first parent header
         headers.add(chunk.get(chunk.size() - 1));
 
         for (int k = 1; k < chunk.size(); ++k) {
@@ -50,10 +52,8 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
 
             headers.add(header);
         }
-        Stack<BlockHeader> headerStack = new Stack<>();
-        Collections.reverse(headers);
-        headerStack.addAll(headers);
-        pendingHeaders.add(headerStack);
+
+        pendingHeaders.add(headers);
 
         if (!chunksDownloadHelper.hasNextChunk()) {
             // Finished verifying headers

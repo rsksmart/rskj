@@ -7,9 +7,9 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 
 public interface SyncEventsHandler {
     void sendSkeletonRequest(MessageChannel peer, long height);
@@ -20,7 +20,7 @@ public interface SyncEventsHandler {
 
     long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId);
 
-    void startDownloadingBodies(List<Stack<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons);
+    void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons);
 
     void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint);
 
@@ -35,4 +35,6 @@ public interface SyncEventsHandler {
     void onCompletedSyncing();
 
     void startFindingConnectionPoint();
+
+    void warnMessage(String message, Object... arguments);
 }

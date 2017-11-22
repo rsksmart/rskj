@@ -58,7 +58,7 @@ public class BlockSyncService {
     private static final Logger logger = LoggerFactory.getLogger(BlockSyncService.class);
     private final BlockStore store;
     private final Blockchain blockchain;
-    private SyncConfiguration syncConfiguration;
+    private final SyncConfiguration syncConfiguration;
     private final ChannelManager channelManager;
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
 

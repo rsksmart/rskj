@@ -37,8 +37,7 @@ public class PeersInformation {
     public SyncPeerStatus getOrRegisterPeer(MessageChannel messageChannel) {
         SyncPeerStatus peerStatus = this.peerStatuses.get(messageChannel.getPeerNodeID());
 
-
-        if (peerStatus != null && !peerStatus.isExpired(syncConfiguration.getExpirationTimePeerStatus()))
+        if (peerStatus != null && peerNotExpired(peerStatus))
             return peerStatus;
 
         return this.registerPeer(messageChannel);
@@ -70,7 +69,7 @@ public class PeersInformation {
 
     private Stream<Map.Entry<NodeID,SyncPeerStatus>> getCandidates(){
         return peerStatuses.entrySet().stream()
-                .filter(e -> !e.getValue().isExpired(syncConfiguration.getExpirationTimePeerStatus()))
+                .filter(e -> peerNotExpired(e.getValue()))
                 .filter(e -> syncInformation.hasGoodReputation(e.getKey()))
                 .filter(e -> syncInformation.hasLowerDifficulty(e.getKey()));
     }
@@ -93,7 +92,11 @@ public class PeersInformation {
 
     public void cleanExpired() {
         peerStatuses = peerStatuses.entrySet().stream()
-                .filter(e -> !e.getValue().isExpired(syncConfiguration.getExpirationTimePeerStatus()))
+                .filter(e -> peerNotExpired(e.getValue()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private boolean peerNotExpired(SyncPeerStatus peer) {
+        return !peer.isExpired(syncConfiguration.getExpirationTimePeerStatus());
     }
 }

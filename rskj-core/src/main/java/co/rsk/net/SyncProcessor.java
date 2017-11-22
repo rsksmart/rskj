@@ -21,10 +21,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 
 /**
  * Created by ajlopez on 29/08/2017.
@@ -33,27 +30,25 @@ import java.util.Stack;
 public class SyncProcessor implements SyncEventsHandler {
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
+    private final Blockchain blockchain;
+    private final BlockSyncService blockSyncService;
+    private final PeerScoringManager peerScoringManager;
     private final SyncConfiguration syncConfiguration;
+    private final PeersInformation peerStatuses;
 
-    private Blockchain blockchain;
-    private BlockSyncService blockSyncService;
-    private PeersInformation peerStatuses;
-
+    private final PendingMessages pendingMessages;
+    private final SyncInformationImpl syncInformation;
     private SyncState syncState;
     private NodeID selectedPeerId;
-    private PendingMessages pendingMessages;
-    private SyncInformationImpl syncInformation;
-    private PeerScoringManager peerScoringManager;
 
     public SyncProcessor(Blockchain blockchain, BlockSyncService blockSyncService, PeerScoringManager peerScoringManager, SyncConfiguration syncConfiguration, BlockHeaderValidationRule blockHeaderValidationRule) {
-        // TODO(mc) implement FollowBestChain
         this.blockchain = blockchain;
         this.blockSyncService = blockSyncService;
+        this.peerScoringManager = peerScoringManager;
         this.syncConfiguration = syncConfiguration;
         this.syncInformation = new SyncInformationImpl(blockHeaderValidationRule);
         this.peerStatuses = new PeersInformation(syncConfiguration, syncInformation);
         this.pendingMessages = new PendingMessages();
-        this.peerScoringManager = peerScoringManager;
         setSyncState(new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses));
     }
 
@@ -185,7 +180,7 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void startDownloadingBodies(List<Stack<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons) {
+    public void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons) {
         // we keep track of best known block and we start to trust it when all headers are validated
         List<BlockIdentifier> selectedSkeleton = skeletons.get(selectedPeerId);
         final long peerBestBlockNumber = selectedSkeleton.get(selectedSkeleton.size() - 1).getNumber();
@@ -213,6 +208,11 @@ public class SyncProcessor implements SyncEventsHandler {
         // always that a syncing process ends unexpectedly the best block number is reset
         blockSyncService.setLastKnownBlockNumber(blockchain.getBestBlock().getNumber());
         setSyncState(new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses));
+    }
+
+    @Override
+    public void warnMessage(String message, Object... arguments) {
+        logger.warn(message, arguments);
     }
 
     @Override
@@ -287,11 +287,6 @@ public class SyncProcessor implements SyncEventsHandler {
     @VisibleForTesting
     public Map<Long, MessageType> getExpectedResponses() {
         return this.pendingMessages.getExpectedMessages();
-    }
-
-    @VisibleForTesting
-    public boolean hasGoodReputation(NodeID nodeID) {
-        return this.peerScoringManager.hasGoodReputation(nodeID);
     }
 
     private class SyncInformationImpl implements SyncInformation {

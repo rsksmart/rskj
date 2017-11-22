@@ -77,6 +77,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
+import javax.annotation.Nullable;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -119,13 +120,13 @@ public class RskFactory {
         return rsk;
     }
 
-    private void setupRecorder(RskImpl rsk, String blocksRecorderFileName) {
+    private void setupRecorder(RskImpl rsk, @Nullable String blocksRecorderFileName) {
         if (blocksRecorderFileName != null) {
             rsk.getBlockchain().setBlockRecorder(new FileBlockRecorder(blocksRecorderFileName));
         }
     }
 
-    private void setupPlayer(RskImpl rsk, String blocksPlayerFileName) {
+    private void setupPlayer(RskImpl rsk, @Nullable String blocksPlayerFileName) {
         if (blocksPlayerFileName == null) {
             return;
         }

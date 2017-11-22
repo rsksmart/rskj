@@ -8,9 +8,9 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 
 public class SimpleSyncEventsHandler implements SyncEventsHandler {
     private boolean startSyncingWasCalled_;
@@ -38,6 +38,11 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
+    public void warnMessage(String message, Object... arguments) {
+
+    }
+
+    @Override
     public long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId) { return 0; }
 
     @Override
@@ -52,7 +57,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void startDownloadingBodies(List<Stack<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons) { }
+    public void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons) { }
 
     @Override
     public void startDownloadingSkeleton(long connectionPoint) { }

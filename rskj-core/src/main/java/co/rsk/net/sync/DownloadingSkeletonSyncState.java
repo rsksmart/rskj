@@ -12,17 +12,15 @@ import java.util.Map;
 
 public class DownloadingSkeletonSyncState extends BaseSyncState {
 
-    private List<MessageChannel> candidates;
-    private boolean selectedPeerAnswered;
-    private PeersInformation knownPeers;
+    private final List<MessageChannel> candidates;
+    private final Map<NodeID, List<BlockIdentifier>> skeletons;
     private long connectionPoint;
-    private Map<NodeID, List<BlockIdentifier>> skeletons;
     private long expectedSkeletons;
+    private boolean selectedPeerAnswered;
 
 
     public DownloadingSkeletonSyncState(SyncConfiguration syncConfiguration, SyncEventsHandler syncEventsHandler, SyncInformation syncInformation, PeersInformation knownPeers, long connectionPoint) {
         super(syncInformation, syncEventsHandler, syncConfiguration);
-        this.knownPeers = knownPeers;
         this.connectionPoint = connectionPoint;
         this.skeletons = new HashMap<>();
         this.selectedPeerAnswered = false;

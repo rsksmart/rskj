@@ -433,9 +433,9 @@ public class SyncProcessorTest {
         BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
         processor.registerExpectedMessage(response);
 
-        Stack<BlockHeader> headerStack = new Stack<>();
+        Deque<BlockHeader> headerStack = new ArrayDeque<>();
         headerStack.add(block.getHeader());
-        List<Stack<BlockHeader>> headers = new ArrayList<>();
+        List<Deque<BlockHeader>> headers = new ArrayList<>();
         headers.add(headerStack);
 
         List<BlockIdentifier> bids = new ArrayList<>();
@@ -483,11 +483,11 @@ public class SyncProcessorTest {
         BodyResponseMessage response = new BodyResponseMessage(lastRequestId, txs, uncles);
         processor.registerExpectedMessage(response);
 
-        Stack<BlockHeader> headerStack = new Stack<>();
+        Deque<BlockHeader> headerStack = new ArrayDeque<>();
         headerStack.add(block.getHeader());
         headerStack.add(block.getHeader());
         headerStack.add(block.getHeader());
-        List<Stack<BlockHeader>> headers = new ArrayList<>();
+        List<Deque<BlockHeader>> headers = new ArrayList<>();
         headers.add(headerStack);
 
         List<BlockIdentifier> bids = new ArrayList<>();
@@ -531,12 +531,12 @@ public class SyncProcessorTest {
         BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
         processor.registerExpectedMessage(response);
 
-        Stack<BlockHeader> headerStack = new Stack<>();
+        Deque<BlockHeader> headerStack = new ArrayDeque<>();
 //        for (int i = 1; i <= blockchain.getBestBlock().getNumber(); i++){
 //            headerStack.add(blockchain.getBlockByNumber(i).getHeader());
 //        }
         headerStack.add(block.getHeader());
-        List<Stack<BlockHeader>> headers = new ArrayList<>();
+        List<Deque<BlockHeader>> headers = new ArrayList<>();
         headers.add(headerStack);
 
         int connectionPoint = 10;
@@ -602,9 +602,9 @@ public class SyncProcessorTest {
         BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
         processor.registerExpectedMessage(response);
 
-        Stack<BlockHeader> headerStack = new Stack<>();
+        Deque<BlockHeader> headerStack = new ArrayDeque<>();
         headerStack.add(block.getHeader());
-        List<Stack<BlockHeader>> headers = new ArrayList<>();
+        List<Deque<BlockHeader>> headers = new ArrayList<>();
         headers.add(headerStack);
 
         List<BlockIdentifier> bids = new ArrayList<>();

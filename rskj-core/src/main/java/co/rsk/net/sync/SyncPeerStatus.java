@@ -35,7 +35,7 @@ public class SyncPeerStatus {
         if (otd == null)
             return 1;
 
-        return this.status.getTotalDifficulty().compareTo(otd);
+        return ttd.compareTo(otd);
     }
 
     private void updateActivity() {
