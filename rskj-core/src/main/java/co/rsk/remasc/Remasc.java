@@ -26,10 +26,14 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.RepositoryTrack;
 import org.ethereum.util.FastByteComparisons;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -54,6 +58,8 @@ public class Remasc {
 
     private List<LogInfo> logs;
 
+    private Repository repository;
+
     Remasc(Transaction executionTx, Repository repository, String contractAddress, Block executionBlock, BlockStore blockStore, RemascConfig remascConstants, List<LogInfo> logs) {
         this.executionTx = executionTx;
         this.executionBlock = executionBlock;
@@ -62,6 +68,7 @@ public class Remasc {
         this.provider = new RemascStorageProvider(repository, contractAddress);
         this.logs = logs;
         this.feesPayer = new RemascFeesPayer(repository, contractAddress);
+        this.repository = repository;
     }
 
     public void save() {
@@ -117,18 +124,15 @@ public class Remasc {
         feesPayer.payMiningFees(processingBlockHeader.getHash(), payToRskLabs, remascConstants.getRskLabsAddress(), logs);
         fullBlockReward = fullBlockReward.subtract(payToRskLabs);
 
-        // Pay Federation labs cut
-        /* WIP
-        Repository processingRepository = repository.getSnapshotTo(processingBlockHeader.getStateRoot());
-        Bridge bridge = (Bridge)PrecompiledContracts.getContractForAddress(new DataWord(Hex.decode(PrecompiledContracts.BRIDGE_ADDR)));
-        bridge.init(null, null, repository, null, null, null);
+        Repository processingRepository = ((RepositoryTrack)repository).getOriginRepository().getSnapshotTo(processingBlockHeader.getStateRoot());
+        Bridge bridge = (Bridge) PrecompiledContracts.getContractForAddress(new DataWord(Hex.decode(PrecompiledContracts.BRIDGE_ADDR)));
+        bridge.init(null, null, processingRepository, null, null, null);
 
         if (bridge.getFederationSize(null).intValue() != 0) {
             BigInteger payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
             // TODO transfer to federators
             fullBlockReward = fullBlockReward.subtract(payToFederation);
         }
-        */
 
         List<Sibling> siblings = provider.getSiblings().get(processingBlockNumber);
 

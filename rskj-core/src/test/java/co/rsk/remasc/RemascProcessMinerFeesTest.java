@@ -652,15 +652,15 @@ public class RemascProcessMinerFeesTest {
         Blockchain blockchain = testRunner.getBlockChain();
 
         Block blockAtHeightSeven = blockchain.getBlockByNumber(8);
-        assertEquals(BigInteger.valueOf(1680L), testRunner.getAccountBalance(blockAtHeightSeven.getCoinbase()));
+        assertEquals(BigInteger.valueOf(1680L - 17L), testRunner.getAccountBalance(blockAtHeightSeven.getCoinbase()));
 
         Block blockAtHeightFiveMainchain = blockchain.getBlockByNumber(6);
-        assertEquals(BigInteger.valueOf(7560L), testRunner.getAccountBalance(blockAtHeightFiveMainchain.getCoinbase()));
+        assertEquals(BigInteger.valueOf(7560L - 76L), testRunner.getAccountBalance(blockAtHeightFiveMainchain.getCoinbase()));
 
         Block blockAtHeightFiveSibling = testRunner.getAddedSiblings().get(0);
-        assertEquals(BigInteger.valueOf(7182L), testRunner.getAccountBalance(blockAtHeightFiveSibling.getCoinbase()));
+        assertEquals(BigInteger.valueOf(7182L - 72L), testRunner.getAccountBalance(blockAtHeightFiveSibling.getCoinbase()));
 
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), BigInteger.valueOf(84000L), BigInteger.valueOf(378L), 0L);
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), BigInteger.valueOf(84000L), BigInteger.valueOf(378L - 3L), 0L);
     }
 
     @Test
@@ -677,19 +677,19 @@ public class RemascProcessMinerFeesTest {
         Blockchain blockchain = testRunner.getBlockChain();
 
         Block blockAtHeightSix = blockchain.getBlockByNumber(7);
-        assertEquals(BigInteger.valueOf(840L), testRunner.getAccountBalance(blockAtHeightSix.getCoinbase()));
+        assertEquals(BigInteger.valueOf(840L - 9L), testRunner.getAccountBalance(blockAtHeightSix.getCoinbase()));
 
         Block blockAtHeightSeven = blockchain.getBlockByNumber(8);
-        assertEquals(BigInteger.valueOf(840L), testRunner.getAccountBalance(blockAtHeightSeven.getCoinbase()));
+        assertEquals(BigInteger.valueOf(840L - 9L), testRunner.getAccountBalance(blockAtHeightSeven.getCoinbase()));
 
         Block blockAtHeightFiveMainchain = blockchain.getBlockByNumber(6);
-        assertEquals(BigInteger.valueOf(5040L), testRunner.getAccountBalance(blockAtHeightFiveMainchain.getCoinbase()));
+        assertEquals(BigInteger.valueOf(5040L - 51L), testRunner.getAccountBalance(blockAtHeightFiveMainchain.getCoinbase()));
 
         Block blockAtHeightFiveFirstSibling = testRunner.getAddedSiblings().get(0);
-        assertEquals(BigInteger.valueOf(5040L), testRunner.getAccountBalance(blockAtHeightFiveFirstSibling.getCoinbase()));
+        assertEquals(BigInteger.valueOf(5040L - 51L), testRunner.getAccountBalance(blockAtHeightFiveFirstSibling.getCoinbase()));
 
         Block blockAtHeightFiveSecondSibling = testRunner.getAddedSiblings().get(1);
-        assertEquals(BigInteger.valueOf(4788L), testRunner.getAccountBalance(blockAtHeightFiveSecondSibling.getCoinbase()));
+        assertEquals(BigInteger.valueOf(4788L - 48L), testRunner.getAccountBalance(blockAtHeightFiveSecondSibling.getCoinbase()));
 
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), BigInteger.valueOf(84000L), BigInteger.valueOf(252L), 0L);
     }
