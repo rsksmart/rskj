@@ -79,7 +79,7 @@ public class RskTestFactory {
 
     private TransactionExecutor executeTransaction(Transaction transaction) {
         Repository track = getRepository().startTracking();
-        TransactionExecutor executor = new TransactionExecutor(transaction, new byte[32],
+        TransactionExecutor executor = new TransactionExecutor(transaction, 0, new byte[32],
                 getRepository(), getBlockStore(), getReceiptStore(),
                 new ProgramInvokeFactoryImpl(), getBlockchain().getBestBlock());
         executor.init();
