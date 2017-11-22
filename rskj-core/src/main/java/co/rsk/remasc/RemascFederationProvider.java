@@ -14,10 +14,10 @@ import java.io.IOException;
 /**
  * Created by ajlopez on 14/11/2017.
  */
-public class RemascBridgeProvider {
+public class RemascFederationProvider {
     private BridgeSupport bridgeSupport;
 
-    public RemascBridgeProvider(Repository repository, BlockStore blockStore) throws IOException, BlockStoreException {
+    public RemascFederationProvider(Repository repository) throws IOException, BlockStoreException {
         this.bridgeSupport = new BridgeSupport(repository, PrecompiledContracts.BRIDGE_ADDR, null, null, null, null);
     }
 

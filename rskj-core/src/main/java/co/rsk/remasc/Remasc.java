@@ -18,8 +18,8 @@
 
 package co.rsk.remasc;
 
+import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.RemascConfig;
-import co.rsk.peg.Bridge;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -28,13 +28,11 @@ import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.RepositoryTrack;
 import org.ethereum.util.FastByteComparisons;
-import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
-import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -86,7 +84,7 @@ public class Remasc {
     /**
      * Implements the actual Remasc distribution logic
      */
-    void processMinersFees() {
+    void processMinersFees() throws IOException, BlockStoreException {
         if (!(executionTx instanceof RemascTransaction)) {
             //Detect
             // 1) tx to remasc that is not the latest tx in a block
@@ -125,10 +123,9 @@ public class Remasc {
         fullBlockReward = fullBlockReward.subtract(payToRskLabs);
 
         Repository processingRepository = ((RepositoryTrack)repository).getOriginRepository().getSnapshotTo(processingBlockHeader.getStateRoot());
-        Bridge bridge = (Bridge) PrecompiledContracts.getContractForAddress(new DataWord(Hex.decode(PrecompiledContracts.BRIDGE_ADDR)));
-        bridge.init(null, null, processingRepository, null, null, null);
+        RemascFederationProvider federationProvider = new RemascFederationProvider(processingRepository);
 
-        if (bridge.getFederationSize(null).intValue() != 0) {
+        if (federationProvider.getFederationSize() != 0) {
             BigInteger payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
             // TODO transfer to federators
             fullBlockReward = fullBlockReward.subtract(payToFederation);
