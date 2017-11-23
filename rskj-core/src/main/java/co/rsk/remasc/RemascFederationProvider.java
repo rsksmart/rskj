@@ -4,6 +4,7 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSupport;
 import org.ethereum.core.Repository;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -23,5 +24,10 @@ public class RemascFederationProvider {
 
     public int getFederationSize() throws IOException {
         return this.bridgeSupport.getFederationSize().intValue();
+    }
+
+    public byte[] getFederatorAddress(int n) throws IOException {
+        byte[] publicKey = this.bridgeSupport.getFederatorPublicKey(n);
+        return ECKey.fromPublicOnly(publicKey).getAddress();
     }
 }
