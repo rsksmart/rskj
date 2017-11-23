@@ -37,9 +37,11 @@ public class BlockProcessResult {
 
     private Map<ByteArrayWrapper, ImportResult> result;
 
-    public BlockProcessResult(boolean additionalValidations, Map<ByteArrayWrapper, ImportResult> result) {
+    public BlockProcessResult(boolean additionalValidations, Map<ByteArrayWrapper, ImportResult> result, String blockHash, long time) {
         this.additionalValidationsOk = additionalValidations;
         this.result = result;
+        if (time >= 1000000000)
+            logResult(blockHash, time);
     }
 
     public boolean wasBlockAdded(Block block) {

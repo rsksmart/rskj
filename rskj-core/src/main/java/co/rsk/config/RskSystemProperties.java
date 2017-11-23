@@ -380,7 +380,8 @@ public class RskSystemProperties extends SystemProperties {
         return getInt("sync.maxSkeletonChunks", 20);
     }
 
+    // its fixed, cannot be set by config file
     public int getChunkSize() {
-        return getInt("sync.chunkSize", 192);
+        return 192;
     }
 }

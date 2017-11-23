@@ -467,7 +467,7 @@ public class MinerServerImpl implements MinerServer {
         }
 
         private boolean isSyncing() {
-            return nodeBlockProcessor.isSyncingBlocks();
+            return nodeBlockProcessor.hasBetterBlockToSync();
         }
     }
 
