@@ -69,9 +69,8 @@ public class RskImpl extends EthereumImpl implements Rsk {
         return isplaying;
     }
 
-    @Override
     public boolean isSyncingBlocks() {
-        return this.getNodeBlockProcessor().isSyncingBlocks();
+        return this.getNodeBlockProcessor().hasBetterBlockToSync();
     }
 
     @Override

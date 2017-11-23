@@ -45,7 +45,7 @@ public class SimpleSyncInformation implements SyncInformation {
 
     @Override
     public BlockProcessResult processBlock(Block block) {
-        return new BlockProcessResult(false, null);
+        return new BlockProcessResult(false, null, block.getShortHash(), 0);
     }
 
     @Override

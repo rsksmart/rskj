@@ -18,7 +18,6 @@
 
 package co.rsk.net;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.SyncConfiguration;
 import org.ethereum.core.Block;
@@ -45,28 +44,24 @@ import java.util.stream.Collectors;
 public class NodeBlockProcessor implements BlockProcessor {
     private static final Logger logger = LoggerFactory.getLogger("blockprocessor");
 
-    private final Object statusLock = new Object();
-
     private final BlockStore store;
     private final Blockchain blockchain;
-    private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
+    // keep tabs on which nodes know which blocks.
     private final BlockSyncService blockSyncService;
+    private final BlockNodeInformation nodeInformation;
     private final SyncConfiguration syncConfiguration;
+    // keeps on a map the hashes that belongs to the skeleton
     private final Map <Long, byte[]> skeletonCache = new HashMap<>();
-
-    private long blocksForPeers;
 
     /**
      * Creates a new NodeBlockProcessor using the given BlockStore and Blockchain.
      *
-     * @param config         RSK Configuration.
      * @param store        A BlockStore to store the blocks that are not ready for the Blockchain.
      * @param blockchain   The blockchain in which to insert the blocks.
      * @param nodeInformation
      * @param blockSyncService
      */
     public NodeBlockProcessor(
-            @Nonnull final RskSystemProperties config,
             @Nonnull final BlockStore store,
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
@@ -76,7 +71,6 @@ public class NodeBlockProcessor implements BlockProcessor {
         this.store = store;
         this.blockchain = blockchain;
         this.nodeInformation = nodeInformation;
-        this.blocksForPeers = config.getBlocksForPeers();
         this.blockSyncService = blockSyncService;
         this.syncConfiguration = syncConfiguration;
     }
@@ -129,45 +123,6 @@ public class NodeBlockProcessor implements BlockProcessor {
         sender.sendMessage(new GetBlockMessage(header.getHash()));
 
         this.store.saveHeader(header);
-    }
-
-    /**
-     * processStatus processes a Status containing another node's status (its bestBlock).
-     * If the sender has a better best block, it will be requested.
-     * Otherwise, all the blocks that the sender is missing will be sent to it.
-     *
-     * @param sender the message sender. This should be the node that sent the status message.
-     * @param status The status message containing the other node's best block.
-     */
-    @Override
-    public void processStatus(@Nonnull final MessageChannel sender, @Nonnull final Status status) {
-        logger.trace("Processing status {} {} from {}", status.getBestBlockNumber(),
-                Hex.toHexString(status.getBestBlockHash()).substring(0, 10), sender.getPeerNodeID().toString());
-
-        final byte[] hash = status.getBestBlockHash();
-        nodeInformation.addBlockToNode(new ByteArrayWrapper(hash), sender.getPeerNodeID());
-
-        if (!this.hasBlock(hash))
-            sender.sendMessage(new GetBlockMessage(hash));
-
-        final long bestBlockNumber = this.getBestBlockNumber();
-        final long peerBestBlockNumber = status.getBestBlockNumber();
-
-        if (peerBestBlockNumber > blockSyncService.getLastKnownBlockNumber())
-            blockSyncService.setLastKnownBlockNumber(peerBestBlockNumber);
-
-        for (long n = peerBestBlockNumber; n <= bestBlockNumber && n < peerBestBlockNumber + this.blocksForPeers; n++) {
-            logger.trace("Trying to send block {}", n);
-            
-            final Block b = this.blockchain.getBlockByNumber(n);
-
-            if (b == null)
-                continue;
-
-            nodeInformation.addBlockToNode(new ByteArrayWrapper(b.getHash()), sender.getPeerNodeID());
-            logger.trace("Sending block {} {}", b.getNumber(), b.getShortHash());
-            sender.sendMessage(new BlockMessage(b));
-        }
     }
 
     /**
@@ -332,7 +287,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     private byte[] getSkeletonHash(long skeletonBlockNumber) {
         // if block number is too close to best block then its not stored in cache
         // in order to avoid caching forked blocks
-        if (blockchain.getBestBlock().getNumber() - skeletonBlockNumber < 192){
+        if (blockchain.getBestBlock().getNumber() - skeletonBlockNumber < syncConfiguration.getChunkSize()){
             Block block = getBlockFromBlockchainStore(skeletonBlockNumber);
             if (block != null){
                 return block.getHash();
@@ -439,16 +394,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      * @return the blockchain's best block's number.
      */
     public long getBestBlockNumber() {
-        return blockSyncService.getBestBlockNumber();
-    }
-
-    /**
-     * getBestBlockHash returns the current blockchain best block's hash.
-     *
-     * @return the blockchain's best block's hash.
-     */
-    private byte[] getBestBlockHash() {
-        return this.blockchain.getBestBlock().getHash();
+        return blockchain.getBestBlock().getNumber();
     }
 
     /**
@@ -493,16 +439,6 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public boolean hasBetterBlockToSync() {
         return blockSyncService.hasBetterBlockToSync();
-    }
-
-    @Override
-    public boolean isSyncingBlocks() {
-        return blockSyncService.isSyncingBlocks();
-    }
-
-    @Override
-    public void acceptAnyBlock() {
-        blockSyncService.acceptAnyBlock();
     }
 
     @Override

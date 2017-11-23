@@ -18,21 +18,19 @@
 
 package co.rsk.net;
 
-import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.core.bc.BlockUtils;
-import co.rsk.net.messages.*;
+import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.sync.SyncConfiguration;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -44,22 +42,14 @@ import java.util.*;
 public class BlockSyncService {
     private static final int NBLOCKS_TO_SYNC = 30;
 
-    private volatile int nsyncs = 0;
-    private volatile boolean syncing = false;
-
     private Map<ByteArrayWrapper, Integer> unknownBlockHashes = new HashMap<>();
     private long processedBlocksCounter;
     private long lastKnownBlockNumber = 0;
-    private long lastStatusTime;
-    private boolean ignoreAdvancedBlocks = true;
-
-    private final Object statusLock = new Object();
 
     private static final Logger logger = LoggerFactory.getLogger(BlockSyncService.class);
     private final BlockStore store;
     private final Blockchain blockchain;
     private final SyncConfiguration syncConfiguration;
-    private final ChannelManager channelManager;
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
 
     // this is tightly coupled with NodeProcessorService and SyncProcessor,
@@ -68,45 +58,27 @@ public class BlockSyncService {
             @Nonnull final BlockStore store,
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
-            final SyncConfiguration syncConfiguration,
-            final ChannelManager channelManager) {
+            final SyncConfiguration syncConfiguration) {
         this.store = store;
         this.blockchain = blockchain;
         this.syncConfiguration = syncConfiguration;
-        this.channelManager = channelManager;
         this.nodeInformation = nodeInformation;
     }
 
     public BlockProcessResult processBlock(MessageChannel sender, @Nonnull Block block) {
+        long start = System.nanoTime();
         long bestBlockNumber = this.getBestBlockNumber();
         long blockNumber = block.getNumber();
-
-        if ((++processedBlocksCounter % 200) == 0) {
-            long minimal = store.minimalHeight();
-            long maximum = store.maximumHeight();
-            logger.trace("Blocks in block processor {} from height {} to height {}", this.store.size(), minimal, maximum);
-
-            if (minimal < bestBlockNumber - 1000)
-                store.releaseRange(minimal, minimal + 1000);
-
-            sendStatus(blockchain, sender);
-        }
-
-        // On incoming block, refresh status if needed
-        trySendStatusToActivePeers();
-
-        store.removeHeader(block.getHeader());
-
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
+        int syncMaxDistance = syncConfiguration.getChunkSize();
 
+        tryReleaseStore(bestBlockNumber);
+        store.removeHeader(block.getHeader());
         unknownBlockHashes.remove(blockHash);
 
-        lastKnownBlockNumber = Math.max(blockNumber, lastKnownBlockNumber);
-
-        int syncMaxDistance = syncConfiguration.getMaxSkeletonChunks() * syncConfiguration.getChunkSize();
-        if (ignoreAdvancedBlocks && blockNumber > bestBlockNumber + syncMaxDistance) {
+        if (blockNumber > bestBlockNumber + syncMaxDistance) {
             logger.trace("Block too advanced {} {} from {} ", blockNumber, block.getShortHash(), sender != null ? sender.getPeerNodeID().toString() : "N/A");
-            return new BlockProcessResult(false, null);
+            return new BlockProcessResult(false, null, block.getShortHash(), System.nanoTime() - start);
         }
 
         if (sender != null) {
@@ -116,45 +88,38 @@ public class BlockSyncService {
         // already in a blockchain
         if (BlockUtils.blockInSomeBlockChain(block, blockchain)) {
             logger.trace("Block already in a chain " + blockNumber + " " + block.getShortHash());
-            return new BlockProcessResult(false, null);
+            return new BlockProcessResult(false, null, block.getShortHash(), System.nanoTime() - start);
         }
 
-        final Set<ByteArrayWrapper> unknownHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
+        Set<ByteArrayWrapper> unknownHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
 
-        this.processMissingHashes(sender, unknownHashes);
-
+        processMissingHashes(sender, unknownHashes);
         trySaveStore(block);
 
         // We can't add the block if there are missing ancestors or uncles. Request the missing blocks to the sender.
         if (!unknownHashes.isEmpty()) {
             logger.trace("Missing hashes for block " + blockNumber + " " + block.getShortHash());
-            return new BlockProcessResult(false, null);
+            return new BlockProcessResult(false, null, block.getShortHash(), System.nanoTime() - start);
         }
 
         logger.trace("Trying to add to blockchain");
 
-        BlockProcessResult result = new BlockProcessResult(true,
-                connectBlocksAndDescendants(sender,
-                BlockUtils.sortBlocksByNumber(this.getParentsNotInBlockchain(block))));
+        Map<ByteArrayWrapper, ImportResult> connectResult = connectBlocksAndDescendants(sender,
+                BlockUtils.sortBlocksByNumber(this.getParentsNotInBlockchain(block)));
 
-        // After adding a long blockchain, refresh status if needed
-        trySendStatusToActivePeers();
-
-        return result;
+        return new BlockProcessResult(true, connectResult, block.getShortHash(),
+                System.nanoTime() - start);
     }
 
-    public synchronized boolean isSyncingBlocks() {
-        if (!hasBetterBlockToSync()) {
-            syncing = false;
-            return false;
-        }
+    private void tryReleaseStore(long bestBlockNumber) {
+        if ((++processedBlocksCounter % 200) == 0) {
+            long minimal = store.minimalHeight();
+            long maximum = store.maximumHeight();
+            logger.trace("Blocks in block processor {} from height {} to height {}", this.store.size(), minimal, maximum);
 
-        if (!syncing) {
-            nsyncs++;
+            if (minimal < bestBlockNumber - 1000)
+                store.releaseRange(minimal, minimal + 1000);
         }
-        syncing = true;
-
-        return nsyncs < 2;
     }
 
     public boolean hasBetterBlockToSync() {
@@ -172,79 +137,13 @@ public class BlockSyncService {
         this.lastKnownBlockNumber = lastKnownBlockNumber;
     }
 
-    public long getBestBlockNumber() {
+    private long getBestBlockNumber() {
         return this.blockchain.getBestBlock().getNumber();
     }
 
     private void trySaveStore(@Nonnull Block block) {
         if (!this.store.hasBlock(block))
             this.store.saveBlock(block);
-    }
-
-    private void trySendStatusToActivePeers() {
-        if (this.hasBetterBlockToSync())
-            sendStatusToActivePeers();
-    }
-
-    public void sendStatusToActivePeers() {
-        synchronized (statusLock) {
-            if (this.channelManager == null) {
-                return;
-            }
-
-            BlockChainStatus blockChainStatus = this.blockchain.getStatus();
-
-            if (blockChainStatus == null) {
-                return;
-            }
-
-            Block block = blockChainStatus.getBestBlock();
-            BigInteger totalDifficulty = blockChainStatus.getTotalDifficulty();
-
-            if (block == null) {
-                return;
-            }
-
-            Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), totalDifficulty);
-
-            long currentTime = System.currentTimeMillis();
-
-            if (currentTime - lastStatusTime < 1000) {
-                return;
-            }
-
-            lastStatusTime = currentTime;
-
-            logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(), Hex.toHexString(status.getBestBlockHash()).substring(0, 8));
-
-            this.channelManager.broadcastStatus(status);
-        }
-    }
-
-    public void acceptAnyBlock()
-    {
-//        this.ignoreAdvancedBlocks = false;
-    }
-
-    private static void sendStatus(Blockchain blockchain, MessageChannel sender) {
-        if (sender == null || blockchain == null)
-            return;
-
-        BlockChainStatus blockChainStatus = blockchain.getStatus();
-
-        if (blockChainStatus == null)
-            return;
-
-        Block block = blockChainStatus.getBestBlock();
-        BigInteger totalDifficulty = blockChainStatus.getTotalDifficulty();
-
-        if (block == null)
-            return;
-
-        Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), totalDifficulty);
-        logger.trace("Sending status best block {} to {}", status.getBestBlockNumber(), sender.getPeerNodeID().toString());
-        StatusMessage msg = new StatusMessage(status);
-        sender.sendMessage(msg);
     }
 
     private Map<ByteArrayWrapper, ImportResult> connectBlocksAndDescendants(MessageChannel sender, List<Block> blocks) {

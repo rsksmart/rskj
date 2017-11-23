@@ -1,23 +1,17 @@
 package co.rsk.net;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
 import co.rsk.validators.BlockValidationRule;
-import org.ethereum.core.Blockchain;
 import co.rsk.validators.ProofOfWorkRule;
-import org.ethereum.rpc.Simples.SimpleChannelManager;
+import org.ethereum.core.Blockchain;
 import org.mockito.Mockito;
 
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 
 public class NodeMessageHandlerUtil {
-
-    public static NodeMessageHandler createHandler() {
-        return createHandler(new ProofOfWorkRule());
-    }
 
     public static NodeMessageHandler createHandler(BlockValidationRule validationRule) {
         final World world = new World();
@@ -26,8 +20,8 @@ public class NodeMessageHandlerUtil {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration, new SimpleChannelManager());
-        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
+        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         return new NodeMessageHandler(processor, null, null, null, null, null, validationRule);
     }
@@ -46,8 +40,8 @@ public class NodeMessageHandlerUtil {
         final BlockStore store = new BlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration, new SimpleChannelManager());
-        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
+        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         ProofOfWorkRule blockValidationRule = new ProofOfWorkRule();
         PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
         Mockito.when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);

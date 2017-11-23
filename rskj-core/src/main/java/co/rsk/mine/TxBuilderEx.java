@@ -73,7 +73,7 @@ public class TxBuilderEx {
                     logger.error("Interrupted", e);
                 }
 
-                while (worldManager.getNodeBlockProcessor() != null && worldManager.getNodeBlockProcessor().isSyncingBlocks()) {
+                while (worldManager.getNodeBlockProcessor() != null && worldManager.getNodeBlockProcessor().hasBetterBlockToSync()) {
                     try {
                         Thread.sleep(60000);
                     } catch (InterruptedException e) {

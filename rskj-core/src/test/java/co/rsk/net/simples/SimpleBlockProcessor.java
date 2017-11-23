@@ -46,7 +46,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
         Map<ByteArrayWrapper, ImportResult> connectionsResult = new HashMap<>();
         this.blocks.add(block);
         connectionsResult.put(new ByteArrayWrapper(block.getHash()), ImportResult.IMPORTED_BEST);
-        return new BlockProcessResult(false, connectionsResult);
+        return new BlockProcessResult(false, connectionsResult, block.getShortHash(), 0);
     }
 
     @Override
@@ -88,11 +88,6 @@ public class SimpleBlockProcessor implements BlockProcessor {
     @Override
     public BlockNodeInformation getNodeInformation() {
         return null;
-    }
-
-    @Override
-    public void processStatus(MessageChannel sender, Status status) {
-
     }
 
     @Override
@@ -139,13 +134,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public boolean isSyncingBlocks() { return false; }
-
-    @Override
     public boolean hasBetterBlockToSync() { return false; }
-
-    @Override
-    public void acceptAnyBlock() { }
 
     public long getRequestId() { return this.requestId; }
 

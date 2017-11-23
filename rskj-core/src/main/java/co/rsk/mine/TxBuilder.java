@@ -67,7 +67,7 @@ public class TxBuilder {
                 try {
                     Thread.sleep(60000);
 
-                    while (blockProcessor.isSyncingBlocks()) {
+                    while (blockProcessor.hasBetterBlockToSync()) {
                         Thread.sleep(60000);
                     }
 

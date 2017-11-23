@@ -193,7 +193,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     private Optional<BlockHeader> tryFindBlockHeader(NodeID peerId) {
         // we start from the last chunk that can be downloaded
-        for (int segmentNumber = segmentByNode.get(peerId);segmentNumber >= 0; segmentNumber--){
+        for (int segmentNumber = segmentByNode.get(peerId); segmentNumber >= 0; segmentNumber--){
             Deque<Integer> chunks = chunksBySegment.get(segmentNumber);
             // if the segment stack is empty then continue to next segment
             if (!chunks.isEmpty()) {
