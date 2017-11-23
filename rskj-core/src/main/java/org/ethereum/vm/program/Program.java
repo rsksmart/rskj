@@ -664,12 +664,16 @@ public class Program {
         else {
             // 4. CREATE THE CONTRACT OUT OF RETURN
             byte[] code = programResult.getHReturn();
+            int codeLength = getLength(code);
 
-            long storageCost = (long)getLength(code) * GasCost.CREATE_DATA;
+            long storageCost = (long) codeLength * GasCost.CREATE_DATA;
             long afterSpend = programInvoke.getGas() - storageCost - programResult.getGasUsed();
             if (afterSpend < 0) {
-                programResult.setException(ExceptionHelper.notEnoughSpendingGas("No gas to return just created contract",
-                        storageCost, this));
+                programResult.setException(
+                        ExceptionHelper.notEnoughSpendingGas(
+                                "No gas to return just created contract",
+                                storageCost,
+                                this));
             } else {
                 programResult.spendGas(storageCost);
                 track.saveCode(newAddress, code);
