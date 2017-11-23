@@ -46,9 +46,9 @@ public class NodeBlockProcessor implements BlockProcessor {
 
     private final BlockStore store;
     private final Blockchain blockchain;
-    private final BlockNodeInformation nodeInformation;
     // keep tabs on which nodes know which blocks.
     private final BlockSyncService blockSyncService;
+    private final BlockNodeInformation nodeInformation;
     private final SyncConfiguration syncConfiguration;
     // keeps on a map the hashes that belongs to the skeleton
     private final Map <Long, byte[]> skeletonCache = new HashMap<>();
