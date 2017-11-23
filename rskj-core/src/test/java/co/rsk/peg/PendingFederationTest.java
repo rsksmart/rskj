@@ -161,13 +161,13 @@ public class PendingFederationTest {
 
     @Test
     public void testToString() {
-        Assert.assertEquals("4 of 6 signatures pending federation (complete)", pendingFederation.toString());
+        Assert.assertEquals("6 signatures pending federation (complete)", pendingFederation.toString());
         PendingFederation otherPendingFederation = new PendingFederation(
                 Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                 })
         );
-        Assert.assertEquals("1 of 1 signatures pending federation (incomplete)", otherPendingFederation.toString());
+        Assert.assertEquals("1 signatures pending federation (incomplete)", otherPendingFederation.toString());
     }
 
     @Test

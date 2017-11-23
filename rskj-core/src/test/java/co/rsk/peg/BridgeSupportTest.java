@@ -1311,7 +1311,7 @@ public class BridgeSupportTest {
                 Instant.ofEpochMilli(1000),
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
-        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(true, activeFederation, genesisFederation, null, null, null);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(true, activeFederation, genesisFederation, null, null, null, null);
 
         Assert.assertEquals(6, bridgeSupport.getFederationSize().intValue());
         Assert.assertEquals(4, bridgeSupport.getFederationThreshold().intValue());
@@ -1334,7 +1334,7 @@ public class BridgeSupportTest {
                 Instant.ofEpochMilli(1000),
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
-        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, activeFederation, genesisFederation, null, null, null);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, activeFederation, genesisFederation, null, null, null, null);
 
         Assert.assertEquals(3, bridgeSupport.getFederationSize().intValue());
         Assert.assertEquals(2, bridgeSupport.getFederationThreshold().intValue());
@@ -1347,7 +1347,7 @@ public class BridgeSupportTest {
 
     @Test
     public void getRetiringFederationMethods_none() throws IOException {
-        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, null, null);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, null, null, null);
 
         Assert.assertEquals(-1, bridgeSupport.getRetiringFederationSize().intValue());
         Assert.assertEquals(-1, bridgeSupport.getRetiringFederationThreshold().intValue());
@@ -1361,10 +1361,10 @@ public class BridgeSupportTest {
                 Instant.ofEpochMilli(2000),
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
-        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, mockedRetiringFederation, null, null);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, mockedRetiringFederation, null, null, null);
 
         Assert.assertEquals(4, bridgeSupport.getRetiringFederationSize().intValue());
-        Assert.assertEquals(2, bridgeSupport.getRetiringFederationThreshold().intValue());
+        Assert.assertEquals(3, bridgeSupport.getRetiringFederationThreshold().intValue());
         Assert.assertEquals(2000, bridgeSupport.getRetiringFederationCreationTime().toEpochMilli());
         Assert.assertEquals(mockedRetiringFederation.getAddress().toString(), bridgeSupport.getRetiringFederationAddress().toString());
         List<BtcECKey> publicKeys = getTestFederationPublicKeys(4);
@@ -1375,7 +1375,7 @@ public class BridgeSupportTest {
 
     @Test
     public void getPendingFederationMethods_none() throws IOException {
-        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, null,  null);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, null,  null, null);
 
         Assert.assertEquals(-1, bridgeSupport.getPendingFederationSize().intValue());
         Assert.assertNull(bridgeSupport.getPendingFederatorPublicKey(0));
@@ -1386,7 +1386,7 @@ public class BridgeSupportTest {
         PendingFederation mockedPendingFederation = new PendingFederation(
                 getTestFederationPublicKeys(5)
         );
-        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, mockedPendingFederation, null);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(false, null, null, null, mockedPendingFederation, null, null);
 
         Assert.assertEquals(5, bridgeSupport.getPendingFederationSize().intValue());
         List<BtcECKey> publicKeys = getTestFederationPublicKeys(5);
@@ -1399,6 +1399,7 @@ public class BridgeSupportTest {
     public void createFederation_ok() throws IOException {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
+                null,
                 null,
                 null,
                 null,
@@ -1418,6 +1419,7 @@ public class BridgeSupportTest {
                 null,
                 null,
                 new PendingFederation(Collections.emptyList()),
+                null,
                 null
         );
 
@@ -1428,6 +1430,7 @@ public class BridgeSupportTest {
     public void createFederation_pendingUTXOs() throws IOException {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
+                null,
                 null,
                 null,
                 null,
@@ -1448,6 +1451,7 @@ public class BridgeSupportTest {
                 null,
                 null,
                 pendingFederation,
+                null,
                 null
         );
 
@@ -1467,6 +1471,7 @@ public class BridgeSupportTest {
                 null,
                 null,
                 pendingFederation,
+                null,
                 null
         );
 
@@ -1479,6 +1484,7 @@ public class BridgeSupportTest {
     public void addFederatorPublicKey_noPendingFederation() throws IOException {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
+                null,
                 null,
                 null,
                 null,
@@ -1500,6 +1506,7 @@ public class BridgeSupportTest {
                 null,
                 null,
                 pendingFederation,
+                null,
                 null
         );
 
@@ -1520,6 +1527,7 @@ public class BridgeSupportTest {
                 null,
                 null,
                 pendingFederation,
+                null,
                 null
         );
 
@@ -1533,6 +1541,7 @@ public class BridgeSupportTest {
     public void rollbackFederation_noPendingFederation() throws IOException {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
+                null,
                 null,
                 null,
                 null,
@@ -1565,6 +1574,7 @@ public class BridgeSupportTest {
                 null,
                 null,
                 pendingFederation,
+                null,
                 executionBlock
         );
         BridgeStorageProvider provider = (BridgeStorageProvider) Whitebox.getInternalState(bridgeSupport, "provider");
@@ -1608,6 +1618,7 @@ public class BridgeSupportTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -1626,6 +1637,7 @@ public class BridgeSupportTest {
                 null,
                 null,
                 pendingFederation,
+                null,
                 null
         );
 
@@ -1645,6 +1657,7 @@ public class BridgeSupportTest {
                 null,
                 null,
                 pendingFederation,
+                null,
                 null
         );
 
@@ -1662,6 +1675,7 @@ public class BridgeSupportTest {
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 expectedFederation,
+                null,
                 null,
                 null,
                 null,
@@ -1697,6 +1711,7 @@ public class BridgeSupportTest {
                 null,
                 expectedFederation,
                 null,
+                null,
                 null
         );
         Context expectedContext = mock(Context.class);
@@ -1728,7 +1743,7 @@ public class BridgeSupportTest {
         return providerMock;
     }
 
-    private BridgeSupport getBridgeSupportWithMocksForFederationTests(boolean genesis, Federation mockedActiveFederation, Federation mockedGenesisFederation, Federation mockedRetiringFederation, PendingFederation mockedPendingFederation, Block executionBlock) throws IOException {
+    private BridgeSupport getBridgeSupportWithMocksForFederationTests(boolean genesis, Federation mockedActiveFederation, Federation mockedGenesisFederation, Federation mockedRetiringFederation, PendingFederation mockedPendingFederation, ABICallElection mockedFederationElection, Block executionBlock) throws IOException {
         BridgeConstants constantsMock = mock(BridgeConstants.class);
         when(constantsMock.getGenesisFederation()).thenReturn(mockedGenesisFederation);
         when(constantsMock.getBtcParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
@@ -1737,6 +1752,7 @@ public class BridgeSupportTest {
             private PendingFederation pendingFederation;
             private Federation activeFederation;
             private Federation retiringFederation;
+            private ABICallElection federationElection;
 
             public List<UTXO> retiringUTXOs = new ArrayList<>();
             public List<UTXO> activeUTXOs = new ArrayList<>();
@@ -1749,6 +1765,9 @@ public class BridgeSupportTest {
 
             Federation getRetiringFederation() { return retiringFederation; }
             void setRetiringFederation(Federation retiringFederation) { this.retiringFederation = retiringFederation; }
+
+            public ABICallElection getFederationElection() { return federationElection; }
+            public void setFederationElection(ABICallElection federationElection) { this.federationElection = federationElection; }
         }
 
         final FederationHolder holder = new FederationHolder();
@@ -1764,6 +1783,18 @@ public class BridgeSupportTest {
         when(providerMock.getActiveFederation()).then((InvocationOnMock m) -> holder.getActiveFederation());
         when(providerMock.getRetiringFederation()).then((InvocationOnMock m) -> holder.getRetiringFederation());
         when(providerMock.getPendingFederation()).then((InvocationOnMock m) -> holder.getPendingFederation());
+        when(providerMock.getFederationElection(any())).then((InvocationOnMock m) -> {
+            if (mockedFederationElection != null) {
+                holder.setFederationElection(mockedFederationElection);
+            }
+
+            if (holder.getFederationElection() == null) {
+                ABICallAuthorizer auth = m.getArgumentAt(0, ABICallAuthorizer.class);
+                holder.setFederationElection(new ABICallElection(auth));
+            }
+
+            return holder.getFederationElection();
+        });
         Mockito.doAnswer((InvocationOnMock m) -> {
             holder.setActiveFederation(m.getArgumentAt(0, Federation.class));
             return null;
