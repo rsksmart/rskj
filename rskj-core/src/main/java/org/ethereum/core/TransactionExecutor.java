@@ -21,6 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
+import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ReceiptStore;
@@ -330,6 +331,13 @@ public class TransactionExecutor {
                                     "No gas to return just created contract",
                                     returnDataGasValue,
                                     program));
+                    result = program.getResult();
+                    result.setHReturn(EMPTY_BYTE_ARRAY);
+                } else if (createdContractSize > Constants.getMaxContractSize()) {
+                    program.setRuntimeFailure(
+                            Program.ExceptionHelper.tooLargeContractSize(
+                                    Constants.getMaxContractSize(),
+                                    createdContractSize));
                     result = program.getResult();
                     result.setHReturn(EMPTY_BYTE_ARRAY);
                 } else {

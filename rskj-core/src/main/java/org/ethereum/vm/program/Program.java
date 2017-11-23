@@ -22,6 +22,7 @@ package org.ethereum.vm.program;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
+import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -674,6 +675,11 @@ public class Program {
                                 "No gas to return just created contract",
                                 storageCost,
                                 this));
+            } else if (codeLength > Constants.getMaxContractSize()) {
+                programResult.setException(
+                        ExceptionHelper.tooLargeContractSize(
+                                Constants.getMaxContractSize(),
+                                codeLength));
             } else {
                 programResult.spendGas(storageCost);
                 track.saveCode(newAddress, code);
@@ -1564,6 +1570,14 @@ public class Program {
         }
     }
 
+    @SuppressWarnings("serial")
+    public static class ContractSizeTooLargeException extends RuntimeException {
+
+        public ContractSizeTooLargeException(String message, Object... args) {
+            super(format(message, args));
+        }
+    }
+
     public static class ExceptionHelper {
 
         private ExceptionHelper() { }
@@ -1601,6 +1615,10 @@ public class Program {
 
         public static StackTooSmallException tooSmallStack(int expectedSize, int actualSize) {
             return new StackTooSmallException("Expected stack size %d but actual %d;", expectedSize, actualSize);
+        }
+
+        public static ContractSizeTooLargeException tooLargeContractSize(int maxSize, int actualSize) {
+            return new ContractSizeTooLargeException("Maximum contract size allowed %d but actual %d;", maxSize, actualSize);
         }
     }
 
