@@ -183,7 +183,7 @@ public class PendingFederationTest {
                 })
         );
 
-        Federation expectedFederation = new Federation(4, Arrays.asList(new BtcECKey[]{
+        Federation expectedFederation = new Federation(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                 BtcECKey.fromPrivate(BigInteger.valueOf(200)),
                 BtcECKey.fromPrivate(BigInteger.valueOf(300)),
@@ -217,7 +217,7 @@ public class PendingFederationTest {
                 })
         );
 
-        Federation expectedFederation = new Federation(5, Arrays.asList(new BtcECKey[]{
+        Federation expectedFederation = new Federation(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                 BtcECKey.fromPrivate(BigInteger.valueOf(200)),
                 BtcECKey.fromPrivate(BigInteger.valueOf(300)),

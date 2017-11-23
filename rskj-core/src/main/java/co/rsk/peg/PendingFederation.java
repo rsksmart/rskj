@@ -79,20 +79,15 @@ public final class PendingFederation {
         }
 
         return new Federation(
-                calculateThreshold(),
                 publicKeys,
                 creationTime,
                 btcParams
         );
     }
 
-    private int calculateThreshold() {
-        return this.publicKeys.size() / 2 + 1;
-    }
-
     @Override
     public String toString() {
-        return String.format("%d of %d signatures pending federation (%s)", calculateThreshold(), publicKeys.size(), isComplete() ? "complete" : "incomplete");
+        return String.format("%d signatures pending federation (%s)", publicKeys.size(), isComplete() ? "complete" : "incomplete");
     }
 
     @Override

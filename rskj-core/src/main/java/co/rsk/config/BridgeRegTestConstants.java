@@ -58,11 +58,11 @@ public class BridgeRegTestConstants extends BridgeConstants {
         BtcECKey federator2PrivateKey = BtcECKey.fromPrivate(HashUtil.sha3("federator3".getBytes(StandardCharsets.UTF_8)));
 
         federatorPrivateKeys = Lists.newArrayList(federator0PrivateKey, federator1PrivateKey, federator2PrivateKey);
+        List<BtcECKey> federatorPublicKeys = federatorPrivateKeys.stream().map(key -> BtcECKey.fromPublicOnly(key.getPubKey())).collect(Collectors.toList());
 
         Instant genesisFederationCreatedAt = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
-        genesisFederation = Federation.fromPrivateKeys(
-                2,
-                federatorPrivateKeys,
+        genesisFederation = new Federation(
+                federatorPublicKeys,
                 genesisFederationCreatedAt,
                 getBtcParams()
         );

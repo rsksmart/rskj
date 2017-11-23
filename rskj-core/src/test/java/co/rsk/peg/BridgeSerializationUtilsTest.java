@@ -127,7 +127,6 @@ public class BridgeSerializationUtilsTest {
         };
 
         Federation federation = new Federation(
-            3,
             Arrays.asList(new BtcECKey[]{
                     BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[1]),

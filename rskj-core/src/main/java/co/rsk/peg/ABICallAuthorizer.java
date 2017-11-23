@@ -38,30 +38,18 @@ public class ABICallAuthorizer {
         this.authorizedKeys = authorizedKeys;
     }
 
-    public boolean isAuthorized(Transaction tx) {
-        if (tx.getSignature() == null)
-            return false;
+    public boolean isAuthorized(ABICallVoter voter) {
+        return authorizedKeys.stream()
+                .map(key -> key.getAddress())
+                .anyMatch(address -> Arrays.equals(address, voter.getBytes()));
+    }
 
+    public boolean isAuthorized(Transaction tx) {
         return isAuthorized(getVoter(tx));
     }
 
-    public boolean isAuthorized(ECKey key) {
-        return authorizedKeys.contains(key);
-    }
-
-    public boolean isSenderAuthorized(Transaction tx) {
-        byte[] sender = tx.getSender();
-
-        return authorizedKeys.stream()
-                .map(key -> key.getAddress())
-                .anyMatch(address -> Arrays.equals(address, sender));
-    }
-
-    public ECKey getVoter(Transaction tx) {
-        if (tx.getSignature() == null)
-            return null;
-
-        return tx.getKey();
+    public ABICallVoter getVoter(Transaction tx) {
+        return new ABICallVoter(tx.getSender());
     }
 
     public int getNumberOfAuthorizedKeys() {

@@ -866,14 +866,13 @@ public class BridgeSupport {
         if (size == -1)
             return null;
 
-        int numberOfSignaturesRequired = getRetiringFederationThreshold();
         List<BtcECKey> publicKeys = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             publicKeys.add(BtcECKey.fromPublicOnly(getRetiringFederatorPublicKey(i)));
         }
         Instant creationTime = getRetiringFederationCreationTime();
 
-        return new Federation(numberOfSignaturesRequired, publicKeys, creationTime, bridgeConstants.getBtcParams());
+        return new Federation(publicKeys, creationTime, bridgeConstants.getBtcParams());
     }
 
     /**
@@ -1036,16 +1035,9 @@ public class BridgeSupport {
 
         ABICallAuthorizer authorizer = bridgeConstants.getFederationChangeAuthorizer();
 
-        if (tx.isOnReversibleExecution()) {
-            // Must be authorized (only checking for sender address)
-            if (!authorizer.isSenderAuthorized(tx)) {
-                return VOTE_GENERIC_ERROR_CODE;
-            }
-        } else {
-            // Must be authorized to vote (checking for signature)
-            if (!authorizer.isAuthorized(tx)) {
-                return VOTE_GENERIC_ERROR_CODE;
-            }
+        // Must be authorized to vote (checking for signature)
+        if (!authorizer.isAuthorized(tx)) {
+            return VOTE_GENERIC_ERROR_CODE;
         }
 
         // Try to do a dry-run and only register the vote if the
@@ -1058,7 +1050,7 @@ public class BridgeSupport {
         }
 
         // Return if the dry run failed or we are on a reversible execution
-        if (!result.wasSuccessful() || tx.isOnReversibleExecution()) {
+        if (!result.wasSuccessful()) {
             return (Integer) result.getResult();
         }
 

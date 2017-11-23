@@ -57,7 +57,6 @@ public class FederationTest {
     @Before
     public void createFederation() {
         federation = new Federation(
-                3,
                 Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
@@ -181,7 +180,6 @@ public class FederationTest {
     @Test
     public void testEquals_differentThreshold() {
         Federation otherFederation = new Federation(
-                2,
                 Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
@@ -199,7 +197,6 @@ public class FederationTest {
     @Test
     public void testEquals_differentNumberOfPublicKeys() {
         Federation otherFederation = new Federation(
-                3,
                 Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
@@ -218,7 +215,6 @@ public class FederationTest {
     @Test
     public void testEquals_differentCreationTime() {
         Federation otherFederation = new Federation(
-                3,
                 Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
@@ -236,7 +232,6 @@ public class FederationTest {
     @Test
     public void testEquals_differentNetworkParameters() {
         Federation otherFederation = new Federation(
-                3,
                 Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
@@ -254,7 +249,6 @@ public class FederationTest {
     @Test
     public void testEquals_differentPublicKeys() {
         Federation otherFederation = new Federation(
-                3,
                 Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
@@ -272,7 +266,6 @@ public class FederationTest {
     @Test
     public void testEquals_same() {
         Federation otherFederation = new Federation(
-                3,
                 Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),

@@ -225,7 +225,6 @@ public class BridgeSerializationUtils {
 
     // A federation is serialized as a list in the following order:
     // creation time
-    // # of signatures required
     // list of public keys -> [pubkey1, pubkey2, ..., pubkeyn], sorted
     // using the lexicographical order of the public keys (see BtcECKey.PUBKEY_COMPARATOR).
     public static byte[] serializeFederation(Federation federation) {
@@ -235,7 +234,6 @@ public class BridgeSerializationUtils {
                 .collect(Collectors.toList());
         return RLP.encodeList(
                 RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationTime().toEpochMilli())),
-                RLP.encodeBigInteger(BigInteger.valueOf(federation.getNumberOfSignaturesRequired())),
                 RLP.encodeList((byte[][])publicKeys.toArray(new byte[publicKeys.size()][]))
         );
     }
@@ -244,28 +242,18 @@ public class BridgeSerializationUtils {
     public static Federation deserializeFederation(byte[] data, Context btcContext) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
-        if (rlpList.size() != 3) {
-            throw new RuntimeException(String.format("Invalid serialized Federation. Expected 3 elements but got %d", rlpList.size()));
+        if (rlpList.size() != 2) {
+            throw new RuntimeException(String.format("Invalid serialized Federation. Expected 2 elements but got %d", rlpList.size()));
         }
 
         byte[] creationTimeBytes = rlpList.get(0).getRLPData();
         Instant creationTime = Instant.ofEpochMilli(new BigInteger(creationTimeBytes).longValue());
 
-        byte[] numberOfSignaturesRequiredBytes = rlpList.get(1).getRLPData();
-        int numberOfSignaturesRequired =  new BigInteger(numberOfSignaturesRequiredBytes).intValue();
-        if (numberOfSignaturesRequired < 1) {
-            throw new RuntimeException(String.format("Invalid serialized Federation # of signatures required. Expected at least 1, but got %d", numberOfSignaturesRequired));
-        }
-
-        List<BtcECKey> pubKeys = ((RLPList) rlpList.get(2)).stream()
+        List<BtcECKey> pubKeys = ((RLPList) rlpList.get(1)).stream()
                 .map(pubKeyBytes -> BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
                 .collect(Collectors.toList());
 
-        if (pubKeys.size() < numberOfSignaturesRequired) {
-            throw new RuntimeException(String.format("Invalid serialized Federation # of public keys. Expected at least %d but got %d", numberOfSignaturesRequired, pubKeys.size()));
-        }
-
-        return new Federation(numberOfSignaturesRequired, pubKeys, creationTime, btcContext.getParams());
+        return new Federation(pubKeys, creationTime, btcContext.getParams());
     }
 
     // A pending federation is serialized as the
@@ -308,16 +296,15 @@ public class BridgeSerializationUtils {
         return new ABICallSpec(function, arguments);
     }
 
-    // A list of public keys is serialized as
-    // [pubkey1, pubkey2, ..., pubkeyn], sorted
-    // using the lexicographical order of the public keys' unsigned bytes
-    // (see BtcECKey.PUBKEY_COMPARATOR).
-    public static byte[] serializePublicKeys(List<ECKey> keys) {
-        List<byte[]> encodedKeys = keys.stream()
-                .sorted((ECKey k1, ECKey k2) ->
-                        UnsignedBytes.lexicographicalComparator().compare(k1.getPubKey(), k2.getPubKey())
+    // A list of voters is serialized as
+    // [voterBytes1, voterBytes2, ..., voterBytesn], sorted
+    // using the lexicographical order of the voters' unsigned bytes
+    public static byte[] serializeVoters(List<ABICallVoter> voters) {
+        List<byte[]> encodedKeys = voters.stream()
+                .sorted((ABICallVoter v1, ABICallVoter v2) ->
+                        UnsignedBytes.lexicographicalComparator().compare(v1.getBytes(), v2.getBytes())
                 )
-                .map(key -> RLP.encodeElement(key.getPubKey()))
+                .map(key -> RLP.encodeElement(key.getBytes()))
                 .collect(Collectors.toList());
         return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
     }
@@ -334,12 +321,12 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializePublicKeys
-    public static List<ECKey> deserializePublicKeys(byte[] data) {
+    // For the serialization format, see BridgeSerializationUtils::serializeVoters
+    public static List<ABICallVoter> deserializeVoters(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         return rlpList.stream()
-                .map(pubKeyBytes -> ECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
+                .map(pubKeyBytes -> new ABICallVoter(pubKeyBytes.getRLPData()))
                 .collect(Collectors.toList());
     }
 
@@ -353,19 +340,19 @@ public class BridgeSerializationUtils {
     }
 
     // An ABI call election is serialized as a list of the votes, like so:
-    // spec_1, keys_1, ..., spec_n, keys_n
+    // spec_1, voters_1, ..., spec_n, voters_n
     // Specs are sorted by their signed byte encoding lexicographically.
     public static byte[] serializeElection(ABICallElection election) {
         byte[][] bytes = new byte[election.getVotes().size() * 2][];
         int n = 0;
 
-        Map<ABICallSpec, List<ECKey>> votes = election.getVotes();
+        Map<ABICallSpec, List<ABICallVoter>> votes = election.getVotes();
         ABICallSpec[] specs = votes.keySet().toArray(new ABICallSpec[0]);
         Arrays.sort(specs, ABICallSpec.byBytesComparator);
 
         for (ABICallSpec spec : specs) {
             bytes[n++] = serializeABICallSpec(spec);
-            bytes[n++] = serializePublicKeys(votes.get(spec));
+            bytes[n++] = serializeVoters(votes.get(spec));
         }
 
         return RLP.encodeList(bytes);
@@ -385,11 +372,11 @@ public class BridgeSerializationUtils {
 
         int numEntries = rlpList.size() / 2;
 
-        Map<ABICallSpec, List<ECKey>> votes = new HashMap<>();
+        Map<ABICallSpec, List<ABICallVoter>> votes = new HashMap<>();
 
         for (int k = 0; k < numEntries; k++) {
             ABICallSpec spec = deserializeABICallSpec(rlpList.get(k * 2).getRLPData());
-            List<ECKey> specVotes = deserializePublicKeys(rlpList.get(k * 2 + 1).getRLPData());
+            List<ABICallVoter> specVotes = deserializeVoters(rlpList.get(k * 2 + 1).getRLPData());
             votes.put(spec, specVotes);
         }
 
