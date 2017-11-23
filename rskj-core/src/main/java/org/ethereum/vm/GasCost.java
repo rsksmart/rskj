@@ -79,7 +79,7 @@ public class GasCost {
     public static final int LOG_TOPIC_GAS = 375;
     public static final int COPY_GAS = 3;
     public static final int EXP_GAS = 10;
-    public static final int EXP_BYTE_GAS = 10;
+    public static final int EXP_BYTE_GAS = 50;
     public static final int IDENTITY = 15;
     public static final int IDENTITY_WORD = 3;
     public static final int RIPEMD160 = 600;
