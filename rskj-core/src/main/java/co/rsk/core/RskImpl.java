@@ -24,10 +24,10 @@ import co.rsk.net.NodeMessageHandler;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.PendingState;
+import org.ethereum.core.Repository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
-import org.ethereum.manager.AdminInfo;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
@@ -42,7 +42,6 @@ public class RskImpl extends EthereumImpl implements Rsk {
     private PeerScoringManager peerScoringManager;
 
     public RskImpl(WorldManager worldManager,
-                   AdminInfo adminInfo,
                    ChannelManager channelManager,
                    PeerServer peerServer,
                    ProgramInvokeFactory programInvokeFactory,
@@ -52,21 +51,12 @@ public class RskImpl extends EthereumImpl implements Rsk {
                    ReceiptStore receiptStore,
                    PeerScoringManager peerScoringManager,
                    NodeBlockProcessor nodeBlockProcessor,
-                   NodeMessageHandler messageHandler) {
-        super(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore);
+                   NodeMessageHandler messageHandler,
+                   Repository repository) {
+        super(worldManager, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore, repository);
         this.peerScoringManager = peerScoringManager;
         this.nodeBlockProcessor = nodeBlockProcessor;
         this.messageHandler = messageHandler;
-    }
-
-    @Override
-    public PeerScoringManager getPeerScoringManager() {
-        return this.peerScoringManager;
-    }
-
-    @Override
-    public MessageHandler getMessageHandler() {
-        return this.messageHandler;
     }
 
     @Override

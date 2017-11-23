@@ -88,7 +88,7 @@ public class RskFactory {
 
     @Bean
     public Rsk getRsk(WorldManager worldManager,
-                      AdminInfo adminInfo,
+                      Blockchain blockchain,
                       ChannelManager channelManager,
                       PeerServer peerServer,
                       ProgramInvokeFactory programInvokeFactory,
@@ -99,13 +99,14 @@ public class RskFactory {
                       PeerScoringManager peerScoringManager,
                       NodeBlockProcessor nodeBlockProcessor,
                       NodeMessageHandler nodeMessageHandler,
-                      RskSystemProperties rskSystemProperties) {
+                      RskSystemProperties rskSystemProperties,
+                      org.ethereum.core.Repository repository) {
 
         logger.info("Running {},  core version: {}-{}", config.genesisInfo(), config.projectVersion(), config.projectVersionModifier());
         BuildInfo.printInfo();
 
-        RskImpl rsk = new RskImpl(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory,
-                pendingState, config, compositeEthereumListener, receiptStore, peerScoringManager, nodeBlockProcessor, nodeMessageHandler);
+        RskImpl rsk = new RskImpl(worldManager, channelManager, peerServer, programInvokeFactory,
+                pendingState, config, compositeEthereumListener, receiptStore, peerScoringManager, nodeBlockProcessor, nodeMessageHandler, repository);
 
         rsk.init();
         rsk.getBlockchain().setRsk(true);  //TODO: check if we can remove this field from org.ethereum.facade.Blockchain
@@ -115,7 +116,7 @@ public class RskFactory {
         }
         if (rskSystemProperties.isBlocksEnabled()) {
             setupRecorder(rsk, rskSystemProperties.blocksRecorder());
-            setupPlayer(rsk, rskSystemProperties.blocksPlayer());
+            setupPlayer(rsk, channelManager, blockchain, rskSystemProperties.blocksPlayer());
         }
         return rsk;
     }
@@ -126,7 +127,7 @@ public class RskFactory {
         }
     }
 
-    private void setupPlayer(RskImpl rsk, @Nullable String blocksPlayerFileName) {
+    private void setupPlayer(RskImpl rsk, ChannelManager cm, Blockchain bc, @Nullable String blocksPlayerFileName) {
         if (blocksPlayerFileName == null) {
             return;
         }
@@ -134,9 +135,6 @@ public class RskFactory {
         new Thread(() -> {
             try (FileBlockPlayer bplayer = new FileBlockPlayer(blocksPlayerFileName)) {
                 rsk.setIsPlayingBlocks(true);
-
-                Blockchain bc = rsk.getWorldManager().getBlockchain();
-                ChannelManager cm = rsk.getChannelManager();
                 connectBlocks(bplayer, bc, cm);
             } catch (Exception e) {
                 logger.error("Error", e);
@@ -232,13 +230,19 @@ public class RskFactory {
 
     @Bean
     public Start.Web3Factory getWeb3Factory(Rsk rsk,
+                                            WorldManager worldManager,
                                             RskSystemProperties config,
                                             MinerClient minerClient,
                                             MinerServer minerServer,
                                             PersonalModule personalModule,
                                             EthModule ethModule,
-                                            ChannelManager channelManager) {
-        return () -> new Web3RskImpl(rsk, config, minerClient, minerServer, personalModule, ethModule, channelManager);
+                                            ChannelManager channelManager,
+                                            Repository repository,
+                                            PeerScoringManager peerScoringManager,
+                                            NetworkStateExporter networkStateExporter,
+                                            org.ethereum.db.BlockStore blockStore,
+                                            PeerServer peerServer) {
+        return () -> new Web3RskImpl(rsk, worldManager, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, networkStateExporter, blockStore, peerServer);
     }
 
     @Bean
@@ -333,21 +337,21 @@ public class RskFactory {
     }
 
     @Bean
-    public PersonalModule getPersonalModuleWallet(Rsk rsk, Wallet wallet) {
+    public PersonalModule getPersonalModuleWallet(Rsk rsk, Wallet wallet, PendingState pendingState) {
         if (wallet == null) {
             return new PersonalModuleWalletDisabled();
         }
 
-        return new PersonalModuleWalletEnabled(rsk, wallet);
+        return new PersonalModuleWalletEnabled(rsk, wallet, pendingState);
     }
 
     @Bean
-    public EthModuleWallet getEthModuleWallet(Rsk rsk, Wallet wallet) {
+    public EthModuleWallet getEthModuleWallet(Rsk rsk, Wallet wallet, PendingState pendingState) {
         if (wallet == null) {
             return new EthModuleWalletDisabled();
         }
 
-        return new EthModuleWalletEnabled(rsk, wallet);
+        return new EthModuleWalletEnabled(rsk, wallet, pendingState);
     }
 
     @Bean

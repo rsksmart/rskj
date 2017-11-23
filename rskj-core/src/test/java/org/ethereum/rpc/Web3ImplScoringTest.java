@@ -312,7 +312,6 @@ public class Web3ImplScoringTest {
 
     private static Web3Impl createWeb3(PeerScoringManager peerScoringManager) {
         SimpleRsk rsk = new SimpleRsk();
-        rsk.setPeerScoringManager(peerScoringManager);
 
         World world = new World();
         SimpleWorldManager worldManager = new SimpleWorldManager();
@@ -320,9 +319,9 @@ public class Web3ImplScoringTest {
         rsk.worldManager = worldManager;
 
         Wallet wallet = WalletFactory.createWallet();
-        PersonalModule pm = new PersonalModuleWalletEnabled(rsk, wallet);
-        EthModule em = new EthModule(rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(rsk, wallet));
-        return new Web3RskImpl(rsk, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager());
+        PersonalModule pm = new PersonalModuleWalletEnabled(rsk, wallet, null);
+        EthModule em = new EthModule(rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(rsk, wallet, null));
+        return new Web3RskImpl(rsk, worldManager, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), rsk.getRepository(), peerScoringManager, null, null, null);
     }
 
     private static NodeID generateNodeID() {
