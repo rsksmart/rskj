@@ -20,6 +20,7 @@ package co.rsk.net;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.messages.*;
+import co.rsk.net.sync.SyncConfiguration;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
@@ -50,6 +51,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     private final Blockchain blockchain;
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
     private final BlockSyncService blockSyncService;
+    private final SyncConfiguration syncConfiguration;
     private final Map <Long, byte[]> skeletonCache = new HashMap<>();
 
     private long blocksForPeers;
@@ -68,14 +70,16 @@ public class NodeBlockProcessor implements BlockProcessor {
             @Nonnull final BlockStore store,
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
-            @Nonnull final BlockSyncService blockSyncService) {
+            @Nonnull final BlockSyncService blockSyncService,
+            @Nonnull final SyncConfiguration syncConfiguration) {
+
         this.store = store;
         this.blockchain = blockchain;
         this.nodeInformation = nodeInformation;
         this.blocksForPeers = config.getBlocksForPeers();
         this.blockSyncService = blockSyncService;
+        this.syncConfiguration = syncConfiguration;
     }
-
     @Override
     @Nonnull
     public Blockchain getBlockchain() {
@@ -289,9 +293,8 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processSkeletonRequest(@Nonnull final MessageChannel sender, long requestId, long startNumber) {
-        logger.trace("Processing block hash request {} {} {} from {}", requestId, startNumber, sender.getPeerNodeID().toString());
-        // TODO(mc) move this to configuration
-        int skeletonStep = 192;
+        logger.trace("Processing block hash request {} {} {} from {}", requestId, startNumber, sender.getPeerNodeID());
+        int skeletonStep = syncConfiguration.getChunkSize();
         Block blockStart = this.getBlockFromBlockchainStore(startNumber);
 
         // If we don't have a block with the requested number, we ignore the message
@@ -303,13 +306,19 @@ public class NodeBlockProcessor implements BlockProcessor {
         // We always include the skeleton block immediately before blockStart, even if it's Genesis
         long skeletonStartHeight = (blockStart.getNumber() / skeletonStep) * skeletonStep;
         List<BlockIdentifier> blockIdentifiers = new ArrayList<>();
-        for (long skeletonNumber = skeletonStartHeight; skeletonNumber < this.getBestBlockNumber(); skeletonNumber += skeletonStep) {
+        long skeletonNumber = skeletonStartHeight;
+        int maxSkeletonChunks = syncConfiguration.getMaxSkeletonChunks();
+        long maxSkeletonNumber = Math.min(this.getBestBlockNumber(), skeletonStartHeight + skeletonStep * maxSkeletonChunks);
+
+        for (; skeletonNumber < maxSkeletonNumber; skeletonNumber += skeletonStep) {
             byte[] skeletonHash = getSkeletonHash(skeletonNumber);
             blockIdentifiers.add(new BlockIdentifier(skeletonHash, skeletonNumber));
         }
 
         // We always include the best block as part of the Skeleton response
-        blockIdentifiers.add(new BlockIdentifier(this.getBestBlockHash(), this.getBestBlockNumber()));
+        skeletonNumber = Math.min(this.getBestBlockNumber(), skeletonNumber + skeletonStep);
+        byte[] skeletonHash = getSkeletonHash(skeletonNumber);
+        blockIdentifiers.add(new BlockIdentifier(skeletonHash, skeletonNumber));
         SkeletonResponseMessage responseMessage = new SkeletonResponseMessage(requestId, blockIdentifiers);
 
         sender.sendMessage(responseMessage);
@@ -484,11 +493,6 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public boolean hasBetterBlockToSync() {
         return blockSyncService.hasBetterBlockToSync();
-    }
-
-    @Override
-    public void sendStatusToAll() {
-        blockSyncService.sendStatusToActivePeers();
     }
 
     @Override

@@ -23,7 +23,6 @@ import co.rsk.panic.PanicProcessor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
@@ -52,12 +51,14 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
+    public static final String INVALIDUNCLE = "invaliduncle";
 
     private BlockStore blockStore;
     private int uncleListLimit;
     private int uncleGenerationLimit;
     private BlockValidationRule validations;
     private BlockParentDependantValidationRule parentValidations;
+    private BlockUnclesHashValidationRule blockValidationRule;
 
     public BlockUnclesValidationRule(BlockStore blockStore, int uncleListLimit, int uncleGenerationLimit, BlockValidationRule validations, BlockParentDependantValidationRule parentValidations) {
         this.blockStore = blockStore;
@@ -65,19 +66,15 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         this.uncleGenerationLimit = uncleGenerationLimit;
         this.validations = validations;
         this.parentValidations = parentValidations;
+        this.blockValidationRule = new BlockUnclesHashValidationRule();
     }
 
     @Override
     public boolean isValid(Block block) {
-        BlockHeader header = block.getHeader();
-        String unclesHash = Hex.toHexString(header.getUnclesHash());
-        String unclesListHash = Hex.toHexString(HashUtil.sha3(header.getUnclesEncoded(block.getUncleList())));
 
-        if (!unclesHash.equals(unclesListHash)) {
-            logger.warn("Block's given Uncle Hash doesn't match: {} != {}", unclesHash, unclesListHash);
-            panicProcessor.panic("invaliduncle", String.format("Block's given Uncle Hash doesn't match: %s != %s", unclesHash, unclesListHash));
+        if (!blockValidationRule.isValid(block))
             return false;
-        }
+
         List<BlockHeader> uncles = block.getUncleList();
         if (CollectionUtils.isNotEmpty(uncles) && !validateUncleList(block.getNumber(), uncles, FamilyUtils.getAncestors(blockStore, block, uncleGenerationLimit), FamilyUtils.getUsedUncles(blockStore, block, uncleGenerationLimit)))
         {
@@ -105,7 +102,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
     public boolean validateUncleList(long blockNumber, List<BlockHeader> uncles, Set<ByteArrayWrapper> ancestors, Set<ByteArrayWrapper> used) {
         if (uncles.size() > uncleListLimit) {
             logger.error("Uncle list to big: block.getUncleList().size() > UNCLE_LIST_LIMIT");
-            panicProcessor.panic("invaliduncle", "Uncle list to big: block.getUncleList().size() > UNCLE_LIST_LIMIT");
+            panicProcessor.panic(INVALIDUNCLE, "Uncle list to big: block.getUncleList().size() > UNCLE_LIST_LIMIT");
             return false;
         }
 
@@ -142,16 +139,16 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
 
         if (isSiblingOrDescendant) {
             logger.error("Uncle is sibling or descendant");
-            panicProcessor.panic("invaliduncle", "Uncle is sibling or descendant");
+            panicProcessor.panic(INVALIDUNCLE, "Uncle is sibling or descendant");
             return false;
         }
 
         // if uncle's parent's number is not less than currentBlock - UNCLE_GEN_LIMIT, mark invalid
-        boolean isValid = !(uncle.getNumber() - 1 < (blockNumber - uncleGenerationLimit));
+        boolean isValid = (uncle.getNumber() - 1 >= (blockNumber - uncleGenerationLimit));
 
         if (!isValid) {
             logger.error("Uncle too old: generationGap must be under UNCLE_GENERATION_LIMIT");
-            panicProcessor.panic("invaliduncle", "Uncle too old: generationGap must be under UNCLE_GENERATION_LIMIT");
+            panicProcessor.panic(INVALIDUNCLE, "Uncle too old: generationGap must be under UNCLE_GENERATION_LIMIT");
             return false;
         }
 
@@ -162,7 +159,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         if (ancestors != null && ancestors.contains(uncleHash)) {
             String uHashStr = uncleHash.toString();
             logger.error("Uncle is direct ancestor: {}", uHashStr);
-            panicProcessor.panic("invaliduncle", String.format("Uncle is direct ancestor: %s", uHashStr));
+            panicProcessor.panic(INVALIDUNCLE, String.format("Uncle is direct ancestor: %s", uHashStr));
             return false;
         }
         return true;
@@ -172,7 +169,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         String uhashString = uncleHash.toString();
         if (used != null && used.contains(uncleHash)) {
             logger.error("Uncle is not unique: {}", uhashString);
-            panicProcessor.panic("invaliduncle", String.format("Uncle is not unique: %s", uhashString));
+            panicProcessor.panic(INVALIDUNCLE, String.format("Uncle is not unique: %s", uhashString));
             return false;
         }
         return true;
@@ -184,7 +181,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
 
         if (ancestors != null && (parent == null || !ancestors.contains(new ByteArrayWrapper(parent.getHash())))) {
             logger.error("Uncle has no common parent: {}", uhashString);
-            panicProcessor.panic("invaliduncle", String.format("Uncle has no common parent: %s", uhashString));
+            panicProcessor.panic(INVALIDUNCLE, String.format("Uncle has no common parent: %s", uhashString));
             return false;
         }
 

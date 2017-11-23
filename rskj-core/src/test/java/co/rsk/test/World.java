@@ -26,8 +26,10 @@ import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockStore;
 import co.rsk.net.BlockSyncService;
 import co.rsk.net.NodeBlockProcessor;
+import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.*;
+import org.ethereum.rpc.Simples.SimpleChannelManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -62,8 +64,9 @@ public class World {
 
         BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockChain, nodeInformation, null);
-        this.blockProcessor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockChain, nodeInformation, blockSyncService);
+        SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockChain, nodeInformation, syncConfiguration, new SimpleChannelManager());
+        this.blockProcessor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
     }
 
     public NodeBlockProcessor getBlockProcessor() { return this.blockProcessor; }

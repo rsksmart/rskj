@@ -14,11 +14,6 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
     }
 
     @Override
-    public boolean isSyncing() {
-        return true;
-    }
-
-    @Override
     public void newConnectionPointData(byte[] hash) {
 
         if (this.syncInformation.isKnownBlock(hash)) {

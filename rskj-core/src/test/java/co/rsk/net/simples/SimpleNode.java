@@ -48,11 +48,11 @@ public class SimpleNode {
     }
 
     public Block getBestBlock() {
-        return ((NodeMessageHandler)this.handler).getBestBlock();
+        return ((NodeMessageHandler)handler).getBlockProcessor().getBlockchain().getBestBlock();
     }
 
     public BigInteger getTotalDifficulty() {
-        return ((NodeMessageHandler)this.handler).getTotalDifficulty();
+        return ((NodeMessageHandler)this.handler).getBlockProcessor().getBlockchain().getTotalDifficulty();
     }
 
     public void sendStatusTo(SimpleNode peer) {

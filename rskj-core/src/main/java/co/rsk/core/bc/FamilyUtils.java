@@ -23,6 +23,7 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 
 import static java.lang.Math.max;
@@ -97,7 +98,7 @@ public class FamilyUtils {
         return getUnclesHeaders(store, block.getNumber(), block.getParentHash(), levels);
     }
 
-    public static List<BlockHeader> getUnclesHeaders(BlockStore store, long blockNumber, byte[] parentHash, int levels) {
+    public static List<BlockHeader> getUnclesHeaders(@Nonnull  BlockStore store, long blockNumber, byte[] parentHash, int levels) {
         List<BlockHeader> uncles = new ArrayList<>();
         Set<ByteArrayWrapper> unclesHeaders = getUncles(store, blockNumber, parentHash, levels);
 

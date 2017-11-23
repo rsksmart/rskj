@@ -77,6 +77,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
+import javax.annotation.Nullable;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -119,29 +120,30 @@ public class RskFactory {
         return rsk;
     }
 
-    private void setupRecorder(RskImpl rsk, String blocksRecorderFileName) {
+    private void setupRecorder(RskImpl rsk, @Nullable String blocksRecorderFileName) {
         if (blocksRecorderFileName != null) {
             rsk.getBlockchain().setBlockRecorder(new FileBlockRecorder(blocksRecorderFileName));
         }
     }
 
-    private void setupPlayer(RskImpl rsk, String blocksPlayerFileName) {
-        if (blocksPlayerFileName != null) {
-            new Thread(() -> {
-                try (FileBlockPlayer bplayer = new FileBlockPlayer(blocksPlayerFileName)) {
-                    rsk.setIsPlayingBlocks(true);
-
-                    Blockchain bc = rsk.getWorldManager().getBlockchain();
-                    ChannelManager cm = rsk.getChannelManager();
-
-                    connectBlocks(bplayer, bc, cm);
-                } catch (Exception e) {
-                    logger.error("Error", e);
-                } finally {
-                    rsk.setIsPlayingBlocks(false);
-                }
-            }).start();
+    private void setupPlayer(RskImpl rsk, @Nullable String blocksPlayerFileName) {
+        if (blocksPlayerFileName == null) {
+            return;
         }
+
+        new Thread(() -> {
+            try (FileBlockPlayer bplayer = new FileBlockPlayer(blocksPlayerFileName)) {
+                rsk.setIsPlayingBlocks(true);
+
+                Blockchain bc = rsk.getWorldManager().getBlockchain();
+                ChannelManager cm = rsk.getChannelManager();
+                connectBlocks(bplayer, bc, cm);
+            } catch (Exception e) {
+                logger.error("Error", e);
+            } finally {
+                rsk.setIsPlayingBlocks(false);
+            }
+        }).start();
     }
 
     private void connectBlocks(FileBlockPlayer bplayer, Blockchain bc, ChannelManager cm) {
@@ -170,23 +172,32 @@ public class RskFactory {
     }
 
     @Bean
-    public NodeBlockProcessor getNodeBlockProcessor(RskSystemProperties config, Blockchain blockchain, BlockStore blockStore, BlockNodeInformation blockNodeInformation, BlockSyncService blockSyncService, ChannelManager channelManager) {
-        return new NodeBlockProcessor(config, blockStore, blockchain, blockNodeInformation, blockSyncService);
+    public NodeBlockProcessor getNodeBlockProcessor(RskSystemProperties config, Blockchain blockchain, BlockStore blockStore,
+                                                    BlockNodeInformation blockNodeInformation, BlockSyncService blockSyncService, SyncConfiguration syncConfiguration) {
+        return new NodeBlockProcessor(config, blockStore, blockchain, blockNodeInformation, blockSyncService, syncConfiguration);
     }
 
     @Bean
     public SyncProcessor getSyncProcessor(WorldManager worldManager,
+                                          RskSystemProperties config,
                                           BlockSyncService blockSyncService,
+                                          PeerScoringManager peerScoringManager,
                                           SyncConfiguration syncConfiguration) {
-        return new SyncProcessor(worldManager.getBlockchain(), blockSyncService, syncConfiguration, new ProofOfWorkRule());
+
+        // some more rules for header validation
+//        int validPeriod = config.getBlockchainConfig().getCommonConstants().getNewBlockMaxMinInTheFuture();
+//        BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod);
+//        BlockHeaderValidationRule rule = (BlockHeaderValidationRule) new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
+        return new SyncProcessor(worldManager.getBlockchain(), blockSyncService, peerScoringManager, syncConfiguration, new ProofOfWorkRule());
     }
 
     @Bean
     public BlockSyncService getBlockSyncService(Blockchain blockchain,
                                                 BlockStore store,
                                                 BlockNodeInformation nodeInformation,
+                                                SyncConfiguration syncConfiguration,
                                                 ChannelManager channelManager) {
-            return new BlockSyncService(store, blockchain, nodeInformation, channelManager);
+            return new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration, channelManager);
     }
 
     @Bean
