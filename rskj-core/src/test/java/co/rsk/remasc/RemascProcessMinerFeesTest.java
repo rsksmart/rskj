@@ -182,8 +182,10 @@ public class RemascProcessMinerFeesTest {
         assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue)), repository.getAccountState(cowAddress).getBalance());
         long blockReward = minerFee/remascConfig.getSyntheticSpan();
         assertEquals(BigInteger.valueOf(minerFee - blockReward), repository.getAccountState(Hex.decode(PrecompiledContracts.REMASC_ADDR)).getBalance());
-        assertEquals(BigInteger.valueOf(blockReward/remascConfig.getRskLabsDivisor()), repository.getAccountState(remascConfig.getRskLabsAddress()).getBalance());
-        assertEquals(BigInteger.valueOf(blockReward - blockReward/remascConfig.getRskLabsDivisor()), repository.getAccountState(coinbaseA.getBytes()).getBalance());
+        long rskReward = blockReward/remascConfig.getRskLabsDivisor();
+        assertEquals(BigInteger.valueOf(rskReward), repository.getAccountState(remascConfig.getRskLabsAddress()).getBalance());
+        long federationReward = (blockReward - rskReward)/remascConfig.getFederationDivisor();
+        assertEquals(BigInteger.valueOf(blockReward - rskReward - federationReward), repository.getAccountState(coinbaseA.getBytes()).getBalance());
 
         remascStorageProvider = getRemascStorageProvider(blockchain);
 
