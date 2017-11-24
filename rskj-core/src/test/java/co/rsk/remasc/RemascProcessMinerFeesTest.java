@@ -746,8 +746,8 @@ public class RemascProcessMinerFeesTest {
         assertEquals(BigInteger.valueOf(5292L - 53), testRunner.getAccountBalance(blockAtHeightFiveSibling.getCoinbase()));
 
         BigInteger remascCurrentBalance = testRunner.getAccountBalance(Hex.decode(PrecompiledContracts.REMASC_ADDR));
-        // TODO review value 314
-        assertEquals(BigInteger.valueOf(296268L + 314), remascCurrentBalance);
+        // TODO review value -22
+        assertEquals(BigInteger.valueOf(296268L - 22), remascCurrentBalance);
 
         // TODO review value -22
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), BigInteger.valueOf(84000L), BigInteger.valueOf(2268L - 22), 0L);
