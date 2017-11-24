@@ -269,76 +269,6 @@ public class BridgeSerializationUtils {
         return new PendingFederation(deserializeBtcPublicKeys(data));
     }
 
-    // An ABI call spec is serialized as:
-    // function name encoded in UTF-8
-    // arg_1, ..., arg_n
-    public static byte[] serializeABICallSpec(ABICallSpec spec) {
-        byte[][] encodedArguments = Arrays.stream(spec.getArguments())
-                .map(arg -> RLP.encodeElement(arg))
-                .toArray(byte[][]::new);
-        return RLP.encodeList(
-            RLP.encodeElement(spec.getFunction().getBytes(StandardCharsets.UTF_8)),
-            RLP.encodeList(encodedArguments)
-        );
-    }
-
-    // For the serialization format, see BridgeSerializationUtils::serializeABICallSpec
-    public static ABICallSpec deserializeABICallSpec(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
-
-        if (rlpList.size() != 2) {
-            throw new RuntimeException(String.format("Invalid serialized ABICallSpec. Expected 2 elements, but got %d", rlpList.size()));
-        }
-
-        String function = new String(rlpList.get(0).getRLPData(), StandardCharsets.UTF_8);
-        byte[][] arguments = ((RLPList)rlpList.get(1)).stream().map(rlpElement -> rlpElement.getRLPData()).toArray(byte[][]::new);
-
-        return new ABICallSpec(function, arguments);
-    }
-
-    // A list of voters is serialized as
-    // [voterBytes1, voterBytes2, ..., voterBytesn], sorted
-    // using the lexicographical order of the voters' unsigned bytes
-    public static byte[] serializeVoters(List<ABICallVoter> voters) {
-        List<byte[]> encodedKeys = voters.stream()
-                .sorted((ABICallVoter v1, ABICallVoter v2) ->
-                        UnsignedBytes.lexicographicalComparator().compare(v1.getBytes(), v2.getBytes())
-                )
-                .map(key -> RLP.encodeElement(key.getBytes()))
-                .collect(Collectors.toList());
-        return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
-    }
-
-    // A list of btc public keys is serialized as
-    // [pubkey1, pubkey2, ..., pubkeyn], sorted
-    // using the lexicographical order of the public keys
-    // (see BtcECKey.PUBKEY_COMPARATOR).
-    public static byte[] serializeBtcPublicKeys(List<BtcECKey> keys) {
-        List<byte[]> encodedKeys = keys.stream()
-                .sorted(BtcECKey.PUBKEY_COMPARATOR)
-                .map(key -> RLP.encodeElement(key.getPubKey()))
-                .collect(Collectors.toList());
-        return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
-    }
-
-    // For the serialization format, see BridgeSerializationUtils::serializeVoters
-    public static List<ABICallVoter> deserializeVoters(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
-
-        return rlpList.stream()
-                .map(pubKeyBytes -> new ABICallVoter(pubKeyBytes.getRLPData()))
-                .collect(Collectors.toList());
-    }
-
-    // For the serialization format, see BridgeSerializationUtils::serializePublicKeys
-    public static List<BtcECKey> deserializeBtcPublicKeys(byte[] data) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
-
-        return rlpList.stream()
-                .map(pubKeyBytes -> BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
-                .collect(Collectors.toList());
-    }
-
     // An ABI call election is serialized as a list of the votes, like so:
     // spec_1, voters_1, ..., spec_n, voters_n
     // Specs are sorted by their signed byte encoding lexicographically.
@@ -381,5 +311,75 @@ public class BridgeSerializationUtils {
         }
 
         return new ABICallElection(authorizer, votes);
+    }
+
+    // An ABI call spec is serialized as:
+    // function name encoded in UTF-8
+    // arg_1, ..., arg_n
+    private static byte[] serializeABICallSpec(ABICallSpec spec) {
+        byte[][] encodedArguments = Arrays.stream(spec.getArguments())
+                .map(arg -> RLP.encodeElement(arg))
+                .toArray(byte[][]::new);
+        return RLP.encodeList(
+                RLP.encodeElement(spec.getFunction().getBytes(StandardCharsets.UTF_8)),
+                RLP.encodeList(encodedArguments)
+        );
+    }
+
+    // For the serialization format, see BridgeSerializationUtils::serializeABICallSpec
+    private static ABICallSpec deserializeABICallSpec(byte[] data) {
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+
+        if (rlpList.size() != 2) {
+            throw new RuntimeException(String.format("Invalid serialized ABICallSpec. Expected 2 elements, but got %d", rlpList.size()));
+        }
+
+        String function = new String(rlpList.get(0).getRLPData(), StandardCharsets.UTF_8);
+        byte[][] arguments = ((RLPList)rlpList.get(1)).stream().map(rlpElement -> rlpElement.getRLPData()).toArray(byte[][]::new);
+
+        return new ABICallSpec(function, arguments);
+    }
+
+    // A list of btc public keys is serialized as
+    // [pubkey1, pubkey2, ..., pubkeyn], sorted
+    // using the lexicographical order of the public keys
+    // (see BtcECKey.PUBKEY_COMPARATOR).
+    private static byte[] serializeBtcPublicKeys(List<BtcECKey> keys) {
+        List<byte[]> encodedKeys = keys.stream()
+                .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                .map(key -> RLP.encodeElement(key.getPubKey()))
+                .collect(Collectors.toList());
+        return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
+    }
+
+    // For the serialization format, see BridgeSerializationUtils::serializePublicKeys
+    private static List<BtcECKey> deserializeBtcPublicKeys(byte[] data) {
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+
+        return rlpList.stream()
+                .map(pubKeyBytes -> BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
+                .collect(Collectors.toList());
+    }
+
+    // A list of voters is serialized as
+    // [voterBytes1, voterBytes2, ..., voterBytesn], sorted
+    // using the lexicographical order of the voters' unsigned bytes
+    private static byte[] serializeVoters(List<ABICallVoter> voters) {
+        List<byte[]> encodedKeys = voters.stream()
+                .sorted((ABICallVoter v1, ABICallVoter v2) ->
+                        UnsignedBytes.lexicographicalComparator().compare(v1.getBytes(), v2.getBytes())
+                )
+                .map(key -> RLP.encodeElement(key.getBytes()))
+                .collect(Collectors.toList());
+        return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
+    }
+
+    // For the serialization format, see BridgeSerializationUtils::serializeVoters
+    private static List<ABICallVoter> deserializeVoters(byte[] data) {
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+
+        return rlpList.stream()
+                .map(pubKeyBytes -> new ABICallVoter(pubKeyBytes.getRLPData()))
+                .collect(Collectors.toList());
     }
 }
