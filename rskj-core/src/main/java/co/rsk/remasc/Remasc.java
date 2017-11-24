@@ -129,7 +129,6 @@ public class Remasc {
 
         BigInteger payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
 
-        // TODO transfer to federators
         byte[] processingBlockHash = processingBlockHeader.getHash();
         int nfederators = federationProvider.getFederationSize();
         BigInteger payToFederator = payToFederation.divide(BigInteger.valueOf(nfederators));
