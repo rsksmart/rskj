@@ -18,6 +18,7 @@ public final class SyncUtils {
         int chunksToBestBlock = (int) Math.ceil(bestBlock / chunkSize);
         int chunksToDownload = Math.max(1, Math.min(maxSkeletonChunks, chunksToBestBlock - skippedChunks));
         return 1 + // get status
+                1 + // check best header
                 binarySearchExpectedRequests(bestBlock, currentBestBlock) + // find connection point
                 1 + // get skeleton
                 chunksToDownload; // get headers chunks

@@ -69,22 +69,6 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static byte[] serializeList(List<UTXO> list) throws IOException {
-        int nutxos = list.size();
-
-        byte[][] bytes = new byte[nutxos][];
-        int n = 0;
-
-        for (UTXO utxo : list) {
-            ByteArrayOutputStream ostream = new ByteArrayOutputStream();
-            utxo.serializeToStream(ostream);
-            ostream.close();
-            bytes[n++] = RLP.encodeElement(ostream.toByteArray());
-        }
-
-        return RLP.encodeList(bytes);
-    }
-
     public static SortedMap<Sha3Hash, BtcTransaction> deserializeMap(byte[] data, NetworkParameters networkParameters, boolean noInputsTxs) {
         SortedMap<Sha3Hash, BtcTransaction> map = new TreeMap<>();
 
@@ -132,7 +116,23 @@ public class BridgeSerializationUtils {
         return map;
     }
 
-    public static List<UTXO> deserializeList(byte[] data) throws IOException {
+    public static byte[] serializeUTXOList(List<UTXO> list) throws IOException {
+        int nutxos = list.size();
+
+        byte[][] bytes = new byte[nutxos][];
+        int n = 0;
+
+        for (UTXO utxo : list) {
+            try (ByteArrayOutputStream ostream = new ByteArrayOutputStream()) {
+                utxo.serializeToStream(ostream);
+                bytes[n++] = RLP.encodeElement(ostream.toByteArray());
+            }
+        }
+
+        return RLP.encodeList(bytes);
+    }
+
+    public static List<UTXO> deserializeUTXOList(byte[] data) throws IOException {
         List<UTXO> list = new ArrayList<>();
 
         if (data == null || data.length == 0)
@@ -228,7 +228,7 @@ public class BridgeSerializationUtils {
     public static byte[] serializeFederation(Federation federation) {
         List<byte[]> publicKeys = federation.getPublicKeys().stream()
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
-                .map(key -> key.getPubKey())
+                .map(key -> RLP.encodeElement(key.getPubKey()))
                 .collect(Collectors.toList());
         return RLP.encodeList(
                 RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationTime().toEpochMilli())),
@@ -263,5 +263,46 @@ public class BridgeSerializationUtils {
         }
 
         return new Federation(numberOfSignaturesRequired, pubKeys, creationTime, btcContext.getParams());
+    }
+
+    // A pending federation is serialized as a list in the following order:
+    // id
+    // # of signatures required
+    // list of public keys -> [pubkey1, pubkey2, ..., pubkeyn], sorted
+    // using the lexicographical order of the public keys (see BtcECKey.PUBKEY_COMPARATOR).
+    public static byte[] serializePendingFederation(PendingFederation pendingFederation) {
+        List<byte[]> publicKeys = pendingFederation.getPublicKeys().stream()
+                .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                .map(key -> RLP.encodeElement(key.getPubKey()))
+                .collect(Collectors.toList());
+        return RLP.encodeList(
+                RLP.encodeBigInteger(BigInteger.valueOf(pendingFederation.getId())),
+                RLP.encodeBigInteger(BigInteger.valueOf(pendingFederation.getNumberOfSignaturesRequired())),
+                RLP.encodeList((byte[][])publicKeys.toArray(new byte[publicKeys.size()][]))
+        );
+    }
+
+    // For the serialization format, see BridgeSerializationUtils::serializePendingFederation
+    public static PendingFederation deserializePendingFederation(byte[] data) {
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+
+        if (rlpList.size() != 3) {
+            throw new RuntimeException(String.format("Invalid serialized PendingFederation. Expected 3 elements but got %d", rlpList.size()));
+        }
+
+        byte[] idBytes = rlpList.get(0).getRLPData();
+        int id = new BigInteger(idBytes).intValue();
+
+        byte[] numberOfSignaturesRequiredBytes = rlpList.get(1).getRLPData();
+        int numberOfSignaturesRequired =  new BigInteger(numberOfSignaturesRequiredBytes).intValue();
+        if (numberOfSignaturesRequired < 1) {
+            throw new RuntimeException(String.format("Invalid serialized PendingFederation # of signatures required. Expected at least 1, but got %d", numberOfSignaturesRequired));
+        }
+
+        List<BtcECKey> pubKeys = ((RLPList) rlpList.get(2)).stream()
+                .map(pubKeyBytes -> BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
+                .collect(Collectors.toList());
+
+        return new PendingFederation(id, numberOfSignaturesRequired, pubKeys);
     }
 }

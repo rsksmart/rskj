@@ -50,22 +50,28 @@ public class RskTestFactory {
         return getRepository().getContractDetails(contractAccount.getAddress());
     }
 
-    public ProgramResult executeRawContract(byte[] runtimeBytecode, byte[] encodedCall, BigInteger value) {
+    public ProgramResult executeRawContract(byte[] bytecode, byte[] encodedCall, BigInteger value) {
         Account sender = new AccountBuilder(getBlockchain())
                 .name("sender")
                 // a large balance will allow running any contract
                 .balance(BigInteger.valueOf(10000000))
                 .build();
-        Account contract = new AccountBuilder(getBlockchain())
-                .name("contract")
-                .code(runtimeBytecode)
+        BigInteger nonceCreate = getRepository().getNonce(sender.getAddress());
+        Transaction creationTx = new TransactionBuilder()
+                .gasLimit(BigInteger.valueOf(3000000))
+                .sender(sender)
+                .data(bytecode)
+                .nonce(nonceCreate.longValue())
                 .build();
+        executeTransaction(creationTx);
+        BigInteger nonceExecute = getRepository().getNonce(sender.getAddress());
         Transaction transaction = new TransactionBuilder()
                 // a large gas limit will allow running any contract
                 .gasLimit(BigInteger.valueOf(3000000))
                 .sender(sender)
-                .receiverAddress(contract.getAddress())
+                .receiverAddress(creationTx.getContractAddress())
                 .data(encodedCall)
+                .nonce(nonceExecute.longValue())
                 .value(value)
                 .build();
         return executeTransaction(transaction).getResult();

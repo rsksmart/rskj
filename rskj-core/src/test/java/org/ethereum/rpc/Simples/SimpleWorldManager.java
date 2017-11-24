@@ -18,18 +18,15 @@
 
 package org.ethereum.rpc.Simples;
 
-import co.rsk.core.NetworkStateExporter;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.net.BlockProcessor;
 import co.rsk.net.simples.SimpleBlockProcessor;
 import org.ethereum.core.PendingState;
 import org.ethereum.db.BlockStore;
-import org.ethereum.facade.Repository;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.server.ChannelManager;
 
 /**
  * Created by Ruben Altman on 09/06/2016.
@@ -48,11 +45,6 @@ public class SimpleWorldManager implements WorldManager {
         this.nodeBlockProcessor = nodeBlockProcessor;
     }
 
-    @Override
-    public void init() {
-
-    }
-
     public void setListener(EthereumListener listener) {
         this.listener = listener;
     }
@@ -63,16 +55,6 @@ public class SimpleWorldManager implements WorldManager {
             this.listener = new CompositeEthereumListener();
         }
         ((CompositeEthereumListener) this.listener).addListener(listener);
-    }
-
-    @Override
-    public ChannelManager getChannelManager() {
-        return new SimpleChannelManager();
-    }
-
-    @Override
-    public Repository getRepository() {
-        return null;
     }
 
     @Override
@@ -127,11 +109,6 @@ public class SimpleWorldManager implements WorldManager {
 
     @Override
     public HashRateCalculator getHashRateCalculator() {
-        return null;
-    }
-
-    @Override
-    public NetworkStateExporter getNetworkStateExporter() {
         return null;
     }
 

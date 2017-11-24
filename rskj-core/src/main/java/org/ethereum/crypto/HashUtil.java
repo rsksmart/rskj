@@ -63,10 +63,6 @@ public class HashUtil {
         return digest.digest();
     }
 
-    public static byte[] sha512(byte[] input) {
-        return SHA3Helper.sha3(input, S512);
-    }
-
     /**
      * hashing chunk of the data
      * @param input - data for hash

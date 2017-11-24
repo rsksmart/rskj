@@ -172,12 +172,10 @@ public class FederationTest {
     @Test
     public void testEquals_a() {
         Assert.assertTrue(federation.equals(federation));
-        Assert.assertTrue(federation.equalsFederation(federation));
 
         Assert.assertFalse(federation.equals(null));
         Assert.assertFalse(federation.equals(new Object()));
         Assert.assertFalse(federation.equals("something else"));
-        Assert.assertFalse(federation.equalsFederation(null));
     }
 
     @Test
@@ -287,6 +285,22 @@ public class FederationTest {
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Assert.assertTrue(federation.equals(otherFederation));
+    }
+
+    @Test
+    public void getPublicKeyIndex() {
+        for (int i = 0; i < federation.getPublicKeys().size(); i++) {
+            Assert.assertEquals(i, federation.getPublicKeyIndex(sortedPublicKeys.get(i)).intValue());
+        }
+        Assert.assertNull(federation.getPublicKeyIndex(BtcECKey.fromPrivate(BigInteger.valueOf(1234))));
+    }
+
+    @Test
+    public void hasPublicKey() {
+        for (int i = 0; i < federation.getPublicKeys().size(); i++) {
+            Assert.assertTrue(federation.hasPublicKey(sortedPublicKeys.get(i)));
+        }
+        Assert.assertFalse(federation.hasPublicKey(BtcECKey.fromPrivate(BigInteger.valueOf(1234))));
     }
 
     @Test

@@ -38,7 +38,7 @@ public class ReversibleTransactionExecutorTest {
 
         TestContract hello = TestContract.hello();
         CallTransaction.Function helloFn = hello.functions.get("hello");
-        ContractDetails contract = factory.addContract(hello.data);
+        ContractDetails contract = factory.addContract(hello.runtimeBytecode);
 
         Web3.CallArguments args = new Web3.CallArguments();
         args.to = TypeConverter.toJsonHex(contract.getAddress());
@@ -69,7 +69,7 @@ public class ReversibleTransactionExecutorTest {
 
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
-        ContractDetails contract = factory.addContract(greeter.data);
+        ContractDetails contract = factory.addContract(greeter.runtimeBytecode);
 
         Web3.CallArguments args = new Web3.CallArguments();
         args.to = TypeConverter.toJsonHex(contract.getAddress());
@@ -100,7 +100,7 @@ public class ReversibleTransactionExecutorTest {
 
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
-        ContractDetails contract = factory.addContract(greeter.data);
+        ContractDetails contract = factory.addContract(greeter.runtimeBytecode);
 
         Web3.CallArguments args = new Web3.CallArguments();
         args.from = "0x23"; // someone else
@@ -129,7 +129,7 @@ public class ReversibleTransactionExecutorTest {
 
         TestContract countcalls = TestContract.countcalls();
         CallTransaction.Function callsFn = countcalls.functions.get("calls");
-        ContractDetails contract = factory.addContract(countcalls.data);
+        ContractDetails contract = factory.addContract(countcalls.runtimeBytecode);
 
         Web3.CallArguments args = new Web3.CallArguments();
         args.from = "0x23"; // someone else

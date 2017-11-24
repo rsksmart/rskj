@@ -145,14 +145,9 @@ public class SimpleBlockProcessor implements BlockProcessor {
     public boolean hasBetterBlockToSync() { return false; }
 
     @Override
-    public void sendStatusToAll() { }
-
-    @Override
     public void acceptAnyBlock() { }
 
     public long getRequestId() { return this.requestId; }
 
     public byte[] getHash() { return this.hash; }
-
-    public int getCount() { return this.count; }
 }

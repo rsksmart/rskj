@@ -19,30 +19,12 @@
 package org.ethereum.rpc.Simples;
 
 import co.rsk.core.Rsk;
-import co.rsk.net.MessageHandler;
 import co.rsk.net.NodeBlockProcessor;
-import co.rsk.scoring.PeerScoringManager;
 
 /**
  * Created by ajlopez on 12/07/2017.
  */
 public class SimpleRsk extends SimpleEthereum implements Rsk {
-    private PeerScoringManager peerScoringManager;
-
-    @Override
-    public MessageHandler getMessageHandler() {
-        return null;
-    }
-
-    public void setPeerScoringManager(PeerScoringManager peerScoringManager) {
-        this.peerScoringManager = peerScoringManager;
-    }
-
-    @Override
-    public PeerScoringManager getPeerScoringManager() {
-        return this.peerScoringManager;
-    }
-
     @Override
     public NodeBlockProcessor getNodeBlockProcessor() {
         return null;

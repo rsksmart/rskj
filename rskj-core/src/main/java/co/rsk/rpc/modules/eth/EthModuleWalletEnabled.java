@@ -43,10 +43,12 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
 
     private final Ethereum eth;
     private final Wallet wallet;
+    private final PendingState pendingState;
 
-    public EthModuleWalletEnabled(Ethereum eth, Wallet wallet) {
+    public EthModuleWalletEnabled(Ethereum eth, Wallet wallet, PendingState pendingState) {
         this.eth = eth;
         this.wallet = wallet;
+        this.pendingState = pendingState;
     }
 
     @Override
@@ -66,8 +68,6 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
             if (args.data != null && args.data.startsWith("0x"))
                 args.data = args.data.substring(2);
 
-            // TODO inject PendingState through constructor if necessary
-            PendingState pendingState = eth.getWorldManager().getPendingState();
             synchronized (pendingState) {
                 BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : (pendingState.getRepository().getNonce(account.getAddress()));
                 Transaction tx = Transaction.create(toAddress, value, accountNonce, gasPrice, gasLimit, args.data);

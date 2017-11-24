@@ -19,13 +19,10 @@
 
 package org.ethereum.util;
 
-import com.cedarsoftware.util.DeepEquals;
-
 import org.ethereum.crypto.HashUtil;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -162,10 +159,6 @@ public class Value {
         if (sha3 == null)
             sha3 = HashUtil.sha3(encode());
         return sha3;
-    }
-
-    public boolean cmp(Value o) {
-        return DeepEquals.deepEquals(this, o);
     }
 
     /* *****************

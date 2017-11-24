@@ -18,11 +18,22 @@
 
 package co.rsk.peg;
 
+import java.util.List;
+
 /**
- * Implementors of this interface must be able to provide a federation instance.
+ * Implementors of this interface must be able to provide
+ * federation instances.
  *
  * @author Ariel Mendelzon
  */
 public interface FederationProvider {
-    Federation getFederation();
+    // The currently "active" federation
+    Federation getActiveFederation();
+    // The currently "retiring" federation
+    Federation getRetiringFederation();
+
+    // The federations that are "live", that is, are still
+    // operational. This should be the active federation
+    // plus the retiring federation, if one exists
+    List<Federation> getLiveFederations();
 }

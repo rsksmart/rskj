@@ -77,6 +77,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
+import javax.annotation.Nullable;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -87,7 +88,7 @@ public class RskFactory {
 
     @Bean
     public Rsk getRsk(WorldManager worldManager,
-                      AdminInfo adminInfo,
+                      Blockchain blockchain,
                       ChannelManager channelManager,
                       PeerServer peerServer,
                       ProgramInvokeFactory programInvokeFactory,
@@ -98,13 +99,14 @@ public class RskFactory {
                       PeerScoringManager peerScoringManager,
                       NodeBlockProcessor nodeBlockProcessor,
                       NodeMessageHandler nodeMessageHandler,
-                      RskSystemProperties rskSystemProperties) {
+                      RskSystemProperties rskSystemProperties,
+                      org.ethereum.core.Repository repository) {
 
         logger.info("Running {},  core version: {}-{}", config.genesisInfo(), config.projectVersion(), config.projectVersionModifier());
         BuildInfo.printInfo();
 
-        RskImpl rsk = new RskImpl(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory,
-                pendingState, config, compositeEthereumListener, receiptStore, peerScoringManager, nodeBlockProcessor, nodeMessageHandler);
+        RskImpl rsk = new RskImpl(worldManager, channelManager, peerServer, programInvokeFactory,
+                pendingState, config, compositeEthereumListener, receiptStore, peerScoringManager, nodeBlockProcessor, nodeMessageHandler, repository);
 
         rsk.init();
         rsk.getBlockchain().setRsk(true);  //TODO: check if we can remove this field from org.ethereum.facade.Blockchain
@@ -114,34 +116,32 @@ public class RskFactory {
         }
         if (rskSystemProperties.isBlocksEnabled()) {
             setupRecorder(rsk, rskSystemProperties.blocksRecorder());
-            setupPlayer(rsk, rskSystemProperties.blocksPlayer());
+            setupPlayer(rsk, channelManager, blockchain, rskSystemProperties.blocksPlayer());
         }
         return rsk;
     }
 
-    private void setupRecorder(RskImpl rsk, String blocksRecorderFileName) {
+    private void setupRecorder(RskImpl rsk, @Nullable String blocksRecorderFileName) {
         if (blocksRecorderFileName != null) {
             rsk.getBlockchain().setBlockRecorder(new FileBlockRecorder(blocksRecorderFileName));
         }
     }
 
-    private void setupPlayer(RskImpl rsk, String blocksPlayerFileName) {
-        if (blocksPlayerFileName != null) {
-            new Thread(() -> {
-                try (FileBlockPlayer bplayer = new FileBlockPlayer(blocksPlayerFileName)) {
-                    rsk.setIsPlayingBlocks(true);
-
-                    Blockchain bc = rsk.getWorldManager().getBlockchain();
-                    ChannelManager cm = rsk.getChannelManager();
-
-                    connectBlocks(bplayer, bc, cm);
-                } catch (Exception e) {
-                    logger.error("Error", e);
-                } finally {
-                    rsk.setIsPlayingBlocks(false);
-                }
-            }).start();
+    private void setupPlayer(RskImpl rsk, ChannelManager cm, Blockchain bc, @Nullable String blocksPlayerFileName) {
+        if (blocksPlayerFileName == null) {
+            return;
         }
+
+        new Thread(() -> {
+            try (FileBlockPlayer bplayer = new FileBlockPlayer(blocksPlayerFileName)) {
+                rsk.setIsPlayingBlocks(true);
+                connectBlocks(bplayer, bc, cm);
+            } catch (Exception e) {
+                logger.error("Error", e);
+            } finally {
+                rsk.setIsPlayingBlocks(false);
+            }
+        }).start();
     }
 
     private void connectBlocks(FileBlockPlayer bplayer, Blockchain bc, ChannelManager cm) {
@@ -170,23 +170,32 @@ public class RskFactory {
     }
 
     @Bean
-    public NodeBlockProcessor getNodeBlockProcessor(RskSystemProperties config, Blockchain blockchain, BlockStore blockStore, BlockNodeInformation blockNodeInformation, BlockSyncService blockSyncService, ChannelManager channelManager) {
-        return new NodeBlockProcessor(config, blockStore, blockchain, blockNodeInformation, blockSyncService);
+    public NodeBlockProcessor getNodeBlockProcessor(RskSystemProperties config, Blockchain blockchain, BlockStore blockStore,
+                                                    BlockNodeInformation blockNodeInformation, BlockSyncService blockSyncService, SyncConfiguration syncConfiguration) {
+        return new NodeBlockProcessor(config, blockStore, blockchain, blockNodeInformation, blockSyncService, syncConfiguration);
     }
 
     @Bean
     public SyncProcessor getSyncProcessor(WorldManager worldManager,
+                                          RskSystemProperties config,
                                           BlockSyncService blockSyncService,
+                                          PeerScoringManager peerScoringManager,
                                           SyncConfiguration syncConfiguration) {
-        return new SyncProcessor(worldManager.getBlockchain(), blockSyncService, syncConfiguration, new ProofOfWorkRule());
+
+        // some more rules for header validation
+//        int validPeriod = config.getBlockchainConfig().getCommonConstants().getNewBlockMaxMinInTheFuture();
+//        BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod);
+//        BlockHeaderValidationRule rule = (BlockHeaderValidationRule) new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
+        return new SyncProcessor(worldManager.getBlockchain(), blockSyncService, peerScoringManager, syncConfiguration, new ProofOfWorkRule());
     }
 
     @Bean
     public BlockSyncService getBlockSyncService(Blockchain blockchain,
                                                 BlockStore store,
                                                 BlockNodeInformation nodeInformation,
+                                                SyncConfiguration syncConfiguration,
                                                 ChannelManager channelManager) {
-            return new BlockSyncService(store, blockchain, nodeInformation, channelManager);
+            return new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration, channelManager);
     }
 
     @Bean
@@ -221,13 +230,19 @@ public class RskFactory {
 
     @Bean
     public Start.Web3Factory getWeb3Factory(Rsk rsk,
+                                            WorldManager worldManager,
                                             RskSystemProperties config,
                                             MinerClient minerClient,
                                             MinerServer minerServer,
                                             PersonalModule personalModule,
                                             EthModule ethModule,
-                                            ChannelManager channelManager) {
-        return () -> new Web3RskImpl(rsk, config, minerClient, minerServer, personalModule, ethModule, channelManager);
+                                            ChannelManager channelManager,
+                                            Repository repository,
+                                            PeerScoringManager peerScoringManager,
+                                            NetworkStateExporter networkStateExporter,
+                                            org.ethereum.db.BlockStore blockStore,
+                                            PeerServer peerServer) {
+        return () -> new Web3RskImpl(rsk, worldManager, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, networkStateExporter, blockStore, peerServer);
     }
 
     @Bean
@@ -322,21 +337,21 @@ public class RskFactory {
     }
 
     @Bean
-    public PersonalModule getPersonalModuleWallet(Rsk rsk, Wallet wallet) {
+    public PersonalModule getPersonalModuleWallet(Rsk rsk, Wallet wallet, PendingState pendingState) {
         if (wallet == null) {
             return new PersonalModuleWalletDisabled();
         }
 
-        return new PersonalModuleWalletEnabled(rsk, wallet);
+        return new PersonalModuleWalletEnabled(rsk, wallet, pendingState);
     }
 
     @Bean
-    public EthModuleWallet getEthModuleWallet(Rsk rsk, Wallet wallet) {
+    public EthModuleWallet getEthModuleWallet(Rsk rsk, Wallet wallet, PendingState pendingState) {
         if (wallet == null) {
             return new EthModuleWalletDisabled();
         }
 
-        return new EthModuleWalletEnabled(rsk, wallet);
+        return new EthModuleWalletEnabled(rsk, wallet, pendingState);
     }
 
     @Bean

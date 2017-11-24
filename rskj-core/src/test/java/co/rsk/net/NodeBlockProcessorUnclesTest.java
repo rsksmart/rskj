@@ -20,6 +20,7 @@ package co.rsk.net;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.simples.SimpleMessageChannel;
+import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -28,6 +29,7 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -147,8 +149,9 @@ public class NodeBlockProcessorUnclesTest {
 
         BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockChain, nodeInformation, null);
-        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockChain, nodeInformation, blockSyncService);
+        SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockChain, nodeInformation, syncConfiguration, new SimpleChannelManager());
+        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
 
         return processor;
     }
