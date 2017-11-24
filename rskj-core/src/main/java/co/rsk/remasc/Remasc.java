@@ -20,6 +20,7 @@ package co.rsk.remasc;
 
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.RemascConfig;
+import co.rsk.db.RepositoryImpl;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -123,13 +124,24 @@ public class Remasc {
         fullBlockReward = fullBlockReward.subtract(payToRskLabs);
 
         Repository processingRepository = ((RepositoryTrack)repository).getOriginRepository().getSnapshotTo(processingBlockHeader.getStateRoot());
+        processingRepository = ((RepositoryImpl)processingRepository).startTracking();
         RemascFederationProvider federationProvider = new RemascFederationProvider(processingRepository);
 
-        if (federationProvider.getFederationSize() != 0) {
-            BigInteger payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
-            // TODO transfer to federators
-            fullBlockReward = fullBlockReward.subtract(payToFederation);
+        BigInteger payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
+
+        // TODO transfer to federators
+        byte[] processingBlockHash = processingBlockHeader.getHash();
+        int nfederators = federationProvider.getFederationSize();
+        BigInteger payToFederator = payToFederation.divide(BigInteger.valueOf(nfederators));
+        BigInteger paidToFederation = BigInteger.ZERO;
+
+        for (int k = 0; k < nfederators; k++) {
+            byte[] federatorAddress = federationProvider.getFederatorAddress(k);
+            feesPayer.payMiningFees(processingBlockHash, payToFederator, federatorAddress, logs);
+            paidToFederation = paidToFederation.add(payToFederator);
         }
+
+        fullBlockReward = fullBlockReward.subtract(paidToFederation);
 
         List<Sibling> siblings = provider.getSiblings().get(processingBlockNumber);
 
