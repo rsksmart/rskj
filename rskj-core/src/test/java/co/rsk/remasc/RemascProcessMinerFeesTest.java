@@ -570,11 +570,17 @@ public class RemascProcessMinerFeesTest {
         // Check "hack" tx makes no changes to the remasc state, sender pays fees, and value is added to remasc account balance
         assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue+minerFee)), repository.getAccountState(cowAddress).getBalance());
         long blockReward = minerFee/remascConfig.getSyntheticSpan();
+        long originalBlockReward = blockReward;
         assertEquals(BigInteger.valueOf(minerFee+minerFee-blockReward), repository.getAccountState(Hex.decode(PrecompiledContracts.REMASC_ADDR)).getBalance());
-        assertEquals(BigInteger.valueOf(blockReward/remascConfig.getRskLabsDivisor()),repository.getAccountState(remascConfig.getRskLabsAddress()).getBalance());
-        assertEquals(BigInteger.valueOf(blockReward - blockReward/remascConfig.getRskLabsDivisor()), repository.getAccountState(coinbaseA.getBytes()).getBalance());
+        long rskReward = blockReward/remascConfig.getRskLabsDivisor();
+        assertEquals(BigInteger.valueOf(rskReward),repository.getAccountState(remascConfig.getRskLabsAddress()).getBalance());
+        blockReward -= rskReward;
+        long federationReward = blockReward / remascConfig.getFederationDivisor();
+        assertEquals(33, federationReward);
+        blockReward -= federationReward;
+        assertEquals(BigInteger.valueOf(blockReward), repository.getAccountState(coinbaseA.getBytes()).getBalance());
 
-        BigInteger expectedRewardBalance = BigInteger.valueOf(minerFee - blockReward);
+        BigInteger expectedRewardBalance = BigInteger.valueOf(minerFee - originalBlockReward);
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, BigInteger.ZERO, 0L);
     }
 
