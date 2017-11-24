@@ -10,6 +10,7 @@ import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -31,17 +32,15 @@ public class EventInfo {
     }
 
     public void decode(byte[] rlp) {
-        RLPList params = (RLPList) RLP.decode2(rlp);
+        RLPList params = (RLPList) RLP.decode2(rlp).get(0);
         decode(params);
         rlpEncoded = rlp;
     }
 
     public void decode(RLPList params){
-        RLPList logInfo = (RLPList) params.get(0);
-
-        RLPList topics = (RLPList) logInfo.get(0);
-        RLPItem data = (RLPItem) logInfo.get(1);
-        RLPItem txIndex = (RLPItem) logInfo.get(2);
+        RLPList topics = (RLPList) params.get(0);
+        RLPItem data = (RLPItem) params.get(1);
+        RLPItem txIndex = (RLPItem) params.get(2);
         this.data = data.getRLPData() != null ? data.getRLPData() : new byte[]{};
         this.txIndex = txIndex.getRLPData() != null ? RLP.decodeInt(txIndex.getRLPData(),0):0;
 
@@ -117,4 +116,25 @@ public class EventInfo {
                 '}';
     }
 
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (!EventInfo.class.isAssignableFrom(obj.getClass())) {
+            return false;
+        }
+        final EventInfo other = (EventInfo) obj;
+
+        if (!Arrays.equals(data,other.data)) {
+            return false;
+        }
+
+        if (txIndex!=other.txIndex) {
+            return false;
+        }
+        if (!topics.equals(other.topics))
+            return false;
+
+        return true;
+    }
 }

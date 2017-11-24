@@ -19,6 +19,7 @@
 
 package org.ethereum.listener;
 
+import co.rsk.core.bc.EventInfoItem;
 import org.ethereum.core.*;
 import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.Message;
@@ -45,7 +46,7 @@ public interface EthereumListener {
 
     void onRecvMessage(Channel channel, Message message);
 
-    void onBlock(Block block, List<TransactionReceipt> receipts);
+    void onBlock(Block block, List<TransactionReceipt> receipts,List<EventInfoItem> events);
 
     void onPeerDisconnect(String host, long port);
 

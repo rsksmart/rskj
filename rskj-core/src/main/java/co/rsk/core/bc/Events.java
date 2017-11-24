@@ -46,24 +46,35 @@ public Map<ByteArrayWrapper, EventsPerAccount> getMap() {
     }
 
     public byte[] getEncoded() {
+        rlpEncoded =encodeEventList(list);
+        return rlpEncoded;
+    }
+
+    static public byte[] encodeEventList(List<EventInfoItem> list) {
         List<byte[]> payloads = new ArrayList<>();
 
         for (EventInfoItem item : list) {
             byte[] payload = item.getEncoded();
             payloads.add(payload);
         }
-        rlpEncoded =RLP.encodeList(payloads);
+        byte[] rlpEncoded =RLP.encodeList(payloads);
         return rlpEncoded;
     }
 
     public void decode(byte[] rlp) {
-        RLPList rlplist =(RLPList) RLP.decode2(rlp);
+        rlpEncoded =rlp;
+        decodeEventList(list,rlp);
+    }
+
+    static public void decodeEventList(List<EventInfoItem> list,byte[] rlp) {
+        //RLPList rlplist =(RLPList) RLP.decode2(rlp);
+        //ArrayList<RLPElement> rlplist = RLP.decode2(rlp).get(0);
+        RLPList rlplist =(RLPList)  RLP.decode2(rlp).get(0);
 
         for (RLPElement payload : rlplist) {
             byte[] item = payload.getRLPData();
             list.add(new EventInfoItem(item));
         }
 
-        rlpEncoded = rlp;
     }
 }

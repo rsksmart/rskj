@@ -5,6 +5,8 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
+import java.util.Arrays;
+
 /**
  * Created by SerAdmin on 11/20/2017.
  */
@@ -36,6 +38,13 @@ public class EventInfoItem {
         this.address = address;
     }
 
+    public byte[] getAddress() {
+        return address;
+    }
+
+    public EventInfo getEventInfo() {
+        return eventInfo;
+    }
     // Encoding for storage in the store
     public byte[] getEncoded() {
 
@@ -55,4 +64,21 @@ public class EventInfoItem {
         this.eventInfo.decode(rlp.get(1).getRLPData());
     }
 
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (!EventInfoItem.class.isAssignableFrom(obj.getClass())) {
+            return false;
+        }
+        final EventInfoItem other = (EventInfoItem) obj;
+        if (!Arrays.equals(address,other.address)) {
+            return false;
+        }
+
+        if (!eventInfo.equals(other.eventInfo)) {
+            return false;
+        }
+        return true;
+    }
 }

@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.core.bc.EventInfoItem;
 import org.ethereum.db.*;
 
 import java.math.BigInteger;
@@ -31,6 +32,11 @@ public interface Blockchain {
     ImportResult tryToConnect(Block block);
 
     Block getBlockByNumber(long blockNr);
+
+
+    List<EventInfoItem> getEventsByBlockHash(byte[] hash);
+
+    List<EventInfoItem> getEventsByBlockNumber(long blockNr);
 
     void setBestBlock(Block block);
 

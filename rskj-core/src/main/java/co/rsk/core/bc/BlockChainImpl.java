@@ -398,6 +398,16 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     public Block getBlockByNumber(long number) { return blockStore.getChainBlockByNumber(number); }
 
     @Override
+    public List<EventInfoItem> getEventsByBlockNumber(long blockNr) {
+        return eventsStore.get(blockStore.getBlockHashByNumber(blockNr));
+    }
+
+    @Override
+    public List<EventInfoItem> getEventsByBlockHash(byte[] hash) {
+        return eventsStore.get(hash);
+    }
+
+    @Override
     public void setBestBlock(Block block) {
         this.setStatus(block, status.getTotalDifficulty());
     }
@@ -506,7 +516,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         if (result.getEvents().isEmpty())
             return;
 
-        eventsStore.save(block.getHash(), result.getEvents());
+        eventsStore.save(block.getHash(), result.getEvents().getList());
     }
 
     private void processBest(final Block block) {
@@ -516,7 +526,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     private void onBlock(Block block, BlockResult result) {
         if (result != null && listener != null) {
             listener.trace(String.format("Block chain size: [ %d ]", this.getSize()));
-            listener.onBlock(block, result.getTransactionReceipts());
+            listener.onBlock(block, result.getTransactionReceipts(),result.getEvents().getList());
         }
     }
 

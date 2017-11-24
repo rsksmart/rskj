@@ -1,7 +1,11 @@
 package org.ethereum.db;
 
+import co.rsk.core.bc.EventInfoItem;
 import co.rsk.core.bc.Events;
 import org.ethereum.datasource.KeyValueDataSource;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by SerAdmin on 6/30/2017.
@@ -16,7 +20,16 @@ public class EventsStoreImpl implements EventsStore {
         this.DS = aDS;
     }
 
-    public void save(byte[] blockHash,Events pcl) {
-            DS.put(blockHash, pcl.getEncoded());
+    public List<EventInfoItem> get(byte[] blockHash) {
+        byte[] encoded =DS.get(blockHash);
+        if (encoded==null)
+            return null;
+        List<EventInfoItem> events = new ArrayList<>();
+        Events.decodeEventList(events,encoded);
+        return events;
+    }
+
+    public void save(byte[] blockHash,List<EventInfoItem> events) {
+            DS.put(blockHash, Events.encodeEventList(events));
     }
 }

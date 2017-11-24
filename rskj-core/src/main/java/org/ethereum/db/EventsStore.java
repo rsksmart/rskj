@@ -10,5 +10,6 @@ import java.util.List;
  * Created by SerAdmin on 6/30/2017.
  */
 public interface EventsStore {
-    void save(byte[] blockHash, Events events);
+    void save(byte[] blockHash, List<EventInfoItem> events);
+    List<EventInfoItem> get(byte[] blockHash);
 }

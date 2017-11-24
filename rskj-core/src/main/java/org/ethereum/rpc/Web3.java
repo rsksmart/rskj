@@ -115,7 +115,7 @@ public interface Web3 {
         public String toBlock;
         public Object address;
         public Object[] topics;
-        public boolean contractLogFilter;
+        public boolean eventFilter;
 
         @Override
         public String toString() {
@@ -124,7 +124,7 @@ public interface Web3 {
                     ", toBlock='" + toBlock + '\'' +
                     ", address=" + address +
                     ", topics=" + Arrays.toString(topics) +
-                    ", contractLogFilter=" + contractLogFilter +
+                    ", eventFilter=" + eventFilter +
                     '}';
         }
     }

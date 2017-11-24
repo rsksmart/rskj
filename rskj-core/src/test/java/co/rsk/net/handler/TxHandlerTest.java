@@ -19,6 +19,7 @@
 package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
+import co.rsk.core.bc.EventInfoItem;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.rpc.TypeConverter;
@@ -120,7 +121,9 @@ public class TxHandlerTest {
         txHandler.setTxsPerAccounts(txsPerAccounts);
         txHandler.setKnownTxs(knownTxs);
 
-        txHandler.onBlock(null, receiptList);
+        List<EventInfoItem> eventList = new ArrayList<>();
+
+        txHandler.onBlock(null, receiptList,eventList);
 
         Assert.assertEquals(1, txHandler.getKnownTxs().keySet().size());
         Assert.assertEquals(1, txHandler.getTxsPerAccounts().entrySet().iterator().next().getValue().getTransactions().size());
