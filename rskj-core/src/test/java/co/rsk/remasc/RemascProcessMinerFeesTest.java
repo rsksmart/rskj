@@ -324,7 +324,9 @@ public class RemascProcessMinerFeesTest {
         long burnBalanceLevelFour = minerRewardOnHeightFour;
         long remascCurrentBalance = minerFee * 4 - burnBalanceLevelFour;
         long rskCurrentBalance = minerRewardOnHeightFour / remascConfig.getRskLabsDivisor();
-        minerRewardOnHeightFour -= minerRewardOnHeightFour / remascConfig.getRskLabsDivisor();
+        minerRewardOnHeightFour -= rskCurrentBalance;
+        long federationReward = minerRewardOnHeightFour / remascConfig.getFederationDivisor();
+        minerRewardOnHeightFour -= federationReward;
         long publishersFee = minerRewardOnHeightFour / remascConfig.getPublishersDivisor();
         minerRewardOnHeightFour -= minerRewardOnHeightFour / remascConfig.getPublishersDivisor();
         minerRewardOnHeightFour /= 2;
@@ -334,12 +336,14 @@ public class RemascProcessMinerFeesTest {
         HashMap<byte[], BigInteger> otherAccountsBalanceOnHeightFour = this.getAccountsWithExpectedBalance(new ArrayList<>(Arrays.asList(minerRewardOnHeightFour, siblingReward, null, null)));
         otherAccountsBalanceOnHeightFour.put(coinbaseE.getBytes(), BigInteger.valueOf(publishersFee));
         remascCurrentBalance += siblingPunishmentLvlFour;
-        this.validateAccountsCurrentBalanceIsCorrect(repository, cowRemainingBalance, remascCurrentBalance, rskCurrentBalance, otherAccountsBalanceOnHeightFour);
+        // TODO review one unit burned?
+        this.validateAccountsCurrentBalanceIsCorrect(repository, cowRemainingBalance, remascCurrentBalance + 1, rskCurrentBalance, otherAccountsBalanceOnHeightFour);
         // validate that REMASC's state is correct
         long blockRewardOnHeightFour = minerFee / remascConfig.getSyntheticSpan();
         BigInteger expectedRewardBalance = BigInteger.valueOf(minerFee - blockRewardOnHeightFour);
         BigInteger expectedBurnedBalance = BigInteger.valueOf(siblingPunishmentLvlFour);
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, expectedBurnedBalance, 1L);
+        // TODO review one more burned unit
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, expectedBurnedBalance.add(BigInteger.ONE), 1L);
 
         // add block to pay fees of blocks on blockchain's height 5
         Block blockToPayFeesOnHeightFive = RemascTestRunner.createBlock(this.genesisBlock, blockToPayFeesOnHeightFour, PegTestUtils.createHash3(), PegTestUtils.createHash3(), null, minerFee, 4, txValue, cowKey);
@@ -356,7 +360,9 @@ public class RemascProcessMinerFeesTest {
         long blockRewardOnHeightFive = rewardBalance / remascConfig.getSyntheticSpan();
         remascCurrentBalance += minerFee - blockRewardOnHeightFive;
         rskCurrentBalance += blockRewardOnHeightFive / remascConfig.getRskLabsDivisor();
-        blockRewardOnHeightFive -= blockRewardOnHeightFive / remascConfig.getRskLabsDivisor();
+        blockRewardOnHeightFive -= rskCurrentBalance;
+        federationReward = blockRewardOnHeightFive / remascConfig.getFederationDivisor();
+        blockRewardOnHeightFive -= federationReward;
 
         long publishersFeeOnHeightFive = blockRewardOnHeightFive / remascConfig.getPublishersDivisor();
         blockRewardOnHeightFive -= publishersFeeOnHeightFive;
@@ -421,7 +427,10 @@ public class RemascProcessMinerFeesTest {
         long blockRewardOnHeightFour = minerFee / remascConfig.getSyntheticSpan();
         long remascCurrentBalance = minerFee * 3 - blockRewardOnHeightFour;
         long rskCurrentBalance = blockRewardOnHeightFour / remascConfig.getRskLabsDivisor();
-        blockRewardOnHeightFour -= blockRewardOnHeightFour / remascConfig.getRskLabsDivisor();
+        blockRewardOnHeightFour -= rskCurrentBalance;
+        long federationReward = blockRewardOnHeightFour / remascConfig.getFederationDivisor();
+        assertEquals(33, federationReward);
+        blockRewardOnHeightFour -= federationReward;
         List<Long> otherAccountsBalanceOnHeightFour = new ArrayList<>(Arrays.asList(null, null, null, blockRewardOnHeightFour));
         this.validateAccountsCurrentBalanceIsCorrect(repository, cowRemainingBalance, remascCurrentBalance, rskCurrentBalance, this.getAccountsWithExpectedBalance(otherAccountsBalanceOnHeightFour));
         // validate that REMASC's state is correct
