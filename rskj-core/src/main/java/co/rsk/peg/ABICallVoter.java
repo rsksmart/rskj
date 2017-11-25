@@ -40,19 +40,15 @@ public final class ABICallVoter {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o)
+    public boolean equals(Object other) {
+        if (this == other)
             return true;
 
-        if (this == null ^ o == null)
+        if (other == null || this.getClass() != other.getClass())
             return false;
 
-        if (o instanceof ABICallVoter) {
-            ABICallVoter otherVoter = (ABICallVoter) o;
-            return Arrays.equals(getBytes(), otherVoter.getBytes());
-        }
-
-        return false;
+        ABICallVoter otherVoter = (ABICallVoter) other;
+        return Arrays.equals(getBytes(), otherVoter.getBytes());
     }
 
     @Override

@@ -92,26 +92,24 @@ public final class PendingFederation {
 
     @Override
     public boolean equals(Object other) {
-        if (this == other) {
+        if (this == other)
             return true;
-        }
 
-        if (other instanceof PendingFederation) {
-            PendingFederation otherFederation = (PendingFederation) other;
-            ByteArrayWrapper[] thisPublicKeys = this.getPublicKeys().stream()
-                    .sorted(BtcECKey.PUBKEY_COMPARATOR)
-                    .map(k -> new ByteArrayWrapper(k.getPubKey()))
-                    .toArray(ByteArrayWrapper[]::new);
-            ByteArrayWrapper[] otherPublicKeys = otherFederation.getPublicKeys().stream()
-                    .sorted(BtcECKey.PUBKEY_COMPARATOR)
-                    .map(k -> new ByteArrayWrapper(k.getPubKey()))
-                    .toArray(ByteArrayWrapper[]::new);
+        if (other == null || this.getClass() != other.getClass())
+            return false;
 
-            return this.getPublicKeys().size() == otherFederation.getPublicKeys().size() &&
-                    Arrays.equals(thisPublicKeys, otherPublicKeys);
-        }
+        PendingFederation otherFederation = (PendingFederation) other;
+        ByteArrayWrapper[] thisPublicKeys = this.getPublicKeys().stream()
+                .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                .map(k -> new ByteArrayWrapper(k.getPubKey()))
+                .toArray(ByteArrayWrapper[]::new);
+        ByteArrayWrapper[] otherPublicKeys = otherFederation.getPublicKeys().stream()
+                .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                .map(k -> new ByteArrayWrapper(k.getPubKey()))
+                .toArray(ByteArrayWrapper[]::new);
 
-        return false;
+        return this.getPublicKeys().size() == otherFederation.getPublicKeys().size() &&
+                Arrays.equals(thisPublicKeys, otherPublicKeys);
     }
 
     public Sha3Hash getHash() {

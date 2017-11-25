@@ -125,39 +125,27 @@ public final class Federation {
 
     @Override
     public boolean equals(Object other) {
-        if (this == other) {
+        if (this == other)
             return true;
-        }
 
-        if (other instanceof Federation) {
-            return this.equalsFederation((Federation) other);
-        }
-
-        return false;
-    }
-
-    private boolean equalsFederation(Federation other) {
-        if (other == null) {
+        if (other == null || this.getClass() != other.getClass())
             return false;
-        }
 
-        if (this == other) {
-            return true;
-        }
+        Federation otherFederation = (Federation) other;
 
         ByteArrayWrapper[] thisPublicKeys = this.getPublicKeys().stream()
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .map(k -> new ByteArrayWrapper(k.getPubKey()))
                 .toArray(ByteArrayWrapper[]::new);
-        ByteArrayWrapper[] otherPublicKeys = other.getPublicKeys().stream()
+        ByteArrayWrapper[] otherPublicKeys = otherFederation.getPublicKeys().stream()
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .map(k -> new ByteArrayWrapper(k.getPubKey()))
                 .toArray(ByteArrayWrapper[]::new);
 
-        return this.getNumberOfSignaturesRequired() == other.getNumberOfSignaturesRequired() &&
-                this.getSize() == other.getSize() &&
-                this.getCreationTime().equals(other.getCreationTime()) &&
-                this.btcParams.equals(other.btcParams) &&
+        return this.getNumberOfSignaturesRequired() == otherFederation.getNumberOfSignaturesRequired() &&
+                this.getSize() == otherFederation.getSize() &&
+                this.getCreationTime().equals(otherFederation.getCreationTime()) &&
+                this.btcParams.equals(otherFederation.btcParams) &&
                 Arrays.equals(thisPublicKeys, otherPublicKeys);
     }
 

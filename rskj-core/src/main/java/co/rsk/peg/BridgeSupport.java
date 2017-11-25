@@ -64,9 +64,10 @@ import static org.ethereum.util.BIUtil.transfer;
  * @author Oscar Guindzberg
  */
 public class BridgeSupport {
+    public static final Integer VOTE_GENERIC_ERROR_CODE = -10;
+
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
-    private static final Integer VOTE_GENERIC_ERROR_CODE = -10;
 
     final List<String> FEDERATION_CHANGE_FUNCTIONS = Collections.unmodifiableList(Arrays.asList(new String[]{
             "create",
@@ -901,7 +902,7 @@ public class BridgeSupport {
      * @return 1 upon success, -1 when a pending federation is present, -2 when funds are still
      * to be moved between federations.
      */
-    public Integer createFederation(boolean dryRun) throws IOException {
+    private Integer createFederation(boolean dryRun) throws IOException {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation != null) {
@@ -931,7 +932,7 @@ public class BridgeSupport {
      * @param key the public key to add
      * @return 1 upon success, -1 if there was no pending federation, -2 if the key was already in the pending federation
      */
-    public Integer addFederatorPublicKey(boolean dryRun, BtcECKey key) {
+    private Integer addFederatorPublicKey(boolean dryRun, BtcECKey key) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
@@ -964,7 +965,7 @@ public class BridgeSupport {
      * @return 1 upon success, -1 if there was no pending federation, -2 if the pending federation was incomplete,
      * -3 if the given hash doesn't match the current pending federation's hash.
      */
-    public Integer commitFederation(boolean dryRun, Sha3Hash hash) throws IOException {
+    private Integer commitFederation(boolean dryRun, Sha3Hash hash) throws IOException {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
@@ -1009,7 +1010,7 @@ public class BridgeSupport {
      * @param dryRun whether to just do a dry run
      * @return 1 upon success, 1 if there was no pending federation
      */
-    public Integer rollbackFederation(boolean dryRun) {
+    private Integer rollbackFederation(boolean dryRun) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
@@ -1046,6 +1047,8 @@ public class BridgeSupport {
         try {
             result = executeVoteFederationChangeFunction(true, callSpec);
         } catch (IOException e) {
+            result = new ABICallVoteResult(false, VOTE_GENERIC_ERROR_CODE);
+        } catch (BridgeIllegalArgumentException e) {
             result = new ABICallVoteResult(false, VOTE_GENERIC_ERROR_CODE);
         }
 

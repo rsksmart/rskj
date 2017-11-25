@@ -47,10 +47,6 @@ public final class ABICallSpec {
     private String function;
     private byte[][] arguments;
 
-    public ABICallSpec(String function) {
-        this(function, new byte[][]{});
-    }
-
     public ABICallSpec(String function, byte[][] arguments) {
         this.function = function;
         // Keep internal copies, so that the instance
@@ -89,17 +85,15 @@ public final class ABICallSpec {
 
     @Override
     public boolean equals(Object other) {
-        if (this == other) {
+        if (this == other)
             return true;
-        }
 
-        if (other instanceof ABICallSpec) {
-            ABICallSpec otherSpec = ((ABICallSpec) other);
-            return otherSpec.getFunction().equals(getFunction()) &&
-                    areEqual(arguments, otherSpec.arguments);
-        }
+        if (other == null || this.getClass() != other.getClass())
+            return false;
 
-        return false;
+        ABICallSpec otherSpec = ((ABICallSpec) other);
+        return otherSpec.getFunction().equals(getFunction()) &&
+                areEqual(arguments, otherSpec.arguments);
     }
 
     @Override
