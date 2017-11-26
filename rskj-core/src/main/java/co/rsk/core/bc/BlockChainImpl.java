@@ -335,7 +335,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         synchronized (accessLock) {
             status = new BlockChainStatus(block, totalDifficulty);
             blockStore.saveBlock(block, totalDifficulty, true);
-            repository.syncToRoot(block.getStateRoot());
+            // repository.syncToRoot(block.getStateRoot());
         }
     }
 
@@ -481,7 +481,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         synchronized (accessLock) {
             storeBlock(block, totalDifficulty, true);
             status = new BlockChainStatus(block, totalDifficulty);
-            repository.syncToRoot(block.getStateRoot());
+            // repository.syncToRoot(block.getStateRoot());
         }
     }
 
