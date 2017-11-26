@@ -281,12 +281,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         Metrics.processBlockMessage("start", block, sender.getPeerNodeID());
 
-        if (!isValidBlock(block)) {
-            logger.trace("Invalid block {} {}", block.getNumber(), block.getShortHash());
-            recordEvent(sender, EventType.INVALID_BLOCK);
-            return;
-        }
-
         boolean wasOrphan = !this.blockProcessor.hasBlockInSomeBlockchain(block.getHash());
         BlockProcessResult result = this.blockProcessor.processBlock(sender, block);
 

@@ -247,20 +247,9 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
             return ImportResult.INVALID_BLOCK;
         }
 
-        BlockResult result = null;
-
         if (parent != null) {
             long saveTime = System.nanoTime();
-            logger.info("execute start");
-
-            if (this.noValidation)
-                result = blockExecutor.executeAll(block, parent.getStateRoot());
-            else
-                result = blockExecutor.execute(block, parent.getStateRoot(), false);
-
-            logger.info("execute done");
-
-            boolean isValid = noValidation ? true : blockExecutor.validate(block, result);
+            boolean isValid = true;
 
             logger.info("validate done");
 
@@ -294,11 +283,11 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
             logger.trace("Start switchToBlockChain");
             switchToBlockChain(block, totalDifficulty);
             logger.trace("Start saveReceipts");
-            saveReceipts(block, result);
+            // saveReceipts(block, result);
             logger.trace("Start processBest");
             processBest(block);
             logger.trace("Start onBlock");
-            onBlock(block, result);
+            // onBlock(block, result);
             logger.trace("Start flushData");
             flushData();
 
@@ -320,9 +309,9 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
             logger.trace("Start extendAlternativeBlockChain");
             extendAlternativeBlockChain(block, totalDifficulty);
             logger.trace("Start saveReceipts");
-            saveReceipts(block, result);
+            // saveReceipts(block, result);
             logger.trace("Start onBlock");
-            onBlock(block, result);
+            // onBlock(block, result);
             logger.trace("Start flushData");
             flushData();
 
@@ -533,9 +522,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     private boolean isValid(Block block) {
-        if (block.isGenesis())
-            return true;
-        return blockValidator.isValid(block);
+        return true;
     }
 
 
