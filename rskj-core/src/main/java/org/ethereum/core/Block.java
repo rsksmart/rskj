@@ -496,10 +496,6 @@ public class Block {
     }
 
     private void checkExpectedRoot(byte[] expectedRoot, byte[] calculatedRoot) {
-        if (!Arrays.areEqual(expectedRoot, calculatedRoot)) {
-            logger.error("Transactions trie root validation failed for block #{}", this.header.getNumber());
-            panicProcessor.panic("txroot", String.format("Transactions trie root validation failed for block %d %s", this.header.getNumber(), Hex.toHexString(this.header.getHash())));
-        }
     }
 
     /**

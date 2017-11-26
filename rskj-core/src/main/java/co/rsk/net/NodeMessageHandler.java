@@ -287,7 +287,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Metrics.processBlockMessage("blockProcessed", block, sender.getPeerNodeID());
 
         recordEvent(sender, EventType.VALID_BLOCK);
-        tryRelayBlock(sender, block, wasOrphan, result);
 
         Metrics.processBlockMessage("finish", block, sender.getPeerNodeID());
     }

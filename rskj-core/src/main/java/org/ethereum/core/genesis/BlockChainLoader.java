@@ -118,7 +118,7 @@ public class BlockChainLoader {
             // if state is not generated from empty premine list
             // todo this is just a workaround, move EMPTY_TRIE_HASH logic to Trie implementation
             if (!Arrays.equals(blockchain.getBestBlock().getStateRoot(), EMPTY_TRIE_HASH)) {
-                this.repository.syncToRoot(blockchain.getBestBlock().getStateRoot());
+//                this.repository.syncToRoot(blockchain.getBestBlock().getStateRoot());
             }
         }
     }
