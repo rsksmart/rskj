@@ -87,17 +87,15 @@ public class BlockSyncService {
             logger.trace("Block already in a chain " + blockNumber + " " + block.getShortHash());
             return new BlockProcessResult(false, null, block.getShortHash(), System.nanoTime() - start);
         }
-
-        Set<ByteArrayWrapper> unknownHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
-
-        if (!ignoreMissingHashes){
-            askMissingHashes(sender, unknownHashes);
-        }
         trySaveStore(block);
 
+        Set<ByteArrayWrapper> unknownHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
         // We can't add the block if there are missing ancestors or uncles. Request the missing blocks to the sender.
         if (!unknownHashes.isEmpty()) {
-            logger.trace("Missing hashes for block " + blockNumber + " " + block.getShortHash());
+            if (!ignoreMissingHashes){
+                logger.trace("Missing hashes for block in process " + block.getNumber() + " " + block.getShortHash());
+                requestMissingHashes(sender, unknownHashes);
+            }
             return new BlockProcessResult(false, null, block.getShortHash(), System.nanoTime() - start);
         }
 
@@ -149,44 +147,47 @@ public class BlockSyncService {
         Map<ByteArrayWrapper, ImportResult> connectionsResult = new HashMap<>();
         List<Block> remainingBlocks = blocks;
         while (!remainingBlocks.isEmpty()) {
-            List<Block> connected = new ArrayList<>();
-
-            for (Block block : remainingBlocks) {
-                logger.trace("Trying to add block {} {}", block.getNumber(), block.getShortHash());
-
-                Set<ByteArrayWrapper> missingHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
-
-                if (!missingHashes.isEmpty()) {
-                    logger.trace("Missing hashes for block in process " + block.getNumber() + " " + block.getShortHash());
-                    logger.trace("Missing hashes " + missingHashes.size());
-                    if (!ignoreMissingHashes){
-                        askMissingHashes(sender, missingHashes);
-                    }
-                    continue;
-                }
-
-                connectionsResult.put(new ByteArrayWrapper(block.getHash()), blockchain.tryToConnect(block));
-
-                if (BlockUtils.blockInSomeBlockChain(block, blockchain)) {
-                    this.store.removeBlock(block);
-                    BlockUtils.addBlockToList(connected, block);
-                }
-            }
-
+            Set<Block> connected = getConnectedBlocks(remainingBlocks, sender, connectionsResult, ignoreMissingHashes);
             remainingBlocks = this.store.getChildrenOf(connected);
         }
 
         return connectionsResult;
     }
 
-    private void askMissingHashes(MessageChannel sender, Set<ByteArrayWrapper> hashes) {
+    private Set<Block> getConnectedBlocks(List<Block> remainingBlocks, MessageChannel sender, Map<ByteArrayWrapper, ImportResult> connectionsResult, boolean ignoreMissingHashes) {
+        Set<Block> connected = new HashSet<>();
+
+        for (Block block : remainingBlocks) {
+            logger.trace("Trying to add block {} {}", block.getNumber(), block.getShortHash());
+
+            Set<ByteArrayWrapper> missingHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
+
+            if (!missingHashes.isEmpty()) {
+                if (!ignoreMissingHashes){
+                    logger.trace("Missing hashes for block in process " + block.getNumber() + " " + block.getShortHash());
+                    requestMissingHashes(sender, missingHashes);
+                }
+                continue;
+            }
+
+            connectionsResult.put(new ByteArrayWrapper(block.getHash()), blockchain.tryToConnect(block));
+
+            if (BlockUtils.blockInSomeBlockChain(block, blockchain)) {
+                this.store.removeBlock(block);
+                connected.add(block);
+            }
+        }
+        return connected;
+    }
+
+    private void requestMissingHashes(MessageChannel sender, Set<ByteArrayWrapper> hashes) {
         logger.trace("Missing blocks to process " + hashes.size());
 
         for (ByteArrayWrapper hash : hashes)
-            this.askMissingHash(sender, hash);
+            this.requestMissingHash(sender, hash);
     }
 
-    private void askMissingHash(MessageChannel sender, ByteArrayWrapper hash) {
+    private void requestMissingHash(MessageChannel sender, ByteArrayWrapper hash) {
         if (sender == null)
             return;
 

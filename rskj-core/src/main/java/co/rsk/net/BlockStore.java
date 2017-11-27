@@ -149,15 +149,12 @@ public class BlockStore {
     /**
      * getChildrenOf returns all the children of a list of blocks that are in the BlockStore.
      *
-     * @param blocks the list of blocks to retrieve the children.
+     * @param blocks a set of blocks to retrieve the children.
      * @return A list with all the children of the given list of blocks.
      */
-    public List<Block> getChildrenOf(List<Block> blocks) {
-        Set<Block> children = blocks.stream()
+    public List<Block> getChildrenOf(Set<Block> blocks) {
+        return blocks.stream()
                 .flatMap(b-> getBlocksByParentHash(new ByteArrayWrapper(b.getHash()).getData()).stream())
-                .collect(Collectors.toSet());
-
-        return children.stream()
                 .collect(Collectors.toList());
     }
 
