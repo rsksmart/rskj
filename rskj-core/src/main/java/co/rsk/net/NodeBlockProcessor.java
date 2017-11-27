@@ -428,7 +428,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public BlockProcessResult processBlock(@Nullable final MessageChannel sender, @Nonnull final Block block) {
-        return blockSyncService.processBlock(sender, block);
+        return blockSyncService.processBlock(sender, block, false);
     }
 
     @Override

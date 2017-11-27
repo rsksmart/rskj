@@ -182,9 +182,7 @@ public class RskFactory {
                                           SyncConfiguration syncConfiguration) {
 
         // some more rules for header validation
-//        int validPeriod = config.getBlockchainConfig().getCommonConstants().getNewBlockMaxMinInTheFuture();
-//        BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod);
-//        BlockHeaderValidationRule rule = (BlockHeaderValidationRule) new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
+        // TODO(lsebrie): add new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
         return new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, new ProofOfWorkRule());
     }
 

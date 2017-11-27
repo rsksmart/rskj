@@ -42,6 +42,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Created by ajlopez on 5/10/2016.
@@ -83,7 +84,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         this.syncProcessor = syncProcessor;
         this.pendingState = pendingState;
         this.blockValidationRule = blockValidationRule;
-        transactionNodeInformation = new TransactionNodeInformation();
+        this.transactionNodeInformation = new TransactionNodeInformation();
         this.txHandler = txHandler;
         this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
@@ -148,6 +149,10 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     @Override
     public void postMessage(MessageChannel sender, Message message) throws InterruptedException {
         logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message.getMessageType());
+        // There's an obvious race condition here, but fear not.
+        // receivedMessages and logger are thread-safe
+        // cleanMsgTimestamp is a long replaced by the next value, we don't care
+        // enough about the precision of the value it takes
         cleanExpiredMessages();
         tryAddMessage(sender, message);
         logger.trace("End post message (queue size {})", this.queue.size());
@@ -172,10 +177,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private void cleanExpiredMessages() {
-        // There's an obvious race condition here, but fear not.
-        // receivedMessages and logger are thread-safe
-        // cleanMsgTimestamp is a long replaced by the next value, we don't care
-        // enough about the precision of the value it takes
         long currentTime = System.currentTimeMillis();
         if (currentTime - cleanMsgTimestamp > RECEIVED_MESSAGES_CACHE_DURATION) {
             logger.trace("Cleaning {} messages from rlp queue", receivedMessages.size());
@@ -210,21 +211,25 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                     logger.trace("No task");
                 }
 
-                Long now = System.currentTimeMillis();
-                Duration timeTick = Duration.ofMillis(now - lastTickSent);
-                this.syncProcessor.onTimePassed(timeTick);
-                lastTickSent = now;
-
-                //Refresh status to peers every 10 seconds or so
-                Duration timeStatus = Duration.ofMillis(now - lastStatusSent);
-                if (timeStatus.getSeconds() > 10) {
-                    sendStatusToAll();
-                    lastStatusSent = now;
-                }
+                updateTimedEvents();
             }
             catch (Exception ex) {
                 logger.error("Error {}", ex);
             }
+        }
+    }
+
+    private void updateTimedEvents() {
+        Long now = System.currentTimeMillis();
+        Duration timeTick = Duration.ofMillis(now - lastTickSent);
+        this.syncProcessor.onTimePassed(timeTick);
+        lastTickSent = now;
+
+        //Refresh status to peers every 10 seconds or so
+        Duration timeStatus = Duration.ofMillis(now - lastStatusSent);
+        if (timeStatus.getSeconds() > 10) {
+            sendStatusToAll();
+            lastStatusSent = now;
         }
     }
 
@@ -299,30 +304,18 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private void tryRelayBlock(@Nonnull MessageChannel sender, Block block, boolean wasOrphan, BlockProcessResult result) {
         // is new block and it is not orphan, it is in some blockchain
-        if (wasOrphan && result.wasBlockAdded(block) && !this.blockProcessor.hasBetterBlockToSync())
+        if (!wasOrphan && result.wasBlockAdded(block) && !this.blockProcessor.hasBetterBlockToSync())
             relayBlock(sender, block);
     }
 
     private void relayBlock(@Nonnull MessageChannel sender, Block block) {
-        if (channelManager == null)
-            return;
-
         final BlockNodeInformation nodeInformation = this.blockProcessor.getNodeInformation();
         final Set<NodeID> nodesWithBlock = nodeInformation.getNodesByBlock(block.getHash());
-
-        final Set<NodeID> nodesToSkip = new HashSet<>();
-        nodesToSkip.addAll(nodesWithBlock);
-
-        final Set<NodeID> newNodes = this.syncProcessor.getKnownPeersNodeIDs();
-        nodesToSkip.addAll(newNodes);
+        final Set<NodeID> newNodes = this.syncProcessor.getKnownPeersNodeIDs().stream()
+                .filter(p -> !nodesWithBlock.contains(p))
+                .collect(Collectors.toSet());
 
         channelManager.broadcastBlockHash(block.getHash(), newNodes);
-
-        final Set<NodeID> nodesSent = channelManager.broadcastBlock(block, nodesToSkip);
-
-        // These set of nodes now know about this block.
-        for (final NodeID nodeID : nodesSent)
-            nodeInformation.addBlockToNode(new ByteArrayWrapper(block.getHash()), nodeID);
 
         Metrics.processBlockMessage("blockRelayed", block, sender.getPeerNodeID());
     }
@@ -418,12 +411,12 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         long start = System.nanoTime();
         loggerMessageProcess.debug("Tx message about to be process: {}", message.getMessageContentInfo());
 
-        List<Transaction> ptxs = message.getTransactions();
-        Metrics.processTxsMessage("start", ptxs, sender.getPeerNodeID());
+        List<Transaction> messageTxs = message.getTransactions();
+        Metrics.processTxsMessage("start", messageTxs, sender.getPeerNodeID());
 
         List<Transaction> txs = new LinkedList();
-        for (Transaction tx : ptxs) {
-            if (tx.getSignature() == null || !tx.acceptTransactionSignature()) {
+        for (Transaction tx : messageTxs) {
+            if (!tx.acceptTransactionSignature()) {
                 recordEvent(sender, EventType.INVALID_TRANSACTION);
             } else {
                 txs.add(tx);
@@ -436,42 +429,31 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Metrics.processTxsMessage("txsValidated", acceptedTxs, sender.getPeerNodeID());
 
         // TODO(mmarquez): Add all this logic to the TxHandler
-        if (pendingState != null) {
-            acceptedTxs = pendingState.addWireTransactions(acceptedTxs);
-        }
+        acceptedTxs = pendingState.addWireTransactions(acceptedTxs);
 
         Metrics.processTxsMessage("validTxsAddedToPendingState", acceptedTxs, sender.getPeerNodeID());
+        /* Relay all transactions to peers that don't have them */
+        relayTransactions(sender, acceptedTxs);
+        Metrics.processTxsMessage("validTxsRelayed", acceptedTxs, sender.getPeerNodeID());
 
-        if (channelManager != null) {
-            /* Relay all transactions to peers that don't have them */
-            for (Transaction tx : acceptedTxs) {
-                final Set<NodeID> nodesToSkip = new HashSet<>(transactionNodeInformation.getNodesByTransaction(tx.getHash()));
-                nodesToSkip.add(sender.getPeerNodeID());
-                final Set<NodeID> newNodes = channelManager.broadcastTransaction(tx, nodesToSkip);
-
-                final ByteArrayWrapper txhash = new ByteArrayWrapper(tx.getHash());
-                for (NodeID nodeID : newNodes)
-                    transactionNodeInformation.addTransactionToNode(txhash, nodeID);
-            }
-
-            Metrics.processTxsMessage("validTxsRelayed", acceptedTxs, sender.getPeerNodeID());
-        }
-
-        for (Transaction tx : acceptedTxs) {
-            final ByteArrayWrapper txhash = new ByteArrayWrapper(tx.getHash());
-            transactionNodeInformation.addTransactionToNode(txhash, sender.getPeerNodeID());
-        }
-
-        Metrics.processTxsMessage("txToNodeInfoUpdated", acceptedTxs, sender.getPeerNodeID());
         Metrics.processTxsMessage("finish", acceptedTxs, sender.getPeerNodeID());
 
         loggerMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
     }
 
-    private void recordEvent(MessageChannel sender, EventType event) {
-        if (this.peerScoringManager == null)
-            return;
+    private void relayTransactions(@Nonnull MessageChannel sender, List<Transaction> acceptedTxs) {
+        for (Transaction tx : acceptedTxs) {
+            final ByteArrayWrapper txHash = new ByteArrayWrapper(tx.getHash());
+            transactionNodeInformation.addTransactionToNode(txHash, sender.getPeerNodeID());
+            final Set<NodeID> nodesToSkip = new HashSet<>(transactionNodeInformation.getNodesByTransaction(tx.getHash()));
+            final Set<NodeID> newNodes = channelManager.broadcastTransaction(tx, nodesToSkip);
 
+            for (NodeID nodeID : newNodes)
+                transactionNodeInformation.addTransactionToNode(txHash, nodeID);
+        }
+    }
+
+    private void recordEvent(MessageChannel sender, EventType event) {
         if (sender == null)
             return;
 

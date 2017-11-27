@@ -27,6 +27,7 @@ import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Blockchain;
+import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.junit.Assert;
 import org.mockito.Mockito;
 
@@ -116,7 +117,7 @@ public class SimpleAsyncNode extends SimpleNode {
         when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
         when(peerScoringManager.getPeerScoring(isA(NodeID.class))).thenReturn(new PeerScoring());
         SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, blockValidationRule);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, null, null, null, peerScoringManager, blockValidationRule);
+        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, new SimpleChannelManager(), null, null, peerScoringManager, blockValidationRule);
         return new SimpleAsyncNode(handler, syncProcessor);
     }
 

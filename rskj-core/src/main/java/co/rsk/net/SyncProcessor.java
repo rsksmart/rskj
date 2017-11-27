@@ -140,7 +140,7 @@ public class SyncProcessor implements SyncEventsHandler {
             return;
         }
 
-        blockSyncService.processBlock(peer, message.getBlock());
+        blockSyncService.processBlock(peer, message.getBlock(), false);
     }
 
     public Set<NodeID> getKnownPeersNodeIDs() {
@@ -313,7 +313,8 @@ public class SyncProcessor implements SyncEventsHandler {
 
         @Override
         public BlockProcessResult processBlock(Block block) {
-            return blockSyncService.processBlock(getSelectedPeerChannel(), block);
+            // this is a controled place where we ask for blocks, we never should look for missing hashes
+            return blockSyncService.processBlock(getSelectedPeerChannel(), block, true);
         }
 
         @Override

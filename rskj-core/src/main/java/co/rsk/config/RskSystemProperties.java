@@ -56,6 +56,7 @@ public class RskSystemProperties extends SystemProperties {
     public static final int BLOCKS_FOR_PEERS_DEFAULT = 100;
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
+    private static final int CHUNK_SIZE = 192;
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
@@ -382,6 +383,6 @@ public class RskSystemProperties extends SystemProperties {
 
     // its fixed, cannot be set by config file
     public int getChunkSize() {
-        return 192;
+        return CHUNK_SIZE;
     }
 }

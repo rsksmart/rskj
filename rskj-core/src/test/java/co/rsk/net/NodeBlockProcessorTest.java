@@ -81,27 +81,6 @@ public class NodeBlockProcessorTest {
         Assert.assertEquals(0, store.size());
     }
 
-    @Test @Ignore
-    public void processBlockWithTooMuchHeightAfterFilterIsRemoved() throws UnknownHostException {
-        final BlockStore store = new BlockStore();
-        final MessageChannel sender = new SimpleMessageChannel();
-
-        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        final Block block = BlockGenerator.getInstance().createBlock(1000, 0);
-
-        BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration, new SimpleChannelManager());
-        final NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        processor.acceptAnyBlock();
-
-        processor.processBlock(sender, block);
-
-        Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(block.getHash()).size() == 1);
-        Assert.assertTrue(store.hasBlock(block));
-        Assert.assertEquals(1, store.size());
-    }
-
     @Test
     public void processBlockAddingToBlockchain() {
         Blockchain blockchain = BlockChainBuilder.ofSize(10);

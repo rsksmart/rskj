@@ -103,7 +103,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     private void verifyDownloadIsFinished() {
         // all headers have been requested and there is not any chunk still in process
-        if (chunksBeingDownloaded.size() == 0 &&
+        if (chunksBeingDownloaded.isEmpty() &&
                 pendingHeaders.stream().allMatch(Collection::isEmpty)) {
             // Finished syncing
             syncEventsHandler.onCompletedSyncing();
@@ -177,8 +177,11 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     private Optional<BlockHeader> updateHeadersAndChunks(NodeID peerId, Integer currentChunk) {
         Deque<BlockHeader> headers = pendingHeaders.get(currentChunk);
-        if (!headers.isEmpty()) {
-            return Optional.of(headers.pop());
+        while (!headers.isEmpty()) {
+            BlockHeader header = headers.pop();
+            // we double check if the header was not downloaded or obtained by another way
+            if (!syncInformation.isKnownBlock(header.getHash()))
+                return Optional.of(header);
         }
 
         Optional<BlockHeader> header = tryFindBlockHeader(peerId);
@@ -199,14 +202,14 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
             if (!chunks.isEmpty()) {
                 int chunkNumber = chunks.pollLast();
                 Deque<BlockHeader> headers = pendingHeaders.get(chunkNumber);
-                if (!headers.isEmpty()) {
-                    chunksBeingDownloaded.put(peerId, chunkNumber);
-                    segmentsBeingDownloaded.put(peerId, segmentNumber);
-                    return Optional.of(headers.poll());
-                } else {
-                    // log something we are in trouble
-                    syncEventsHandler.warnMessage("We got a segment {} with a unfinished chunk {} with no pending headers!", segmentNumber, chunkNumber);
-                    syncEventsHandler.stopSyncing();
+                while (!headers.isEmpty()) {
+                    BlockHeader header = headers.poll();
+                    // we double check if the header was not downloaded or obtained by another way
+                    if (!syncInformation.isKnownBlock(header.getHash())) {
+                        chunksBeingDownloaded.put(peerId, chunkNumber);
+                        segmentsBeingDownloaded.put(peerId, segmentNumber);
+                        return Optional.of(header);
+                    }
                 }
             }
         }

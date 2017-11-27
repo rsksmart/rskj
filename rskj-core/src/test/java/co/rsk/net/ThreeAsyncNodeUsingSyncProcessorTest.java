@@ -236,7 +236,6 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
     }
 
-    @Ignore("Should be activated when old sync is removed")
     @Test
     public void synchronizeNewNodeWithTwoPeers200Default() {
         Blockchain b1 = BlockChainBuilder.ofSize(200, true);
@@ -255,9 +254,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node2.sendFullStatusTo(node3);
 
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(200, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
-        // synchronize 200 (extra tasks are from old sync protocol messages)
-        node3.waitExactlyNTasksWithTimeout(200 + 774);
+        int setupRequests = SyncUtils.syncSetupRequests(200, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        node3.waitUntilNTasksWithTimeout(setupRequests);
+        node3.waitExactlyNTasksWithTimeout(200 + setupRequests - 10);
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node3.getSyncProcessor().getExpectedResponses().isEmpty());
@@ -330,7 +329,6 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
     }
 
-    @Ignore("Should be activated when old sync is removed")
     @Test
     public void synchronizeNewNodeWithTwoPeers200Different() {
         Blockchain b1 = BlockChainBuilder.ofSize(193, true);
@@ -350,9 +348,10 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node2.sendFullStatusTo(node3);
 
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(200, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        int setupRequests = SyncUtils.syncSetupRequests(200, 0, syncConfiguration);
+        node3.waitUntilNTasksWithTimeout(setupRequests);
         // synchronize 200 new blocks (extra tasks are from old sync protocol messages)
-        node3.waitExactlyNTasksWithTimeout(200 + 1319);
+        node3.waitExactlyNTasksWithTimeout(192 + setupRequests - 2);
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node3.getSyncProcessor().getExpectedResponses().isEmpty());
@@ -376,7 +375,6 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
     }
 
-    @Ignore("Should be activated when old sync is removed")
     @Test
     public void synchronizeNewNodeWithThreePeers400Different() {
         Blockchain b1 = BlockChainBuilder.ofSize(0, true);
@@ -399,9 +397,10 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node3.sendFullStatusTo(node4);
 
         // sync setup
-        node4.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(400, 0, syncConfiguration));
+        int setupRequests = SyncUtils.syncSetupRequests(400, 0, syncConfiguration);
+        node4.waitUntilNTasksWithTimeout(setupRequests);
         // synchronize 50 new blocks from node 1
-        node4.waitExactlyNTasksWithTimeout(400 + 2 + 18000);
+        node4.waitExactlyNTasksWithTimeout(400 + setupRequests - 10);
 
         Assert.assertTrue(node3.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node4.getSyncProcessor().getExpectedResponses().isEmpty());

@@ -308,10 +308,14 @@ public class Transaction implements SerializableObject {
     }
 
     public boolean acceptTransactionSignature() {
-        if (!getSignature().validateComponents())
+        ECDSASignature signature = getSignature();
+        if (signature == null)
             return false;
 
-        if (getSignature().s.compareTo(SECP256K1N_HALF) >= 0)
+        if (!signature.validateComponents())
+            return false;
+
+        if (signature.s.compareTo(SECP256K1N_HALF) >= 0)
             return false;
 
         byte chId = this.getChainId();

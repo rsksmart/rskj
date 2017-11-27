@@ -41,7 +41,7 @@ public class BlockSyncServiceTest {
 
             List<Block> extendedChain = BlockGenerator.getInstance().getBlockChain(blockchain.getBestBlock(), i);
             for (Block block : extendedChain) {
-                blockSyncService.processBlock(null, block);
+                blockSyncService.processBlock(null, block, false);
                 Assert.assertEquals(block.getNumber(), blockchain.getBestBlock().getNumber());
                 Assert.assertArrayEquals(block.getHash(), blockchain.getBestBlock().getHash());
             }
@@ -62,7 +62,7 @@ public class BlockSyncServiceTest {
             Collections.reverse(extendedChain);
             for (int j = 0; j < extendedChain.size() - 1; j++) {
                 Block block = extendedChain.get(j);
-                blockSyncService.processBlock(null, block);
+                blockSyncService.processBlock(null, block, false);
                 // we don't have all the parents, so we wait to update the best chain
                 Assert.assertEquals(initialBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
                 Assert.assertArrayEquals(initialBestBlock.getHash(), blockchain.getBestBlock().getHash());
@@ -71,7 +71,7 @@ public class BlockSyncServiceTest {
             // the chain is complete, we have a new best block
             Block closingBlock = extendedChain.get(extendedChain.size() - 1);
             Block newBestBlock = extendedChain.get(0);
-            blockSyncService.processBlock(null, closingBlock);
+            blockSyncService.processBlock(null, closingBlock, false);
             Assert.assertEquals(newBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
             Assert.assertArrayEquals(newBestBlock.getHash(), blockchain.getBestBlock().getHash());
         }
@@ -93,7 +93,7 @@ public class BlockSyncServiceTest {
         // we have just surpassed the best branch
         for (int i = 0; i < extendedChain.size(); i++) {
             Block newBestBlock = extendedChain.get(i);
-            blockSyncService.processBlock(null, newBestBlock);
+            blockSyncService.processBlock(null, newBestBlock, false);
             Assert.assertEquals(newBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
             Assert.assertArrayEquals(newBestBlock.getHash(), blockchain.getBestBlock().getHash());
         }

@@ -747,10 +747,12 @@ public class NodeMessageHandlerTest {
         PeerScoringManager scoring = createPeerScoringManager();
         final SimpleChannelManager channelManager = new SimpleChannelManager();
         TxHandler txmock = Mockito.mock(TxHandler.class);
+        PendingState state = Mockito.mock(PendingState.class);
+        Mockito.when(state.addWireTransactions(any())).thenAnswer(i -> i.getArguments()[0]);
         BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, null, txmock, scoring, new ProofOfWorkRule());
+        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, state, txmock, scoring, new ProofOfWorkRule());
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
         sender.setPeerNodeID(new byte[] {1});
@@ -802,10 +804,11 @@ public class NodeMessageHandlerTest {
         PeerScoringManager scoring = createPeerScoringManager();
         final SimpleChannelManager channelManager = new SimpleChannelManager();
         TxHandler txmock = Mockito.mock(TxHandler.class);
+        PendingState state = Mockito.mock(PendingState.class);
         BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, null, txmock, scoring, new ProofOfWorkRule());
+        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, state, txmock, scoring, new ProofOfWorkRule());
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -853,7 +856,7 @@ public class NodeMessageHandlerTest {
         BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
-        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, pendingState, txmock, null, new ProofOfWorkRule());
+        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, pendingState, txmock, RskMockFactory.getPeerScoringManager(), new ProofOfWorkRule());
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
         sender.setPeerNodeID(new byte[] {1});
