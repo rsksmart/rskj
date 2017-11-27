@@ -273,15 +273,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.rskReceiptStore = rskReceiptStore;
         this.repository = repository;
         this.logs = logs;
-
-        try {
-            this.bridgeSupport = setup();
-        }
-        catch(Exception ex) {
-            logger.error(ex.getMessage(), ex);
-            panicProcessor.panic("bridgeinit", ex.getMessage());
-            throw new RuntimeException("Exception initializing bridge", ex);
-        }
     }
 
     @Override

@@ -123,8 +123,16 @@ public class Remasc {
         feesPayer.payMiningFees(processingBlockHeader.getHash(), payToRskLabs, remascConstants.getRskLabsAddress(), logs);
         fullBlockReward = fullBlockReward.subtract(payToRskLabs);
 
+        // TODO to improve
+        // this type choreography is only needed because the RepositoryTrack support the
+        // get snapshot to method
         Repository processingRepository = ((RepositoryTrack)repository).getOriginRepository().getSnapshotTo(processingBlockHeader.getStateRoot());
-        processingRepository = ((RepositoryImpl)processingRepository).startTracking();
+        // TODO to improve
+        // and we need a RepositoryTrack to feed RemascFederationProvider
+        // because it supports the update of bytes (notably, RepositoryImpl don't)
+        // the update of bytes is needed, because BridgeSupport creation could alter
+        // the storage when getChainHead is null (specially in production)
+        processingRepository = processingRepository.startTracking();
         RemascFederationProvider federationProvider = new RemascFederationProvider(processingRepository);
 
         BigInteger payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
