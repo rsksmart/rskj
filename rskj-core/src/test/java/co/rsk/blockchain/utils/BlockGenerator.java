@@ -232,6 +232,11 @@ public class BlockGenerator {
 
     public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
                                   long difficulty, BigInteger minGasPrice) {
+        return createChildBlock(parent, txs, uncles, difficulty, minGasPrice, parent.getGasLimit());
+    }
+
+    public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
+                                  long difficulty, BigInteger minGasPrice, byte[] gasLimit) {
         if (txs == null)
             txs = new ArrayList<>();
         if (uncles == null)
@@ -247,7 +252,7 @@ public class BlockGenerator {
                 ByteUtils.clone(new Bloom().getData()),
                 new byte[]{1},
                 parent.getNumber()+1,
-                parent.getGasLimit(),
+                gasLimit,
                 0,
                 parent.getTimestamp() + ++count,
                 new byte[]{},

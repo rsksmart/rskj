@@ -20,6 +20,7 @@
 package org.ethereum.vm;
 
 import co.rsk.util.TestContract;
+import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
@@ -76,5 +77,13 @@ public class ProgramTest {
         Assert.assertArrayEquals(
                 new Object[] { BigInteger.valueOf(43) },
                 TestContract.bankTest().functions.get("test").decodeResult(result.getHReturn()));
+    }
+
+    @Test
+    public void cantCreateTooLargeContract() {
+        ProgramResult result = TestContract.bigTest().createContract();
+        Assert.assertFalse(result.isRevert());
+        Assert.assertNotNull(result.getException());
+        Assert.assertTrue(result.getException() instanceof Program.ContractSizeTooLargeException);
     }
 }
