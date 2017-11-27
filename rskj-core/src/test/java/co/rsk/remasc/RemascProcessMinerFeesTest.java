@@ -18,6 +18,7 @@
 
 package co.rsk.remasc;
 
+import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Sha3Hash;
@@ -143,7 +144,7 @@ public class RemascProcessMinerFeesTest {
     }
 
     @Test
-    public void processMinersFeesWithNoSiblings() throws IOException {
+    public void processMinersFeesWithNoSiblings() throws IOException, BlockStoreException {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
 
@@ -193,10 +194,12 @@ public class RemascProcessMinerFeesTest {
         assertEquals(BigInteger.valueOf(minerFee - blockReward), remascStorageProvider.getRewardBalance());
         assertEquals(BigInteger.ZERO, remascStorageProvider.getBurnedBalance());
         assertEquals(0, remascStorageProvider.getSiblings().size());
+
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
     }
 
     @Test
-    public void processMinersFeesWithOneSibling() throws IOException {
+    public void processMinersFeesWithOneSibling() throws IOException, BlockStoreException {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
 
@@ -261,20 +264,22 @@ public class RemascProcessMinerFeesTest {
         assertEquals(BigInteger.valueOf(minerFee - blockReward), remascStorageProvider.getRewardBalance());
         assertEquals(BigInteger.ONE, remascStorageProvider.getBurnedBalance());
         assertEquals(0, remascStorageProvider.getSiblings().size());
+
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
     }
 
     @Test
-    public void processMinersFeesWithOneSiblingBrokenSelectionRuleBlockWithHigherFees() throws IOException {
+    public void processMinersFeesWithOneSiblingBrokenSelectionRuleBlockWithHigherFees() throws IOException, BlockStoreException {
         processMinersFeesWithOneSiblingBrokenSelectionRule("higherFees");
     }
 
     @Test
-    public void processMinersFeesWithOneSiblingBrokenSelectionRuleBlockWithLowerHash() throws IOException, ClassNotFoundException {
+    public void processMinersFeesWithOneSiblingBrokenSelectionRuleBlockWithLowerHash() throws IOException, ClassNotFoundException, BlockStoreException {
         processMinersFeesWithOneSiblingBrokenSelectionRule("lowerHash");
     }
 
     @Test
-    public void siblingThatBreaksSelectionRuleGetsPunished() throws IOException {
+    public void siblingThatBreaksSelectionRuleGetsPunished() throws IOException, BlockStoreException {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
 
@@ -338,6 +343,9 @@ public class RemascProcessMinerFeesTest {
         remascCurrentBalance += siblingPunishmentLvlFour;
         // TODO review one unit burned?
         this.validateAccountsCurrentBalanceIsCorrect(repository, cowRemainingBalance, remascCurrentBalance + 1, rskCurrentBalance, otherAccountsBalanceOnHeightFour);
+
+        this.validateFederatorsBalanceIsCorrect(repository, federationReward);
+
         // validate that REMASC's state is correct
         long blockRewardOnHeightFour = minerFee / remascConfig.getSyntheticSpan();
         BigInteger expectedRewardBalance = BigInteger.valueOf(minerFee - blockRewardOnHeightFour);
@@ -362,8 +370,8 @@ public class RemascProcessMinerFeesTest {
         long rskReward = blockRewardOnHeightFive / remascConfig.getRskLabsDivisor();
         rskCurrentBalance += rskReward;
         blockRewardOnHeightFive -= rskReward;
-        federationReward = blockRewardOnHeightFive / remascConfig.getFederationDivisor();
-        blockRewardOnHeightFive -= federationReward;
+        long federationReward2 = blockRewardOnHeightFive / remascConfig.getFederationDivisor();
+        blockRewardOnHeightFive -= federationReward2;
 
         long publishersFeeOnHeightFive = blockRewardOnHeightFive / remascConfig.getPublishersDivisor();
         blockRewardOnHeightFive -= publishersFeeOnHeightFive;
@@ -385,10 +393,11 @@ public class RemascProcessMinerFeesTest {
         expectedBurnedBalance = BigInteger.valueOf((2 * punishmentFee) + siblingPunishmentLvlFour);
         // TODO review value + 1
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, expectedBurnedBalance.add(BigInteger.ONE), 0L);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward + federationReward2);
     }
 
     @Test
-    public void noPublisherFeeIsPaidWhenThePublisherHasNoSiblings() throws IOException {
+    public void noPublisherFeeIsPaidWhenThePublisherHasNoSiblings() throws IOException, BlockStoreException {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
 
@@ -440,9 +449,10 @@ public class RemascProcessMinerFeesTest {
         blockRewardOnHeightFour = minerFee / remascConfig.getSyntheticSpan();
         BigInteger expectedRewardBalance = BigInteger.valueOf(minerFee - blockRewardOnHeightFour);
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, BigInteger.ZERO, 1L);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
     }
 
-    private void processMinersFeesWithOneSiblingBrokenSelectionRule(String reasonForBrokenSelectionRule) throws IOException {
+    private void processMinersFeesWithOneSiblingBrokenSelectionRule(String reasonForBrokenSelectionRule) throws IOException, BlockStoreException {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
 
@@ -499,6 +509,9 @@ public class RemascProcessMinerFeesTest {
         blockRewardOnHeightFive -= publisherReward;
         long minerRewardOnHeightFive = blockRewardOnHeightFive / 2;
         List<Long> otherAccountsBalanceOnHeightFive = new ArrayList<>(Arrays.asList(minerRewardOnHeightFive, minerRewardOnHeightFive, publisherReward, null));
+
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
+
         // TODO review value + 1
         this.validateAccountsCurrentBalanceIsCorrect(blockchain.getRepository(), cowRemainingBalance, remascCurrentBalance + 1, rskCurrentBalance, this.getAccountsWithExpectedBalance(otherAccountsBalanceOnHeightFive));
         // validate that REMASC's state is correct
@@ -520,8 +533,8 @@ public class RemascProcessMinerFeesTest {
 
         rskReward = blockRewardOnHeightSix / remascConfig.getRskLabsDivisor();
         long blockRewardWithoutRskFee = blockRewardOnHeightSix - rskReward;
-        federationReward = blockRewardWithoutRskFee / remascConfig.getFederationDivisor();
-        long blockRewardWithoutRskAndFederationFee = blockRewardWithoutRskFee - federationReward;
+        long federationReward2 = blockRewardWithoutRskFee / remascConfig.getFederationDivisor();
+        long blockRewardWithoutRskAndFederationFee = blockRewardWithoutRskFee - federationReward2;
         long burnedBalance = blockRewardWithoutRskAndFederationFee / remascConfig.getPunishmentDivisor();
 
         remascCurrentBalance = minerFee * NUMBER_OF_TXS_WITH_FEES - blockRewardOnHeightFive - blockRewardOnHeightSix + burnedBalance;
@@ -532,12 +545,13 @@ public class RemascProcessMinerFeesTest {
         List<Long> otherAccountsBalanceOnHeightSix = new ArrayList<>(Arrays.asList(minerRewardOnHeightFive, minerRewardOnHeightFive, publisherReward + blockRewardOnHeightSix, null));
         // TODO review + 1
         this.validateAccountsCurrentBalanceIsCorrect(blockchain.getRepository(), cowRemainingBalance, remascCurrentBalance + 1, rskCurrentBalance, this.getAccountsWithExpectedBalance(otherAccountsBalanceOnHeightSix));
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward + federationReward2);
         // TODO review + 1
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), BigInteger.valueOf(rewardBalance), BigInteger.valueOf(burnedBalance + 1), 0L);
     }
 
     @Test
-    public void processMinersFeesFromTxThatIsNotTheLatestTx() throws IOException {
+    public void processMinersFeesFromTxThatIsNotTheLatestTx() throws IOException, BlockStoreException {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
 
@@ -596,10 +610,11 @@ public class RemascProcessMinerFeesTest {
 
         BigInteger expectedRewardBalance = BigInteger.valueOf(minerFee - originalBlockReward);
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, BigInteger.ZERO, 0L);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
     }
 
     @Test
-    public void processMinersFeesFromTxInvokedByAnotherContract() throws IOException {
+    public void processMinersFeesFromTxInvokedByAnotherContract() throws IOException, BlockStoreException {
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
 
@@ -679,6 +694,7 @@ public class RemascProcessMinerFeesTest {
 
         BigInteger expectedRewardBalance = BigInteger.valueOf(minerFee - originalBlockReward);
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, BigInteger.ZERO, 0L);
+        this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
     }
 
     @Test
@@ -863,6 +879,17 @@ public class RemascProcessMinerFeesTest {
             accountsWithExpectedBalance.put(accountsAddressesUpToD.get(currentAccount), otherAccountsBalance.get(currentAccount) == null ? null : BigInteger.valueOf(otherAccountsBalance.get(currentAccount)));
 
         return accountsWithExpectedBalance;
+    }
+
+    private void validateFederatorsBalanceIsCorrect(Repository repository, long federationReward) throws IOException, BlockStoreException {
+        RemascFederationProvider provider = new RemascFederationProvider(repository);
+
+        int nfederators = provider.getFederationSize();
+
+        BigInteger federatorBalance = BigInteger.valueOf(federationReward / nfederators);
+
+        for (int k = 0; k < nfederators; k++)
+            assertEquals(federatorBalance, repository.getBalance(provider.getFederatorAddress(k)));
     }
 
     private void validateAccountsCurrentBalanceIsCorrect(Repository repository, BigInteger cowBalance, Long remascBalance, Long rskBalance, HashMap<byte[], BigInteger> otherAccountsBalance) {
