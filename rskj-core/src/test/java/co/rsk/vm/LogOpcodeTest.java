@@ -43,6 +43,25 @@ public class LogOpcodeTest {
     private ProgramInvokeMockImpl invoke;
     private BytecodeCompiler compiler;
     private Program program;
+
+
+    final static String pushConfigByteAddrCheapest = // for 0x80..000, gas cost = 23
+
+            "PUSH1 0x00 " + //
+                    "NOT " +        // 0xff .. x0ff
+                    "DUP1 " +
+                    "PUSH1 0x02 " +
+                    "SWAP1 " +
+                    "DIV " +
+                    "XOR"; // result = 0x1000000
+
+    final public static String pushConfigByteAddrShortest = // for 0x80..000, gas cost = 26
+            "PUSH1 0xff " + //
+                    "PUSH1 0x02 " +
+                    "EXP";          // gc=20
+
+    final public static String pushConfigByteAddr = pushConfigByteAddrShortest;
+
     @Before
     public void setup() {
 
@@ -56,31 +75,78 @@ public class LogOpcodeTest {
     }
 
     @Test
+    public void testOutofBoundsAccess() {
+        testFaultyCode(String.join(" ",
+                "PUSH1 0x01",
+                "PUSH1 0x01 ", // change configurationRegister at wrong address
+                pushConfigByteAddr,
+                "SUB",
+                "MSTORE8 "    // should get an exception
+        ), "");
+    }
+
+    @Test
+    public void testOutofBoundsAccess2() {
+        testFaultyCode(String.join(" ",
+                "PUSH1 0x01", // change configurationRegister at wrong address
+                "PUSH1 0x20",
+                pushConfigByteAddr,
+                "ADD",
+                "MSTORE8 "    // should get an exception
+        ), "");
+    }
+
+    @Test
     public void testLogNewAccountTree() {
-        testCode(
-                "CALLVALUE "   // Store value in memory position 0
-                +"PUSH1 0x00 " // Offset in memory to store
-                +"MSTORE " // store in memory
+        testCode(String.join(" ",
+                "CALLVALUE ",   // Store value in memory position 0
+                "PUSH1 0x00 ", // Offset in memory to store
+                "MSTORE ", // store in memory
 
-            +"PUSH1 0x01 " // change configurationRegister
-            +"PUSH1 0x00 " //
-            +"NOT "        // 0xff......0xff
-            +"MSTORE8 "    // config register changed
+                "PUSH1 0x01 ", // change configurationRegister
+                pushConfigByteAddr,
+                "MSTORE8 ",    // config register changed
 
-            +"PUSH1 0x12 " // 1st topic: Sample topic
-            +"CALLER "     // 2nd topic: source address
+                "PUSH1 0x12 ", // 1st topic: Sample topic
+                "CALLER ",     // 2nd topic: source address
 
-            +"PUSH1 0x20 " // memSize, only 8 bytes, blocknumber firs in 64-bit.
-            +"PUSH1 0x00 " // memStart, offset 24 (last 8 LSBs)
-            +"LOG2 "
-            +"LASTEVENTBLOCKNUMBER", 13,
+                "PUSH1 0x20 ", // memSize, only 8 bytes, blocknumber firs in 64-bit.
+                "PUSH1 0x00 ", // memStart, offset 24 (last 8 LSBs)
+                "LOG2 ",
+                "LASTEVENTBLOCKNUMBER"),
                 "0000000000000000000000000000000000000000000000000000000000000021"); // 0x21 = 33 is the mock block number
-    // Gasused = 2163
-      // Now check that the last event has been set to 33.
+        // Gasused = 2163
+        // Now check that the last event has been set to 33.
         // This means that a light client must always fetch two consecutive headers, in the first
         // it finds the previous event block number. In the second, the logged event
 
 
+    }
+
+    private void testFaultyCode(String code, String expectedMsg) {
+        // Assume code is linear (no loops). Set maximum steps equal to code size
+        byte[] codeBytes = compiler.compile(code);
+
+        try {
+            VM vm = new VM();
+            program = new Program(codeBytes, invoke);
+
+            for (int k = 0; k < 1000000; k++) {
+                if (program.isStopped())
+                    break;
+                vm.step(program);
+            }
+
+            Assert.fail();
+        } catch (Program.OutOfGasException ex) {
+            if (expectedMsg.length()!=0)
+                Assert.assertEquals(expectedMsg, ex.getMessage());
+        }
+    }
+
+    private void testCode(String code, String expected) {
+        byte[] codeBytes = compiler.compile(code);
+        testCode(codeBytes , codeBytes.length, expected);
     }
 
     private void testCode(String code, int nsteps, String expected) {
@@ -103,11 +169,15 @@ public class LogOpcodeTest {
         VM vm = new VM();
         program = new Program(code, invoke);
 
-        for (int k = 0; k < nsteps; k++)
+        for (int k = 0; k < nsteps; k++) {
+            if (program.isStopped())
+                break;
             vm.step(program);
+        }
 
         assertEquals(expected, Hex.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
+
 
 
 
@@ -127,15 +197,15 @@ public class LogOpcodeTest {
         ECKey sender = ECKey.fromPrivate(SHA3Helper.sha3("cow".getBytes()));
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
 
-        String asm =
-                         "PUSH1 0x55 " // size will be set later
-                        +"PUSH1 0x0C " // offset = 12
-                        +"PUSH1 0x00 CODECOPY " // (7b) Extract real code into address 0, skip first 12 bytes, copy 20 bytes
-                        +"PUSH1 0x55 PUSH1 0x00 RETURN " // (5b) offset 0, size 0x55, now return the first code
+        String asm = String.join(" ",
+                         "PUSH1 0x55 ", // size will be set later
+                        "PUSH1 0x0C ", // offset = 12
+                        "PUSH1 0x00 CODECOPY ", // (7b) Extract real code into address 0, skip first 12 bytes, copy 20 bytes
+                        "PUSH1 0x55 PUSH1 0x00 RETURN ", // (5b) offset 0, size 0x55, now return the first code
 
-                        +"CALLVALUE "   // Store value in memory position 0
-                        +"PUSH1 0x20 " // Offset 32 in memory to store
-                        +"MSTORE " // store in memory
+                        "CALLVALUE ",   // Store value in memory position 0
+                        "PUSH1 0x20 ", // Offset 32 in memory to store
+                        "MSTORE ", // store in memory
 
                         /*-------------------------------
                         // change configurationRegister, using full 32-byte access
@@ -148,22 +218,21 @@ public class LogOpcodeTest {
 
                         // change configurationRegister
                         // Alternative, using MSTORE8
-                        +"PUSH1 0x01 " // set LSB
-                        +"PUSH1 0x00 " //
-                        +"NOT "        // 0xff .. x0ff
-                        +"MSTORE8 "    // config register changed
+                        "PUSH1 0x01 ", // set LSB
+                        pushConfigByteAddr,
+                        "MSTORE8 ",    // config register changed
 
 
-                        +"LASTEVENTBLOCKNUMBER "
-                        +"PUSH1 0x00 " // Offset 0x00 in memory, last 8 bytes will end up in offs 24..31
-                        +"MSTORE " // store in memory
+                        "LASTEVENTBLOCKNUMBER ",
+                        "PUSH1 0x00 ", // Offset 0x00 in memory, last 8 bytes will end up in offs 24..31
+                        "MSTORE ", // store in memory
 
-                        +"PUSH1 0x12 " // 1st topic: Sample topic
-                        +"CALLER " // 2nd topic: source address
+                        "PUSH1 0x12 ", // 1st topic: Sample topic
+                        "CALLER ", // 2nd topic: source address
 
-                        +"PUSH1 0x28 " // memSize, 40 bytes, 32 bytes value + 8 bytes blocknumber first 64-bits.
-                        +"PUSH1 0x18 " // memStart, offset 24 (last 8 LSBs of LASTEVENT...)
-                        +"LOG2 ";
+                        "PUSH1 0x28 ", // memSize, 40 bytes, 32 bytes value + 8 bytes blocknumber first 64-bits.
+                        "PUSH1 0x18 ", // memStart, offset 24 (last 8 LSBs of LASTEVENT...)
+                        "LOG2 ");
 
         /*
         EVMAssembler assembler = new EVMAssembler();

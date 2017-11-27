@@ -150,6 +150,6 @@ public class Web3RskImplTest {
         filterRequest.address = "0x0000000001";
         filterRequest.topics = new Object[] {"2"};
 
-        Assert.assertEquals(filterRequest.toString(), "FilterRequest{fromBlock='1', toBlock='2', address=0x0000000001, topics=[2]}");
+        Assert.assertEquals(filterRequest.toString(), "FilterRequest{fromBlock='1', toBlock='2', address=0x0000000001, topics=[2], eventFilter=false}");
     }
 }

@@ -327,6 +327,14 @@ public class DataWord implements Comparable<DataWord> {
         return true;
     }
 
+    public boolean equalsByteRange(int from,int to,DataWord w2) {
+        for (int i = from; i <= to; ++i) {
+            if (this.data[i]!=w2.data[i])
+                return false;
+        }
+        return true;
+    }
+
     public DataWord and(DataWord w2) {
 
         for (int i = 0; i < this.data.length; ++i) {

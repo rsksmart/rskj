@@ -987,7 +987,7 @@ public class VM {
                 throw Program.Exception.notEnoughOpGas(op, dataCost, program.getRemainingGas());
 
             // Events could cost less than Logs for several reasons:
-            // 1. There is no bloom filter stored for the events, and there is one for receipts.
+            // 1. There is no bloom filter stored for the events, and there is one for receipts (256 bytes less).
             // 2. Each event (except the first) does not encode the account address (20 bytes less each)
 
             gasCost = GasCost.LOG_GAS +

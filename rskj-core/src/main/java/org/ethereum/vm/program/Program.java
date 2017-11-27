@@ -83,7 +83,12 @@ public class Program {
 
     private DataWord configurationRegister = new DataWord();
 
-    public static final DataWord CONFIG_MEMORY_OFFSET = new DataWord().setMax().setByte(31,(byte) 0xE0);
+    // The configuration memory offset is 0x80...00. it was previously set to 0xff..ff but
+    // i was changed because:
+    // 1. A buggy contract may underflow the word and access the moemry position 0xff.ff by error.
+    // 2. There is a standard Eth test case that specifically tests for out-of-bounds at 0xff..ff
+    // The only drawback it that it takes more gas to load 0x80..00 than to load 0xff..ff
+    public static final DataWord CONFIG_MEMORY_OFFSET = new DataWord().setByte(0,(byte) 0x80);
 
     private Transaction transaction;
 
@@ -214,20 +219,21 @@ public class Program {
 
     // An address less than the base address of the configuration register could have an overlap
     // with the 32 byte configuration register.
-    // E.g. the address could be 0xff...0xd0.
-    // However, we do not support this mixed access. All accesses must start after 0xff...0xe0.
-    // MSTORE8 accesses are allowed starting from 0xff...0xe0.
+    // E.g. the address could be 0x7f...ff
+    // However, we do not support this mixed access. All accesses must be iether 0x80..00 exactly
+    // or byte-access within this range.
+    // MSTORE8 accesses are allowed starting from 0x80..00 to 0x80..0x1f
 
     public static boolean isExactMatchInternalConfigurationRegister(DataWord addr) {
-        // Internal configuration memory is stored in the last 32 bytes
-        // of memory.
+        // Internal configuration memory is stored in CONFIG_MEMORY_OFFSET.
         return addr.equalValue(CONFIG_MEMORY_OFFSET);
     }
 
     public static boolean isByteInsideInternalConfigurationRegister(DataWord addr) {
-        // Internal configuration memory is stored in the last 32 bytes
-        // of memory.
-        return addr.containsMask(CONFIG_MEMORY_OFFSET);
+        // These checks should be faster than greater/lower range tests.
+        if (!addr.equalsByteRange(0,30,CONFIG_MEMORY_OFFSET)) return false;
+        if ((addr.getByte(31) | 0x1f) !=0x1f) return false;
+        return true;
     }
 
     public static void setUseDataWordPool(Boolean value) {
@@ -480,7 +486,8 @@ public class Program {
     }
 
     public boolean isEventModeLoggingSet() {
-        return (configurationRegister.getByte(31) & 0x01)!=0;
+        // Lowest bit of highest byte
+        return (configurationRegister.getByte(00) & 0x01)!=0;
     }
 
     public DataWord getConfigurationRegister() {
@@ -497,8 +504,9 @@ public class Program {
     }
 
     public int getOffsetInInternalConfigurationRegister(DataWord addr) {
-     // Assumes the addr is effectively in the register memory space
-        return byteAsUnisgnedToInt(addr.getByte(31))-0xe0;
+        // Assumes the addr is effectively in the register memory space
+        // NOTE: This assumes a specific postion of the configuration regiter
+        return byteAsUnisgnedToInt(addr.getByte(31));
     }
 
     public void setConfigurationRegister(DataWord value) {

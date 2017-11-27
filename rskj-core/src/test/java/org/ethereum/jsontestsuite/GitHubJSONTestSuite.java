@@ -78,6 +78,10 @@ public class GitHubJSONTestSuite {
     }
 
     public static void runGitHubJsonVMTest(String json, Set<String> excluded) throws ParseException {
+        runGitHubJsonVMTest(json, excluded,null);
+    }
+
+    public static void runGitHubJsonVMTest(String json, Set<String> excluded,Set<String> included) throws ParseException {
         Assume.assumeFalse("Online test is not available", json.equals(""));
 
         JSONParser parser = new JSONParser();
@@ -90,7 +94,9 @@ public class GitHubJSONTestSuite {
 
             String prefix = "    ";
             if (excluded.contains(testCase.getName())) prefix = "[X] ";
-
+            else
+            if ((included!=null) && (!included.contains(testCase.getName())))
+                prefix = "[X] ";
             logger.info(prefix + testCase.getName());
         }
 
@@ -99,6 +105,9 @@ public class GitHubJSONTestSuite {
 
             TestCase testCase = testIterator.next();
             if (excluded.contains(testCase.getName()))
+                continue;
+
+            if ((included!=null) && (!included.contains(testCase.getName())))
                 continue;
 
             TestRunner runner = new TestRunner();
