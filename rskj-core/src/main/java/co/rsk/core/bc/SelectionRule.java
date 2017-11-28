@@ -15,8 +15,12 @@ public class SelectionRule {
 
     private static final int PAID_FEES_MULTIPLIER_CRITERIA = 2;
 
-    public static boolean shouldWeAddThisBlock(BigInteger blockDifficulty, BigInteger currentDifficulty,
-        Block block, Block currentBlock) {
+    public static boolean shouldWeAddThisBlock(
+            BigInteger blockDifficulty,
+            BigInteger currentDifficulty,
+            Block block,
+            Block currentBlock) {
+
         int compareDifficulties = blockDifficulty.compareTo(currentDifficulty);
 
         if (compareDifficulties > 0) {
