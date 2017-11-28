@@ -38,16 +38,6 @@ public class BlockRootValidationRule implements BlockValidationRule {
 
     @Override
     public boolean isValid(Block block) {
-        String trieHash = Hex.toHexString(block.getTxTrieRoot());
-        String trieListHash = Hex.toHexString(Block.getTxTrie(block.getTransactionsList()).getHash());
-
-        boolean isValid = true;
-
-        if (!trieHash.equals(trieListHash)) {
-            logger.warn("Block's given Trie Hash doesn't match: {} != {}", trieHash, trieListHash);
-            panicProcessor.panic("invalidtrie", String.format("Block's given Trie Hash doesn't match: %s != %s", trieHash, trieListHash));
-            isValid = false;
-        }
-        return isValid;
+        return true;
     }
 }
