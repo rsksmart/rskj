@@ -280,6 +280,7 @@ public class TransactionExecutor {
 
     private void create() {
         byte[] newContractAddress = tx.getContractAddress();
+        DataWord newContractAddressDW = new DataWord(newContractAddress);
         if (isEmpty(tx.getData())) {
             mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
             cacheTrack.createAccount(tx.getContractAddress());
@@ -299,6 +300,7 @@ public class TransactionExecutor {
 
         BigInteger endowment = toBI(tx.getValue());
         transfer(cacheTrack, tx.getSender(), newContractAddress, endowment);
+        touchedAccounts.add(newContractAddressDW);
     }
 
     public void go() {
