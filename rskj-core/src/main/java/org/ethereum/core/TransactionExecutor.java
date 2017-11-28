@@ -274,6 +274,7 @@ public class TransactionExecutor {
         if (result.getException() == null) {
             BigInteger endowment = toBI(tx.getValue());
             transfer(cacheTrack, tx.getSender(), targetAddress, endowment);
+            touchedAccounts.add(targetAddressDW);
         }
     }
 
