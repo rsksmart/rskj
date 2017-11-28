@@ -304,7 +304,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         BodyResponseMessage response = new BodyResponseMessage(new Random().nextLong(), null, null);
         node3.getSyncProcessor().registerExpectedMessage(response);
         node3.getSyncProcessor().processBodyResponse(node1.getMessageChannel(node3), response);
-        node3.waitExactlyNTasksWithTimeout(200 + setupRequests);
+        node3.waitExactlyNTasksWithTimeout(200 + setupRequests - 15);
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node3.getSyncProcessor().getExpectedResponses().isEmpty());

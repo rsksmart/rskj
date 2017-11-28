@@ -30,9 +30,7 @@ public interface Rsk extends Ethereum {
 
     boolean isPlayingBlocks();
 
-    boolean isSyncingBlocks();
+    boolean hasBetterBlockToSync();
 
     boolean isBlockchainEmpty();
-
-    boolean hasBetterBlockToSync();
 }

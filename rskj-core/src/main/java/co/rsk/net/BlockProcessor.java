@@ -33,10 +33,6 @@ public interface BlockProcessor {
 
     void processGetBlock(MessageChannel sender, byte[] hash);
 
-    void processGetBlockHeaders(MessageChannel sender, long blockNumber, byte[] hash, int maxHeaders, int skip, boolean reverse);
-
-    void processGetBlockHeaders(MessageChannel sender, byte[] hash);
-
     BlockNodeInformation getNodeInformation();
 
     Blockchain getBlockchain();

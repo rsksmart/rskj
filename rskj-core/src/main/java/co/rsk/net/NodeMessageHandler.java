@@ -104,14 +104,10 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         if (mType == MessageType.GET_BLOCK_MESSAGE)
             this.processGetBlockMessage(sender, (GetBlockMessage) message);
-        else if (mType == MessageType.GET_BLOCK_HEADERS_MESSAGE)
-            this.processGetBlockHeadersMessage(sender, (GetBlockHeadersMessage) message);
         else if (mType == MessageType.BLOCK_MESSAGE)
             this.processBlockMessage(sender, (BlockMessage) message);
         else if (mType == MessageType.STATUS_MESSAGE)
             this.processStatusMessage(sender, (StatusMessage) message);
-        else if (mType == MessageType.BLOCK_HEADERS_MESSAGE)
-            this.processBlockHeadersMessage(sender, (BlockHeadersMessage) message);
         else if (mType == MessageType.BLOCK_REQUEST_MESSAGE)
             this.processBlockRequestMessage(sender, (BlockRequestMessage) message);
         else if (mType == MessageType.BLOCK_RESPONSE_MESSAGE)
@@ -384,22 +380,6 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private void processBodyResponseMessage(@Nonnull final MessageChannel sender, @Nonnull final BodyResponseMessage message) {
         this.syncProcessor.processBodyResponse(sender, message);
-    }
-
-    private void processGetBlockHeadersMessage(@Nonnull final MessageChannel sender, @Nonnull final GetBlockHeadersMessage message) {
-        // TODO(mvanotti): Add upper bound to maxHeaders.
-        final byte[] hash = message.getBlockHash();
-        final int maxHeaders = message.getMaxHeaders();
-        final int skipBlocks = message.getSkipBlocks();
-        final boolean reverse = message.isReverse();
-        final long blockNumber = message.getBlockNumber();
-
-        this.blockProcessor.processGetBlockHeaders(sender, blockNumber, hash, maxHeaders, skipBlocks, reverse);
-    }
-
-    private void processBlockHeadersMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockHeadersMessage message) {
-        message.getBlockHeaders().forEach(h -> Metrics.newBlockHeader(h, sender.getPeerNodeID()));
-        blockProcessor.processBlockHeaders(sender, message.getBlockHeaders());
     }
 
     private void processNewBlockHashesMessage(@Nonnull final MessageChannel sender, @Nonnull final NewBlockHashesMessage message) {

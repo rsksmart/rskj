@@ -106,7 +106,7 @@ public class RskFactory {
         BuildInfo.printInfo();
 
         RskImpl rsk = new RskImpl(worldManager, channelManager, peerServer, programInvokeFactory,
-                pendingState, config, compositeEthereumListener, receiptStore, peerScoringManager, nodeBlockProcessor, nodeMessageHandler, repository);
+                pendingState, config, compositeEthereumListener, receiptStore, nodeBlockProcessor, repository);
 
         rsk.init();
         rsk.getBlockchain().setRsk(true);  //TODO: check if we can remove this field from org.ethereum.facade.Blockchain
@@ -181,7 +181,6 @@ public class RskFactory {
                                           PeerScoringManager peerScoringManager,
                                           SyncConfiguration syncConfiguration) {
 
-        // some more rules for header validation
         // TODO(lsebrie): add new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
         return new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, new ProofOfWorkRule());
     }

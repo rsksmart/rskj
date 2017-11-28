@@ -54,7 +54,7 @@ public class BlockSyncService {
             @Nonnull final BlockStore store,
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
-            final SyncConfiguration syncConfiguration) {
+            @Nonnull final SyncConfiguration syncConfiguration) {
         this.store = store;
         this.blockchain = blockchain;
         this.syncConfiguration = syncConfiguration;
@@ -84,7 +84,7 @@ public class BlockSyncService {
 
         // already in a blockchain
         if (BlockUtils.blockInSomeBlockChain(block, blockchain)) {
-            logger.trace("Block already in a chain " + blockNumber + " " + block.getShortHash());
+            logger.trace("Block already in a chain {} {}", blockNumber, block.getShortHash());
             return new BlockProcessResult(false, null, block.getShortHash(), System.nanoTime() - start);
         }
         trySaveStore(block);
@@ -93,7 +93,7 @@ public class BlockSyncService {
         // We can't add the block if there are missing ancestors or uncles. Request the missing blocks to the sender.
         if (!unknownHashes.isEmpty()) {
             if (!ignoreMissingHashes){
-                logger.trace("Missing hashes for block in process " + block.getNumber() + " " + block.getShortHash());
+                logger.trace("Missing hashes for block in process {} {}", blockNumber, block.getShortHash());
                 requestMissingHashes(sender, unknownHashes);
             }
             return new BlockProcessResult(false, null, block.getShortHash(), System.nanoTime() - start);
@@ -164,7 +164,7 @@ public class BlockSyncService {
 
             if (!missingHashes.isEmpty()) {
                 if (!ignoreMissingHashes){
-                    logger.trace("Missing hashes for block in process " + block.getNumber() + " " + block.getShortHash());
+                    logger.trace("Missing hashes for block in process {} {}", block.getNumber(), block.getShortHash());
                     requestMissingHashes(sender, missingHashes);
                 }
                 continue;
@@ -181,7 +181,7 @@ public class BlockSyncService {
     }
 
     private void requestMissingHashes(MessageChannel sender, Set<ByteArrayWrapper> hashes) {
-        logger.trace("Missing blocks to process " + hashes.size());
+        logger.trace("Missing blocks to process {}", hashes.size());
 
         for (ByteArrayWrapper hash : hashes)
             this.requestMissingHash(sender, hash);
@@ -193,7 +193,7 @@ public class BlockSyncService {
 
         unknownBlockHashes.put(hash, 1);
 
-        logger.trace("Missing block " + hash.toString().substring(0, 10));
+        logger.trace("Missing block {}", hash.toString().substring(0, 10));
 
         sender.sendMessage(new GetBlockMessage(hash.getData()));
     }

@@ -76,16 +76,6 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public void processGetBlockHeaders(MessageChannel sender, long blockNumber, byte[] hash, int maxHeaders, int skip, boolean reverse) {
-
-    }
-
-    @Override
-    public void processGetBlockHeaders(MessageChannel sender, byte[] hash) {
-
-    }
-
-    @Override
     public BlockNodeInformation getNodeInformation() {
         return null;
     }

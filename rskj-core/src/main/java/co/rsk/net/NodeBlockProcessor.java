@@ -89,7 +89,6 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processNewBlockHashesMessage(@Nonnull final MessageChannel sender, @Nonnull final NewBlockHashesMessage message) {
-        // TODO(mvanotti): Implement retrieval via GetBlockHeaders and GetBlockBodies.
         message.getBlockIdentifiers().stream()
                 .map(bi -> new ByteArrayWrapper(bi.getHash()))
                 .collect(Collectors.toSet()) // Eliminate duplicates
@@ -106,8 +105,6 @@ public class NodeBlockProcessor implements BlockProcessor {
 
     @Override
     public void processBlockHeaders(@Nonnull final MessageChannel sender, @Nonnull final List<BlockHeader> blockHeaders) {
-        // TODO(mvanotti): Implement missing functionality.
-
         blockHeaders.stream()
                 .filter(h -> !hasHeader(h.getHash()))
                 // sort block headers in ascending order, so we can process them in that order.
@@ -305,73 +302,6 @@ public class NodeBlockProcessor implements BlockProcessor {
         return hash;
     }
 
-    /**
-     * processGetBlock sends a requested block to a peer if the block is available.
-     *
-     * @param sender the sender of the GetBlock message.
-     * @param hash   the requested block's hash.
-     */
-    @Override
-    public void processGetBlockHeaders(@Nonnull final MessageChannel sender,
-                                       @Nonnull final byte[] hash) {
-        processGetBlockHeaders(sender, 0, hash, 1, 0, false);
-    }
-
-
-    @Override
-    public void processGetBlockHeaders(@Nonnull final MessageChannel sender,
-                                       final long blockNumber,
-                                       @Nullable byte[] hash,
-                                       final int maxHeaders,
-                                       final int skip,
-                                       final boolean reverse) {
-        // TODO(mvanotti): Implement reverse retrieval.
-        Block block;
-        if (hash == null) {
-            block = this.getBlockchain().getBlockByNumber(blockNumber);
-        } else {
-            block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
-        }
-
-        List<BlockHeader> result = new LinkedList<>();
-        for (int i = 0; i < maxHeaders; i += 1) {
-            if (block == null) {
-                break;
-            }
-
-            result.add(block.getHeader());
-
-            block = skipNBlocks(block, skip);
-            if (block == null) {
-                break;
-            }
-
-            hash = block.getParentHash();
-            block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
-        }
-
-        if (result.isEmpty()) {
-            // Don't waste time sending an empty response.
-            return;
-        }
-        // TODO(mvanotti): Add information NodeBlockHeader information.
-        sender.sendMessage(new BlockHeadersMessage(result));
-    }
-
-    @CheckForNull
-    private Block skipNBlocks(@Nonnull Block block, final int skip) {
-        byte[] hash;
-        Block result = block;
-        for (int j = 0; j < skip; j++) {
-            hash = result.getParentHash();
-            result = blockSyncService.getBlockFromStoreOrBlockchain(hash);
-            if (result == null) {
-                return null;
-            }
-        }
-        return result;
-    }
-
     @Override
     public BlockNodeInformation getNodeInformation() {
         return nodeInformation;
@@ -410,9 +340,6 @@ public class NodeBlockProcessor implements BlockProcessor {
 
     @Override
     public boolean hasBlockInProcessorStore(@Nonnull final byte[] hash) {
-        if (this.store == null)
-            return false;
-
         return this.store.hasBlock(hash);
     }
 

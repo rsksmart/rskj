@@ -18,10 +18,7 @@
 
 package co.rsk.core;
 
-import co.rsk.net.MessageHandler;
 import co.rsk.net.NodeBlockProcessor;
-import co.rsk.net.NodeMessageHandler;
-import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
@@ -38,9 +35,6 @@ public class RskImpl extends EthereumImpl implements Rsk {
     private boolean isplaying;
     private NodeBlockProcessor nodeBlockProcessor;
 
-    private MessageHandler messageHandler;
-    private PeerScoringManager peerScoringManager;
-
     public RskImpl(WorldManager worldManager,
                    ChannelManager channelManager,
                    PeerServer peerServer,
@@ -49,14 +43,10 @@ public class RskImpl extends EthereumImpl implements Rsk {
                    SystemProperties config,
                    CompositeEthereumListener compositeEthereumListener,
                    ReceiptStore receiptStore,
-                   PeerScoringManager peerScoringManager,
                    NodeBlockProcessor nodeBlockProcessor,
-                   NodeMessageHandler messageHandler,
                    Repository repository) {
         super(worldManager, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore, repository);
-        this.peerScoringManager = peerScoringManager;
         this.nodeBlockProcessor = nodeBlockProcessor;
-        this.messageHandler = messageHandler;
     }
 
     @Override
@@ -67,10 +57,6 @@ public class RskImpl extends EthereumImpl implements Rsk {
     @Override
     public boolean isPlayingBlocks() {
         return isplaying;
-    }
-
-    public boolean isSyncingBlocks() {
-        return this.getNodeBlockProcessor().hasBetterBlockToSync();
     }
 
     @Override

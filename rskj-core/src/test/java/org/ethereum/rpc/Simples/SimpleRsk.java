@@ -36,17 +36,12 @@ public class SimpleRsk extends SimpleEthereum implements Rsk {
     }
 
     @Override
-    public boolean isSyncingBlocks() {
+    public boolean hasBetterBlockToSync() {
         return false;
     }
 
     @Override
     public boolean isBlockchainEmpty() {
-        return false;
-    }
-
-    @Override
-    public boolean hasBetterBlockToSync() {
         return false;
     }
 }

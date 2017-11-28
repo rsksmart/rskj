@@ -208,7 +208,7 @@ public class NodeBlockProcessorTest {
 
         Assert.assertFalse(processor.hasBetterBlockToSync());
 
-//        Status status = new Status(block.getNumber(), block.getHash());
+        Status status = new Status(block.getNumber(), block.getHash());
 //        processor.processStatus(new SimpleNodeChannel(null, null), status);
 
         Assert.assertFalse(processor.hasBetterBlockToSync());
@@ -512,16 +512,16 @@ public class NodeBlockProcessorTest {
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        processor.processGetBlockHeaders(sender, block.getHash());
+        processor.processBlockHeadersRequest(sender, 1, block.getHash(), 1);
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_MESSAGE, message.getMessageType());
+        Assert.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
 
-        final BlockHeadersMessage bMessage = (BlockHeadersMessage) message;
+        final BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
         Assert.assertArrayEquals(block.getHeader().getHash(), bMessage.getBlockHeaders().get(0).getHash());
     }
@@ -541,7 +541,7 @@ public class NodeBlockProcessorTest {
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
 
-        processor.processGetBlockHeaders(sender, block.getHash());
+        processor.processBlockHeadersRequest(sender, 1, block.getHash(), 1);
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
 
@@ -561,16 +561,16 @@ public class NodeBlockProcessorTest {
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        processor.processGetBlockHeaders(sender, block.getHash());
+        processor.processBlockHeadersRequest(sender, 1, block.getHash(), 1);
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_MESSAGE, message.getMessageType());
+        Assert.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
 
-        final BlockHeadersMessage bMessage = (BlockHeadersMessage) message;
+        final BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
         Assert.assertArrayEquals(block.getHeader().getHash(), bMessage.getBlockHeaders().get(0).getHash());
     }
