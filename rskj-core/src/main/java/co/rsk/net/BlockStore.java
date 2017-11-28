@@ -35,8 +35,6 @@ public class BlockStore {
     private Map<ByteArrayWrapper, Set<Block>> blocksbyparent = new HashMap<>();
 
     private final Map<ByteArrayWrapper, BlockHeader> headers = new HashMap<>();
-    private final Map<Long, Set<ByteArrayWrapper>> headersbynumber = new HashMap<>();
-    private final Map<ByteArrayWrapper, Set<ByteArrayWrapper>> headersbyparent = new HashMap<>();
 
     public synchronized void saveBlock(Block block) {
         ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
@@ -218,23 +216,8 @@ public class BlockStore {
      */
     public synchronized void saveHeader(@Nonnull final BlockHeader header) {
         ByteArrayWrapper key = new ByteArrayWrapper(header.getHash());
-        ByteArrayWrapper pkey = new ByteArrayWrapper(header.getParentHash());
-        Long nkey = Long.valueOf(header.getNumber());
+
         this.headers.put(key, header);
-
-        Set<ByteArrayWrapper> hsbynumber = this.headersbynumber.get(nkey);
-        if (hsbynumber == null) {
-            hsbynumber = new HashSet<>();
-            this.headersbynumber.put(nkey, hsbynumber);
-        }
-        hsbynumber.add(key);
-
-        Set<ByteArrayWrapper> hsbyphash = this.headersbyparent.get(pkey);
-        if (hsbyphash == null) {
-            hsbyphash = new HashSet<>();
-            this.headersbyparent.put(pkey, hsbyphash);
-        }
-        hsbyphash.add(key);
     }
 
     /**
@@ -247,25 +230,7 @@ public class BlockStore {
             return;
 
         ByteArrayWrapper key = new ByteArrayWrapper(header.getHash());
-        ByteArrayWrapper pkey = new ByteArrayWrapper(header.getParentHash());
-        Long nkey = Long.valueOf(header.getNumber());
 
         this.headers.remove(key);
-
-        Set<ByteArrayWrapper> byNumber = this.headersbynumber.get(nkey);
-        if (byNumber != null) {
-            byNumber.remove(key);
-            if (byNumber.isEmpty()) {
-                this.headersbynumber.remove(byNumber);
-            }
-        }
-
-        Set<ByteArrayWrapper> byParent = this.headersbyparent.get(pkey);
-        if (byParent != null) {
-            byParent.remove(key);
-            if (byParent.isEmpty()) {
-                this.headersbyparent.remove(byParent);
-            }
-        }
     }
 }

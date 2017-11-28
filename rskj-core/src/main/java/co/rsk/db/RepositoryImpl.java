@@ -34,9 +34,11 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.crypto.SHA3Helper.sha3;
@@ -219,24 +221,6 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     public synchronized DataWord getStorageValue(byte[] addr, DataWord key) {
         ContractDetails details = getContractDetails(addr);
         return (details == null) ? null : details.get(key);
-    }
-
-    @Override
-    public int getStorageSize(byte[] addr) {
-        ContractDetails details = getContractDetails(addr);
-        return (details == null) ? 0 : details.getStorageSize();
-    }
-
-    @Override
-    public Set<DataWord> getStorageKeys(byte[] addr) {
-        ContractDetails details = getContractDetails(addr);
-        return (details == null) ? Collections.emptySet() : details.getStorageKeys();
-    }
-
-    @Override
-    public Map<DataWord, DataWord> getStorage(byte[] addr, @Nullable Collection<DataWord> keys) {
-        ContractDetails details = getContractDetails(addr);
-        return (details == null) ? Collections.emptyMap() : details.getStorage(keys);
     }
 
     @Override

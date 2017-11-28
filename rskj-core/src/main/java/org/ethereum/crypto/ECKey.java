@@ -685,32 +685,6 @@ public class ECKey implements Serializable {
     }
 
     /**
-     * Verifies the given ASN.1 encoded ECDSA signature against a hash using the public key.
-     *
-     * @param data Hash of the data to verify.
-     * @param signature signature.
-     * @param pub The public key bytes to use.
-     *
-     * @return  -
-     */
-    public static boolean verify(byte[] data, byte[] signature, byte[] pub) {
-        return verify(data, signature, pub);
-    }
-
-    /**
-     * Verifies the given ASN.1 encoded ECDSA signature against a hash using the public key.
-     *
-     * @param data Hash of the data to verify.
-     * @param signature signature.
-     *
-     * @return -
-     */
-    public boolean verify(byte[] data, byte[] signature) {
-        return ECKey.verify(data, signature, getPubKey());
-    }
-
-
-    /**
      * Verifies the given R/S pair (signature) against a hash using the public key.
      *
      * @param sigHash -

@@ -20,7 +20,6 @@
 package org.ethereum.vm;
 
 import co.rsk.asm.EVMAssembler;
-import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.Program;
@@ -33,7 +32,6 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.oneByteToHexString;
@@ -2443,8 +2441,7 @@ public class VMTest {
         assertEquals(expectedSteps, i);
     }
 
-    @Ignore //TODO #POC9
-    @Test // EXP OP
+    @Test
     public void testEXP_1() {
 
         VM vm = new VM();
@@ -2459,11 +2456,10 @@ public class VMTest {
         long gas = program.getResult().getGasUsed();
 
         assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
-        assertEquals(4, gas);
+        assertEquals(66, gas);
     }
 
-    @Ignore //TODO #POC9
-    @Test // EXP OP
+    @Test
     public void testEXP_2() {
 
         VM vm = new VM();
@@ -2478,11 +2474,10 @@ public class VMTest {
         long gas = program.getResult().getGasUsed();
 
         assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
-        assertEquals(3, gas);
+        assertEquals(16, gas);
     }
 
-    @Ignore //TODO #POC9
-    @Test // EXP OP
+    @Test
     public void testEXP_3() {
 
         VM vm = new VM();
@@ -2497,7 +2492,7 @@ public class VMTest {
         long gas = program.getResult().getGasUsed();
 
         assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
-        assertEquals(5, gas);
+        assertEquals(116, gas);
     }
 
 

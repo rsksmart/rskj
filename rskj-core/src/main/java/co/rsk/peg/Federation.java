@@ -23,12 +23,15 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.db.ByteArrayWrapper;
+import org.spongycastle.util.encoders.Hex;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -107,6 +110,23 @@ public final class Federation {
         return address;
     }
 
+    public int getSize() {
+        return publicKeys.size();
+    }
+
+    public Integer getPublicKeyIndex(BtcECKey key) {
+        for (int i = 0; i < publicKeys.size(); i++) {
+            if (Arrays.equals(key.getPubKey(), publicKeys.get(i).getPubKey())) {
+                return i;
+            }
+        }
+        return null;
+    }
+
+    public boolean hasPublicKey(BtcECKey key) {
+        return getPublicKeyIndex(key) != null;
+    }
+
     @Override
     public String toString() {
         return String.format("%d of %d signatures federation", numberOfSignaturesRequired, publicKeys.size());
@@ -125,7 +145,7 @@ public final class Federation {
         return false;
     }
 
-    public boolean equalsFederation(Federation other) {
+    private boolean equalsFederation(Federation other) {
         if (other == null) {
             return false;
         }
@@ -144,9 +164,20 @@ public final class Federation {
                 .toArray(ByteArrayWrapper[]::new);
 
         return this.getNumberOfSignaturesRequired() == other.getNumberOfSignaturesRequired() &&
-                this.getPublicKeys().size() == other.getPublicKeys().size() &&
+                this.getSize() == other.getSize() &&
                 this.getCreationTime().equals(other.getCreationTime()) &&
                 this.btcParams.equals(other.btcParams) &&
                 Arrays.equals(thisPublicKeys, otherPublicKeys);
+    }
+
+    @Override
+    public int hashCode() {
+        // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
+        // well-defined hashCode()s
+        return Objects.hash(
+                getCreationTime(),
+                getNumberOfSignaturesRequired(),
+                getPublicKeys()
+        );
     }
 }

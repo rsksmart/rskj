@@ -59,8 +59,6 @@ public interface BlockProcessor {
 
     boolean hasBetterBlockToSync();
 
-    void sendStatusToAll();
-
     void acceptAnyBlock();
 
     // New messages for RSK's sync protocol

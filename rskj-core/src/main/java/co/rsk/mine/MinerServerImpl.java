@@ -104,16 +104,26 @@ public class MinerServerImpl implements MinerServer {
 
     private BlockValidationRule validationRules;
 
+    private final BlockProcessor nodeBlockProcessor;
+
     private long timeAdjustment;
 
     @Autowired
-    public MinerServerImpl(Ethereum ethereum, Blockchain blockchain, BlockStore blockStore, PendingState pendingState, Repository repository, MiningConfig miningConfig, @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules) {
+    public MinerServerImpl(Ethereum ethereum,
+                           Blockchain blockchain,
+                           BlockStore blockStore,
+                           PendingState pendingState,
+                           Repository repository,
+                           MiningConfig miningConfig,
+                           @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
+                           BlockProcessor nodeBlockProcessor) {
         this.ethereum = ethereum;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.pendingState = pendingState;
         this.miningConfig = miningConfig;
         this.validationRules = validationRules;
+        this.nodeBlockProcessor = nodeBlockProcessor;
 
         executor = new BlockExecutor(repository, blockchain, blockStore, null);
 
@@ -457,12 +467,7 @@ public class MinerServerImpl implements MinerServer {
         }
 
         private boolean isSyncing() {
-            BlockProcessor processor = ethereum.getWorldManager().getNodeBlockProcessor();
-
-            if (processor == null)
-                return false;
-
-            return processor.isSyncingBlocks();
+            return nodeBlockProcessor.isSyncingBlocks();
         }
     }
 

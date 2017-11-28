@@ -28,8 +28,32 @@ import java.math.BigInteger;
 
 public class ProgramTest {
     @Test
+    public void helloContract() {
+        ProgramResult result = TestContract.hello().executeFunction("hello", BigInteger.ZERO);
+        Assert.assertFalse(result.isRevert());
+        Assert.assertNull(result.getException());
+        Assert.assertArrayEquals(
+                new String[] { "chinchilla" },
+                TestContract.hello().functions.get("hello").decodeResult(result.getHReturn()));
+    }
+
+    @Test
+    public void helloContractIsNotPayable() {
+        ProgramResult result = TestContract.hello().executeFunction("hello", BigInteger.TEN);
+        Assert.assertTrue(result.isRevert());
+        Assert.assertNull(result.getException());
+    }
+
+    @Test
     public void childContractDoesntInheritMsgValue() {
         ProgramResult result = TestContract.parent().executeFunction("createChild", BigInteger.TEN);
+        Assert.assertFalse(result.isRevert());
+        Assert.assertNull(result.getException());
+    }
+
+    @Test
+    public void childContractDoesntInheritMsgValue_2() {
+        ProgramResult result = TestContract.msgValueTest().executeFunction("test_create", BigInteger.TEN);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
     }
@@ -42,5 +66,15 @@ public class ProgramTest {
         Assert.assertArrayEquals(
                 new Object[] { BigInteger.valueOf(42) },
                 TestContract.sendTest().functions.get("test").decodeResult(result.getHReturn()));
+    }
+
+    @Test
+    public void childContractGetsStipend() {
+        ProgramResult result = TestContract.bankTest().executeFunction("test", BigInteger.TEN);
+        Assert.assertFalse(result.isRevert());
+        Assert.assertNull(result.getException());
+        Assert.assertArrayEquals(
+                new Object[] { BigInteger.valueOf(43) },
+                TestContract.bankTest().functions.get("test").decodeResult(result.getHReturn()));
     }
 }

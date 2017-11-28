@@ -1244,77 +1244,11 @@ public class VM {
     }
 
     protected void doCALL(){
-        long newMemSize ;
-
-        DataWord value;
-
-        if (!op.equals(OpCode.DELEGATECALL))
-            value = stack.get(stack.size() - 3);
-        else
-            value = DataWord.ZERO;
-
-        DataWord callGasWord = stack.get(stack.size() - 1);
-        long callGasWordLong = Program.limitToMaxLong(callGasWord);
-
-        if (computeGas) {
-            gasCost = GasCost.CALL;
-
-            DataWord callAddressWord = stack.get(stack.size() - 2);
-            //check to see if account does not exist and is not a precompiled contract
-            if (op != OpCode.CALLCODE && !program.getStorage().isExist(callAddressWord.getLast20Bytes()))
-                gasCost += GasCost.NEW_ACCT_CALL;
-
-            if (!stack.get(stack.size() - 3).isZero())
-                gasCost += GasCost.VT_CALL;
-
-
-            int opOff = op == OpCode.DELEGATECALL ? 3 : 4;
-            DataWord inOfs = stack.get(stack.size() - opOff);
-            DataWord inSize = stack.get(stack.size() - opOff - 1);
-            DataWord outOfs = stack.get(stack.size() - opOff - 2);
-            DataWord outSize = stack.get(stack.size() - opOff - 3);
-
-            long inSizeLong = Program.limitToMaxLong(inSize);
-            long outSizeLong = Program.limitToMaxLong(outSize);
-
-            long in = memNeeded(inOfs, inSizeLong); // in offset+size
-            long out = memNeeded(outOfs, outSizeLong); // out offset+size
-            newMemSize = Long.max(in, out);
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
-        }
-
-        long requiredGas = gasCost;
-
-        if (!value.isZero()) {
-            requiredGas +=GasCost.STIPEND_CALL; // This is decremented later in message call
-         }
-
-        // The following is an important gas check. DO NOT REMOVE.
-        // If callGasWordLong is higher than available gas, then move all gas to callee.
-        // Before, it rose an exception
-
-        long remGas = program.getRemainingGas()-requiredGas ;
-
-        if (remGas < 0)
-            throw Program.ExceptionHelper.gasOverflow(BigInteger.valueOf(program.getRemainingGas()), BigInteger.valueOf(requiredGas));
-
-        if (callGasWordLong>remGas) {
-            // This would rise an exception pre EIP150
-            callGasWordLong = remGas;
-        }
-
-        if (computeGas) {
-            gasCost += callGasWordLong;
-
-            spendOpCodeGas();
-        }
-
-        // EXECUTION PHASE
-        program.stackPop(); // gas
+        DataWord gas = program.stackPop();
         DataWord codeAddress = program.stackPop();
 
-        if (!op.equals(OpCode.DELEGATECALL))
-            program.stackPop(); // value
+        // value is always zero in a DELEGATECALL operation
+        DataWord value = op.equals(OpCode.DELEGATECALL) ? DataWord.ZERO : program.stackPop();
 
         DataWord inDataOffs = program.stackPop();
         DataWord inDataSize = program.stackPop();
@@ -1322,9 +1256,32 @@ public class VM {
         DataWord outDataOffs = program.stackPop();
         DataWord outDataSize = program.stackPop();
 
+        long calleeGas = Program.limitToMaxLong(gas);
+        if (!value.isZero()) {
+            calleeGas += GasCost.STIPEND_CALL;
+        }
+
+        if (computeGas) {
+            gasCost = computeCallGas(codeAddress, value, inDataOffs, inDataSize, outDataOffs, outDataSize);
+        }
+
+        long requiredGas = gasCost;
+        long remainingGas = program.getRemainingGas() - requiredGas;
+        if (remainingGas < 0) {
+            throw Program.ExceptionHelper.gasOverflow(BigInteger.valueOf(program.getRemainingGas()), BigInteger.valueOf(requiredGas));
+        }
+
+        // If calleeGas is higher than available gas, then move all gas to callee.
+        calleeGas = Math.min(calleeGas, remainingGas);
+
+        if (computeGas) {
+            gasCost += calleeGas;
+            spendOpCodeGas();
+        }
+
         if (isLogEnabled) {
             hint = "addr: " + Hex.toHexString(codeAddress.getLast20Bytes())
-                    + " gas: " + callGasWordLong
+                    + " gas: " + calleeGas
                     + " inOff: " + inDataOffs.shortHex()
                     + " inSize: " + inDataSize.shortHex();
             logger.info(logString, String.format("%5s", "[" + program.getPC() + "]"),
@@ -1337,26 +1294,59 @@ public class VM {
 
         MessageCall msg = new MessageCall(
                 MsgType.fromOpcode(op),
-                new DataWord(callGasWordLong), codeAddress, value, inDataOffs, inDataSize,
+                new DataWord(calleeGas), codeAddress, value, inDataOffs, inDataSize,
                 outDataOffs, outDataSize);
 
-        PrecompiledContracts.PrecompiledContract contract =
-                PrecompiledContracts.getContractForAddress(codeAddress);
+        callToAddress(codeAddress, msg);
+
+        program.disposeWord(inDataOffs);
+        program.disposeWord(inDataSize);
+        program.disposeWord(outDataOffs);
+        program.disposeWord(outDataSize);
+        program.disposeWord(codeAddress);
+        program.disposeWord(gas);
+        if (!op.equals(OpCode.DELEGATECALL)) {
+            program.disposeWord(value);
+        }
+
+        program.step();
+    }
+
+    private void callToAddress(DataWord codeAddress, MessageCall msg) {
+        PrecompiledContracts.PrecompiledContract contract = PrecompiledContracts.getContractForAddress(codeAddress);
 
         if (contract != null) {
             program.callToPrecompiledAddress(msg, contract);
         } else {
             program.callToAddress(msg);
         }
-        program.disposeWord(inDataOffs);
-        program.disposeWord(inDataSize);
-        program.disposeWord(outDataOffs);
-        program.disposeWord(outDataSize);
-        program.disposeWord(codeAddress);
-        program.disposeWord(callGasWord);
-        if (!op.equals(OpCode.DELEGATECALL))
-            program.disposeWord(value);
-        program.step();
+    }
+
+    private long computeCallGas(DataWord codeAddress,
+                                DataWord value,
+                                DataWord inDataOffs,
+                                DataWord inDataSize,
+                                DataWord outDataOffs,
+                                DataWord outDataSize) {
+        long callGas = GasCost.CALL;
+
+        //check to see if account does not exist and is not a precompiled contract
+        if (op != OpCode.CALLCODE && !program.getStorage().isExist(codeAddress.getLast20Bytes())) {
+            callGas += GasCost.NEW_ACCT_CALL;
+        }
+
+        if (!value.isZero()) {
+            callGas += GasCost.VT_CALL;
+        }
+
+        long inSizeLong = Program.limitToMaxLong(inDataSize);
+        long outSizeLong = Program.limitToMaxLong(outDataSize);
+
+        long in = memNeeded(inDataOffs, inSizeLong); // in offset+size
+        long out = memNeeded(outDataOffs, outSizeLong); // out offset+size
+        long newMemSize = Long.max(in, out);
+        callGas += calcMemGas(oldMemSize, newMemSize, 0);
+        return callGas;
     }
 
     protected void doREVERT(){

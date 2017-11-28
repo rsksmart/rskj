@@ -23,13 +23,15 @@ public class JsonRpcNettyServer {
     private int socketLinger;
     private boolean reuseAddress;
     private CorsConfiguration corsConfiguration;
+    private final JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler;
     private final JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler;
 
-    public JsonRpcNettyServer(int port, int socketLinger, boolean reuseAddress, CorsConfiguration corsConfiguration, JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler) {
+    public JsonRpcNettyServer(int port, int socketLinger, boolean reuseAddress, CorsConfiguration corsConfiguration, JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler, JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler) {
         this.port = port;
         this.socketLinger = socketLinger;
         this.reuseAddress = reuseAddress;
         this.corsConfiguration = corsConfiguration;
+        this.jsonRpcWeb3FilterHandler = jsonRpcWeb3FilterHandler;
         this.jsonRpcWeb3ServerHandler = jsonRpcWeb3ServerHandler;
         this.bossGroup = new NioEventLoopGroup();
         this.workerGroup = new NioEventLoopGroup();
@@ -59,6 +61,7 @@ public class JsonRpcNettyServer {
                             .build())
                         );
                     }
+                    p.addLast(jsonRpcWeb3FilterHandler);
                     p.addLast(jsonRpcWeb3ServerHandler);
                 }
             });

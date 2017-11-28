@@ -51,8 +51,8 @@ public class BridgeDevNetConstants extends BridgeConstants {
         // To recreate the value use
         // genesisFederationAddressCreatedAt = Instant.ofEpochMilli(new GregorianCalendar(2009,0,1).getTimeInMillis());
         // Currently set to:
-        // Tue Aug 23 21:53:20 ART 2016
-        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1472000000l);
+        // Monday, November 13, 2017 9:00:00 PM GMT-03:00
+        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1510617600l);
 
         // Expected federation address is:
         // 2NCEo1RdmGDj6MqiipD6DUSerSxKv79FNWX

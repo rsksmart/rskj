@@ -1,5 +1,6 @@
 package co.rsk.net.sync;
 
+import co.rsk.net.MessageChannel;
 import co.rsk.net.messages.BodyResponseMessage;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
@@ -11,7 +12,7 @@ public interface SyncState {
     void newBlockHeaders(List<BlockHeader> chunk);
 
     // TODO(mc) don't receive a full message
-    void newBody(BodyResponseMessage message);
+    void newBody(BodyResponseMessage message, MessageChannel peer);
 
     void newConnectionPointData(byte[] hash);
 
@@ -20,7 +21,7 @@ public interface SyncState {
      */
     void newPeerStatus();
 
-    void newSkeleton(List<BlockIdentifier> skeletonChunk);
+    void newSkeleton(List<BlockIdentifier> skeletonChunk, MessageChannel peer);
 
     void onEnter();
 
