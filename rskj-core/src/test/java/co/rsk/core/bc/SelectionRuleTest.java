@@ -1,9 +1,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.test.World;
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Test;
@@ -29,9 +27,9 @@ public class SelectionRuleTest {
         Blockchain blockchain = createBlockchain();
 
 
-        Block lowDifficultyBlock = BlockGenerator.createChildBlock(blockchain.getBestBlock(), 0, 1);
-        Block highDifficultyBlock = BlockGenerator.createChildBlock(lowDifficultyBlock, 0, 5);
-        Block highDifficultyBlockWithMoreFees = BlockGenerator.createChildBlock(lowDifficultyBlock, 10l, new ArrayList<>(), highDifficultyBlock.getDifficulty());
+        Block lowDifficultyBlock = BlockGenerator.getInstance().createChildBlock(blockchain.getBestBlock(), 0, 1);
+        Block highDifficultyBlock = BlockGenerator.getInstance().createChildBlock(lowDifficultyBlock, 0, 5);
+        Block highDifficultyBlockWithMoreFees = BlockGenerator.getInstance().createChildBlock(lowDifficultyBlock, 10l, new ArrayList<>(), highDifficultyBlock.getDifficulty());
 
         //diff test
         assertFalse(SelectionRule.shouldWeAddThisBlock(lowDifficultyBlock.getDifficultyBI(),

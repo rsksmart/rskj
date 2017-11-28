@@ -42,7 +42,7 @@ public class BlockUtilsTest {
     public void blockInSomeBlockChain() {
         BlockChainImpl blockChain = new BlockChainBuilder().build();
 
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
         genesis.setStateRoot(blockChain.getRepository().getRoot());
         genesis.flushRLP();
 
@@ -68,7 +68,7 @@ public class BlockUtilsTest {
         BlockChainImpl blockChain = new BlockChainBuilder().build();
         BlockStore store = new BlockStore();
 
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
         genesis.setStateRoot(blockChain.getRepository().getRoot());
         genesis.flushRLP();
 
@@ -118,7 +118,7 @@ public class BlockUtilsTest {
         BlockChainImpl blockChain = new BlockChainBuilder().build();
         BlockStore store = new BlockStore();
 
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
         genesis.setStateRoot(blockChain.getRepository().getRoot());
         genesis.flushRLP();
 

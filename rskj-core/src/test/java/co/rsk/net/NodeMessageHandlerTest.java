@@ -118,7 +118,7 @@ public class NodeMessageHandlerTest {
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null,null, scoring, new DummyBlockValidationRule());
-        Block block = BlockGenerator.getGenesisBlock();
+        Block block = BlockGenerator.getInstance().getGenesisBlock();
         Message message = new BlockMessage(block);
 
         processor.processMessage(sender, message);
@@ -204,10 +204,10 @@ public class NodeMessageHandlerTest {
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, scoring, new DummyBlockValidationRule());
-        Block block = BlockGenerator.getGenesisBlock();
+        Block block = BlockGenerator.getInstance().getGenesisBlock();
 
         for (int i = 0; i < 50; i++) {
-            block = BlockGenerator.createChildBlock(block);
+            block = BlockGenerator.getInstance().createChildBlock(block);
         }
 
         Message message = new BlockMessage(block);
@@ -231,7 +231,7 @@ public class NodeMessageHandlerTest {
     public void processFutureBlockMessageUsingProcessor() throws UnknownHostException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, null, new ProofOfWorkRule());
-        Block block = BlockGenerator.getGenesisBlock();
+        Block block = BlockGenerator.getInstance().getGenesisBlock();
         Message message = new BlockMessage(block);
         SimpleMessageChannel sender = new SimpleMessageChannel();
         processor.processMessage(sender, message);
@@ -252,7 +252,7 @@ public class NodeMessageHandlerTest {
         final SimpleMessageChannel sender = new SimpleMessageChannel();
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
-        final Block block = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock());
+        final Block block = BlockGenerator.getInstance().createChildBlock(BlockGenerator.getInstance().getGenesisBlock());
         final Status status = new Status(block.getNumber(), block.getHash());
         final Message message = new StatusMessage(status);
 
@@ -275,7 +275,7 @@ public class NodeMessageHandlerTest {
         final SimpleMessageChannel sender = new SimpleMessageChannel();
         final NodeMessageHandler handler = NodeMessageHandlerUtil.createHandlerWithSyncProcessor();
 
-        final Block block = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock());
+        final Block block = BlockGenerator.getInstance().createChildBlock(BlockGenerator.getInstance().getGenesisBlock());
         final Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), BigInteger.TEN);
         final Message message = new StatusMessage(status);
 
@@ -305,7 +305,7 @@ public class NodeMessageHandlerTest {
         final SimpleMessageChannel sender = new SimpleMessageChannel();
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null, new ProofOfWorkRule());
 
-        final Block block = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock());
+        final Block block = BlockGenerator.getInstance().createChildBlock(BlockGenerator.getInstance().getGenesisBlock());
         final Status status = new Status(block.getNumber(), block.getHash());
         final Message message = new StatusMessage(status);
 
@@ -318,7 +318,7 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processGetBlockMessageUsingBlockInStore() throws UnknownHostException {
-        final Block block = BlockGenerator.getBlock(3);
+        final Block block = BlockGenerator.getInstance().getBlock(3);
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         final BlockStore store = new BlockStore();
@@ -355,7 +355,7 @@ public class NodeMessageHandlerTest {
         final Blockchain blockchain = world.getBlockChain();
         final BlockStore store = new BlockStore();
 
-        List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), 10);
+        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(blockchain.getBestBlock(), 10);
 
         for (Block b: blocks)
             blockchain.tryToConnect(b);
@@ -385,7 +385,7 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processGetBlockMessageUsingEmptyStore() throws UnknownHostException {
-        final Block block = BlockGenerator.getBlock(3);
+        final Block block = BlockGenerator.getInstance().getBlock(3);
 
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
@@ -407,7 +407,7 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processGetBlockHeaderMessageUsingBlockInStore() throws UnknownHostException {
-        final Block block = BlockGenerator.getBlock(3);
+        final Block block = BlockGenerator.getInstance().getBlock(3);
 
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
@@ -444,7 +444,7 @@ public class NodeMessageHandlerTest {
         final Blockchain blockchain = world.getBlockChain();
         final BlockStore store = new BlockStore();
 
-        List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), 10);
+        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(blockchain.getBestBlock(), 10);
 
         for (Block b: blocks)
             blockchain.tryToConnect(b);
@@ -478,7 +478,7 @@ public class NodeMessageHandlerTest {
         final Blockchain blockchain = world.getBlockChain();
         final BlockStore store = new BlockStore();
 
-        final List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), 15);
+        final List<Block> blocks = BlockGenerator.getInstance().getBlockChain(blockchain.getBestBlock(), 15);
         final List<Block> bcBlocks = blocks.subList(0, 10);
 
         for (Block b: bcBlocks)
@@ -613,7 +613,7 @@ public class NodeMessageHandlerTest {
         final Blockchain blockchain = world.getBlockChain();
         final BlockStore store = new BlockStore();
 
-        final List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), 10);
+        final List<Block> blocks = BlockGenerator.getInstance().getBlockChain(blockchain.getBestBlock(), 10);
 
         for (Block b: blocks) {
             ImportResult result = blockchain.tryToConnect(b);
@@ -723,7 +723,7 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processGetBlockHeaderMessageUsingEmptyStore() throws UnknownHostException {
-        final Block block = BlockGenerator.getBlock(3);
+        final Block block = BlockGenerator.getInstance().getBlock(3);
 
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();

@@ -42,7 +42,7 @@ import static org.junit.Assert.assertEquals;
 public class MessageTest {
     @Test
     public void encodeDecodeGetBlockMessage() {
-        Block block = BlockGenerator.getBlock(1);
+        Block block = BlockGenerator.getInstance().getBlock(1);
         GetBlockMessage message = new GetBlockMessage(block.getHash());
 
         byte[] encoded = message.getEncoded();
@@ -60,7 +60,7 @@ public class MessageTest {
 
     @Test
     public void encodeDecodeBlockRequestMessage() {
-        Block block = BlockGenerator.getBlock(1);
+        Block block = BlockGenerator.getInstance().getBlock(1);
         BlockRequestMessage message = new BlockRequestMessage(100, block.getHash());
 
         byte[] encoded = message.getEncoded();
@@ -79,7 +79,7 @@ public class MessageTest {
 
     @Test
     public void encodeDecodeGetBlockHeaderMessage() {
-        Block block = BlockGenerator.getBlock(1);
+        Block block = BlockGenerator.getInstance().getBlock(1);
         GetBlockHeadersMessage message = new GetBlockHeadersMessage(block.getHash(), 1);
 
         byte[] encoded = message.getEncoded();
@@ -112,7 +112,7 @@ public class MessageTest {
 
     @Test
     public void encodeDecodeStatusMessage() {
-        Block block = BlockGenerator.getBlock(1);
+        Block block = BlockGenerator.getInstance().getBlock(1);
         Status status = new Status(block.getNumber(), block.getHash());
         StatusMessage message = new StatusMessage(status);
 
@@ -134,7 +134,7 @@ public class MessageTest {
 
     @Test
     public void encodeDecodeStatusMessageWithCompleteArguments() {
-        Block block = BlockGenerator.getBlock(1);
+        Block block = BlockGenerator.getInstance().getBlock(1);
         Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), BigInteger.TEN);
         StatusMessage message = new StatusMessage(status);
 
@@ -154,7 +154,7 @@ public class MessageTest {
 
     @Test
     public void encodeDecodeStatusMessageUsingGenesisBlock() {
-        Block block = BlockGenerator.getBlock(0);
+        Block block = BlockGenerator.getInstance().getBlock(0);
         Status status = new Status(block.getNumber(), block.getHash());
         StatusMessage message = new StatusMessage(status);
 
@@ -174,7 +174,7 @@ public class MessageTest {
 
     @Test
     public void encodeDecodeBlockMessage() {
-        Block block = BlockGenerator.getBlock(1);
+        Block block = BlockGenerator.getInstance().getBlock(1);
         BlockMessage message = new BlockMessage(block);
 
         byte[] encoded = message.getEncoded();
@@ -194,7 +194,7 @@ public class MessageTest {
 
     @Test
     public void encodeDecodeBlockResponseMessage() {
-        Block block = BlockGenerator.getBlock(1);
+        Block block = BlockGenerator.getInstance().getBlock(1);
         BlockResponseMessage message = new BlockResponseMessage(100, block);
 
         byte[] encoded = message.getEncoded();
@@ -217,7 +217,7 @@ public class MessageTest {
 
     @Test
     public void encodeDecodeBlockHeaderMessage() {
-        BlockHeader header = BlockGenerator.getBlock(1).getHeader();
+        BlockHeader header = BlockGenerator.getInstance().getBlock(1).getHeader();
         BlockHeadersMessage message = new BlockHeadersMessage(header);
 
         byte[] encoded = message.getEncoded();
@@ -242,7 +242,7 @@ public class MessageTest {
         List<BlockHeader> headers = new ArrayList<>();
 
         for (int k = 1; k <= 4; k++)
-            headers.add(BlockGenerator.getBlock(k).getHeader());
+            headers.add(BlockGenerator.getInstance().getBlock(k).getHeader());
 
         BlockHeadersResponseMessage message = new BlockHeadersResponseMessage(100, headers);
 
@@ -271,7 +271,7 @@ public class MessageTest {
 
     @Test
     public void encodeDecodeNewBlockHashesMessage() {
-        List<Block> blocks = BlockGenerator.getBlockChain(10);
+        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(10);
         Block b1 = blocks.get(5);
         Block b2 = blocks.get(7);
 
@@ -413,7 +413,7 @@ public class MessageTest {
     @Test
     public void encodeDecodeSkeletonResponseMessage() {
         long someId = 42;
-        List<Block> blocks = BlockGenerator.getBlockChain(10);
+        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(10);
         Block b1 = blocks.get(5);
         Block b2 = blocks.get(7);
 
@@ -485,7 +485,7 @@ public class MessageTest {
 
     @Test
     public void encodeDecodeBodyRequestMessage() {
-        Block block = BlockGenerator.getBlock(1);
+        Block block = BlockGenerator.getInstance().getBlock(1);
         BodyRequestMessage message = new BodyRequestMessage(100, block.getHash());
 
         byte[] encoded = message.getEncoded();
@@ -511,10 +511,10 @@ public class MessageTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        Block parent = BlockGenerator.getGenesisBlock();
+        Block parent = BlockGenerator.getInstance().getGenesisBlock();
 
         for (int k = 1; k < 10; k++) {
-            Block block = BlockGenerator.createChildBlock(parent);
+            Block block = BlockGenerator.getInstance().createChildBlock(parent);
             uncles.add(block.getHeader());
             parent = block;
         }

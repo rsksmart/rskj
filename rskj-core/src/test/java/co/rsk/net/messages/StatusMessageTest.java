@@ -32,8 +32,8 @@ import java.math.BigInteger;
 public class StatusMessageTest {
     @Test
     public void createWithBestBlockNumberAndHash() {
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block = BlockGenerator.createChildBlock(genesis);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block block = BlockGenerator.getInstance().createChildBlock(genesis);
         Status status = new Status(block.getNumber(), block.getHash());
 
         StatusMessage message = new StatusMessage(status);
@@ -48,8 +48,8 @@ public class StatusMessageTest {
 
     @Test
     public void createWithCompleteArguments() {
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block = BlockGenerator.createChildBlock(genesis);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block block = BlockGenerator.getInstance().createChildBlock(genesis);
         Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), BigInteger.TEN);
 
         StatusMessage message = new StatusMessage(status);
@@ -66,7 +66,7 @@ public class StatusMessageTest {
 
     @Test
     public void createWithGenesisBestBlockNumberAndHash() {
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
         Status status = new Status(genesis.getNumber(), genesis.getHash());
 
         StatusMessage message = new StatusMessage(status);

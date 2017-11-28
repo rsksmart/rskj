@@ -40,7 +40,6 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.invocation.InvocationOnMock;
 import org.spongycastle.util.encoders.Hex;
@@ -158,7 +157,7 @@ public class BridgeTest {
         track = repository.startTracking();
 
         World world = new World();
-        List<Block> blocks = BlockGenerator.getSimpleBlockChain(world.getBlockChain().getBestBlock(), 10);
+        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(world.getBlockChain().getBestBlock(), 10);
         TransactionReceipt receipt = new TransactionReceipt();
         org.ethereum.core.Transaction tx = new SimpleRskTransaction(hash1.getBytes());
         receipt.setTransaction(tx);
@@ -372,7 +371,7 @@ public class BridgeTest {
         Repository track = repository.startTracking();
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, BlockGenerator.getGenesisBlock(), track, null, null, null);
+        bridge.init(null, BlockGenerator.getInstance().getGenesisBlock(), track, null, null, null);
 
         byte[] federatorPublicKeySerialized = new BtcECKey().getPubKey();
         Object[] signaturesObjectArray = new Object[]{new byte[3]};
@@ -388,7 +387,7 @@ public class BridgeTest {
         Repository track = repository.startTracking();
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, BlockGenerator.getGenesisBlock(), track, null, null, null);
+        bridge.init(null, BlockGenerator.getInstance().getGenesisBlock(), track, null, null, null);
 
         byte[] federatorPublicKeySerialized = new BtcECKey().getPubKey();
         Object[] signaturesObjectArray = new Object[]{new BtcECKey().sign(Sha256Hash.ZERO_HASH).encodeToDER()};
@@ -496,7 +495,7 @@ public class BridgeTest {
                 Bridge.UPDATE_COLLECTIONS);
         rskTx.sign(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0).getPrivKeyBytes());
 
-        org.ethereum.core.Block rskExecutionBlock = BlockGenerator.createChildBlock(Genesis.getInstance(RskSystemProperties.CONFIG));
+        Block rskExecutionBlock = BlockGenerator.getInstance().createChildBlock(Genesis.getInstance(RskSystemProperties.CONFIG));
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
         Assert.assertEquals(0, bridge.getGasForData(rskTx.getData()));
 
@@ -589,9 +588,9 @@ public class BridgeTest {
 
         rskTx.sign(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0).getPrivKeyBytes());
 
-        org.ethereum.core.Block rskExecutionBlock = BlockGenerator.createChildBlock(Genesis.getInstance(RskSystemProperties.CONFIG));
+        Block rskExecutionBlock = BlockGenerator.getInstance().createChildBlock(Genesis.getInstance(RskSystemProperties.CONFIG));
         for (int i = 0; i < 20; i++) {
-            rskExecutionBlock = BlockGenerator.createChildBlock(rskExecutionBlock);
+            rskExecutionBlock = BlockGenerator.getInstance().createChildBlock(rskExecutionBlock);
         }
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
         Assert.assertEquals(expected, bridge.getGasForData(rskTx.getData()));

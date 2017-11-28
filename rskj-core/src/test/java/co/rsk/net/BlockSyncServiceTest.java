@@ -40,7 +40,7 @@ public class BlockSyncServiceTest {
             BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, new SimpleChannelManager());
             Assert.assertEquals(10 * i, blockchain.getBestBlock().getNumber());
 
-            List<Block> extendedChain = BlockGenerator.getBlockChain(blockchain.getBestBlock(), i);
+            List<Block> extendedChain = BlockGenerator.getInstance().getBlockChain(blockchain.getBestBlock(), i);
             for (Block block : extendedChain) {
                 blockSyncService.processBlock(null, block);
                 Assert.assertEquals(block.getNumber(), blockchain.getBestBlock().getNumber());
@@ -59,7 +59,7 @@ public class BlockSyncServiceTest {
             Assert.assertEquals(10 * i, blockchain.getBestBlock().getNumber());
 
             Block initialBestBlock = blockchain.getBestBlock();
-            List<Block> extendedChain = BlockGenerator.getBlockChain(blockchain.getBestBlock(), i);
+            List<Block> extendedChain = BlockGenerator.getInstance().getBlockChain(blockchain.getBestBlock(), i);
             Collections.reverse(extendedChain);
             for (int j = 0; j < extendedChain.size() - 1; j++) {
                 Block block = extendedChain.get(j);
@@ -89,7 +89,8 @@ public class BlockSyncServiceTest {
         Assert.assertEquals(10, initialBestBlock.getNumber());
         Block branchingPoint = blockchain.getBlockByNumber(7);
 
-        List<Block> extendedChain = BlockGenerator.getBlockChain(branchingPoint, 10);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        List<Block> extendedChain = blockGenerator.getBlockChain(branchingPoint, 10);
         int branchingNumber = (int) (initialBestBlock.getNumber() - branchingPoint.getNumber());
         for (int i = 0; i < branchingNumber; i++) {
             Block block = extendedChain.get(i);

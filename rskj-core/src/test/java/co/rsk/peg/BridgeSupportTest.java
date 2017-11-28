@@ -295,7 +295,7 @@ public class BridgeSupportTest {
 
         track = repository.startTracking();
 
-        List<Block> blocks = BlockGenerator.getSimpleBlockChain(BlockGenerator.getGenesisBlock(), 10);
+        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
         TransactionReceipt receipt1 = new TransactionReceipt();
         org.ethereum.core.Transaction rskTx1 = new SimpleRskTransaction(hash1.getBytes());
         receipt1.setTransaction(rskTx1);
@@ -313,7 +313,7 @@ public class BridgeSupportTest {
 
         BlockChainBuilder builder = new BlockChainBuilder();
 
-        Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).setGenesis(BlockGenerator.getGenesisBlock()).build();
+        Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).setGenesis(BlockGenerator.getInstance().getGenesisBlock()).build();
 
         for (Block block : blocks)
             blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);
@@ -367,7 +367,7 @@ public class BridgeSupportTest {
 
         track = repository.startTracking();
 
-        List<Block> blocks = BlockGenerator.getSimpleBlockChain(BlockGenerator.getGenesisBlock(), 10);
+        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
         TransactionReceipt receipt1 = new TransactionReceipt();
         org.ethereum.core.Transaction rskTx1 = new SimpleRskTransaction(hash1.getBytes());
         receipt1.setTransaction(rskTx1);
@@ -431,7 +431,7 @@ public class BridgeSupportTest {
 
         track = repository.startTracking();
 
-        List<Block> blocks = BlockGenerator.getSimpleBlockChain(BlockGenerator.getGenesisBlock(), 10);
+        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
         TransactionReceipt receipt1 = new TransactionReceipt();
         org.ethereum.core.Transaction rskTx1 = new SimpleRskTransaction(hash1.getBytes());
         receipt1.setTransaction(rskTx1);
@@ -474,9 +474,9 @@ public class BridgeSupportTest {
         Map<byte[], BigInteger> preMineMap = new HashMap<byte[], BigInteger>();
         preMineMap.put(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), Denomination.satoshisToWeis(BigInteger.valueOf(21000000)));
 
-        Genesis genesisBlock = (Genesis) BlockGenerator.getNewGenesisBlock(0, preMineMap);
+        Genesis genesisBlock = (Genesis) BlockGenerator.getInstance().getNewGenesisBlock(0, preMineMap);
 
-        List<Block> blocks = BlockGenerator.getSimpleBlockChain(genesisBlock, 10);
+        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(genesisBlock, 10);
 
         TransactionReceipt receipt1 = new TransactionReceipt();
         org.ethereum.core.Transaction rskTx1 = new SimpleRskTransaction(hash1.getBytes());
@@ -559,7 +559,7 @@ public class BridgeSupportTest {
         track = repository.startTracking();
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        List<Block> blocks = BlockGenerator.getSimpleBlockChain(BlockGenerator.getGenesisBlock(), 10);
+        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
         TransactionReceipt receipt = new TransactionReceipt();
         org.ethereum.core.Transaction tx = new SimpleRskTransaction(hash1.getBytes());
         receipt.setTransaction(tx);

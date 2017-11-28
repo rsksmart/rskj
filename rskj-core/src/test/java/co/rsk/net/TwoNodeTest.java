@@ -42,7 +42,7 @@ public class TwoNodeTest {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
 
-        List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), size);
+        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(blockchain.getBestBlock(), size);
 
         for (Block b: blocks)
             blockchain.tryToConnect(b);
@@ -75,7 +75,7 @@ public class TwoNodeTest {
         SimpleNode node1 = createNode(0);
         SimpleNode node2 = createNode(0);
 
-        List<Block> blocks = BlockGenerator.getBlockChain(10);
+        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(10);
 
         for (Block block : blocks) {
             BlockMessage message = new BlockMessage(block);
