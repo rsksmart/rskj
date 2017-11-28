@@ -19,7 +19,6 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
@@ -430,13 +429,8 @@ public class TransactionExecutor {
         // Transfer fees to miner
         BigInteger summaryFee = summary.getFee();
 
-        //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-        if(RskSystemProperties.CONFIG.isRemascEnabled()) {
-            logger.info("Adding fee to remasc contract account");
-            track.addBalance(Hex.decode(PrecompiledContracts.REMASC_ADDR), summaryFee);
-        } else {
-            track.addBalance(coinbase, summaryFee);
-        }
+        logger.info("Adding fee to remasc contract account");
+        track.addBalance(Hex.decode(PrecompiledContracts.REMASC_ADDR), summaryFee);
 
         this.paidFees = summaryFee.longValue();
 
