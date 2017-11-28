@@ -361,7 +361,7 @@ public class Web3ImplTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(world).parent(genesis).difficulty(3l).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
         Block block1b = new BlockBuilder(world).parent(genesis)
                 .difficulty(block1.getDifficultyBI().longValue()-1).build();
