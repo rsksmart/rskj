@@ -443,6 +443,8 @@ public class TransactionExecutor {
             result.getDeleteAccounts().forEach(address -> track.delete(address.getLast20Bytes()));
         }
 
+        clearEmptyAccountsFromStateTrie();
+
         if (listener != null)
             listener.onTransactionExecuted(summary);
 
@@ -464,6 +466,19 @@ public class TransactionExecutor {
         }
 
         logger.info("tx finalization done");
+    }
+
+    /**
+     * Invariant-preserving state trie clearing as specified in EIP-161
+     */
+    private void clearEmptyAccountsFromStateTrie() {
+        for (DataWord acctAddrDW : touchedAccounts) {
+            byte[] acctAddr = acctAddrDW.getData();
+            AccountState state = track.getAccountState(acctAddr);
+            if (state != null && state.isEmpty()) {
+                track.delete(acctAddr);
+            }
+        }
     }
 
     public TransactionExecutor setLocalCall(boolean localCall) {
