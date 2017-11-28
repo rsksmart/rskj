@@ -140,15 +140,21 @@ public class Remasc {
         byte[] processingBlockHash = processingBlockHeader.getHash();
         int nfederators = federationProvider.getFederationSize();
         BigInteger payToFederator = payToFederation.divide(BigInteger.valueOf(nfederators));
+        BigInteger restToLastFederator = payToFederation.subtract(payToFederator.multiply(BigInteger.valueOf(nfederators)));
         BigInteger paidToFederation = BigInteger.ZERO;
 
         for (int k = 0; k < nfederators; k++) {
             byte[] federatorAddress = federationProvider.getFederatorAddress(k);
-            feesPayer.payMiningFees(processingBlockHash, payToFederator, federatorAddress, logs);
+
+            if (k == nfederators - 1 && restToLastFederator.compareTo(BigInteger.ZERO) > 0)
+                feesPayer.payMiningFees(processingBlockHash, payToFederator.add(restToLastFederator), federatorAddress, logs);
+            else
+                feesPayer.payMiningFees(processingBlockHash, payToFederator, federatorAddress, logs);
+
             paidToFederation = paidToFederation.add(payToFederator);
         }
 
-        fullBlockReward = fullBlockReward.subtract(paidToFederation);
+        fullBlockReward = fullBlockReward.subtract(payToFederation);
 
         List<Sibling> siblings = provider.getSiblings().get(processingBlockNumber);
 
