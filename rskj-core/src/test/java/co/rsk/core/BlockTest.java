@@ -81,6 +81,7 @@ public class BlockTest {
                 new byte[0],                    // mixHash
                 new byte[]{0},         // provisory nonce
                 HashUtil.EMPTY_TRIE_HASH,       // receipts root
+                HashUtil.EMPTY_TRIE_HASH,       // contractLogRoot
                 BlockChainImpl.calcTxTrie(txs), // transaction root
                 HashUtil.EMPTY_TRIE_HASH,    //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list

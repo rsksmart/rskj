@@ -180,60 +180,79 @@ public class RLPTest {
 
     @Test
     /** encode int */
+    public void testEncodeLong() {
+        byte[] expectedL1 = {(byte) 0x88, (byte) 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,(byte) 0xFF, (byte) 0xFF, (byte) 0xFF,(byte) 0xFF};
+        testEncodeDecodeLong(expectedL1 ,Long.MAX_VALUE);
+
+        byte[] expectedL2 = {(byte) 0x88, (byte) 0x08, (byte) 0x00, (byte) 0x00, (byte) 0x00,(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+        testEncodeDecodeLong(expectedL2 ,0x0800000000000000L);
+
+        byte[] expectedL3 = {(byte) 0x87, (byte) 0x80, (byte) 0x00, (byte) 0x00,(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+        testEncodeDecodeLong(expectedL3 ,0x80000000000000L);
+
+
+        byte[] expectedL4 = {(byte) 0x87, (byte) 0x01, (byte) 0x00, (byte) 0x00,(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+        testEncodeDecodeLong(expectedL4 ,(1L<<48));
+
+        byte[] expectedL5 = {(byte) 0x87, (byte) 0xFF, (byte) 0x00, (byte) 0x00,(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00};
+        testEncodeDecodeLong(expectedL5 ,0xff000000000000L);
+
+    }
+
+    public void testEncodeDecodeLong(byte[] expected,long value) {
+        byte[] data ;
+        data = encodeLong(value);
+        assertArrayEquals(expected, data);
+        assertEquals(value, RLP.decodeLong(data, 0));
+    }
+
+    public void testEncodeDecodeInt(byte[] expected,int value) {
+        byte[] data ;
+        data = encodeInt(value);
+        assertArrayEquals(expected, data);
+        assertEquals(value, RLP.decodeInt(data, 0));
+    }
+
+    @Test
+    /** encode int */
     public void testEncodeInt() {
 
         byte[] expected = {(byte) 0x80};
-        byte[] data = encodeInt(0);
-        assertArrayEquals(expected, data);
-        assertEquals(0, RLP.decodeInt(data, 0));
+        testEncodeDecodeInt(expected, 0);
 
         byte[] expected2 = {(byte) 0x78};
-        data = encodeInt(120);
-        assertArrayEquals(expected2, data);
-        assertEquals(120, RLP.decodeInt(data, 0));
+        testEncodeDecodeInt(expected2,120);
 
         byte[] expected3 = {(byte) 0x7F};
-        data = encodeInt(127);
-        assertArrayEquals(expected3, data);
-        assertEquals(127, RLP.decodeInt(data, 0));
+        testEncodeDecodeInt(expected3, 127);
 
         assertEquals(256, RLP.decodeInt(RLP.encodeInt(256), 0));
         assertEquals(255, RLP.decodeInt(RLP.encodeInt(255), 0));
         assertEquals(127, RLP.decodeInt(RLP.encodeInt(127), 0));
         assertEquals(128, RLP.decodeInt(RLP.encodeInt(128), 0));
 
-        data = RLP.encodeInt(1024);
+        byte[] data = RLP.encodeInt(1024);
         assertEquals(1024, RLP.decodeInt(data, 0));
 
         byte[] expected4 = {(byte) 0x82, (byte) 0x76, (byte) 0x5F};
-        data = encodeInt(30303);
-        assertArrayEquals(expected4, data);
-        assertEquals(30303, RLP.decodeInt(data, 0));
+        testEncodeDecodeInt(expected4 ,30303);
 
         byte[] expected5 = {(byte) 0x82, (byte) 0x4E, (byte) 0xEA};
-        data = encodeInt(20202);
-        assertArrayEquals(expected5, data);
-        assertEquals(20202, RLP.decodeInt(data, 0));
+        testEncodeDecodeInt(expected5,20202);
 
         byte[] expected6 = {(byte) 0x83, 1, 0, 0};
-        data = encodeInt(65536);
-        assertArrayEquals(expected6, data);
-        assertEquals(65536, RLP.decodeInt(data, 0));
+        testEncodeDecodeInt(expected6 ,65536);
 
         byte[] expected7 = {(byte) 0x84, (byte) 0x80, (byte) 0x00, (byte) 0x00, (byte) 0x00};
-        data = encodeInt(Integer.MIN_VALUE);
-        assertArrayEquals(expected7, data);
-        assertEquals(Integer.MIN_VALUE, RLP.decodeInt(data, 0));
+        testEncodeDecodeLong(expected7 ,Integer.MAX_VALUE+1L); // cannot be passed to testEncodeDecodeInt()
 
         byte[] expected8 = {(byte) 0x84, (byte) 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF};
-        data = encodeInt(Integer.MAX_VALUE);
-        assertArrayEquals(expected8, data);
-        assertEquals(Integer.MAX_VALUE, RLP.decodeInt(data, 0));
+        testEncodeDecodeInt(expected8 ,Integer.MAX_VALUE);
 
         byte[] expected9 = {(byte) 0x84, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF};
-        data = encodeInt(0xFFFFFFFF);
-        assertArrayEquals(expected9, data);
-        assertEquals(0xFFFFFFFF, RLP.decodeInt(data, 0));
+        testEncodeDecodeLong(expected9 ,0xFFFFFFFFL);// cannot be passed to testEncodeDecodeInt()
+
+
 
     }
 

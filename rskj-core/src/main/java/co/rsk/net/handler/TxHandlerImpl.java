@@ -18,6 +18,7 @@
 
 package co.rsk.net.handler;
 
+import co.rsk.core.bc.EventInfoItem;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.listener.EthereumListenerAdapter;
@@ -121,7 +122,7 @@ public class TxHandlerImpl implements TxHandler {
     private class Listener extends EthereumListenerAdapter {
 
         @Override
-        public void onBlock(Block block, List<TransactionReceipt> receipts) {
+        public void onBlock(Block block, List<TransactionReceipt> receipts, List<EventInfoItem> events) {
             try {
                 knownTxsLock.lock();
                 for (TransactionReceipt txReceipt : receipts) {
@@ -160,6 +161,6 @@ public class TxHandlerImpl implements TxHandler {
     @VisibleForTesting void setTxsPerAccounts(Map<String, TxsPerAccount> txsPerAccounts) { this.txsPerAccounts = txsPerAccounts; }
     @VisibleForTesting Map<String, TxTimestamp> getKnownTxs() { return knownTxs; }
     @VisibleForTesting Map<String, TxsPerAccount> getTxsPerAccounts() { return txsPerAccounts; }
-    @VisibleForTesting public void onBlock(Block block, List<TransactionReceipt> receiptList) { new Listener().onBlock(block, receiptList); }
+    @VisibleForTesting public void onBlock(Block block, List<TransactionReceipt> receiptList,List<EventInfoItem> events) { new Listener().onBlock(block, receiptList,events); }
 
 }

@@ -90,7 +90,7 @@ public class LocalVMTest {
     public void testvmInputLimitsLight() throws ParseException {
         Set<String> excluded = new HashSet<>();
         String json = getJSON("vmInputLimitsLight");
-        GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded);
+        GitHubJSONTestSuite.runGitHubJsonVMTest(json, excluded,null);
     }
 
     @Test // testing full suite

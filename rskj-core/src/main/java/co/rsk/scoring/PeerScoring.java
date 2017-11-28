@@ -77,7 +77,7 @@ public class PeerScoring {
     /**
      * Returns the count of events given a event type.
      *
-     * @param evt       Event Type (@see EventType)
+     * @param evt       EventsPerAccount Type (@see EventType)
      *
      * @return  The count of events of the specefied type
      */

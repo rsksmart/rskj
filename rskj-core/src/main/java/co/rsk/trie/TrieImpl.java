@@ -602,7 +602,7 @@ public class TrieImpl implements Trie {
         if (this.nodes == null)
             this.nodes = new TrieImpl[this.arity];
 
-        this.nodes[n] = (TrieImpl)node;
+        this.nodes[n] = (TrieImpl)node; // bad, because then it wont retrieve remainder nodes
 
         return node;
     }

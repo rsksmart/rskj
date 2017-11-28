@@ -20,10 +20,8 @@
 package org.ethereum.core;
 
 import co.rsk.core.bc.BlockChainStatus;
-import org.ethereum.db.BlockInformation;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.TransactionInfo;
+import co.rsk.core.bc.EventInfoItem;
+import org.ethereum.db.*;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -34,6 +32,11 @@ public interface Blockchain {
     ImportResult tryToConnect(Block block);
 
     Block getBlockByNumber(long blockNr);
+
+
+    List<EventInfoItem> getEventsByBlockHash(byte[] hash);
+
+    List<EventInfoItem> getEventsByBlockNumber(long blockNr);
 
     void setBestBlock(Block block);
 
@@ -70,6 +73,8 @@ public interface Blockchain {
     void removeBlocksByNumber(long blockNr);
 
     ReceiptStore getReceiptStore();
+
+    EventsStore getEventsStore();
 
     BlockStore getBlockStore();
 

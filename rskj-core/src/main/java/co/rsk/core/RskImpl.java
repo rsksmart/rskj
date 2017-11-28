@@ -24,6 +24,7 @@ import co.rsk.net.NodeMessageHandler;
 import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.PendingState;
+import org.ethereum.db.EventsStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -49,11 +50,12 @@ public class RskImpl extends EthereumImpl implements Rsk {
                    SystemProperties config,
                    CompositeEthereumListener compositeEthereumListener,
                    ReceiptStore receiptStore,
+                   EventsStore eventsStore,
                    PeerScoringManager peerScoringManager,
                    NodeBlockProcessor nodeBlockProcessor,
                    NodeMessageHandler messageHandler,
                    PeerClientFactory peerClientFactory) {
-        super(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore, peerClientFactory);
+        super(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore, eventsStore, peerClientFactory);
         this.peerScoringManager = peerScoringManager;
         this.nodeBlockProcessor = nodeBlockProcessor;
         this.messageHandler = messageHandler;

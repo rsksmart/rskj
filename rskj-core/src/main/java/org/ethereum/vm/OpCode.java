@@ -196,13 +196,13 @@ public enum OpCode {
      */
     GASPRICE(0x3a, 0, 1, BASE_TIER),
     /**
-     * (0x3b) Get size of code running in
-     * current environment with given offset
+     * (0x3b) Get size of code in
+     * another contract address.
      */
     EXTCODESIZE(0x3b, 1, 1, EXT_TIER),
     /**
-     * (0x3c) Copy code running in current
-     * environment to memory with given offset
+     * (0x3c) Copy code running in another
+     * contract address to memory with given offset
      */
     EXTCODECOPY(0x3c, 4, 0, EXT_TIER),
 
@@ -568,6 +568,8 @@ public enum OpCode {
      * CODEREPLACE
      */
     CODEREPLACE(0xa8, 2, 1, SPECIAL_TIER,1),   //       [in_size] [in_offs] CODEREPLACE -> success
+
+    LASTEVENTBLOCKNUMBER(0xac,0, 1, BASE_TIER),
 
     /*  System operations   */
 

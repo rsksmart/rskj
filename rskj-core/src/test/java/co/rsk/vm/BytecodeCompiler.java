@@ -18,6 +18,9 @@
 
 package co.rsk.vm;
 
+import org.ethereum.vm.OpCode;
+
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,7 +54,17 @@ public class BytecodeCompiler {
         return result;
     }
 
+    private boolean isOpcode(String opcode) {
+        return OpCode.contains(opcode);
+    }
+
     private byte compileToken(String token) {
+       String upToken = token.toUpperCase();
+       if (isOpcode(upToken ))
+        return OpCode.byteVal(upToken );
+       // The manual opcode checks should not be required anymore
+       // Remove in a later clan up
+        else
         if ("push1".equals(token))
             return 0x60;
         if ("push2".equals(token))
@@ -116,4 +129,5 @@ public class BytecodeCompiler {
 
         return (byte) Integer.parseInt(token);
     }
+
 }

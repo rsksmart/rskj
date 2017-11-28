@@ -67,7 +67,8 @@ public class StateTestRunner {
         Repository track = repository.startTracking();
 
         TransactionExecutor executor =
-                new TransactionExecutor(transaction, env.getCurrentCoinbase(), track, new BlockStoreDummy(), null,
+                new TransactionExecutor(transaction, env.getCurrentCoinbase(), track,
+                        new BlockStoreDummy(), null,null,
                         invokeFactory, blockchain.getBestBlock());
 
         try{
@@ -96,7 +97,7 @@ public class StateTestRunner {
         indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
         BlockStore blockStore = indexedBlockStore;
 
-        blockchain = new BlockChainImpl(repository, blockStore, null, null, null, null, null);
+        blockchain = new BlockChainImpl(repository, blockStore, null, null, null, null, null, null);
 
         env = EnvBuilder.build(stateTestCase.getEnv());
         invokeFactory = new TestProgramInvokeFactory(env);

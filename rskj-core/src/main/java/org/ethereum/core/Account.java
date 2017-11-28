@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
 import org.ethereum.crypto.ECKey;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -106,5 +107,9 @@ public class Account {
         synchronized (pendingTransactions) {
             pendingTransactions.clear();
         }
+    }
+
+    public String toString() {
+        return Hex.toHexString(getAddress());
     }
 }

@@ -114,12 +114,22 @@ public interface Repository {
     byte[] getCode(byte[] addr);
 
     /**
-     * Put a value in storage of an account at a given key
+     * Store the block number associated with the last event
      *
-     * @param addr of the account
-     * @param key of the data to store
-     * @param value is the data to store
+     * @param addr for the account
+     * @param value the block number
      */
+    public void setBlockNumberOfLastEvent(byte[] addr, long value);
+
+    public long getBlockNumberOfLastEvent(byte[] addr);
+
+        /**
+         * Put a value in storage of an account at a given key
+         *
+         * @param addr of the account
+         * @param key of the data to store
+         * @param value is the data to store
+         */
     void addStorageRow(byte[] addr, DataWord key, DataWord value);
 
     void addStorageBytes(byte[] addr, DataWord key, byte[] value);

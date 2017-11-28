@@ -109,6 +109,7 @@ public class Block {
                 header.getBitcoinMergedMiningMerkleProof(),
                 header.getBitcoinMergedMiningCoinbaseTransaction(),
                 header.getReceiptsRoot(),
+                header.getEventsRoot(),
                 header.getTxTrieRoot(),
                 header.getStateRoot(),
                 transactionsList,
@@ -122,18 +123,19 @@ public class Block {
                  byte[] mixHash,
                  byte[] nonce, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                  byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] receiptsRoot,
+                 byte[] eventsRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
-                gasUsed, timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot,
+                gasUsed, timestamp, extraData, mixHash, nonce, receiptsRoot, eventsRoot, transactionsRoot,
                 stateRoot, transactionsList, uncleList, minimumGasPrice, 0L);
 
         this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
         this.header.setBitcoinMergedMiningHeader(bitcoinMergedMiningHeader);
         this.header.setBitcoinMergedMiningMerkleProof(bitcoinMergedMiningMerkleProof);
 
-        this.header.setTransactionsRoot(calcTxTrie(getTransactionsList()));
+
         if (!Hex.toHexString(transactionsRoot).
                 equals(Hex.toHexString(this.header.getTxTrieRoot()))){
             logger.error("Transaction root miss-calculate, block: {}", getNumber());
@@ -143,6 +145,7 @@ public class Block {
 
         this.header.setStateRoot(stateRoot);
         this.header.setReceiptsRoot(receiptsRoot);
+        this.header.setEventsRoot(eventsRoot);
 
         this.flushRLP();
     }
@@ -151,6 +154,7 @@ public class Block {
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp, byte[] extraData,
                  byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
+                 byte[] eventsRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, long paidFees) {
 
@@ -158,7 +162,8 @@ public class Block {
                 gasUsed, timestamp, extraData, mixHash, nonce, transactionsList, uncleList, minimumGasPrice);
 
         this.header.setPaidFees(paidFees);
-        this.header.setTransactionsRoot(Block.getTxTrie(transactionsList).getHash());
+        this.header.setTransactionsRoot(calcTxTrie(transactionsList));
+
         if (!Hex.toHexString(transactionsRoot).
                 equals(Hex.toHexString(this.header.getTxTrieRoot()))) {
             logger.error("Transaction root miss-calculate, block: {}", getNumber());
@@ -167,7 +172,7 @@ public class Block {
 
         this.header.setStateRoot(stateRoot);
         this.header.setReceiptsRoot(receiptsRoot);
-
+        this.header.setEventsRoot(eventsRoot);
         this.flushRLP();
     }
 
@@ -221,6 +226,7 @@ public class Block {
         this.header = new BlockHeader(header, this.sealed);
 
         // Parse Transactions
+        // The element cannot be empty/null. It can however be an empty list.
         RLPList txTransactions = (RLPList) block.get(1);
         this.parseTxs(this.header.getTxTrieRoot(), txTransactions);
 
@@ -279,6 +285,12 @@ public class Block {
         if (!parsed)
             parseRLP();
         return this.header.getStateRoot();
+    }
+
+    public byte[] getEventsRoot() {
+        if (!parsed)
+            parseRLP();
+        return this.header.getEventsRoot();
     }
 
     public void setStateRoot(byte[] stateRoot) {
@@ -404,6 +416,9 @@ public class Block {
 
     @Override
     public String toString() {
+        if (!parsed)
+            return "unparsed:"+super.toString();
+
         if (!parsed)
             parseRLP();
 

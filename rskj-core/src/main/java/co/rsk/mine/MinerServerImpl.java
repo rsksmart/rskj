@@ -21,6 +21,7 @@ package co.rsk.mine;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.EventInfoItem;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.net.BlockProcessor;
@@ -429,7 +430,7 @@ public class MinerServerImpl implements MinerServer {
          * This method will be called on every block added to the blockchain, even if it doesn't go to the best chain.
          * TODO(???): It would be cleaner to just send this when the blockchain's best block changes.
          * **/
-        public void onBlock(Block block, List<TransactionReceipt> receipts) {
+        public void onBlock(Block block, List<TransactionReceipt> receipts,List<EventInfoItem> events) {
             if (isSyncing())
                 return;
 

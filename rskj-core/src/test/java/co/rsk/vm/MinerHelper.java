@@ -19,13 +19,18 @@
 package co.rsk.vm;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.*;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.EventsStore;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListenerAdapter;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -41,17 +46,12 @@ import java.util.List;
 public class MinerHelper {
     private static final Logger logger = LoggerFactory.getLogger("minerhelper");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
-    @Autowired
+
     private BlockStore blockStore;
-
-    @Autowired
     protected Blockchain blockchain;
-
-    @Autowired
     protected Repository repository;
 
-    @Autowired
-    ProgramInvokeFactory programInvokeFactory;
+    ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
 
 
 
@@ -59,21 +59,29 @@ public class MinerHelper {
     long totalGasUsed = 0;
     long totalPaidFees = 0;
     List<TransactionReceipt> txReceipts;
+    Events events;
+
     private GasLimitCalculator gasLimitCalculator;
 
-    public MinerHelper(Repository repository , Blockchain blockchain) // , BlockStore blockStore)
+    public MinerHelper(Repository repository ,
+                       Blockchain blockchain,
+                       BlockStore blockStore)
     {
         this.repository = repository;
         this.blockchain = blockchain;
-       // this.blockStore =blockStore;
+        this.blockStore =blockStore;
+        this.programInvokeFactory = programInvokeFactory;
         gasLimitCalculator = new GasLimitCalculator();
     }
+
+
 
     public void processBlock( Block block, Block parent) {
         latestStateRootHash = null;
         totalGasUsed = 0;
         totalPaidFees = 0;
         txReceipts = new ArrayList<>();
+        events = new Events();
 
         //Repository originalRepo  = ((Repository) ethereum.getRepository()).getSnapshotTo(parent.getStateRoot());
 
@@ -94,11 +102,13 @@ public class MinerHelper {
             logger.error("Strange state in block {} {}", block.getNumber(), Hex.toHexString(block.getHash()));
             panicProcessor.panic("minerserver", String.format("Strange state in block %d %s", block.getNumber(), Hex.toHexString(block.getHash())));
         }
-
+        int i=0;
         for (Transaction tx : block.getTransactionsList()) {
 
             TransactionExecutor executor = new TransactionExecutor(tx, block.getCoinbase(),
-                    track, blockStore, blockchain.getReceiptStore(),
+                    track, blockStore,
+                    blockchain.getReceiptStore(),
+                    blockchain.getEventsStore(),
                     programInvokeFactory, block, new EthereumListenerAdapter(), totalGasUsed);
 
             executor.init();
@@ -121,7 +131,11 @@ public class MinerHelper {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(executor.getVMLogs());
 
+            if (executor.getVMEvents()!=null)
+                events.addAll(executor.getVMEvents());
+
             txReceipts.add(receipt);
+            i++;
 
         }
     }
@@ -130,12 +144,17 @@ public class MinerHelper {
         processBlock(newBlock, parent);
 
         newBlock.getHeader().setReceiptsRoot(BlockChainImpl.calcReceiptsTrie(txReceipts));
+        newBlock.getHeader().setEventsRoot(BlockResult.calculateEventsTrie(events.getList()));
         newBlock.getHeader().setStateRoot(latestStateRootHash);
         newBlock.getHeader().setGasUsed(totalGasUsed);
 
         Bloom logBloom = new Bloom();
         for (TransactionReceipt receipt : txReceipts) {
             logBloom.or(receipt.getBloomFilter());
+        }
+
+        for (EventInfoItem item : events.getList()) {
+            logBloom.or(item.getBloomFilter());
         }
 
         newBlock.getHeader().setLogsBloom(logBloom.getData());

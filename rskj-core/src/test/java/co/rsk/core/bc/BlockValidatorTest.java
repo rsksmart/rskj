@@ -362,7 +362,7 @@ public class BlockValidatorTest {
 
         Block genesis = BlockGenerator.getGenesisBlock();
 
-        Block uncle1a = BlockGenerator.getBlock(1);
+        Block uncle1a = BlockGenerator.getBlockBadlyEncoded(1);
         List<BlockHeader> uncles1 = new ArrayList<>();
         uncles1.add(uncle1a.getHeader());
         Block block1 = BlockGenerator.createChildBlock(genesis, null, uncles1, 1, null);
@@ -430,8 +430,12 @@ public class BlockValidatorTest {
         Block genesis = BlockGenerator.getGenesisBlock();
 
 
-        Block uncle1a = BlockGenerator.createChildBlock(new SimpleBlock(null, null, new byte[]{12, 12}, null, BigInteger.ONE.toByteArray(),
-                0, null, 0L, 0L, new byte[]{}, null, null, null, new byte[]{1, 2}, null, null, null));
+        Block uncle1a = BlockGenerator.createChildBlock(
+                new SimpleBlock(null, null, new byte[]{12, 12},
+                        null, BigInteger.ONE.toByteArray(),
+                        0, null, 0L, 0L, new byte[]{},
+                        null, null, null, null, new byte[]{1, 2},
+                        null, null, null));
 
         List<BlockHeader> uncles1 = new ArrayList<>();
         uncles1.add(uncle1a.getHeader());
