@@ -39,7 +39,9 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.ArrayUtils.getLength;
@@ -75,6 +77,7 @@ public class TransactionExecutor {
     private Block executionBlock;
 
     private final EthereumListener listener;
+    private final Set<DataWord> touchedAccounts = new HashSet<>();
 
     private VM vm;
     private Program program;
