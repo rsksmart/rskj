@@ -30,7 +30,7 @@ import org.ethereum.core.*;
 import org.ethereum.core.genesis.InitialAddressState;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.util.ByteUtil;
+import org.ethereum.util.BIUtil;
 import org.ethereum.util.RLP;
 import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 import org.spongycastle.util.encoders.Hex;
@@ -178,7 +178,7 @@ public class BlockGenerator {
     }
 
     public static Block createChildBlock(Block parent, int ntxs) {
-        return createChildBlock(parent, ntxs, ByteUtil.bytesToBigInteger(parent.getDifficulty()).longValue());
+        return createChildBlock(parent, ntxs, BIUtil.toBI(parent.getDifficulty()).longValue());
     }
 
     public static Block createChildBlock(Block parent, int ntxs, long difficulty) {
@@ -193,7 +193,7 @@ public class BlockGenerator {
     }
 
     public static Block createChildBlock(Block parent, List<Transaction> txs) {
-        return createChildBlock(parent, txs, new ArrayList<>(), ByteUtil.bytesToBigInteger(parent.getDifficulty()).longValue(), null);
+        return createChildBlock(parent, txs, new ArrayList<>(), BIUtil.toBI(parent.getDifficulty()).longValue(), null);
     }
 
 
@@ -338,6 +338,7 @@ public class BlockGenerator {
 
             for (int ntx = 0; ntx < ntxs; ntx++)
                 txs.add(new SimpleRskTransaction(null));
+
 
             Block newblock = BlockGenerator.createChildBlock(parent, txs, uncles, 0, null);
 

@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.builders.BlockBuilder;
+import org.ethereum.util.BIUtil;
 import org.spongycastle.util.encoders.Hex;
 import co.rsk.test.World;
 import co.rsk.bitcoinj.core.Address;
@@ -30,7 +31,6 @@ import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -215,7 +215,7 @@ public class RskForksBridgeTest {
     private Block buildBlock(Block parent, Transaction ... txs) {
         List<Transaction> txList = Arrays.asList(txs);
         World world = new World(blockChain, genesis);
-        BlockBuilder blockBuilder = new BlockBuilder(world).difficulty(ByteUtil.bytesToBigInteger(parent.getDifficulty()).longValue()).parent(parent).transactions(txList).uncles(new ArrayList<>());
+        BlockBuilder blockBuilder = new BlockBuilder(world).difficulty(BIUtil.toBI(parent.getDifficulty()).longValue()).parent(parent).transactions(txList).uncles(new ArrayList<>());
         return blockBuilder.build();
     }
 

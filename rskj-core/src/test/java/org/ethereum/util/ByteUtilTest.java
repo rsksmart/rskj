@@ -383,4 +383,63 @@ public class ByteUtilTest {
         bytes = ByteUtil.longToBytes(256);
         assertArrayEquals(bytes, Hex.decode("0000000000000100"));
     }
+
+    @Test
+    public void testNumberOfLeadingZeros() {
+
+        int n0 = ByteUtil.numberOfLeadingZeros(new byte[0]);
+        assertEquals(0, n0);
+
+        int n1 = ByteUtil.numberOfLeadingZeros(Hex.decode("05"));
+        assertEquals(5, n1);
+
+        int n2 = ByteUtil.numberOfLeadingZeros(Hex.decode("01"));
+        assertEquals(7, n2);
+
+        int n3 = ByteUtil.numberOfLeadingZeros(Hex.decode("00"));
+        assertEquals(8, n3);
+
+        int n4 = ByteUtil.numberOfLeadingZeros(Hex.decode("ff"));
+        assertEquals(0, n4);
+
+
+        byte[] v1 = Hex.decode("1040");
+
+        int n5 = ByteUtil.numberOfLeadingZeros(v1);
+        assertEquals(3, n5);
+
+        // add leading zero bytes
+        byte[] v2 = new byte[4];
+        System.arraycopy(v1, 0, v2, 2, v1.length);
+
+        int n6 = ByteUtil.numberOfLeadingZeros(v2);
+        assertEquals(19, n6);
+
+        byte[] v3 = new byte[8];
+
+        int n7 = ByteUtil.numberOfLeadingZeros(v3);
+        assertEquals(64, n7);
+
+    }
+
+    @Test
+    public void testParseBytes() {
+        byte[] shortByteArray = new byte[]{0,1};
+        byte[] normalByteArray = new byte[]{0,1,2,3,4,5};
+        byte[] normalByteArrayOffset3LeadingZeroes = new byte[]{3,4,5,0,0,0};
+        //If input.length < offset then EMPTY_BYTE_ARRAY
+        byte[] b1 = ByteUtil.parseBytes(shortByteArray, shortByteArray.length+1, 10);
+        assertEquals(b1,ByteUtil.EMPTY_BYTE_ARRAY);
+        //If len == 0 then EMPTY_BYTE_ARRAY
+        byte[] b2 = ByteUtil.parseBytes(shortByteArray, shortByteArray.length-1, 0);
+        assertEquals(b1,ByteUtil.EMPTY_BYTE_ARRAY);
+
+        byte[] b3 = ByteUtil.parseBytes(normalByteArray, normalByteArray.length -3,
+                normalByteArrayOffset3LeadingZeroes.length);
+        for (int i=0; i < b3.length; i++) {
+            assertEquals(b3[i],normalByteArrayOffset3LeadingZeroes[i]);
+        }
+
+    }
+
 }
