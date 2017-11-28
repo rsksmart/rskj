@@ -25,7 +25,6 @@ import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
-import com.fasterxml.jackson.databind.node.BigIntegerNode;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.InitialAddressState;
