@@ -360,6 +360,7 @@ public class TransactionExecutor {
                     throw result.getException();
                 }
             } else {
+                touchedAccounts.addAll(result.getTouchedAccounts());
                 cacheTrack.commit();
             }
 
