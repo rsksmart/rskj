@@ -20,18 +20,20 @@
 package org.ethereum.util;
 
 import org.ethereum.db.ByteArrayWrapper;
-
 import org.spongycastle.util.encoders.Hex;
-
+import javax.annotation.Nonnull;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
-
 import java.nio.ByteBuffer;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 public class ByteUtil {
+
+    private ByteUtil() {
+    }
 
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
@@ -62,7 +64,7 @@ public class ByteUtil {
      */
     public static byte[] bigIntegerToBytes(BigInteger b, int numBytes) {
         if (b == null)
-            return null;
+            return EMPTY_BYTE_ARRAY;
         byte[] bytes = new byte[numBytes];
         byte[] biBytes = b.toByteArray();
         int start = (biBytes.length == numBytes + 1) ? 1 : 0;
@@ -83,7 +85,7 @@ public class ByteUtil {
      */
     public static byte[] bigIntegerToBytes(BigInteger value) {
         if (value == null)
-            return null;
+            return EMPTY_BYTE_ARRAY;
 
         byte[] data = value.toByteArray();
 
@@ -95,8 +97,19 @@ public class ByteUtil {
         return data;
     }
 
-    public static BigInteger bytesToBigInteger(byte[] bb) {
-        return new BigInteger(1, bb);
+    /**
+     * Parses fixed number of bytes starting from {@code offset} in {@code input} array.
+     * If {@code input} has not enough bytes return array will be right padded with zero bytes.
+     * I.e. if {@code offset} is higher than {@code input.length} then zero byte array of length {@code len} will be returned
+     */
+    public static byte[] parseBytes(byte[] input, int offset, int len) {
+
+        if (offset >= input.length || len == 0)
+            return EMPTY_BYTE_ARRAY;
+
+        byte[] bytes = new byte[len];
+        System.arraycopy(input, offset, bytes, 0, Math.min(input.length - offset, len));
+        return bytes;
     }
 
     /**
@@ -353,8 +366,9 @@ public class ByteUtil {
     public static byte[] copyToArray(BigInteger value) {
         byte[] src = ByteUtil.bigIntegerToBytes(value);
 
-        if (src == null)
+        if (Arrays.equals(src, EMPTY_BYTE_ARRAY)) {
             throw new NullPointerException();
+        }
 
         byte[] dest = ByteBuffer.allocate(32).array();
         System.arraycopy(src, 0, dest, dest.length - src.length, src.length);
@@ -417,45 +431,13 @@ public class ByteUtil {
         return ret;
     }
 
-    public static byte[] xor(byte[] b1, byte[] b2) {
-        if (b1.length != b2.length) {
-            throw new RuntimeException("Array sizes differ");
-        }
-        byte[] ret = new byte[b1.length];
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = (byte) (b1[i] ^ b2[i]);
-        }
-        return ret;
-    }
-
-    /**
-     * XORs byte arrays of different lengths by aligning length of the shortest via adding zeros at beginning
-     */
-    public static byte[] xorAlignRight(byte[] b1, byte[] b2) {
-        if (b1.length > b2.length) {
-            byte[] b2_ = new byte[b1.length];
-            System.arraycopy(b2, 0, b2_, b1.length - b2.length, b2.length);
-            b2 = b2_;
-        } else if (b2.length > b1.length) {
-            byte[] b1_ = new byte[b2.length];
-            System.arraycopy(b1, 0, b1_, b2.length - b1.length, b1.length);
-            b1 = b1_;
-        }
-
-        return xor(b1, b2);
-    }
-
     /**
      * @param arrays - arrays to merge
      * @return - merged array
      */
-    public static byte[] merge(byte[]... arrays)
-    {
-        int arrCount = 0;
+    public static byte[] merge(byte[]... arrays) {
         int count = 0;
-        for (byte[] array: arrays)
-        {
-            arrCount++;
+        for (byte[] array: arrays) {
             count += array.length;
         }
 
@@ -507,62 +489,6 @@ public class ByteUtil {
         return result;
     }
 
-    public static byte[] intsToBytes(int[] arr, boolean bigEndian) {
-        byte[] ret = new byte[arr.length * 4];
-        intsToBytes(arr,ret, bigEndian);
-        return ret;
-    }
-
-    public static int[] bytesToInts(byte[] arr, boolean bigEndian) {
-        int[] ret = new int[arr.length / 4];
-        bytesToInts(arr, ret, bigEndian);
-        return ret;
-    }
-
-    public static void bytesToInts(byte[] b, int[] arr, boolean bigEndian) {
-        if (!bigEndian) {
-            int off = 0;
-            for (int i = 0; i < arr.length; i++) {
-                int ii = b[off++] & 0x000000FF;
-                ii |= (b[off++] << 8) & 0x0000FF00;
-                ii |= (b[off++] << 16) & 0x00FF0000;
-                ii |= (b[off++] << 24);
-                arr[i] = ii;
-            }
-        } else {
-            int off = 0;
-            for (int i = 0; i < arr.length; i++) {
-                int ii = b[off++] << 24;
-                ii |= (b[off++] << 16) & 0x00FF0000;
-                ii |= (b[off++] << 8) & 0x0000FF00;
-                ii |= b[off++] & 0x000000FF;
-                arr[i] = ii;
-            }
-        }
-    }
-
-    public static void intsToBytes(int[] arr, byte[] b, boolean bigEndian) {
-        if (!bigEndian) {
-            int off = 0;
-            for (int i = 0; i < arr.length; i++) {
-                int ii = arr[i];
-                b[off++] = (byte) (ii & 0xFF);
-                b[off++] = (byte) ((ii >> 8) & 0xFF);
-                b[off++] = (byte) ((ii >> 16) & 0xFF);
-                b[off++] = (byte) ((ii >> 24) & 0xFF);
-            }
-        } else {
-            int off = 0;
-            for (int i = 0; i < arr.length; i++) {
-                int ii = arr[i];
-                b[off++] = (byte) ((ii >> 24) & 0xFF);
-                b[off++] = (byte) ((ii >> 16) & 0xFF);
-                b[off++] = (byte) ((ii >> 8) & 0xFF);
-                b[off++] = (byte) (ii & 0xFF);
-            }
-        }
-    }
-
     public static short bigEndianToShort(byte[] bs) {
         return bigEndianToShort(bs, 0);
     }
@@ -576,6 +502,39 @@ public class ByteUtil {
 
     public static byte[] shortToBytes(short n) {
         return ByteBuffer.allocate(2).putShort(n).array();
+    }
+
+    /**
+     * Returns a number of zero bits preceding the highest-order ("leftmost") one-bit
+     * interpreting input array as a big-endian integer value
+     */
+    public static int numberOfLeadingZeros(byte[] bytes) {
+
+        int i = firstNonZeroByte(bytes);
+
+        if (i == -1) {
+            return bytes.length * 8;
+        } else {
+            int byteLeadingZeros = Integer.numberOfLeadingZeros((int)bytes[i] & 0xff) - 24;
+            return i * 8 + byteLeadingZeros;
+        }
+    }
+
+    /**
+     * Returns a copy of original padded to the left with zeroes,
+     * or original if {@code original.length >= newLength}
+     */
+    public static byte[] leftPadBytes(@Nonnull byte[] original, int newLength) {
+        // the result array is larger than the modulus length,
+        // but this should never happen.
+        if (original.length >= newLength) {
+            return original;
+        }
+
+        // otherwise adjust result to the same length as the modulus has
+        byte[] copy = new byte[newLength];
+        System.arraycopy(original, 0, copy, newLength - original.length, original.length);
+        return copy;
     }
 
     public static boolean fastEquals(byte[] left, byte[] right) {

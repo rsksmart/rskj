@@ -59,7 +59,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<FullHt
         ByteBuf responseContent = Unpooled.buffer();
         HttpResponseStatus responseStatus = HttpResponseStatus.OK;
         try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
-             ByteBufInputStream is = new ByteBufInputStream(request.content())){
+             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())){
             int result = jsonRpcServer.handleRequest(is, os);
             responseStatus = HttpResponseStatus.valueOf(DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(result));
         } catch (Exception e) {
