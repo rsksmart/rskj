@@ -280,9 +280,15 @@ public class TransactionExecutor {
     private void create() {
         byte[] newContractAddress = tx.getContractAddress();
         DataWord newContractAddressDW = new DataWord(newContractAddress);
+
+        //In case of hashing collisions, check for any balance before createAccount()
+        BigInteger oldBalance = track.getBalance(newContractAddress);
+        cacheTrack.createAccount(newContractAddress);
+        cacheTrack.addBalance(newContractAddress, oldBalance);
+        cacheTrack.increaseNonce(newContractAddress);
+
         if (isEmpty(tx.getData())) {
             mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
-            cacheTrack.createAccount(tx.getContractAddress());
         } else {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, executionBlock, cacheTrack, blockStore);
 
