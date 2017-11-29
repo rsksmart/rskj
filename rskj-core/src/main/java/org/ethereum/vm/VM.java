@@ -1318,6 +1318,10 @@ public class VM {
     private void callToAddress(DataWord codeAddress, MessageCall msg) {
         PrecompiledContracts.PrecompiledContract contract = PrecompiledContracts.getContractForAddress(codeAddress);
 
+        if (op == OpCode.CALL) {
+            program.getResult().addTouchedAccount(codeAddress);
+        }
+
         if (contract != null) {
             program.callToPrecompiledAddress(msg, contract);
         } else {
