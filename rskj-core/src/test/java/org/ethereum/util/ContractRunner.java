@@ -1,10 +1,13 @@
 package org.ethereum.util;
 
+import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.ContractDetails;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -12,10 +15,14 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import java.math.BigInteger;
 
 /**
- * Helper methods to easily run contracts using {@link org.ethereum.util.RskTestFactory}.
+ * Helper methods to easily run contracts.
  */
 public class ContractRunner {
-    private final RskTestFactory factory;
+    private final Repository repository;
+    private final BlockChainImpl blockchain;
+    private final BlockStore blockStore;
+    private final ReceiptStore receiptStore;
+
     public final Account sender;
 
     public ContractRunner() {
@@ -23,27 +30,38 @@ public class ContractRunner {
     }
 
     public ContractRunner(RskTestFactory factory) {
-        this.factory = factory;
+        this(factory.getRepository(), factory.getBlockchain(), factory.getBlockStore(), factory.getReceiptStore());
+    }
+
+    private ContractRunner(Repository repository,
+                           BlockChainImpl blockchain,
+                           BlockStore blockStore,
+                           ReceiptStore receiptStore) {
+        this.blockchain = blockchain;
+        this.repository = repository;
+        this.blockStore = blockStore;
+        this.receiptStore = receiptStore;
+
         // we build a new block with high gas limit because Genesis' is too low
-        Block block = new BlockBuilder(factory.getBlockchain())
+        Block block = new BlockBuilder(blockchain)
                 .gasLimit(BigInteger.valueOf(10_000_000))
                 .build();
-        this.factory.getBlockchain().setBestBlock(block);
+        blockchain.setBestBlock(block);
         // create a test sender account with a large balance for running any contract
-        this.sender = new AccountBuilder(factory.getBlockchain())
+        this.sender = new AccountBuilder(blockchain)
                 .name("sender")
                 .balance(BigInteger.valueOf(1_000_000_000_000L))
                 .build();
     }
 
     public ContractDetails addContract(String runtimeBytecode) {
-        Account contractAccount = new AccountBuilder(factory.getBlockchain())
+        Account contractAccount = new AccountBuilder(blockchain)
                         .name(runtimeBytecode)
                         .balance(BigInteger.TEN)
                         .code(TypeConverter.stringHexToByteArray(runtimeBytecode))
                         .build();
 
-        return factory.getRepository().getContractDetails(contractAccount.getAddress());
+        return repository.getContractDetails(contractAccount.getAddress());
     }
 
     public ProgramResult createContract(byte[] bytecode) {
@@ -59,7 +77,7 @@ public class ContractRunner {
     }
 
     private Transaction contractCreateTx(byte[] bytecode) {
-        BigInteger nonceCreate = factory.getRepository().getNonce(sender.getAddress());
+        BigInteger nonceCreate = repository.getNonce(sender.getAddress());
         return new TransactionBuilder()
                 .gasLimit(BigInteger.valueOf(10_000_000))
                 .sender(sender)
@@ -69,7 +87,7 @@ public class ContractRunner {
     }
 
     private ProgramResult runContract(byte[] contractAddress, byte[] encodedCall, BigInteger value) {
-        BigInteger nonceExecute = factory.getRepository().getNonce(sender.getAddress());
+        BigInteger nonceExecute = repository.getNonce(sender.getAddress());
         Transaction transaction = new TransactionBuilder()
                 // a large gas limit will allow running any contract
                 .gasLimit(BigInteger.valueOf(10_000_000))
@@ -83,10 +101,10 @@ public class ContractRunner {
     }
 
     private TransactionExecutor executeTransaction(Transaction transaction) {
-        Repository track = factory.getRepository().startTracking();
+        Repository track = repository.startTracking();
         TransactionExecutor executor = new TransactionExecutor(transaction, new byte[32],
-                factory.getRepository(), factory.getBlockStore(), factory.getReceiptStore(),
-                new ProgramInvokeFactoryImpl(), factory.getBlockchain().getBestBlock());
+                repository, blockStore, receiptStore,
+                new ProgramInvokeFactoryImpl(), blockchain.getBestBlock());
         executor.init();
         executor.execute();
         executor.go();
