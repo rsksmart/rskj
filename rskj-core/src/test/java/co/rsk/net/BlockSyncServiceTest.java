@@ -90,16 +90,9 @@ public class BlockSyncServiceTest {
         Block branchingPoint = blockchain.getBlockByNumber(7);
 
         BlockGenerator blockGenerator = new BlockGenerator();
-        List<Block> extendedChain = blockGenerator.getBlockChain(branchingPoint, 10);
-        int branchingNumber = (int) (initialBestBlock.getNumber() - branchingPoint.getNumber());
-        for (int i = 0; i < branchingNumber; i++) {
-            Block block = extendedChain.get(i);
-            blockSyncService.processBlock(null, block);
-            Assert.assertEquals(initialBestBlock.getNumber(), blockchain.getBestBlock().getNumber());
-            Assert.assertArrayEquals(initialBestBlock.getHash(), blockchain.getBestBlock().getHash());
-        }
+        List<Block> extendedChain = blockGenerator.getBlockChain(branchingPoint, 10, 1000000l);
         // we have just surpassed the best branch
-        for (int i = branchingNumber; i < extendedChain.size(); i++) {
+        for (int i = 0; i < extendedChain.size(); i++) {
             Block newBestBlock = extendedChain.get(i);
             blockSyncService.processBlock(null, newBestBlock);
             Assert.assertEquals(newBestBlock.getNumber(), blockchain.getBestBlock().getNumber());

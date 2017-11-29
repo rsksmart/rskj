@@ -186,7 +186,7 @@ public class BlockChainBuilder {
             List<Block> blocks = mining ? BlockGenerator.getInstance().getMinedBlockChain(genesis, size) : BlockGenerator.getInstance().getBlockChain(genesis, size);
 
             for (Block block: blocks)
-                blockChain.tryToConnect(block);
+                Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block));
         }
 
         return blockChain;
