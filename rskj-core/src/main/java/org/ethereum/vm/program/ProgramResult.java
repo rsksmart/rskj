@@ -226,6 +226,7 @@ public class ProgramResult {
             addDeleteAccounts(another.getDeleteAccounts());
             addLogInfos(another.getLogInfoList());
             addFutureRefund(another.getFutureRefund());
+            touchedAccounts.addAll(another.getTouchedAccounts());
         }
     }
     
