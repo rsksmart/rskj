@@ -884,7 +884,6 @@ public class Program {
 
             internalTx.reject();
             childResult .rejectInternalTransactions();
-            childResult.rejectLogInfos();
 
             track.rollback();
             // when there's an exception we skip applying results and refunding gas,
