@@ -33,7 +33,7 @@ public class RskTestFactory {
     private RepositoryImpl repository;
 
     public RskTestFactory() {
-        Genesis genesis = BlockGenerator.getGenesisBlock();
+        Genesis genesis = BlockGenerator.getInstance().getGenesisBlock();
         genesis.setStateRoot(getRepository().getRoot());
         genesis.flushRLP();
         getBlockchain().setBestBlock(genesis);

@@ -76,7 +76,7 @@ public class BlockBuilder {
     }
 
     public Block build() {
-        Block block = BlockGenerator.createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice);
+        Block block = BlockGenerator.getInstance().createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice);
 
         if (blockChain != null) {
             BlockExecutor executor = new BlockExecutor(blockChain.getRepository(), blockChain, blockChain.getBlockStore(), blockChain.getListener());

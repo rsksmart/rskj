@@ -3,7 +3,6 @@ package co.rsk.validators;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
-import com.fasterxml.jackson.databind.node.BigIntegerNode;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
@@ -20,14 +19,14 @@ import java.util.List;
 public class BlockUnclesValidationRuleTest {
     @Test
     public void rejectBlockWithSiblingUncle() {
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
 
-        Block block1 = BlockGenerator.createChildBlock(genesis);
-        Block uncle = BlockGenerator.createChildBlock(block1);
+        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block uncle = BlockGenerator.getInstance().createChildBlock(block1);
         List<BlockHeader> uncles = new ArrayList<>();
         uncles.add(uncle.getHeader());
 
-        Block block = BlockGenerator.createChildBlock(block1, null, uncles, 1, null);
+        Block block = BlockGenerator.getInstance().createChildBlock(block1, null, uncles, 1, null);
 
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
         BlockStore store = blockChain.getBlockStore();
@@ -42,15 +41,15 @@ public class BlockUnclesValidationRuleTest {
 
     @Test
     public void rejectBlockWithUncleHavingHigherNumber() {
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
 
-        Block block1 = BlockGenerator.createChildBlock(genesis);
-        Block uncle1 = BlockGenerator.createChildBlock(block1);
-        Block uncle2 = BlockGenerator.createChildBlock(uncle1);
+        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block uncle1 = BlockGenerator.getInstance().createChildBlock(block1);
+        Block uncle2 = BlockGenerator.getInstance().createChildBlock(uncle1);
         List<BlockHeader> uncles = new ArrayList<>();
         uncles.add(uncle2.getHeader());
 
-        Block block = BlockGenerator.createChildBlock(block1, null, uncles, 1, null);
+        Block block = BlockGenerator.getInstance().createChildBlock(block1, null, uncles, 1, null);
 
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
         BlockStore store = blockChain.getBlockStore();

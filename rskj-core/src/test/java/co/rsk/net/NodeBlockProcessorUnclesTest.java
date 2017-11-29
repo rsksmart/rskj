@@ -141,7 +141,7 @@ public class NodeBlockProcessorUnclesTest {
     private static NodeBlockProcessor createNodeBlockProcessor() {
         Blockchain blockChain = new BlockChainBuilder().build();
 
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
         genesis.setStateRoot(blockChain.getRepository().getRoot());
         genesis.flushRLP();
 

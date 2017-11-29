@@ -19,16 +19,19 @@
 package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
+import co.rsk.core.bc.SelectionRule;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
-import org.ethereum.util.FastByteComparisons;
+import org.ethereum.util.BIUtil;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.LogInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -45,6 +48,8 @@ public class Remasc {
     private RemascStorageProvider provider;
 
     private final Transaction executionTx;
+    private Repository repository;
+
 
     private Block executionBlock;
     private BlockStore blockStore;
@@ -55,6 +60,7 @@ public class Remasc {
 
     Remasc(Transaction executionTx, Repository repository, String contractAddress, Block executionBlock, BlockStore blockStore, RemascConfig remascConstants, List<LogInfo> logs) {
         this.executionTx = executionTx;
+        this.repository = repository;
         this.executionBlock = executionBlock;
         this.blockStore = blockStore;
         this.remascConstants = remascConstants;
@@ -122,7 +128,7 @@ public class Remasc {
             // Block has siblings, reward distribution is more complex
             boolean previousBrokenSelectionRule = provider.getBrokenSelectionRule();
             this.payWithSiblings(processingBlockHeader, fullBlockReward, siblings, previousBrokenSelectionRule);
-            boolean brokenSelectionRule = this.isBrokenSelectionRule(processingBlockHeader, siblings);
+            boolean brokenSelectionRule = SelectionRule.isBrokenSelectionRule(processingBlockHeader, siblings);
             provider.setBrokenSelectionRule(brokenSelectionRule);
         } else {
             if (provider.getBrokenSelectionRule()) {
@@ -200,17 +206,8 @@ public class Remasc {
         }
     }
 
-    private boolean isBrokenSelectionRule(BlockHeader processingBlockHeader, List<Sibling> siblings) {
-        // Find out if main chain block selection rule was broken
-        for (Sibling sibling : siblings) {
-            // Sibling pays significant more fees than block in the main chain OR Sibling has lower hash than block in the main chain
-            if (sibling.getPaidFees() > remascConstants.getPaidFeesMultiplier() * processingBlockHeader.getPaidFees() / remascConstants.getPaidFeesDivisor() ||
-                    FastByteComparisons.compareTo(sibling.getHash(), 0, 32, processingBlockHeader.getHash(), 0, 32) < 0) {
-                return true;
-            }
-        }
-
-        return false;
+    private void transfer(byte[] toAddr, BigInteger value) {
+        BIUtil.transfer(repository, Hex.decode(PrecompiledContracts.REMASC_ADDR), toAddr, value);
     }
 }
 
