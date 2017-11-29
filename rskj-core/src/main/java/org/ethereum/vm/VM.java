@@ -1408,6 +1408,7 @@ public class VM {
         // EXECUTION PHASE
         DataWord address = program.stackPop();
         program.suicide(address);
+        program.getResult().addTouchedAccount(address);
 
         if (isLogEnabled)
             hint = "address: " + Hex.toHexString(program.getOwnerAddress().getLast20Bytes());
