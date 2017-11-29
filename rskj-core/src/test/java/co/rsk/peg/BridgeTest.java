@@ -770,17 +770,6 @@ public class BridgeTest {
     }
 
     @Test
-    public void getPendingFederationId() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, null, null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.getPendingFederationId()).thenReturn(25L);
-
-        Assert.assertEquals(25L, bridge.getPendingFederationId(new Object[]{}).longValue());
-    }
-
-    @Test
     public void getPendingFederationSize() throws IOException {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, null, null, null, null);
@@ -789,17 +778,6 @@ public class BridgeTest {
         when(bridgeSupportMock.getPendingFederationSize()).thenReturn(1234);
 
         Assert.assertEquals(1234, bridge.getPendingFederationSize(new Object[]{}).intValue());
-    }
-
-    @Test
-    public void getPendingFederationThreshold() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, null, null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.getPendingFederationThreshold()).thenReturn(5678);
-
-        Assert.assertEquals(5678, bridge.getPendingFederationThreshold(new Object[]{}).intValue());
     }
 
     @Test
@@ -817,126 +795,73 @@ public class BridgeTest {
     }
 
     @Test
-    public void createFederation_ok() throws IOException {
+    public void createFederation() throws IOException {
+        Transaction txMock = mock(Transaction.class);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, null, null, null, null);
+        bridge.init(txMock, null, null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.createFederation(456)).thenReturn(789L);
+        when(bridgeSupportMock.voteFederationChange(txMock, new ABICallSpec("create", new byte[][]{}))).thenReturn(123);
 
-        Assert.assertEquals(789L, bridge.createFederation(new Object[]{BigInteger.valueOf(456)}).longValue());
-    }
-
-    @Test
-    public void createFederation_error() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, null, null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.createFederation(123)).thenThrow(new IOException("I am an exception"));
-
-        try {
-            bridge.createFederation(new Object[]{BigInteger.valueOf(123)});
-            Assert.fail();
-        }
-        catch (RuntimeException ex) {
-            Assert.assertEquals("Exception in createFederation", ex.getMessage());
-        }
+        Assert.assertEquals(123, bridge.createFederation(new Object[]{}).intValue());
     }
 
     @Test
     public void addFederatorPublicKey_ok() throws IOException {
+        Transaction txMock = mock(Transaction.class);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, null, null, null, null);
+        bridge.init(txMock, null, null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.addFederatorPublicKey(BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))))
+        when(bridgeSupportMock.voteFederationChange(txMock, new ABICallSpec("add", new byte[][] { Hex.decode("aabbccdd") })))
                 .thenReturn(123);
 
-        Assert.assertEquals(123, bridge.addFederatorPublicKey(new Object[]{Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")}).intValue());
+        Assert.assertEquals(123, bridge.addFederatorPublicKey(new Object[]{Hex.decode("aabbccdd")}).intValue());
     }
 
     @Test
-    public void addFederatorPublicKey_error() throws IOException {
+    public void addFederatorPublicKey_wrongParameterType() throws IOException {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        verify(bridgeSupportMock, never()).addFederatorPublicKey(any());
 
-        try {
-            bridge.addFederatorPublicKey(new Object[]{Hex.decode("abcdef")});
-            Assert.fail();
-        }
-        catch (RuntimeException ex) {
-            Assert.assertEquals("Public key could not be parsed abcdef", ex.getMessage());
-        }
-    }
-
-    @Test
-    public void removeFederatorPublicKey_ok() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, null, null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.removeFederatorPublicKey(BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))))
-                .thenReturn(456);
-
-        Assert.assertEquals(456, bridge.removeFederatorPublicKey(new Object[]{Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")}).intValue());
-    }
-
-    @Test
-    public void removeFederatorPublicKey_error() throws IOException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, null, null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        verify(bridgeSupportMock, never()).removeFederatorPublicKey(any());
-
-        try {
-            bridge.removeFederatorPublicKey(new Object[]{Hex.decode("abcdef")});
-            Assert.fail();
-        }
-        catch (RuntimeException ex) {
-            Assert.assertEquals("Public key could not be parsed abcdef", ex.getMessage());
-        }
+        Assert.assertEquals(-10, bridge.addFederatorPublicKey(new Object[]{ "i'm not a byte array" }).intValue());
+        verify(bridgeSupportMock, never()).voteFederationChange(any(), any());
     }
 
     @Test
     public void commitFederation_ok() throws IOException {
+        Transaction txMock = mock(Transaction.class);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, null, null, null, null);
+        bridge.init(txMock, null, null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.commitFederation()).thenReturn(123);
 
-        Assert.assertEquals(123, bridge.commitFederation(new Object[]{}).intValue());
+        when(bridgeSupportMock.voteFederationChange(txMock, new ABICallSpec("commit", new byte[][] { Hex.decode("01020304") }))).thenReturn(123);
+
+        Assert.assertEquals(123, bridge.commitFederation(new Object[]{ Hex.decode("01020304") }).intValue());
     }
 
     @Test
-    public void commitFederation_error() throws IOException {
+    public void commitFederation_wrongParameterType() throws IOException {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.commitFederation()).thenThrow(new IOException("I am an exception"));
 
-        try {
-            bridge.commitFederation(new Object[]{});
-            Assert.fail();
-        }
-        catch (RuntimeException ex) {
-            Assert.assertEquals("Exception in commitFederation", ex.getMessage());
-        }
+        Assert.assertEquals(-10, bridge.commitFederation(new Object[]{ "i'm not a byte array" }).intValue());
+        verify(bridgeSupportMock, never()).voteFederationChange(any(), any());
     }
 
     @Test
     public void rollbackFederation() throws IOException {
+        Transaction txMock = mock(Transaction.class);
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, null, null, null, null);
+        bridge.init(txMock, null, null, null, null, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.rollbackFederation()).thenReturn(456);
+        when(bridgeSupportMock.voteFederationChange(txMock, new ABICallSpec("rollback", new byte[][]{}))).thenReturn(456);
 
         Assert.assertEquals(456, bridge.rollbackFederation(new Object[]{}).intValue());
     }

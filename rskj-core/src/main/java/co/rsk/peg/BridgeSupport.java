@@ -36,6 +36,8 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import org.ethereum.core.Block;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
@@ -52,6 +54,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Function;
 
 import static org.ethereum.util.BIUtil.toBI;
 import static org.ethereum.util.BIUtil.transfer;
@@ -61,8 +64,17 @@ import static org.ethereum.util.BIUtil.transfer;
  * @author Oscar Guindzberg
  */
 public class BridgeSupport {
+    public static final Integer VOTE_GENERIC_ERROR_CODE = -10;
+
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
+
+    final List<String> FEDERATION_CHANGE_FUNCTIONS = Collections.unmodifiableList(Arrays.asList(new String[]{
+            "create",
+            "add",
+            "commit",
+            "rollback"
+    }));
 
     private final String contractAddress;
     private BridgeConstants bridgeConstants;
@@ -855,14 +867,13 @@ public class BridgeSupport {
         if (size == -1)
             return null;
 
-        int numberOfSignaturesRequired = getRetiringFederationThreshold();
         List<BtcECKey> publicKeys = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             publicKeys.add(BtcECKey.fromPublicOnly(getRetiringFederatorPublicKey(i)));
         }
         Instant creationTime = getRetiringFederationCreationTime();
 
-        return new Federation(numberOfSignaturesRequired, publicKeys, creationTime, bridgeConstants.getBtcParams());
+        return new Federation(publicKeys, creationTime, bridgeConstants.getBtcParams());
     }
 
     /**
@@ -882,38 +893,46 @@ public class BridgeSupport {
     }
 
     /**
-     * Creates a new pending federation and returns its id.
+     * Creates a new pending federation
      * If there's currently no pending federation and no funds remain
      * to be moved from a previous federation, a new one is created.
      * Otherwise, -1 is returned if there's already a pending federation
      * or -2 is returned if funds are left from a previous one.
-     * @param numberOfSignaturesRequired the N in N of M multisig
-     * @return The newly created Pending Federation's id
+     * @param dryRun whether to just do a dry run
+     * @return 1 upon success, -1 when a pending federation is present, -2 when funds are still
+     * to be moved between federations.
      */
-    public Long createFederation(int numberOfSignaturesRequired) throws IOException {
+    private Integer createFederation(boolean dryRun) throws IOException {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation != null) {
-            return -1L;
+            return -1;
         }
 
         if (provider.getRetiringFederationBtcUTXOs().size() > 0) {
-            return -2L;
+            return -2;
         }
 
-        currentPendingFederation = new PendingFederation(rskExecutionBlock.getNumber(), numberOfSignaturesRequired, Collections.emptyList());
+        if (dryRun)
+            return 1;
+
+        currentPendingFederation = new PendingFederation(Collections.emptyList());
 
         provider.setPendingFederation(currentPendingFederation);
 
-        return currentPendingFederation.getId();
+        // Clear votes on election
+        provider.getFederationElection(bridgeConstants.getFederationChangeAuthorizer()).clear();
+
+        return 1;
     }
 
     /**
      * Adds the given key to the current pending federation
+     * @param dryRun whether to just do a dry run
      * @param key the public key to add
      * @return 1 upon success, -1 if there was no pending federation, -2 if the key was already in the pending federation
      */
-    public Integer addFederatorPublicKey(BtcECKey key) {
+    private Integer addFederatorPublicKey(boolean dryRun, BtcECKey key) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
@@ -924,6 +943,9 @@ public class BridgeSupport {
             return -2;
         }
 
+        if (dryRun)
+            return 1;
+
         currentPendingFederation = currentPendingFederation.addPublicKey(key);
 
         provider.setPendingFederation(currentPendingFederation);
@@ -932,38 +954,18 @@ public class BridgeSupport {
     }
 
     /**
-     * Removes the given key from the current pending federation
-     * @param key the public key to remove
-     * @return 1 upon success, -1 if there was no pending federation, -2 if the key was not part of the pending federation
-     */
-    public Integer removeFederatorPublicKey(BtcECKey key) {
-        PendingFederation currentPendingFederation = provider.getPendingFederation();
-
-        if (currentPendingFederation == null) {
-            return -1;
-        }
-
-        if (!currentPendingFederation.getPublicKeys().contains(key)) {
-            return -2;
-        }
-
-        currentPendingFederation = currentPendingFederation.removePublicKey(key);
-
-        provider.setPendingFederation(currentPendingFederation);
-
-        return 1;
-    }
-
-    /**
-     * Commits the currently pending federation
-     * That is,  the retiring federation is set to be the currently active federation,
+     * Commits the currently pending federation.
+     * That is, the retiring federation is set to be the currently active federation,
      * the active federation is replaced with a new federation generated from the pending federation,
      * and the pending federation is wiped out.
      * Also, UTXOs are moved from active to retiring so that the transfer of funds can
      * begin.
-     * @return 1 upon success, 1 if there was no pending federation, 2 if the pending federation was incomplete
+     * @param dryRun whether to just do a dry run
+     * @param hash the pending federation's hash. This is checked the execution block's pending federation hash for equality.
+     * @return 1 upon success, -1 if there was no pending federation, -2 if the pending federation was incomplete,
+     * -3 if the given hash doesn't match the current pending federation's hash.
      */
-    public Integer commitFederation() throws IOException {
+    private Integer commitFederation(boolean dryRun, Sha3Hash hash) throws IOException {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
@@ -973,6 +975,13 @@ public class BridgeSupport {
         if (!currentPendingFederation.isComplete()) {
             return -2;
         }
+
+        if (!hash.equals(currentPendingFederation.getHash())) {
+            return -3;
+        }
+
+        if (dryRun)
+            return 1;
 
         // Move UTXOs from the active federation into the retiring federation
         // and clear the active federation's UTXOs
@@ -989,38 +998,139 @@ public class BridgeSupport {
         provider.setActiveFederation(currentPendingFederation.buildFederation(creationTime, bridgeConstants.getBtcParams()));
         provider.setPendingFederation(null);
 
+        // Clear votes on election
+        provider.getFederationElection(bridgeConstants.getFederationChangeAuthorizer()).clear();
+
         return 1;
     }
 
     /**
      * Rolls back the currently pending federation
      * That is, the pending federation is wiped out.
+     * @param dryRun whether to just do a dry run
      * @return 1 upon success, 1 if there was no pending federation
      */
-    public Integer rollbackFederation() {
+    private Integer rollbackFederation(boolean dryRun) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
             return -1;
         }
 
+        if (dryRun)
+            return 1;
+
         provider.setPendingFederation(null);
+
+        // Clear votes on election
+        provider.getFederationElection(bridgeConstants.getFederationChangeAuthorizer()).clear();
 
         return 1;
     }
 
+    public Integer voteFederationChange(Transaction tx, ABICallSpec callSpec) {
+        // Must be on one of the allowed functions
+        if (!FEDERATION_CHANGE_FUNCTIONS.contains(callSpec.getFunction())) {
+            return VOTE_GENERIC_ERROR_CODE;
+        }
+
+        ABICallAuthorizer authorizer = bridgeConstants.getFederationChangeAuthorizer();
+
+        // Must be authorized to vote (checking for signature)
+        if (!authorizer.isAuthorized(tx)) {
+            return VOTE_GENERIC_ERROR_CODE;
+        }
+
+        // Try to do a dry-run and only register the vote if the
+        // call would be successful
+        ABICallVoteResult result;
+        try {
+            result = executeVoteFederationChangeFunction(true, callSpec);
+        } catch (IOException e) {
+            result = new ABICallVoteResult(false, VOTE_GENERIC_ERROR_CODE);
+        } catch (BridgeIllegalArgumentException e) {
+            result = new ABICallVoteResult(false, VOTE_GENERIC_ERROR_CODE);
+        }
+
+        // Return if the dry run failed or we are on a reversible execution
+        if (!result.wasSuccessful()) {
+            return (Integer) result.getResult();
+        }
+
+        ABICallElection election = provider.getFederationElection(authorizer);
+        // Register the vote. It is expected to succeed, since all previous checks succeeded
+        if (!election.vote(callSpec, authorizer.getVoter(tx))) {
+            logger.warn("Unexpected federation change vote failure");
+            return VOTE_GENERIC_ERROR_CODE;
+        }
+
+        // If enough votes have been reached, then actually execute the function
+        ABICallSpec winnerSpec = election.getWinner();
+        if (winnerSpec != null) {
+            try {
+                result = executeVoteFederationChangeFunction(false, winnerSpec);
+            } catch (IOException e) {
+                logger.warn("Unexpected federation change vote exception: {}", e.getMessage());
+                return VOTE_GENERIC_ERROR_CODE;
+            } finally {
+                // Clear the winner so that we don't repeat ourselves
+                election.clearWinners();
+            }
+        }
+
+        return (Integer) result.getResult();
+    }
+
+    private ABICallVoteResult executeVoteFederationChangeFunction(boolean dryRun, ABICallSpec callSpec) throws IOException {
+        // Try to do a dry-run and only register the vote if the
+        // call would be successful
+        ABICallVoteResult result;
+        Integer executionResult;
+        switch (callSpec.getFunction()) {
+            case "create":
+                executionResult = createFederation(dryRun);
+                result = new ABICallVoteResult(executionResult == 1, executionResult);
+                break;
+            case "add":
+                byte[] publicKeyBytes = (byte[]) callSpec.getArguments()[0];
+                BtcECKey publicKey;
+                try {
+                    publicKey = BtcECKey.fromPublicOnly(publicKeyBytes);
+                } catch (Exception e) {
+                    throw new BridgeIllegalArgumentException("Public key could not be parsed " + Hex.toHexString(publicKeyBytes), e);
+                }
+                executionResult = addFederatorPublicKey(dryRun, publicKey);
+                result = new ABICallVoteResult(executionResult == 1, executionResult);
+                break;
+            case "commit":
+                Sha3Hash hash = new Sha3Hash((byte[]) callSpec.getArguments()[0]);
+                executionResult = commitFederation(dryRun, hash);
+                result = new ABICallVoteResult(executionResult == 1, executionResult);
+                break;
+            case "rollback":
+                executionResult = rollbackFederation(dryRun);
+                result = new ABICallVoteResult(executionResult == 1, executionResult);
+                break;
+            default:
+                // Fail by default
+                result = new ABICallVoteResult(false, VOTE_GENERIC_ERROR_CODE);
+        }
+
+        return result;
+    }
+
     /**
-     * Returns the currently pending federation id, or -1 if none exists
-     * @return the currently pending federation id, or -1 if none exists
+     * Returns the currently pending federation hash, or null if none exists
+     * @return the currently pending federation hash, or null if none exists
      */
-    public Long getPendingFederationId() {
+    public byte[] getPendingFederationHash() {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation == null) {
-            return -1L;
+            return null;
         }
 
-        return currentPendingFederation.getId();
+        return currentPendingFederation.getHash().getBytes();
     }
 
     /**
@@ -1035,20 +1145,6 @@ public class BridgeSupport {
         }
 
         return currentPendingFederation.getPublicKeys().size();
-    }
-
-    /**
-     * Returns the currently pending federation threshold, or -1 if none exists
-     * @return the currently pending federation threshold, or -1 if none exists
-     */
-    public Integer getPendingFederationThreshold() {
-        PendingFederation currentPendingFederation = provider.getPendingFederation();
-
-        if (currentPendingFederation == null) {
-            return -1;
-        }
-
-        return currentPendingFederation.getNumberOfSignaturesRequired();
     }
 
     /**

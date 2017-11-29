@@ -76,7 +76,6 @@ public class BridgeTestNetConstants extends BridgeConstants {
         // Expected federation address is:
         // 2NBPystfboREksK6hMCZesfH444zB3BkUUm
         genesisFederation = new Federation(
-                7,
                 genesisFederationPublicKeys,
                 genesisFederationAddressCreatedAt,
                 getBtcParams()
