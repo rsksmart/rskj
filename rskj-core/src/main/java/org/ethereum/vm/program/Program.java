@@ -825,10 +825,7 @@ public class Program {
             return;
         }
 
-        // Only transfer immediately balance if it's a new account or scriptVersion=0
-        if ((!dstExists)) {
-            contextBalance = track.addBalance(contextAddress, endowment);
-        }
+        contextBalance = track.addBalance(contextAddress, endowment);
 
         // CREATE CALL INTERNAL TRANSACTION
         InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, programCode, "call");
