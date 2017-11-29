@@ -17,7 +17,7 @@ public class RemascFederationProviderTest {
     @Test
     public void getDefaultFederationSize() throws IOException {
         RemascFederationProvider provider = getRemascFederationProvider();
-        Assert.assertEquals(3, provider.getFederationSize());
+        Assert.assertEquals(15, provider.getFederationSize());
     }
 
     @Test
