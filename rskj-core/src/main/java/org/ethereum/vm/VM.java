@@ -137,6 +137,9 @@ public class VM {
         return gasCost;
     }
 
+    private boolean isDeadAccount(Program program, byte[] addr) {
+        return !program.getStorage().isExist(addr) || program.getStorage().getAccountState(addr).isEmpty();
+    }
 
     public void step(Program aprogram) {
         steps(aprogram,1);
