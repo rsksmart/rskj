@@ -82,8 +82,6 @@ public class TransactionExecutor {
     private VM vm;
     private Program program;
 
-    PrecompiledContracts.PrecompiledContract precompiledContract;
-
     BigInteger mEndGas = BigInteger.ZERO;
     long basicTxCost = 0;
     List<LogInfo> logs = null;
@@ -233,7 +231,8 @@ public class TransactionExecutor {
         logger.info("Call transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
 
         byte[] targetAddress = tx.getReceiveAddress();
-        precompiledContract = PrecompiledContracts.getContractForAddress(new DataWord(targetAddress));
+        DataWord targetAddressDW = new DataWord(targetAddress);
+        PrecompiledContracts.PrecompiledContract precompiledContract = PrecompiledContracts.getContractForAddress(targetAddressDW);
 
         if (precompiledContract != null) {
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
