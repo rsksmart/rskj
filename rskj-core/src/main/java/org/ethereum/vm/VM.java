@@ -1334,7 +1334,7 @@ public class VM {
         long callGas = GasCost.CALL;
 
         //check to see if account does not exist and is not a precompiled contract
-        if (op == OpCode.CALL && !program.getStorage().isExist(codeAddress.getLast20Bytes())) {
+        if (op == OpCode.CALL && isDeadAccount(program, codeAddress.getLast20Bytes()) && !value.isZero()) {
             callGas += GasCost.NEW_ACCT_CALL;
         }
 
