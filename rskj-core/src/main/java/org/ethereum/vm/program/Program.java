@@ -1570,14 +1570,6 @@ public class Program {
         }
     }
 
-    @SuppressWarnings("serial")
-    public static class ContractSizeTooLargeException extends RuntimeException {
-
-        public ContractSizeTooLargeException(String message, Object... args) {
-            super(format(message, args));
-        }
-    }
-
     public static class ExceptionHelper {
 
         private ExceptionHelper() { }
@@ -1617,8 +1609,9 @@ public class Program {
             return new StackTooSmallException("Expected stack size %d but actual %d;", expectedSize, actualSize);
         }
 
-        public static ContractSizeTooLargeException tooLargeContractSize(int maxSize, int actualSize) {
-            return new ContractSizeTooLargeException("Maximum contract size allowed %d but actual %d;", maxSize, actualSize);
+        public static RuntimeException tooLargeContractSize(int maxSize, int actualSize) {
+            Object[] args = new Object[]{maxSize, actualSize};
+            return new RuntimeException(format("Maximum contract size allowed %d but actual %d;", args));
         }
     }
 

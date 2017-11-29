@@ -20,7 +20,6 @@
 package org.ethereum.vm;
 
 import co.rsk.util.TestContract;
-import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
@@ -84,6 +83,6 @@ public class ProgramTest {
         ProgramResult result = TestContract.bigTest().createContract();
         Assert.assertFalse(result.isRevert());
         Assert.assertNotNull(result.getException());
-        Assert.assertTrue(result.getException() instanceof Program.ContractSizeTooLargeException);
+        Assert.assertTrue(result.getException() instanceof RuntimeException);
     }
 }
