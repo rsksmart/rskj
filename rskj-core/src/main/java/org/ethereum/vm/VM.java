@@ -1395,8 +1395,10 @@ public class VM {
         if (computeGas) {
             gasCost = GasCost.SUICIDE;
             DataWord suicideAddressWord = stack.get(stack.size() - 1);
-            if (!program.getStorage().isExist(suicideAddressWord.getLast20Bytes()))
+            if (isDeadAccount(program, suicideAddressWord.getLast20Bytes()) &&
+                    !program.getBalance(program.getOwnerAddress()).isZero()) {
                 gasCost += GasCost.NEW_ACCT_SUICIDE;
+            }
             spendOpCodeGas();
         }
         // EXECUTION PHASE
