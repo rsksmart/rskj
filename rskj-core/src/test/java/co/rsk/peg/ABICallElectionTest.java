@@ -32,18 +32,18 @@ import static org.mockito.Mockito.when;
 public class ABICallElectionTest {
     private ABICallSpec spec_fna, spec_fnb;
     private ABICallElection election;
-    private ABICallAuthorizer authorizer;
-    private Map<ABICallSpec, List<ABICallVoter>> votes;
+    private AddressBasedAuthorizer authorizer;
+    private Map<ABICallSpec, List<TxSender>> votes;
 
     @Before
     public void createVotesAuthorizerAndElection() {
-        authorizer = new ABICallAuthorizer(Arrays.asList(
+        authorizer = new AddressBasedAuthorizer(Arrays.asList(
                 createMockKeyForAddress("aa"),
                 createMockKeyForAddress("bb"),
                 createMockKeyForAddress("cc"),
                 createMockKeyForAddress("dd"),
                 createMockKeyForAddress("ee")
-        ));
+        ), AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
         spec_fna = new ABICallSpec("fn-a", new byte[][]{});
         spec_fnb = new ABICallSpec("fn-b", new byte[][]{ Hex.decode("11"), Hex.decode("2233") });
@@ -154,8 +154,8 @@ public class ABICallElectionTest {
         Assert.assertEquals(Arrays.asList(createVoter("aa"), createVoter("bb")), election.getVotes().get(spec_fnb));
     }
 
-    private ABICallVoter createVoter(String hex) {
-        return new ABICallVoter(Hex.decode(hex));
+    private TxSender createVoter(String hex) {
+        return new TxSender(Hex.decode(hex));
     }
 
     private ECKey createMockKeyForAddress(String hex) {

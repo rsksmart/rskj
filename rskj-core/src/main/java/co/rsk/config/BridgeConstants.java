@@ -18,12 +18,10 @@
 
 package co.rsk.config;
 
-import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.peg.ABICallAuthorizer;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
-
-import java.util.List;
 
 public class BridgeConstants {
 
@@ -46,7 +44,9 @@ public class BridgeConstants {
     protected long fundsMigrationAgeBegin;
     protected long fundsMigrationAgeEnd;
 
-    protected ABICallAuthorizer federationChangeAuthorizer;
+    protected AddressBasedAuthorizer federationChangeAuthorizer;
+
+    protected AddressBasedAuthorizer lockWhitelistChangeAuthorizer;
 
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
@@ -82,8 +82,6 @@ public class BridgeConstants {
 
     public Coin getMinimumReleaseTxValue() { return minimumReleaseTxValue; }
 
-    public ABICallAuthorizer getFederationChangeAuthorizer() { return federationChangeAuthorizer; }
-
     public long getFundsMigrationAgeBegin() {
         return fundsMigrationAgeBegin;
     }
@@ -91,4 +89,8 @@ public class BridgeConstants {
     public long getFundsMigrationAgeEnd() {
         return fundsMigrationAgeEnd;
     }
+
+    public AddressBasedAuthorizer getFederationChangeAuthorizer() { return federationChangeAuthorizer; }
+
+    public AddressBasedAuthorizer getLockWhitelistChangeAuthorizer() { return lockWhitelistChangeAuthorizer; }
 }

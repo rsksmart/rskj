@@ -62,7 +62,8 @@ import static org.ethereum.util.BIUtil.transfer;
  * @author Oscar Guindzberg
  */
 public class BridgeSupport {
-    public static final Integer VOTE_GENERIC_ERROR_CODE = -10;
+    public static final Integer FEDERATION_CHANGE_GENERIC_ERROR_CODE = -10;
+    public static final Integer LOCK_WHITELIST_GENERIC_ERROR_CODE = -10;
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
@@ -1071,14 +1072,14 @@ public class BridgeSupport {
     public Integer voteFederationChange(Transaction tx, ABICallSpec callSpec) {
         // Must be on one of the allowed functions
         if (!FEDERATION_CHANGE_FUNCTIONS.contains(callSpec.getFunction())) {
-            return VOTE_GENERIC_ERROR_CODE;
+            return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
         }
 
-        ABICallAuthorizer authorizer = bridgeConstants.getFederationChangeAuthorizer();
+        AddressBasedAuthorizer authorizer = bridgeConstants.getFederationChangeAuthorizer();
 
         // Must be authorized to vote (checking for signature)
         if (!authorizer.isAuthorized(tx)) {
-            return VOTE_GENERIC_ERROR_CODE;
+            return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
         }
 
         // Try to do a dry-run and only register the vote if the
@@ -1087,9 +1088,9 @@ public class BridgeSupport {
         try {
             result = executeVoteFederationChangeFunction(true, callSpec);
         } catch (IOException e) {
-            result = new ABICallVoteResult(false, VOTE_GENERIC_ERROR_CODE);
+            result = new ABICallVoteResult(false, FEDERATION_CHANGE_GENERIC_ERROR_CODE);
         } catch (BridgeIllegalArgumentException e) {
-            result = new ABICallVoteResult(false, VOTE_GENERIC_ERROR_CODE);
+            result = new ABICallVoteResult(false, FEDERATION_CHANGE_GENERIC_ERROR_CODE);
         }
 
         // Return if the dry run failed or we are on a reversible execution
@@ -1099,9 +1100,9 @@ public class BridgeSupport {
 
         ABICallElection election = provider.getFederationElection(authorizer);
         // Register the vote. It is expected to succeed, since all previous checks succeeded
-        if (!election.vote(callSpec, authorizer.getVoter(tx))) {
+        if (!election.vote(callSpec, TxSender.fromTx(tx))) {
             logger.warn("Unexpected federation change vote failure");
-            return VOTE_GENERIC_ERROR_CODE;
+            return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
         }
 
         // If enough votes have been reached, then actually execute the function
@@ -1111,7 +1112,7 @@ public class BridgeSupport {
                 result = executeVoteFederationChangeFunction(false, winnerSpec);
             } catch (IOException e) {
                 logger.warn("Unexpected federation change vote exception: {}", e.getMessage());
-                return VOTE_GENERIC_ERROR_CODE;
+                return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
             } finally {
                 // Clear the winner so that we don't repeat ourselves
                 election.clearWinners();
@@ -1153,7 +1154,7 @@ public class BridgeSupport {
                 break;
             default:
                 // Fail by default
-                result = new ABICallVoteResult(false, VOTE_GENERIC_ERROR_CODE);
+                result = new ABICallVoteResult(false, FEDERATION_CHANGE_GENERIC_ERROR_CODE);
         }
 
         return result;
@@ -1206,6 +1207,102 @@ public class BridgeSupport {
         }
 
         return publicKeys.get(index).getPubKey();
+    }
+
+    /**
+     * Returns the lock whitelist size, that is,
+     * the number of whitelisted addresses
+     * @return the lock whitelist size
+     */
+    public Integer getLockWhitelistSize() {
+        return provider.getLockWhitelist().getSize();
+    }
+
+    /**
+     * Returns the lock whitelist address stored
+     * at the given index, or null if the
+     * index is out of bounds
+     * @param index the index at which to get the address
+     * @return the base58-encoded address stored at the given index, or null if index is out of bounds
+     */
+    public String getLockWhitelistAddress(int index) {
+        List<Address> addresses = provider.getLockWhitelist().getAddresses();
+
+        if (index < 0 || index >= addresses.size()) {
+            return null;
+        }
+
+        return addresses.get(index).toBase58();
+    }
+
+    /**
+     * Adds the given address to the lock whitelist.
+     * Returns 1 upon success, or -1 if the address was
+     * already in the whitelist.
+     * @param addressBase58 the base58-encoded address to add to the whitelist
+     * @return 1 upon success, -1 if the address was already
+     * in the whitelist, -2 if address is invalid
+     * LOCK_WHITELIST_GENERIC_ERROR_CODE otherwise.
+     */
+    public Integer addLockWhitelistAddress(Transaction tx, String addressBase58) {
+        if (!isLockWhitelistChangeAuthorized(tx))
+            return LOCK_WHITELIST_GENERIC_ERROR_CODE;
+
+        LockWhitelist whitelist = provider.getLockWhitelist();
+
+        try {
+            Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
+
+            if (!whitelist.add(address)) {
+                return -1;
+            }
+
+            return 1;
+        } catch (AddressFormatException e) {
+            return -2;
+        } catch (Exception e) {
+            logger.error("Unexpected error in addLockWhitelistAddress: {}", e.getMessage());
+            panicProcessor.panic("lock-whitelist", e.getMessage());
+            return 0;
+        }
+    }
+
+    private boolean isLockWhitelistChangeAuthorized(Transaction tx) {
+        AddressBasedAuthorizer authorizer = bridgeConstants.getLockWhitelistChangeAuthorizer();
+
+        return authorizer.isAuthorized(tx);
+    }
+
+    /**
+     * Removes the given address from the lock whitelist.
+     * Returns 1 upon success, or -1 if the address was
+     * not in the whitelist.
+     * @param addressBase58 the base58-encoded address to remove from the whitelist
+     * @return 1 upon success, -1 if the address was not
+     * in the whitelist, -2 if the address is invalid,
+     * LOCK_WHITELIST_GENERIC_ERROR_CODE otherwise.
+     */
+    public Integer removeLockWhitelistAddress(Transaction tx, String addressBase58) {
+        if (!isLockWhitelistChangeAuthorized(tx))
+            return LOCK_WHITELIST_GENERIC_ERROR_CODE;
+
+        LockWhitelist whitelist = provider.getLockWhitelist();
+
+        try {
+            Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
+
+            if (!whitelist.remove(address)) {
+                return -1;
+            }
+
+            return 1;
+        } catch (AddressFormatException e) {
+            return -2;
+        } catch (Exception e) {
+            logger.error("Unexpected error in removeLockWhitelistAddress: {}", e.getMessage());
+            panicProcessor.panic("lock-whitelist", e.getMessage());
+            return 0;
+        }
     }
 
     /**

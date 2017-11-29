@@ -130,6 +130,15 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     // Returns the public key of the federator at the specified index for the current pending federation
     public static final CallTransaction.Function GET_PENDING_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getPendingFederatorPublicKey", new String[]{"int256"}, new String[]{"bytes"});
 
+    // Returns the lock whitelist size
+    public static final CallTransaction.Function GET_LOCK_WHITELIST_SIZE = CallTransaction.Function.fromSignature("getLockWhitelistSize", new String[]{}, new String[]{"int256"});
+    // Returns the lock whitelist address stored at the specified index
+    public static final CallTransaction.Function GET_LOCK_WHITELIST_ADDRESS = CallTransaction.Function.fromSignature("getLockWhitelistAddress", new String[]{"int256"}, new String[]{"string"});
+    // Adds the given address to the lock whitelist
+    public static final CallTransaction.Function ADD_LOCK_WHITELIST_ADDRESS = CallTransaction.Function.fromSignature("addLockWhitelistAddress", new String[]{"string"}, new String[]{"int256"});
+    // Adds the given address to the lock whitelist
+    public static final CallTransaction.Function REMOVE_LOCK_WHITELIST_ADDRESS = CallTransaction.Function.fromSignature("removeLockWhitelistAddress", new String[]{"string"}, new String[]{"int256"});
+
     // Log topics used by the Bridge
     public static final DataWord RELEASE_BTC_TOPIC = new DataWord("release_btc_topic".getBytes(StandardCharsets.UTF_8));
 
@@ -195,6 +204,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             GET_PENDING_FEDERATION_HASH,
             GET_PENDING_FEDERATION_SIZE,
             GET_PENDING_FEDERATOR_PUBLIC_KEY,
+            GET_LOCK_WHITELIST_SIZE,
+            GET_LOCK_WHITELIST_ADDRESS,
+            ADD_LOCK_WHITELIST_ADDRESS,
+            REMOVE_LOCK_WHITELIST_ADDRESS
         }).forEach((CallTransaction.Function func) -> {
             this.functions.put(new ByteArrayWrapper(func.encodeSignature()),  func);
             functionCostMap.put(func, costProvider.nextCost());
@@ -730,5 +743,57 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return publicKey;
+    }
+
+    public Integer getLockWhitelistSize(Object[] args)
+    {
+        logger.trace("getLockWhitelistSize");
+
+        return bridgeSupport.getLockWhitelistSize();
+    }
+
+    public String getLockWhitelistAddress(Object[] args)
+    {
+        logger.trace("getLockWhitelistAddress");
+
+        int index = ((BigInteger) args[0]).intValue();
+        String address = bridgeSupport.getLockWhitelistAddress(index);
+
+        if (address == null) {
+            // Empty string is returned when address is not found
+            return "";
+        }
+
+        return address;
+    }
+
+    public Integer addLockWhitelistAddress(Object[] args)
+    {
+        logger.trace("addLockWhitelistAddress");
+
+        String addressBase58;
+        try {
+            addressBase58 = (String) args[0];
+        } catch (Exception e) {
+            logger.warn("Exception in addLockWhitelistAddress: {}", e.getMessage());
+            return 0;
+        }
+
+        return bridgeSupport.addLockWhitelistAddress(rskTx, addressBase58);
+    }
+
+    public Integer removeLockWhitelistAddress(Object[] args)
+    {
+        logger.trace("removeLockWhitelistAddress");
+
+        String addressBase58;
+        try {
+            addressBase58 = (String) args[0];
+        } catch (Exception e) {
+            logger.warn("Exception in removeLockWhitelistAddress: {}", e.getMessage());
+            return 0;
+        }
+
+        return bridgeSupport.removeLockWhitelistAddress(rskTx, addressBase58);
     }
 }

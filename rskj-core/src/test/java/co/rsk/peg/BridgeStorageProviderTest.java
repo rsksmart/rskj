@@ -371,7 +371,7 @@ public class BridgeStorageProviderTest {
     @Test
     public void getFederationElection_nonNullBytes() throws IOException {
         List<Integer> calls = new ArrayList<>();
-        ABICallAuthorizer authorizerMock = mock(ABICallAuthorizer.class);
+        AddressBasedAuthorizer authorizerMock = mock(AddressBasedAuthorizer.class);
         ABICallElection electionMock = mock(ABICallElection.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
@@ -386,11 +386,11 @@ public class BridgeStorageProviderTest {
             Assert.assertEquals(new DataWord("bridgeFederationElection".getBytes(StandardCharsets.UTF_8)), address);
             return new byte[]{(byte)0xaa};
         });
-        PowerMockito.when(BridgeSerializationUtils.deserializeElection(any(byte[].class), any(ABICallAuthorizer.class))).then((InvocationOnMock invocation) -> {
+        PowerMockito.when(BridgeSerializationUtils.deserializeElection(any(byte[].class), any(AddressBasedAuthorizer.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
             byte[] data = invocation.getArgumentAt(0, byte[].class);
-            ABICallAuthorizer authorizer = invocation.getArgumentAt(1, ABICallAuthorizer.class);
-            // Make sure we're deserializing what just came from the repo with the correct ABICallAuthorizer
+            AddressBasedAuthorizer authorizer = invocation.getArgumentAt(1, AddressBasedAuthorizer.class);
+            // Make sure we're deserializing what just came from the repo with the correct AddressBasedAuthorizer
             Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa}, data));
             Assert.assertEquals(authorizerMock, authorizer);
             return electionMock;
@@ -404,7 +404,7 @@ public class BridgeStorageProviderTest {
     @Test
     public void getFederationElection_nullBytes() throws IOException {
         List<Integer> calls = new ArrayList<>();
-        ABICallAuthorizer authorizerMock = mock(ABICallAuthorizer.class);
+        AddressBasedAuthorizer authorizerMock = mock(AddressBasedAuthorizer.class);
         ABICallElection electionMock = mock(ABICallElection.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
@@ -419,7 +419,7 @@ public class BridgeStorageProviderTest {
             Assert.assertEquals(new DataWord("bridgeFederationElection".getBytes(StandardCharsets.UTF_8)), address);
             return null;
         });
-        PowerMockito.when(BridgeSerializationUtils.deserializeElection(any(byte[].class), any(ABICallAuthorizer.class))).then((InvocationOnMock invocation) -> {
+        PowerMockito.when(BridgeSerializationUtils.deserializeElection(any(byte[].class), any(AddressBasedAuthorizer.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
             return null;
         });

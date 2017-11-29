@@ -18,25 +18,31 @@
 
 package co.rsk.peg;
 
+import org.ethereum.core.Transaction;
+
 import java.util.Arrays;
 
 /**
- * Immutable representation of a voter
- * for an ABICallElection. It is
+ * Immutable representation of a tx
+ * sender. It is
  * simple a byte[] wrapper.
  * The byte[] is an RSK address.
  *
  * @author Ariel Mendelzon
  */
-public final class ABICallVoter {
-    private byte[] voterBytes;
+public final class TxSender {
+    private byte[] senderBytes;
 
-    public ABICallVoter(byte[] voterBytes) {
-        this.voterBytes = voterBytes;
+    public static TxSender fromTx(Transaction tx) {
+        return new TxSender(tx.getSender());
+    }
+
+    public TxSender(byte[] senderBytes) {
+        this.senderBytes = senderBytes;
     }
 
     public byte[] getBytes() {
-        return voterBytes;
+        return senderBytes;
     }
 
     @Override
@@ -47,12 +53,12 @@ public final class ABICallVoter {
         if (other == null || this.getClass() != other.getClass())
             return false;
 
-        ABICallVoter otherVoter = (ABICallVoter) other;
-        return Arrays.equals(getBytes(), otherVoter.getBytes());
+        TxSender otherSender = (TxSender) other;
+        return Arrays.equals(getBytes(), otherSender.getBytes());
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(voterBytes);
+        return Arrays.hashCode(senderBytes);
     }
 }

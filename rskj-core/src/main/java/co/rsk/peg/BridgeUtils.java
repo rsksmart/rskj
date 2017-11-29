@@ -159,7 +159,8 @@ public class BridgeUtils {
                rskTx.acceptTransactionSignature() &&
                (
                        isFromFederateMember(rskTx) ||
-                       isFromFederationChangeAuthorizedVoter(rskTx, bridgeConstants)
+                       isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants) ||
+                       isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants)
                );
     }
 
@@ -167,8 +168,13 @@ public class BridgeUtils {
         return true;
     }
 
-    private static boolean isFromFederationChangeAuthorizedVoter(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
-        ABICallAuthorizer authorizer = bridgeConfiguration.getFederationChangeAuthorizer();
+    private static boolean isFromFederationChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
+        AddressBasedAuthorizer authorizer = bridgeConfiguration.getFederationChangeAuthorizer();
+        return authorizer.isAuthorized(rskTx);
+    }
+
+    private static boolean isFromLockWhitelistChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
+        AddressBasedAuthorizer authorizer = bridgeConfiguration.getLockWhitelistChangeAuthorizer();
         return authorizer.isAuthorized(rskTx);
     }
 }

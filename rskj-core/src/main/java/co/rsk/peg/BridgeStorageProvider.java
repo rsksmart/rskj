@@ -28,6 +28,8 @@ import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -48,6 +50,7 @@ public class BridgeStorageProvider {
     private static final DataWord BRIDGE_RETIRING_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("bridgeRetiringFederation"));
     private static final DataWord BRIDGE_PENDING_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("bridgePendingFederation"));
     private static final DataWord BRIDGE_FEDERATION_ELECTION_KEY = new DataWord(TypeConverter.stringToByteArray("bridgeFederationElection"));
+    private static final DataWord LOCK_WHITELIST_KEY = new DataWord(TypeConverter.stringToByteArray("lockWhitelist"));
 
     private static final NetworkParameters networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
@@ -73,6 +76,8 @@ public class BridgeStorageProvider {
     private boolean shouldSavePendingFederation = false;
 
     private ABICallElection federationElection;
+
+    private LockWhitelist lockWhitelist;
 
     private BridgeConstants bridgeConstants;
     private Context btcContext;
@@ -241,12 +246,34 @@ public class BridgeStorageProvider {
         safeSaveToRepository(BRIDGE_FEDERATION_ELECTION_KEY, federationElection, BridgeSerializationUtils::serializeElection);
     }
 
-    public ABICallElection getFederationElection(ABICallAuthorizer authorizer) {
+    public ABICallElection getFederationElection(AddressBasedAuthorizer authorizer) {
         if (federationElection != null)
             return federationElection;
 
         federationElection = safeGetFromRepository(BRIDGE_FEDERATION_ELECTION_KEY, data -> (data == null)? new ABICallElection(authorizer) : BridgeSerializationUtils.deserializeElection(data, authorizer));
         return federationElection;
+    }
+
+    /**
+     * Save the lock whitelist
+     */
+    public void saveLockWhitelist() {
+        if (lockWhitelist == null)
+            return;
+        safeSaveToRepository(LOCK_WHITELIST_KEY, lockWhitelist, BridgeSerializationUtils::serializeLockWhitelist);
+    }
+
+    public LockWhitelist getLockWhitelist() {
+        if (lockWhitelist != null)
+            return lockWhitelist;
+
+        lockWhitelist = safeGetFromRepository(LOCK_WHITELIST_KEY,
+            data -> (data == null)?
+                new LockWhitelist(Collections.emptyList()) :
+                BridgeSerializationUtils.deserializeLockWhitelist(data, btcContext.getParams())
+        );
+
+        return lockWhitelist;
     }
 
     public void save() throws IOException {
@@ -264,6 +291,8 @@ public class BridgeStorageProvider {
         savePendingFederation();
 
         saveFederationElection();
+
+        saveLockWhitelist();
     }
 
     private <T> T safeGetFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) {

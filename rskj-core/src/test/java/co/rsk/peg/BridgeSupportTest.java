@@ -1418,7 +1418,7 @@ public class BridgeSupportTest {
                 null
         );
         ABICallSpec spec = new ABICallSpec("a-random-method", new byte[][]{});
-        Assert.assertEquals(BridgeSupport.VOTE_GENERIC_ERROR_CODE, bridgeSupport.voteFederationChange(mock(Transaction.class), spec));
+        Assert.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE, bridgeSupport.voteFederationChange(mock(Transaction.class), spec));
     }
 
     @Test
@@ -1435,11 +1435,11 @@ public class BridgeSupportTest {
         ABICallSpec spec = new ABICallSpec("create", new byte[][]{});
         Transaction mockedTx = mock(Transaction.class);
         when(mockedTx.getSender()).thenReturn(ECKey.fromPrivate(BigInteger.valueOf(12L)).getAddress());
-        Assert.assertEquals(BridgeSupport.VOTE_GENERIC_ERROR_CODE, bridgeSupport.voteFederationChange(mockedTx, spec));
+        Assert.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE, bridgeSupport.voteFederationChange(mockedTx, spec));
     }
 
     private class VotingMocksProvider {
-        private ABICallVoter voter;
+        private TxSender voter;
         private ABICallElection election;
         private ABICallSpec winner;
         private ABICallSpec spec;
@@ -1450,7 +1450,7 @@ public class BridgeSupportTest {
                     // Public key hex of an authorized voter in regtest, taken from BridgeRegTestConstants
                     "04dde17c5fab31ffc53c91c2390136c325bb8690dc135b0840075dd7b86910d8ab9e88baad0c32f3eea8833446a6bc5ff1cd2efa99ecb17801bcb65fc16fc7d991"
             )).getAddress();
-            voter = new ABICallVoter(voterBytes);
+            voter = new TxSender(voterBytes);
 
             tx = mock(Transaction.class);
             when(tx.getSender()).thenReturn(voterBytes);
@@ -1464,7 +1464,7 @@ public class BridgeSupportTest {
             when(election.getWinner()).then((InvocationOnMock m) -> this.getWinner());
         }
 
-        public ABICallVoter getVoter() { return voter; }
+        public TxSender getVoter() { return voter; }
 
         public ABICallElection getElection() { return election; }
 
@@ -1707,7 +1707,7 @@ public class BridgeSupportTest {
         );
 
         Assert.assertNull(bridgeSupport.getPendingFederationHash());
-        Assert.assertEquals(BridgeSupport.VOTE_GENERIC_ERROR_CODE.intValue(), mocksProvider.execute(bridgeSupport));
+        Assert.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE.intValue(), mocksProvider.execute(bridgeSupport));
         Assert.assertNull(bridgeSupport.getPendingFederationHash());
         verify(mocksProvider.getElection(), never()).clearWinners();
         verify(mocksProvider.getElection(), never()).clear();
@@ -2066,7 +2066,7 @@ public class BridgeSupportTest {
             }
 
             if (holder.getFederationElection() == null) {
-                ABICallAuthorizer auth = m.getArgumentAt(0, ABICallAuthorizer.class);
+                AddressBasedAuthorizer auth = m.getArgumentAt(0, AddressBasedAuthorizer.class);
                 holder.setFederationElection(new ABICallElection(auth));
             }
 

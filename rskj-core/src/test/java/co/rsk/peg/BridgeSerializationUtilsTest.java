@@ -22,7 +22,6 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
-import javassist.runtime.Inner;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.Assert;
@@ -291,21 +290,21 @@ public class BridgeSerializationUtilsTest {
         mock_RLP_encodeElement();
         mock_RLP_encodeList();
 
-        ABICallAuthorizer mockedAuthorizer = mock(ABICallAuthorizer.class);
-        when(mockedAuthorizer.isAuthorized(any(ABICallVoter.class))).thenReturn(true);
+        AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
+        when(mockedAuthorizer.isAuthorized(any(TxSender.class))).thenReturn(true);
 
-        Map<ABICallSpec, List<ABICallVoter>> sampleVotes = new HashMap<>();
+        Map<ABICallSpec, List<TxSender>> sampleVotes = new HashMap<>();
         sampleVotes.put(
                 new ABICallSpec("one-function", new byte[][]{}),
-                Arrays.asList(new ABICallVoter(Hex.decode("8899")), new ABICallVoter(Hex.decode("aabb")))
+                Arrays.asList(new TxSender(Hex.decode("8899")), new TxSender(Hex.decode("aabb")))
         );
         sampleVotes.put(
                 new ABICallSpec("another-function", new byte[][]{ Hex.decode("01"), Hex.decode("0203") }),
-                Arrays.asList(new ABICallVoter(Hex.decode("ccdd")), new ABICallVoter(Hex.decode("eeff")), new ABICallVoter(Hex.decode("0011")))
+                Arrays.asList(new TxSender(Hex.decode("ccdd")), new TxSender(Hex.decode("eeff")), new TxSender(Hex.decode("0011")))
         );
         sampleVotes.put(
                 new ABICallSpec("yet-another-function", new byte[][]{ Hex.decode("0405") }),
-                Arrays.asList(new ABICallVoter(Hex.decode("fa")), new ABICallVoter(Hex.decode("ca")))
+                Arrays.asList(new TxSender(Hex.decode("fa")), new TxSender(Hex.decode("ca")))
         );
 
         ABICallElection sample = new ABICallElection(mockedAuthorizer, sampleVotes);
@@ -334,7 +333,7 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void deserializeElection_emptyOrNull() throws Exception {
-        ABICallAuthorizer mockAuthorizer = mock(ABICallAuthorizer.class);
+        AddressBasedAuthorizer mockAuthorizer = mock(AddressBasedAuthorizer.class);
         ABICallElection election;
         election = BridgeSerializationUtils.deserializeElection(null, mockAuthorizer);
         Assert.assertEquals(0, election.getVotes().size());
@@ -348,8 +347,8 @@ public class BridgeSerializationUtilsTest {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_decode2(InnerListMode.STARTING_WITH_FF_RECURSIVE);
 
-        ABICallAuthorizer mockedAuthorizer = mock(ABICallAuthorizer.class);
-        when(mockedAuthorizer.isAuthorized(any(ABICallVoter.class))).thenReturn(true);
+        AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
+        when(mockedAuthorizer.isAuthorized(any(TxSender.class))).thenReturn(true);
 
         StringBuilder sampleBuilder = new StringBuilder();
         sampleBuilder.append("06"); // Total of three specs, two entries for each
@@ -392,14 +391,14 @@ public class BridgeSerializationUtilsTest {
         ABICallElection election = BridgeSerializationUtils.deserializeElection(sample, mockedAuthorizer);
 
         Assert.assertEquals(3, election.getVotes().size());
-        List<ABICallVoter> voters;
+        List<TxSender> voters;
         ABICallSpec spec;
 
         spec = new ABICallSpec("funct", new byte[][]{});
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                new ABICallVoter(Hex.decode("aa")),
-                new ABICallVoter(Hex.decode("bbccdd"))
+                new TxSender(Hex.decode("aa")),
+                new TxSender(Hex.decode("bbccdd"))
         );
         Assert.assertEquals(voters, election.getVotes().get(spec));
 
@@ -409,9 +408,9 @@ public class BridgeSerializationUtilsTest {
         });
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                new ABICallVoter(Hex.decode("55")),
-                new ABICallVoter(Hex.decode("66")),
-                new ABICallVoter(Hex.decode("77"))
+                new TxSender(Hex.decode("55")),
+                new TxSender(Hex.decode("66")),
+                new TxSender(Hex.decode("77"))
         );
         Assert.assertEquals(voters, election.getVotes().get(spec));
 
@@ -420,10 +419,10 @@ public class BridgeSerializationUtilsTest {
         });
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                new ABICallVoter(Hex.decode("1111")),
-                new ABICallVoter(Hex.decode("3333")),
-                new ABICallVoter(Hex.decode("5555")),
-                new ABICallVoter(Hex.decode("77"))
+                new TxSender(Hex.decode("1111")),
+                new TxSender(Hex.decode("3333")),
+                new TxSender(Hex.decode("5555")),
+                new TxSender(Hex.decode("77"))
         );
         Assert.assertEquals(voters, election.getVotes().get(spec));
     }
@@ -434,8 +433,8 @@ public class BridgeSerializationUtilsTest {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_decode2(InnerListMode.STARTING_WITH_FF_RECURSIVE);
 
-        ABICallAuthorizer mockedAuthorizer = mock(ABICallAuthorizer.class);
-        when(mockedAuthorizer.isAuthorized(any(ABICallVoter.class))).thenReturn(true);
+        AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
+        when(mockedAuthorizer.isAuthorized(any(TxSender.class))).thenReturn(true);
 
         StringBuilder sampleBuilder = new StringBuilder();
         sampleBuilder.append("05"); // Five elements, uneven
@@ -460,8 +459,8 @@ public class BridgeSerializationUtilsTest {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_decode2(InnerListMode.STARTING_WITH_FF_RECURSIVE);
 
-        ABICallAuthorizer mockedAuthorizer = mock(ABICallAuthorizer.class);
-        when(mockedAuthorizer.isAuthorized(any(ABICallVoter.class))).thenReturn(true);
+        AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
+        when(mockedAuthorizer.isAuthorized(any(TxSender.class))).thenReturn(true);
 
         StringBuilder sampleBuilder = new StringBuilder();
         sampleBuilder.append("02");

@@ -25,31 +25,30 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Representation of a given state of the election
- * of an ABI function call by a series of known
- * and authorized electors.
+ * Authorizes an operation based
+ * on an RSK address.
  *
  * @author Ariel Mendelzon
  */
-public class ABICallAuthorizer {
-    private List<ECKey> authorizedKeys;
+public class AddressBasedAuthorizer {
+    public enum MinimumRequiredCalculation { ONE, MAJORITY, ALL };
 
-    public ABICallAuthorizer(List<ECKey> authorizedKeys) {
+    private List<ECKey> authorizedKeys;
+    private MinimumRequiredCalculation requiredCalculation;
+
+    public AddressBasedAuthorizer(List<ECKey> authorizedKeys, MinimumRequiredCalculation requiredCalculation) {
         this.authorizedKeys = authorizedKeys;
+        this.requiredCalculation = requiredCalculation;
     }
 
-    public boolean isAuthorized(ABICallVoter voter) {
+    public boolean isAuthorized(TxSender sender) {
         return authorizedKeys.stream()
                 .map(key -> key.getAddress())
-                .anyMatch(address -> Arrays.equals(address, voter.getBytes()));
+                .anyMatch(address -> Arrays.equals(address, sender.getBytes()));
     }
 
     public boolean isAuthorized(Transaction tx) {
-        return isAuthorized(getVoter(tx));
-    }
-
-    public ABICallVoter getVoter(Transaction tx) {
-        return new ABICallVoter(tx.getSender());
+        return isAuthorized(TxSender.fromTx(tx));
     }
 
     public int getNumberOfAuthorizedKeys() {
@@ -57,6 +56,14 @@ public class ABICallAuthorizer {
     }
 
     public int getRequiredAuthorizedKeys() {
-        return getNumberOfAuthorizedKeys() / 2 + 1;
+        switch (requiredCalculation) {
+            case ONE:
+                return 1;
+            case MAJORITY:
+                return getNumberOfAuthorizedKeys() / 2 + 1;
+            case ALL:
+            default:
+                return getNumberOfAuthorizedKeys();
+        }
     }
 }
