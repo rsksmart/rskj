@@ -639,8 +639,6 @@ public class Program {
             Program program = new Program(programCode, programInvoke, internalTx);
             vm.play(program);
             programResult = program.getResult();
-
-            getResult().merge(programResult);
         }
 
         if (programResult.getException() != null || programResult.isRevert()) {
