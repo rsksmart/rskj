@@ -32,13 +32,7 @@ import java.util.List;
 
 public class BridgeTestNetConstants extends BridgeConstants {
 
-    private static final Logger logger = LoggerFactory.getLogger("BridgeTestNetConstants");
-
     private static BridgeTestNetConstants instance = new BridgeTestNetConstants();
-
-    public static BridgeTestNetConstants getInstance() {
-        return instance;
-    }
 
     BridgeTestNetConstants() {
         btcParamsString = NetworkParameters.ID_TESTNET;
@@ -67,8 +61,6 @@ public class BridgeTestNetConstants extends BridgeConstants {
                 federator12PublicKey, federator13PublicKey, federator14PublicKey
         );
 
-        // To recreate the value use
-        // genesisFederationAddressCreatedAt = new GregorianCalendar(2017,4,10).getTimeInMillis() / 1000;
         // Currently set to:
         // Sun Dec 03 00:00:00 ART 2017
         Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1512270000l);
@@ -93,4 +85,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
         minimumReleaseTxValue = Coin.valueOf(500000);
     }
 
+    public static BridgeTestNetConstants getInstance() {
+        return instance;
+    }
+    
 }
