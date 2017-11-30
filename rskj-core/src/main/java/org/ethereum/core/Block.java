@@ -605,7 +605,7 @@ public class Block {
             parseRLP();
         }
 
-        return Hex.toHexString(getHash()).substring(0, 6);
+        return header.getShortHash();
     }
 
     public String getShortHashForMergedMining() {

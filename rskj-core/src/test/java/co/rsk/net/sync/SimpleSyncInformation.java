@@ -29,7 +29,7 @@ public class SimpleSyncInformation implements SyncInformation {
     }
 
     @Override
-    public void reportEvent(String message, EventType eventType, NodeID peerId) {
+    public void reportEvent(String message, EventType eventType, NodeID peerId, Object... arguments) {
 
     }
 
