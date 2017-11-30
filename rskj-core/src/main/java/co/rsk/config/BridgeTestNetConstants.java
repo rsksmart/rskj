@@ -74,7 +74,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
         Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1512270000l);
 
         // Expected federation address is:
-        // 2NBPystfboREksK6hMCZesfH444zB3BkUUm
+        // 2NCJZnqZHjvTNn9CUR8WyB3253cB7tPYKUq
         genesisFederation = new Federation(
                 genesisFederationPublicKeys,
                 genesisFederationAddressCreatedAt,
