@@ -1610,8 +1610,7 @@ public class Program {
         }
 
         public static RuntimeException tooLargeContractSize(int maxSize, int actualSize) {
-            Object[] args = new Object[]{maxSize, actualSize};
-            return new RuntimeException(format("Maximum contract size allowed %d but actual %d;", args));
+            return new RuntimeException(format("Maximum contract size allowed %d but actual %d;", maxSize, actualSize));
         }
     }
 
