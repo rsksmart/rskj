@@ -1,16 +1,19 @@
 package org.ethereum.util;
 
+import co.rsk.core.TouchedAccountsTracker;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
+import co.rsk.util.RskTransactionExecutor;
+import co.rsk.util.TestContract;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.program.ProgramResult;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -69,47 +72,57 @@ public class ContractRunner {
         return executeTransaction(creationTx).getResult();
     }
 
-    public ProgramResult createAndRunContract(byte[] bytecode, byte[] encodedCall, BigInteger value) {
+    public ProgramResult createAndRunContract(TestContract contract, String functionName, BigInteger value, Object... args) {
+        byte[] bytecode = Hex.decode(contract.bytecode);
         createContract(bytecode);
         Transaction creationTx = contractCreateTx(bytecode);
         executeTransaction(creationTx);
-        return runContract(creationTx.getContractAddress(), encodedCall, value);
+        return runContract(contract, creationTx.getContractAddress(), functionName, value, args);
     }
 
-    private Transaction contractCreateTx(byte[] bytecode) {
+    private TransactionBuilder contractCreateTxBuilder(byte[] data) {
         BigInteger nonceCreate = repository.getNonce(sender.getAddress());
         return new TransactionBuilder()
-                .gasLimit(BigInteger.valueOf(10_000_000))
-                .sender(sender)
-                .data(bytecode)
-                .nonce(nonceCreate.longValue())
-                .build();
-    }
-
-    private ProgramResult runContract(byte[] contractAddress, byte[] encodedCall, BigInteger value) {
-        BigInteger nonceExecute = repository.getNonce(sender.getAddress());
-        Transaction transaction = new TransactionBuilder()
                 // a large gas limit will allow running any contract
                 .gasLimit(BigInteger.valueOf(10_000_000))
                 .sender(sender)
-                .receiverAddress(contractAddress)
-                .data(encodedCall)
-                .nonce(nonceExecute.longValue())
-                .value(value)
-                .build();
+                .data(data)
+                .nonce(nonceCreate.longValue());
+    }
+
+    public Transaction contractCreateTx(byte[] bytecode) {
+        return contractCreateTxBuilder(bytecode).build();
+    }
+
+    private ProgramResult runContract(TestContract contract, byte[] contractAddress, String functionName, BigInteger value, Object... args) {
+        Transaction transaction = callTransaction(contract, contractAddress, functionName, value, args);
         return executeTransaction(transaction).getResult();
     }
 
     private TransactionExecutor executeTransaction(Transaction transaction) {
-        Repository track = repository.startTracking();
-        TransactionExecutor executor = new TransactionExecutor(transaction, new byte[32],
-                repository, blockStore, receiptStore,
-                new ProgramInvokeFactoryImpl(), blockchain.getBestBlock());
-        executor.init();
-        executor.execute();
-        executor.go();
-        executor.finalization();
-        track.commit();
-        return executor;
+        RskTransactionExecutor executor = new RskTransactionExecutor(repository, blockchain, blockStore, receiptStore);
+        return executor.executeTransaction(new TouchedAccountsTracker(), transaction);
     }
+
+    public ProgramResult executeFunction(TestContract contract, String functionName, BigInteger value, Object... args) {
+        return createAndRunContract(contract, functionName, value, args);
+    }
+
+    public ProgramResult createContract(TestContract contract) {
+        return createContract(Hex.decode(contract.bytecode));
+    }
+
+    public Transaction creationTransaction(TestContract contract) {
+        byte[] bytecode = Hex.decode(contract.bytecode);
+        return contractCreateTx(bytecode);
+    }
+
+    public Transaction callTransaction(TestContract contract, byte[] contractAddress, String functionName, BigInteger value, Object... args) {
+        byte[] encodedCall = contract.functions.get(functionName).encode(args);
+        return contractCreateTxBuilder(encodedCall)
+                .receiverAddress(contractAddress)
+                .value(value)
+                .build();
+    }
+
 }

@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.TouchedAccountsTracker;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
@@ -38,14 +39,12 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
+import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
-import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.util.ByteUtil.toHexString;
@@ -76,7 +75,7 @@ public class TransactionExecutor {
     private Block executionBlock;
 
     private final EthereumListener listener;
-    private final Set<DataWord> touchedAccounts = new HashSet<>();
+    private final TouchedAccountsTracker touchedAccounts;
 
     private VM vm;
     private Program program;
@@ -89,14 +88,23 @@ public class TransactionExecutor {
 
     public TransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
+        this(tx, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, new TouchedAccountsTracker());
+    }
 
-        this(tx, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0);
+    public TransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
+                               ProgramInvokeFactory programInvokeFactory, Block executionBlock, TouchedAccountsTracker touchedAccounts) {
+        this(tx, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0, touchedAccounts);
     }
 
     public TransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock,
                                EthereumListener listener, long gasUsedInTheBlock) {
+        this(tx, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, listener, gasUsedInTheBlock, new TouchedAccountsTracker());
+    }
 
+    public TransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
+                               ProgramInvokeFactory programInvokeFactory, Block executionBlock,
+                               EthereumListener listener, long gasUsedInTheBlock, TouchedAccountsTracker touchedAccounts) {
         this.tx = tx;
         this.coinbase = coinbase;
         this.track = track;
@@ -107,6 +115,7 @@ public class TransactionExecutor {
         this.executionBlock = executionBlock;
         this.listener = listener;
         this.gasUsedInTheBlock = gasUsedInTheBlock;
+        this.touchedAccounts = touchedAccounts;
     }
 
 
@@ -365,7 +374,7 @@ public class TransactionExecutor {
                     throw result.getException();
                 }
             } else {
-                touchedAccounts.addAll(result.getTouchedAccounts());
+                touchedAccounts.mergeFrom(result.getTouchedAccounts());
                 cacheTrack.commit();
             }
 
@@ -449,7 +458,7 @@ public class TransactionExecutor {
             result.getDeleteAccounts().forEach(address -> track.delete(address.getLast20Bytes()));
         }
 
-        clearEmptyAccountsFromStateTrie();
+        touchedAccounts.clearEmptyAccountsFrom(track);
 
         if (listener != null)
             listener.onTransactionExecuted(summary);
@@ -472,19 +481,6 @@ public class TransactionExecutor {
         }
 
         logger.info("tx finalization done");
-    }
-
-    /**
-     * Invariant-preserving state trie clearing as specified in EIP-161
-     */
-    private void clearEmptyAccountsFromStateTrie() {
-        for (DataWord acctAddrDW : touchedAccounts) {
-            byte[] acctAddr = acctAddrDW.getData();
-            AccountState state = track.getAccountState(acctAddr);
-            if (state != null && state.isEmpty()) {
-                track.delete(acctAddr);
-            }
-        }
     }
 
     public TransactionExecutor setLocalCall(boolean localCall) {
