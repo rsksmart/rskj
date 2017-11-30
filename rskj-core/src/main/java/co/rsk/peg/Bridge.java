@@ -401,7 +401,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             throw new BridgeIllegalArgumentException("PartialMerkleTree could not be parsed " + Hex.toHexString(pmtSerialized), e);
         }
         try {
-            bridgeSupport.registerBtcTransaction(btcTx, height, pmt);
+            bridgeSupport.registerBtcTransaction(rskTx, btcTx, height, pmt);
         } catch (Exception e) {
             logger.warn("Exception in registerBtcTransaction", e);
             throw new RuntimeException("Exception in registerBtcTransaction", e);

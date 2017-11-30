@@ -920,7 +920,7 @@ public class BridgeSupportTest {
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, Collections.emptyList());
 
-        bridgeSupport.registerBtcTransaction(tx, 0, null);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx, 0, null);
         bridgeSupport.save();
 
         track.commit();
@@ -950,7 +950,7 @@ public class BridgeSupportTest {
 
         PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 1);
 
-        bridgeSupport.registerBtcTransaction(tx, 0, pmt);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx, 0, pmt);
         bridgeSupport.save();
 
         track.commit();
@@ -980,7 +980,7 @@ public class BridgeSupportTest {
 
         PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 1);
 
-        bridgeSupport.registerBtcTransaction(tx, -1, pmt);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx, -1, pmt);
         bridgeSupport.save();
 
         track.commit();
@@ -1014,7 +1014,7 @@ public class BridgeSupportTest {
 
         PartialMerkleTree pmt = new PartialMerkleTree(_networkParameters, bits, hashes, 1);
 
-        bridgeSupport.registerBtcTransaction(tx, 1, pmt);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx, 1, pmt);
         bridgeSupport.save();
 
         track.commit();
@@ -1063,7 +1063,7 @@ public class BridgeSupportTest {
 
         btcBlockChain.add(block);
 
-        bridgeSupport.registerBtcTransaction(tx, 1, pmt);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx, 1, pmt);
         bridgeSupport.save();
 
         track.commit();
@@ -1141,7 +1141,7 @@ public class BridgeSupportTest {
 
         btcBlockChain.add(block);
         ((SimpleBlockChain)btcBlockChain).useHighBlock();
-        bridgeSupport.registerBtcTransaction(tx, 1, pmt);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx, 1, pmt);
         bridgeSupport.save();
         ((SimpleBlockChain)btcBlockChain).useBlock();
 
@@ -1232,9 +1232,9 @@ public class BridgeSupportTest {
         btcBlockChain.add(block);
 
         ((SimpleBlockChain)btcBlockChain).useHighBlock();
-        bridgeSupport.registerBtcTransaction(tx1, 1, pmt);
-        bridgeSupport.registerBtcTransaction(tx2, 1, pmt);
-        bridgeSupport.registerBtcTransaction(tx3, 1, pmt);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1, 1, pmt);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx2, 1, pmt);
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx3, 1, pmt);
         bridgeSupport.save();
         ((SimpleBlockChain)btcBlockChain).useBlock();
 
