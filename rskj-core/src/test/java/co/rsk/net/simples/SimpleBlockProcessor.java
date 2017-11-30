@@ -26,6 +26,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 import org.ethereum.db.ByteArrayWrapper;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +47,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
         Map<ByteArrayWrapper, ImportResult> connectionsResult = new HashMap<>();
         this.blocks.add(block);
         connectionsResult.put(new ByteArrayWrapper(block.getHash()), ImportResult.IMPORTED_BEST);
-        return new BlockProcessResult(false, connectionsResult, block.getShortHash(), 0);
+        return new BlockProcessResult(false, connectionsResult, block.getShortHash(), Duration.ZERO);
     }
 
     @Override

@@ -18,15 +18,12 @@
 
 package co.rsk.core;
 
-import co.rsk.net.NodeBlockProcessor;
 import org.ethereum.facade.Ethereum;
 
 /**
  * Created by ajlopez on 3/3/2016.
  */
 public interface Rsk extends Ethereum {
-
-    NodeBlockProcessor getNodeBlockProcessor();
 
     boolean isPlayingBlocks();
 

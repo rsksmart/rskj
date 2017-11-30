@@ -428,8 +428,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             final Set<NodeID> nodesToSkip = new HashSet<>(transactionNodeInformation.getNodesByTransaction(tx.getHash()));
             final Set<NodeID> newNodes = channelManager.broadcastTransaction(tx, nodesToSkip);
 
-            for (NodeID nodeID : newNodes)
-                transactionNodeInformation.addTransactionToNode(txHash, nodeID);
+            newNodes.forEach(nodeID -> transactionNodeInformation.addTransactionToNode(txHash, nodeID));
         }
     }
 

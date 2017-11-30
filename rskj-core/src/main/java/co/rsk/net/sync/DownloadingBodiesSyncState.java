@@ -179,21 +179,23 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     private Optional<BlockHeader> updateHeadersAndChunks(NodeID peerId, Integer currentChunk) {
         Deque<BlockHeader> headers = pendingHeaders.get(currentChunk);
-        while (!headers.isEmpty()) {
-            BlockHeader header = headers.pop();
+        BlockHeader header = headers.poll();
+        while (header != null) {
             // we double check if the header was not downloaded or obtained by another way
-            if (!syncInformation.isKnownBlock(header.getHash()))
+            if (!syncInformation.isKnownBlock(header.getHash())) {
                 return Optional.of(header);
+            }
+            header = headers.poll();
         }
 
-        Optional<BlockHeader> header = tryFindBlockHeader(peerId);
-        if (!header.isPresent()){
+        Optional<BlockHeader> blockHeader = tryFindBlockHeader(peerId);
+        if (!blockHeader.isPresent()){
             chunksBeingDownloaded.remove(peerId);
             segmentsBeingDownloaded.remove(peerId);
             messagesByPeers.remove(peerId);
         }
 
-        return header;
+        return blockHeader;
     }
 
     private Optional<BlockHeader> tryFindBlockHeader(NodeID peerId) {
@@ -204,14 +206,15 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
             if (!chunks.isEmpty()) {
                 int chunkNumber = chunks.pollLast();
                 Deque<BlockHeader> headers = pendingHeaders.get(chunkNumber);
-                while (!headers.isEmpty()) {
-                    BlockHeader header = headers.poll();
+                BlockHeader header = headers.poll();
+                while (header != null) {
                     // we double check if the header was not downloaded or obtained by another way
                     if (!syncInformation.isKnownBlock(header.getHash())) {
                         chunksBeingDownloaded.put(peerId, chunkNumber);
                         segmentsBeingDownloaded.put(peerId, segmentNumber);
                         return Optional.of(header);
                     }
+                    header = headers.poll();
                 }
             }
         }

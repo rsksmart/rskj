@@ -33,7 +33,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 public class RskImpl extends EthereumImpl implements Rsk {
 
     private boolean isplaying;
-    private NodeBlockProcessor nodeBlockProcessor;
+    private final NodeBlockProcessor nodeBlockProcessor;
 
     public RskImpl(WorldManager worldManager,
                    ChannelManager channelManager,
@@ -50,18 +50,13 @@ public class RskImpl extends EthereumImpl implements Rsk {
     }
 
     @Override
-    public NodeBlockProcessor getNodeBlockProcessor() {
-        return this.nodeBlockProcessor;
-    }
-
-    @Override
     public boolean isPlayingBlocks() {
         return isplaying;
     }
 
     @Override
     public boolean isBlockchainEmpty() {
-        return this.getNodeBlockProcessor().getBestBlockNumber() == 0;
+        return this.nodeBlockProcessor.getBestBlockNumber() == 0;
     }
 
     public void setIsPlayingBlocks(boolean value) {
@@ -70,6 +65,6 @@ public class RskImpl extends EthereumImpl implements Rsk {
 
     @Override
     public boolean hasBetterBlockToSync() {
-            return this.getNodeBlockProcessor().hasBetterBlockToSync();
+        return this.nodeBlockProcessor.hasBetterBlockToSync();
     }
 }

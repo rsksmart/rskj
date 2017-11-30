@@ -8,6 +8,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
 import javax.annotation.Nonnull;
+import java.time.Duration;
 
 public class SimpleSyncInformation implements SyncInformation {
     private boolean hasLowerDifficulty = true;
@@ -45,7 +46,7 @@ public class SimpleSyncInformation implements SyncInformation {
 
     @Override
     public BlockProcessResult processBlock(Block block) {
-        return new BlockProcessResult(false, null, block.getShortHash(), 0);
+        return new BlockProcessResult(false, null, block.getShortHash(), Duration.ZERO);
     }
 
     @Override

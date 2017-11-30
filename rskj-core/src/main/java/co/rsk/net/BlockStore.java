@@ -155,6 +155,7 @@ public class BlockStore {
     public List<Block> getChildrenOf(Set<Block> blocks) {
         return blocks.stream()
                 .flatMap(b-> getBlocksByParentHash(new ByteArrayWrapper(b.getHash()).getData()).stream())
+                .distinct()
                 .collect(Collectors.toList());
     }
 

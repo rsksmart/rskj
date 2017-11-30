@@ -31,6 +31,8 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -38,11 +40,14 @@ import java.util.*;
  * If a block is not ready to be added to the blockchain, it will be on hold in a BlockStore.
  */
 public class BlockSyncService {
+    public static final int CHUNK_PART_LIMIT = 8;
+    public static final int PROCESSED_BLOCKS_TO_CHECK_STORE = 200;
+    public static final int RELEASED_RANGE = 1000;
     private Map<ByteArrayWrapper, Integer> unknownBlockHashes;
     private long processedBlocksCounter;
     private long lastKnownBlockNumber = 0;
 
-    private static final Logger logger = LoggerFactory.getLogger(BlockSyncService.class);
+    private static final Logger logger = LoggerFactory.getLogger("blocksyncservice");
     private final BlockStore store;
     private final Blockchain blockchain;
     private final SyncConfiguration syncConfiguration;
@@ -63,7 +68,7 @@ public class BlockSyncService {
     }
 
     public BlockProcessResult processBlock(MessageChannel sender, @Nonnull Block block, boolean ignoreMissingHashes) {
-        long start = System.nanoTime();
+        Instant start = Instant.now();
         long bestBlockNumber = this.getBestBlockNumber();
         long blockNumber = block.getNumber();
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
@@ -74,8 +79,10 @@ public class BlockSyncService {
         unknownBlockHashes.remove(blockHash);
 
         if (blockNumber > bestBlockNumber + syncMaxDistance) {
-            logger.trace("Block too advanced {} {} from {} ", blockNumber, block.getShortHash(), sender != null ? sender.getPeerNodeID().toString() : "N/A");
-            return new BlockProcessResult(false, null, block.getShortHash(), System.nanoTime() - start);
+            logger.trace("Block too advanced {} {} from {} ", blockNumber, block.getShortHash(),
+                    sender != null ? sender.getPeerNodeID().toString() : "N/A");
+            return new BlockProcessResult(false, null, block.getShortHash(),
+                    Duration.between(start, Instant.now()));
         }
 
         if (sender != null) {
@@ -85,7 +92,8 @@ public class BlockSyncService {
         // already in a blockchain
         if (BlockUtils.blockInSomeBlockChain(block, blockchain)) {
             logger.trace("Block already in a chain {} {}", blockNumber, block.getShortHash());
-            return new BlockProcessResult(false, null, block.getShortHash(), System.nanoTime() - start);
+            return new BlockProcessResult(false, null, block.getShortHash(),
+                    Duration.between(start, Instant.now()));
         }
         trySaveStore(block);
 
@@ -96,7 +104,8 @@ public class BlockSyncService {
                 logger.trace("Missing hashes for block in process {} {}", blockNumber, block.getShortHash());
                 requestMissingHashes(sender, unknownHashes);
             }
-            return new BlockProcessResult(false, null, block.getShortHash(), System.nanoTime() - start);
+            return new BlockProcessResult(false, null, block.getShortHash(),
+                    Duration.between(start, Instant.now()));
         }
 
         logger.trace("Trying to add to blockchain");
@@ -105,25 +114,24 @@ public class BlockSyncService {
                 BlockUtils.sortBlocksByNumber(this.getParentsNotInBlockchain(block)), ignoreMissingHashes);
 
         return new BlockProcessResult(true, connectResult, block.getShortHash(),
-                System.nanoTime() - start);
+                Duration.between(start, Instant.now()));
     }
 
     private void tryReleaseStore(long bestBlockNumber) {
-        if ((++processedBlocksCounter % 200) == 0) {
+        if ((++processedBlocksCounter % PROCESSED_BLOCKS_TO_CHECK_STORE) == 0) {
             long minimal = store.minimalHeight();
             long maximum = store.maximumHeight();
             logger.trace("Blocks in block processor {} from height {} to height {}", this.store.size(), minimal, maximum);
 
-            if (minimal < bestBlockNumber - 1000)
-                store.releaseRange(minimal, minimal + 1000);
+            if (minimal < bestBlockNumber - RELEASED_RANGE) {
+                store.releaseRange(minimal, minimal + RELEASED_RANGE);
+            }
         }
     }
 
     public boolean hasBetterBlockToSync() {
-        long last = this.getLastKnownBlockNumber();
-        long current = this.getBestBlockNumber();
-
-        return last >= current + syncConfiguration.getChunkSize() / 8;
+        int blocksDistance = syncConfiguration.getChunkSize() / CHUNK_PART_LIMIT;
+        return getLastKnownBlockNumber() >= getBestBlockNumber() + blocksDistance;
     }
 
     public long getLastKnownBlockNumber() {
