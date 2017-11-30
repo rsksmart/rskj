@@ -32,6 +32,7 @@ import java.math.BigInteger;
  * Created by Anton Nashatyrev on 25.02.2016.
  */
 public class Constants {
+    private static final int MAX_CONTRACT_SIZE = 0x6000;
     private int maximumExtraDataSize = 32;
     private int minGasLimit = 3000000;
     private int gasLimitBoundDivisor = 1024;
@@ -53,6 +54,10 @@ public class Constants {
     private static final byte[] BURN_ADDRESS = Hex.decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 
     private static final byte CHAIN_ID = 30;
+
+    public static int getMaxContractSize() {
+        return MAX_CONTRACT_SIZE;
+    }
 
     public int getDurationLimit() {
         return 8;

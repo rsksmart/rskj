@@ -36,6 +36,7 @@ import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
 import org.ethereum.util.RLP;
+import org.ethereum.vm.trace.ProgramTrace;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.BigIntegers;
@@ -56,7 +57,7 @@ public class BlockExecutorTest {
 
     @Test
     public void executeBlockWithoutTransaction() {
-        Block block = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock());
+        Block block = BlockGenerator.getInstance().createChildBlock(BlockGenerator.getInstance().getGenesisBlock());
 
         Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
 
@@ -159,7 +160,7 @@ public class BlockExecutorTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        Block block = BlockGenerator.createChildBlock(BlockGenerator.getGenesisBlock(), txs, uncles, 1, null);
+        Block block = BlockGenerator.getInstance().createChildBlock(BlockGenerator.getInstance().getGenesisBlock(), txs, uncles, 1, null);
 
         BlockResult result = executor.execute(block, repository.getRoot(), false);
 
@@ -248,9 +249,9 @@ public class BlockExecutorTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
         genesis.setStateRoot(repository.getRoot());
-        Block block = BlockGenerator.createChildBlock(genesis, txs, uncles, 1, null);
+        Block block = BlockGenerator.getInstance().createChildBlock(genesis, txs, uncles, 1, null);
 
         executor.executeAndFill(block, genesis);
 
@@ -286,9 +287,9 @@ public class BlockExecutorTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
         genesis.setStateRoot(repository.getRoot());
-        Block block = BlockGenerator.createChildBlock(genesis, txs, uncles, 1, null);
+        Block block = BlockGenerator.getInstance().createChildBlock(genesis, txs, uncles, 1, null);
 
         BlockResult result = executor.execute(block, genesis.getStateRoot(), false);
 
@@ -391,7 +392,7 @@ public class BlockExecutorTest {
 
         Block genesis = BlockChainImplTest.getGenesisBlock(blockchain);
         genesis.setStateRoot(repository.getRoot());
-        Block block = BlockGenerator.createChildBlock(genesis, txs, uncles, 1, null);
+        Block block = BlockGenerator.getInstance().createChildBlock(genesis, txs, uncles, 1, null);
 
         executor.executeAndFill(block, genesis);
 
@@ -542,9 +543,9 @@ public class BlockExecutorTest {
         }
 
         @Override
-        public void onVMTraceCreated(String transactionHash, String trace) {
+        public void onVMTraceCreated(String transactionHash, ProgramTrace trace) {
             latestTransactionHash = transactionHash;
-            latestTrace = trace;
+            latestTrace = trace.toString();
         }
 
         @Override

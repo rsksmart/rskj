@@ -19,6 +19,7 @@
 
 package org.ethereum.datasource;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.SystemProperties;
 import org.fusesource.leveldbjni.JniDBFactory;
@@ -31,9 +32,6 @@ import org.iq80.leveldb.WriteBatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,8 +52,6 @@ import static org.fusesource.leveldbjni.JniDBFactory.factory;
  * @author Roman Mandeleil
  * @since 18.01.2015
  */
-@Component
-@Scope("prototype")
 public class LevelDbDataSource implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("db");
@@ -70,9 +66,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     private static final boolean LDB_PARANOID_CHECKS = true;
     private static final boolean LDB_VERIFY_CHECKSUMS = true;
     private static final int LDB_JNI_MEMORY_POOL_SIZE = 1024 * 512;
-
-    @Autowired
-    private SystemProperties config = SystemProperties.CONFIG; // initialized for standalone test
+    private static final SystemProperties config = RskSystemProperties.CONFIG;
 
     private long lastTimeUsed;
     private String name;
@@ -86,9 +80,6 @@ public class LevelDbDataSource implements KeyValueDataSource {
     // however blocks them on init/close/delete operations
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
-    public LevelDbDataSource() {
-    }
-
     public LevelDbDataSource(String name) {
         this.name = name;
         logger.info("New LevelDbDataSource: {}", name);
@@ -98,7 +89,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     public void init() {
         resetDbLock.writeLock().lock();
         try {
-            logger.debug("~> LevelDbDataSource.init(): {}",  name);
+            logger.debug("~> LevelDbDataSource.init(): {}", name);
 
             if (isAlive()) {
                 return;

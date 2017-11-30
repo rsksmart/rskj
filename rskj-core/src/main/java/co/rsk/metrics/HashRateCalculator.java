@@ -18,15 +18,79 @@
 
 package co.rsk.metrics;
 
+import co.rsk.util.RskCustomCache;
+import org.ethereum.core.Block;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ByteArrayWrapper;
+
 import java.math.BigInteger;
-import java.util.concurrent.TimeUnit;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.function.Predicate;
 
-/**
- * Created by mario on 05/08/2016.
- */
-public interface HashRateCalculator {
+public abstract class HashRateCalculator {
 
-    BigInteger calculateNodeHashRate(Long periodLenght, TimeUnit unit);
+    private final BlockStore blockStore;
+    private final RskCustomCache<ByteArrayWrapper, BlockHeaderElement> headerCache;
 
-    BigInteger calculateNetHashRate(Long periodLenght, TimeUnit unit);
+    public HashRateCalculator(BlockStore blockStore, RskCustomCache<ByteArrayWrapper, BlockHeaderElement> headerCache) {
+        this.blockStore = blockStore;
+        this.headerCache = headerCache;
+    }
+
+    public abstract BigInteger calculateNodeHashRate(Duration duration);
+
+    public BigInteger calculateNetHashRate(Duration period) {
+        return calculateHashRate(b -> true, period);
+    }
+
+    protected BigInteger calculateHashRate(Predicate<BlockHeaderElement> countCondition, Duration period) {
+        if (hasBestBlock()) {
+            Instant upto = Clock.systemUTC().instant();
+            Instant from = upto.minus(period);
+            return this.hashRate(getHeaderElement(blockStore.getBestBlock().getHash()), countCondition, b -> checkBlockTimeRange(b, from, upto));
+        }
+        return BigInteger.ZERO;
+    }
+
+    private BigInteger hashRate(BlockHeaderElement elem, Predicate<BlockHeaderElement> countCondition, Predicate<BlockHeaderElement> cutCondition) {
+        BigInteger hashRate = BigInteger.ZERO;
+        BlockHeaderElement element = elem;
+
+        while (element != null && cutCondition.test(element)) {
+            if (countCondition.test(element))
+                hashRate = hashRate.add(element.getDifficulty());
+
+            byte[] parentHash = element.getBlockHeader().getParentHash();
+
+            element = getHeaderElement(parentHash);
+        }
+        return hashRate;
+    }
+
+    private boolean checkBlockTimeRange(BlockHeaderElement element, Instant from, Instant upto) {
+        Instant ts = Instant.ofEpochSecond(element.getBlockHeader().getTimestamp());
+        return !ts.isBefore(from) && !ts.isAfter(upto);
+    }
+
+    private Boolean hasBestBlock() {
+        return blockStore.getBestBlock() != null;
+    }
+
+    private BlockHeaderElement getHeaderElement(byte[] hash) {
+        BlockHeaderElement element = null;
+        if (hash != null) {
+            ByteArrayWrapper key = new ByteArrayWrapper(hash);
+            element = this.headerCache.get(key);
+            if (element == null) {
+                Block block = this.blockStore.getBlockByHash(hash);
+                if (block != null) {
+                    element = new BlockHeaderElement(block.getHeader(), this.blockStore.getBlockByHash(hash).getCumulativeDifficulty());
+                    this.headerCache.put(key, element);
+                }
+            }
+        }
+        return element;
+    }
 }

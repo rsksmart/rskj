@@ -19,9 +19,9 @@
 
 package co.rsk.db;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
@@ -410,7 +410,7 @@ public class RepositoryImplOriginalTest {
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
-        Genesis genesis = (Genesis)Genesis.getInstance(SystemProperties.CONFIG);
+        Genesis genesis = (Genesis)Genesis.getInstance(RskSystemProperties.CONFIG);
         for (ByteArrayWrapper key : genesis.getPremine().keySet()) {
             repository.createAccount(key.getData());
             repository.addBalance(key.getData(), genesis.getPremine().get(key).getAccountState().getBalance());

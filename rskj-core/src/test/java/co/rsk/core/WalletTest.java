@@ -32,7 +32,7 @@ import java.util.List;
 public class WalletTest {
     @Test
     public void getEmptyAccountList() {
-        Wallet wallet = new Wallet();
+        Wallet wallet = WalletFactory.createWallet();
 
         List<byte[]> addresses = wallet.getAccountAddresses();
 
@@ -42,7 +42,7 @@ public class WalletTest {
 
     @Test
     public void addAccountWithSeed() {
-        Wallet wallet = new Wallet();
+        Wallet wallet = WalletFactory.createWallet();
 
         byte[] address = wallet.addAccountWithSeed("seed");
 
@@ -66,7 +66,7 @@ public class WalletTest {
 
     @Test
     public void addAccountWithPassphrase() {
-        Wallet wallet = new Wallet();
+        Wallet wallet = WalletFactory.createWallet();
 
         byte[] address = wallet.addAccount("passphrase");
 
@@ -91,7 +91,7 @@ public class WalletTest {
 
     @Test
     public void unlockAccountWithPassphrase() {
-        Wallet wallet = new Wallet();
+        Wallet wallet = WalletFactory.createWallet();
 
         byte[] address = wallet.addAccount("passphrase");
 
@@ -122,14 +122,14 @@ public class WalletTest {
 
     @Test
     public void unlockNonexistentAccount() {
-        Wallet wallet = new Wallet();
+        Wallet wallet = WalletFactory.createWallet();
 
         Assert.assertFalse(wallet.unlockAccount(new byte[] { 0x01, 0x02, 0x03 }, "passphrase"));
     }
 
     @Test
     public void lockAccount() {
-        Wallet wallet = new Wallet();
+        Wallet wallet = WalletFactory.createWallet();
 
         byte[] address = wallet.addAccount("passphrase");
 
@@ -151,14 +151,14 @@ public class WalletTest {
 
     @Test
     public void lockNonexistentAccount() {
-        Wallet wallet = new Wallet();
+        Wallet wallet = WalletFactory.createWallet();
 
         Assert.assertFalse(wallet.lockAccount(new byte[] { 0x01, 0x02, 0x03 }));
     }
 
     @Test
     public void addAccountWithRandomPrivateKey() {
-        Wallet wallet = new Wallet();
+        Wallet wallet = WalletFactory.createWallet();
 
         byte[] address = wallet.addAccount();
 
@@ -173,7 +173,7 @@ public class WalletTest {
 
     @Test
     public void getUnknownAccount() {
-        Wallet wallet = new Wallet();
+        Wallet wallet = WalletFactory.createWallet();
 
         Account account = wallet.getAccount(new byte[] { 0x01, 0x02, 0x03 });
 
@@ -182,7 +182,7 @@ public class WalletTest {
 
     @Test
     public void addAccountWithPrivateKey() {
-        Wallet wallet = new Wallet();
+        Wallet wallet = WalletFactory.createWallet();
         byte[] privateKeyBytes = SHA3Helper.sha3("seed".getBytes());
 
         byte[] address = wallet.addAccountWithPrivateKey(privateKeyBytes);

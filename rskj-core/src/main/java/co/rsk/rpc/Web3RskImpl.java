@@ -18,18 +18,24 @@
 
 package co.rsk.rpc;
 
-import co.rsk.config.RskSystemProperties;
-import co.rsk.mine.MinerServer;
 import co.rsk.config.RskMiningConstants;
-import co.rsk.core.Rsk;
-import co.rsk.core.Wallet;
-import co.rsk.core.WalletFactory;
-import co.rsk.mine.MinerWork;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.core.NetworkStateExporter;
+import co.rsk.mine.*;
+import co.rsk.rpc.exception.JsonRpcSubmitBlockException;
+import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.personal.PersonalModule;
+import co.rsk.scoring.PeerScoringManager;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.BlockStore;
+import org.ethereum.facade.Ethereum;
+import org.ethereum.facade.Repository;
+import org.ethereum.manager.WorldManager;
+import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3Impl;
 import org.slf4j.Logger;
@@ -49,30 +55,37 @@ import java.util.List;
  */
 public class Web3RskImpl extends Web3Impl {
     private static final Logger logger = LoggerFactory.getLogger("web3");
+    private final NetworkStateExporter networkStateExporter;
+    private final BlockStore blockStore;
 
-    MinerServer minerServer;
-
-    public Web3RskImpl(Rsk rsk) {
-        super(rsk, RskSystemProperties.RSKCONFIG, WalletFactory.createPersistentWallet());
-        this.minerServer = rsk.getMinerServer();
-    }
-
-    public Web3RskImpl(Rsk rsk, Wallet wallet) {
-        super(rsk, RskSystemProperties.RSKCONFIG, wallet);
-        this.minerServer = rsk.getMinerServer();
+    public Web3RskImpl(Ethereum eth,
+                       WorldManager worldManager,
+                       RskSystemProperties properties,
+                       MinerClient minerClient,
+                       MinerServer minerServer,
+                       PersonalModule personalModule,
+                       EthModule ethModule,
+                       ChannelManager channelManager,
+                       Repository repository,
+                       PeerScoringManager peerScoringManager,
+                       NetworkStateExporter networkStateExporter,
+                       BlockStore blockStore,
+                       PeerServer peerServer) {
+        super(eth, worldManager, properties, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, peerServer);
+        this.networkStateExporter = networkStateExporter;
+        this.blockStore = blockStore;
     }
 
     public MinerWork mnr_getWork() {
         if (logger.isDebugEnabled()) {
             logger.debug("mnr_getWork()");
         }
-
         return minerServer.getWork();
     }
 
-    public void mnr_submitBitcoinBlock(String bitcoinBlockHex) {
+    public SubmittedBlockInfo mnr_submitBitcoinBlock(String bitcoinBlockHex) {
         if (logger.isDebugEnabled()) {
-            logger.debug("mnr_submitBitcoinBlock(): " + bitcoinBlockHex.length());
+            logger.debug("mnr_submitBitcoinBlock(): {}", bitcoinBlockHex.length());
         }
         
         co.rsk.bitcoinj.core.NetworkParameters params = co.rsk.bitcoinj.params.RegTestParams.get();
@@ -90,13 +103,19 @@ public class Web3RskImpl extends Web3Impl {
         System.arraycopy(coinbaseAsByteArray, rskTagPosition+ RskMiningConstants.RSK_TAG.length, blockHashForMergedMiningArray, 0, blockHashForMergedMiningArray.length);
         String blockHashForMergedMining = TypeConverter.toJsonHex(blockHashForMergedMiningArray);
 
-        minerServer.submitBitcoinBlock(blockHashForMergedMining, bitcoinBlock);
+        SubmitBlockResult result = minerServer.submitBitcoinBlock(blockHashForMergedMining, bitcoinBlock);
+
+        if("OK".equals(result.getStatus())) {
+            return result.getBlockInfo();
+        } else {
+            throw new JsonRpcSubmitBlockException(result.getMessage());
+        }
     }
 
     public void ext_dumpState()  {
-        Block bestBlcock = worldManager.getBlockStore().getBestBlock();
+        Block bestBlcock = blockStore.getBestBlock();
         logger.info("Dumping state for block hash {}, block number {}", Hex.toHexString(bestBlcock.getHash()), bestBlcock.getNumber());
-        this.worldManager.getNetworkStateExporter().exportStatus(System.getProperty("user.dir") + "/" + "rskdump.json");
+        networkStateExporter.exportStatus(System.getProperty("user.dir") + "/" + "rskdump.json");
     }
 
     /**
@@ -105,8 +124,7 @@ public class Web3RskImpl extends Web3Impl {
      * @param includeUncles Whether to show uncle links (recommended value is false)
      */
     public void ext_dumpBlockchain(long numberOfBlocks, boolean includeUncles)  {
-        BlockStore bs = worldManager.getBlockStore();
-        Block bestBlock = bs.getBestBlock();
+        Block bestBlock = blockStore.getBestBlock();
         logger.info("Dumping blockchain starting on block number {}, to best block number {}", bestBlock.getNumber()-numberOfBlocks, bestBlock.getNumber());
         PrintWriter writer = null;
         try {
@@ -119,7 +137,7 @@ public class Web3RskImpl extends Web3Impl {
                 firstBlock = 0;
             }
             for (long i = firstBlock; i < bestBlock.getNumber(); i++) {
-                result.addAll(bs.getChainBlocksByNumber(i));
+                result.addAll(blockStore.getChainBlocksByNumber(i));
             }
             for (Block block : result) {
                 writer.println(toSmallHash(block.getHash()) + " " + block.getNumber()+"-"+toSmallHash(block.getHash()));

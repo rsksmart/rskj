@@ -22,6 +22,7 @@ import co.rsk.net.BlockStore;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
+import org.ethereum.db.BlockInformation;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,25 +36,14 @@ public class BlockUtils {
     private static final Logger logger = LoggerFactory.getLogger("blockprocessor");
 
     public static boolean blockInSomeBlockChain(Block block, Blockchain blockChain) {
-        return blockInSomeBlockChain(block.getHash(), blockChain);
+        return blockInSomeBlockChain(block.getHash(), block.getNumber(), blockChain);
     }
 
-    public static boolean blockInSomeBlockChain(byte[] blockHash, Blockchain blockChain) {
-        final Block block = blockChain.getBlockByHash(blockHash);
+    public static boolean blockInSomeBlockChain(byte[] blockHash, long blockNumber, Blockchain blockChain) {
+        final ByteArrayWrapper key = new ByteArrayWrapper(blockHash);
+        final List<BlockInformation> blocks = blockChain.getBlocksInformationByNumber(blockNumber);
 
-        if (block == null)
-            return false;
-
-        final ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
-        final List<Block> blocks = blockChain.getBlocksByNumber(block.getNumber());
-
-        for (final Block b : blocks) {
-            if (new ByteArrayWrapper(b.getHash()).equals(key)) {
-                return true;
-            }
-        }
-
-        return false;
+        return blocks.stream().anyMatch(bi -> key.equalsToByteArray(bi.getHash()));
     }
 
     public static Set<ByteArrayWrapper> unknownDirectAncestorsHashes(Block block, Blockchain blockChain, BlockStore store) {
@@ -127,6 +117,11 @@ public class BlockUtils {
         blocks.add(block);
     }
 
+    /**
+     * Adds blocks to a list of blocks if they are not already in there.
+     * This method performs expensive operations, so you should be careful
+     * with performance-sensitive code.
+     */
     public static void addBlocksToList(List<Block> blocks, List<Block> newBlocks) {
         for (Block newBlock : newBlocks)
             addBlockToList(blocks, newBlock);

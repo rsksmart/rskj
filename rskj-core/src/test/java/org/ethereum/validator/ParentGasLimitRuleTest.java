@@ -59,7 +59,22 @@ public class ParentGasLimitRuleTest {
         assertFalse(rule.validate(header, parent));
     }
 
-    private static BlockHeader getHeader(long gasLimitValue) {
+    @Test // no pass rule
+    public void parentGasLimitOfBy1Tests() {
+        BlockHeader parent = getHeader(2049);
+        BlockHeader headerGGood = getHeader(2051);
+        BlockHeader headerGBad = getHeader(2052);
+        BlockHeader headerLGood = getHeader(2047);
+        BlockHeader headerLBad = getHeader(2046);
+        assertTrue(rule.validate(headerGGood, parent));
+        assertTrue(rule.validate(headerLGood, parent));
+        assertFalse(rule.validate(headerGBad, parent));
+        assertFalse(rule.validate(headerLBad, parent));
+    }
+
+
+    // Used also by GasLimitCalculatorTest
+    public static BlockHeader getHeader(long gasLimitValue) {
         byte[] gasLimit = new DataWord(gasLimitValue).getData();
 
         BlockHeader header = new BlockHeader(null, null, null, null, null, 0,

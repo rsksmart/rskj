@@ -21,8 +21,6 @@ package org.ethereum.manager;
 
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.metrics.HashRateCalculator;
-import co.rsk.mine.MinerClient;
-import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
@@ -32,11 +30,8 @@ import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.net.NodeManager;
 import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.client.PeerClient;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,134 +46,88 @@ import javax.annotation.PreDestroy;
  * @author Roman Mandeleil
  * @since 01.06.2014
  */
-@Component("worldManager")
+@Component
 public class WorldManagerImpl implements WorldManager {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
 
-    @Autowired
-    private EthereumListener listener;
+    private final Blockchain blockchain;
+    private final BlockStore blockStore;
+    private final PendingState pendingState;
+    private final Repository repository;
+    private final NetworkStateExporter networkStateExporter;
+    private final HashRateCalculator hashRateCalculator;
+    private final ConfigCapabilities configCapabilities;
+    private final SystemProperties config;
+    private final ChannelManager channelManager;
+    private final EthereumListener listener;
+    private final BlockProcessor nodeBlockProcessor;
 
     @Autowired
-    private Blockchain blockchain;
+    public WorldManagerImpl(Blockchain blockchain,
+                            BlockStore blockStore,
+                            PendingState pendingState,
+                            Repository repository,
+                            NetworkStateExporter networkStateExporter,
+                            HashRateCalculator hashRateCalculator,
+                            ConfigCapabilities configCapabilities,
+                            SystemProperties config,
+                            ChannelManager channelManager,
+                            EthereumListener listener,
+                            BlockProcessor nodeBlockProcessor) {
+        this.blockchain = blockchain;
+        this.blockStore = blockStore;
+        this.pendingState = pendingState;
+        this.repository = repository;
+        this.networkStateExporter = networkStateExporter;
+        this.hashRateCalculator = hashRateCalculator;
+        this.configCapabilities = configCapabilities;
+        this.config = config;
+        this.channelManager = channelManager;
+        this.listener = listener;
+        this.nodeBlockProcessor = nodeBlockProcessor;
 
-    @Autowired
-    private Repository repository;
-
-    @Autowired
-    private PeerClient activePeer;
-
-    @Autowired
-    private BlockStore blockStore;
-
-    @Autowired
-    private ChannelManager channelManager;
-
-    @Autowired
-    private AdminInfo adminInfo;
-
-    @Autowired
-    private NodeManager nodeManager;
-
-    @Autowired
-    private PendingState pendingState;
-
-    @Autowired
-    SystemProperties config;
-
-    @Autowired
-    ConfigCapabilities configCapabilities;
-
-    @Autowired
-    private MinerServer minerServer;
-
-    @Autowired
-    private MinerClient minerClient;
-
-    BlockProcessor nodeBlockProcessor;
-
-    @Autowired
-    private HashRateCalculator hashRateCalculator;
-
-    @Autowired
-    private NetworkStateExporter networkStateExporter;
-
-    @Autowired
-    private SolidityCompiler solidityCompiler;
-
-    @PostConstruct
-    public void init() {
         BlockChainLoader loader = new BlockChainLoader(this.blockchain, this.config, this.blockStore, this.repository, this.listener);
         loader.loadBlockchain();
     }
 
+    @Override
     public void addListener(EthereumListener listener) {
         logger.info("Ethereum listener added");
         ((CompositeEthereumListener) this.listener).addListener(listener);
     }
 
-    public ChannelManager getChannelManager() {
-        return channelManager;
-    }
-
-   public EthereumListener getListener() {
-        return listener;
-    }
-
-    public org.ethereum.facade.Repository getRepository() {
-        return (org.ethereum.facade.Repository)repository;
-    }
-
+    @Override
     public Blockchain getBlockchain() {
         return blockchain;
     }
 
-    public void setActivePeer(PeerClient peer) {
-        this.activePeer = peer;
-    }
-
-    public PeerClient getActivePeer() {
-        return activePeer;
-    }
-
+    @Override
     public BlockStore getBlockStore() {
         return blockStore;
     }
 
+    @Override
     public PendingState getPendingState() {
         return pendingState;
     }
 
+    @Override
     @PreDestroy
     public void close() {
         repository.close();
         blockchain.close();
     }
 
+    @Override
     public ConfigCapabilities getConfigCapabilities() { return configCapabilities; }
 
-    public void setNodeBlockProcessor(BlockProcessor nodeBlockProcessor){
-        this.nodeBlockProcessor = nodeBlockProcessor;
-    }
-
+    @Override
     public BlockProcessor getNodeBlockProcessor(){
         return this.nodeBlockProcessor;
     }
 
-    public MinerClient getMinerClient() { return this.minerClient; }
-
-    public MinerServer getMinerServer() { return this.minerServer; }
-
+    @Override
     public HashRateCalculator getHashRateCalculator() { return hashRateCalculator; }
-
-    @Override
-    public NetworkStateExporter getNetworkStateExporter() {
-        return networkStateExporter;
-    }
-
-    @Override
-    public SolidityCompiler getSolidityCompiler() {
-        return this.solidityCompiler;
-    }
 
 }

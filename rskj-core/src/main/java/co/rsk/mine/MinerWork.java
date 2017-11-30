@@ -24,6 +24,7 @@ import javax.annotation.concurrent.Immutable;
 /**
  * Work to do.
  * Requested by MinerClient to MinerServer
+ * @author Oscar Guindzberg
  */
 @Immutable
 public class MinerWork {
@@ -34,10 +35,10 @@ public class MinerWork {
     private final String parentBlockHash;
 
     public MinerWork(@Nonnull final String blockHashForMergedMining, @Nonnull final String target,
-                     final long paidFees, final boolean notify, @Nonnull final String parentBlockHash) {
+                     final String paidFees, final boolean notify, @Nonnull final String parentBlockHash) {
         this.blockHashForMergedMining = blockHashForMergedMining;
         this.target = target;
-        this.feesPaidToMiner = String.valueOf(paidFees);
+        this.feesPaidToMiner = paidFees;
         this.notify = notify;
         this.parentBlockHash = parentBlockHash;
     }

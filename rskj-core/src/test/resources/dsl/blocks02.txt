@@ -2,7 +2,7 @@
 # DSL test file
 
 # Create two blocks, same height
-block_chain g00 b01
+block_chain g00 b01:4
 block_chain g00 c01
 
 # Add the two blocks

@@ -38,7 +38,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.ethereum.config.SystemProperties.CONFIG;
+import static co.rsk.config.RskSystemProperties.CONFIG;
 
 /**
  * Created by Anton Nashatyrev on 25.12.2015.

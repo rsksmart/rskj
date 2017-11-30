@@ -18,19 +18,21 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.net.MessageHandler;
-import co.rsk.net.MessageSender;
-import co.rsk.net.NodeMessageHandler;
-import co.rsk.net.Status;
+import co.rsk.net.*;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.StatusMessage;
+import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Block;
+import org.ethereum.crypto.HashUtil;
+
+import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 5/14/2016.
  */
 public class SimpleNode {
     private MessageHandler handler;
+    private NodeID nodeID = new NodeID(HashUtil.randomPeerId());
 
     public SimpleNode(MessageHandler handler) {
         this.handler = handler;
@@ -40,21 +42,43 @@ public class SimpleNode {
         return this.handler;
     }
 
-    public void sendMessage(SimpleNode sender, Message message) {
-        this.processMessage(new SimpleNodeSender(this, sender), message);
+    public void receiveMessageFrom(SimpleNode peer, Message message) {
+        SimpleNodeChannel senderToPeer = getMessageChannel(peer);
+        this.handler.processMessage(senderToPeer, message);
     }
 
     public Block getBestBlock() {
-        return ((NodeMessageHandler)this.handler).getBestBlock();
+        return ((NodeMessageHandler)handler).getBlockProcessor().getBlockchain().getBestBlock();
     }
 
-    public void sendStatus(SimpleNode node) {
+    public BigInteger getTotalDifficulty() {
+        return ((NodeMessageHandler)this.handler).getBlockProcessor().getBlockchain().getTotalDifficulty();
+    }
+
+    public void sendStatusTo(SimpleNode peer) {
         Block block = this.getBestBlock();
         Status status = new Status(block.getNumber(), block.getHash());
-        node.sendMessage(this, new StatusMessage(status));
+        peer.receiveMessageFrom(this, new StatusMessage(status));
     }
 
-    protected void processMessage(MessageSender sender, Message message) {
-        this.handler.processMessage(sender, message);
+    public void sendFullStatusTo(SimpleNode peer) {
+        Status status = getFullStatus();
+        peer.receiveMessageFrom(this, new StatusMessage(status));
+    }
+
+    public Status getFullStatus() {
+        Block block = this.getBestBlock();
+        return new Status(block.getNumber(), block.getHash(), block.getParentHash(), this.getTotalDifficulty());
+    }
+
+    public SimpleNodeChannel getMessageChannel(SimpleNode peer) {
+        return new SimpleNodeChannel(this, peer);
+    }
+
+    public NodeID getNodeID() { return nodeID; }
+
+    public static SimpleNode createNode() {
+        NodeMessageHandler handler = NodeMessageHandlerUtil.createHandler(new DummyBlockValidationRule());
+        return new SimpleNode(handler);
     }
 }

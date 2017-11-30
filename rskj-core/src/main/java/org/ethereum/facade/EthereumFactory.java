@@ -19,6 +19,7 @@
 
 package org.ethereum.facade;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.config.DefaultConfig;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.net.eth.EthVersion;
@@ -46,7 +47,7 @@ public class EthereumFactory {
     }
 
     public static Ethereum createEthereum(Class userSpringConfig) {
-        return createEthereum(SystemProperties.CONFIG, userSpringConfig);
+        return createEthereum(RskSystemProperties.CONFIG, userSpringConfig);
     }
 
     public static Ethereum createEthereum(SystemProperties config, Class userSpringConfig) {

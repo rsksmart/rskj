@@ -18,7 +18,7 @@
 
 package co.rsk.jsontestsuite;
 
-import org.ethereum.config.SystemProperties;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.jsontestsuite.DifficultyTestCase;
@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import static org.ethereum.config.SystemProperties.CONFIG;
+import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -59,7 +59,7 @@ public class LocalBasicTest {
     @Test
     public void runDifficultyTest() throws IOException, ParseException {
 
-        SystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+        RskSystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
 
         String json = getJSON("difficulty");
 

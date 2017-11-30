@@ -151,6 +151,19 @@ public class PendingStateImplTest {
     }
 
     @Test
+    public void rejectPendingStateTransaction() {
+        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"));
+        Transaction tx = createSampleTransaction(1, 2, 1000, 0);
+        tx.setGasLimit(BigInteger.valueOf(3000001).toByteArray());
+        Account receiver = createAccount(2);
+
+        pendingState.addPendingTransaction(tx);
+
+        Repository repository = pendingState.getRepository();
+        Assert.assertEquals(BigInteger.valueOf(1000000), repository.getBalance(receiver.getAddress()));
+    }
+
+    @Test
     public void removeObsoletePendingTransactionsByBlock() {
         PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"));
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
@@ -318,7 +331,7 @@ public class PendingStateImplTest {
         txs.add(tx3);
         txs.add(tx4);
 
-        Block block = new BlockBuilder().parent(BlockGenerator.getGenesisBlock()).transactions(txs).build();
+        Block block = new BlockBuilder().parent(BlockGenerator.getInstance().getGenesisBlock()).transactions(txs).build();
 
         pendingState.retractBlock(block);
 

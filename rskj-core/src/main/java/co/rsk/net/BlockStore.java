@@ -24,6 +24,7 @@ import org.ethereum.db.ByteArrayWrapper;
 
 import javax.annotation.Nonnull;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by ajlopez on 5/11/2016.
@@ -34,8 +35,6 @@ public class BlockStore {
     private Map<ByteArrayWrapper, Set<Block>> blocksbyparent = new HashMap<>();
 
     private final Map<ByteArrayWrapper, BlockHeader> headers = new HashMap<>();
-    private final Map<Long, Set<ByteArrayWrapper>> headersbynumber = new HashMap<>();
-    private final Map<ByteArrayWrapper, Set<ByteArrayWrapper>> headersbyparent = new HashMap<>();
 
     public synchronized void saveBlock(Block block) {
         ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
@@ -72,25 +71,11 @@ public class BlockStore {
 
         this.blocks.remove(key);
 
-        Set<Block> bynumber = this.blocksbynumber.get(nkey);
+        removeBlockByNumber(key, nkey);
+        removeBlockByParent(key, pkey);
+    }
 
-        if (bynumber != null && !bynumber.isEmpty()) {
-            Block toremove = null;
-
-            for (Block blk : bynumber) {
-                if (new ByteArrayWrapper(blk.getHash()).equals(key)) {
-                    toremove = blk;
-                    break;
-                }
-            }
-
-            if (toremove != null) {
-                bynumber.remove(toremove);
-                if (bynumber.isEmpty())
-                    this.blocksbynumber.remove(nkey);
-            }
-        }
-
+    private void removeBlockByParent(ByteArrayWrapper key, ByteArrayWrapper pkey) {
         Set<Block> byparent = this.blocksbyparent.get(pkey);
 
         if (byparent != null && !byparent.isEmpty()) {
@@ -112,6 +97,27 @@ public class BlockStore {
         }
     }
 
+    private void removeBlockByNumber(ByteArrayWrapper key, Long nkey) {
+        Set<Block> bynumber = this.blocksbynumber.get(nkey);
+
+        if (bynumber != null && !bynumber.isEmpty()) {
+            Block toremove = null;
+
+            for (Block blk : bynumber) {
+                if (new ByteArrayWrapper(blk.getHash()).equals(key)) {
+                    toremove = blk;
+                    break;
+                }
+            }
+
+            if (toremove != null) {
+                bynumber.remove(toremove);
+                if (bynumber.isEmpty())
+                    this.blocksbynumber.remove(nkey);
+            }
+        }
+    }
+
     public synchronized Block getBlockByHash(byte[] hash) {
         ByteArrayWrapper key = new ByteArrayWrapper(hash);
 
@@ -121,27 +127,38 @@ public class BlockStore {
     public synchronized List<Block> getBlocksByNumber(long number) {
         Long nkey = Long.valueOf(number);
 
-        Set<Block> blocks = this.blocksbynumber.get(nkey);
+        Set<Block> blockSet = this.blocksbynumber.get(nkey);
 
-        if (blocks == null)
-            blocks = new HashSet<Block>();
+        if (blockSet == null)
+            blockSet = new HashSet<>();
 
-        List<Block> ls = new ArrayList<Block>(blocks);
-
-        return ls;
+        return new ArrayList<>(blockSet);
     }
 
     public synchronized List<Block> getBlocksByParentHash(byte[] hash) {
         ByteArrayWrapper key = new ByteArrayWrapper(hash);
 
-        Set<Block> blocks = this.blocksbyparent.get(key);
+        Set<Block> blockSet = this.blocksbyparent.get(key);
 
-        if (blocks == null)
-            blocks = new HashSet<Block>();
+        if (blockSet == null)
+            blockSet = new HashSet<>();
 
-        List<Block> ls = new ArrayList<Block>(blocks);
+        return new ArrayList<>(blockSet);
+    }
 
-        return ls;
+    /**
+     * getChildrenOf returns all the children of a list of blocks that are in the BlockStore.
+     *
+     * @param blocks the list of blocks to retrieve the children.
+     * @return A list with all the children of the given list of blocks.
+     */
+    public List<Block> getChildrenOf(List<Block> blocks) {
+        Set<Block> children = blocks.stream()
+                .flatMap(b-> getBlocksByParentHash(new ByteArrayWrapper(b.getHash()).getData()).stream())
+                .collect(Collectors.toSet());
+
+        return children.stream()
+                .collect(Collectors.toList());
     }
 
     public synchronized boolean hasBlock(Block block) {
@@ -199,23 +216,8 @@ public class BlockStore {
      */
     public synchronized void saveHeader(@Nonnull final BlockHeader header) {
         ByteArrayWrapper key = new ByteArrayWrapper(header.getHash());
-        ByteArrayWrapper pkey = new ByteArrayWrapper(header.getParentHash());
-        Long nkey = Long.valueOf(header.getNumber());
+
         this.headers.put(key, header);
-
-        Set<ByteArrayWrapper> hsbynumber = this.headersbynumber.get(nkey);
-        if (hsbynumber == null) {
-            hsbynumber = new HashSet<>();
-            this.headersbynumber.put(nkey, hsbynumber);
-        }
-        hsbynumber.add(key);
-
-        Set<ByteArrayWrapper> hsbyphash = this.headersbyparent.get(pkey);
-        if (hsbyphash == null) {
-            hsbyphash = new HashSet<>();
-            this.headersbyparent.put(pkey, hsbyphash);
-        }
-        hsbyphash.add(key);
     }
 
     /**
@@ -228,25 +230,7 @@ public class BlockStore {
             return;
 
         ByteArrayWrapper key = new ByteArrayWrapper(header.getHash());
-        ByteArrayWrapper pkey = new ByteArrayWrapper(header.getParentHash());
-        Long nkey = Long.valueOf(header.getNumber());
 
         this.headers.remove(key);
-
-        Set<ByteArrayWrapper> byNumber = this.headersbynumber.get(nkey);
-        if (byNumber != null) {
-            byNumber.remove(key);
-            if (byNumber.isEmpty()) {
-                this.headersbynumber.remove(byNumber);
-            }
-        }
-
-        Set<ByteArrayWrapper> byParent = this.headersbyparent.get(pkey);
-        if (byParent != null) {
-            byParent.remove(key);
-            if (byParent.isEmpty()) {
-                this.headersbyparent.remove(byParent);
-            }
-        }
     }
 }

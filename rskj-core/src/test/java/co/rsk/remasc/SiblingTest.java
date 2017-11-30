@@ -19,7 +19,6 @@
 package co.rsk.remasc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.test.World;
 import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,7 +29,7 @@ import org.junit.Test;
 public class SiblingTest {
     @Test
     public void siblingSerializeWithGenesis() {
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
 
         Sibling sibling = new Sibling(genesis.getHeader(), genesis.getCoinbase(), 1);
 
@@ -52,8 +51,8 @@ public class SiblingTest {
 
     @Test
     public void siblingSerializeWithBlock() {
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block = BlockGenerator.createChildBlock(genesis);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block block = BlockGenerator.getInstance().createChildBlock(genesis);
 
         Sibling sibling = new Sibling(block.getHeader(), block.getCoinbase(), 0);
 

@@ -94,7 +94,6 @@ public class TransactionTest {
     }
 
     @Test
-    @Ignore
     public void constantCallConflictTest() throws Exception {
         /*
           0x095e7baea6a6c7c4c2dfeb977efac326af552d87 contract is the following Solidity code:
@@ -134,14 +133,14 @@ public class TransactionTest {
                 "                } " +
                 "            }, " +
                 "            '" + PrecompiledContracts.REMASC_ADDR + "' : { " +
-                "                'balance' : '0x67c3', " +
+                "                'balance' : '0x67EB', " +
                 "                'code' : '0x', " +
                 "                'nonce' : '0x00', " +
                 "                'storage' : { " +
                 "                } " +
                 "            }, " +
                 "            'a94f5374fce5edbc8e2a8697c15331677e6ebf0b' : { " +
-                "                'balance' : '0x0DE0B6B3A762119D', " +
+                "                'balance' : '0x0DE0B6B3A7621175', " +
                 "                'code' : '0x', " +
                 "                'nonce' : '0x01', " +
                 "                'storage' : { " +
@@ -190,7 +189,8 @@ public class TransactionTest {
                     Repository track = repository.startTracking();
 
                     Transaction txConst = CallTransaction.createCallTransaction(0, 0, 100000000000000L,
-                            "095e7baea6a6c7c4c2dfeb977efac326af552d87", 0, CallTransaction.Function.fromSignature("get"));
+                            "095e7baea6a6c7c4c2dfeb977efac326af552d87", 0,
+                            CallTransaction.Function.fromSignature("get"));
                     txConst.sign(new byte[32]);
 
                     Block bestBlock = block;
@@ -237,5 +237,41 @@ public class TransactionTest {
         Assert.assertEquals("daf5a779ae972f972197303d7b574746c7ef83eadac0f2791ad23db92e4c8e53", strhash);
         System.out.println(strenc);
         System.out.println(strhash);
+    }
+
+    @Test
+    public void isContractCreationWhenReceiveAddressIsNull() {
+        Transaction tx = Transaction.create(null, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Assert.assertTrue(tx.isContractCreation());
+    }
+
+    @Test
+    public void isContractCreationWhenReceiveAddressIsEmptyString() {
+        Transaction tx = Transaction.create("", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Assert.assertTrue(tx.isContractCreation());
+    }
+
+    @Test
+    public void isContractCreationWhenReceiveAddressIs00() {
+        Transaction tx = Transaction.create("00", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Assert.assertTrue(tx.isContractCreation());
+    }
+
+    @Test
+    public void isContractCreationWhenReceiveAddressIsFortyZeroes() {
+        Transaction tx = Transaction.create("0000000000000000000000000000000000000000", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Assert.assertTrue(tx.isContractCreation());
+    }
+
+    @Test
+    public void isNotContractCreationWhenReceiveAddressIsCowAddress() {
+        Transaction tx = Transaction.create("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Assert.assertFalse(tx.isContractCreation());
+    }
+
+    @Test
+    public void isNotContractCreationWhenReceiveAddressIsBridgeAddress() {
+        Transaction tx = Transaction.create(PrecompiledContracts.BRIDGE_ADDR, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Assert.assertFalse(tx.isContractCreation());
     }
 }

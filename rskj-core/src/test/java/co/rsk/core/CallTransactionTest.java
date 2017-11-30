@@ -19,6 +19,7 @@
 package co.rsk.core;
 
 import org.ethereum.core.CallTransaction;
+import org.ethereum.solidity.SolidityType;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -102,5 +103,17 @@ public class CallTransactionTest {
         CallTransaction.IntType type = new CallTransaction.IntType("int");
 
         Assert.assertArrayEquals(CallTransaction.IntType.encodeInt(new BigInteger("01020304", 10)), type.encode("01020304"));
+    }
+
+    @Test
+    public void decodeString() {
+        SolidityType.StringType type = new SolidityType.StringType();
+        byte[] toDecode = new byte[] {
+                // len of string = 5
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5,
+                // string
+                104, 101, 108, 108, 111, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+        Assert.assertEquals("hello", type.decode(toDecode));
     }
 }

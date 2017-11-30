@@ -18,11 +18,11 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.remasc.RemascTransaction;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.net.handler.TxPendingValidator;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
@@ -35,12 +35,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.ethereum.crypto.HashUtil.sha3;
 import static org.ethereum.util.BIUtil.toBI;
@@ -48,7 +50,6 @@ import static org.ethereum.util.BIUtil.toBI;
 /**
  * Created by ajlopez on 08/08/2016.
  */
-@Component
 public class PendingStateImpl implements PendingState {
     private static final Logger logger = LoggerFactory.getLogger("pendingstate");
     private static final byte[] emptyUncleHashList = sha3(RLP.encodeList(new byte[0]));
@@ -65,12 +66,6 @@ public class PendingStateImpl implements PendingState {
     private ScheduledFuture<?> cleanerFuture;
 
     @Autowired
-    private Repository repository;
-
-    @Autowired
-    private Blockchain blockChain;
-
-    @Autowired
     private BlockStore blockStore;
 
     @Autowired
@@ -79,18 +74,31 @@ public class PendingStateImpl implements PendingState {
     @Autowired
     private EthereumListener listener;
 
+    private final Blockchain blockChain;
+    private final Repository repository;
+
     private Block bestBlock;
 
     private Repository pendingStateRepository;
+    private TxPendingValidator validator = new TxPendingValidator();
 
-    public PendingStateImpl() {
-        // Used by Spring framework
+    @Autowired
+    public PendingStateImpl(Blockchain blockChain,
+                            BlockStore blockStore,
+                            Repository repository) {
+        this.blockChain = blockChain;
+        this.blockStore = blockStore;
+        this.repository = repository;
     }
 
-    public PendingStateImpl(Blockchain blockChain, Repository repository, BlockStore blockStore, ProgramInvokeFactory programInvokeFactory, EthereumListener listener, int outdatedThreshold, int outdatedTimeout) {
-        this.blockChain = blockChain;
-        this.repository = repository;
-        this.blockStore = blockStore;
+    public PendingStateImpl(Blockchain blockChain,
+                            Repository repository,
+                            BlockStore blockStore,
+                            ProgramInvokeFactory programInvokeFactory,
+                            EthereumListener listener,
+                            int outdatedThreshold,
+                            int outdatedTimeout) {
+        this(blockChain, blockStore, repository);
         this.programInvokeFactory = programInvokeFactory;
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
@@ -99,6 +107,7 @@ public class PendingStateImpl implements PendingState {
         init();
     }
 
+    @Override
     @PostConstruct
     public final void init() {
         if (this.repository != null)
@@ -108,9 +117,9 @@ public class PendingStateImpl implements PendingState {
             this.bestBlock = blockChain.getBestBlock();
 
         if (this.outdatedThreshold == 0)
-            this.outdatedThreshold = SystemProperties.CONFIG.txOutdatedThreshold();
+            this.outdatedThreshold = RskSystemProperties.CONFIG.txOutdatedThreshold();
         if (this.outdatedTimeout == 0)
-            this.outdatedTimeout = SystemProperties.CONFIG.txOutdatedTimeout();
+            this.outdatedTimeout = RskSystemProperties.CONFIG.txOutdatedTimeout();
 
         if (this.outdatedTimeout > 0)
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "PendingStateCleanerTimer"));
@@ -167,7 +176,7 @@ public class PendingStateImpl implements PendingState {
         logger.info("Trying add {} wire transactions using block {} {}", transactions.size(), bnumber, getBestBlock().getShortHash());
 
         for (Transaction tx : transactions) {
-            if (tx instanceof RemascTransaction)
+            if (!shouldAcceptTx(tx))
                 continue;
 
             logger.info("Trying add wire transaction nonce {} hash {}", tx.getHash(), toBI(tx.getNonce()));
@@ -199,14 +208,17 @@ public class PendingStateImpl implements PendingState {
         return added;
     }
 
+    @Override
     public synchronized Repository getRepository() { return this.pendingStateRepository; }
 
+    @Override
     public synchronized List<Transaction> getWireTransactions() {
         List<Transaction> txs = new ArrayList<>();
         txs.addAll(wireTransactions.values());
         return txs;
     }
 
+    @Override
     public synchronized List<Transaction> getPendingTransactions() {
         List<Transaction> txs = new ArrayList<>();
 
@@ -217,7 +229,7 @@ public class PendingStateImpl implements PendingState {
 
     @Override
     public synchronized void addPendingTransaction(final Transaction tx) {
-        if (tx instanceof RemascTransaction)
+        if (!shouldAcceptTx(tx))
             return;
 
         logger.trace("add pending transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
@@ -424,6 +436,12 @@ public class PendingStateImpl implements PendingState {
                             Collections.<Transaction>emptyList(), // tx list
                             Collections.<BlockHeader>emptyList(), // uncle list
                             ByteUtil.bigIntegerToBytes(BigInteger.ZERO)); //minimum gas price
+    }
+
+    private boolean shouldAcceptTx(Transaction tx) {
+        if (bestBlock == null)
+            return true;
+        return validator.isValid(tx, bestBlock.getGasLimitAsInteger());
     }
 
     public static class TransactionSortedSet extends TreeSet<Transaction> {

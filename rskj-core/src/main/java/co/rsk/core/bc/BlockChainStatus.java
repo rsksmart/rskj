@@ -18,7 +18,9 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.net.Status;
 import org.ethereum.core.Block;
+import org.ethereum.util.BIUtil;
 
 import java.math.BigInteger;
 
@@ -46,5 +48,9 @@ public class BlockChainStatus {
 
     public BigInteger getTotalDifficulty() {
         return totalDifficulty;
+    }
+
+    public boolean hasLowerTotalDifficultyThan(Status status) {
+        return BIUtil.isLessThan(this.totalDifficulty, status.getTotalDifficulty());
     }
 }

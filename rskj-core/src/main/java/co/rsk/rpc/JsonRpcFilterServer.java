@@ -20,17 +20,19 @@ package co.rsk.rpc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.googlecode.jsonrpc4j.JsonRpcServer;
+import com.googlecode.jsonrpc4j.ErrorResolver;
+import com.googlecode.jsonrpc4j.JsonRpcBasicServer;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.io.OutputStream;
 import java.util.List;
 
 /**
  * Created by ajlopez on 19/04/2017.
  */
-public class JsonRpcFilterServer extends JsonRpcServer {
+public class JsonRpcFilterServer extends JsonRpcBasicServer {
+
+    private static final String JSON_RPC_METHOD_FIELD_NAME = "/method";
     private List<ModuleDescription> modules;
 
     /**
@@ -50,19 +52,18 @@ public class JsonRpcFilterServer extends JsonRpcServer {
     }
 
     @Override
-    protected JsonNode invoke(Object target, Method m, List<JsonNode> params)
-            throws IOException,
-            IllegalAccessException,
-            InvocationTargetException {
-        checkMethod(m.getName());
-        return super.invoke(target, m, params);
+    protected ErrorResolver.JsonError handleJsonNodeRequest(JsonNode node, OutputStream output) throws IOException {
+        if (node.hasNonNull(JSON_RPC_METHOD_FIELD_NAME)) {
+            checkMethod(node.at(JSON_RPC_METHOD_FIELD_NAME).asText());
+        }
+        return super.handleJsonNodeRequest(node, output);
     }
 
-    public void checkMethod(String methodName) throws InvocationTargetException {
+    public void checkMethod(String methodName) throws IOException {
         for (ModuleDescription module: this.modules)
             if (module.methodIsEnable(methodName))
                 return;
 
-        throw new InvocationTargetException(null, "Unknown method: " + methodName);
+        throw new IOException("Method not supported: " + methodName);
     }
 }

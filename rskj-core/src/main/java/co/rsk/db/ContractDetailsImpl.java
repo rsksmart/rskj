@@ -18,10 +18,10 @@
 
 package co.rsk.db;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.*;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.datasource.DataSourcePool;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -173,7 +173,7 @@ public class ContractDetailsImpl implements ContractDetails {
 
     @Override
     public final void decode(byte[] rlpBytes) {
-        RLPList rlpData = RLP.decode2(rlpBytes);
+        ArrayList<RLPElement> rlpData = RLP.decode2(rlpBytes);
         RLPList rlpList = (RLPList) rlpData.get(0);
 
         RLPItem rlpAddress = (RLPItem) rlpList.get(0);
@@ -390,7 +390,7 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
     private void checkExternalStorage() {
-        this.externalStorage = (keys.size() > SystemProperties.CONFIG.detailsInMemoryStorageLimit()) || this.externalStorage;
+        this.externalStorage = (keys.size() > RskSystemProperties.CONFIG.detailsInMemoryStorageLimit()) || this.externalStorage;
     }
 
     private String getDataSourceName() {

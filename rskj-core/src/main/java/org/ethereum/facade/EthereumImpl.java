@@ -19,6 +19,7 @@
 
 package org.ethereum.facade;
 
+import co.rsk.core.ReversibleTransactionExecutor;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.core.PendingState;
@@ -27,110 +28,78 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
-import org.ethereum.manager.AdminInfo;
 import org.ethereum.manager.WorldManager;
-import org.ethereum.net.client.PeerClient;
-import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.net.submit.TransactionExecutor;
 import org.ethereum.net.submit.TransactionTask;
+import org.ethereum.rpc.Web3;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.util.concurrent.FutureAdapter;
 
 import javax.annotation.Nonnull;
-import javax.annotation.PostConstruct;
 import java.math.BigInteger;
-import java.net.InetAddress;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-/**
- * @author Roman Mandeleil
- * @since 27.07.2014
- */
-// @Component
 public class EthereumImpl implements Ethereum {
 
     private static final Logger logger = LoggerFactory.getLogger("facade");
     private static final Logger gLogger = LoggerFactory.getLogger("general");
 
-    @Autowired
-    WorldManager worldManager;
-
-    @Autowired
-    AdminInfo adminInfo;
-
-    @Autowired
-    ChannelManager channelManager;
-
-    @Autowired
-    PeerServer peerServer;
-
-    @Autowired
-    ApplicationContext ctx;
-
-    @Autowired
-    ProgramInvokeFactory programInvokeFactory;
-
-    @Autowired
-    PendingState pendingState;
-
-    @Autowired
-    SystemProperties config;
-
-    @Autowired
-    CompositeEthereumListener compositeEthereumListener;
-
-    @Autowired
-    ReceiptStore receiptStore;
+    private final WorldManager worldManager;
+    private final ChannelManager channelManager;
+    private final PeerServer peerServer;
+    private final ProgramInvokeFactory programInvokeFactory;
+    private final PendingState pendingState;
+    private final SystemProperties config;
+    private final CompositeEthereumListener compositeEthereumListener;
+    private final ReceiptStore receiptStore;
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
+    private final Repository repository;
 
-    public EthereumImpl() {
-        System.out.println();
+    public EthereumImpl(WorldManager worldManager,
+                        ChannelManager channelManager,
+                        PeerServer peerServer,
+                        ProgramInvokeFactory programInvokeFactory,
+                        PendingState pendingState,
+                        SystemProperties config,
+                        CompositeEthereumListener compositeEthereumListener,
+                        ReceiptStore receiptStore,
+                        Repository repository) {
+        this.worldManager = worldManager;
+        this.channelManager = channelManager;
+        this.peerServer = peerServer;
+        this.programInvokeFactory = programInvokeFactory;
+        this.pendingState = pendingState;
+        this.config = config;
+        this.compositeEthereumListener = compositeEthereumListener;
+        this.receiptStore = receiptStore;
+        this.repository = repository;
     }
 
-    @PostConstruct
+    @Override
     public void init() {
         if (config.listenPort() > 0) {
-            Executors.newSingleThreadExecutor().submit(
-                    new Runnable() {
-                        public void run() {
-                            peerServer.start(config.listenPort());
-                        }
-                    }
-            );
+            Executors.newSingleThreadExecutor(runnable -> {
+                Thread thread = new Thread(runnable);
+                thread.setUncaughtExceptionHandler((exceptionThread, exception) -> {
+                    gLogger.error("Unable to start peer server", exception);
+                });
+                return thread;
+            }).execute(() -> peerServer.start(config.listenPort()));
         }
         compositeEthereumListener.addListener(gasPriceTracker);
 
         gLogger.info("RskJ node started: enode://" + Hex.toHexString(config.nodeId()) + "@" + config.externalIp() + ":" + config.listenPort());
-    }
-
-    @Override
-    public void connect(InetAddress addr, int port, String remoteId) {
-        connect(addr.getHostName(), port, remoteId);
-    }
-
-    @Override
-    public void connect(final String ip, final int port, final String remoteId) {
-        logger.info("Connecting to: {}:{}", ip, port);
-        final PeerClient peerClient = ctx.getBean(PeerClient.class);
-        peerClient.connectAsync(ip, port, remoteId, false);
-    }
-
-    @Override
-    public void connect(Node node) {
-        connect(node.getHost(), node.getPort(), Hex.toHexString(node.getId()));
     }
 
     @Override
@@ -156,23 +125,6 @@ public class EthereumImpl implements Ethereum {
     @Override
     public void close() {
 //        worldManager.close();
-    }
-
-    @Override
-    public PeerClient getDefaultPeer() {
-
-        PeerClient peer = worldManager.getActivePeer();
-        if (peer == null) {
-
-            peer = new PeerClient();
-            worldManager.setActivePeer(peer);
-        }
-        return peer;
-    }
-
-    @Override
-    public boolean isConnected() {
-        return worldManager.getActivePeer() != null;
     }
 
     @Override
@@ -210,64 +162,19 @@ public class EthereumImpl implements Ethereum {
         };
     }
 
-
     @Override
-    public ProgramResult callConstantFunction(String receiveAddress, CallTransaction.Function function,
-                                              Object... funcArgs) {
-        Transaction tx = CallTransaction.createCallTransaction(0, 0, 100000000000000L,
-                receiveAddress, 0, function, funcArgs);
-        tx.sign(new byte[32]);
-
-        Block bestBlock = worldManager.getBlockchain().getBestBlock();
-
-        Repository repository = ((Repository) worldManager.getRepository()).startTracking();
-
-        try {
-            org.ethereum.core.TransactionExecutor executor = new org.ethereum.core.TransactionExecutor
-                    (tx, bestBlock.getCoinbase(), repository, worldManager.getBlockStore(), receiptStore,
-                    programInvokeFactory, bestBlock)
-                    .setLocalCall(true);
-
-            executor.init();
-            executor.execute();
-            executor.go();
-            executor.finalization();
-
-            return executor.getResult();
-        } finally {
-            repository.rollback();
-        }
+    public ProgramResult callConstant(Web3.CallArguments args) {
+        Block bestBlock = getBlockchain().getBestBlock();
+        return ReversibleTransactionExecutor.executeTransaction(
+                bestBlock.getCoinbase(),
+                repository,
+                worldManager.getBlockStore(),
+                receiptStore,
+                programInvokeFactory,
+                bestBlock,
+                args
+        ).getResult();
     }
-
-    @Override
-    public org.ethereum.facade.Repository getRepository() {
-        return worldManager.getRepository();
-    }
-
-    @Override
-    public org.ethereum.facade.Repository getPendingState() {
-        return (org.ethereum.facade.Repository) worldManager.getPendingState().getRepository();
-    }
-
-    @Override
-    public org.ethereum.facade.Repository getSnapshootTo(byte[] root){
-
-        Repository repository = (Repository) worldManager.getRepository();
-        org.ethereum.facade.Repository snapshot = (org.ethereum.facade.Repository) repository.getSnapshotTo(root);
-
-        return snapshot;
-    }
-
-    @Override
-    public AdminInfo getAdminInfo() {
-        return adminInfo;
-    }
-
-    @Override
-    public ChannelManager getChannelManager() {
-        return channelManager;
-    }
-
 
     @Override
     public List<Transaction> getWireTransactions() {
@@ -275,54 +182,7 @@ public class EthereumImpl implements Ethereum {
     }
 
     @Override
-    public List<Transaction> getPendingStateTransactions() {
-        return worldManager.getPendingState().getPendingTransactions();
-    }
-
-    @Override
     public long getGasPrice() {
         return gasPriceTracker.getGasPrice();
-    }
-
-    @Override
-    public void exitOn(long number) {
-        worldManager.getBlockchain().setExitOn(number);
-    }
-
-    // TODO Review world manager expose
-    @Override
-    public WorldManager getWorldManager() { return worldManager; }
-
-    // TODO Review peer server expose
-    @Override
-    public PeerServer getPeerServer() { return peerServer; }
-
-    // TODO added method, to review
-    @Override
-    public ProgramResult callConstantCallTransaction(Transaction tx, Block block) {
-        Repository repository = ((Repository) worldManager.getRepository()).getSnapshotTo(block.getStateRoot()).startTracking();
-
-        try {
-            Block bestBlock = worldManager.getBlockchain().getBestBlock();
-            org.ethereum.core.TransactionExecutor executor = new org.ethereum.core.TransactionExecutor
-                    (tx, bestBlock.getCoinbase(), repository,
-                            worldManager.getBlockStore(), receiptStore, programInvokeFactory, block)
-                    .setLocalCall(true);
-
-            executor.init();
-            executor.execute();
-            executor.go();
-            executor.finalization();
-
-            return executor.getResult();
-        } finally {
-            repository.rollback();
-        }
-
-    }
-
-    @Override
-    public SystemProperties getSystemProperties() {
-        return this.config;
     }
 }

@@ -41,7 +41,7 @@ public class WorldTest {
     public void saveAndGetBlock() {
         World world = new World();
 
-        Block block = BlockGenerator.getBlock(1);
+        Block block = BlockGenerator.getInstance().getBlock(1);
 
         world.saveBlock("b01", block);
         Assert.assertSame(block, world.getBlockByName("b01"));

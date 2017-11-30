@@ -69,12 +69,17 @@ public class ChannelManagerImpl implements ChannelManager {
     // then we ban that peer IP on any connections for some time to protect from
     // too active peers
     private static final int INBOUND_CONNECTION_BAN_TIMEOUT = 10 * 1000;
-    private final Map<ByteArrayWrapper, Channel> activePeers = Collections.synchronizedMap(new HashMap<ByteArrayWrapper, Channel>());
+    private final Map<ByteArrayWrapper, Channel> activePeers = Collections.synchronizedMap(new HashMap<>());
     @Autowired
     SystemProperties config;
     @Autowired
     SyncPool syncPool;
+
+    // Using a concurrent list
+    // (the add and remove methods copy an internal array,
+    // but the iterator directly use the internal array)
     private List<Channel> newPeers = new CopyOnWriteArrayList<>();
+
     private ScheduledExecutorService mainWorker = Executors.newSingleThreadScheduledExecutor();
     private int maxActivePeers;
     private Map<InetAddress, Date> recentlyDisconnected = Collections.synchronizedMap(new LRUMap<InetAddress, Date>(500));
@@ -87,8 +92,8 @@ public class ChannelManagerImpl implements ChannelManager {
         mainWorker.scheduleWithFixedDelay((Runnable) () -> {
             try {
                 processNewPeers();
-            } catch (Throwable t) {
-                logger.error("Error", t);
+            } catch (Exception e) {
+                logger.error("Error", e);
             }
         }, 0, 1, TimeUnit.SECONDS);
     }
@@ -208,6 +213,25 @@ public class ChannelManagerImpl implements ChannelManager {
         return res;
     }
 
+    @Nonnull
+    public Set<NodeID> broadcastBlockHash(@Nonnull final byte[] hash, @Nullable final Set<NodeID> targets) {
+        final Set<NodeID> res = new HashSet<>();
+        final EthMessage newBlockHash = new RskMessage(new NewBlockHashesMessage(hash));
+
+        synchronized (activePeers) {
+            activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
+
+            activePeers.values().stream()
+                    .filter(p -> targets == null || targets.contains(new NodeID(p.getNodeId())))
+                    .forEach(peer -> {
+                        logger.trace("RSK announce hash: {}", peer);
+                        peer.sendMessage(newBlockHash);
+                    });
+        }
+
+        return res;
+    }
+
     /**
      * broadcastTransaction Propagates a transaction message across active peers with exclusion of
      * the peers with an id belonging to the skip set.
@@ -271,7 +295,7 @@ public class ChannelManagerImpl implements ChannelManager {
     /**
      * Propagates the new block message across active peers with exclusion of
      * 'receivedFrom' peer.
-     *
+     * @deprecated
      * @param block        new Block to be sent
      * @param receivedFrom the peer which sent original message or null if
      *                     the block has been mined by us

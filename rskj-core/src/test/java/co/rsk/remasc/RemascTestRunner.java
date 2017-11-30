@@ -18,11 +18,11 @@
 
 package co.rsk.remasc;
 
-import co.rsk.blockchain.utils.BlockchainBuilder;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -54,11 +54,11 @@ class RemascTestRunner {
 
     private Blockchain blockchain;
 
-    private BlockchainBuilder builder;
+    private BlockChainBuilder builder;
 
     private Block genesis;
 
-    public RemascTestRunner(BlockchainBuilder blockchainBuilder, Block genesis) {
+    public RemascTestRunner(BlockChainBuilder blockchainBuilder, Block genesis) {
         this.builder = blockchainBuilder;
         this.genesis = genesis;
     }
@@ -101,29 +101,48 @@ class RemascTestRunner {
         List<Block> mainChainBlocks = new ArrayList<>();
         this.blockchain.tryToConnect(this.genesis);
 
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
+        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(),
+                blockchain, blockchain.getBlockStore(), null);
 
         for(int i = 0; i <= this.initialHeight; i++) {
             int finalI = i;
-            List<SiblingElement> siblingsForCurrentHeight = this.siblingElements.stream().filter(siblingElement -> siblingElement.getHeightToBeIncluded() == finalI).collect(Collectors.toList());
+
+            List<SiblingElement> siblingsForCurrentHeight = this.siblingElements.stream()
+                    .filter(siblingElement -> siblingElement.getHeightToBeIncluded() == finalI)
+                    .collect(Collectors.toList());
+
             List<BlockHeader> blockSiblings = new ArrayList<>();
+
+            // Going to add siblings
+            BigInteger cummDifficulty = BigInteger.ZERO;
+            if (siblingsForCurrentHeight.size() > 0){
+                cummDifficulty = blockchain.getTotalDifficulty();
+            }
+
             for(SiblingElement sibling : siblingsForCurrentHeight) {
                 Sha3Hash siblingCoinbase = PegTestUtils.createHash3();
                 Block mainchainSiblingParent = mainChainBlocks.get(sibling.getHeight() - 1);
-                Block siblingBlock = createBlock(this.genesis, mainchainSiblingParent, PegTestUtils.createHash3(), siblingCoinbase, null, minerFee, Long.valueOf(i), this.txValue, this.txSigningKey);
+                Block siblingBlock = createBlock(this.genesis, mainchainSiblingParent, PegTestUtils.createHash3(),
+                        siblingCoinbase, null, minerFee, Long.valueOf(i), this.txValue,
+                        this.txSigningKey, null);
 
                 blockSiblings.add(siblingBlock.getHeader());
+
+                blockchain.getBlockStore().saveBlock(siblingBlock, cummDifficulty.add(siblingBlock.getCumulativeDifficulty()), false);
                 this.addedSiblings.add(siblingBlock);
             }
 
             long txNonce = i;
             Sha3Hash coinbase = PegTestUtils.createHash3();
-            Block block = createBlock(this.genesis, this.blockchain.getBestBlock(), PegTestUtils.createHash3(), coinbase, blockSiblings, minerFee, txNonce, this.txValue, this.txSigningKey);
+            Block block = createBlock(this.genesis, this.blockchain.getBestBlock(), PegTestUtils.createHash3(),
+                    coinbase, blockSiblings, minerFee, txNonce, this.txValue, this.txSigningKey, null);
             mainChainBlocks.add(block);
 
             blockExecutor.executeAndFillAll(block, this.blockchain.getBestBlock());
 
+            block.seal();
             ImportResult result = this.blockchain.tryToConnect(block);
+
             System.out.println(result);
         }
     }
@@ -142,7 +161,15 @@ class RemascTestRunner {
         return accountState == null ? null : repository.getAccountState(address).getBalance();
     }
 
-    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, Sha3Hash coinbase, List<BlockHeader> uncles, long minerFee, long txNonce, long txValue, ECKey txSigningKey) {
+    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, Sha3Hash coinbase,
+                                    List<BlockHeader> uncles, long minerFee, long txNonce, long txValue,
+                                    ECKey txSigningKey) {
+        return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, minerFee, txNonce,
+                txValue, txSigningKey, null);
+    }
+    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, Sha3Hash coinbase,
+                                    List<BlockHeader> uncles, long minerFee, long txNonce, long txValue,
+                                    ECKey txSigningKey, Long difficulty) {
         if (minerFee == 0) throw new IllegalArgumentException();
         Transaction tx = new Transaction(
                 BigInteger.valueOf(txNonce).toByteArray(),
@@ -154,11 +181,12 @@ class RemascTestRunner {
                 Transaction.getConfigChainId());
 
         tx.sign(txSigningKey.getPrivKeyBytes());
-
-        return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, tx);
+        //createBlook 1
+        return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, difficulty, tx);
     }
 
-    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, Sha3Hash coinbase, List<BlockHeader> uncles, Transaction... txsToInlcude) {
+    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, Sha3Hash coinbase,
+                                    List<BlockHeader> uncles, Long difficulty, Transaction... txsToInlcude) {
         List<Transaction> txs = new ArrayList<>();
         if (txsToInlcude != null) {
             for (Transaction tx : txsToInlcude) {
@@ -169,12 +197,18 @@ class RemascTestRunner {
         Transaction remascTx = new RemascTransaction(parentBlock.getNumber() + 1);
         txs.add(remascTx);
 
-        long difficulty = BigIntegers.fromUnsignedByteArray(parentBlock.getDifficulty()).longValue();
+        long difficultyAsLong = difficulty == null?BigIntegers.fromUnsignedByteArray(parentBlock.getDifficulty()).longValue():difficulty;
 
-        if (difficulty == 0)
-            difficulty = 1;
+        if (difficultyAsLong == 0)
+            difficultyAsLong = 1;
 
-        byte[] diffBytes = BigInteger.valueOf(difficulty).toByteArray();
+        byte[] diffBytes = BigInteger.valueOf(difficultyAsLong).toByteArray();
+
+        long paidFees = 0;
+
+        for (Transaction tx : txs) {
+            paidFees += BigIntegers.fromUnsignedByteArray(tx.getGasLimit()).longValue() * BigIntegers.fromUnsignedByteArray(tx.getGasPrice()).longValue();
+        }
 
         Block block =  new Block(
                 parentBlock.getHash(),          // parent hash
@@ -194,14 +228,15 @@ class RemascTestRunner {
                 genesis.getStateRoot(),         //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list
                 uncles,                          // uncle list
-                BigInteger.TEN.toByteArray()
+                BigInteger.TEN.toByteArray(),
+                paidFees
         ) {
             private BlockHeader harcodedHashHeader;
 
             @Override
             public BlockHeader getHeader() {
                 if (harcodedHashHeader==null) {
-                    harcodedHashHeader = new BlockHeader(super.getHeader().getEncoded()) {
+                    harcodedHashHeader = new BlockHeader(super.getHeader().getEncoded(), false) {
                         @Override
                         public byte[] getHash() {
                             return blockHash.getBytes();
@@ -226,11 +261,6 @@ class RemascTestRunner {
                 harcodedHashHeader = null;
             }
         };
-        long paidFees = 0;
-        for (Transaction tx : txs) {
-            paidFees += BigIntegers.fromUnsignedByteArray(tx.getGasLimit()).longValue() * BigIntegers.fromUnsignedByteArray(tx.getGasPrice()).longValue();
-        }
-        block.getHeader().setPaidFees(paidFees);
 
         return block;
     }

@@ -19,13 +19,10 @@
 
 package org.ethereum.util;
 
-import com.cedarsoftware.util.DeepEquals;
-
 import org.ethereum.crypto.HashUtil;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -39,10 +36,7 @@ public class Value {
     private byte[] rlp;
     private byte[] sha3;
 
-    private boolean decoded = false;
-
     public static Value fromRlpEncoded(byte[] data) {
-
         if (data != null && data.length != 0) {
             Value v = new Value();
             v.init(data);
@@ -51,7 +45,7 @@ public class Value {
         return null;
     }
 
-    public Value(){
+    public Value() {
     }
 
     public void init(byte[] rlp){
@@ -59,8 +53,6 @@ public class Value {
     }
 
     public Value(Object obj) {
-
-        this.decoded = true;
         if (obj == null) {
             return;
         }
@@ -77,18 +69,15 @@ public class Value {
      * *****************/
 
     public Object asObj() {
-        decode();
         return value;
     }
 
     public List<Object> asList() {
-        decode();
         Object[] valueArray = (Object[]) value;
         return Arrays.asList(valueArray);
     }
 
     public int asInt() {
-        decode();
         if (isInt()) {
             return (Integer) value;
         } else if (isBytes()) {
@@ -98,7 +87,6 @@ public class Value {
     }
 
     public long asLong() {
-        decode();
         if (isLong()) {
             return (Long) value;
         } else if (isBytes()) {
@@ -108,12 +96,10 @@ public class Value {
     }
 
     public BigInteger asBigInt() {
-        decode();
         return (BigInteger) value;
     }
 
     public String asString() {
-        decode();
         if (isBytes()) {
             return new String((byte[]) value);
         } else if (isString()) {
@@ -123,7 +109,6 @@ public class Value {
     }
 
     public byte[] asBytes() {
-        decode();
         if (isBytes()) {
             return (byte[]) value;
         } else if (isString()) {
@@ -164,13 +149,6 @@ public class Value {
      *      Utility
      * *****************/
 
-    public void decode(){
-        if (!this.decoded) {
-            this.value = RLP.decode(rlp, 0).getDecoded();
-            this.decoded = true;
-        }
-    }
-
     public byte[] encode() {
         if (rlp == null)
             rlp = RLP.encode(value);
@@ -183,48 +161,37 @@ public class Value {
         return sha3;
     }
 
-    public boolean cmp(Value o) {
-        return DeepEquals.deepEquals(this, o);
-    }
-
     /* *****************
      *      Checks
      * *****************/
 
     public boolean isList() {
-        decode();
         return value != null && value.getClass().isArray() && !value.getClass().getComponentType().isPrimitive();
     }
 
     public boolean isString() {
-        decode();
         return value instanceof String;
     }
 
     public boolean isInt() {
-        decode();
         return value instanceof Integer;
     }
 
     public boolean isLong() {
-        decode();
         return value instanceof Long;
     }
 
     public boolean isBigInt() {
-        decode();
         return value instanceof BigInteger;
     }
 
     public boolean isBytes() {
-        decode();
         return value instanceof byte[];
     }
 
     // it's only if the isBytes() = true
     public boolean isReadableString() {
 
-        decode();
         int readableChars = 0;
         byte[] data = (byte[]) value;
 
@@ -244,7 +211,6 @@ public class Value {
     // it's only if the isBytes() = true
     public boolean isHexString() {
 
-        decode();
         int hexChars = 0;
         byte[] data = (byte[]) value;
 
@@ -259,17 +225,14 @@ public class Value {
     }
 
     public boolean isHashCode() {
-        decode();
         return this.asBytes().length == 32;
     }
 
     public boolean isNull() {
-        decode();
         return value == null;
     }
 
     public boolean isEmpty() {
-        decode();
         if (isNull()) {
             return true;
         }
@@ -287,7 +250,6 @@ public class Value {
     }
 
     public int length() {
-        decode();
         if (isList()) {
             return asList().size();
         } else if (isBytes()) {
@@ -300,7 +262,6 @@ public class Value {
 
     public String toString() {
 
-        decode();
         StringBuilder stringBuilder = new StringBuilder();
 
         if (isList()) {
@@ -367,18 +328,4 @@ public class Value {
         return "Unexpected type";
     }
 
-    public int countBranchNodes() {
-        decode();
-        if (this.isList()) {
-            List<Object> objList = this.asList();
-            int i = 0;
-            for (Object obj : objList) {
-                i += (new Value(obj)).countBranchNodes();
-            }
-            return i;
-        } else if (this.isBytes()) {
-            this.asBytes();
-        }
-        return 0;
-    }
 }

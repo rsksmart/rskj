@@ -32,6 +32,7 @@ import java.util.*;
 /**
  * Responsible for persisting the remasc state into the contract state
  * @see co.rsk.peg.BridgeStorageProvider
+ * @author Oscar Guindzberg
  */
 class RemascStorageProvider {
     // Contract state keys used to store values
