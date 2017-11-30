@@ -297,6 +297,8 @@ public class BridgeSupport {
 
             // If the address is not whitelisted, then return the funds
             // That is, get them in the release cycle
+            // otherwise, transfer SBTC to the sender of the BTC
+            // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
             if (!provider.getLockWhitelist().isWhitelisted(senderBtcAddress)) {
                 boolean addResult = addToReleaseCycle(rskTx, senderBtcAddress, totalAmount);
 
@@ -305,21 +307,17 @@ public class BridgeSupport {
                 } else {
                     logger.warn("whitelist money return ignored because value is considered dust. To {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
                 }
+            } else {
+                org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
+                byte[] sender = key.getAddress();
 
-                return;
+                transfer(
+                        rskRepository,
+                        Hex.decode(PrecompiledContracts.BRIDGE_ADDR),
+                        sender,
+                        Denomination.satoshisToWeis(BigInteger.valueOf(totalAmount.getValue()))
+                );
             }
-
-            // Tx is a lock tx, transfer SBTC to the sender of the BTC
-            // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
-            org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
-            byte[] sender = key.getAddress();
-
-            transfer(
-                    rskRepository,
-                    Hex.decode(PrecompiledContracts.BRIDGE_ADDR),
-                    sender,
-                    Denomination.satoshisToWeis(BigInteger.valueOf(totalAmount.getValue()))
-            );
         } else if (BridgeUtils.isReleaseTx(btcTx, federation, bridgeConstants)) {
             logger.debug("This is a release tx {}", btcTx);
             // do-nothing
