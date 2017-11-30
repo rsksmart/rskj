@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.TouchedAccountsTracker;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
@@ -38,14 +39,12 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
+import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
-import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.util.ByteUtil.toHexString;
@@ -76,7 +75,7 @@ public class TransactionExecutor {
     private Block executionBlock;
 
     private final EthereumListener listener;
-    private final Set<DataWord> touchedAccounts = new HashSet<>();
+    private final TouchedAccountsTracker touchedAccounts = new TouchedAccountsTracker();
 
     private VM vm;
     private Program program;
@@ -365,7 +364,7 @@ public class TransactionExecutor {
                     throw result.getException();
                 }
             } else {
-                touchedAccounts.addAll(result.getTouchedAccounts());
+                touchedAccounts.mergeFrom(result.getTouchedAccounts());
                 cacheTrack.commit();
             }
 
@@ -449,7 +448,7 @@ public class TransactionExecutor {
             result.getDeleteAccounts().forEach(address -> track.delete(address.getLast20Bytes()));
         }
 
-        clearEmptyAccountsFromStateTrie();
+        touchedAccounts.clearEmptyAccountsFrom(track);
 
         if (listener != null)
             listener.onTransactionExecuted(summary);
@@ -472,19 +471,6 @@ public class TransactionExecutor {
         }
 
         logger.info("tx finalization done");
-    }
-
-    /**
-     * Invariant-preserving state trie clearing as specified in EIP-161
-     */
-    private void clearEmptyAccountsFromStateTrie() {
-        for (DataWord acctAddrDW : touchedAccounts) {
-            byte[] acctAddr = acctAddrDW.getData();
-            AccountState state = track.getAccountState(acctAddr);
-            if (state != null && state.isEmpty()) {
-                track.delete(acctAddr);
-            }
-        }
     }
 
     public TransactionExecutor setLocalCall(boolean localCall) {

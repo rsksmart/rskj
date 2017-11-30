@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program;
 
+import co.rsk.core.TouchedAccountsTracker;
 import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
@@ -47,7 +48,7 @@ public class ProgramResult {
     private Map<DataWord, byte[]> codeChanges;
 
     private Set<DataWord> deleteAccounts;
-    private final Set<DataWord> touchedAccounts = new HashSet<>();
+    private final TouchedAccountsTracker touchedAccounts = new TouchedAccountsTracker();
     private List<InternalTransaction> internalTransactions;
     private List<LogInfo> logInfoList;
     private long futureRefund = 0;
@@ -109,7 +110,7 @@ public class ProgramResult {
     }
 
     @Nonnull
-    public Set<DataWord> getTouchedAccounts() {
+    public TouchedAccountsTracker getTouchedAccounts() {
         return touchedAccounts;
     }
 
@@ -226,7 +227,7 @@ public class ProgramResult {
             addDeleteAccounts(another.getDeleteAccounts());
             addLogInfos(another.getLogInfoList());
             addFutureRefund(another.getFutureRefund());
-            touchedAccounts.addAll(another.getTouchedAccounts());
+            touchedAccounts.mergeFrom(another.getTouchedAccounts());
         }
     }
     
