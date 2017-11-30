@@ -820,17 +820,18 @@ public class Program {
             callResult = executeCode(msg,contextAddress, contextBalance,internalTx,track,programCode,senderAddress,data);
         }
         else {
-            // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
             track.commit();
             callResult = true;
             refundGas(msg.getGas().longValue(), "remaining gas from the internal call");
         }
 
-        if (callResult)
+        // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
+        if (callResult) {
             stackPushOne();
-        else
+        }
+        else {
             stackPushZero();
-
+        }
     }
 
     public boolean executeCode(
