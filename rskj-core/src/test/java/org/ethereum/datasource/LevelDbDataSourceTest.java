@@ -19,6 +19,8 @@
 
 package org.ethereum.datasource;
 
+import co.rsk.config.RskSystemProperties;
+
 import org.ethereum.config.SystemProperties;
 import org.junit.After;
 import org.junit.Before;
@@ -50,7 +52,7 @@ public class LevelDbDataSourceTest {
 
     @Before
     public void before() {
-        SystemProperties.CONFIG.setDataBaseDir(dbsTempFolder.getRoot().getAbsolutePath());
+        RskSystemProperties.CONFIG.setDataBaseDir(dbsTempFolder.getRoot().getAbsolutePath());
         underTest = new LevelDbDataSource("test");
         underTest.init();
     }
