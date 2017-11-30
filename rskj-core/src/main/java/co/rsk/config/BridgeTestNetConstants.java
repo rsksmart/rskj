@@ -50,7 +50,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
         BtcECKey federator4PublicKey = BtcECKey.fromPublicOnly(Hex.decode("029868937807b41dac42ff5a5b4a1d1711c4f3454f5826933465aa2614c5e90fdf"));
         BtcECKey federator5PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03c83e2dc1fbeaa54f0a8e8d482d46a32ef721322a4910a756fb07713f2dddbcb9"));
         BtcECKey federator6PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02629b1e976a5ed02194c0680f4f7b30f8388b51e935796ccee35e5b0fad915c3a"));
-        BtcECKey federator7PublicKey = BtcECKey.fromPublicOnly(Hex.decode("032ed58056d205829824c3693cc2f9285565b068a29661c37bc90f431b147f8e55"));
+        BtcECKey federator7PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09"));
         BtcECKey federator8PublicKey = BtcECKey.fromPublicOnly(Hex.decode("023552f8144c944ffa220724cd4b5f455d75eaf59b17f73bdc1a7177a3e9bf7871"));
         BtcECKey federator9PublicKey = BtcECKey.fromPublicOnly(Hex.decode("036d9d9bf6fa85bbb00a18b34e0d8baecf32c330c4b1920419c415e1005355f498"));
         BtcECKey federator10PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03bb42b0d32e781b88319dbc3aadc43c7a032c1931b641f5ae8340b8891bfdedbd"));
@@ -70,8 +70,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
         // To recreate the value use
         // genesisFederationAddressCreatedAt = new GregorianCalendar(2017,4,10).getTimeInMillis() / 1000;
         // Currently set to:
-        // Wed May 10 00:00:00 ART 2017
-        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1494385200l);
+        // Sun Dec 03 00:00:00 ART 2017
+        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1512270000l);
 
         // Expected federation address is:
         // 2NBPystfboREksK6hMCZesfH444zB3BkUUm
