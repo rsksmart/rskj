@@ -46,6 +46,6 @@ public class TouchedAccountsTracker {
     }
 
     public void mergeFrom(TouchedAccountsTracker other) {
-        touchedAccounts.addAll(other.touchedAccounts);
+        other.touchedAccounts.forEach(this::add);
     }
 }

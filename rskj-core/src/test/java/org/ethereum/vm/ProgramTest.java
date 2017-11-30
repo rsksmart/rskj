@@ -20,6 +20,7 @@
 package org.ethereum.vm;
 
 import co.rsk.util.TestContract;
+import org.ethereum.util.ContractRunner;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,7 +30,8 @@ import java.math.BigInteger;
 public class ProgramTest {
     @Test
     public void helloContract() {
-        ProgramResult result = TestContract.hello().executeFunction("hello", BigInteger.ZERO);
+        ContractRunner runner = new ContractRunner();
+        ProgramResult result = runner.executeFunction(TestContract.hello(), "hello", BigInteger.ZERO);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
@@ -39,28 +41,32 @@ public class ProgramTest {
 
     @Test
     public void helloContractIsNotPayable() {
-        ProgramResult result = TestContract.hello().executeFunction("hello", BigInteger.TEN);
+        ContractRunner runner = new ContractRunner();
+        ProgramResult result = runner.executeFunction(TestContract.hello(), "hello", BigInteger.TEN);
         Assert.assertTrue(result.isRevert());
         Assert.assertNull(result.getException());
     }
 
     @Test
     public void childContractDoesntInheritMsgValue() {
-        ProgramResult result = TestContract.parent().executeFunction("createChild", BigInteger.TEN);
+        ContractRunner runner = new ContractRunner();
+        ProgramResult result = runner.executeFunction(TestContract.parent(), "createChild", BigInteger.TEN);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
     }
 
     @Test
     public void childContractDoesntInheritMsgValue_2() {
-        ProgramResult result = TestContract.msgValueTest().executeFunction("test_create", BigInteger.TEN);
+        ContractRunner runner = new ContractRunner();
+        ProgramResult result = runner.executeFunction(TestContract.msgValueTest(), "test_create", BigInteger.TEN);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
     }
 
     @Test
     public void sendFailsAndReturnsFalseThenExecutionContinuesNormally() {
-        ProgramResult result = TestContract.sendTest().executeFunction("test", BigInteger.TEN);
+        ContractRunner runner = new ContractRunner();
+        ProgramResult result = runner.executeFunction(TestContract.sendTest(), "test", BigInteger.TEN);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
@@ -70,7 +76,8 @@ public class ProgramTest {
 
     @Test
     public void childContractGetsStipend() {
-        ProgramResult result = TestContract.bankTest().executeFunction("test", BigInteger.TEN);
+        ContractRunner runner = new ContractRunner();
+        ProgramResult result = runner.executeFunction(TestContract.bankTest(), "test", BigInteger.TEN);
         Assert.assertFalse(result.isRevert());
         Assert.assertNull(result.getException());
         Assert.assertArrayEquals(
@@ -80,7 +87,8 @@ public class ProgramTest {
 
     @Test
     public void cantCreateTooLargeContract() {
-        ProgramResult result = TestContract.bigTest().createContract();
+        ContractRunner runner = new ContractRunner();
+        ProgramResult result = runner.createContract(TestContract.bigTest());
         Assert.assertFalse(result.isRevert());
         Assert.assertNotNull(result.getException());
         Assert.assertTrue(result.getException() instanceof RuntimeException);

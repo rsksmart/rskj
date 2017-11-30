@@ -75,7 +75,7 @@ public class TransactionExecutor {
     private Block executionBlock;
 
     private final EthereumListener listener;
-    private final TouchedAccountsTracker touchedAccounts = new TouchedAccountsTracker();
+    private final TouchedAccountsTracker touchedAccounts;
 
     private VM vm;
     private Program program;
@@ -88,14 +88,23 @@ public class TransactionExecutor {
 
     public TransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
+        this(tx, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, new TouchedAccountsTracker());
+    }
 
-        this(tx, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0);
+    public TransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
+                               ProgramInvokeFactory programInvokeFactory, Block executionBlock, TouchedAccountsTracker touchedAccounts) {
+        this(tx, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0, touchedAccounts);
     }
 
     public TransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock,
                                EthereumListener listener, long gasUsedInTheBlock) {
+        this(tx, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, listener, gasUsedInTheBlock, new TouchedAccountsTracker());
+    }
 
+    public TransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
+                               ProgramInvokeFactory programInvokeFactory, Block executionBlock,
+                               EthereumListener listener, long gasUsedInTheBlock, TouchedAccountsTracker touchedAccounts) {
         this.tx = tx;
         this.coinbase = coinbase;
         this.track = track;
@@ -106,6 +115,7 @@ public class TransactionExecutor {
         this.executionBlock = executionBlock;
         this.listener = listener;
         this.gasUsedInTheBlock = gasUsedInTheBlock;
+        this.touchedAccounts = touchedAccounts;
     }
 
 
