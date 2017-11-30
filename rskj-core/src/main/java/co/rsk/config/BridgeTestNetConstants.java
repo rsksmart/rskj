@@ -21,12 +21,16 @@ package co.rsk.config;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import com.google.common.collect.Lists;
+import org.ethereum.crypto.ECKey;
 import org.spongycastle.util.encoders.Hex;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class BridgeTestNetConstants extends BridgeConstants {
 
@@ -83,6 +87,27 @@ public class BridgeTestNetConstants extends BridgeConstants {
         minimumLockTxValue = Coin.valueOf(1000000);
         minimumReleaseTxValue = Coin.valueOf(500000);
 
+        // Keys generated with GenNodeKey using generators 'auth-a' through 'auth-e'
+        List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
+            "04d9052c2022f6f35da53f04f02856ff5e59f9836eec03daad0328d12c5c66140205da540498e46cd05bf63c1201382dd84c100f0d52a10654159965aea452c3f2",
+            "04bf889f2035c8c441d7d1054b6a449742edd04d202f44a29348b4140b34e2a81ce66e388f40046636fd012bd7e3cecd9b951ffe28422334722d20a1cf6c7926fb",
+            "047e707e4f67655c40c539363fb435d89574b8fe400971ba0290de9c2adbb2bd4e1e5b35a2188b9409ff2cc102292616efc113623483056bb8d8a02bf7695670ea"
+        }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+
+        federationChangeAuthorizer = new AddressBasedAuthorizer(
+                federationChangeAuthorizedKeys,
+                AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY
+        );
+
+        // Key generated with GenNodeKey using generator 'auth-lock-whitelist'
+        List<ECKey> lockWhitelistAuthorizedKeys = Arrays.stream(new String[]{
+            "04bf7e3bca7f7c58326382ed9c2516a8773c21f1b806984bb1c5c33bd18046502d97b28c0ea5b16433fbb2b23f14e95b36209f304841e814017f1ede1ecbdcfce3"
+        }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+
+        lockWhitelistChangeAuthorizer = new AddressBasedAuthorizer(
+                lockWhitelistAuthorizedKeys,
+                AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
+        );
         fundsMigrationAgeBegin = 60L;
         fundsMigrationAgeEnd = 900L;
     }
