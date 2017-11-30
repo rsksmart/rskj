@@ -35,13 +35,14 @@ import java.util.Map;
  * Created by ajlopez on 5/11/2016.
  */
 public class SimpleBlockProcessor implements BlockProcessor {
-
     public long lastKnownBlockNumber = 0;
     private List<Block> blocks = new ArrayList<Block>();
-
+    private long requestId;
+    private byte[] hash;
+    private int count;
 
     @Override
-    public BlockProcessResult processBlock(MessageSender sender, Block block) {
+    public BlockProcessResult processBlock(MessageChannel sender, Block block) {
         Map<ByteArrayWrapper, ImportResult> connectionsResult = new HashMap<>();
         this.blocks.add(block);
         connectionsResult.put(new ByteArrayWrapper(block.getHash()), ImportResult.IMPORTED_BEST);
@@ -49,17 +50,38 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public void processGetBlock(MessageSender sender, byte[] hash) {
+    public void processGetBlock(MessageChannel sender, byte[] hash) {
 
     }
 
     @Override
-    public void processGetBlockHeaders(MessageSender sender, long blockNumber, byte[] hash, int maxHeaders, int skip, boolean reverse) {
+    public void processBlockRequest(MessageChannel sender, long requestId, byte[] hash) {
+        this.requestId = requestId;
+        this.hash = hash;
+    }
+
+    @Override
+    public void processBlockHeadersRequest(MessageChannel sender, long requestId, byte[] hash, int count) {
+        this.requestId = requestId;
+        this.hash = hash;
+        this.count = count;
+    }
+
+    @Override
+    public void processBodyRequest(MessageChannel sender, long requestId, byte[] hash) {
+    }
+
+    @Override
+    public void processBlockHashRequest(MessageChannel sender, long requestId, long height) {
+    }
+
+    @Override
+    public void processGetBlockHeaders(MessageChannel sender, long blockNumber, byte[] hash, int maxHeaders, int skip, boolean reverse) {
 
     }
 
     @Override
-    public void processGetBlockHeaders(MessageSender sender, byte[] hash) {
+    public void processGetBlockHeaders(MessageChannel sender, byte[] hash) {
 
     }
 
@@ -69,7 +91,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public void processStatus(MessageSender sender, Status status) {
+    public void processStatus(MessageChannel sender, Status status) {
 
     }
 
@@ -87,12 +109,17 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public void processNewBlockHashesMessage(MessageSender sender, NewBlockHashesMessage message) {
+    public void processNewBlockHashesMessage(MessageChannel sender, NewBlockHashesMessage message) {
 
     }
 
     @Override
-    public void processBlockHeaders(MessageSender sender, List<BlockHeader> blockHeaders) {
+    public void processBlockHeaders(MessageChannel sender, List<BlockHeader> blockHeaders) {
+
+    }
+
+    @Override
+    public void processSkeletonRequest(final MessageChannel sender, long requestId, final long startNumber) {
 
     }
 
@@ -118,8 +145,9 @@ public class SimpleBlockProcessor implements BlockProcessor {
     public boolean hasBetterBlockToSync() { return false; }
 
     @Override
-    public void sendStatusToAll() { }
-
-    @Override
     public void acceptAnyBlock() { }
+
+    public long getRequestId() { return this.requestId; }
+
+    public byte[] getHash() { return this.hash; }
 }

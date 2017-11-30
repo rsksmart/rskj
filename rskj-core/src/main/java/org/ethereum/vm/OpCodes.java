@@ -583,6 +583,14 @@ public class OpCodes {
      */
     static final byte OP_DELEGATECALL =(byte)0xf4 ;
     static final byte OP_HEADER =(byte)0xfc  ;
+
+    /**
+     * (0xfd) The `REVERT` instruction will stop execution, roll back all state changes done so far
+     * and provide a pointer to a memory section, which can be interpreted as an error code or message.
+     * While doing so, it will not consume all the remaining gas.
+     */
+    static final byte OP_REVERT = (byte)0xfd;
+
     /**
      * (0xff) Halt execution and register account for
      * later deletion

@@ -31,7 +31,6 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -466,126 +465,6 @@ public class RepositoryImplTest {
         RepositoryImpl repository = new RepositoryImpl();
 
         Assert.assertNotNull(repository.getDetailsDataStore());
-    }
-
-    @Test
-    public void getStorageKeysForUnknownAccount() {
-        RepositoryImpl repository = new RepositoryImpl();
-
-        Set<DataWord> keys = repository.getStorageKeys(randomAccountAddress());
-
-        Assert.assertNotNull(keys);
-        Assert.assertTrue(keys.isEmpty());
-    }
-
-    @Test
-    public void getStorageKeysForCreatedAccountWithoutStorage() {
-        byte[] accAddress = randomAccountAddress();
-
-        RepositoryImpl repository = new RepositoryImpl();
-
-        repository.createAccount(accAddress);
-
-        Set<DataWord> keys = repository.getStorageKeys(accAddress);
-
-        Assert.assertNotNull(keys);
-        Assert.assertTrue(keys.isEmpty());
-    }
-
-    @Test
-    public void getStorageKeysForAccountWithSavedData() {
-        byte[] accAddress = randomAccountAddress();
-
-        RepositoryImpl repository = new RepositoryImpl();
-
-        repository.createAccount(accAddress);
-        repository.addStorageRow(accAddress, DataWord.ONE, new DataWord(2));
-
-        Set<DataWord> keys = repository.getStorageKeys(accAddress);
-
-        Assert.assertNotNull(keys);
-        Assert.assertFalse(keys.isEmpty());
-        Assert.assertEquals(1, keys.size());
-        Assert.assertTrue(keys.contains(DataWord.ONE));
-    }
-
-    @Test
-    public void getStorageSizeForUnknownAccount() {
-        RepositoryImpl repository = new RepositoryImpl();
-
-        Assert.assertEquals(0, repository.getStorageSize(randomAccountAddress()));
-    }
-
-    @Test
-    public void getStorageSizeForCreatedAccountWithoutStorage() {
-        byte[] accAddress = randomAccountAddress();
-
-        RepositoryImpl repository = new RepositoryImpl();
-
-        repository.createAccount(accAddress);
-
-        Assert.assertEquals(0, repository.getStorageSize(accAddress));
-    }
-
-    @Test
-    public void getStorageSizeForAccountWithSavedData() {
-        byte[] accAddress = randomAccountAddress();
-
-        RepositoryImpl repository = new RepositoryImpl();
-
-        repository.createAccount(accAddress);
-        repository.addStorageRow(accAddress, DataWord.ONE, DataWord.ONE);
-
-        Assert.assertEquals(1, repository.getStorageSize(accAddress));
-    }
-
-    @Test
-    public void getStorageForUnknownAccount() {
-        RepositoryImpl repository = new RepositoryImpl();
-
-        Map<DataWord, DataWord> map = repository.getStorage(randomAccountAddress(), null);
-
-        Assert.assertNotNull(map);
-        Assert.assertTrue(map.isEmpty());
-    }
-
-    @Test
-    public void getStorageForCreatedAccountWithoutStorage() {
-        byte[] accAddress = randomAccountAddress();
-
-        RepositoryImpl repository = new RepositoryImpl();
-
-        repository.createAccount(accAddress);
-
-        Map<DataWord, DataWord> map = repository.getStorage(accAddress, null);
-
-        Assert.assertNotNull(map);
-        Assert.assertTrue(map.isEmpty());
-    }
-
-    @Test
-    public void getStorageForAccountWithSavedData() {
-        byte[] accAddress = randomAccountAddress();
-
-        RepositoryImpl repository = new RepositoryImpl();
-
-        Repository track = repository.startTracking();
-
-        track.createAccount(accAddress);
-        track.addStorageRow(accAddress, DataWord.ONE, new DataWord(2));
-
-        track.commit();
-
-        Map<DataWord, DataWord> map = repository.getStorage(accAddress, null);
-
-        Assert.assertNotNull(map);
-        Assert.assertFalse(map.isEmpty());
-
-        Assert.assertEquals(1, map.size());
-        Assert.assertTrue(map.containsKey(DataWord.ONE));
-
-        Assert.assertNotNull(map.get(DataWord.ONE));
-        Assert.assertEquals(new DataWord(2), map.get(DataWord.ONE));
     }
 
     @Test

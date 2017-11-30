@@ -18,28 +18,26 @@
 
 package co.rsk.blockchain.utils;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.peg.PegTestUtils;
-import co.rsk.peg.simples.SimpleRskTransaction;
 import co.rsk.mine.MinimumGasPriceCalculator;
+import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleBlock;
-
+import co.rsk.peg.simples.SimpleRskTransaction;
+import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.InitialAddressState;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
-import co.rsk.trie.Trie;
-import org.ethereum.util.ByteUtil;
+import org.ethereum.util.BIUtil;
 import org.ethereum.util.RLP;
 import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 import org.spongycastle.util.encoders.Hex;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
-
 import java.util.List;
 import java.util.Map;
 
@@ -51,15 +49,16 @@ import static org.ethereum.util.ByteUtil.wrap;
  * Created by ajlopez on 5/10/2016.
  */
 public class BlockGenerator {
+    private static final BlockGenerator INSTANCE = new BlockGenerator();
+
     private static final byte[] EMPTY_LIST_HASH = HashUtil.sha3(RLP.encodeList());
 
-    private static byte[] EMPTY_BYTE_ARRAY = new byte[0];
-    private static int count = 0;
+    private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     // from bcValidBlockTest.json
-    private static String genesisRLP = "f901fcf901f7a00000000000000000000000000000000000000000000000000000000000000000a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347948888f1f195afa192cfee860698584c030f4c9db1a07dba07d6b448a186e9612e5f737d1c909dce473e53199901a302c00646d523c1a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421b90100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008302000080832fefd8808454c98c8142a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421880102030405060708c0c0";
+    private static final String genesisRLP = "f901fcf901f7a00000000000000000000000000000000000000000000000000000000000000000a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347948888f1f195afa192cfee860698584c030f4c9db1a07dba07d6b448a186e9612e5f737d1c909dce473e53199901a302c00646d523c1a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421b90100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008302000080832fefd8808454c98c8142a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421880102030405060708c0c0";
 
-    private static String[] blockRlps = {
+    private static final String[] blockRlps = {
             genesisRLP,
             "f902b4f902afa0abff92b32e43e9f34eda3fa7fe5359cb06871b172226a829daa9af22d1fac2cea01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347949efa02278cc63dc612c174976f11037d382f8b67a0c5d6ad68162cb8f04ef7afc8bf74558a19bceaf334b0497bd8d3c86c24de9f9da056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a0a8f57ab26ee2c88d15f6bd20f052dbc76a1f4a0b55d214a88f4b8201b8840736b901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000083020000018407fe000080845730e70e808080b85004000000f08613eff431f121c059541e38594a190d6b0e46d2cb2bb52dc6b692020000003b8cacca5ed46c229a777c7c55ddfefed2b78ccb4ce6df07ecb1e36bde29f4741ee73057ffff7f20005a40aca701000000013b8cacca5ed46c229a777c7c55ddfefed2b78ccb4ce6df07ecb1e36bde29f4740101b86100000000000000801f506f4152ccdb46a5e162488b24647e750c88073c56530d2154475fdc8c4cb4ac00000000000000002b6a524f4f5453544f434b3a1ff8eae11ecb36803b0fd23bd31490bd1054e078852a0f975428871c42bef40900000000800ac0c0",
             "f902b4f902afa0c15c503127c6c70f53666806a336ab7600c5d7aa86bf2bd9149acb48b3353ffba01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347949efa02278cc63dc612c174976f11037d382f8b67a0feac8b5b3fdaad27bc3a289646b6c44464c4b89ce30d1649cfe39e2b26323526a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a0e2bdde9667f20119e55bc4d60dd80c14fca25caf985b8523e20c649b1113b06eb901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000083020000028407fc008080845730e726808080b85004000000f08613eff431f121c059541e38594a190d6b0e46d2cb2bb52dc6b69202000000899e557890240f889575a7dbb3249e6a9cb3df8933ffd29fd88b0a559229b11f28e73057ffff7f20804a9c66a70100000001899e557890240f889575a7dbb3249e6a9cb3df8933ffd29fd88b0a559229b11f0101b861000000000000008034d70d272689bd240d2c25c5d15b5bb7242c6979011ec2167faad2b90c079c2fac00000000000000002b6a524f4f5453544f434b3acb21587449c2d39b94bf06c2b81ea74d83ad1b4de7d425cfce01253796b2d85a00000000800ac0c0",
@@ -67,18 +66,23 @@ public class BlockGenerator {
             "f902b4f902afa02224b34b6bd4a0b4a4dc2b9aa67d86dd401a4c180d519022f85e500ff82f7637a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347949efa02278cc63dc612c174976f11037d382f8b67a0bbef991ea1691a0ee9eeebeda57dde7fe3f80f589f7abd47bf16d8cd04b964c3a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a0249b2f538c284002a2068409d2cbdcba3a74072cea3dcaf1bcef415e86acbaf6b901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000083020080048407f802fe80845730e732808080b85004000000f08613eff431f121c059541e38594a190d6b0e46d2cb2bb52dc6b69202000000e8d9789a4509cb1f3d775d267b7f2fa7b5291f56717dc962dc319e9d706c84ee33e73057ffff7f2080012abca70100000001e8d9789a4509cb1f3d775d267b7f2fa7b5291f56717dc962dc319e9d706c84ee0101b861000000000000008010a3283751f55cfc66e4f5e3691330ef9fe39b86852b98e0fef969ab2bfb16cbac00000000000000002b6a524f4f5453544f434b3a772c6a4f889a9cf4bc7ec380c9014dbf0f8cb529155282a4ea78ccb18f18fd7600000000800ac0c0"
     };
 
-    public static Genesis getGenesisBlock() {
+    /**
+     * @deprecated
+     * Using this singleton instance is a bad idea because {@link #count} will be shared by all tests.
+     * This dependency makes tests flaky and prevents us from running tests in parallel or unordered.
+     */
+    public static BlockGenerator getInstance() {
+        return INSTANCE;
+    }
+
+
+    private int count = 0;
+
+    public Genesis getGenesisBlock() {
         return new Genesis(Hex.decode(genesisRLP));
     }
 
-    static final boolean isRsk = true;
-
-    public static Block getNewGenesisBlock(long initialGasLimit,Map<byte[], BigInteger> preMineMap) {
-        return getNewGenesisBlock(initialGasLimit,preMineMap, (byte) 0);
-    }
-
-
-    public static Block getNewGenesisBlock(long initialGasLimit,Map<byte[], BigInteger> preMineMap, byte difficultyByte) {
+    private Block getNewGenesisBlock(long initialGasLimit, Map<byte[], BigInteger> preMineMap, byte difficultyByte) {
 
         byte[] nonce       = new byte[]{0};
         byte[] difficulty  = new byte[]{difficultyByte};
@@ -119,7 +123,7 @@ public class BlockGenerator {
         return genesis;
     }
 
-    private static byte[] generateRootHash(Map<ByteArrayWrapper, InitialAddressState> premine){
+    private byte[] generateRootHash(Map<ByteArrayWrapper, InitialAddressState> premine){
         Trie state = new TrieImpl(null, true);
 
         for (ByteArrayWrapper key : premine.keySet())
@@ -128,7 +132,7 @@ public class BlockGenerator {
         return state.getHash();
     }
 
-    private static Map<ByteArrayWrapper, InitialAddressState> generatePreMine(Map<byte[], BigInteger> alloc){
+    private Map<ByteArrayWrapper, InitialAddressState> generatePreMine(Map<byte[], BigInteger> alloc){
         Map<ByteArrayWrapper, InitialAddressState> premine = new HashMap<>();
         for (byte[] key : alloc.keySet()){
             AccountState acctState = new AccountState(BigInteger.valueOf(0), alloc.get(key));
@@ -138,19 +142,47 @@ public class BlockGenerator {
         return premine;
     }
 
-    public static Block getBlock(int number) {
+    public Block getBlock(int number) {
         return new Block(Hex.decode(blockRlps[number]));
     }
 
-    public static Block createChildBlock(Block parent) {
+    public Block createChildBlock(Block parent) {
         return createChildBlock(parent, 0);
     }
 
-    public static Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot ) {
+    public Block createChildBlock(Block parent, long fees, List<BlockHeader> uncles, byte[] difficulty) {
+        List<Transaction> txs = new ArrayList<>();
+        byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
+
+        return new Block(
+                parent.getHash(), // parent hash
+                unclesListHash, // uncle hash
+                parent.getCoinbase(),
+                ByteUtils.clone(new Bloom().getData()),
+                difficulty, // difficulty
+                parent.getNumber() + 1,
+                parent.getGasLimit(),
+                parent.getGasUsed(),
+                parent.getTimestamp() + ++count,
+                EMPTY_BYTE_ARRAY,   // extraData
+                EMPTY_BYTE_ARRAY,   // mixHash
+                BigInteger.ZERO.toByteArray(),  // provisory nonce
+                EMPTY_TRIE_HASH,   // receipts root
+                BlockChainImpl.calcTxTrie(txs),  // transaction root
+                ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
+                txs,       // transaction list
+                uncles,        // uncle list
+                null,
+                fees
+        );
+//        return createChildBlock(parent, 0);
+    }
+
+    public Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot) {
         return createChildBlock(parent, txs, stateRoot, parent.getCoinbase());
     }
 
-    public static Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot, byte[] coinbase ) {
+    public Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot, byte[] coinbase) {
         Bloom logBloom = new Bloom();
 
         if (txs==null)
@@ -179,11 +211,11 @@ public class BlockGenerator {
         );
     }
 
-    public static Block createChildBlock(Block parent, int ntxs) {
-        return createChildBlock(parent, ntxs, ByteUtil.bytesToBigInteger(parent.getDifficulty()).longValue());
+    public Block createChildBlock(Block parent, int ntxs) {
+        return createChildBlock(parent, ntxs, BIUtil.toBI(parent.getDifficulty()).longValue());
     }
 
-    public static Block createChildBlock(Block parent, int ntxs, long difficulty) {
+    public Block createChildBlock(Block parent, int ntxs, long difficulty) {
         List<Transaction> txs = new ArrayList<>();
 
         for (int ntx = 0; ntx < ntxs; ntx++)
@@ -194,12 +226,17 @@ public class BlockGenerator {
         return createChildBlock(parent, txs, uncles, difficulty, null);
     }
 
-    public static Block createChildBlock(Block parent, List<Transaction> txs) {
-        return createChildBlock(parent, txs, new ArrayList<>(), ByteUtil.bytesToBigInteger(parent.getDifficulty()).longValue(), null);
+    public Block createChildBlock(Block parent, List<Transaction> txs) {
+        return createChildBlock(parent, txs, new ArrayList<>(), BIUtil.toBI(parent.getDifficulty()).longValue(), null);
     }
 
+    public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
+                                  long difficulty, BigInteger minGasPrice) {
+        return createChildBlock(parent, txs, uncles, difficulty, minGasPrice, parent.getGasLimit());
+    }
 
-    public static Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles, long difficulty, BigInteger minGasPrice) {
+    public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
+                                  long difficulty, BigInteger minGasPrice, byte[] gasLimit) {
         if (txs == null)
             txs = new ArrayList<>();
         if (uncles == null)
@@ -215,7 +252,7 @@ public class BlockGenerator {
                 ByteUtils.clone(new Bloom().getData()),
                 new byte[]{1},
                 parent.getNumber()+1,
-                parent.getGasLimit(),
+                gasLimit,
                 0,
                 parent.getTimestamp() + ++count,
                 new byte[]{},
@@ -240,9 +277,9 @@ public class BlockGenerator {
         return newBlock;
     }
 
-    public static Block createBlock(int number, int ntxs) {
+    public Block createBlock(int number, int ntxs) {
         Bloom logBloom = new Bloom();
-        Block parent = BlockGenerator.getGenesisBlock();
+        Block parent = getGenesisBlock();
 
         List<Transaction> txs = new ArrayList<>();
 
@@ -277,7 +314,7 @@ public class BlockGenerator {
         );
     }
 
-    public static Block createSimpleChildBlock(Block parent, int ntxs) {
+    public Block createSimpleChildBlock(Block parent, int ntxs) {
         Bloom logBloom = new Bloom();
 
         List<Transaction> txs = new ArrayList<>();
@@ -306,23 +343,40 @@ public class BlockGenerator {
         );
     }
 
-    public static List<Block> getBlockChain(int size) {
-        return getBlockChain(BlockGenerator.getGenesisBlock(), size);
+    public List<Block> getBlockChain(int size) {
+        return getBlockChain(getGenesisBlock(), size);
     }
 
-    public static List<Block> getBlockChain(Block parent, int size) {
+    public List<Block> getBlockChain(Block parent, int size, long difficulty) {
+        return getBlockChain(parent, size,0,false, difficulty);
+    }
+
+    public List<Block> getBlockChain(Block parent, int size) {
         return getBlockChain(parent, size, 0);
     }
 
-    public static List<Block> getSimpleBlockChain(Block parent, int size) {
+    public List<Block> getMinedBlockChain(Block parent, int size) {
+        return getBlockChain(parent, size, 0, false, true, null);
+    }
+
+    public List<Block> getSimpleBlockChain(Block parent, int size) {
         return getSimpleBlockChain(parent, size, 0);
     }
 
-    public static List<Block> getBlockChain(Block parent, int size, int ntxs) {
+    public List<Block> getBlockChain(Block parent, int size, int ntxs) {
         return getBlockChain(parent, size, ntxs, false);
     }
 
-    public static List<Block> getBlockChain(Block parent, int size, int ntxs, boolean withUncles) {
+    public List<Block> getBlockChain(Block parent, int size, int ntxs, boolean withUncles) {
+        return getBlockChain(parent, size, ntxs, withUncles, null);
+    }
+
+    public List<Block> getBlockChain(Block parent, int size, int ntxs, boolean withUncles, Long difficulty) {
+        return getBlockChain(parent, size, ntxs, false, false, difficulty);
+    }
+
+
+    public List<Block> getBlockChain(Block parent, int size, int ntxs, boolean withUncles, boolean withMining, Long difficulty) {
         List<Block> chain = new ArrayList<Block>();
         List<BlockHeader> uncles = new ArrayList<>();
         int chainSize = 0;
@@ -330,20 +384,33 @@ public class BlockGenerator {
         while (chainSize < size) {
             List<Transaction> txs = new ArrayList<>();
 
-            for (int ntx = 0; ntx < ntxs; ntx++)
+            for (int ntx = 0; ntx < ntxs; ntx++) {
                 txs.add(new SimpleRskTransaction(null));
+            }
 
-            Block newblock = BlockGenerator.createChildBlock(parent, txs, uncles, ByteUtil.bytesToBigInteger(parent.getDifficulty()).longValue(), null);
+            if (difficulty == null) {
+                difficulty = 0l;
+            }
+
+            Block newblock = createChildBlock(
+                    parent, txs, uncles,
+                    difficulty,
+                    null);
+
+            if (withMining) {
+                newblock = BlockMiner.mineBlock(newblock);
+            }
+
             chain.add(newblock);
 
             if (withUncles) {
                 uncles = new ArrayList<>();
 
-                Block newuncle = BlockGenerator.createChildBlock(parent, ntxs);
+                Block newuncle = createChildBlock(parent, ntxs);
                 chain.add(newuncle);
                 uncles.add(newuncle.getHeader());
 
-                newuncle = BlockGenerator.createChildBlock(parent, ntxs);
+                newuncle = createChildBlock(parent, ntxs);
                 chain.add(newuncle);
                 uncles.add(newuncle.getHeader());
             }
@@ -355,15 +422,19 @@ public class BlockGenerator {
         return chain;
     }
 
-    public static List<Block> getSimpleBlockChain(Block parent, int size, int ntxs) {
+    public List<Block> getSimpleBlockChain(Block parent, int size, int ntxs) {
         List<Block> chain = new ArrayList<Block>();
 
         while (chain.size() < size) {
-            Block newblock = BlockGenerator.createSimpleChildBlock(parent, ntxs);
+            Block newblock = createSimpleChildBlock(parent, ntxs);
             chain.add(newblock);
             parent = newblock;
         }
 
         return chain;
+    }
+
+    public Block getNewGenesisBlock(long initialGasLimit, Map<byte[], BigInteger> preMineMap) {
+        return getNewGenesisBlock(initialGasLimit,preMineMap, (byte) 0);
     }
 }

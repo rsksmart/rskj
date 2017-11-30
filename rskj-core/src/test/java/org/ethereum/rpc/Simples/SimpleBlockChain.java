@@ -72,7 +72,7 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     @Override
     public Block getBestBlock() {
 
-        Block block = BlockGenerator.getGenesisBlock();
+        Block block = BlockGenerator.getInstance().getGenesisBlock();
 
         return block;
     }
@@ -150,4 +150,10 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     public List<BlockInformation> getBlocksInformationByNumber(long number) {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public boolean hasBlockInSomeBlockchain(byte[] hash) {
+        return false;
+    }
+
 }

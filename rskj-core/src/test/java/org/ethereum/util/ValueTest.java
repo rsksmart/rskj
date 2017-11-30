@@ -26,22 +26,27 @@ import org.spongycastle.util.encoders.Hex;
 import java.math.BigInteger;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import static org.junit.Assert.*;
 
 public class ValueTest {
+
+    public static boolean cmp(Value value, Value o) {
+        return Objects.deepEquals(value.asObj(), o.asObj());
+    }
 
     @Test
     public void testCmp() {
         Value val1 = new Value("hello");
         Value val2 = new Value("world");
 
-        assertFalse("Expected values not to be equalBytes", val1.cmp(val2));
+        assertFalse("Expected values not to be equalBytes", cmp(val1, val2));
 
         Value val3 = new Value("hello");
         Value val4 = new Value("hello");
 
-        assertTrue("Expected values to be equalBytes", val3.cmp(val4));
+        assertTrue("Expected values to be equalBytes", cmp(val3, val4));
     }
 
     @Test
@@ -54,7 +59,7 @@ public class ValueTest {
 
         Value inter = new Value(new Object[]{1});
         Object[] interExp = new Object[]{1};
-        assertTrue(new Value(inter.asObj()).cmp(new Value(interExp)));
+        assertTrue(cmp(new Value(inter.asObj()), new Value(interExp)));
 
         Value byt = new Value(new byte[]{1, 2, 3, 4});
         byte[] bytExp = new byte[]{1, 2, 3, 4};

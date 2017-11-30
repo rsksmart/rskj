@@ -25,6 +25,7 @@ import co.rsk.test.World;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
+import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -39,6 +40,7 @@ public class BlockBuilder {
     private List<Transaction> txs;
     private List<BlockHeader> uncles;
     private BigInteger minGasPrice;
+    private byte[] gasLimit;
 
     public BlockBuilder() { }
 
@@ -48,10 +50,13 @@ public class BlockBuilder {
 
     public BlockBuilder(BlockChainImpl blockChain) {
         this.blockChain = blockChain;
+        // sane defaults
+        this.parent(blockChain.getBestBlock());
     }
 
     public BlockBuilder parent(Block parent) {
         this.parent = parent;
+        this.gasLimit = parent.getGasLimit();
         return this;
     }
 
@@ -75,8 +80,16 @@ public class BlockBuilder {
         return this;
     }
 
+    /**
+     * This has to be called after .parent() in order to have any effect
+     */
+    public BlockBuilder gasLimit(BigInteger gasLimit) {
+        this.gasLimit = BigIntegers.asUnsignedByteArray(gasLimit);
+        return this;
+    }
+
     public Block build() {
-        Block block = BlockGenerator.createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice);
+        Block block = BlockGenerator.getInstance().createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice, gasLimit);
 
         if (blockChain != null) {
             BlockExecutor executor = new BlockExecutor(blockChain.getRepository(), blockChain, blockChain.getBlockStore(), blockChain.getListener());

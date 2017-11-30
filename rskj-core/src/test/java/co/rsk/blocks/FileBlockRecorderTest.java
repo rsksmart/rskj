@@ -43,7 +43,7 @@ public class FileBlockRecorderTest {
     @Test
     public void writeBlock() throws Exception {
         FileBlockRecorder recorder = new FileBlockRecorder("testrecorder.txt");
-        recorder.writeBlock(BlockGenerator.getGenesisBlock());
+        recorder.writeBlock(BlockGenerator.getInstance().getGenesisBlock());
 
         File file = new File("testrecorder.txt");
         Assert.assertTrue(file.exists());

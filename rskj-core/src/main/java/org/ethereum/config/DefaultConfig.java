@@ -41,7 +41,6 @@ import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.*;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.util.FileUtil;
-import org.ethereum.validator.ProofOfWorkRule;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Serializer;

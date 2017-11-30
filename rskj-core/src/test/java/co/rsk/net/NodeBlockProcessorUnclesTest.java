@@ -18,15 +18,18 @@
 
 package co.rsk.net;
 
+import co.rsk.config.RskSystemProperties;
+import co.rsk.net.simples.SimpleMessageChannel;
+import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.net.simples.SimpleMessageSender;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -72,7 +75,7 @@ public class NodeBlockProcessorUnclesTest {
         processor.processBlock(null, uncle1);
         processor.processBlock(null, uncle2);
 
-        SimpleMessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
 
         processor.processBlock(sender, block2);
 
@@ -99,7 +102,7 @@ public class NodeBlockProcessorUnclesTest {
 
         processor.processBlock(null, block1);
 
-        SimpleMessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
 
         processor.processBlock(sender, block2);
 
@@ -125,7 +128,7 @@ public class NodeBlockProcessorUnclesTest {
 
         Block block2 = new BlockBuilder().parent(block1).uncles(uncles).build();
 
-        SimpleMessageSender sender = new SimpleMessageSender();
+        SimpleMessageChannel sender = new SimpleMessageChannel();
 
         processor.processBlock(sender, block2);
 
@@ -138,13 +141,17 @@ public class NodeBlockProcessorUnclesTest {
     private static NodeBlockProcessor createNodeBlockProcessor() {
         Blockchain blockChain = new BlockChainBuilder().build();
 
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
         genesis.setStateRoot(blockChain.getRepository().getRoot());
         genesis.flushRLP();
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
-        NodeBlockProcessor processor = new NodeBlockProcessor(new BlockStore(), blockChain);
+        BlockStore store = new BlockStore();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockChain, nodeInformation, syncConfiguration, new SimpleChannelManager());
+        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
 
         return processor;
     }

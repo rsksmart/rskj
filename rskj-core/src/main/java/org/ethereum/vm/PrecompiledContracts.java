@@ -31,11 +31,15 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.util.ModexpUtil;
 
 import java.math.BigInteger;
 import java.util.List;
+
+import static org.ethereum.util.ByteUtil.*;
+
+
 
 /**
  * @author Roman Mandeleil
@@ -47,9 +51,9 @@ public class PrecompiledContracts {
     public static final String SHA256_ADDR = "0000000000000000000000000000000000000000000000000000000000000002";
     public static final String RIPEMPD160_ADDR = "0000000000000000000000000000000000000000000000000000000000000003";
     public static final String IDENTITY_ADDR = "0000000000000000000000000000000000000000000000000000000000000004";
+    public static final String BIG_INT_MODEXP_ADDR = "0000000000000000000000000000000000000000000000000000000000000005";
     public static final String SAMPLE_ADDR = "0000000000000000000000000000000000000000000000000000000001000005";
     public static final String BRIDGE_ADDR = "0000000000000000000000000000000001000006";
-    public static final String MODEXP_ADDR = "0000000000000000000000000000000000000000000000000000000001000007";
     public static final String REMASC_ADDR = "0000000000000000000000000000000001000008";
 
     private static final String RSK_NATIVECONTRACT_REQUIREDPREFIX = "000000000000000000000000";
@@ -58,7 +62,7 @@ public class PrecompiledContracts {
     private static Ripempd160 ripempd160 = new Ripempd160();
     private static Identity identity = new Identity();
     private static SamplePrecompiledContract sample = new SamplePrecompiledContract(SAMPLE_ADDR);
-    private static Modexp modexp = new Modexp();
+    private static BigIntegerModexp bigIntegerModexp = new BigIntegerModexp();
 
     public static PrecompiledContract getContractForAddress(DataWord address) {
 
@@ -83,8 +87,8 @@ public class PrecompiledContracts {
         if (address.isHex(BRIDGE_ADDR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + BRIDGE_ADDR)) {
             return new Bridge(BRIDGE_ADDR);
         }
-        if (address.isHex(MODEXP_ADDR)) {
-            return modexp;
+        if (address.isHex(BIG_INT_MODEXP_ADDR)) {
+            return bigIntegerModexp;
         }
         if (address.isHex(REMASC_ADDR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + REMASC_ADDR))
             return new RemascContract(REMASC_ADDR, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(RskSystemProperties.CONFIG.netName()));
@@ -115,7 +119,7 @@ public class PrecompiledContracts {
             if (data == null) {
                 return 15;
             }
-            return 15 + (data.length + 31) / 32 * 3;
+            return 15l + (data.length + 31) / 32 * 3;
         }
 
         @Override
@@ -135,7 +139,7 @@ public class PrecompiledContracts {
             if (data == null) {
                 return 60;
             }
-            return 60 + (data.length + 31) / 32 * 12;
+            return 60l + (data.length + 31) / 32 * 12;
         }
 
         @Override
@@ -161,7 +165,7 @@ public class PrecompiledContracts {
             if (data == null) {
                 return 600;
             }
-            return 600 + (data.length + 31) / 32 * 120;
+            return 600l + (data.length + 31) / 32 * 120;
         }
 
         @Override
@@ -209,7 +213,7 @@ public class PrecompiledContracts {
                     ECKey key = ECKey.signatureToKey(h, signature.toBase64());
                     out = new DataWord(key.getAddress());
                 }
-            } catch (Throwable any) {
+            } catch (Exception any) {
             }
 
             if (out == null) {
@@ -229,30 +233,128 @@ public class PrecompiledContracts {
         }
     }
 
+    /**
+     * Computes modular exponentiation on big numbers
+     *
+     * format of data[] array:
+     * [length_of_BASE] [length_of_EXPONENT] [length_of_MODULUS] [BASE] [EXPONENT] [MODULUS]
+     * where every length is a 32-byte left-padded integer representing the number of bytes.
+     * Call data is assumed to be infinitely right-padded with zero bytes.
+     *
+     * Returns an output as a byte array with the same length as the modulus
+     */
+    public static class BigIntegerModexp extends PrecompiledContract {
 
-    public static class Modexp extends PrecompiledContract {
+        private static final int BASE = 0;
+        private static final int EXPONENT = 1;
+        private static final int MODULUS = 2;
 
-        public Modexp() {
-            super();
-        }
+        private static final BigInteger GQUAD_DIVISOR = BigInteger.valueOf(20);
 
-        @Override
-        public byte[] execute(byte[] data) throws RuntimeException {
-            ModexpUtil util = new ModexpUtil(data);
-
-            BigInteger b = util.base();
-            BigInteger e = util.exp();
-            BigInteger m = util.mod();
-
-            BigInteger res = b.modPow(e, m);
-
-            return util.encodeResult(res);
-        }
+        private static final int ARGS_OFFSET = 32 * 3; // addresses length part
 
         @Override
         public long getGasForData(byte[] data) {
-            return data != null ? 4 * data.length : 400;
+            byte[] safeData = data==null?EMPTY_BYTE_ARRAY:data;
+
+            int baseLen = parseLen(safeData, BASE);
+            int expLen = parseLen(safeData, EXPONENT);
+            int modLen = parseLen(safeData, MODULUS);
+
+            long multComplexity = getMultComplexity(Math.max(baseLen, modLen));
+
+            byte[] expHighBytes;
+            try {
+                int offset = Math.addExact(ARGS_OFFSET, baseLen);
+                expHighBytes = parseBytes(safeData, offset, Math.min(expLen, 32));
+            }
+            catch (ArithmeticException e) {
+                expHighBytes = ByteUtil.EMPTY_BYTE_ARRAY;
+            }
+
+            long adjExpLen = getAdjustedExponentLength(expHighBytes, expLen);
+
+            // use big numbers to stay safe in case of overflow
+            BigInteger gas = BigInteger.valueOf(multComplexity)
+                    .multiply(BigInteger.valueOf(Math.max(adjExpLen, 1)))
+                    .divide(GQUAD_DIVISOR);
+
+
+            return gas.min(BigInteger.valueOf(Long.MAX_VALUE)).longValueExact();
+        }
+
+        @Override
+        public byte[] execute(byte[] data) {
+
+            if (data == null)
+                return EMPTY_BYTE_ARRAY;
+
+            try {
+                int baseLen = parseLen(data, BASE);
+                int expLen = parseLen(data, EXPONENT);
+                int modLen = parseLen(data, MODULUS);
+
+                int expOffset = Math.addExact(ARGS_OFFSET, baseLen);
+                int modOffset = Math.addExact(expOffset, expLen);
+
+                // whenever an offset gets too big we will get BigInteger.ZERO back
+                BigInteger base = parseArg(data, ARGS_OFFSET, baseLen);
+                BigInteger exp = parseArg(data, expOffset, expLen);
+                BigInteger mod = parseArg(data, modOffset, modLen);
+
+                if (mod.equals(BigInteger.ZERO)) {
+                    // Modulo 0 is undefined, return zero
+                    return ByteUtil.leftPadBytes(ByteUtil.EMPTY_BYTE_ARRAY, modLen);
+                }
+
+                byte[] res = stripLeadingZeroes(base.modPow(exp, mod).toByteArray());
+                return ByteUtil.leftPadBytes(res, modLen);
+            } catch (ArithmeticException e) {
+                return ByteUtil.EMPTY_BYTE_ARRAY;
+            }
+        }
+
+        private long getMultComplexity(long x) {
+
+            long x2 = x * x;
+
+            if (x <= 64) {
+                return x2;
+            }
+            if (x <= 1024) {
+                return x2 / 4 + 96 * x - 3072;
+            }
+
+            return x2 / 16 + 480 * x - 199680;
+        }
+
+        private long getAdjustedExponentLength(byte[] expHighBytes, long expLen) {
+
+            int leadingZeros = numberOfLeadingZeros(expHighBytes);
+            int highestBit = 8 * expHighBytes.length - leadingZeros;
+
+            // set index basement to zero
+            if (highestBit > 0) {
+                highestBit--;
+            }
+
+            if (expLen <= 32) {
+                return highestBit;
+            } else {
+                return 8 * (expLen - 32) + highestBit;
+            }
+        }
+
+        private int parseLen(byte[] data, int idx) {
+            byte[] bytes = parseBytes(data, 32 * idx, 32);
+            return new DataWord(bytes).intValueSafe();
+        }
+
+        private BigInteger parseArg(byte[] data, int offset, int len) {
+            byte[] bytes = parseBytes(data, offset, len);
+            return BIUtil.toBI(bytes);
         }
 
     }
+
 }

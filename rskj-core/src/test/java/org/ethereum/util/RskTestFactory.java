@@ -4,18 +4,17 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.db.RepositoryImpl;
-import co.rsk.test.builders.AccountBuilder;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
-import org.ethereum.core.Account;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.*;
-import org.ethereum.rpc.TypeConverter;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.ReceiptStoreImpl;
 
-import java.math.BigInteger;
 import java.util.HashMap;
 
 /**
@@ -32,15 +31,12 @@ public class RskTestFactory {
     private PendingState pendingState;
     private RepositoryImpl repository;
 
-    public ContractDetails addContract(String runtimeBytecode) {
-
-        Account contractAccount = new AccountBuilder(getBlockchain())
-                .name("contract")
-                .balance(BigInteger.TEN)
-                .code(TypeConverter.stringHexToByteArray(runtimeBytecode))
-                .build();
-
-        return getRepository().getContractDetails(contractAccount.getAddress());
+    public RskTestFactory() {
+        Genesis genesis = BlockGenerator.getInstance().getGenesisBlock();
+        genesis.setStateRoot(getRepository().getRoot());
+        genesis.flushRLP();
+        getBlockchain().setBestBlock(genesis);
+        getBlockchain().setTotalDifficulty(genesis.getCumulativeDifficulty());
     }
 
     public BlockChainImpl getBlockchain() {
@@ -91,13 +87,5 @@ public class RskTestFactory {
         }
 
         return repository;
-    }
-
-    public void initGenesis() {
-        Genesis genesis = BlockGenerator.getGenesisBlock();
-        genesis.setStateRoot(getRepository().getRoot());
-        genesis.flushRLP();
-        getBlockchain().setBestBlock(genesis);
-        getBlockchain().setTotalDifficulty(genesis.getCumulativeDifficulty());
     }
 }

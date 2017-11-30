@@ -42,8 +42,8 @@ public class FamilyUtilsTest {
     public void getFamilyGetParent() {
         BlockStore store = createBlockStore();
 
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block1 = BlockGenerator.createChildBlock(genesis);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
 
         store.saveBlock(genesis, BigInteger.ONE, true);
         store.saveBlock(block1, BigInteger.ONE, true);
@@ -61,7 +61,7 @@ public class FamilyUtilsTest {
     public void getEmptyFamilyForGenesis() {
         BlockStore store = createBlockStore();
 
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
 
         store.saveBlock(genesis, BigInteger.ONE, true);
 
@@ -75,10 +75,10 @@ public class FamilyUtilsTest {
     public void getFamilyGetAncestorsUpToLevel() {
         BlockStore store = createBlockStore();
 
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block1 = BlockGenerator.createChildBlock(genesis);
-        Block block2 = BlockGenerator.createChildBlock(block1);
-        Block block3 = BlockGenerator.createChildBlock(block2);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
+        Block block3 = BlockGenerator.getInstance().createChildBlock(block2);
 
         store.saveBlock(genesis, BigInteger.ONE, true);
         store.saveBlock(block1, BigInteger.ONE, true);
@@ -101,16 +101,16 @@ public class FamilyUtilsTest {
     public void getFamilyGetAncestorsWithUncles() {
         BlockStore store = createBlockStore();
 
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block1 = BlockGenerator.createChildBlock(genesis);
-        Block uncle11 = BlockGenerator.createChildBlock(genesis);
-        Block uncle12 = BlockGenerator.createChildBlock(genesis);
-        Block block2 = BlockGenerator.createChildBlock(block1);
-        Block uncle21 = BlockGenerator.createChildBlock(block1);
-        Block uncle22 = BlockGenerator.createChildBlock(block1);
-        Block block3 = BlockGenerator.createChildBlock(block2);
-        Block uncle31 = BlockGenerator.createChildBlock(block2);
-        Block uncle32 = BlockGenerator.createChildBlock(block2);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block uncle11 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block uncle12 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
+        Block uncle21 = BlockGenerator.getInstance().createChildBlock(block1);
+        Block uncle22 = BlockGenerator.getInstance().createChildBlock(block1);
+        Block block3 = BlockGenerator.getInstance().createChildBlock(block2);
+        Block uncle31 = BlockGenerator.getInstance().createChildBlock(block2);
+        Block uncle32 = BlockGenerator.getInstance().createChildBlock(block2);
 
         store.saveBlock(genesis, BigInteger.ONE, true);
         store.saveBlock(block1, BigInteger.ONE, true);
@@ -162,18 +162,18 @@ public class FamilyUtilsTest {
     public void getUnclesHeaders() {
         BlockStore store = createBlockStore();
 
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block1 = BlockGenerator.createChildBlock(genesis);
-        Block uncle11 = BlockGenerator.createChildBlock(genesis);
-        Block uncle111 = BlockGenerator.createChildBlock(uncle11);
-        Block uncle12 = BlockGenerator.createChildBlock(genesis);
-        Block uncle121 = BlockGenerator.createChildBlock(uncle12);
-        Block block2 = BlockGenerator.createChildBlock(block1);
-        Block uncle21 = BlockGenerator.createChildBlock(block1);
-        Block uncle22 = BlockGenerator.createChildBlock(block1);
-        Block block3 = BlockGenerator.createChildBlock(block2);
-        Block uncle31 = BlockGenerator.createChildBlock(block2);
-        Block uncle32 = BlockGenerator.createChildBlock(block2);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block uncle11 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block uncle111 = BlockGenerator.getInstance().createChildBlock(uncle11);
+        Block uncle12 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block uncle121 = BlockGenerator.getInstance().createChildBlock(uncle12);
+        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
+        Block uncle21 = BlockGenerator.getInstance().createChildBlock(block1);
+        Block uncle22 = BlockGenerator.getInstance().createChildBlock(block1);
+        Block block3 = BlockGenerator.getInstance().createChildBlock(block2);
+        Block uncle31 = BlockGenerator.getInstance().createChildBlock(block2);
+        Block uncle32 = BlockGenerator.getInstance().createChildBlock(block2);
 
         store.saveBlock(genesis, BigInteger.ONE, true);
         store.saveBlock(block1, BigInteger.ONE, true);
@@ -204,16 +204,16 @@ public class FamilyUtilsTest {
     public void getUncles() {
         BlockStore store = createBlockStore();
 
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block1 = BlockGenerator.createChildBlock(genesis);
-        Block uncle11 = BlockGenerator.createChildBlock(genesis);
-        Block uncle12 = BlockGenerator.createChildBlock(genesis);
-        Block block2 = BlockGenerator.createChildBlock(block1);
-        Block uncle21 = BlockGenerator.createChildBlock(block1);
-        Block uncle22 = BlockGenerator.createChildBlock(block1);
-        Block block3 = BlockGenerator.createChildBlock(block2);
-        Block uncle31 = BlockGenerator.createChildBlock(block2);
-        Block uncle32 = BlockGenerator.createChildBlock(block2);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block uncle11 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block uncle12 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
+        Block uncle21 = BlockGenerator.getInstance().createChildBlock(block1);
+        Block uncle22 = BlockGenerator.getInstance().createChildBlock(block1);
+        Block block3 = BlockGenerator.getInstance().createChildBlock(block2);
+        Block uncle31 = BlockGenerator.getInstance().createChildBlock(block2);
+        Block uncle32 = BlockGenerator.getInstance().createChildBlock(block2);
 
         store.saveBlock(genesis, BigInteger.ONE, true);
         store.saveBlock(block1, BigInteger.ONE, true);

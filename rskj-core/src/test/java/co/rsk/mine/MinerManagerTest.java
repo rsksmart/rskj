@@ -349,7 +349,7 @@ public class MinerManagerTest {
         worldManager.setBlockchain(blockchain);
         ethereum.repository = (org.ethereum.facade.Repository)blockchain.getRepository();
         ethereum.worldManager = worldManager;
-        return new MinerServerImpl(ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), new BlockValidationRuleDummy());
+        return new MinerServerImpl(ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), new BlockValidationRuleDummy(), worldManager.getNodeBlockProcessor());
     }
 
     public static class BlockValidationRuleDummy implements BlockValidationRule {
@@ -361,8 +361,8 @@ public class MinerManagerTest {
 
     private static class RskImplForTest extends RskImpl {
         public RskImplForTest() {
-            super(null, null, null, null, null,
-                    null, null, null, null, null, null, null, null);
+            super(null, null, null,
+                    null, null, null, null, null, null, null, null, null);
         }
     }
 }

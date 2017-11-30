@@ -18,7 +18,7 @@
 
 package co.rsk.net.eth;
 
-import co.rsk.net.MessageSender;
+import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.Message;
 import org.ethereum.net.eth.handler.Eth;
@@ -27,11 +27,11 @@ import javax.annotation.Nonnull;
 import java.net.InetAddress;
 
 /**
- * EthMessageSender implements the MessageSender interface.
+ * EthMessageSender implements the MessageChannel interface.
  * <p>
  * Created by ajlopez on 5/16/2016.
  */
-public class EthMessageSender implements MessageSender {
+public class EthMessageSender implements MessageChannel {
     private final Eth eth;
     private NodeID nodeID;
     private InetAddress address;
@@ -61,13 +61,13 @@ public class EthMessageSender implements MessageSender {
      * @return the corresponding NodeID.
      */
     @Nonnull
-    public NodeID getNodeID() {
+    public NodeID getPeerNodeID() {
         return this.nodeID;
     }
 
     @Override
-    public void setNodeID(@Nonnull final byte[] nodeID) {
-        this.nodeID = new NodeID(nodeID);
+    public void setPeerNodeID(@Nonnull final byte[] peerNodeId) {
+        this.nodeID = new NodeID(peerNodeId);
     }
 
     @Override

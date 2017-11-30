@@ -27,7 +27,21 @@ public class JsonRpcNettyServerTest {
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Test
-    public void smokeTest() throws Exception {
+    public void smokeTestUsingJsonContentType() throws Exception {
+        smokeTest("application/json");
+    }
+
+    @Test
+    public void smokeTestUsingJsonRpcContentType() throws Exception {
+        smokeTest("application/json-rpc");
+    }
+
+    @Test(expected=IOException.class)
+    public void smokeTestUsingInvalidContentType() throws Exception {
+        smokeTest("text/plain");
+    }
+
+    public void smokeTest(String contentType) throws Exception {
         Web3 web3Mock = Mockito.mock(Web3.class);
         String mockResult = "output";
         Mockito.when(web3Mock.web3_sha3(Mockito.anyString())).thenReturn(mockResult);
@@ -38,11 +52,12 @@ public class JsonRpcNettyServerTest {
         int randomPort = 9999;//new ServerSocket(0).getLocalPort();
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
+        JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*");
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules);
-        JsonRpcNettyServer server = new JsonRpcNettyServer(randomPort, 0, Boolean.TRUE, mockCorsConfiguration, serverHandler);
+        JsonRpcNettyServer server = new JsonRpcNettyServer(randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler);
         server.start();
 
-        HttpURLConnection conn = sendJsonRpcMessage(randomPort);
+        HttpURLConnection conn = sendJsonRpcMessage(randomPort, contentType);
         JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(conn.getInputStream());
 
         assertThat(conn.getResponseCode(), is(HttpResponseStatus.OK.code()));
@@ -50,7 +65,7 @@ public class JsonRpcNettyServerTest {
         server.stop();
     }
 
-    private HttpURLConnection sendJsonRpcMessage(int port) throws IOException {
+    private HttpURLConnection sendJsonRpcMessage(int port, String contentType) throws IOException {
         Map<String, JsonNode> jsonRpcRequestProperties = new HashMap<>();
         jsonRpcRequestProperties.put("jsonrpc", JSON_NODE_FACTORY.textNode("2.0"));
         jsonRpcRequestProperties.put("id", JSON_NODE_FACTORY.numberNode(13));
@@ -63,6 +78,7 @@ public class JsonRpcNettyServerTest {
         HttpURLConnection jsonRpcConnection = (HttpURLConnection) jsonRpcServer.openConnection();
         jsonRpcConnection.setDoOutput(true);
         jsonRpcConnection.setRequestMethod("POST");
+        jsonRpcConnection.setRequestProperty("Content-Type", contentType);
         jsonRpcConnection.setRequestProperty("Content-Length", String.valueOf(request.length));
         OutputStream os = jsonRpcConnection.getOutputStream();
         os.write(request);

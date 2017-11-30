@@ -19,9 +19,12 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.simples.SimpleAsyncNode;
+import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.World;
+import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
@@ -39,8 +42,10 @@ public class OneAsyncNodeTest {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
 
-        BlockProcessor processor = new NodeBlockProcessor(store, blockchain);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null, null).disablePoWValidation();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, null);
+        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null, null, null, new DummyBlockValidationRule());
 
         return new SimpleAsyncNode(handler);
     }
@@ -55,15 +60,13 @@ public class OneAsyncNodeTest {
     public void buildBlockchain() throws InterruptedException {
         SimpleAsyncNode node = createNode();
 
-        List<Block> blocks = BlockGenerator.getBlockChain(getGenesis(), 10);
+        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(getGenesis(), 10);
 
         for (Block block : blocks)
-            node.sendMessage(null, new BlockMessage(block));
+            node.receiveMessageFrom(null, new BlockMessage(block));
 
-        // TODO better synchronization
-        Thread.sleep(2000);
-
-        node.stop();
+        node.waitExactlyNTasksWithTimeout(10);
+        node.joinWithTimeout();
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
         Assert.assertArrayEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
@@ -73,7 +76,7 @@ public class OneAsyncNodeTest {
     public void buildBlockchainInReverse() throws InterruptedException {
         SimpleAsyncNode node = createNode();
 
-        List<Block> blocks = BlockGenerator.getBlockChain(getGenesis(), 10);
+        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(getGenesis(), 10);
 
         List<Block> reverse = new ArrayList<>();
 
@@ -81,12 +84,10 @@ public class OneAsyncNodeTest {
             reverse.add(0, block);
 
         for (Block block : reverse)
-            node.sendMessage(null, new BlockMessage(block));
+            node.receiveMessageFrom(null, new BlockMessage(block));
 
-        // TODO better synchronization
-        Thread.sleep(2000);
-
-        node.stop();
+        node.waitExactlyNTasksWithTimeout(10);
+        node.joinWithTimeout();
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
         Assert.assertArrayEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());

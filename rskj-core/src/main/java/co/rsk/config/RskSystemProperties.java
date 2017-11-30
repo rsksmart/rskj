@@ -77,8 +77,8 @@ public class RskSystemProperties extends SystemProperties {
         }
 
         String coinbaseAddress = configFromFiles.getString(MINER_REWARD_ADDRESS_CONFIG);
-        if (coinbaseAddress.length() != 64) {
-            throw new RskConfigurationException(MINER_REWARD_ADDRESS_CONFIG + " needs to be Hex encoded and 32 byte length");
+        if (coinbaseAddress.length() != 40) {
+            throw new RskConfigurationException(MINER_REWARD_ADDRESS_CONFIG + " needs to be Hex encoded and 20 byte length");
         }
 
         return Hex.decode(coinbaseAddress);
@@ -355,5 +355,32 @@ public class RskSystemProperties extends SystemProperties {
 
     public boolean getForceTargetGasLimit() {
         return getBooleanProperty("forcegaslimit", true);
+    }
+
+    /**
+     * SYNC CONFIG PROPERTIES
+     * **/
+    public int getExpectedPeers() {
+        return getInt("sync.expectedPeers", 5);
+    }
+
+    public int getTimeoutWaitingPeers() {
+        return getInt("sync.timeoutWaitingPeers", 1);
+    }
+
+    public int getTimeoutWaitingRequest() {
+        return getInt("sync.timeoutWaitingRequest", 30);
+    }
+
+    public int getExpirationTimePeerStatus() {
+        return getInt("sync.expirationTimePeerStatus", 10);
+    }
+
+    public int getMaxSkeletonChunks() {
+        return getInt("sync.maxSkeletonChunks", 20);
+    }
+
+    public int getChunkSize() {
+        return getInt("sync.chunkSize", 192);
     }
 }

@@ -32,7 +32,7 @@ import java.math.BigInteger;
 public class BlockBuilderTest {
     @Test
     public void buildBlockWithGenesisAsParent() {
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
 
         BlockBuilder builder = new BlockBuilder();
 
@@ -48,7 +48,7 @@ public class BlockBuilderTest {
 
     @Test
     public void buildBlockWithDifficulty() {
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
 
         BlockBuilder builder = new BlockBuilder();
 

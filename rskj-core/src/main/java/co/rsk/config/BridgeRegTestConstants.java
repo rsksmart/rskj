@@ -18,17 +18,25 @@
 
 package co.rsk.config;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.ABICallAuthorizer;
+import co.rsk.peg.Federation;
 import com.google.common.collect.Lists;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 public class BridgeRegTestConstants extends BridgeConstants {
@@ -36,11 +44,11 @@ public class BridgeRegTestConstants extends BridgeConstants {
     private static final Logger logger = LoggerFactory.getLogger("BridgeRegTestConstants");
 
     private static BridgeRegTestConstants instance = new BridgeRegTestConstants();
-    protected List<BtcECKey> federatorPrivateKeys;
-
     public static BridgeRegTestConstants getInstance() {
         return instance;
     }
+
+    protected List<BtcECKey> federatorPrivateKeys;
 
     BridgeRegTestConstants() {
         btcParamsString = NetworkParameters.ID_REGTEST;
@@ -50,36 +58,17 @@ public class BridgeRegTestConstants extends BridgeConstants {
         BtcECKey federator2PrivateKey = BtcECKey.fromPrivate(HashUtil.sha3("federator3".getBytes(StandardCharsets.UTF_8)));
 
         federatorPrivateKeys = Lists.newArrayList(federator0PrivateKey, federator1PrivateKey, federator2PrivateKey);
+        List<BtcECKey> federatorPublicKeys = federatorPrivateKeys.stream().map(key -> BtcECKey.fromPublicOnly(key.getPubKey())).collect(Collectors.toList());
 
-        // To recalculate federator private keys
-        // Hex.toHexString(ECKey.fromPrivate(HashUtil.sha3("federator1".getBytes())).getPubKey())
-        // Current federator secrets: federator1, federator2, federator3
-        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0362634ab57dae9cb373a5d536e66a8c4f67468bbcfb063809bab643072d78a124"));
-        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03c5946b3fbae03a654237da863c9ed534e0878657175b132b8ca630f245df04db"));
-        BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02cd53fc53a07f211641a677d250f6de99caf620e8e77071e811a28b3bcddf0be1"));
-
-        federatorPublicKeys = Lists.newArrayList(federator0PublicKey, federator1PublicKey, federator2PublicKey);
-
-        federatorsRequiredToSign = 2;
-
-        Script redeemScript = ScriptBuilder.createRedeemScript(federatorsRequiredToSign, federatorPublicKeys);
-        federationPubScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-//      To recalculate federationAddress
-//      federationAddress = Address.fromP2SHScript(btcParams, federationPubScript);
-        try {
-            federationAddress = Address.fromBase58(getBtcParams(), "2N5muMepJizJE1gR7FbHJU6CD18V3BpNF9p");
-        } catch (AddressFormatException e) {
-            logger.error("Federation address format is invalid");
-            throw new RskConfigurationException(e.getMessage(), e);
-        }
-
-        // To recreate the value use
-        // federationAddressCreationTime = new GregorianCalendar(2016,0,1).getTimeInMillis();
-        // Currently set to:
-        // Jan 1 2016 00:00 GMT-3
-        federationAddressCreationTime = 1451617200;
+        Instant genesisFederationCreatedAt = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
+        genesisFederation = new Federation(
+                federatorPublicKeys,
+                genesisFederationCreatedAt,
+                getBtcParams()
+        );
 
         btc2RskMinimumAcceptableConfirmations = 3;
+        btc2RskMinimumAcceptableConfirmationsOnRsk = 5;
         rsk2BtcMinimumAcceptableConfirmations = 3;
         btcBroadcastingMinimumAcceptableBlocks = 3;
 
@@ -89,6 +78,17 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         minimumLockTxValue = Coin.COIN;
         minimumReleaseTxValue = Coin.valueOf(500000);
+
+        // Keys generated with GenNodeKey using generators 'auth-a' through 'auth-e'
+        List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
+                "04dde17c5fab31ffc53c91c2390136c325bb8690dc135b0840075dd7b86910d8ab9e88baad0c32f3eea8833446a6bc5ff1cd2efa99ecb17801bcb65fc16fc7d991",
+                "04af886c67231476807e2a8eee9193878b9d94e30aa2ee469a9611d20e1e1c1b438e5044148f65e6e61bf03e9d72e597cb9cdea96d6fc044001b22099f9ec403e2",
+                "045d4dedf9c69ab3ea139d0f0da0ad00160b7663d01ce7a6155cd44a3567d360112b0480ab6f31cac7345b5f64862205ea7ccf555fcf218f87fa0d801008fecb61",
+                "04709f002ac4642b6a87ea0a9dc76eeaa93f71b3185985817ec1827eae34b46b5d869320efb5c5cbe2a5c13f96463fe0210710b53352a4314188daffe07bd54154",
+                "04aff62315e9c18004392a5d9e39496ff5794b2d9f43ab4e8ade64740d7fdfe896969be859b43f26ef5aa4b5a0d11808277b4abfa1a07cc39f2839b89cc2bc6b4c"
+        }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+
+        federationChangeAuthorizer = new ABICallAuthorizer(federationChangeAuthorizedKeys);
     }
 
     public List<BtcECKey> getFederatorPrivateKeys() {

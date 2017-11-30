@@ -19,7 +19,6 @@
 
 package org.ethereum.manager;
 
-import co.rsk.core.NetworkStateExporter;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.net.BlockProcessor;
 import org.ethereum.core.Blockchain;
@@ -27,7 +26,6 @@ import org.ethereum.core.PendingState;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.server.ChannelManager;
 
 /**
  * WorldManager is a singleton containing references to different parts of the system.
@@ -39,13 +37,7 @@ import org.ethereum.net.server.ChannelManager;
 
 public interface WorldManager {
 
-    void init();
-
     void addListener(EthereumListener listener);
-
-    ChannelManager getChannelManager();
-
-    org.ethereum.facade.Repository getRepository();
 
     Blockchain getBlockchain();
 
@@ -60,7 +52,5 @@ public interface WorldManager {
     BlockProcessor getNodeBlockProcessor();
 
     HashRateCalculator getHashRateCalculator();
-
-    NetworkStateExporter getNetworkStateExporter();
 
 }

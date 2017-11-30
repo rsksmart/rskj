@@ -18,13 +18,17 @@
 
 package co.rsk.config;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.peg.Federation;
 import com.google.common.collect.Lists;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
+
+import java.time.Instant;
+import java.util.List;
 
 
 public class BridgeDevNetConstants extends BridgeConstants {
@@ -40,26 +44,23 @@ public class BridgeDevNetConstants extends BridgeConstants {
         BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03301f6c4422aa96d85f52a93612a0c6eeea3d04cfa32f97a7a764c67e062e992a"));
         BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02d33a1f8f5cfa2f7be71b0002710f4c8f3ea44fef40056be7b89ed3ca0eb3431c"));
 
-        federatorPublicKeys = Lists.newArrayList(federator0PublicKey, federator1PublicKey, federator2PublicKey);
-
-        federatorsRequiredToSign = 2;
-
-        Script redeemScript = ScriptBuilder.createRedeemScript(federatorsRequiredToSign, federatorPublicKeys);
-        federationPubScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-//      To recalculate federationAddress
-//      federationAddress = Address.fromP2SHScript(btcParams, federationPubScript);
-        try {
-            federationAddress = Address.fromBase58(getBtcParams(), "2NCEo1RdmGDj6MqiipD6DUSerSxKv79FNWX");
-        } catch (AddressFormatException e) {
-            logger.error("Federation address format is invalid");
-            throw new RskConfigurationException(e.getMessage(), e);
-        }
+        List<BtcECKey> genesisFederationPublicKeys = Lists.newArrayList(
+                federator0PublicKey, federator1PublicKey, federator2PublicKey
+        );
 
         // To recreate the value use
-        // federationAddressCreationTime = new GregorianCalendar(2009,0,1).getTimeInMillis() / 1000;
+        // genesisFederationAddressCreatedAt = Instant.ofEpochMilli(new GregorianCalendar(2009,0,1).getTimeInMillis());
         // Currently set to:
-        // Tue Aug 23 21:53:20 ART 2016
-        federationAddressCreationTime = 1472000000l;
+        // Monday, November 13, 2017 9:00:00 PM GMT-03:00
+        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1510617600l);
+
+        // Expected federation address is:
+        // 2NCEo1RdmGDj6MqiipD6DUSerSxKv79FNWX
+        genesisFederation = new Federation(
+                genesisFederationPublicKeys,
+                genesisFederationAddressCreatedAt,
+                getBtcParams()
+        );
 
         btc2RskMinimumAcceptableConfirmations = 10;
         rsk2BtcMinimumAcceptableConfirmations = 10;
