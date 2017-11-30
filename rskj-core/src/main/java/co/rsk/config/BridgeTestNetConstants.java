@@ -23,8 +23,6 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.Federation;
 import com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 import java.time.Instant;
@@ -88,5 +86,5 @@ public class BridgeTestNetConstants extends BridgeConstants {
     public static BridgeTestNetConstants getInstance() {
         return instance;
     }
-    
+
 }
