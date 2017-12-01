@@ -5,6 +5,7 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
+import org.ethereum.core.TransactionExecutor;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ReceiptStore;
@@ -102,7 +103,7 @@ public class ContractRunner {
 
     private TransactionExecutor executeTransaction(Transaction transaction) {
         Repository track = repository.startTracking();
-        TransactionExecutor executor = new TransactionExecutor(transaction, new byte[32],
+        TransactionExecutor executor = new TransactionExecutor(transaction, 0, new byte[32],
                 repository, blockStore, receiptStore,
                 new ProgramInvokeFactoryImpl(), blockchain.getBestBlock());
         executor.init();

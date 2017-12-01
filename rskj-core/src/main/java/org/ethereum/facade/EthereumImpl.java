@@ -177,64 +177,6 @@ public class EthereumImpl implements Ethereum {
     }
 
     @Override
-    public ProgramResult callConstantFunction(String receiveAddress, CallTransaction.Function function,
-                                              Object... funcArgs) {
-        Transaction tx = CallTransaction.createCallTransaction(0, 0, 100000000000000L,
-                receiveAddress, 0, function, funcArgs);
-        tx.sign(new byte[32]);
-
-        Block bestBlock = worldManager.getBlockchain().getBestBlock();
-
-        Repository repository = ((Repository) worldManager.getRepository()).startTracking();
-
-        try {
-            org.ethereum.core.TransactionExecutor executor = new org.ethereum.core.TransactionExecutor
-                    (tx, 0, bestBlock.getCoinbase(), repository, worldManager.getBlockStore(), receiptStore,
-                    programInvokeFactory, bestBlock)
-                    .setLocalCall(true);
-
-            executor.init();
-            executor.execute();
-            executor.go();
-            executor.finalization();
-
-            return executor.getResult();
-        } finally {
-            repository.rollback();
-        }
-    }
-
-    @Override
-    public org.ethereum.facade.Repository getRepository() {
-        return worldManager.getRepository();
-    }
-
-    @Override
-    public org.ethereum.facade.Repository getPendingState() {
-        return (org.ethereum.facade.Repository) worldManager.getPendingState().getRepository();
-    }
-
-    @Override
-    public org.ethereum.facade.Repository getSnapshootTo(byte[] root){
-
-        Repository repository = (Repository) worldManager.getRepository();
-        org.ethereum.facade.Repository snapshot = (org.ethereum.facade.Repository) repository.getSnapshotTo(root);
-
-        return snapshot;
-    }
-
-    @Override
-    public AdminInfo getAdminInfo() {
-        return adminInfo;
-    }
-
-    @Override
-    public ChannelManager getChannelManager() {
-        return channelManager;
-    }
-
-
-    @Override
     public List<Transaction> getWireTransactions() {
         return worldManager.getPendingState().getWireTransactions();
     }
