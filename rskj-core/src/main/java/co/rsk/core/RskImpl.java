@@ -18,10 +18,7 @@
 
 package co.rsk.core;
 
-import co.rsk.net.MessageHandler;
 import co.rsk.net.NodeBlockProcessor;
-import co.rsk.net.NodeMessageHandler;
-import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
@@ -36,10 +33,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 public class RskImpl extends EthereumImpl implements Rsk {
 
     private boolean isplaying;
-    private NodeBlockProcessor nodeBlockProcessor;
-
-    private MessageHandler messageHandler;
-    private PeerScoringManager peerScoringManager;
+    private final NodeBlockProcessor nodeBlockProcessor;
 
     public RskImpl(WorldManager worldManager,
                    ChannelManager channelManager,
@@ -49,19 +43,10 @@ public class RskImpl extends EthereumImpl implements Rsk {
                    SystemProperties config,
                    CompositeEthereumListener compositeEthereumListener,
                    ReceiptStore receiptStore,
-                   PeerScoringManager peerScoringManager,
                    NodeBlockProcessor nodeBlockProcessor,
-                   NodeMessageHandler messageHandler,
                    Repository repository) {
         super(worldManager, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore, repository);
-        this.peerScoringManager = peerScoringManager;
         this.nodeBlockProcessor = nodeBlockProcessor;
-        this.messageHandler = messageHandler;
-    }
-
-    @Override
-    public NodeBlockProcessor getNodeBlockProcessor() {
-        return this.nodeBlockProcessor;
     }
 
     @Override
@@ -70,13 +55,8 @@ public class RskImpl extends EthereumImpl implements Rsk {
     }
 
     @Override
-    public boolean isSyncingBlocks() {
-        return this.getNodeBlockProcessor().isSyncingBlocks();
-    }
-
-    @Override
     public boolean isBlockchainEmpty() {
-        return this.getNodeBlockProcessor().getBestBlockNumber() == 0;
+        return this.nodeBlockProcessor.getBestBlockNumber() == 0;
     }
 
     public void setIsPlayingBlocks(boolean value) {
@@ -85,6 +65,6 @@ public class RskImpl extends EthereumImpl implements Rsk {
 
     @Override
     public boolean hasBetterBlockToSync() {
-            return this.getNodeBlockProcessor().hasBetterBlockToSync();
+        return this.nodeBlockProcessor.hasBetterBlockToSync();
     }
 }

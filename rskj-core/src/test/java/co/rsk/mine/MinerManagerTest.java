@@ -151,7 +151,7 @@ public class MinerManagerTest {
 
         minerClient.setRsk(new RskImplForTest() {
             @Override
-            public boolean isSyncingBlocks() {
+            public boolean hasBetterBlockToSync() {
                 return true;
             }
         });
@@ -175,7 +175,7 @@ public class MinerManagerTest {
 
         minerClient.setRsk(new RskImplForTest() {
             @Override
-            public boolean isSyncingBlocks() {
+            public boolean hasBetterBlockToSync() {
                 return false;
             }
 
@@ -331,7 +331,7 @@ public class MinerManagerTest {
         minerClient.setMinerServer(minerServer);
         minerClient.setRsk(new RskImplForTest() {
             @Override
-            public boolean isSyncingBlocks() {
+            public boolean hasBetterBlockToSync() {
                 return false;
             }
 
@@ -362,7 +362,7 @@ public class MinerManagerTest {
     private static class RskImplForTest extends RskImpl {
         public RskImplForTest() {
             super(null, null, null,
-                    null, null, null, null, null, null, null, null, null);
+                    null, null, null, null, null, null, null);
         }
     }
 }

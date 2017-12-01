@@ -29,8 +29,8 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
                 || chunk.size() != currentChunk.get().getCount()
                 || !ByteUtil.fastEquals(chunk.get(0).getHash(), currentChunk.get().getHash())) {
             syncEventsHandler.onErrorSyncing(
-                    "Invalid chunk received from node {}", EventType.INVALID_MESSAGE, this.getClass(),
-                    syncInformation.getSelectedPeerId());
+                    "Invalid chunk received from node {} {}", EventType.INVALID_MESSAGE,
+                    syncInformation.getSelectedPeerId(), currentChunk.get().getHash());
             return;
         }
 
@@ -45,8 +45,8 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
 
             if (!syncInformation.blockHeaderIsValid(header, parentHeader)) {
                 syncEventsHandler.onErrorSyncing(
-                        "Invalid header received from node {}", EventType.INVALID_HEADER, this.getClass(),
-                        syncInformation.getSelectedPeerId());
+                        "Invalid header received from node {} {} {}", EventType.INVALID_HEADER,
+                        syncInformation.getSelectedPeerId(), header.getNumber(), header.getShortHash());
                 return;
             }
 

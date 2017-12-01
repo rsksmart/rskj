@@ -26,27 +26,17 @@ import co.rsk.net.NodeBlockProcessor;
  */
 public class SimpleRsk extends SimpleEthereum implements Rsk {
     @Override
-    public NodeBlockProcessor getNodeBlockProcessor() {
-        return null;
-    }
-
-    @Override
     public boolean isPlayingBlocks() {
         return false;
     }
 
     @Override
-    public boolean isSyncingBlocks() {
+    public boolean hasBetterBlockToSync() {
         return false;
     }
 
     @Override
     public boolean isBlockchainEmpty() {
-        return false;
-    }
-
-    @Override
-    public boolean hasBetterBlockToSync() {
         return false;
     }
 }

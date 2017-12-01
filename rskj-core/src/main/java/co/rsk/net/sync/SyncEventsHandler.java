@@ -35,6 +35,4 @@ public interface SyncEventsHandler {
     void onCompletedSyncing();
 
     void startFindingConnectionPoint();
-
-    void warnMessage(String message, Object... arguments);
 }

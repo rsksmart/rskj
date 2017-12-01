@@ -18,7 +18,6 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.net.*;
 import co.rsk.net.messages.Message;
 import co.rsk.net.sync.SyncConfiguration;
@@ -28,6 +27,7 @@ import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Blockchain;
+import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.junit.Assert;
 import org.mockito.Mockito;
 
@@ -110,14 +110,14 @@ public class SimpleAsyncNode extends SimpleNode {
         final BlockStore store = new BlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration, null);
-        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
+        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
         PeerScoringManager peerScoringManager = Mockito.mock(PeerScoringManager.class);
         when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
         when(peerScoringManager.getPeerScoring(isA(NodeID.class))).thenReturn(new PeerScoring());
         SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, blockValidationRule);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, null, null, null, peerScoringManager, blockValidationRule);
+        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, new SimpleChannelManager(), null, null, peerScoringManager, blockValidationRule);
         return new SimpleAsyncNode(handler, syncProcessor);
     }
 

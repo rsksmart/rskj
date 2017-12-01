@@ -38,11 +38,6 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void warnMessage(String message, Object... arguments) {
-
-    }
-
-    @Override
     public long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId) { return 0; }
 
     @Override

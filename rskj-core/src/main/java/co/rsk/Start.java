@@ -152,7 +152,7 @@ public class Start {
     }
 
     private void waitRskSyncDone(Rsk rsk) throws InterruptedException {
-        while (rsk.isBlockchainEmpty() || rsk.isSyncingBlocks() || rsk.isPlayingBlocks()) {
+        while (rsk.isBlockchainEmpty() || rsk.hasBetterBlockToSync() || rsk.isPlayingBlocks()) {
             try {
                 Thread.sleep(10000);
             } catch (InterruptedException e1) {

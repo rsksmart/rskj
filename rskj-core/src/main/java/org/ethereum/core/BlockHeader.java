@@ -27,7 +27,6 @@ import org.ethereum.util.RLPList;
 import org.ethereum.util.Utils;
 import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 import org.spongycastle.util.BigIntegers;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -584,10 +583,14 @@ public class BlockHeader implements SerializableObject {
     }
 
     public String getShortHashForMergedMining() {
-        return Hex.toHexString(getHashForMergedMining()).substring(0, 6);
+        return HashUtil.shortHash(getHashForMergedMining());
     }
 
     public byte[] getHashForMergedMining() {
         return HashUtil.sha3(getEncoded(false));
+    }
+
+    public String getShortHash() {
+        return HashUtil.shortHash(getHash());
     }
 }

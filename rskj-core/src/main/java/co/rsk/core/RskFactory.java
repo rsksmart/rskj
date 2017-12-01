@@ -106,7 +106,7 @@ public class RskFactory {
         BuildInfo.printInfo();
 
         RskImpl rsk = new RskImpl(worldManager, channelManager, peerServer, programInvokeFactory,
-                pendingState, config, compositeEthereumListener, receiptStore, peerScoringManager, nodeBlockProcessor, nodeMessageHandler, repository);
+                pendingState, config, compositeEthereumListener, receiptStore, nodeBlockProcessor, repository);
 
         rsk.init();
         rsk.getBlockchain().setRsk(true);  //TODO: check if we can remove this field from org.ethereum.facade.Blockchain
@@ -170,32 +170,27 @@ public class RskFactory {
     }
 
     @Bean
-    public NodeBlockProcessor getNodeBlockProcessor(RskSystemProperties config, Blockchain blockchain, BlockStore blockStore,
+    public NodeBlockProcessor getNodeBlockProcessor(Blockchain blockchain, BlockStore blockStore,
                                                     BlockNodeInformation blockNodeInformation, BlockSyncService blockSyncService, SyncConfiguration syncConfiguration) {
-        return new NodeBlockProcessor(config, blockStore, blockchain, blockNodeInformation, blockSyncService, syncConfiguration);
+        return new NodeBlockProcessor(blockStore, blockchain, blockNodeInformation, blockSyncService, syncConfiguration);
     }
 
     @Bean
-    public SyncProcessor getSyncProcessor(WorldManager worldManager,
-                                          RskSystemProperties config,
+    public SyncProcessor getSyncProcessor(Blockchain blockchain,
                                           BlockSyncService blockSyncService,
                                           PeerScoringManager peerScoringManager,
                                           SyncConfiguration syncConfiguration) {
 
-        // some more rules for header validation
-//        int validPeriod = config.getBlockchainConfig().getCommonConstants().getNewBlockMaxMinInTheFuture();
-//        BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod);
-//        BlockHeaderValidationRule rule = (BlockHeaderValidationRule) new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
-        return new SyncProcessor(worldManager.getBlockchain(), blockSyncService, peerScoringManager, syncConfiguration, new ProofOfWorkRule());
+        // TODO(lsebrie): add new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
+        return new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, new ProofOfWorkRule());
     }
 
     @Bean
     public BlockSyncService getBlockSyncService(Blockchain blockchain,
                                                 BlockStore store,
                                                 BlockNodeInformation nodeInformation,
-                                                SyncConfiguration syncConfiguration,
-                                                ChannelManager channelManager) {
-            return new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration, channelManager);
+                                                SyncConfiguration syncConfiguration) {
+            return new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
     }
 
     @Bean
@@ -366,13 +361,13 @@ public class RskFactory {
     }
 
     @Bean
-    public SyncConfiguration getSyncConfiguration() {
-        int expectedPeers = RskSystemProperties.CONFIG.getExpectedPeers();
-        int timeoutWaitingPeers = RskSystemProperties.CONFIG.getTimeoutWaitingPeers();
-        int timeoutWaitingRequest = RskSystemProperties.CONFIG.getTimeoutWaitingRequest();
-        int expirationTimePeerStatus = RskSystemProperties.CONFIG.getExpirationTimePeerStatus();
-        int maxSkeletonChunks = RskSystemProperties.CONFIG.getMaxSkeletonChunks();
-        int chunkSize = RskSystemProperties.CONFIG.getChunkSize();
+    public SyncConfiguration getSyncConfiguration(RskSystemProperties config) {
+        int expectedPeers = config.getExpectedPeers();
+        int timeoutWaitingPeers = config.getTimeoutWaitingPeers();
+        int timeoutWaitingRequest = config.getTimeoutWaitingRequest();
+        int expirationTimePeerStatus = config.getExpirationTimePeerStatus();
+        int maxSkeletonChunks = config.getMaxSkeletonChunks();
+        int chunkSize = config.getChunkSize();
         return new SyncConfiguration(expectedPeers, timeoutWaitingPeers, timeoutWaitingRequest,
                 expirationTimePeerStatus, maxSkeletonChunks, chunkSize);
     }

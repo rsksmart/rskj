@@ -26,6 +26,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 import org.ethereum.db.ByteArrayWrapper;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +47,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
         Map<ByteArrayWrapper, ImportResult> connectionsResult = new HashMap<>();
         this.blocks.add(block);
         connectionsResult.put(new ByteArrayWrapper(block.getHash()), ImportResult.IMPORTED_BEST);
-        return new BlockProcessResult(false, connectionsResult);
+        return new BlockProcessResult(false, connectionsResult, block.getShortHash(), Duration.ZERO);
     }
 
     @Override
@@ -76,23 +77,8 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public void processGetBlockHeaders(MessageChannel sender, long blockNumber, byte[] hash, int maxHeaders, int skip, boolean reverse) {
-
-    }
-
-    @Override
-    public void processGetBlockHeaders(MessageChannel sender, byte[] hash) {
-
-    }
-
-    @Override
     public BlockNodeInformation getNodeInformation() {
         return null;
-    }
-
-    @Override
-    public void processStatus(MessageChannel sender, Status status) {
-
     }
 
     @Override
@@ -139,13 +125,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public boolean isSyncingBlocks() { return false; }
-
-    @Override
     public boolean hasBetterBlockToSync() { return false; }
-
-    @Override
-    public void acceptAnyBlock() { }
 
     public long getRequestId() { return this.requestId; }
 

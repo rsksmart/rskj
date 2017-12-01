@@ -103,7 +103,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     private void verifyDownloadIsFinished() {
         // all headers have been requested and there is not any chunk still in process
-        if (chunksBeingDownloaded.size() == 0 &&
+        if (chunksBeingDownloaded.isEmpty() &&
                 pendingHeaders.stream().allMatch(Collection::isEmpty)) {
             // Finished syncing
             syncEventsHandler.onCompletedSyncing();
@@ -117,8 +117,9 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     private void handleInvalidBlock(NodeID peerId, BlockHeader header) {
         syncInformation.reportEvent(
-                "Invalid block received from node {}",
-                EventType.INVALID_BLOCK, peerId);
+                "Invalid block received from node {} {} {}",
+                EventType.INVALID_BLOCK, peerId,
+                peerId, header.getNumber(), header.getShortHash());
 
         clearPeerInfo(peerId);
         if (suitablePeers.isEmpty()){
@@ -132,8 +133,9 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     private void handleInvalidMessage(NodeID peerId, BlockHeader header) {
         syncInformation.reportEvent(
-                "Invalid body received from node {}",
-                EventType.INVALID_MESSAGE, peerId);
+                "Invalid body received from node {} {} {}",
+                EventType.INVALID_MESSAGE, peerId,
+                peerId, header.getNumber(), header.getShortHash());
 
         clearPeerInfo(peerId);
         if (suitablePeers.isEmpty()){
@@ -148,7 +150,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     private void handleUnexpectedBody(NodeID peerId) {
         syncInformation.reportEvent(
                 "Unexpected body received from node {}",
-                EventType.UNEXPECTED_MESSAGE, peerId);
+                EventType.UNEXPECTED_MESSAGE, peerId, peerId);
 
         clearPeerInfo(peerId);
         if (suitablePeers.isEmpty()) {
@@ -177,36 +179,42 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     private Optional<BlockHeader> updateHeadersAndChunks(NodeID peerId, Integer currentChunk) {
         Deque<BlockHeader> headers = pendingHeaders.get(currentChunk);
-        if (!headers.isEmpty()) {
-            return Optional.of(headers.pop());
+        BlockHeader header = headers.poll();
+        while (header != null) {
+            // we double check if the header was not downloaded or obtained by another way
+            if (!syncInformation.isKnownBlock(header.getHash())) {
+                return Optional.of(header);
+            }
+            header = headers.poll();
         }
 
-        Optional<BlockHeader> header = tryFindBlockHeader(peerId);
-        if (!header.isPresent()){
+        Optional<BlockHeader> blockHeader = tryFindBlockHeader(peerId);
+        if (!blockHeader.isPresent()){
             chunksBeingDownloaded.remove(peerId);
             segmentsBeingDownloaded.remove(peerId);
             messagesByPeers.remove(peerId);
         }
 
-        return header;
+        return blockHeader;
     }
 
     private Optional<BlockHeader> tryFindBlockHeader(NodeID peerId) {
         // we start from the last chunk that can be downloaded
-        for (int segmentNumber = segmentByNode.get(peerId);segmentNumber >= 0; segmentNumber--){
+        for (int segmentNumber = segmentByNode.get(peerId); segmentNumber >= 0; segmentNumber--){
             Deque<Integer> chunks = chunksBySegment.get(segmentNumber);
             // if the segment stack is empty then continue to next segment
             if (!chunks.isEmpty()) {
                 int chunkNumber = chunks.pollLast();
                 Deque<BlockHeader> headers = pendingHeaders.get(chunkNumber);
-                if (!headers.isEmpty()) {
-                    chunksBeingDownloaded.put(peerId, chunkNumber);
-                    segmentsBeingDownloaded.put(peerId, segmentNumber);
-                    return Optional.of(headers.poll());
-                } else {
-                    // log something we are in trouble
-                    syncEventsHandler.warnMessage("We got a segment {} with a unfinished chunk {} with no pending headers!", segmentNumber, chunkNumber);
-                    syncEventsHandler.stopSyncing();
+                BlockHeader header = headers.poll();
+                while (header != null) {
+                    // we double check if the header was not downloaded or obtained by another way
+                    if (!syncInformation.isKnownBlock(header.getHash())) {
+                        chunksBeingDownloaded.put(peerId, chunkNumber);
+                        segmentsBeingDownloaded.put(peerId, segmentNumber);
+                        return Optional.of(header);
+                    }
+                    header = headers.poll();
                 }
             }
         }
@@ -251,7 +259,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     private void handleTimeoutMessage(NodeID peerId) {
         syncInformation.reportEvent("Timeout waiting requests from node {}",
-                EventType.TIMEOUT_MESSAGE, peerId);
+                EventType.TIMEOUT_MESSAGE, peerId, peerId);
         Long messageId = messagesByPeers.remove(peerId);
         BlockHeader header = pendingBodyResponses.remove(messageId).header;
         clearPeerInfo(peerId);
