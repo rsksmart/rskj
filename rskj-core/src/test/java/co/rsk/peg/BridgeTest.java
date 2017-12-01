@@ -78,24 +78,6 @@ public class BridgeTest {
     }
 
     @Test
-    public void callUpdateCollectionsWithoutTransactions() throws IOException {
-        Repository repository = new RepositoryImpl();
-        Repository track = repository.startTracking();
-
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, track, null, null, null);
-
-        bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
-
-        track.commit();
-
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
-
-        Assert.assertTrue(provider.getRskTxsWaitingForConfirmations().isEmpty());
-        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
-    }
-
-    @Test
     public void callUpdateCollectionsWithTransactionsWaitingForConfirmation() throws IOException {
         BtcTransaction tx1 = createTransaction();
         BtcTransaction tx2 = createTransaction();

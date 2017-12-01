@@ -323,10 +323,11 @@ public class BridgeSupportTest {
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         ReceiptStore rskReceiptStore = blockchain.getReceiptStore();
         org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
+        Transaction tx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, Collections.emptyList());
 
-        bridgeSupport.updateCollections();
+        bridgeSupport.updateCollections(tx);
 
         bridgeSupport.save();
 
@@ -387,10 +388,11 @@ public class BridgeSupportTest {
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         ReceiptStore rskReceiptStore = blockchain.getReceiptStore();
         org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
+        Transaction tx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, Collections.emptyList());
 
-        bridgeSupport.updateCollections();
+        bridgeSupport.updateCollections(tx);
 
         bridgeSupport.save();
 
@@ -450,10 +452,11 @@ public class BridgeSupportTest {
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         ReceiptStore rskReceiptStore = blockchain.getReceiptStore();
         org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
+        Transaction tx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, Collections.emptyList());
 
-        bridgeSupport.updateCollections();
+        bridgeSupport.updateCollections(tx);
 
         bridgeSupport.save();
 
@@ -510,10 +513,11 @@ public class BridgeSupportTest {
         track.commit();
 
         track = repository.startTracking();
+        Transaction tx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, Collections.emptyList());
 
-        bridgeSupport.updateCollections();
+        bridgeSupport.updateCollections(tx);
 
         bridgeSupport.save();
 
@@ -578,10 +582,11 @@ public class BridgeSupportTest {
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         ReceiptStore rskReceiptStore = blockchain.getReceiptStore();
         org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
+        Transaction rskTx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, rskCurrentBlock, rskReceiptStore, rskBlockStore, Collections.emptyList());
 
-        bridgeSupport.updateCollections();
+        bridgeSupport.updateCollections(rskTx);
         bridgeSupport.save();
 
         track.commit();

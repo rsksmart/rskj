@@ -36,7 +36,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
@@ -54,7 +53,6 @@ import java.io.*;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
-import java.util.function.Function;
 
 import static org.ethereum.util.BIUtil.toBI;
 import static org.ethereum.util.BIUtil.transfer;
@@ -68,6 +66,9 @@ public class BridgeSupport {
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
+    private static final Coin MINIMUM_FUNDS_TO_MIGRATE = Coin.CENT;
+    private static final long FUNDS_MIGRATION_AGE_BEGIN = 50;
+    private static final long FUNDS_MIGRATION_AGE_END = 100;
 
     final List<String> FEDERATION_CHANGE_FUNCTIONS = Collections.unmodifiableList(Arrays.asList(new String[]{
             "create",
@@ -360,6 +361,11 @@ public class BridgeSupport {
                     break;
                 }
             }
+
+            provider.getRetiringFederationBtcUTXOs().removeIf(
+                utxo -> utxo.getHash().equals(transactionInput.getOutpoint().getHash())
+                    && utxo.getIndex() == transactionInput.getOutpoint().getIndex()
+            );
         }
     }
 
@@ -404,11 +410,30 @@ public class BridgeSupport {
      * Iterates rskTxsWaitingForConfirmations map searching for txs with enough confirmations in the RSK blockchain.
      * If it finds one, adds unsigned inputs and change output and moves it to rskTxsWaitingForSignatures map.
      * @throws IOException
+     * @param rskTx current RSK transaction
      */
-    public void updateCollections() throws IOException {
+    public void updateCollections(Transaction rskTx) throws IOException {
         Context.propagate(btcContext);
+        boolean pendingSignatures = !provider.getRskTxsWaitingForSignatures().isEmpty();
+        long activeFederationAge = rskExecutionBlock.getNumber() - getFederationCreationBlockNumber();
+        Wallet retiringFederationWallet = getRetiringFederationWallet();
+
+        if (activeFederationAge > FUNDS_MIGRATION_AGE_BEGIN && activeFederationAge < FUNDS_MIGRATION_AGE_END
+                && retiringFederationWallet.getBalance().isGreaterThan(MINIMUM_FUNDS_TO_MIGRATE)
+                && !pendingSignatures) {
+
+            BtcTransaction btcTx = createMigrationTransaction(retiringFederationWallet, getActiveFederation().getAddress());
+            provider.getRskTxsWaitingForSignatures().put(new Sha3Hash(rskTx.getHash()), btcTx);
+        }
+
+        if (retiringFederationWallet != null && activeFederationAge >= FUNDS_MIGRATION_AGE_END && !pendingSignatures) {
+            BtcTransaction btcTx = createMigrationTransaction(retiringFederationWallet, getActiveFederation().getAddress());
+            provider.getRskTxsWaitingForSignatures().put(new Sha3Hash(rskTx.getHash()), btcTx);
+            provider.setRetiringFederation(null);
+        }
+
         Iterator<Map.Entry<Sha3Hash, BtcTransaction>> iter = provider.getRskTxsWaitingForConfirmations().entrySet().iterator();
-        while (iter.hasNext() && provider.getRskTxsWaitingForSignatures().size() == 0) {
+        while (iter.hasNext() && !pendingSignatures) {
             Map.Entry<Sha3Hash, BtcTransaction> entry = iter.next();
             // We copy the entry's key and value to temporary variables because iter.remove() changes the values of entry's key and value
             Sha3Hash rskTxHash = entry.getKey();
@@ -511,7 +536,8 @@ public class BridgeSupport {
      */
     public void addSignature(long executionBlockNumber, BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash) throws Exception {
         Context.propagate(btcContext);
-        if (!getActiveFederation().getPublicKeys().contains(federatorPublicKey)) {
+        Federation retiringFederation = getRetiringFederation();
+        if (!getActiveFederation().getPublicKeys().contains(federatorPublicKey) && (retiringFederation == null || !retiringFederation.getPublicKeys().contains(federatorPublicKey))) {
             logger.warn("Supplied federator public key {} does not belong to any of the federators.", federatorPublicKey);
             return;
         }
@@ -924,7 +950,7 @@ public class BridgeSupport {
             return -1;
         }
 
-        if (provider.getRetiringFederationBtcUTXOs().size() > 0) {
+        if (provider.getRetiringFederation() != null) {
             return -2;
         }
 
@@ -1210,6 +1236,31 @@ public class BridgeSupport {
     @VisibleForTesting
     BtcBlockStore getBtcBlockStore() {
         return btcBlockStore;
+    }
+
+    private static BtcTransaction createMigrationTransaction(Wallet originWallet, Address destinationAddress) {
+        Coin expectedMigrationValue = originWallet.getBalance();
+        for(;;) {
+            BtcTransaction migrationBtcTx = new BtcTransaction(originWallet.getParams());
+            migrationBtcTx.addOutput(expectedMigrationValue, destinationAddress);
+
+            SendRequest sr = SendRequest.forTx(migrationBtcTx);
+            sr.changeAddress = destinationAddress;
+            sr.feePerKb = Coin.MILLICOIN;
+            sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
+            sr.recipientsPayFees = true;
+            try {
+                originWallet.completeTx(sr);
+                for (TransactionInput transactionInput : migrationBtcTx.getInputs()) {
+                    transactionInput.disconnect();
+                }
+                return migrationBtcTx;
+            } catch (InsufficientMoneyException | Wallet.ExceededMaxTransactionSize | Wallet.CouldNotAdjustDownwards e) {
+                expectedMigrationValue = expectedMigrationValue.divide(2);
+            } catch(Wallet.DustySendRequested e) {
+                throw new IllegalStateException("Retiring federation wallet cannot be emptied", e);
+            }
+        }
     }
 }
 

@@ -332,7 +332,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("updateCollections");
 
         try {
-            bridgeSupport.updateCollections();
+            bridgeSupport.updateCollections(rskTx);
         } catch (Exception e) {
             logger.warn("Exception onBlock", e);
             throw new RuntimeException("Exception onBlock", e);
