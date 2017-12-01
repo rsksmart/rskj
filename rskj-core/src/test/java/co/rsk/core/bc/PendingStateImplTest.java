@@ -331,7 +331,7 @@ public class PendingStateImplTest {
         txs.add(tx3);
         txs.add(tx4);
 
-        Block block = new BlockBuilder().parent(BlockGenerator.getGenesisBlock()).transactions(txs).build();
+        Block block = new BlockBuilder().parent(BlockGenerator.getInstance().getGenesisBlock()).transactions(txs).build();
 
         pendingState.retractBlock(block);
 

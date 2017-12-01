@@ -57,7 +57,6 @@ public class FederationTest {
     @Before
     public void createFederation() {
         federation = new Federation(
-                3,
                 Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
@@ -107,7 +106,7 @@ public class FederationTest {
             calls.add(1);
             int numberOfSignaturesRequired = invocationOnMock.getArgumentAt(0, int.class);
             List<BtcECKey> publicKeys = invocationOnMock.getArgumentAt(1, List.class);
-            Assert.assertEquals(3, numberOfSignaturesRequired);
+            Assert.assertEquals(4, numberOfSignaturesRequired);
             Assert.assertEquals(6, publicKeys.size());
             for (int i = 0; i < sortedPublicKeys.size(); i++) {
                 Assert.assertTrue(Arrays.equals(sortedPublicKeys.get(i).getPubKey(), publicKeys.get(i).getPubKey()));
@@ -129,7 +128,7 @@ public class FederationTest {
             calls.add(0);
             int numberOfSignaturesRequired = invocationOnMock.getArgumentAt(0, int.class);
             List<BtcECKey> publicKeys = invocationOnMock.getArgumentAt(1, List.class);
-            Assert.assertEquals(3, numberOfSignaturesRequired);
+            Assert.assertEquals(4, numberOfSignaturesRequired);
             Assert.assertEquals(6, publicKeys.size());
             for (int i = 0; i < sortedPublicKeys.size();i ++) {
                 Assert.assertTrue(Arrays.equals(sortedPublicKeys.get(i).getPubKey(), publicKeys.get(i).getPubKey()));
@@ -155,7 +154,7 @@ public class FederationTest {
             calls.add(0);
             int numberOfSignaturesRequired = invocationOnMock.getArgumentAt(0, int.class);
             List<BtcECKey> publicKeys = invocationOnMock.getArgumentAt(1, List.class);
-            Assert.assertEquals(3, numberOfSignaturesRequired);
+            Assert.assertEquals(4, numberOfSignaturesRequired);
             Assert.assertEquals(6, publicKeys.size());
             for (int i = 0; i < sortedPublicKeys.size();i ++) {
                 Assert.assertTrue(Arrays.equals(sortedPublicKeys.get(i).getPubKey(), publicKeys.get(i).getPubKey()));
@@ -179,27 +178,8 @@ public class FederationTest {
     }
 
     @Test
-    public void testEquals_differentThreshold() {
-        Federation otherFederation = new Federation(
-                2,
-                Arrays.asList(new BtcECKey[]{
-                        BtcECKey.fromPrivate(BigInteger.valueOf(100)),
-                        BtcECKey.fromPrivate(BigInteger.valueOf(200)),
-                        BtcECKey.fromPrivate(BigInteger.valueOf(300)),
-                        BtcECKey.fromPrivate(BigInteger.valueOf(400)),
-                        BtcECKey.fromPrivate(BigInteger.valueOf(500)),
-                        BtcECKey.fromPrivate(BigInteger.valueOf(600)),
-                }),
-                ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-        );
-        Assert.assertFalse(federation.equals(otherFederation));
-    }
-
-    @Test
     public void testEquals_differentNumberOfPublicKeys() {
         Federation otherFederation = new Federation(
-                3,
                 Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
@@ -218,7 +198,6 @@ public class FederationTest {
     @Test
     public void testEquals_differentCreationTime() {
         Federation otherFederation = new Federation(
-                3,
                 Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
@@ -236,7 +215,6 @@ public class FederationTest {
     @Test
     public void testEquals_differentNetworkParameters() {
         Federation otherFederation = new Federation(
-                3,
                 Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
@@ -254,7 +232,6 @@ public class FederationTest {
     @Test
     public void testEquals_differentPublicKeys() {
         Federation otherFederation = new Federation(
-                3,
                 Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
@@ -272,7 +249,6 @@ public class FederationTest {
     @Test
     public void testEquals_same() {
         Federation otherFederation = new Federation(
-                3,
                 Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPrivate(BigInteger.valueOf(100)),
                         BtcECKey.fromPrivate(BigInteger.valueOf(200)),
@@ -305,6 +281,6 @@ public class FederationTest {
 
     @Test
     public void testToString() {
-        Assert.assertEquals("3 of 6 signatures federation", federation.toString());
+        Assert.assertEquals("4 of 6 signatures federation", federation.toString());
     }
 }

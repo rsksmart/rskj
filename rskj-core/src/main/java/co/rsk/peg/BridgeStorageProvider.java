@@ -51,6 +51,7 @@ public class BridgeStorageProvider {
     private static final String BRIDGE_ACTIVE_FEDERATION_KEY = "bridgeActiveFederation";
     private static final String BRIDGE_RETIRING_FEDERATION_KEY = "bridgeRetiringFederation";
     private static final String BRIDGE_PENDING_FEDERATION_KEY = "bridgePendingFederation";
+    private static final String BRIDGE_FEDERATION_ELECTION_KEY = "bridgeFederationElection";
 
     private static final NetworkParameters networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
@@ -74,6 +75,8 @@ public class BridgeStorageProvider {
     private boolean shouldSaveRetiringFederation = false;
     private PendingFederation pendingFederation;
     private boolean shouldSavePendingFederation = false;
+
+    private ABICallElection federationElection;
 
     private BridgeConstants bridgeConstants;
     private Context btcContext;
@@ -277,8 +280,6 @@ public class BridgeStorageProvider {
         }
     }
 
-
-
     public PendingFederation getPendingFederation() {
         if (pendingFederation != null)
             return pendingFederation;
@@ -316,6 +317,38 @@ public class BridgeStorageProvider {
         }
     }
 
+    /**
+     * Save the federation election
+     */
+    public void saveFederationElection() {
+        if (federationElection == null)
+            return;
+
+        DataWord address = new DataWord(BRIDGE_FEDERATION_ELECTION_KEY.getBytes(StandardCharsets.UTF_8));
+
+        byte[] data = BridgeSerializationUtils.serializeElection(federationElection);
+
+        repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+    }
+
+    public ABICallElection getFederationElection(ABICallAuthorizer authorizer) {
+        if (federationElection != null)
+            return federationElection;
+
+        DataWord address = new DataWord(BRIDGE_FEDERATION_ELECTION_KEY.getBytes(StandardCharsets.UTF_8));
+
+        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
+
+        if (data == null) {
+            federationElection = new ABICallElection(authorizer);
+            return federationElection;
+        }
+
+        federationElection = BridgeSerializationUtils.deserializeElection(data, authorizer);
+
+        return federationElection;
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -329,5 +362,7 @@ public class BridgeStorageProvider {
         saveRetiringFederationBtcUTXOs();
 
         savePendingFederation();
+
+        saveFederationElection();
     }
 }

@@ -149,11 +149,26 @@ public class BridgeUtils {
         if (receiveAddress == null)
             return false;
 
+        BridgeConstants bridgeConstants = blockchainConfig.getCommonConstants().getBridgeConstants();
+
         // Temporary assumption: if areBridgeTxsFree() is true then the current federation
         // must be the genesis federation.
         // Once the original federation changes, txs are always paid.
         return StringUtils.equals(Hex.toHexString(receiveAddress), PrecompiledContracts.BRIDGE_ADDR) &&
                blockchainConfig.getConfigForBlock(blockNumber).areBridgeTxsFree() &&
-               rskTx.acceptTransactionSignature();
+               rskTx.acceptTransactionSignature() &&
+               (
+                       isFromFederateMember(rskTx) ||
+                       isFromFederationChangeAuthorizedVoter(rskTx, bridgeConstants)
+               );
+    }
+
+    private static boolean isFromFederateMember(org.ethereum.core.Transaction rskTx) {
+        return true;
+    }
+
+    private static boolean isFromFederationChangeAuthorizedVoter(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
+        ABICallAuthorizer authorizer = bridgeConfiguration.getFederationChangeAuthorizer();
+        return authorizer.isAuthorized(rskTx);
     }
 }

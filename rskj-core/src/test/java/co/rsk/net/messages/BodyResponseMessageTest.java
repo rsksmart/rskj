@@ -27,10 +27,10 @@ public class BodyResponseMessageTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        Block parent = BlockGenerator.getGenesisBlock();
+        Block parent = BlockGenerator.getInstance().getGenesisBlock();
 
         for (int k = 1; k < 10; k++) {
-            Block block = BlockGenerator.createChildBlock(parent);
+            Block block = BlockGenerator.getInstance().createChildBlock(parent);
             uncles.add(block.getHeader());
             parent = block;
         }

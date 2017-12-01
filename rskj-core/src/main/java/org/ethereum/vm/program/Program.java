@@ -22,6 +22,7 @@ package org.ethereum.vm.program;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
+import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -638,8 +639,6 @@ public class Program {
             Program program = new Program(programCode, programInvoke, internalTx);
             vm.play(program);
             programResult = program.getResult();
-
-            getResult().merge(programResult);
         }
 
         if (programResult.getException() != null || programResult.isRevert()) {
@@ -664,12 +663,21 @@ public class Program {
         else {
             // 4. CREATE THE CONTRACT OUT OF RETURN
             byte[] code = programResult.getHReturn();
+            int codeLength = getLength(code);
 
-            long storageCost = (long)getLength(code) * GasCost.CREATE_DATA;
+            long storageCost = (long) codeLength * GasCost.CREATE_DATA;
             long afterSpend = programInvoke.getGas() - storageCost - programResult.getGasUsed();
             if (afterSpend < 0) {
-                programResult.setException(ExceptionHelper.notEnoughSpendingGas("No gas to return just created contract",
-                        storageCost, this));
+                programResult.setException(
+                        ExceptionHelper.notEnoughSpendingGas(
+                                "No gas to return just created contract",
+                                storageCost,
+                                this));
+            } else if (codeLength > Constants.getMaxContractSize()) {
+                programResult.setException(
+                        ExceptionHelper.tooLargeContractSize(
+                                Constants.getMaxContractSize(),
+                                codeLength));
             } else {
                 programResult.spendGas(storageCost);
                 track.saveCode(newAddress, code);
@@ -1597,6 +1605,10 @@ public class Program {
 
         public static StackTooSmallException tooSmallStack(int expectedSize, int actualSize) {
             return new StackTooSmallException("Expected stack size %d but actual %d;", expectedSize, actualSize);
+        }
+
+        public static RuntimeException tooLargeContractSize(int maxSize, int actualSize) {
+            return new RuntimeException(format("Maximum contract size allowed %d but actual %d;", maxSize, actualSize));
         }
     }
 

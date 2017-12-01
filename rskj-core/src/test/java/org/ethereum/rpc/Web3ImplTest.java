@@ -361,9 +361,10 @@ public class Web3ImplTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(world).parent(genesis).difficulty(3l).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-        Block block1b = new BlockBuilder(world).parent(genesis).build();
+        Block block1b = new BlockBuilder(world).parent(genesis)
+                .difficulty(block1.getDifficultyBI().longValue()-1).build();
         Block block2b = new BlockBuilder(world).parent(block1b).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
@@ -448,10 +449,10 @@ public class Web3ImplTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
+        Block block1 = new BlockBuilder(world).difficulty(10).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-        Block block1b = new BlockBuilder(world).parent(genesis).build();
-        Block block2b = new BlockBuilder(world).parent(block1b).build();
+        Block block1b = new BlockBuilder(world).difficulty(block1.getDifficultyBI().longValue()-1).parent(genesis).build();
+        Block block2b = new BlockBuilder(world).difficulty(block1.getDifficultyBI().longValue()+1).parent(block1b).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
 
@@ -594,11 +595,11 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3(worldManager);
 
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world).parent(genesis).build();
+        Block block1 = new BlockBuilder(world).difficulty(10).parent(genesis).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-        Block block1b = new BlockBuilder(world).parent(genesis).build();
+        Block block1b = new BlockBuilder(world).difficulty(2).parent(genesis).build();
         block1b.setBitcoinMergedMiningHeader(new byte[]{0x01});
-        Block block2b = new BlockBuilder(world).parent(block1b).build();
+        Block block2b = new BlockBuilder(world).difficulty(11).parent(block1b).build();
         block2b.setBitcoinMergedMiningHeader(new byte[] { 0x02 });
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
@@ -627,9 +628,9 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3(worldManager);
 
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world).parent(genesis).build();
+        Block block1 = new BlockBuilder(world).difficulty(10).parent(genesis).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-        Block block1b = new BlockBuilder(world).parent(genesis).build();
+        Block block1b = new BlockBuilder(world).difficulty(block1.getDifficultyBI().longValue()-1).parent(genesis).build();
         block1b.setBitcoinMergedMiningHeader(new byte[]{0x01});
         Block block2b = new BlockBuilder(world).parent(block1b).build();
         block2b.setBitcoinMergedMiningHeader(new byte[] { 0x02 });
@@ -708,10 +709,10 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3(worldManager);
 
         Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world).parent(genesis).build();
+        Block block1 = new BlockBuilder(world).difficulty(10).parent(genesis).build();
         block1.setBitcoinMergedMiningHeader(new byte[] { 0x01 });
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-        Block block1b = new BlockBuilder(world).parent(genesis).build();
+        Block block1b = new BlockBuilder(world).difficulty(block1.getDifficultyBI().longValue()-1).parent(genesis).build();
         block1b.setBitcoinMergedMiningHeader(new byte[] { 0x01 });
         Block block2b = new BlockBuilder(world).parent(block1b).build();
         block2b.setBitcoinMergedMiningHeader(new byte[] { 0x02 });

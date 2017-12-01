@@ -24,7 +24,6 @@ import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
-import org.ethereum.db.BlockStore;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -243,7 +242,7 @@ public class SnapshotManagerTest {
     }
 
     private static void addBlocks(Blockchain blockchain, int size) {
-        List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), size);
+        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(blockchain.getBestBlock(), size);
 
         for (Block block : blocks)
             blockchain.tryToConnect(block);

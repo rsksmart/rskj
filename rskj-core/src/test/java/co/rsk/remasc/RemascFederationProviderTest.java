@@ -31,7 +31,7 @@ public class RemascFederationProviderTest {
     }
 
     private static RemascFederationProvider getRemascFederationProvider() {
-        Genesis genesisBlock = BlockGenerator.getGenesisBlock();
+        Genesis genesisBlock = BlockGenerator.getInstance().getGenesisBlock();
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setRsk(true).setGenesis(genesisBlock);
         Blockchain blockchain = builder.build();
 

@@ -29,7 +29,7 @@ import org.junit.Test;
 public class BlockResponseMessageTest {
     @Test
     public void createWithBlockHash() {
-        Block block = BlockGenerator.getBlock(1);
+        Block block = BlockGenerator.getInstance().getBlock(1);
         BlockResponseMessage message = new BlockResponseMessage(100, block);
 
         Assert.assertEquals(100, message.getId());

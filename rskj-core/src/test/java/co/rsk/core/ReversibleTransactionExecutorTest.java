@@ -26,6 +26,7 @@ import org.ethereum.core.TransactionExecutor;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
+import org.ethereum.util.ContractRunner;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
@@ -35,10 +36,11 @@ public class ReversibleTransactionExecutorTest {
     @Test
     public void executeTransactionHello() {
         RskTestFactory factory = new RskTestFactory();
+        ContractRunner contractRunner = new ContractRunner(factory);
 
         TestContract hello = TestContract.hello();
         CallTransaction.Function helloFn = hello.functions.get("hello");
-        ContractDetails contract = factory.addContract(hello.runtimeBytecode);
+        ContractDetails contract = contractRunner.addContract(hello.runtimeBytecode);
 
         Web3.CallArguments args = new Web3.CallArguments();
         args.to = TypeConverter.toJsonHex(contract.getAddress());
@@ -66,10 +68,11 @@ public class ReversibleTransactionExecutorTest {
     @Test
     public void executeTransactionGreeter() {
         RskTestFactory factory = new RskTestFactory();
+        ContractRunner contractRunner = new ContractRunner(factory);
 
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
-        ContractDetails contract = factory.addContract(greeter.runtimeBytecode);
+        ContractDetails contract = contractRunner.addContract(greeter.runtimeBytecode);
 
         Web3.CallArguments args = new Web3.CallArguments();
         args.to = TypeConverter.toJsonHex(contract.getAddress());
@@ -97,10 +100,11 @@ public class ReversibleTransactionExecutorTest {
     @Test
     public void executeTransactionGreeterOtherSender() {
         RskTestFactory factory = new RskTestFactory();
+        ContractRunner contractRunner = new ContractRunner(factory);
 
         TestContract greeter = TestContract.greeter();
         CallTransaction.Function greeterFn = greeter.functions.get("greet");
-        ContractDetails contract = factory.addContract(greeter.runtimeBytecode);
+        ContractDetails contract = contractRunner.addContract(greeter.runtimeBytecode);
 
         Web3.CallArguments args = new Web3.CallArguments();
         args.from = "0x23"; // someone else
@@ -126,10 +130,11 @@ public class ReversibleTransactionExecutorTest {
     @Test
     public void executeTransactionCountCallsMultipleTimes() {
         RskTestFactory factory = new RskTestFactory();
+        ContractRunner contractRunner = new ContractRunner(factory);
 
         TestContract countcalls = TestContract.countcalls();
         CallTransaction.Function callsFn = countcalls.functions.get("calls");
-        ContractDetails contract = factory.addContract(countcalls.runtimeBytecode);
+        ContractDetails contract = contractRunner.addContract(countcalls.runtimeBytecode);
 
         Web3.CallArguments args = new Web3.CallArguments();
         args.from = "0x23"; // someone else

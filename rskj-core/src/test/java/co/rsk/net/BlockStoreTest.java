@@ -19,7 +19,6 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.test.builders.BlockBuilder;
 import com.google.common.collect.Lists;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -53,7 +52,7 @@ public class BlockStoreTest {
     @Test
     public void saveAndGetBlockByHash() {
         BlockStore store = new BlockStore();
-        Block block = BlockGenerator.getGenesisBlock();
+        Block block = BlockGenerator.getInstance().getGenesisBlock();
 
         store.saveBlock(block);
 
@@ -65,7 +64,7 @@ public class BlockStoreTest {
     @Test
     public void saveRemoveAndGetBlockByHash() {
         BlockStore store = new BlockStore();
-        Block block = BlockGenerator.getBlock(1);
+        Block block = BlockGenerator.getInstance().getBlock(1);
 
         store.saveBlock(block);
 
@@ -83,10 +82,10 @@ public class BlockStoreTest {
     @Test
     public void saveRemoveAndGetBlockByHashWithUncles() {
         BlockStore store = new BlockStore();
-        Block parent = BlockGenerator.getGenesisBlock();
-        Block son1 = BlockGenerator.createChildBlock(parent);
-        Block son2 = BlockGenerator.createChildBlock(parent);
-        Block grandson = BlockGenerator.createChildBlock(son1, new ArrayList<>(), Lists.newArrayList(son2.getHeader()), 1, BigInteger.ONE);
+        Block parent = BlockGenerator.getInstance().getGenesisBlock();
+        Block son1 = BlockGenerator.getInstance().createChildBlock(parent);
+        Block son2 = BlockGenerator.getInstance().createChildBlock(parent);
+        Block grandson = BlockGenerator.getInstance().createChildBlock(son1, new ArrayList<>(), Lists.newArrayList(son2.getHeader()), 1, BigInteger.ONE);
 
         store.saveBlock(son1);
         store.saveBlock(son2);
@@ -107,9 +106,9 @@ public class BlockStoreTest {
     @Test
     public void saveTwoBlocksRemoveOne() {
         BlockStore store = new BlockStore();
-        Block parent = BlockGenerator.getGenesisBlock();
-        Block adam = BlockGenerator.createChildBlock(parent);
-        Block eve = BlockGenerator.createChildBlock(adam);
+        Block parent = BlockGenerator.getInstance().getGenesisBlock();
+        Block adam = BlockGenerator.getInstance().createChildBlock(parent);
+        Block eve = BlockGenerator.getInstance().createChildBlock(adam);
 
         store.saveBlock(adam);
         store.saveBlock(eve);
@@ -147,9 +146,9 @@ public class BlockStoreTest {
     @Test
     public void saveAndGetBlocksByNumber() {
         BlockStore store = new BlockStore();
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block1 = BlockGenerator.createChildBlock(genesis);
-        Block block2 = BlockGenerator.createChildBlock(genesis);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block2 = BlockGenerator.getInstance().createChildBlock(genesis);
 
         store.saveBlock(block1);
         store.saveBlock(block2);
@@ -166,10 +165,10 @@ public class BlockStoreTest {
     @Test
     public void releaseRange() {
         BlockStore store = new BlockStore();
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
 
-        List<Block> blocks1 = BlockGenerator.getBlockChain(genesis, 1000);
-        List<Block> blocks2 = BlockGenerator.getBlockChain(genesis, 1000);
+        List<Block> blocks1 = BlockGenerator.getInstance().getBlockChain(genesis, 1000);
+        List<Block> blocks2 = BlockGenerator.getInstance().getBlockChain(genesis, 1000);
 
         for (Block b : blocks1)
             store.saveBlock(b);
@@ -186,9 +185,9 @@ public class BlockStoreTest {
     @Test
     public void saveAndGetBlocksByParentHash() {
         BlockStore store = new BlockStore();
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block1 = BlockGenerator.createChildBlock(genesis);
-        Block block2 = BlockGenerator.createChildBlock(genesis);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block2 = BlockGenerator.getInstance().createChildBlock(genesis);
 
         store.saveBlock(block1);
         store.saveBlock(block2);

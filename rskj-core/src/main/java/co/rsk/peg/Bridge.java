@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.CallTransaction;
@@ -110,23 +111,19 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_RETIRING_FEDERATION_CREATION_TIME = CallTransaction.Function.fromSignature("getRetiringFederationCreationTime", new String[]{}, new String[]{"int256"});
 
     // Creates a new pending federation and returns its id
-    public static final CallTransaction.Function CREATE_FEDERATION = CallTransaction.Function.fromSignature("createFederation", new String[]{"int256"}, new String[]{"int256"});
+    public static final CallTransaction.Function CREATE_FEDERATION = CallTransaction.Function.fromSignature("createFederation", new String[]{}, new String[]{"int256"});
     // Adds the given key to the current pending federation
     public static final CallTransaction.Function ADD_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("addFederatorPublicKey", new String[]{"bytes"}, new String[]{"int256"});
-    // Removes the given key from the current pending federation
-    public static final CallTransaction.Function REMOVE_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("removeFederatorPublicKey", new String[]{"bytes"}, new String[]{"int256"});
     // Commits the currently pending federation
-    public static final CallTransaction.Function COMMIT_FEDERATION = CallTransaction.Function.fromSignature("commitFederation", new String[]{}, new String[]{"int256"});
+    public static final CallTransaction.Function COMMIT_FEDERATION = CallTransaction.Function.fromSignature("commitFederation", new String[]{"bytes"}, new String[]{"int256"});
     // Rolls back the currently pending federation
     public static final CallTransaction.Function ROLLBACK_FEDERATION = CallTransaction.Function.fromSignature("rollbackFederation", new String[]{}, new String[]{"int256"});
 
-    // Returns the number of federates in the currently active federation
-    public static final CallTransaction.Function GET_PENDING_FEDERATION_ID = CallTransaction.Function.fromSignature("getPendingFederationId", new String[]{}, new String[]{"int256"});
-    // Returns the number of federates in the currently active federation
+    // Returns the current pending federation's hash
+    public static final CallTransaction.Function GET_PENDING_FEDERATION_HASH = CallTransaction.Function.fromSignature("getPendingFederationHash", new String[]{}, new String[]{"bytes"});
+    // Returns the number of federates in the current pending federation
     public static final CallTransaction.Function GET_PENDING_FEDERATION_SIZE = CallTransaction.Function.fromSignature("getPendingFederationSize", new String[]{}, new String[]{"int256"});
-    // Returns the number of minimum required signatures from the currently active federation
-    public static final CallTransaction.Function GET_PENDING_FEDERATION_THRESHOLD = CallTransaction.Function.fromSignature("getPendingFederationThreshold", new String[]{}, new String[]{"int256"});
-    // Returns the public key of the federator at the specified index
+    // Returns the public key of the federator at the specified index for the current pending federation
     public static final CallTransaction.Function GET_PENDING_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getPendingFederatorPublicKey", new String[]{"int256"}, new String[]{"bytes"});
 
     // Log topics used by the Bridge
@@ -187,12 +184,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             GET_RETIRING_FEDERATION_CREATION_TIME,
             CREATE_FEDERATION,
             ADD_FEDERATOR_PUBLIC_KEY,
-            REMOVE_FEDERATOR_PUBLIC_KEY,
             COMMIT_FEDERATION,
             ROLLBACK_FEDERATION,
-            GET_PENDING_FEDERATION_ID,
+            GET_PENDING_FEDERATION_HASH,
             GET_PENDING_FEDERATION_SIZE,
-            GET_PENDING_FEDERATION_THRESHOLD,
             GET_PENDING_FEDERATOR_PUBLIC_KEY,
         }).forEach((CallTransaction.Function func) -> {
             this.functions.put(new ByteArrayWrapper(func.encodeSignature()),  func);
@@ -629,74 +624,74 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return creationTime.toEpochMilli();
     }
 
-    public Long createFederation(Object[] args)
+    public Integer createFederation(Object[] args)
     {
         logger.trace("createFederation");
 
-        int numberOfSignaturesRequired = ((BigInteger) args[0]).intValue();
-        try {
-            return bridgeSupport.createFederation(numberOfSignaturesRequired);
-        } catch (IOException e) {
-            logger.warn("Exception in createFederation", e);
-            throw new RuntimeException("Exception in createFederation", e);
-        }
-
+        return bridgeSupport.voteFederationChange(
+                rskTx,
+                new ABICallSpec("create", new byte[][]{})
+        );
     }
 
     public Integer addFederatorPublicKey(Object[] args)
     {
         logger.trace("addFederatorPublicKey");
 
-        byte[] publicKeyBytes = (byte[]) args[0];
-        BtcECKey publicKey;
+        byte[] publicKeyBytes;
         try {
-            publicKey = BtcECKey.fromPublicOnly(publicKeyBytes);
+            publicKeyBytes = (byte[]) args[0];
         } catch (Exception e) {
-            throw new BridgeIllegalArgumentException("Public key could not be parsed " + Hex.toHexString(publicKeyBytes), e);
+            logger.warn("Exception in addFederatorPublicKey: {}", e.getMessage());
+            return -10;
         }
 
-        return bridgeSupport.addFederatorPublicKey(publicKey);
-    }
-
-    public Integer removeFederatorPublicKey(Object[] args)
-    {
-        logger.trace("removeFederatorPublicKey");
-
-        byte[] publicKeyBytes = (byte[]) args[0];
-        BtcECKey publicKey;
-        try {
-            publicKey = BtcECKey.fromPublicOnly(publicKeyBytes);
-        } catch (Exception e) {
-            throw new BridgeIllegalArgumentException("Public key could not be parsed " + Hex.toHexString(publicKeyBytes), e);
-        }
-
-        return bridgeSupport.removeFederatorPublicKey(publicKey);
+        return bridgeSupport.voteFederationChange(
+                rskTx,
+                new ABICallSpec("add", new byte[][]{ publicKeyBytes })
+        );
     }
 
     public Integer commitFederation(Object[] args)
     {
         logger.trace("commitFederation");
 
+        byte[] hash;
         try {
-            return bridgeSupport.commitFederation();
-        } catch (IOException e) {
-            logger.warn("Exception in commitFederation", e);
-            throw new RuntimeException("Exception in commitFederation", e);
+            hash = (byte[]) args[0];
+        } catch (Exception e) {
+            logger.warn("Exception in commitFederation: {}", e.getMessage());
+            return -10;
         }
+
+        return bridgeSupport.voteFederationChange(
+                rskTx,
+                new ABICallSpec("commit", new byte[][]{ hash })
+        );
     }
 
     public Integer rollbackFederation(Object[] args)
     {
         logger.trace("rollbackFederation");
 
-        return bridgeSupport.rollbackFederation();
+        return bridgeSupport.voteFederationChange(
+                rskTx,
+                new ABICallSpec("rollback", new byte[][]{})
+        );
     }
 
-    public Long getPendingFederationId(Object[] args)
+    public byte[] getPendingFederationHash(Object[] args)
     {
-        logger.trace("getPendingFederationId");
+        logger.trace("getPendingFederationHash");
 
-        return bridgeSupport.getPendingFederationId();
+        byte[] hash = bridgeSupport.getPendingFederationHash();
+
+        if (hash == null) {
+            // Empty array is returned when pending federation is not present
+            return new byte[]{};
+        }
+
+        return hash;
     }
 
     public Integer getPendingFederationSize(Object[] args)
@@ -704,13 +699,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getPendingFederationSize");
 
         return bridgeSupport.getPendingFederationSize();
-    }
-
-    public Integer getPendingFederationThreshold(Object[] args)
-    {
-        logger.trace("getPendingFederationThreshold");
-
-        return bridgeSupport.getPendingFederationThreshold();
     }
 
     public byte[] getPendingFederatorPublicKey(Object[] args)

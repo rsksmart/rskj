@@ -31,6 +31,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
+import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Genesis;
 import org.ethereum.vm.PrecompiledContracts;
@@ -113,7 +114,7 @@ public class BridgeUtilsTest {
                 BtcECKey.fromPrivate(Hex.decode("fa02")),
         });
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation federation1 = new Federation(1, federation1Keys, Instant.ofEpochMilli(1000L), parameters);
+        Federation federation1 = new Federation(federation1Keys, Instant.ofEpochMilli(1000L), parameters);
 
         List<BtcECKey> federation2Keys = Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPrivate(Hex.decode("fb01")),
@@ -121,7 +122,7 @@ public class BridgeUtilsTest {
                 BtcECKey.fromPrivate(Hex.decode("fb03")),
         });
         federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-        Federation federation2 = new Federation(2, federation2Keys, Instant.ofEpochMilli(2000L), parameters);
+        Federation federation2 = new Federation(federation2Keys, Instant.ofEpochMilli(2000L), parameters);
 
         Address address1 = federation1.getAddress();
         Address address2 = federation2.getAddress();
@@ -299,7 +300,7 @@ public class BridgeUtilsTest {
     @Test
     public void getFederationNoSpendWallet() {
         NetworkParameters regTestParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Federation federation = new Federation(1, Arrays.asList(new BtcECKey[]{
+        Federation federation = new Federation(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
         }), Instant.ofEpochMilli(5005L), regTestParameters);
@@ -314,7 +315,7 @@ public class BridgeUtilsTest {
     @Test
     public void getFederationSpendWallet() throws UTXOProviderException {
         NetworkParameters regTestParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Federation federation = new Federation(1, Arrays.asList(new BtcECKey[]{
+        Federation federation = new Federation(Arrays.asList(new BtcECKey[]{
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
                 BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
         }), Instant.ofEpochMilli(5005L), regTestParameters);
@@ -360,7 +361,7 @@ public class BridgeUtilsTest {
                 Bridge.UPDATE_COLLECTIONS);
         rskTx.sign(privKeyBytes);
 
-        org.ethereum.core.Block rskExecutionBlock = BlockGenerator.createChildBlock(Genesis.getInstance(RskSystemProperties.CONFIG));
+        Block rskExecutionBlock = BlockGenerator.getInstance().createChildBlock(Genesis.getInstance(RskSystemProperties.CONFIG));
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
         Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, rskExecutionBlock.getNumber()));
 

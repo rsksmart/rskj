@@ -77,4 +77,12 @@ public class ProgramTest {
                 new Object[] { BigInteger.valueOf(43) },
                 TestContract.bankTest().functions.get("test").decodeResult(result.getHReturn()));
     }
+
+    @Test
+    public void cantCreateTooLargeContract() {
+        ProgramResult result = TestContract.bigTest().createContract();
+        Assert.assertFalse(result.isRevert());
+        Assert.assertNotNull(result.getException());
+        Assert.assertTrue(result.getException() instanceof RuntimeException);
+    }
 }
