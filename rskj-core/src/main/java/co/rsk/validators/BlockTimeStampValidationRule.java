@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Created by mario on 23/01/17.
  */
-public class BlockTimeStampValidationRule implements BlockValidationRule{
+public class BlockTimeStampValidationRule implements BlockParentDependantValidationRule, BlockValidationRule{
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
@@ -46,8 +46,22 @@ public class BlockTimeStampValidationRule implements BlockValidationRule{
         boolean result = blockTime - currentTime <= this.validPeriodLength;
         if(!result) {
             logger.warn("Error validating block. Invalid timestamp {}.", blockTime);
-            panicProcessor.panic("invalidtimestamp", String.format("Error validating block. Invalid timestamp %d.", blockTime));
         }
+        return result;
+    }
+
+    @Override
+    public boolean isValid(Block block, Block parent) {
+        boolean result = this.isValid(block);
+
+        final long blockTime = block.getTimestamp();
+        final long parentTime = parent.getTimestamp();
+        result = result && (blockTime > parentTime);
+
+        if (!result) {
+            logger.warn("Error validating block. Invalid timestamp {} for parent timestamp {}", blockTime, parentTime);
+        }
+
         return result;
     }
 }
