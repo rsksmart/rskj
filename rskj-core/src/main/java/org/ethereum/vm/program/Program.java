@@ -441,7 +441,7 @@ public class Program {
      *                                smaller than <code>stackSize</code>
      */
     public void verifyStackSize(int stackSize) {
-        if (stack.size() < stackSize) {
+        if (stackSize < 0 || stack.size() < stackSize) {
             throw ExceptionHelper.tooSmallStack(stackSize, stack.size());
         }
     }
