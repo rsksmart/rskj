@@ -22,6 +22,7 @@ package org.ethereum.vm.program;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
@@ -106,7 +107,7 @@ public class Program {
     private byte scriptVersion; // currently limited to 0..127
     private int startAddr;
 
-    private BitSet jumpdest;
+    private BitSet jumpdestSet;
     /**********************************************************************************************************
      * About DataWord Pool:
      *---------------------------------------------------------------------------------------------------------
@@ -441,7 +442,7 @@ public class Program {
      *                                smaller than <code>stackSize</code>
      */
     public void verifyStackSize(int stackSize) {
-        if (stack.size() < stackSize) {
+        if (stackSize < 0 || stack.size() < stackSize) {
             throw ExceptionHelper.tooSmallStack(stackSize, stack.size());
         }
     }
@@ -1067,6 +1068,10 @@ public class Program {
         return invoke.getNumber().clone();
     }
 
+    public DataWord getTransactionIndex() {
+        return invoke.getTransactionIndex().clone();
+    }
+
     public DataWord getDifficulty() {
         return invoke.getDifficulty().clone();
     }
@@ -1261,22 +1266,21 @@ public class Program {
         computeJumpDests(i);
     }
 
-    public void computeJumpDests(int i) {
-        if (jumpdest == null)
-            jumpdest = new BitSet(ops.length);
+    public void computeJumpDests(int start) {
+        if (jumpdestSet == null)
+            jumpdestSet = new BitSet(ops.length);
 
-        for (; i < ops.length; ++i) {
+        for (int i = start; i < ops.length; ++i) {
             OpCode op = OpCode.code(ops[i]);
 
             if (op == null)
                 continue;
 
             if (op == OpCode.JUMPDEST)
-                jumpdest.set(i);
+                jumpdestSet.set(i);
 
-            if (op.asInt() >= OpCode.PUSH1.asInt() && op.asInt() <= OpCode.PUSH32.asInt()) {
+            if (op.asInt() >= OpCode.PUSH1.asInt() && op.asInt() <= OpCode.PUSH32.asInt())
                 i += op.asInt() - OpCode.PUSH1.asInt() + 1;
-            }
         }
     }
 
@@ -1435,7 +1439,7 @@ public class Program {
             throw ExceptionHelper.badJumpDestination(-1);
         }
         int ret = nextPC.intValue(); // could be negative
-        if (ret < 0 || ret >= jumpdest.size() || !jumpdest.get(ret)) {
+        if (ret < 0 || ret >= jumpdestSet.size() || !jumpdestSet.get(ret)) {
             throw ExceptionHelper.badJumpDestination(ret);
         }
         return ret;
@@ -1454,7 +1458,6 @@ public class Program {
         byte[] senderAddress = this.getOwnerAddressLast20Bytes();
         byte[] codeAddress = msg.getCodeAddress().getLast20Bytes();
         byte[] contextAddress = msg.getType().isStateless() ? senderAddress : codeAddress;
-
 
         BigInteger endowment = msg.getEndowment().value();
         BigInteger senderBalance = track.getBalance(senderAddress);
@@ -1578,7 +1581,7 @@ public class Program {
             return new OutOfGasException("Gas value overflow: actualGas[%d], gasLimit[%d];", actualGas, gasLimit.longValue());
         }
         public static IllegalOperationException invalidOpCode(byte... opCode) {
-            return new IllegalOperationException("Invalid operation code: opCode[%s];", Hex.toHexString(opCode, 0, 1));
+            return new IllegalOperationException("Invalid operation code: opcode[%s];", Hex.toHexString(opCode, 0, 1));
         }
 
         public static BadJumpDestinationException badJumpDestination(int pc) {
@@ -1624,4 +1627,7 @@ public class Program {
     public int getStartAddr(){
         return startAddr;
     }
+
+    @VisibleForTesting
+    public BitSet getJumpdestSet() { return this.jumpdestSet; }
 }
