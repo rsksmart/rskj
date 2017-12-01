@@ -430,10 +430,8 @@ public class BridgeSupport {
             provider.setRetiringFederation(null);
         }
         
-        //refreshing in case we are migrating funds
-        pendingSignatures = !provider.getRskTxsWaitingForSignatures().isEmpty();
         Iterator<Map.Entry<Sha3Hash, BtcTransaction>> iter = provider.getRskTxsWaitingForConfirmations().entrySet().iterator();
-        while (iter.hasNext() && !pendingSignatures) {
+        while (iter.hasNext() && provider.getRskTxsWaitingForSignatures().isEmpty()) {
             Map.Entry<Sha3Hash, BtcTransaction> entry = iter.next();
             // We copy the entry's key and value to temporary variables because iter.remove() changes the values of entry's key and value
             Sha3Hash rskTxHash = entry.getKey();
