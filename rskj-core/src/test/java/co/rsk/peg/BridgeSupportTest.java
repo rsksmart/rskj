@@ -43,6 +43,7 @@ import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.util.RLP;
@@ -72,6 +73,7 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
@@ -1160,7 +1162,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void registerBtcTransactionLockTx() throws BlockStoreException, AddressFormatException, IOException {
+    public void registerBtcTransactionLockTxWhitelisted() throws BlockStoreException, AddressFormatException, IOException {
         BridgeConstants bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         NetworkParameters parameters = bridgeConstants.getBtcParams();
 
@@ -1213,6 +1215,12 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress);
         provider.setActiveFederation(federation1);
         provider.setRetiringFederation(federation2);
+
+        // Whitelist the addresses
+        LockWhitelist whitelist = provider.getLockWhitelist();
+        whitelist.add(srcKey1.toAddress(parameters));
+        whitelist.add(srcKey2.toAddress(parameters));
+        whitelist.add(srcKey3.toAddress(parameters));
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, provider, btcBlockStore, btcBlockChain);
         Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
@@ -1267,6 +1275,138 @@ public class BridgeSupportTest {
         Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertEquals(3, provider2.getBtcTxHashesAlreadyProcessed().size());
+    }
+
+    @Test
+    public void registerBtcTransactionLockTxNotWhitelisted() throws BlockStoreException, AddressFormatException, IOException {
+        BridgeConstants bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        NetworkParameters parameters = bridgeConstants.getBtcParams();
+
+        List<BtcECKey> federation1Keys = Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPrivate(Hex.decode("fa01")),
+                BtcECKey.fromPrivate(Hex.decode("fa02")),
+        });
+        federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        Federation federation1 = new Federation(federation1Keys, Instant.ofEpochMilli(1000L), 0L, parameters);
+
+        List<BtcECKey> federation2Keys = Arrays.asList(new BtcECKey[]{
+                BtcECKey.fromPrivate(Hex.decode("fb01")),
+                BtcECKey.fromPrivate(Hex.decode("fb02")),
+                BtcECKey.fromPrivate(Hex.decode("fb03")),
+        });
+        federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        Federation federation2 = new Federation(federation2Keys, Instant.ofEpochMilli(2000L), 0L, parameters);
+
+        Repository repository = new RepositoryImpl();
+        repository.addBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
+        Block executionBlock = Mockito.mock(Block.class);
+        Mockito.when(executionBlock.getNumber()).thenReturn(10L);
+
+        Repository track = repository.startTracking();
+
+        // First transaction goes only to the first federation
+        BtcTransaction tx1 = new BtcTransaction(this.btcParams);
+        tx1.addOutput(Coin.COIN.multiply(5), federation1.getAddress());
+        BtcECKey srcKey1 = new BtcECKey();
+        tx1.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey1));
+
+        // Second transaction goes only to the second federation
+        BtcTransaction tx2 = new BtcTransaction(this.btcParams);
+        tx2.addOutput(Coin.COIN.multiply(10), federation2.getAddress());
+        BtcECKey srcKey2 = new BtcECKey();
+        tx2.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey2));
+
+        // Third transaction has one output to each federation
+        // Lock is expected to be done accordingly and utxos assigned accordingly as well
+        BtcTransaction tx3 = new BtcTransaction(this.btcParams);
+        tx3.addOutput(Coin.COIN.multiply(3), federation1.getAddress());
+        tx3.addOutput(Coin.COIN.multiply(4), federation2.getAddress());
+        BtcECKey srcKey3 = new BtcECKey();
+        tx3.addInput(PegTestUtils.createHash(), 0, ScriptBuilder.createInputScript(null, srcKey3));
+
+        Context btcContext = new Context(bridgeConstants.getBtcParams());
+        BtcBlockStore btcBlockStore = new RepositoryBlockStore(track, contractAddress);
+        BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress);
+        provider.setActiveFederation(federation1);
+        provider.setRetiringFederation(federation2);
+
+        BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, provider, btcBlockStore, btcBlockChain);
+        Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(tx1.getHash());
+        hashes.add(tx2.getHash());
+        hashes.add(tx3.getHash());
+        PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 3);
+        List<Sha256Hash> hashlist = new ArrayList<>();
+        Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
+
+        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+
+        btcBlockChain.add(block);
+
+        Transaction rskTx1 = getMockedRskTxWithHash("aa");
+        Transaction rskTx2 = getMockedRskTxWithHash("bb");
+        Transaction rskTx3 = getMockedRskTxWithHash("cc");
+
+        ((SimpleBlockChain)btcBlockChain).useHighBlock();
+        bridgeSupport.registerBtcTransaction(rskTx1, tx1, 1, pmt);
+        bridgeSupport.registerBtcTransaction(rskTx2, tx2, 1, pmt);
+        bridgeSupport.registerBtcTransaction(rskTx3, tx3, 1, pmt);
+        bridgeSupport.save();
+        ((SimpleBlockChain)btcBlockChain).useBlock();
+
+        track.commit();
+
+        byte[] srcKey1RskAddress = org.ethereum.crypto.ECKey.fromPrivate(srcKey1.getPrivKey()).getAddress();
+        byte[] srcKey2RskAddress = org.ethereum.crypto.ECKey.fromPrivate(srcKey2.getPrivKey()).getAddress();
+        byte[] srcKey3RskAddress = org.ethereum.crypto.ECKey.fromPrivate(srcKey3.getPrivKey()).getAddress();
+
+        Assert.assertEquals(0, repository.getBalance(srcKey1RskAddress).intValue());
+        Assert.assertEquals(0, repository.getBalance(srcKey2RskAddress).intValue());
+        Assert.assertEquals(0, repository.getBalance(srcKey3RskAddress).intValue());
+        Assert.assertEquals(BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()), repository.getBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR)));
+
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
+
+        Assert.assertEquals(2, provider2.getActiveFederationBtcUTXOs().size());
+        Assert.assertEquals(2, provider2.getRetiringFederationBtcUTXOs().size());
+        Assert.assertEquals(Coin.COIN.multiply(5), provider2.getActiveFederationBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(Coin.COIN.multiply(3), provider2.getActiveFederationBtcUTXOs().get(1).getValue());
+        Assert.assertEquals(Coin.COIN.multiply(10), provider2.getRetiringFederationBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(Coin.COIN.multiply(4), provider2.getRetiringFederationBtcUTXOs().get(1).getValue());
+
+        Assert.assertEquals(3, provider2.getRskTxsWaitingForConfirmations().size());
+        BtcTransaction tx;
+        TransactionOutput output;
+        Address outputAddress;
+
+        tx = provider2.getRskTxsWaitingForConfirmations().get(new Sha3Hash(rskTx1.getHash()));
+        assertTxIsOfValueToSpecificAddress(tx, srcKey1, 5);
+
+        tx = provider2.getRskTxsWaitingForConfirmations().get(new Sha3Hash(rskTx2.getHash()));
+        assertTxIsOfValueToSpecificAddress(tx, srcKey2, 10);
+
+        tx = provider2.getRskTxsWaitingForConfirmations().get(new Sha3Hash(rskTx3.getHash()));
+        assertTxIsOfValueToSpecificAddress(tx, srcKey3, 7);
+
+        Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
+        Assert.assertEquals(3, provider2.getBtcTxHashesAlreadyProcessed().size());
+    }
+
+    private void assertTxIsOfValueToSpecificAddress(BtcTransaction tx, BtcECKey key, int value) {
+        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        Assert.assertNotNull(tx);
+        Assert.assertEquals(0, tx.getInputs().size());
+        Assert.assertEquals(1, tx.getOutputs().size());
+        TransactionOutput output = tx.getOutputs().get(0);
+        Address outputAddress = new Script(output.getScriptBytes()).getToAddress(params);
+        Assert.assertEquals(outputAddress, key.toAddress(params));
+        Assert.assertEquals(output.getValue(), Coin.COIN.multiply(value));
     }
 
     @Test
@@ -2007,6 +2147,160 @@ public class BridgeSupportTest {
         Assert.assertSame(expectedWallet, bridgeSupport.getRetiringFederationWallet());
     }
 
+    @Test
+    public void getLockWhitelistMethods() throws IOException {
+        NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
+        when(mockedWhitelist.getSize()).thenReturn(4);
+        List<Address> addresses = Arrays.stream(new Integer[]{2,3,4,5}).map(i ->
+            new Address(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(i)).getPubKeyHash())
+        ).collect(Collectors.toList());
+        when(mockedWhitelist.getAddresses()).thenReturn(addresses);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
+
+        Assert.assertEquals(4, bridgeSupport.getLockWhitelistSize().intValue());
+        Assert.assertNull(bridgeSupport.getLockWhitelistAddress(-1));
+        Assert.assertNull(bridgeSupport.getLockWhitelistAddress(4));
+        Assert.assertNull(bridgeSupport.getLockWhitelistAddress(5));
+        for (int i = 0; i < 4; i++) {
+            Assert.assertEquals(addresses.get(i).toBase58(), bridgeSupport.getLockWhitelistAddress(i));
+        }
+    }
+
+    @Test
+    public void addLockWhitelistAddress_ok() throws IOException {
+        Transaction mockedTx = mock(Transaction.class);
+        byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
+            // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+        )).getAddress();
+        when(mockedTx.getSender()).thenReturn(senderBytes);
+        LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
+
+        when(mockedWhitelist.add(any(Address.class))).then((InvocationOnMock m) -> {
+            Address address = m.getArgumentAt(0, Address.class);
+            Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
+            return true;
+        });
+
+        Assert.assertEquals(1, bridgeSupport.addLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
+    }
+
+    @Test
+    public void addLockWhitelistAddress_addFails() throws IOException {
+        Transaction mockedTx = mock(Transaction.class);
+        byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
+                // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+                "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+        )).getAddress();
+        when(mockedTx.getSender()).thenReturn(senderBytes);
+        LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
+
+        when(mockedWhitelist.add(any(Address.class))).then((InvocationOnMock m) -> {
+            Address address = m.getArgumentAt(0, Address.class);
+            Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
+            return false;
+        });
+
+        Assert.assertEquals(-1, bridgeSupport.addLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
+    }
+
+    @Test
+    public void addLockWhitelistAddress_notAuthorized() throws IOException {
+        Transaction mockedTx = mock(Transaction.class);
+        byte[] senderBytes = Hex.decode("aabbcc");
+        when(mockedTx.getSender()).thenReturn(senderBytes);
+        LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
+
+        Assert.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE.intValue(), bridgeSupport.addLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
+        verify(mockedWhitelist, never()).add(any());
+    }
+
+    @Test
+    public void addLockWhitelistAddress_invalidAddress() throws IOException {
+        Transaction mockedTx = mock(Transaction.class);
+        byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
+            // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+        )).getAddress();
+        when(mockedTx.getSender()).thenReturn(senderBytes);
+        LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
+
+        Assert.assertEquals(-2, bridgeSupport.addLockWhitelistAddress(mockedTx, "i-am-invalid").intValue());
+        verify(mockedWhitelist, never()).add(any());
+    }
+
+    @Test
+    public void removeLockWhitelistAddress_ok() throws IOException {
+        Transaction mockedTx = mock(Transaction.class);
+        byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
+                // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+                "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+        )).getAddress();
+        when(mockedTx.getSender()).thenReturn(senderBytes);
+        LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
+
+        when(mockedWhitelist.remove(any(Address.class))).then((InvocationOnMock m) -> {
+            Address address = m.getArgumentAt(0, Address.class);
+            Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
+            return true;
+        });
+
+        Assert.assertEquals(1, bridgeSupport.removeLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
+    }
+
+    @Test
+    public void removeLockWhitelistAddress_removeFails() throws IOException {
+        Transaction mockedTx = mock(Transaction.class);
+        byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
+                // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+                "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+        )).getAddress();
+        when(mockedTx.getSender()).thenReturn(senderBytes);
+        LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
+
+        when(mockedWhitelist.remove(any(Address.class))).then((InvocationOnMock m) -> {
+            Address address = m.getArgumentAt(0, Address.class);
+            Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
+            return false;
+        });
+
+        Assert.assertEquals(-1, bridgeSupport.removeLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
+    }
+
+    @Test
+    public void removeLockWhitelistAddress_notAuthorized() throws IOException {
+        Transaction mockedTx = mock(Transaction.class);
+        byte[] senderBytes = Hex.decode("aabbcc");
+        when(mockedTx.getSender()).thenReturn(senderBytes);
+        LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
+
+        Assert.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE.intValue(), bridgeSupport.removeLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
+        verify(mockedWhitelist, never()).remove(any());
+    }
+
+    @Test
+    public void removeLockWhitelistAddress_invalidAddress() throws IOException {
+        Transaction mockedTx = mock(Transaction.class);
+        byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
+            // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
+            "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
+        )).getAddress();
+        when(mockedTx.getSender()).thenReturn(senderBytes);
+        LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
+        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
+
+        Assert.assertEquals(-2, bridgeSupport.removeLockWhitelistAddress(mockedTx, "i-am-invalid").intValue());
+        verify(mockedWhitelist, never()).remove(any());
+    }
+
     private BridgeStorageProvider getBridgeStorageProviderMockWithProcessedHashes() throws IOException {
         Map<Sha256Hash, Long> mockedHashes = new HashMap<>();
         BridgeStorageProvider providerMock = mock(BridgeStorageProvider.class);
@@ -2099,6 +2393,27 @@ public class BridgeSupportTest {
         return result;
     }
 
+    private BridgeSupport getBridgeSupportWithMocksForWhitelistTests(LockWhitelist mockedWhitelist) throws IOException {
+        BridgeConstants constantsMock = mock(BridgeConstants.class);
+        when(constantsMock.getBtcParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        when(constantsMock.getLockWhitelistChangeAuthorizer()).thenReturn(BridgeRegTestConstants.getInstance().getLockWhitelistChangeAuthorizer());
+
+        BridgeStorageProvider providerMock = mock(BridgeStorageProvider.class);
+        when(providerMock.getLockWhitelist()).thenReturn(mockedWhitelist);
+
+        BridgeSupport result = new BridgeSupport(
+                null,
+                null,
+                providerMock,
+                null,
+                null
+        );
+
+        Whitebox.setInternalState(result, "bridgeConstants", constantsMock);
+
+        return result;
+    }
+
     private List<BtcECKey> getTestFederationPublicKeys(int amount) {
         List<BtcECKey> result = new ArrayList<>();
         for (int i = 0; i < amount; i++) {
@@ -2143,5 +2458,10 @@ public class BridgeSupportTest {
         btcTx.addOutput(new TransactionOutput(btcParams, btcTx, Coin.COIN, new BtcECKey().toAddress(btcParams)));
         return btcTx;
         //new SimpleBtcTransaction(btcParams, PegTestUtils.createHash());
+    }
+
+    private Transaction getMockedRskTxWithHash(String s) {
+        byte[] hash = SHA3Helper.sha3(s);
+        return new SimpleRskTransaction(hash);
     }
 }
