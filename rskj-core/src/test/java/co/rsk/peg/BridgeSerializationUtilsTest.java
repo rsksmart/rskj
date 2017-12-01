@@ -18,10 +18,8 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.*;
+import com.google.common.primitives.UnsignedBytes;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.Assert;
@@ -32,11 +30,13 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.spongycastle.util.encoders.Hex;
+import sun.nio.ch.Net;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -258,7 +258,7 @@ public class BridgeSerializationUtilsTest {
 
     @PrepareForTest({ RLP.class })
     @Test
-    public void desserializePendingFederation_ok() throws Exception {
+    public void deserializePendingFederation() throws Exception {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_decode2(InnerListMode.NONE);
 
@@ -480,6 +480,70 @@ public class BridgeSerializationUtilsTest {
         }
 
         Assert.fail();
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void serializeLockWhitelist() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_encodeList();
+        mock_RLP_encodeElement();
+
+        byte[][] addressesBytes = new byte[][]{
+                BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKeyHash(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKeyHash(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKeyHash(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKeyHash(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKeyHash(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKeyHash(),
+        };
+
+        LockWhitelist lockWhitelist = new LockWhitelist(
+            Arrays.stream(addressesBytes)
+                .map(bytes -> new Address(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), bytes))
+                .collect(Collectors.toList())
+        );
+
+        byte[] result = BridgeSerializationUtils.serializeLockWhitelist(lockWhitelist);
+        StringBuilder expectedBuilder = new StringBuilder();
+        Arrays.stream(addressesBytes).sorted(
+                (byte[] b1, byte[] b2) -> UnsignedBytes.lexicographicalComparator().compare(b1, b2)
+        ).forEach(bytes -> {
+            expectedBuilder.append("dd");
+            expectedBuilder.append(Hex.toHexString(bytes));
+        });
+        byte[] expected = Hex.decode(expectedBuilder.toString());
+        Assert.assertTrue(Arrays.equals(expected, result));
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void deserializeLockWhitelist() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_decode2(InnerListMode.NONE);
+
+        byte[][] addressesBytes = Arrays.asList(100, 200, 300, 400).stream()
+                .map(k -> BtcECKey.fromPrivate(BigInteger.valueOf(k)))
+                .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                .map(k -> k.getPubKeyHash())
+                .toArray(byte[][]::new);
+
+        StringBuilder sampleBuilder = new StringBuilder();
+        sampleBuilder.append("0414141414"); // 4 elements of 20 bytes (0x14 bytes) each.
+        for (int i = 0; i < addressesBytes.length; i++) {
+            sampleBuilder.append(Hex.toHexString(addressesBytes[i]));
+        }
+        byte[] sample = Hex.decode(sampleBuilder.toString());
+
+        LockWhitelist deserializedLockWhitelist = BridgeSerializationUtils.deserializeLockWhitelist(
+                sample,
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+
+        Assert.assertEquals(4, deserializedLockWhitelist.getSize().intValue());
+        for (int i = 0; i < 4; i++) {
+            Assert.assertTrue(Arrays.equals(addressesBytes[i], deserializedLockWhitelist.getAddresses().get(i).getHash160()));
+        }
     }
 
     private void mock_RLP_encodeElement() {
