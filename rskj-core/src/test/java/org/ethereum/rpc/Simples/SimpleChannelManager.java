@@ -55,13 +55,13 @@ public class SimpleChannelManager implements ChannelManager {
     @Nonnull
     @Override
     public Set<NodeID> broadcastBlock(@Nonnull Block block, @Nullable Set<NodeID> skip) {
-        return null;
+        return new HashSet<>();
     }
 
     @Nonnull
     @Override
     public Set<NodeID> broadcastBlockHash(@Nonnull byte[] hash, @Nullable Set<NodeID> skip) {
-        return null;
+        return new HashSet<>();
     }
 
     @Nonnull

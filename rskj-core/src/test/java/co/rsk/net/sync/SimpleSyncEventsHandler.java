@@ -2,12 +2,15 @@ package co.rsk.net.sync;
 
 
 import co.rsk.net.MessageChannel;
+import co.rsk.net.NodeID;
+import co.rsk.scoring.EventType;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
+import java.util.Deque;
 import java.util.List;
-import java.util.Queue;
+import java.util.Map;
 
 public class SimpleSyncEventsHandler implements SyncEventsHandler {
     private boolean startSyncingWasCalled_;
@@ -20,7 +23,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     public void sendBlockHeadersRequest(ChunkDescriptor chunk) { }
 
     @Override
-    public void onErrorSyncing(String message, Object... arguments) {
+    public void onErrorSyncing(String message, EventType eventType, Object... arguments) {
         stopSyncing();
     }
 
@@ -30,13 +33,18 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public long sendBodyRequest(@Nonnull BlockHeader header) { return 0; }
+    public void startFindingConnectionPoint() {
+
+    }
 
     @Override
-    public void sendSkeletonRequest(long height) { }
+    public long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId) { return 0; }
 
     @Override
-    public void startDownloadingHeaders(List<BlockIdentifier> skeleton, long connectionPoint) { }
+    public void sendSkeletonRequest(MessageChannel peer, long height) { }
+
+    @Override
+    public void startDownloadingHeaders(Map<NodeID, List<BlockIdentifier>> skeletons, long connectionPoint) { }
 
     @Override
     public void startSyncing(MessageChannel peer) {
@@ -44,7 +52,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void startDownloadingBodies(Queue<BlockHeader> pendingHeaders) { }
+    public void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<NodeID, List<BlockIdentifier>> skeletons) { }
 
     @Override
     public void startDownloadingSkeleton(long connectionPoint) { }

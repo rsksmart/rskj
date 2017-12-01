@@ -38,8 +38,8 @@ public class BlockForkTest {
     @Test
     public void calculateParentChild() {
         BlockStore store = createBlockStore();
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block = BlockGenerator.createChildBlock(genesis);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block block = BlockGenerator.getInstance().createChildBlock(genesis);
 
         store.saveBlock(genesis, BigInteger.ONE, true);
         store.saveBlock(block, BigInteger.ONE, true);
@@ -58,8 +58,8 @@ public class BlockForkTest {
     @Test
     public void calculateForkLengthTwo() {
         BlockStore store = createBlockStore();
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block parent = BlockGenerator.createChildBlock(genesis);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block parent = BlockGenerator.getInstance().createChildBlock(genesis);
 
         store.saveBlock(genesis, BigInteger.ONE, true);
         store.saveBlock(parent, BigInteger.ONE, true);
@@ -87,8 +87,8 @@ public class BlockForkTest {
     @Test
     public void calculateForkLengthTwoOldThreeNew() {
         BlockStore store = createBlockStore();
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block parent = BlockGenerator.createChildBlock(genesis);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block parent = BlockGenerator.getInstance().createChildBlock(genesis);
 
         store.saveBlock(genesis, BigInteger.ONE, true);
         store.saveBlock(parent, BigInteger.ONE, true);
@@ -117,8 +117,8 @@ public class BlockForkTest {
     @Test
     public void calculateForkLengthThreeOldTwoNew() {
         BlockStore store = createBlockStore();
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block parent = BlockGenerator.createChildBlock(genesis);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block parent = BlockGenerator.getInstance().createChildBlock(genesis);
 
         store.saveBlock(genesis, BigInteger.ONE, true);
         store.saveBlock(parent, BigInteger.ONE, true);
@@ -148,7 +148,7 @@ public class BlockForkTest {
         List<Block> blocks = new ArrayList<>();
 
         for (int k = 0; k < length; k++) {
-            Block block = BlockGenerator.createChildBlock(parent);
+            Block block = BlockGenerator.getInstance().createChildBlock(parent);
             blocks.add(block);
             store.saveBlock(block, BigInteger.ONE, false);
             parent = block;

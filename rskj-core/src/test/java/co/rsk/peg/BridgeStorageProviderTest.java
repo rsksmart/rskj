@@ -18,15 +18,14 @@
 
 package co.rsk.peg;
 
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Sha3Hash;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.wallet.Wallet;
-import org.ethereum.core.Repository;
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.db.RepositoryImpl;
+import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -40,7 +39,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.spongycastle.util.encoders.Hex;
 
-import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -79,15 +77,10 @@ public class BridgeStorageProviderTest {
         Assert.assertNotNull(signatures);
         Assert.assertTrue(signatures.isEmpty());
 
-        List<UTXO> utxos = provider.getBtcUTXOs();
+        List<UTXO> utxos = provider.getActiveFederationBtcUTXOs();
 
         Assert.assertNotNull(utxos);
         Assert.assertTrue(utxos.isEmpty());
-
-        Wallet wallet = provider.getWallet();
-
-        Assert.assertNotNull(wallet);
-        Assert.assertNotNull(wallet.getCoinSelector());
     }
 
     @Test
@@ -99,7 +92,8 @@ public class BridgeStorageProviderTest {
         provider0.getBtcTxHashesAlreadyProcessed();
         provider0.getRskTxsWaitingForConfirmations();
         provider0.getRskTxsWaitingForSignatures();
-        provider0.getBtcUTXOs();
+        provider0.getActiveFederationBtcUTXOs();
+        provider0.getRetiringFederationBtcUTXOs();
         provider0.save();
         track.commit();
 
@@ -111,7 +105,8 @@ public class BridgeStorageProviderTest {
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("btcTxHashesAP".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("rskTxsWaitingFC".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("rskTxsWaitingFS".getBytes())));
-        Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("btcUTXOs".getBytes())));
+        Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("activeFederationBtcUTXOs".getBytes())));
+        Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("retiringFederationBtcUTXOs".getBytes())));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
@@ -130,15 +125,15 @@ public class BridgeStorageProviderTest {
         Assert.assertNotNull(signatures);
         Assert.assertTrue(signatures.isEmpty());
 
-        List<UTXO> utxos = provider.getBtcUTXOs();
+        List<UTXO> activeUtxos = provider.getActiveFederationBtcUTXOs();
 
-        Assert.assertNotNull(utxos);
-        Assert.assertTrue(utxos.isEmpty());
+        Assert.assertNotNull(activeUtxos);
+        Assert.assertTrue(activeUtxos.isEmpty());
 
-        Wallet wallet = provider.getWallet();
+        List<UTXO> retiringUtxos = provider.getActiveFederationBtcUTXOs();
 
-        Assert.assertNotNull(wallet);
-        Assert.assertNotNull(wallet.getCoinSelector());
+        Assert.assertNotNull(retiringUtxos);
+        Assert.assertTrue(retiringUtxos.isEmpty());
     }
 
     @Test
@@ -253,8 +248,8 @@ public class BridgeStorageProviderTest {
         Federation federation = bridgeConstants.getGenesisFederation();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
-        provider0.getBtcUTXOs().add(new UTXO(hash1, 1, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
-        provider0.getBtcUTXOs().add(new UTXO(hash2, 2, Coin.FIFTY_COINS, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
+        provider0.getActiveFederationBtcUTXOs().add(new UTXO(hash1, 1, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
+        provider0.getActiveFederationBtcUTXOs().add(new UTXO(hash2, 2, Coin.FIFTY_COINS, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
         provider0.save();
         track.commit();
 
@@ -262,7 +257,7 @@ public class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        List<UTXO> utxos = provider.getBtcUTXOs();
+        List<UTXO> utxos = provider.getActiveFederationBtcUTXOs();
 
         Assert.assertTrue(utxos.get(0).getHash().equals(hash1));
         Assert.assertTrue(utxos.get(1).getHash().equals(hash2));
@@ -273,7 +268,7 @@ public class BridgeStorageProviderTest {
     public void getActiveFederation() throws IOException {
         List<Integer> calls = new ArrayList<>();
         Context contextMock = mock(Context.class);
-        Federation activeFederation = new Federation(1, Arrays.asList(new BtcECKey[]{BtcECKey.fromPrivate(BigInteger.valueOf(100))}), Instant.ofEpochMilli(1000), NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        Federation activeFederation = new Federation(Arrays.asList(new BtcECKey[]{BtcECKey.fromPrivate(BigInteger.valueOf(100))}), Instant.ofEpochMilli(1000), NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd");
@@ -337,7 +332,7 @@ public class BridgeStorageProviderTest {
     @PrepareForTest({ BridgeSerializationUtils.class })
     @Test
     public void saveNewFederation() throws IOException {
-        Federation newFederation = new Federation(1, Arrays.asList(new BtcECKey[]{BtcECKey.fromPrivate(BigInteger.valueOf(100))}), Instant.ofEpochMilli(1000), NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        Federation newFederation = new Federation(Arrays.asList(new BtcECKey[]{BtcECKey.fromPrivate(BigInteger.valueOf(100))}), Instant.ofEpochMilli(1000), NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         List<Integer> storageBytesCalls = new ArrayList<>();
         List<Integer> serializeCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
@@ -362,12 +357,113 @@ public class BridgeStorageProviderTest {
             return null;
         }).when(repositoryMock).addStorageBytes(any(byte[].class), any(DataWord.class), any(byte[].class));
 
-        storageProvider.saveNewFederation();
+        storageProvider.saveActiveFederation();
         // Shouldn't have tried to save nor serialize anything
         Assert.assertEquals(0, storageBytesCalls.size());
         Assert.assertEquals(0, serializeCalls.size());
-        storageProvider.setNewFederation(newFederation);
-        storageProvider.saveNewFederation();
+        storageProvider.setActiveFederation(newFederation);
+        storageProvider.saveActiveFederation();
+        Assert.assertEquals(1, storageBytesCalls.size());
+        Assert.assertEquals(1, serializeCalls.size());
+    }
+
+    @PrepareForTest({ BridgeSerializationUtils.class })
+    @Test
+    public void getFederationElection_nonNullBytes() throws IOException {
+        List<Integer> calls = new ArrayList<>();
+        ABICallAuthorizer authorizerMock = mock(ABICallAuthorizer.class);
+        ABICallElection electionMock = mock(ABICallElection.class);
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd");
+
+        when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+            calls.add(0);
+            byte[] contractAddress = invocation.getArgumentAt(0, byte[].class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+            // Make sure the bytes are got from the correct address in the repo
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress));
+            Assert.assertEquals(new DataWord("bridgeFederationElection".getBytes(StandardCharsets.UTF_8)), address);
+            return new byte[]{(byte)0xaa};
+        });
+        PowerMockito.when(BridgeSerializationUtils.deserializeElection(any(byte[].class), any(ABICallAuthorizer.class))).then((InvocationOnMock invocation) -> {
+            calls.add(0);
+            byte[] data = invocation.getArgumentAt(0, byte[].class);
+            ABICallAuthorizer authorizer = invocation.getArgumentAt(1, ABICallAuthorizer.class);
+            // Make sure we're deserializing what just came from the repo with the correct ABICallAuthorizer
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa}, data));
+            Assert.assertEquals(authorizerMock, authorizer);
+            return electionMock;
+        });
+
+        Assert.assertSame(electionMock, storageProvider.getFederationElection(authorizerMock));
+        Assert.assertEquals(2, calls.size()); // 1 for each call to deserializeFederation & getStorageBytes
+    }
+
+    @PrepareForTest({ BridgeSerializationUtils.class })
+    @Test
+    public void getFederationElection_nullBytes() throws IOException {
+        List<Integer> calls = new ArrayList<>();
+        ABICallAuthorizer authorizerMock = mock(ABICallAuthorizer.class);
+        ABICallElection electionMock = mock(ABICallElection.class);
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd");
+
+        when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+            calls.add(0);
+            byte[] contractAddress = invocation.getArgumentAt(0, byte[].class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+            // Make sure the bytes are got from the correct address in the repo
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress));
+            Assert.assertEquals(new DataWord("bridgeFederationElection".getBytes(StandardCharsets.UTF_8)), address);
+            return null;
+        });
+        PowerMockito.when(BridgeSerializationUtils.deserializeElection(any(byte[].class), any(ABICallAuthorizer.class))).then((InvocationOnMock invocation) -> {
+            calls.add(0);
+            return null;
+        });
+
+        ABICallElection result = storageProvider.getFederationElection(authorizerMock);
+        Assert.assertSame(authorizerMock, Whitebox.getInternalState(result, "authorizer"));
+        Assert.assertEquals(0, result.getVotes().size());
+        Assert.assertEquals(1, calls.size()); // getStorageBytes is the only one called (can't be the other way around)
+    }
+
+    @PrepareForTest({ BridgeSerializationUtils.class })
+    @Test
+    public void saveFederationElection() throws IOException {
+        ABICallElection electionMock = mock(ABICallElection.class);
+        List<Integer> storageBytesCalls = new ArrayList<>();
+        List<Integer> serializeCalls = new ArrayList<>();
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd");
+
+        PowerMockito.when(BridgeSerializationUtils.serializeElection(any(ABICallElection.class))).then((InvocationOnMock invocation) -> {
+            ABICallElection election = invocation.getArgumentAt(0, ABICallElection.class);
+            Assert.assertSame(electionMock, election);
+            serializeCalls.add(0);
+            return Hex.decode("aabb");
+        });
+        Mockito.doAnswer((InvocationOnMock invocation) -> {
+            storageBytesCalls.add(0);
+            byte[] contractAddress = invocation.getArgumentAt(0, byte[].class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+            byte[] data = invocation.getArgumentAt(2, byte[].class);
+            // Make sure the bytes are set to the correct address in the repo and that what's saved is what was serialized
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress));
+            Assert.assertEquals(new DataWord("bridgeFederationElection".getBytes(StandardCharsets.UTF_8)), address);
+            Assert.assertTrue(Arrays.equals(Hex.decode("aabb"), data));
+            return null;
+        }).when(repositoryMock).addStorageBytes(any(byte[].class), any(DataWord.class), any(byte[].class));
+
+        storageProvider.saveFederationElection();
+        // Shouldn't have tried to save nor serialize anything
+        Assert.assertEquals(0, storageBytesCalls.size());
+        Assert.assertEquals(0, serializeCalls.size());
+        Whitebox.setInternalState(storageProvider, "federationElection", electionMock);
+        storageProvider.saveFederationElection();
         Assert.assertEquals(1, storageBytesCalls.size());
         Assert.assertEquals(1, serializeCalls.size());
     }

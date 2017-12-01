@@ -31,13 +31,7 @@ import java.util.List;
 public interface BlockProcessor {
     BlockProcessResult processBlock(MessageChannel sender, Block block);
 
-    void processStatus(MessageChannel sender, Status status);
-
     void processGetBlock(MessageChannel sender, byte[] hash);
-
-    void processGetBlockHeaders(MessageChannel sender, long blockNumber, byte[] hash, int maxHeaders, int skip, boolean reverse);
-
-    void processGetBlockHeaders(MessageChannel sender, byte[] hash);
 
     BlockNodeInformation getNodeInformation();
 
@@ -55,13 +49,7 @@ public interface BlockProcessor {
 
     boolean hasBlockInSomeBlockchain(byte[] hash);
 
-    boolean isSyncingBlocks();
-
     boolean hasBetterBlockToSync();
-
-    void sendStatusToAll();
-
-    void acceptAnyBlock();
 
     // New messages for RSK's sync protocol
 

@@ -12,14 +12,9 @@ public class DecidingSyncState extends BaseSyncState {
     }
 
     @Override
-    public boolean isSyncing() {
-        return false;
-    }
-
-    @Override
     public void newPeerStatus() {
         if (knownPeers.count() >= syncConfiguration.getExpectedPeers()) {
-            canStartSyncing();
+            tryStartSyncing();
         }
     }
 
@@ -30,13 +25,11 @@ public class DecidingSyncState extends BaseSyncState {
         if (knownPeers.count() > 0 &&
                 timeElapsed.compareTo(syncConfiguration.getTimeoutWaitingPeers()) >= 0) {
 
-            canStartSyncing();
+            tryStartSyncing();
         }
     }
 
-    private void canStartSyncing() {
-        knownPeers.getBestPeer()
-                .filter(syncInformation::hasLowerDifficulty)
-                .ifPresent(syncEventsHandler::startSyncing);
+    private void tryStartSyncing() {
+        knownPeers.getBestPeer().ifPresent(syncEventsHandler::startSyncing);
     }
 }

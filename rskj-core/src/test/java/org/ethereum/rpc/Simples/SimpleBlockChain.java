@@ -72,7 +72,7 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     @Override
     public Block getBestBlock() {
 
-        Block block = BlockGenerator.getGenesisBlock();
+        Block block = BlockGenerator.getInstance().getGenesisBlock();
 
         return block;
     }

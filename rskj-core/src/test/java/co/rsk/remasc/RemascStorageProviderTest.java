@@ -172,8 +172,8 @@ public class RemascStorageProviderTest {
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block = BlockGenerator.createChildBlock(genesis);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block block = BlockGenerator.getInstance().createChildBlock(genesis);
 
         Sibling sibling1 = new Sibling(genesis.getHeader(), genesis.getCoinbase(), 1);
         Sibling sibling2 = new Sibling(block.getHeader(), block.getCoinbase(), 2);
@@ -200,8 +200,8 @@ public class RemascStorageProviderTest {
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block = BlockGenerator.createChildBlock(genesis);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block block = BlockGenerator.getInstance().createChildBlock(genesis);
 
         Sibling sibling1 = new Sibling(genesis.getHeader(), genesis.getCoinbase(), 1);
         Sibling sibling2 = new Sibling(block.getHeader(), block.getCoinbase(), 2);
@@ -232,12 +232,12 @@ public class RemascStorageProviderTest {
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block1 = BlockGenerator.createChildBlock(genesis);
-        Block block2 = BlockGenerator.createChildBlock(block1);
-        Block block3 = BlockGenerator.createChildBlock(block2);
-        Block block4 = BlockGenerator.createChildBlock(block3);
-        Block block5 = BlockGenerator.createChildBlock(block4);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
+        Block block3 = BlockGenerator.getInstance().createChildBlock(block2);
+        Block block4 = BlockGenerator.getInstance().createChildBlock(block3);
+        Block block5 = BlockGenerator.getInstance().createChildBlock(block4);
 
         Sibling sibling1 = new Sibling(genesis.getHeader(), genesis.getCoinbase(), 1);
         Sibling sibling2 = new Sibling(block1.getHeader(), block1.getCoinbase(), 2);

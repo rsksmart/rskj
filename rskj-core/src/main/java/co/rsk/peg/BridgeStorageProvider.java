@@ -26,6 +26,8 @@ import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
@@ -41,11 +43,15 @@ import java.util.SortedMap;
  * @author Oscar Guindzberg
  */
 public class BridgeStorageProvider {
-    private static final String BTC_UTXOS_KEY = "btcUTXOs";
+    private static final String ACTIVE_FEDERATION_BTC_UTXOS_KEY = "activeFederationBtcUTXOs";
+    private static final String RETIRING_FEDERATION_BTC_UTXOS_KEY = "retiringFederationBtcUTXOs";
     private static final String BTC_TX_HASHES_ALREADY_PROCESSED_KEY = "btcTxHashesAP";
     private static final String RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY = "rskTxsWaitingFC";
     private static final String RSK_TXS_WAITING_FOR_SIGNATURES_KEY = "rskTxsWaitingFS";
     private static final String BRIDGE_ACTIVE_FEDERATION_KEY = "bridgeActiveFederation";
+    private static final String BRIDGE_RETIRING_FEDERATION_KEY = "bridgeRetiringFederation";
+    private static final String BRIDGE_PENDING_FEDERATION_KEY = "bridgePendingFederation";
+    private static final String BRIDGE_FEDERATION_ELECTION_KEY = "bridgeFederationElection";
 
     private static final NetworkParameters networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
@@ -61,13 +67,16 @@ public class BridgeStorageProvider {
     // key = rsk tx hash, value = btc tx
     private SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForSignatures;
 
-    private List<UTXO> btcUTXOs;
-    private Wallet btcWallet;
+    private List<UTXO> activeFederationBtcUTXOs;
+    private List<UTXO> retiringFederationBtcUTXOs;
 
-    // Active federation
     private Federation activeFederation;
-    // Federation to save
-    private Federation newFederation;
+    private Federation retiringFederation;
+    private boolean shouldSaveRetiringFederation = false;
+    private PendingFederation pendingFederation;
+    private boolean shouldSavePendingFederation = false;
+
+    private ABICallElection federationElection;
 
     private BridgeConstants bridgeConstants;
     private Context btcContext;
@@ -79,70 +88,50 @@ public class BridgeStorageProvider {
         btcContext = new Context(bridgeConstants.getBtcParams());
     }
 
-    /**
-     * The current federation is the one stored at the current best block
-     * otherwise it is the genesis federation from the bridge constants.
-     * @return The currently active federation
-     */
-    private Federation getCurrentFederation() throws IOException {
-        Federation activeFederation = getActiveFederation();
-        if (activeFederation == null)
-            activeFederation = bridgeConstants.getGenesisFederation();
-        return activeFederation;
-    }
+    public List<UTXO> getActiveFederationBtcUTXOs() throws IOException {
+        if (activeFederationBtcUTXOs != null)
+            return activeFederationBtcUTXOs;
 
-    /**
-     * Get the wallet for the currently active federation
-     * @return A BTC wallet for the currently active federation
-     *
-     * Ariel Mendelzon, comment: this method has no relation whatsoever with storage.
-     * Consider moving it straight to BridgeSupport and removing getCurrentFederation()
-     * which is already implemented with the same logic there.
-     *
-     * @throws IOException
-     */
-    public Wallet getWallet() throws IOException {
-        if (btcWallet != null)
-            return btcWallet;
-
-        List<UTXO> btcUTXOs = this.getBtcUTXOs();
-
-        RskUTXOProvider utxoProvider = new RskUTXOProvider(bridgeConstants.getBtcParams(), btcUTXOs);
-
-        Federation federation = getCurrentFederation();
-
-        btcWallet = new BridgeBtcWallet(btcContext, federation);
-        btcWallet.setUTXOProvider(utxoProvider);
-        btcWallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli());
-        btcWallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
-//      Oscar: Comment out these setting since we now have our own bitcoinj wallet and we disabled these features
-//      I leave the code here just in case we decide to rollback to use the full original bitcoinj Wallet
-//        "btcWallet.setKeyChainGroupLookaheadSize(1);"
-//        "btcWallet.setKeyChainGroupLookaheadThreshold(0);"
-//        "btcWallet.setAcceptRiskyTransactions(true);"
-        return btcWallet;
-    }
-
-    public List<UTXO> getBtcUTXOs() throws IOException {
-        if (btcUTXOs!= null)
-            return btcUTXOs;
-
-        DataWord address = new DataWord(BTC_UTXOS_KEY.getBytes(StandardCharsets.UTF_8));
+        DataWord address = new DataWord(ACTIVE_FEDERATION_BTC_UTXOS_KEY.getBytes(StandardCharsets.UTF_8));
 
         byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
 
-        btcUTXOs = BridgeSerializationUtils.deserializeList(data);
+        activeFederationBtcUTXOs = BridgeSerializationUtils.deserializeUTXOList(data);
 
-        return btcUTXOs;
+        return activeFederationBtcUTXOs;
     }
 
-    public void saveBtcUTXOs() throws IOException {
-        if (btcUTXOs == null)
+    public void saveActiveFederationBtcUTXOs() throws IOException {
+        if (activeFederationBtcUTXOs == null)
             return;
 
-        byte[] data = BridgeSerializationUtils.serializeList(btcUTXOs);
+        byte[] data = BridgeSerializationUtils.serializeUTXOList(activeFederationBtcUTXOs);
 
-        DataWord address = new DataWord(BTC_UTXOS_KEY.getBytes(StandardCharsets.UTF_8));
+        DataWord address = new DataWord(ACTIVE_FEDERATION_BTC_UTXOS_KEY.getBytes(StandardCharsets.UTF_8));
+
+        repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+    }
+
+    public List<UTXO> getRetiringFederationBtcUTXOs() throws IOException {
+        if (retiringFederationBtcUTXOs != null)
+            return retiringFederationBtcUTXOs;
+
+        DataWord address = new DataWord(RETIRING_FEDERATION_BTC_UTXOS_KEY.getBytes(StandardCharsets.UTF_8));
+
+        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
+
+        retiringFederationBtcUTXOs = BridgeSerializationUtils.deserializeUTXOList(data);
+
+        return retiringFederationBtcUTXOs;
+    }
+
+    public void saveRetiringFederationBtcUTXOs() throws IOException {
+        if (retiringFederationBtcUTXOs == null)
+            return;
+
+        byte[] data = BridgeSerializationUtils.serializeUTXOList(retiringFederationBtcUTXOs);
+
+        DataWord address = new DataWord(RETIRING_FEDERATION_BTC_UTXOS_KEY.getBytes(StandardCharsets.UTF_8));
 
         repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
@@ -219,7 +208,7 @@ public class BridgeStorageProvider {
         repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
 
-    public Federation getActiveFederation() throws IOException {
+    public Federation getActiveFederation() {
         if (activeFederation != null)
             return activeFederation;
 
@@ -235,30 +224,145 @@ public class BridgeStorageProvider {
         return activeFederation;
     }
 
-    public void setNewFederation(Federation federation) {
-        newFederation = federation;
+    public void setActiveFederation(Federation federation) {
+        activeFederation = federation;
     }
 
     /**
-     * Save the new (active) federation
-     * Only saved if a new federation was set with BridgeStorageProvider::setActiveFederation
+     * Save the active federation
+     * Only saved if a federation was set with BridgeStorageProvider::setActiveFederation
      */
-    public void saveNewFederation() {
-        if (newFederation == null)
+    public void saveActiveFederation() {
+        if (activeFederation == null)
             return;
 
-        byte[] data = BridgeSerializationUtils.serializeFederation(newFederation);
+        byte[] data = BridgeSerializationUtils.serializeFederation(activeFederation);
 
         DataWord address = new DataWord(BRIDGE_ACTIVE_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
 
         repository.addStorageBytes(Hex.decode(contractAddress), address, data);
     }
 
+    public Federation getRetiringFederation() {
+        if (retiringFederation != null)
+            return retiringFederation;
+
+        DataWord address = new DataWord(BRIDGE_RETIRING_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
+
+        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
+
+        if (data == null)
+            return null;
+
+        retiringFederation = BridgeSerializationUtils.deserializeFederation(data, btcContext);
+
+        return retiringFederation;
+    }
+
+    public void setRetiringFederation(Federation federation) {
+        shouldSaveRetiringFederation = true;
+        retiringFederation = federation;
+    }
+
+    /**
+     * Save the retiring federation
+     */
+    public void saveRetiringFederation() {
+        if (shouldSaveRetiringFederation) {
+            DataWord address = new DataWord(BRIDGE_RETIRING_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
+
+            byte[] data = null;
+            if (retiringFederation != null) {
+                data = BridgeSerializationUtils.serializeFederation(retiringFederation);
+            }
+
+            repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+        }
+    }
+
+    public PendingFederation getPendingFederation() {
+        if (pendingFederation != null)
+            return pendingFederation;
+
+        DataWord address = new DataWord(BRIDGE_PENDING_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
+
+        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
+
+        if (data == null) {
+            return null;
+        }
+
+        pendingFederation = BridgeSerializationUtils.deserializePendingFederation(data);
+
+        return pendingFederation;
+    }
+
+    public void setPendingFederation(PendingFederation federation) {
+        shouldSavePendingFederation = true;
+        pendingFederation = federation;
+    }
+
+    /**
+     * Save the pending federation
+     */
+    public void savePendingFederation() {
+        if (shouldSavePendingFederation) {
+            DataWord address = new DataWord(BRIDGE_PENDING_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
+
+            byte[] data = null;
+            if (pendingFederation != null)
+                data = BridgeSerializationUtils.serializePendingFederation(pendingFederation);
+
+            repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+        }
+    }
+
+    /**
+     * Save the federation election
+     */
+    public void saveFederationElection() {
+        if (federationElection == null)
+            return;
+
+        DataWord address = new DataWord(BRIDGE_FEDERATION_ELECTION_KEY.getBytes(StandardCharsets.UTF_8));
+
+        byte[] data = BridgeSerializationUtils.serializeElection(federationElection);
+
+        repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+    }
+
+    public ABICallElection getFederationElection(ABICallAuthorizer authorizer) {
+        if (federationElection != null)
+            return federationElection;
+
+        DataWord address = new DataWord(BRIDGE_FEDERATION_ELECTION_KEY.getBytes(StandardCharsets.UTF_8));
+
+        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
+
+        if (data == null) {
+            federationElection = new ABICallElection(authorizer);
+            return federationElection;
+        }
+
+        federationElection = BridgeSerializationUtils.deserializeElection(data, authorizer);
+
+        return federationElection;
+    }
+
     public void save() throws IOException {
-        saveBtcUTXOs();
         saveBtcTxHashesAlreadyProcessed();
+
         saveRskTxsWaitingForConfirmations();
         saveRskTxsWaitingForSignatures();
-        saveNewFederation();
+
+        saveActiveFederation();
+        saveActiveFederationBtcUTXOs();
+
+        saveRetiringFederation();
+        saveRetiringFederationBtcUTXOs();
+
+        savePendingFederation();
+
+        saveFederationElection();
     }
 }

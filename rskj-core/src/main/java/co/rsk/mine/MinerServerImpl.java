@@ -104,16 +104,27 @@ public class MinerServerImpl implements MinerServer {
 
     private BlockValidationRule validationRules;
 
+    private final BlockProcessor nodeBlockProcessor;
+
     private long timeAdjustment;
+    private long minimumAcceptableTime;
 
     @Autowired
-    public MinerServerImpl(Ethereum ethereum, Blockchain blockchain, BlockStore blockStore, PendingState pendingState, Repository repository, MiningConfig miningConfig, @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules) {
+    public MinerServerImpl(Ethereum ethereum,
+                           Blockchain blockchain,
+                           BlockStore blockStore,
+                           PendingState pendingState,
+                           Repository repository,
+                           MiningConfig miningConfig,
+                           @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
+                           BlockProcessor nodeBlockProcessor) {
         this.ethereum = ethereum;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.pendingState = pendingState;
         this.miningConfig = miningConfig;
         this.validationRules = validationRules;
+        this.nodeBlockProcessor = nodeBlockProcessor;
 
         executor = new BlockExecutor(repository, blockchain, blockStore, null);
 
@@ -340,6 +351,7 @@ public class MinerServerImpl implements MinerServer {
 
         BigInteger minimumGasPrice = new MinimumGasPriceCalculator().calculate(newBlockParent.getMinGasPriceAsInteger(), minerMinGasPriceTarget);
         final List<Transaction> txs = getTransactions(txsToRemove, newBlockParent, minimumGasPrice);
+        minimumAcceptableTime = newBlockParent.getTimestamp() + 1;
 
         final Block newBlock = createBlock(newBlockParent, uncles, txs, minimumGasPrice);
 
@@ -390,7 +402,8 @@ public class MinerServerImpl implements MinerServer {
 
     @Override
     public long getCurrentTimeInSeconds() {
-        return System.currentTimeMillis() / 1000 + this.timeAdjustment;
+        long ret = System.currentTimeMillis() / 1000 + this.timeAdjustment;
+        return Long.max(ret, minimumAcceptableTime);
     }
 
     @Override
@@ -457,12 +470,7 @@ public class MinerServerImpl implements MinerServer {
         }
 
         private boolean isSyncing() {
-            BlockProcessor processor = ethereum.getWorldManager().getNodeBlockProcessor();
-
-            if (processor == null)
-                return false;
-
-            return processor.isSyncingBlocks();
+            return nodeBlockProcessor.hasBetterBlockToSync();
         }
     }
 

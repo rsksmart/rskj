@@ -47,27 +47,33 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<FullHt
         HttpMethod httpMethod = request.getMethod();
         HttpResponse response;
         if (HttpMethod.POST.equals(httpMethod)) {
-            ByteBuf responseContent = Unpooled.buffer();
-            HttpResponseStatus responseStatus = HttpResponseStatus.OK;
-            try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
-                 ByteBufInputStream is = new ByteBufInputStream(request.content())){
-                int result = jsonRpcServer.handleRequest(is, os);
-                responseStatus = HttpResponseStatus.valueOf(DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(result));
-            } catch (Exception e) {
-                LOGGER.error("Unexpected error", e);
-                responseContent = buildErrorContent(JSON_RPC_SERVER_ERROR_HIGH_CODE, HttpResponseStatus.INTERNAL_SERVER_ERROR.reasonPhrase());
-                responseStatus = HttpResponseStatus.INTERNAL_SERVER_ERROR;
-            } finally {
-                response = new DefaultFullHttpResponse(
-                    HttpVersion.HTTP_1_1,
-                    responseStatus,
-                    responseContent
-                );
-            }
+            response = processRequest(request);
         } else {
             response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_IMPLEMENTED);
         }
         ctx.write(response).addListener(ChannelFutureListener.CLOSE);
+    }
+
+    private HttpResponse processRequest(FullHttpRequest request) throws JsonProcessingException {
+        HttpResponse response;
+        ByteBuf responseContent = Unpooled.buffer();
+        HttpResponseStatus responseStatus = HttpResponseStatus.OK;
+        try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
+             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())){
+            int result = jsonRpcServer.handleRequest(is, os);
+            responseStatus = HttpResponseStatus.valueOf(DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(result));
+        } catch (Exception e) {
+            LOGGER.error("Unexpected error", e);
+            responseContent = buildErrorContent(JSON_RPC_SERVER_ERROR_HIGH_CODE, HttpResponseStatus.INTERNAL_SERVER_ERROR.reasonPhrase());
+            responseStatus = HttpResponseStatus.INTERNAL_SERVER_ERROR;
+        } finally {
+            response = new DefaultFullHttpResponse(
+                HttpVersion.HTTP_1_1,
+                responseStatus,
+                responseContent
+            );
+        }
+        return response;
     }
 
     @Override

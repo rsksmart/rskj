@@ -62,4 +62,4 @@ block_connect b03
 assert_best b03
 
 # spend 99527 gas running the contract
-assert_balance acc1 9768088
+assert_balance acc1 9767368

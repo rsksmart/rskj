@@ -18,18 +18,25 @@
 
 package co.rsk.remasc;
 
+import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.RemascConfig;
+import co.rsk.core.bc.SelectionRule;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
-import org.ethereum.util.FastByteComparisons;
+import org.ethereum.db.RepositoryTrack;
+
+import org.ethereum.util.BIUtil;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.LogInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +52,8 @@ public class Remasc {
     private RemascStorageProvider provider;
 
     private final Transaction executionTx;
+    private Repository repository;
+
 
     private Block executionBlock;
     private BlockStore blockStore;
@@ -55,12 +64,14 @@ public class Remasc {
 
     Remasc(Transaction executionTx, Repository repository, String contractAddress, Block executionBlock, BlockStore blockStore, RemascConfig remascConstants, List<LogInfo> logs) {
         this.executionTx = executionTx;
+        this.repository = repository;
         this.executionBlock = executionBlock;
         this.blockStore = blockStore;
         this.remascConstants = remascConstants;
         this.provider = new RemascStorageProvider(repository, contractAddress);
         this.logs = logs;
         this.feesPayer = new RemascFeesPayer(repository, contractAddress);
+        this.repository = repository;
     }
 
     public void save() {
@@ -78,7 +89,7 @@ public class Remasc {
     /**
      * Implements the actual Remasc distribution logic
      */
-    void processMinersFees() {
+    void processMinersFees() throws IOException, BlockStoreException {
         if (!(executionTx instanceof RemascTransaction)) {
             //Detect
             // 1) tx to remasc that is not the latest tx in a block
@@ -116,13 +127,46 @@ public class Remasc {
         feesPayer.payMiningFees(processingBlockHeader.getHash(), payToRskLabs, remascConstants.getRskLabsAddress(), logs);
         fullBlockReward = fullBlockReward.subtract(payToRskLabs);
 
+        // TODO to improve
+        // this type choreography is only needed because the RepositoryTrack support the
+        // get snapshot to method
+        Repository processingRepository = ((RepositoryTrack)repository).getOriginRepository().getSnapshotTo(processingBlockHeader.getStateRoot());
+        // TODO to improve
+        // and we need a RepositoryTrack to feed RemascFederationProvider
+        // because it supports the update of bytes (notably, RepositoryImpl don't)
+        // the update of bytes is needed, because BridgeSupport creation could alter
+        // the storage when getChainHead is null (specially in production)
+        processingRepository = processingRepository.startTracking();
+        RemascFederationProvider federationProvider = new RemascFederationProvider(processingRepository);
+
+        BigInteger payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
+
+        byte[] processingBlockHash = processingBlockHeader.getHash();
+        int nfederators = federationProvider.getFederationSize();
+        BigInteger payToFederator = payToFederation.divide(BigInteger.valueOf(nfederators));
+        BigInteger restToLastFederator = payToFederation.subtract(payToFederator.multiply(BigInteger.valueOf(nfederators)));
+        BigInteger paidToFederation = BigInteger.ZERO;
+
+        for (int k = 0; k < nfederators; k++) {
+            byte[] federatorAddress = federationProvider.getFederatorAddress(k);
+
+            if (k == nfederators - 1 && restToLastFederator.compareTo(BigInteger.ZERO) > 0)
+                feesPayer.payMiningFees(processingBlockHash, payToFederator.add(restToLastFederator), federatorAddress, logs);
+            else
+                feesPayer.payMiningFees(processingBlockHash, payToFederator, federatorAddress, logs);
+
+            paidToFederation = paidToFederation.add(payToFederator);
+        }
+
+        fullBlockReward = fullBlockReward.subtract(payToFederation);
+
         List<Sibling> siblings = provider.getSiblings().get(processingBlockNumber);
 
         if (CollectionUtils.isNotEmpty(siblings)) {
             // Block has siblings, reward distribution is more complex
             boolean previousBrokenSelectionRule = provider.getBrokenSelectionRule();
             this.payWithSiblings(processingBlockHeader, fullBlockReward, siblings, previousBrokenSelectionRule);
-            boolean brokenSelectionRule = this.isBrokenSelectionRule(processingBlockHeader, siblings);
+            boolean brokenSelectionRule = SelectionRule.isBrokenSelectionRule(processingBlockHeader, siblings);
             provider.setBrokenSelectionRule(brokenSelectionRule);
         } else {
             if (provider.getBrokenSelectionRule()) {
@@ -200,17 +244,8 @@ public class Remasc {
         }
     }
 
-    private boolean isBrokenSelectionRule(BlockHeader processingBlockHeader, List<Sibling> siblings) {
-        // Find out if main chain block selection rule was broken
-        for (Sibling sibling : siblings) {
-            // Sibling pays significant more fees than block in the main chain OR Sibling has lower hash than block in the main chain
-            if (sibling.getPaidFees() > remascConstants.getPaidFeesMultiplier() * processingBlockHeader.getPaidFees() / remascConstants.getPaidFeesDivisor() ||
-                    FastByteComparisons.compareTo(sibling.getHash(), 0, 32, processingBlockHeader.getHash(), 0, 32) < 0) {
-                return true;
-            }
-        }
-
-        return false;
+    private void transfer(byte[] toAddr, BigInteger value) {
+        BIUtil.transfer(repository, Hex.decode(PrecompiledContracts.REMASC_ADDR), toAddr, value);
     }
 }
 

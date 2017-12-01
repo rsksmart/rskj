@@ -192,8 +192,8 @@ public class ReceiptStoreImplTest {
         World world = new World();
         Block genesis = world.getBlockChain().getBestBlock();
 
-        Block block1a = new BlockBuilder().parent(genesis).build();
-        Block block1b = new BlockBuilder().parent(genesis).build();
+        Block block1a = new BlockBuilder().difficulty(10).parent(genesis).build();
+        Block block1b = new BlockBuilder().difficulty(block1a.getDifficultyBI().longValue()-1).parent(genesis).build();
 
         Block block2a = new BlockBuilder().parent(block1a).build();
         Block block2b = new BlockBuilder().parent(block1b).build();

@@ -34,6 +34,7 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.StringTokenizer;
 
 /**
  * Created by ajlopez on 8/7/2016.
@@ -180,6 +181,7 @@ public class WorldDslProcessor {
             Block block = world.getBlockByName(name);
             BlockExecutor executor = world.getBlockExecutor();
             executor.executeAndFill(block, blockChain.getBestBlock());
+            block.seal();
             latestImportResult = blockChain.tryToConnect(block);
         }
     }
@@ -195,6 +197,16 @@ public class WorldDslProcessor {
         }
     }
 
+    private int parseDifficulty(String difficulty, int defaultDifficulty) {
+        int diff;
+        try {
+            diff = Integer.parseInt(difficulty);
+        } catch (NumberFormatException e) {
+            diff = defaultDifficulty;
+        }
+        return diff;
+    }
+
     private void processBlockChainCommand(DslCommand cmd) {
         Block parent = world.getBlockByName(cmd.getArgument(0));
 
@@ -202,8 +214,15 @@ public class WorldDslProcessor {
 
         while (cmd.getArgument(k) != null) {
             String name = cmd.getArgument(k);
-            Block block = new BlockBuilder().parent(parent).build();
-            BlockExecutor executor = new BlockExecutor(world.getRepository(), world.getBlockChain(), world.getBlockChain().getBlockStore(), null);
+            int difficulty = k;
+            if (name != null) {
+                StringTokenizer difficultyTokenizer = new StringTokenizer(name,":");
+                name = difficultyTokenizer.nextToken();
+                difficulty = difficultyTokenizer.hasMoreTokens()?parseDifficulty(difficultyTokenizer.nextToken(),k):k;
+            }
+            Block block = new BlockBuilder().difficulty(difficulty).parent(parent).build();
+            BlockExecutor executor = new BlockExecutor(world.getRepository(),
+                    world.getBlockChain(), world.getBlockChain().getBlockStore(), null);
             executor.executeAndFill(block, parent);
             world.saveBlock(name, block);
             parent = block;

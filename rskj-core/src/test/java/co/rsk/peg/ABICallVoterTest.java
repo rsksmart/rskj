@@ -16,25 +16,24 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg.simples;
+package co.rsk.peg;
 
-import co.rsk.peg.BridgeStorageProvider;
-import co.rsk.bitcoinj.wallet.Wallet;
-import org.ethereum.core.Repository;
+import org.junit.Assert;
+import org.junit.Test;
+import org.spongycastle.util.encoders.Hex;
 
-/**
- * Created by ajlopez on 6/9/2016.
- */
-public class SimpleBridgeStorageProvider extends BridgeStorageProvider {
-    private Wallet wallet;
+public class ABICallVoterTest {
+    @Test
+    public void testEquals() {
+        ABICallVoter voterA = new ABICallVoter(Hex.decode("aabbccdd"));
+        ABICallVoter voterB = new ABICallVoter(Hex.decode("aabbccdd"));
+        ABICallVoter voterC = new ABICallVoter(Hex.decode("aabbccddee"));
+        ABICallVoter voterD = new ABICallVoter(Hex.decode(""));
+        ABICallVoter voterE = new ABICallVoter(Hex.decode("112233"));
 
-    public SimpleBridgeStorageProvider(Repository repository, String contractAddress, Wallet wallet) {
-        super(repository, contractAddress);
-        this.wallet = wallet;
-    }
-
-    @Override
-    public Wallet getWallet() {
-        return this.wallet;
+        Assert.assertEquals(voterA, voterB);
+        Assert.assertNotEquals(voterA, voterC);
+        Assert.assertNotEquals(voterA, voterD);
+        Assert.assertNotEquals(voterA, voterE);
     }
 }

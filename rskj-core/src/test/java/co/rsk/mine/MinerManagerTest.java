@@ -23,7 +23,6 @@ import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
 import co.rsk.test.World;
 import co.rsk.validators.BlockValidationRule;
-import co.rsk.validators.DummyBlockValidationRule;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.ethereum.core.Block;
@@ -152,7 +151,7 @@ public class MinerManagerTest {
 
         minerClient.setRsk(new RskImplForTest() {
             @Override
-            public boolean isSyncingBlocks() {
+            public boolean hasBetterBlockToSync() {
                 return true;
             }
         });
@@ -176,7 +175,7 @@ public class MinerManagerTest {
 
         minerClient.setRsk(new RskImplForTest() {
             @Override
-            public boolean isSyncingBlocks() {
+            public boolean hasBetterBlockToSync() {
                 return false;
             }
 
@@ -332,7 +331,7 @@ public class MinerManagerTest {
         minerClient.setMinerServer(minerServer);
         minerClient.setRsk(new RskImplForTest() {
             @Override
-            public boolean isSyncingBlocks() {
+            public boolean hasBetterBlockToSync() {
                 return false;
             }
 
@@ -350,7 +349,7 @@ public class MinerManagerTest {
         worldManager.setBlockchain(blockchain);
         ethereum.repository = (org.ethereum.facade.Repository)blockchain.getRepository();
         ethereum.worldManager = worldManager;
-        return new MinerServerImpl(ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), new BlockValidationRuleDummy());
+        return new MinerServerImpl(ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), new BlockValidationRuleDummy(), worldManager.getNodeBlockProcessor());
     }
 
     public static class BlockValidationRuleDummy implements BlockValidationRule {
@@ -362,7 +361,7 @@ public class MinerManagerTest {
 
     private static class RskImplForTest extends RskImpl {
         public RskImplForTest() {
-            super(null, null, null, null, null,
+            super(null, null, null,
                     null, null, null, null, null, null, null);
         }
     }

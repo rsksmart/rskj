@@ -3,12 +3,10 @@ package co.rsk.net.sync;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This is mostly a workaround because SyncProcessor needs to access MessageChannel instances.
@@ -17,10 +15,12 @@ import java.util.stream.Collectors;
  */
 public class PeersInformation {
     private final SyncConfiguration syncConfiguration;
+    private final SyncInformation syncInformation;
     private Map<NodeID, SyncPeerStatus> peerStatuses = new HashMap<>();
 
-    public PeersInformation(SyncConfiguration syncConfiguration){
+    public PeersInformation(SyncConfiguration syncConfiguration, SyncInformation syncInformation){
         this.syncConfiguration = syncConfiguration;
+        this.syncInformation = syncInformation;
     }
 
     public int count() {
@@ -37,33 +37,51 @@ public class PeersInformation {
     public SyncPeerStatus getOrRegisterPeer(MessageChannel messageChannel) {
         SyncPeerStatus peerStatus = this.peerStatuses.get(messageChannel.getPeerNodeID());
 
-        if (peerStatus != null && !peerStatus.isExpired(syncConfiguration.getExpirationTimePeerStatus()))
+        if (peerStatus != null && peerNotExpired(peerStatus))
             return peerStatus;
 
         return this.registerPeer(messageChannel);
     }
 
     public SyncPeerStatus getPeer(NodeID nodeID) {
-        // TODO(mc) check expiration
         return this.peerStatuses.get(nodeID);
     }
 
     public Optional<MessageChannel> getBestPeer() {
-        return peerStatuses.entrySet().stream()
-                .filter(e -> !e.getValue().isExpired(syncConfiguration.getExpirationTimePeerStatus()))
-                .max(this::bestPeerComparator)
+        return getCandidates()
+                .max(this::peerComparator)
                 .map(Map.Entry::getValue)
                 .map(SyncPeerStatus::getMessageChannel);
     }
 
-    public Set<NodeID> knownNodeIds() {
-        return peerStatuses.keySet();
+    private int peerComparator(Map.Entry<NodeID, SyncPeerStatus> entry, Map.Entry<NodeID, SyncPeerStatus> other) {
+        int score = syncInformation.getScore(entry.getKey());
+        int otherScore = syncInformation.getScore(other.getKey());
+        if (score >= 0 && otherScore >= 0) {
+            return entry.getValue().peerTotalDifficultyComparator(other.getValue());
+        } else if (score < otherScore){
+            return -1;
+        } else if (score > otherScore){
+            return 1;
+        }
+        return entry.getValue().peerTotalDifficultyComparator(other.getValue());
     }
 
-    private int bestPeerComparator(Map.Entry<NodeID, SyncPeerStatus> left, Map.Entry<NodeID, SyncPeerStatus> right) {
-         return Long.compare(
-                 left.getValue().getStatus().getBestBlockNumber(),
-                 right.getValue().getStatus().getBestBlockNumber());
+    private Stream<Map.Entry<NodeID,SyncPeerStatus>> getCandidates(){
+        return peerStatuses.entrySet().stream()
+                .filter(e -> peerNotExpired(e.getValue()))
+                .filter(e -> syncInformation.hasGoodReputation(e.getKey()))
+                .filter(e -> syncInformation.hasLowerDifficulty(e.getKey()));
+    }
+
+    public List<MessageChannel> getPeerCandidates() {
+        return getCandidates()
+                .map(e -> e.getValue().getMessageChannel())
+                .collect(Collectors.toList());
+    }
+
+    public Set<NodeID> knownNodeIds() {
+        return peerStatuses.keySet();
     }
 
     public SyncPeerStatus registerPeer(MessageChannel messageChannel) {
@@ -74,7 +92,11 @@ public class PeersInformation {
 
     public void cleanExpired() {
         peerStatuses = peerStatuses.entrySet().stream()
-                .filter(e -> !e.getValue().isExpired(syncConfiguration.getExpirationTimePeerStatus()))
+                .filter(e -> peerNotExpired(e.getValue()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private boolean peerNotExpired(SyncPeerStatus peer) {
+        return !peer.isExpired(syncConfiguration.getExpirationTimePeerStatus());
     }
 }

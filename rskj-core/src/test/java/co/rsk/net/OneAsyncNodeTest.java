@@ -19,13 +19,15 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.simples.SimpleAsyncNode;
+import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.World;
 import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
+import org.ethereum.rpc.Simples.SimpleChannelManager;
+import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -42,9 +44,11 @@ public class OneAsyncNodeTest {
         final Blockchain blockchain = world.getBlockChain();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null, null, null, new DummyBlockValidationRule());
+        SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
+        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), syncConfiguration, new DummyBlockValidationRule());
+        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, new SimpleChannelManager(), null, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule());
 
         return new SimpleAsyncNode(handler);
     }
@@ -59,7 +63,7 @@ public class OneAsyncNodeTest {
     public void buildBlockchain() throws InterruptedException {
         SimpleAsyncNode node = createNode();
 
-        List<Block> blocks = BlockGenerator.getBlockChain(getGenesis(), 10);
+        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(getGenesis(), 10);
 
         for (Block block : blocks)
             node.receiveMessageFrom(null, new BlockMessage(block));
@@ -75,7 +79,7 @@ public class OneAsyncNodeTest {
     public void buildBlockchainInReverse() throws InterruptedException {
         SimpleAsyncNode node = createNode();
 
-        List<Block> blocks = BlockGenerator.getBlockChain(getGenesis(), 10);
+        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(getGenesis(), 10);
 
         List<Block> reverse = new ArrayList<>();
 

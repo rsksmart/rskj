@@ -18,10 +18,10 @@
 
 package co.rsk.net;
 
-import co.rsk.config.RskSystemProperties;
-import co.rsk.net.simples.SimpleMessageChannel;
-import co.rsk.test.builders.BlockBuilder;
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.net.simples.SimpleMessageChannel;
+import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -139,7 +139,7 @@ public class NodeBlockProcessorUnclesTest {
     private static NodeBlockProcessor createNodeBlockProcessor() {
         Blockchain blockChain = new BlockChainBuilder().build();
 
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
         genesis.setStateRoot(blockChain.getRepository().getRoot());
         genesis.flushRLP();
 
@@ -147,8 +147,9 @@ public class NodeBlockProcessorUnclesTest {
 
         BlockStore store = new BlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockChain, nodeInformation, null);
-        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockChain, nodeInformation, blockSyncService);
+        SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockChain, nodeInformation, syncConfiguration);
+        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
 
         return processor;
     }

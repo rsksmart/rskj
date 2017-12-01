@@ -18,16 +18,13 @@
 
 package co.rsk.core;
 
-import co.rsk.net.MessageHandler;
 import co.rsk.net.NodeBlockProcessor;
-import co.rsk.net.NodeMessageHandler;
-import co.rsk.scoring.PeerScoringManager;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.PendingState;
+import org.ethereum.core.Repository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
-import org.ethereum.manager.AdminInfo;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
@@ -36,13 +33,9 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 public class RskImpl extends EthereumImpl implements Rsk {
 
     private boolean isplaying;
-    private NodeBlockProcessor nodeBlockProcessor;
-
-    private MessageHandler messageHandler;
-    private PeerScoringManager peerScoringManager;
+    private final NodeBlockProcessor nodeBlockProcessor;
 
     public RskImpl(WorldManager worldManager,
-                   AdminInfo adminInfo,
                    ChannelManager channelManager,
                    PeerServer peerServer,
                    ProgramInvokeFactory programInvokeFactory,
@@ -50,28 +43,10 @@ public class RskImpl extends EthereumImpl implements Rsk {
                    SystemProperties config,
                    CompositeEthereumListener compositeEthereumListener,
                    ReceiptStore receiptStore,
-                   PeerScoringManager peerScoringManager,
                    NodeBlockProcessor nodeBlockProcessor,
-                   NodeMessageHandler messageHandler) {
-        super(worldManager, adminInfo, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore);
-        this.peerScoringManager = peerScoringManager;
+                   Repository repository) {
+        super(worldManager, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore, repository);
         this.nodeBlockProcessor = nodeBlockProcessor;
-        this.messageHandler = messageHandler;
-    }
-
-    @Override
-    public PeerScoringManager getPeerScoringManager() {
-        return this.peerScoringManager;
-    }
-
-    @Override
-    public MessageHandler getMessageHandler() {
-        return this.messageHandler;
-    }
-
-    @Override
-    public NodeBlockProcessor getNodeBlockProcessor() {
-        return this.nodeBlockProcessor;
     }
 
     @Override
@@ -80,13 +55,8 @@ public class RskImpl extends EthereumImpl implements Rsk {
     }
 
     @Override
-    public boolean isSyncingBlocks() {
-        return this.getNodeBlockProcessor().isSyncingBlocks();
-    }
-
-    @Override
     public boolean isBlockchainEmpty() {
-        return this.getNodeBlockProcessor().getBestBlockNumber() == 0;
+        return this.nodeBlockProcessor.getBestBlockNumber() == 0;
     }
 
     public void setIsPlayingBlocks(boolean value) {
@@ -95,6 +65,6 @@ public class RskImpl extends EthereumImpl implements Rsk {
 
     @Override
     public boolean hasBetterBlockToSync() {
-            return this.getNodeBlockProcessor().hasBetterBlockToSync();
+        return this.nodeBlockProcessor.hasBetterBlockToSync();
     }
 }

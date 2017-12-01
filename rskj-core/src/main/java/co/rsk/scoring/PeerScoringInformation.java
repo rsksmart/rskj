@@ -15,6 +15,10 @@ public class PeerScoringInformation {
     private final int validTransactions;
     private final int invalidBlocks;
     private final int invalidTransactions;
+    private final int invalidMessages;
+    private final int timeoutMessages;
+    private final int unexpectedMessages;
+    private final int invalidHeader;
     private final int score;
     private final int punishments;
     private final boolean goodReputation;
@@ -32,6 +36,10 @@ public class PeerScoringInformation {
         this.invalidBlocks = scoring.getEventCounter(EventType.INVALID_BLOCK);
         this.validTransactions = scoring.getEventCounter(EventType.VALID_TRANSACTION);
         this.invalidTransactions = scoring.getEventCounter(EventType.INVALID_TRANSACTION);
+        this.invalidMessages = scoring.getEventCounter(EventType.INVALID_MESSAGE);
+        this.timeoutMessages = scoring.getEventCounter(EventType.TIMEOUT_MESSAGE);
+        this.unexpectedMessages = scoring.getEventCounter(EventType.UNEXPECTED_MESSAGE);
+        this.invalidHeader = scoring.getEventCounter(EventType.INVALID_HEADER);
         this.score = scoring.getScore();
         this.punishments = scoring.getPunishmentCounter();
         this.id = id;
@@ -73,6 +81,22 @@ public class PeerScoringInformation {
 
     public int getInvalidTransactions() {
         return this.invalidTransactions;
+    }
+
+    public int getInvalidMessages() {
+        return this.invalidMessages;
+    }
+
+    public int getUnexpectedMessages() {
+        return this.unexpectedMessages;
+    }
+
+    public int getTimeoutMessages() {
+        return this.timeoutMessages;
+    }
+
+    public int getInvalidHeader() {
+        return this.invalidHeader;
     }
 
     public int getPunishments() { return this.punishments; }

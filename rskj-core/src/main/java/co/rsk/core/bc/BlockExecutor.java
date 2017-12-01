@@ -151,7 +151,10 @@ public class BlockExecutor {
 
         if (paidFees != feesPaidToMiner)  {
             logger.error("Block's given paidFees doesn't match: {} != {} Block {} {}", feesPaidToMiner, paidFees, block.getNumber(), block.getShortHash());
-            panicProcessor.panic("invalidpaidfees", String.format("Block's paid fees doesn't match: %s != %s", feesPaidToMiner, paidFees));
+            panicProcessor.panic("invalidpaidfees",
+                    String.format("Block's given logBloom Hash doesn't match: %s != %s",
+                            feesPaidToMiner, paidFees));
+            //ERROR [panic]  invalidpaidfees: Block's given logBloom Hash doesn't match: 10 != 0
             return false;
         }
 
@@ -200,6 +203,7 @@ public class BlockExecutor {
 
         for (Transaction tx : block.getTransactionsList()) {
             logger.info("apply block: [{}] tx: [{}] ", block.getNumber(), i);
+
             TransactionExecutor txExecutor = new TransactionExecutor(tx, txindex++, block.getCoinbase(), track, blockStore, blockChain.getReceiptStore(), programInvokeFactory, block, listener, totalGasUsed);
 
             boolean readyToExecute = txExecutor.init();
@@ -208,7 +212,8 @@ public class BlockExecutor {
                     logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()));
                     continue;
                 } else {
-                    logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()));
+                    logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
+                            block.getNumber(), Hex.toHexString(tx.getHash()));
                     return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
                 }
             }

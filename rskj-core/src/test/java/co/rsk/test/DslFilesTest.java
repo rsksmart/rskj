@@ -18,13 +18,18 @@
 
 package co.rsk.test;
 
+import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import org.ethereum.core.Block;
+import org.ethereum.db.TransactionInfo;
+import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 
 /**
  * Created by ajlopez on 8/7/2016.
@@ -96,6 +101,59 @@ public class DslFilesTest {
     @Test
     public void runContracts06Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/contracts06.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+    }
+
+    @Test
+    public void runLogs01Resource() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/logs01.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        // the transaction receipt should have three logs
+        BlockChainStatus status = world.getBlockChain().getStatus();
+        Assert.assertEquals(1, status.getBestBlockNumber());
+
+        Block block = status.getBestBlock();
+
+        Assert.assertEquals(1, block.getTransactionsList().size());
+        byte[] txhash = block.getTransactionsList().get(0).getHash();
+        TransactionInfo txinfo = world.getBlockChain().getTransactionInfo(txhash);
+
+        // only three events, raised by
+        // Counter constructor
+        // Counter getValue
+        // Creator constructor
+        Assert.assertEquals(3, txinfo.getReceipt().getLogInfoList().size());
+
+        // only one topic in each event
+        Assert.assertEquals(1, txinfo.getReceipt().getLogInfoList().get(0).getTopics().size());
+        Assert.assertEquals(1, txinfo.getReceipt().getLogInfoList().get(1).getTopics().size());
+        Assert.assertEquals(1, txinfo.getReceipt().getLogInfoList().get(2).getTopics().size());
+
+        // the topics are different
+        DataWord topic1 = txinfo.getReceipt().getLogInfoList().get(0).getTopics().get(0);
+        DataWord topic2 = txinfo.getReceipt().getLogInfoList().get(1).getTopics().get(0);
+        DataWord topic3 = txinfo.getReceipt().getLogInfoList().get(2).getTopics().get(0);
+
+        Assert.assertNotEquals(topic1, topic2);
+        Assert.assertNotEquals(topic1, topic3);
+        Assert.assertNotEquals(topic2, topic3);
+
+        // only the third log was directly produced by the created contract
+        byte[] contractAddress = txinfo.getReceipt().getTransaction().getContractAddress();
+
+        Assert.assertFalse(Arrays.equals(contractAddress, txinfo.getReceipt().getLogInfoList().get(0).getAddress()));
+        Assert.assertFalse(Arrays.equals(contractAddress, txinfo.getReceipt().getLogInfoList().get(1).getAddress()));
+        Assert.assertTrue(Arrays.equals(contractAddress, txinfo.getReceipt().getLogInfoList().get(2).getAddress()));
+    }
+
+    @Test
+    public void runContracts07Resource() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/contracts07.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);

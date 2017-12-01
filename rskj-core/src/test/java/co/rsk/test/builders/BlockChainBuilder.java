@@ -21,6 +21,7 @@ package co.rsk.test.builders;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.peg.RepositoryBlockStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.core.*;
@@ -31,6 +32,7 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 
@@ -137,9 +139,14 @@ public class BlockChainBuilder {
                 this.repository.addBalance(key.getData(), this.genesis.getPremine().get(key).getAccountState().getBalance());
             }
 
+            Repository track = this.repository.startTracking();
+            new RepositoryBlockStore(track, PrecompiledContracts.BRIDGE_ADDR);
+            track.commit();
+
             this.genesis.setStateRoot(this.repository.getRoot());
             this.genesis.flushRLP();
             blockChain.setBestBlock(this.genesis);
+
             blockChain.setTotalDifficulty(this.genesis.getCumulativeDifficulty());
         }
 
@@ -167,7 +174,7 @@ public class BlockChainBuilder {
         BlockChainBuilder builder = new BlockChainBuilder();
         BlockChainImpl blockChain = builder.build();
 
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
 
         if (accounts != null)
             for (int k = 0; k < accounts.size(); k++) {
@@ -183,10 +190,10 @@ public class BlockChainBuilder {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
         if (size > 0) {
-            List<Block> blocks = mining ? BlockGenerator.getMinedBlockChain(genesis, size) : BlockGenerator.getBlockChain(genesis, size);
+            List<Block> blocks = mining ? BlockGenerator.getInstance().getMinedBlockChain(genesis, size) : BlockGenerator.getInstance().getBlockChain(genesis, size);
 
             for (Block block: blocks)
-                blockChain.tryToConnect(block);
+                Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block));
         }
 
         return blockChain;
@@ -216,7 +223,7 @@ public class BlockChainBuilder {
 
     public static void extend(Blockchain blockchain, int size, boolean withUncles, boolean mining) {
         Block initial = blockchain.getBestBlock();
-        List<Block> blocks = BlockGenerator.getBlockChain(initial, size, 0, withUncles, mining);
+        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(initial, size, 0, withUncles, mining, null);
 
         for (Block block: blocks)
             blockchain.tryToConnect(block);

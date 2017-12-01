@@ -18,24 +18,30 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.net.*;
 import co.rsk.net.messages.Message;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.scoring.PeerScoring;
+import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Blockchain;
+import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.junit.Assert;
+import org.mockito.Mockito;
 
 import java.util.concurrent.*;
+
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 5/15/2016.
  */
 public class SimpleAsyncNode extends SimpleNode {
     private ExecutorService executor = Executors.newSingleThreadExecutor();
-    private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(1500);
+    private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(5000);
     private SyncProcessor syncProcessor;
 
     public SimpleAsyncNode(MessageHandler handler) {
@@ -94,15 +100,24 @@ public class SimpleAsyncNode extends SimpleNode {
         return this.syncProcessor;
     }
 
-    public static SimpleAsyncNode createNode(Blockchain blockchain) {
+
+
+    public static SimpleAsyncNode createDefaultNode(Blockchain blockChain){
+        return createNode(blockChain, SyncConfiguration.DEFAULT);
+    }
+
+    public static SimpleAsyncNode createNode(Blockchain blockchain, SyncConfiguration syncConfiguration) {
         final BlockStore store = new BlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, null);
-        NodeBlockProcessor processor = new NodeBlockProcessor(RskSystemProperties.CONFIG, store, blockchain, nodeInformation, blockSyncService);
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
+        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
-        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockValidationRule);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, null, null, null, null, blockValidationRule);
+        PeerScoringManager peerScoringManager = Mockito.mock(PeerScoringManager.class);
+        when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
+        when(peerScoringManager.getPeerScoring(isA(NodeID.class))).thenReturn(new PeerScoring());
+        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, blockValidationRule);
+        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, new SimpleChannelManager(), null, null, peerScoringManager, blockValidationRule);
         return new SimpleAsyncNode(handler, syncProcessor);
     }
 
@@ -111,13 +126,13 @@ public class SimpleAsyncNode extends SimpleNode {
     public static SimpleAsyncNode createNodeWithBlockChainBuilder(int size) {
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockChainBuilder.extend(blockchain, size, false, true);
-        return createNode(blockchain);
+        return createNode(blockchain, SyncConfiguration.IMMEDIATE_FOR_TESTING);
     }
 
-    public static SimpleAsyncNode createNodeWithWorldBlockChain(int size, boolean withUncles) {
+    public static SimpleAsyncNode createNodeWithWorldBlockChain(int size, boolean withUncles, boolean mining) {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        BlockChainBuilder.extend(blockchain, size, withUncles, true);
-        return createNode(blockchain);
+        BlockChainBuilder.extend(blockchain, size, withUncles, mining);
+        return createNode(blockchain, SyncConfiguration.IMMEDIATE_FOR_TESTING);
     }
 }

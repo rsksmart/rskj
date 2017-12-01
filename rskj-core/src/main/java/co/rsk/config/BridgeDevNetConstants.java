@@ -57,7 +57,6 @@ public class BridgeDevNetConstants extends BridgeConstants {
         // Expected federation address is:
         // 2NCEo1RdmGDj6MqiipD6DUSerSxKv79FNWX
         genesisFederation = new Federation(
-                2,
                 genesisFederationPublicKeys,
                 genesisFederationAddressCreatedAt,
                 getBtcParams()
@@ -67,7 +66,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
         rsk2BtcMinimumAcceptableConfirmations = 10;
         btcBroadcastingMinimumAcceptableBlocks = 30;
 
-        updateBridgeExecutionPeriod = 3 * 60 * 1000; // in millis
+        updateBridgeExecutionPeriod = 30000; // 30secs
 
         maxBtcHeadersPerRskBlock = 500;
 

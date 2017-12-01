@@ -56,6 +56,7 @@ public class RskSystemProperties extends SystemProperties {
     public static final int BLOCKS_FOR_PEERS_DEFAULT = 100;
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";
     private static final String MINER_COINBASE_SECRET_CONFIG = "miner.coinbase.secret";
+    private static final int CHUNK_SIZE = 192;
 
     //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
     private boolean remascEnabled = true;
@@ -77,8 +78,8 @@ public class RskSystemProperties extends SystemProperties {
         }
 
         String coinbaseAddress = configFromFiles.getString(MINER_REWARD_ADDRESS_CONFIG);
-        if (coinbaseAddress.length() != 64) {
-            throw new RskConfigurationException(MINER_REWARD_ADDRESS_CONFIG + " needs to be Hex encoded and 32 byte length");
+        if (coinbaseAddress.length() != 40) {
+            throw new RskConfigurationException(MINER_REWARD_ADDRESS_CONFIG + " needs to be Hex encoded and 20 byte length");
         }
 
         return Hex.decode(coinbaseAddress);
@@ -380,7 +381,8 @@ public class RskSystemProperties extends SystemProperties {
         return getInt("sync.maxSkeletonChunks", 20);
     }
 
+    // its fixed, cannot be set by config file
     public int getChunkSize() {
-        return getInt("sync.chunkSize", 192);
+        return CHUNK_SIZE;
     }
 }

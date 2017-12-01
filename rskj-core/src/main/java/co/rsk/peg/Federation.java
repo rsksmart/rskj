@@ -23,12 +23,15 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.db.ByteArrayWrapper;
+import org.spongycastle.util.encoders.Hex;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -38,7 +41,6 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 public final class Federation {
-    private int numberOfSignaturesRequired;
     private List<BtcECKey> publicKeys;
     private Instant creationTime;
     private NetworkParameters btcParams;
@@ -46,15 +48,7 @@ public final class Federation {
     private Script p2shScript;
     private Address address;
 
-    public static Federation fromPrivateKeys(int numberOfSignaturesRequired, List<BtcECKey> privateKeys, Instant creationTime, NetworkParameters btcParams) {
-        List<BtcECKey> publicKeys = privateKeys.stream()
-                .map(key -> BtcECKey.fromPublicOnly(key.getPubKey()))
-                .collect(Collectors.toList());
-        return new Federation(numberOfSignaturesRequired, publicKeys, creationTime, btcParams);
-    }
-
-    public Federation(int numberOfSignaturesRequired, List<BtcECKey> publicKeys, Instant creationTime, NetworkParameters btcParams) {
-        this.numberOfSignaturesRequired = numberOfSignaturesRequired;
+    public Federation(List<BtcECKey> publicKeys, Instant creationTime, NetworkParameters btcParams) {
         // Sorting public keys ensures same order of federators for same public keys
         // Immutability provides protection unless unwanted modification, thus making the Federation instance
         // effectively immutable
@@ -72,7 +66,7 @@ public final class Federation {
     }
 
     public int getNumberOfSignaturesRequired() {
-        return this.numberOfSignaturesRequired;
+        return publicKeys.size() / 2 + 1;
     }
 
     public Instant getCreationTime() {
@@ -107,46 +101,62 @@ public final class Federation {
         return address;
     }
 
+    public int getSize() {
+        return publicKeys.size();
+    }
+
+    public Integer getPublicKeyIndex(BtcECKey key) {
+        for (int i = 0; i < publicKeys.size(); i++) {
+            if (Arrays.equals(key.getPubKey(), publicKeys.get(i).getPubKey())) {
+                return i;
+            }
+        }
+        return null;
+    }
+
+    public boolean hasPublicKey(BtcECKey key) {
+        return getPublicKeyIndex(key) != null;
+    }
+
     @Override
     public String toString() {
-        return String.format("%d of %d signatures federation", numberOfSignaturesRequired, publicKeys.size());
+        return String.format("%d of %d signatures federation", getNumberOfSignaturesRequired(), publicKeys.size());
     }
 
     @Override
     public boolean equals(Object other) {
-        if (this == other) {
+        if (this == other)
             return true;
-        }
 
-        if (other instanceof Federation) {
-            return this.equalsFederation((Federation) other);
-        }
-
-        return false;
-    }
-
-    public boolean equalsFederation(Federation other) {
-        if (other == null) {
+        if (other == null || this.getClass() != other.getClass())
             return false;
-        }
 
-        if (this == other) {
-            return true;
-        }
+        Federation otherFederation = (Federation) other;
 
         ByteArrayWrapper[] thisPublicKeys = this.getPublicKeys().stream()
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .map(k -> new ByteArrayWrapper(k.getPubKey()))
                 .toArray(ByteArrayWrapper[]::new);
-        ByteArrayWrapper[] otherPublicKeys = other.getPublicKeys().stream()
+        ByteArrayWrapper[] otherPublicKeys = otherFederation.getPublicKeys().stream()
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .map(k -> new ByteArrayWrapper(k.getPubKey()))
                 .toArray(ByteArrayWrapper[]::new);
 
-        return this.getNumberOfSignaturesRequired() == other.getNumberOfSignaturesRequired() &&
-                this.getPublicKeys().size() == other.getPublicKeys().size() &&
-                this.getCreationTime().equals(other.getCreationTime()) &&
-                this.btcParams.equals(other.btcParams) &&
+        return this.getNumberOfSignaturesRequired() == otherFederation.getNumberOfSignaturesRequired() &&
+                this.getSize() == otherFederation.getSize() &&
+                this.getCreationTime().equals(otherFederation.getCreationTime()) &&
+                this.btcParams.equals(otherFederation.btcParams) &&
                 Arrays.equals(thisPublicKeys, otherPublicKeys);
+    }
+
+    @Override
+    public int hashCode() {
+        // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
+        // well-defined hashCode()s
+        return Objects.hash(
+                getCreationTime(),
+                getNumberOfSignaturesRequired(),
+                getPublicKeys()
+        );
     }
 }
