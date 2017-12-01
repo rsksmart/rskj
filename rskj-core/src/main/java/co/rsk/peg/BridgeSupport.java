@@ -429,7 +429,9 @@ public class BridgeSupport {
             provider.getRskTxsWaitingForSignatures().put(new Sha3Hash(rskTx.getHash()), btcTx);
             provider.setRetiringFederation(null);
         }
-
+        
+        //refreshing in case we are migrating funds
+        pendingSignatures = !provider.getRskTxsWaitingForSignatures().isEmpty();
         Iterator<Map.Entry<Sha3Hash, BtcTransaction>> iter = provider.getRskTxsWaitingForConfirmations().entrySet().iterator();
         while (iter.hasNext() && !pendingSignatures) {
             Map.Entry<Sha3Hash, BtcTransaction> entry = iter.next();
