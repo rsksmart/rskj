@@ -21,6 +21,7 @@ package co.rsk.test.builders;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.peg.RepositoryBlockStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.core.*;
@@ -31,6 +32,7 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 
@@ -137,9 +139,14 @@ public class BlockChainBuilder {
                 this.repository.addBalance(key.getData(), this.genesis.getPremine().get(key).getAccountState().getBalance());
             }
 
+            Repository track = this.repository.startTracking();
+            new RepositoryBlockStore(track, PrecompiledContracts.BRIDGE_ADDR);
+            track.commit();
+
             this.genesis.setStateRoot(this.repository.getRoot());
             this.genesis.flushRLP();
             blockChain.setBestBlock(this.genesis);
+
             blockChain.setTotalDifficulty(this.genesis.getCumulativeDifficulty());
         }
 

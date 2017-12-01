@@ -18,6 +18,7 @@
 
 package co.rsk.remasc;
 
+import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.RemascConfig;
 import co.rsk.core.bc.SelectionRule;
 import org.apache.commons.collections4.CollectionUtils;
@@ -26,6 +27,8 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.RepositoryTrack;
+
 import org.ethereum.util.BIUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.LogInfo;
@@ -33,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,6 +71,7 @@ public class Remasc {
         this.provider = new RemascStorageProvider(repository, contractAddress);
         this.logs = logs;
         this.feesPayer = new RemascFeesPayer(repository, contractAddress);
+        this.repository = repository;
     }
 
     public void save() {
@@ -84,7 +89,7 @@ public class Remasc {
     /**
      * Implements the actual Remasc distribution logic
      */
-    void processMinersFees() {
+    void processMinersFees() throws IOException, BlockStoreException {
         if (!(executionTx instanceof RemascTransaction)) {
             //Detect
             // 1) tx to remasc that is not the latest tx in a block
@@ -121,6 +126,39 @@ public class Remasc {
         BigInteger payToRskLabs = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
         feesPayer.payMiningFees(processingBlockHeader.getHash(), payToRskLabs, remascConstants.getRskLabsAddress(), logs);
         fullBlockReward = fullBlockReward.subtract(payToRskLabs);
+
+        // TODO to improve
+        // this type choreography is only needed because the RepositoryTrack support the
+        // get snapshot to method
+        Repository processingRepository = ((RepositoryTrack)repository).getOriginRepository().getSnapshotTo(processingBlockHeader.getStateRoot());
+        // TODO to improve
+        // and we need a RepositoryTrack to feed RemascFederationProvider
+        // because it supports the update of bytes (notably, RepositoryImpl don't)
+        // the update of bytes is needed, because BridgeSupport creation could alter
+        // the storage when getChainHead is null (specially in production)
+        processingRepository = processingRepository.startTracking();
+        RemascFederationProvider federationProvider = new RemascFederationProvider(processingRepository);
+
+        BigInteger payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
+
+        byte[] processingBlockHash = processingBlockHeader.getHash();
+        int nfederators = federationProvider.getFederationSize();
+        BigInteger payToFederator = payToFederation.divide(BigInteger.valueOf(nfederators));
+        BigInteger restToLastFederator = payToFederation.subtract(payToFederator.multiply(BigInteger.valueOf(nfederators)));
+        BigInteger paidToFederation = BigInteger.ZERO;
+
+        for (int k = 0; k < nfederators; k++) {
+            byte[] federatorAddress = federationProvider.getFederatorAddress(k);
+
+            if (k == nfederators - 1 && restToLastFederator.compareTo(BigInteger.ZERO) > 0)
+                feesPayer.payMiningFees(processingBlockHash, payToFederator.add(restToLastFederator), federatorAddress, logs);
+            else
+                feesPayer.payMiningFees(processingBlockHash, payToFederator, federatorAddress, logs);
+
+            paidToFederation = paidToFederation.add(payToFederator);
+        }
+
+        fullBlockReward = fullBlockReward.subtract(payToFederation);
 
         List<Sibling> siblings = provider.getSiblings().get(processingBlockNumber);
 
