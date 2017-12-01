@@ -79,6 +79,13 @@ public class ProgramTest {
     }
 
     @Test
+    public void shouldRevertIfLessThanStipendGasAvailable() {
+        ProgramResult result = TestContract.bankTest2().executeFunction("test", BigInteger.TEN);
+        Assert.assertTrue(result.isRevert());
+        Assert.assertNull(result.getException());
+    }
+
+    @Test
     public void cantCreateTooLargeContract() {
         ProgramResult result = TestContract.bigTest().createContract();
         Assert.assertFalse(result.isRevert());
