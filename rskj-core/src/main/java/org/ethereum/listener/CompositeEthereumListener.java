@@ -19,6 +19,7 @@
 
 package org.ethereum.listener;
 
+import co.rsk.core.bc.EventInfoItem;
 import org.ethereum.core.*;
 import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.Message;
@@ -58,9 +59,9 @@ public class CompositeEthereumListener implements EthereumListener {
     }
 
     @Override
-    public void onBlock(Block block, List<TransactionReceipt> receipts) {
+    public void onBlock(Block block, List<TransactionReceipt> receipts,List<EventInfoItem> events) {
         for (EthereumListener listener : listeners) {
-            listener.onBlock(block, receipts);
+            listener.onBlock(block, receipts,events);
         }
     }
 

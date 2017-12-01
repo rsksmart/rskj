@@ -46,7 +46,7 @@ public class DataWord implements Comparable<DataWord> {
     public static final DataWord ZERO = new DataWord(new byte[32]);      // don't push it in to the stack
     public static final DataWord ONE = new DataWord(1);
     public static final DataWord ZERO_EMPTY_ARRAY = new DataWord(new byte[0]);      // don't push it in to the stack
-
+    public static final DataWord MAX_DATAWORD_VALUE = new DataWord().setMax();
     private byte[] data; // Optimization, do not initialize until needed
 
     public DataWord() {
@@ -85,6 +85,24 @@ public class DataWord implements Comparable<DataWord> {
         assign(data);
     }
 
+    public byte getByte(int offset) {
+        return data[offset];
+    }
+
+    public DataWord setByte(int offset,byte i) {
+        data[offset] = i;
+        return this;
+    }
+
+    public void assign(DataWord b) {
+     assign(b.getData());
+    }
+
+    public void assign(byte i) {
+        // TODO: Does support negative numbers?
+        zero();
+        data[31] = i;
+    }
 
     public void assign(int i) {
         // TODO: Does support negative numbers?
@@ -158,6 +176,18 @@ public class DataWord implements Comparable<DataWord> {
 
     public byte[] getLast20Bytes() {
         return Arrays.copyOfRange(data, 12, data.length);
+    }
+
+    public byte[] getLastNBytes(int N) {
+        return Arrays.copyOfRange(data,32-N, data.length);
+    }
+
+    public void copyTo(byte[] dest, int destOffset) {
+        System.arraycopy(data,0,dest,destOffset,data.length);
+    }
+
+    public void copyLastNBytes(byte[] dest, int destOffset, int N) {
+        System.arraycopy(data,32-N,dest,destOffset,N);
     }
 
     public BigInteger value() {
@@ -272,12 +302,37 @@ public class DataWord implements Comparable<DataWord> {
         return true;
     }
 
+    public boolean isMax() {
+        for (int i = this.data.length-1; i>=0;i--) {
+            if (data[i] != (byte) 0xff )
+                return false;
+        }
+        return true;
+    }
+
     // only in case of signed operation
     // when the number is explicit defined
     // as negative
     public boolean isNegative() {
         int result = data[0] & 0x80;
         return result == 0x80;
+    }
+
+    public boolean containsMask(DataWord w2) {
+
+        for (int i = 0; i < this.data.length; ++i) {
+            if ((this.data[i] & w2.data[i])!=w2.data[i])
+                return false;
+        }
+        return true;
+    }
+
+    public boolean equalsByteRange(int from,int to,DataWord w2) {
+        for (int i = from; i <= to; ++i) {
+            if (this.data[i]!=w2.data[i])
+                return false;
+        }
+        return true;
     }
 
     public DataWord and(DataWord w2) {
@@ -315,6 +370,10 @@ public class DataWord implements Comparable<DataWord> {
         return this;
     }
 
+    public DataWord setMax() {
+        Arrays.fill(this.data, (byte) -1);
+        return this;
+    }
     public void negate() {
 
         if (this.isZero()) {
@@ -571,6 +630,32 @@ public class DataWord implements Comparable<DataWord> {
     public static int numberOfTrailingNonZeros(byte i) {
         return 8 - numberOfLeadingZeros(i);
     }
+
+    public static int numberOfTrailingZeros(byte i) {
+            // UNTESTED
+
+            if (i == 0) {
+                return 8;
+            }
+            int y;
+            int v = i;
+            int n = 7;
+            y = (v << 4);
+            if (y != 0) {
+                n = n - 4;
+                v = y;
+            }
+            y = (v << 2);
+            if (y != 0) {
+                n = n - 2;
+                v = y;
+            }
+            y = (v << 1);
+            if (y != 0) {
+                n = n - 1;
+            }
+            return n;
+        }
 
     public int bitsOccupied() {
         int firstNonZero = ByteUtil.firstNonZeroByte(data);

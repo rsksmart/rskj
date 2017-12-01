@@ -19,6 +19,7 @@
 
 package org.ethereum.core.genesis;
 
+import co.rsk.core.bc.EventInfoItem;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
@@ -88,7 +89,7 @@ public class BlockChainLoader {
             blockchain.setBestBlock(genesis);
             blockchain.setTotalDifficulty(genesis.getCumulativeDifficulty());
 
-            listener.onBlock(genesis, new ArrayList<TransactionReceipt>() );
+            listener.onBlock(genesis, new ArrayList<TransactionReceipt>(),new ArrayList<EventInfoItem>() );
             repository.dumpState(genesis, 0, 0, null);
 
             logger.info("Genesis block loaded");

@@ -38,10 +38,11 @@ public class SimpleBlock extends Block {
                        long gasUsed, long timestamp, byte[] extraData,
                        byte[] mixHash,
                        byte[] nonce, byte[] receiptsRoot,
+                       byte[] eventsRoot,
                        byte[] transactionsRoot, byte[] stateRoot,
                        List<Transaction> transactionsList, List<BlockHeader> uncleList) {
         super(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit, gasUsed,
-                timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot, stateRoot,
+                timestamp, extraData, mixHash, nonce, receiptsRoot, eventsRoot,transactionsRoot, stateRoot,
                 transactionsList, uncleList, BigInteger.TEN.toByteArray(), 0L);
 
         if (transactionsList != null)

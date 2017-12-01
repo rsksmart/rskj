@@ -107,6 +107,7 @@ public class Block {
                 header.getBitcoinMergedMiningMerkleProof(),
                 header.getBitcoinMergedMiningCoinbaseTransaction(),
                 header.getReceiptsRoot(),
+                header.getEventsRoot(),
                 header.getTxTrieRoot(),
                 header.getStateRoot(),
                 transactionsList,
@@ -120,11 +121,12 @@ public class Block {
                  byte[] mixHash,
                  byte[] nonce, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                  byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] receiptsRoot,
+                 byte[] eventsRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
-                gasUsed, timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot,
+                gasUsed, timestamp, extraData, mixHash, nonce, receiptsRoot, eventsRoot, transactionsRoot,
                 stateRoot, transactionsList, uncleList, minimumGasPrice, 0L);
 
         this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
@@ -138,6 +140,7 @@ public class Block {
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp, byte[] extraData,
                  byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
+                 byte[] eventsRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, long paidFees) {
 
@@ -152,7 +155,7 @@ public class Block {
 
         this.header.setStateRoot(stateRoot);
         this.header.setReceiptsRoot(receiptsRoot);
-
+        this.header.setEventsRoot(eventsRoot);
         this.flushRLP();
     }
 
@@ -278,6 +281,12 @@ public class Block {
         return this.header.getStateRoot();
     }
 
+    public byte[] getEventsRoot() {
+        if (!parsed)
+            parseRLP();
+        return this.header.getEventsRoot();
+    }
+
     public void setStateRoot(byte[] stateRoot) {
         /* A sealed block is immutable, cannot be changed */
         if (this.sealed)
@@ -401,6 +410,11 @@ public class Block {
 
     @Override
     public String toString() {
+        // This is to prevent the Block changing
+        // its state while debugging
+        if (!parsed)
+            return "unparsed:"+super.toString();
+
         if (!parsed)
             parseRLP();
 

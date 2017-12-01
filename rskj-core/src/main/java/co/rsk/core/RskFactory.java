@@ -47,6 +47,7 @@ import org.ethereum.core.ImportResult;
 import org.ethereum.core.PendingState;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.db.EventsStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.Repository;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -96,6 +97,7 @@ public class RskFactory {
                       SystemProperties config,
                       CompositeEthereumListener compositeEthereumListener,
                       ReceiptStore receiptStore,
+                      EventsStore eventsStore,
                       PeerScoringManager peerScoringManager,
                       NodeBlockProcessor nodeBlockProcessor,
                       NodeMessageHandler nodeMessageHandler,
@@ -106,7 +108,7 @@ public class RskFactory {
         BuildInfo.printInfo();
 
         RskImpl rsk = new RskImpl(worldManager, channelManager, peerServer, programInvokeFactory,
-                pendingState, config, compositeEthereumListener, receiptStore, nodeBlockProcessor, repository);
+                pendingState, config, compositeEthereumListener, receiptStore, eventsStore, nodeBlockProcessor, repository);
 
         rsk.init();
         rsk.getBlockchain().setRsk(true);  //TODO: check if we can remove this field from org.ethereum.facade.Blockchain
@@ -244,6 +246,7 @@ public class RskFactory {
     public BlockChainImpl getBlockchain(org.ethereum.core.Repository repository,
                                         org.ethereum.db.BlockStore blockStore,
                                         ReceiptStore receiptStore,
+                                        EventsStore eventsStore,
                                         EthereumListener listener,
                                         AdminInfo adminInfo,
                                         BlockValidator blockValidator) {
@@ -251,6 +254,7 @@ public class RskFactory {
                 repository,
                 blockStore,
                 receiptStore,
+                eventsStore,
                 null, // circular dependency
                 listener,
                 adminInfo,

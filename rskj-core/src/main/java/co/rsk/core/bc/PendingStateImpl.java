@@ -387,8 +387,10 @@ public class PendingStateImpl implements PendingState {
         Block best = blockChain.getBestBlock();
 
         TransactionExecutor executor = new TransactionExecutor(
-                tx, 0, best.getCoinbase(), pendingStateRepository,
-                blockStore, blockChain.getReceiptStore(), programInvokeFactory, createFakePendingBlock(best)
+                tx, 0,best.getCoinbase(), pendingStateRepository,
+                blockStore, blockChain.getReceiptStore(),
+                blockChain.getEventsStore(),
+                programInvokeFactory, createFakePendingBlock(best)
         );
 
         executor.init();
@@ -431,6 +433,7 @@ public class PendingStateImpl implements PendingState {
                             new byte[0],
                             new byte[0],
                             new byte[32],  // receiptsRoot
+                            new byte[32],  // contractsLogRoot
                             txsTrie.getHash(),  // TransactionsRoot-
                             new byte[32],  // stateRoot
                             Collections.<Transaction>emptyList(), // tx list

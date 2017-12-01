@@ -144,12 +144,12 @@ public class Web3Impl implements Web3 {
     public EthereumListener setupListener() {
         return new EthereumListenerAdapter() {
             @Override
-            public void onBlock(Block block, List<TransactionReceipt> receipts) {
+            public void onBlock(Block block, List<TransactionReceipt> receipts, List<EventInfoItem> events) {
                 logger.trace("Start onBlock");
 
                 synchronized (filterLock) {
                     for (Filter filter : installedFilters.values()) {
-                        filter.newBlockReceived(block);
+                        filter.newBlockReceived(block,events);
                     }
                 }
 
@@ -912,7 +912,7 @@ public class Web3Impl implements Web3 {
             events.add(evt);
         }
 
-        public void newBlockReceived(Block b) {
+        public void newBlockReceived(Block b,List<EventInfoItem> events) {
         }
 
         public void newPendingTx(Transaction tx) {
@@ -923,9 +923,11 @@ public class Web3Impl implements Web3 {
     static class NewBlockFilter extends Filter {
         class NewBlockFilterEvent extends FilterEvent {
             public final Block b;
+            public final List<EventInfoItem> events;
 
-            NewBlockFilterEvent(Block b) {
+            NewBlockFilterEvent(Block b,List<EventInfoItem> events) {
                 this.b = b;
+                this.events = events;
             }
 
             @Override
@@ -935,8 +937,8 @@ public class Web3Impl implements Web3 {
         }
 
         @Override
-        public void newBlockReceived(Block b) {
-            add(new NewBlockFilterEvent(b));
+        public void newBlockReceived(Block b,List<EventInfoItem> events) {
+            add(new NewBlockFilterEvent(b,events));
         }
     }
 
@@ -1011,7 +1013,7 @@ public class Web3Impl implements Web3 {
             }
         }
 
-        void onBlock(Block b) {
+        void onBlock(Block b,List<EventInfoItem> events) {
             if (logFilter.matchBloom(new Bloom(b.getLogBloom()))) {
                 int txIdx = 0;
                 for (Transaction tx : b.getTransactionsList()) {
@@ -1022,9 +1024,9 @@ public class Web3Impl implements Web3 {
         }
 
         @Override
-        public void newBlockReceived(Block b) {
+        public void newBlockReceived(Block b,List<EventInfoItem> events) {
             if (onNewBlock) {
-                onBlock(b);
+                onBlock(b,events);
             }
         }
 
@@ -1095,7 +1097,8 @@ public class Web3Impl implements Web3 {
                 // need to add historical data
                 blockTo = blockTo == null ? this.blockchain.getBestBlock() : blockTo;
                 for (long blockNum = blockFrom.getNumber(); blockNum <= blockTo.getNumber(); blockNum++) {
-                    filter.onBlock(this.blockchain.getBlockByNumber(blockNum));
+                    filter.onBlock(this.blockchain.getBlockByNumber(blockNum),
+                                 this.blockchain.getEventsByBlockNumber(blockNum));
                 }
             }
 

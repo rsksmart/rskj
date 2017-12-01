@@ -19,6 +19,8 @@
 
 package org.ethereum.vm.program;
 
+import co.rsk.core.bc.EventInfo;
+import co.rsk.core.bc.EventInfoItem;
 import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
@@ -48,6 +50,7 @@ public class ProgramResult {
     private Set<DataWord> deleteAccounts;
     private List<InternalTransaction> internalTransactions;
     private List<LogInfo> logInfoList;
+    private List<EventInfoItem> eventInfoItemList;
     private long futureRefund = 0;
 
     /*
@@ -133,6 +136,8 @@ public class ProgramResult {
             deleteAccounts.clear();
         if (logInfoList!=null)
             logInfoList.clear();
+        if (eventInfoItemList!=null)
+            eventInfoItemList.clear();
         if (codeChanges!=null)
             codeChanges.clear();
         resetFutureRefund();
@@ -146,8 +151,18 @@ public class ProgramResult {
         return logInfoList;
     }
 
+    public List<EventInfoItem> getEventInfoItemList() {
+        if (eventInfoItemList == null) {
+            eventInfoItemList = new ArrayList<>();
+        }
+        return eventInfoItemList;
+    }
+
     public void addLogInfo(LogInfo logInfo) {
         getLogInfoList().add(logInfo);
+    }
+    public void addEventInfoItem(EventInfoItem eventInfo) {
+        getEventInfoItemList().add(eventInfo);
     }
 
     public void addLogInfos(List<LogInfo> logInfos) {
@@ -156,6 +171,11 @@ public class ProgramResult {
         }
     }
 
+    public void addEventInfos(List<EventInfoItem> eventInfos) {
+        if (!isEmpty(eventInfos)) {
+            getEventInfoItemList().addAll(eventInfos);
+        }
+    }
     public List<CallCreate> getCallCreateList() {
         if (callCreateList == null) {
             callCreateList = new ArrayList<>();
@@ -214,6 +234,7 @@ public class ProgramResult {
         if (another.getException() == null && !another.isRevert()) {
             addDeleteAccounts(another.getDeleteAccounts());
             addLogInfos(another.getLogInfoList());
+            addEventInfos(another.getEventInfoItemList());
             addFutureRefund(another.getFutureRefund());
         }
     }

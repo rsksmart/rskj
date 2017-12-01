@@ -466,6 +466,7 @@ public class BlockExecutorTest {
     public static class SimpleEthereumListener implements EthereumListener {
         private Block latestBlock;
         private List<TransactionReceipt> latestReceipts;
+        private List<EventInfoItem> latestEvents;
         private String latestTransactionHash;
         private String latestTrace;
         private TransactionExecutionSummary latestSummary;
@@ -508,14 +509,17 @@ public class BlockExecutorTest {
         }
 
         @Override
-        public void onBlock(Block block, List<TransactionReceipt> receipts) {
+        public void onBlock(Block block, List<TransactionReceipt> receipts,List<EventInfoItem> events) {
             latestBlock = block;
             latestReceipts = receipts;
+            latestEvents = events;
         }
 
         public Block getLatestBlock() { return latestBlock; }
 
         public List<TransactionReceipt> getLatestReceipts() { return latestReceipts; }
+
+        public List<EventInfoItem> getLatestEvents() { return latestEvents; }
 
         @Override
         public void onPeerDisconnect(String host, long port) {

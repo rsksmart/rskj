@@ -246,6 +246,22 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     }
 
     @Override
+    public synchronized void setBlockNumberOfLastEvent(byte[] addr, long value) {
+        AccountState account = getAccountStateOrCreateNew(addr);
+
+        account.setBlockNumberOfLastEvent(value);
+        updateAccountState(addr, account);
+    }
+
+    @Override
+    public long getBlockNumberOfLastEvent(byte[] addr) {
+        AccountState account = getAccountStateOrCreateNew(addr);
+        return account.getBlockNumberOfLastEvent();
+
+    }
+
+
+        @Override
     public synchronized Set<ByteArrayWrapper> getAccountsKeys() {
         Set<ByteArrayWrapper> result = new HashSet<>();
 

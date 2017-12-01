@@ -24,6 +24,7 @@ import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
+import org.ethereum.db.EventsStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
@@ -62,6 +63,7 @@ public class EthereumImpl implements Ethereum {
     private final SystemProperties config;
     private final CompositeEthereumListener compositeEthereumListener;
     private final ReceiptStore receiptStore;
+    private final EventsStore eventsStore;
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
     private final Repository repository;
@@ -74,6 +76,7 @@ public class EthereumImpl implements Ethereum {
                         SystemProperties config,
                         CompositeEthereumListener compositeEthereumListener,
                         ReceiptStore receiptStore,
+                        EventsStore eventsStore,
                         Repository repository) {
         this.worldManager = worldManager;
         this.channelManager = channelManager;
@@ -83,6 +86,7 @@ public class EthereumImpl implements Ethereum {
         this.config = config;
         this.compositeEthereumListener = compositeEthereumListener;
         this.receiptStore = receiptStore;
+        this.eventsStore = eventsStore;
         this.repository = repository;
     }
 
@@ -170,6 +174,7 @@ public class EthereumImpl implements Ethereum {
                 repository,
                 worldManager.getBlockStore(),
                 receiptStore,
+                eventsStore,
                 programInvokeFactory,
                 bestBlock,
                 args

@@ -59,6 +59,8 @@ public class MinerHelper {
     long totalGasUsed = 0;
     long totalPaidFees = 0;
     List<TransactionReceipt> txReceipts;
+    Events events;
+
     private GasLimitCalculator gasLimitCalculator;
 
     public MinerHelper(Repository repository , Blockchain blockchain) // , BlockStore blockStore)
@@ -74,6 +76,7 @@ public class MinerHelper {
         totalGasUsed = 0;
         totalPaidFees = 0;
         txReceipts = new ArrayList<>();
+        events = new Events();
 
         //Repository originalRepo  = ((Repository) ethereum.getRepository()).getSnapshotTo(parent.getStateRoot());
 
@@ -94,13 +97,13 @@ public class MinerHelper {
             logger.error("Strange state in block {} {}", block.getNumber(), Hex.toHexString(block.getHash()));
             panicProcessor.panic("minerserver", String.format("Strange state in block %d %s", block.getNumber(), Hex.toHexString(block.getHash())));
         }
-
-        int txindex = 0;
-
+        int i=0;
         for (Transaction tx : block.getTransactionsList()) {
 
-            TransactionExecutor executor = new TransactionExecutor(tx, txindex++, block.getCoinbase(),
-                    track, blockStore, blockchain.getReceiptStore(),
+            TransactionExecutor executor = new TransactionExecutor(tx, i, block.getCoinbase(),
+                    track, blockStore,
+                    blockchain.getReceiptStore(),
+                    blockchain.getEventsStore(),
                     programInvokeFactory, block, new EthereumListenerAdapter(), totalGasUsed);
 
             executor.init();
@@ -123,7 +126,11 @@ public class MinerHelper {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(executor.getVMLogs());
 
+            if (executor.getVMEvents()!=null)
+                events.addAll(executor.getVMEvents());
+
             txReceipts.add(receipt);
+            i++;
 
         }
     }
@@ -132,12 +139,17 @@ public class MinerHelper {
         processBlock(newBlock, parent);
 
         newBlock.getHeader().setReceiptsRoot(BlockChainImpl.calcReceiptsTrie(txReceipts));
+        newBlock.getHeader().setEventsRoot(BlockResult.calculateEventsTrie(events.getList()));
         newBlock.getHeader().setStateRoot(latestStateRootHash);
         newBlock.getHeader().setGasUsed(totalGasUsed);
 
         Bloom logBloom = new Bloom();
         for (TransactionReceipt receipt : txReceipts) {
             logBloom.or(receipt.getBloomFilter());
+        }
+
+        for (EventInfoItem item : events.getList()) {
+            logBloom.or(item.getBloomFilter());
         }
 
         newBlock.getHeader().setLogsBloom(logBloom.getData());

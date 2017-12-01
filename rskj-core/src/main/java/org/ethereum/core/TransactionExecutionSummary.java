@@ -19,6 +19,8 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.bc.EventInfo;
+import co.rsk.core.bc.EventInfoItem;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.InternalTransaction;
@@ -49,6 +51,7 @@ public class TransactionExecutionSummary {
 
     private byte[] result;
     private List<LogInfo> logs;
+    private List<EventInfoItem> events;
 
     private boolean failed;
 
@@ -133,6 +136,10 @@ public class TransactionExecutionSummary {
         return logs;
     }
 
+    public List<EventInfoItem> getEvents() {
+        return events;
+    }
+
     public static Builder builderFor(Transaction transaction) {
         return new Builder(transaction);
     }
@@ -194,6 +201,10 @@ public class TransactionExecutionSummary {
             return this;
         }
 
+        public Builder events(List<EventInfoItem> events) {
+            summary.events = events;
+            return this;
+        }
         public Builder result(byte[] result) {
             summary.result = result;
             return this;

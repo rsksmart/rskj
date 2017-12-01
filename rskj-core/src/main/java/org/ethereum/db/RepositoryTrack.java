@@ -240,6 +240,28 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
+    public synchronized void setBlockNumberOfLastEvent(byte[] addr, long value) {
+        synchronized (repository) {
+            AccountState accountState = getAccountState(addr);
+            if (accountState == null) {
+                accountState = createAccount(addr);
+            }
+
+            getContractDetails(addr).setDirty(true);
+            accountState.setBlockNumberOfLastEvent(value);
+
+            logger.trace("setting block number of last event: [{}], value: [{}]", Hex.toHexString(addr), value);
+
+        }
+    }
+
+    @Override
+    public long getBlockNumberOfLastEvent(byte[] addr) {
+        AccountState accountState = getAccountState(addr);
+        return accountState == null ? AccountState.EMPTY.getBlockNumberOfLastEvent() : accountState.getBlockNumberOfLastEvent();
+    }
+
+    @Override
     public void saveCode(byte[] addr, byte[] code) {
         logger.trace("saving code addr: [{}], code: [{}]", Hex.toHexString(addr),
                 Hex.toHexString(code));

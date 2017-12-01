@@ -80,6 +80,7 @@ public class BlockBuilder {
                 EMPTY_TRIE_HASH,
                 EMPTY_TRIE_HASH,
                 EMPTY_TRIE_HASH,
+                EMPTY_TRIE_HASH,
                 null, null, null);
 
         return block;

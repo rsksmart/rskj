@@ -80,6 +80,7 @@ public class BlockExecutor {
         BlockHeader header = block.getHeader();
         header.setTransactionsRoot(Block.getTxTrie(block.getTransactionsList()).getHash());
         header.setReceiptsRoot(result.getReceiptsRoot());
+        header.setEventsRoot(result.getEventsRoot());
         header.setGasUsed(result.getGasUsed());
         header.setPaidFees(result.getPaidFees());
         block.setStateRoot(result.getStateRoot());
@@ -127,7 +128,12 @@ public class BlockExecutor {
             panicProcessor.panic("invalidreceipt", String.format("Block's given Receipt Hash doesn't match: %s != %s", Hex.toHexString(block.getReceiptsRoot()), Hex.toHexString(result.getReceiptsRoot())));
             return false;
         }
-
+        if (!Arrays.equals(result.getEventsRoot(), block.getEventsRoot())) {
+            logger.error("Block's given events Hash doesn't match: {} {} != {}", block.getNumber(), block.getShortHash(), Hex.toHexString(block.getEventsRoot()));
+            panicProcessor.panic("invalid events",
+                    String.format("Block's given events Hash doesn't match: %s != %s", Hex.toHexString(block.getEventsRoot()), Hex.toHexString(result.getEventsRoot())));
+            return false;
+        }
         byte[] resultLogsBloom = result.getLogsBloom();
         byte[] blockLogsBloom = block.getLogBloom();
 
@@ -193,18 +199,24 @@ public class BlockExecutor {
         byte[] lastStateRootHash = initialRepository.getRoot();
 
         Repository track = initialRepository.startTracking();
-        int i = 1;
+        int i = 0;
         long totalGasUsed = 0;
         long totalPaidFees = 0;
         List<TransactionReceipt> receipts = new ArrayList<>();
+        // Maps and address to its logs.
+        List<EventInfoItem> events;
+        events = new ArrayList<>();
+
         List<Transaction> executedTransactions = new ArrayList<>();
 
         int txindex = 0;
 
         for (Transaction tx : block.getTransactionsList()) {
-            logger.info("apply block: [{}] tx: [{}] ", block.getNumber(), i);
-
-            TransactionExecutor txExecutor = new TransactionExecutor(tx, txindex++, block.getCoinbase(), track, blockStore, blockChain.getReceiptStore(), programInvokeFactory, block, listener, totalGasUsed);
+            logger.info("apply block: [{}] tx: [{}] ", block.getNumber(), i+1);
+            TransactionExecutor txExecutor = new TransactionExecutor(tx,txindex++, block.getCoinbase(), track, blockStore,
+                    blockChain.getReceiptStore(),
+                    blockChain.getEventsStore(),
+                    programInvokeFactory, block, listener, totalGasUsed);
 
             boolean readyToExecute = txExecutor.init();
             if (!ignoreReadyToExecute && !readyToExecute) {
@@ -212,8 +224,7 @@ public class BlockExecutor {
                     logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()));
                     continue;
                 } else {
-                    logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
-                            block.getNumber(), Hex.toHexString(tx.getHash()));
+                    logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()));
                     return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
                 }
             }
@@ -243,10 +254,13 @@ public class BlockExecutor {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(txExecutor.getVMLogs());
 
+            if (txExecutor.getVMEvents()!=null)
+                events.addAll(txExecutor.getVMEvents());
+
             logger.info("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()),
                     Hex.toHexString(lastStateRootHash));
 
-            logger.info("tx[{}].receipt", i);
+            logger.info("tx[{}].receipt", i+1);
 
             i++;
 
@@ -255,6 +269,6 @@ public class BlockExecutor {
             logger.info("tx done");
         }
 
-        return new BlockResult(executedTransactions, receipts, lastStateRootHash, totalGasUsed, totalPaidFees);
+        return new BlockResult(executedTransactions, receipts, events,lastStateRootHash, totalGasUsed, totalPaidFees);
     }
 }
