@@ -181,6 +181,7 @@ public class WorldDslProcessor {
             Block block = world.getBlockByName(name);
             BlockExecutor executor = world.getBlockExecutor();
             executor.executeAndFill(block, blockChain.getBestBlock());
+            block.seal();
             latestImportResult = blockChain.tryToConnect(block);
         }
     }

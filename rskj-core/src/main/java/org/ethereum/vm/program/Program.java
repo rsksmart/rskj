@@ -784,12 +784,6 @@ public class Program {
 
         Repository track = getStorage().startTracking();
 
-        // Abort if destination contract is hibernated
-        Boolean dstExists = getStorage().isExist(codeAddress);
-        AccountState dstState = null;
-        if (dstExists) {
-            dstState = getStorage().getAccountState(codeAddress);
-        }
         // 2.1 PERFORM THE VALUE (endowment) PART
         BigInteger endowment = msg.getEndowment().value();
         BigInteger senderBalance = track.getBalance(senderAddress);
@@ -799,18 +793,8 @@ public class Program {
             return;
         }
 
-        // Abort if destination contract is hibernated
-        // I'm not sure if it should return false or it should execute the destination contract as it was empty
-        // I think that it should abort since as we don't know the scriptVersion of the dest contract,
-        // we don't know if it should take the value transferred or requires ACCEPTVALUE (of this op is implemented)
-        if (dstExists && dstState.isHibernated()) {
-            stackPushZero();
-            refundGas(msg.getGas().longValue(), "refund gas from message call");
-            return;
-        }
-
         // FETCH THE CODE
-        byte[] programCode = dstExists ? getStorage().getCode(codeAddress) : EMPTY_BYTE_ARRAY;// If scriptVersion is not zero, then value must be accepted explicitely.
+        byte[] programCode = getStorage().isExist(codeAddress) ? getStorage().getCode(codeAddress) : EMPTY_BYTE_ARRAY;
 
         // Always first remove funds from sender
         track.addBalance(senderAddress, endowment.negate());
@@ -825,31 +809,29 @@ public class Program {
             return;
         }
 
-        // Only transfer immediately balance if it's a new account or scriptVersion=0
-        if ((!dstExists)) {
-            contextBalance = track.addBalance(contextAddress, endowment);
-        }
+        contextBalance = track.addBalance(contextAddress, endowment);
 
         // CREATE CALL INTERNAL TRANSACTION
         InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, programCode, "call");
 
-
         boolean callResult;
+
         if (isNotEmpty(programCode)) {
             callResult = executeCode(msg,contextAddress, contextBalance,internalTx,track,programCode,senderAddress,data);
         }
         else {
-            // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
             track.commit();
             callResult = true;
             refundGas(msg.getGas().longValue(), "remaining gas from the internal call");
         }
 
-        if (callResult)
+        // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
+        if (callResult) {
             stackPushOne();
-        else
+        }
+        else {
             stackPushZero();
-
+        }
     }
 
     public boolean executeCode(
