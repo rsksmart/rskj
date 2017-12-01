@@ -19,19 +19,15 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
-import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.ethereum.core.Repository;
+import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -43,20 +39,20 @@ import java.util.SortedMap;
  * @author Oscar Guindzberg
  */
 public class BridgeStorageProvider {
-    private static final String ACTIVE_FEDERATION_BTC_UTXOS_KEY = "activeFederationBtcUTXOs";
-    private static final String RETIRING_FEDERATION_BTC_UTXOS_KEY = "retiringFederationBtcUTXOs";
-    private static final String BTC_TX_HASHES_ALREADY_PROCESSED_KEY = "btcTxHashesAP";
-    private static final String RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY = "rskTxsWaitingFC";
-    private static final String RSK_TXS_WAITING_FOR_SIGNATURES_KEY = "rskTxsWaitingFS";
-    private static final String BRIDGE_ACTIVE_FEDERATION_KEY = "bridgeActiveFederation";
-    private static final String BRIDGE_RETIRING_FEDERATION_KEY = "bridgeRetiringFederation";
-    private static final String BRIDGE_PENDING_FEDERATION_KEY = "bridgePendingFederation";
-    private static final String BRIDGE_FEDERATION_ELECTION_KEY = "bridgeFederationElection";
+    private static final DataWord ACTIVE_FEDERATION_BTC_UTXOS_KEY = new DataWord(TypeConverter.stringToByteArray("activeFederationBtcUTXOs"));
+    private static final DataWord RETIRING_FEDERATION_BTC_UTXOS_KEY = new DataWord(TypeConverter.stringToByteArray("retiringFederationBtcUTXOs"));
+    private static final DataWord BTC_TX_HASHES_ALREADY_PROCESSED_KEY = new DataWord(TypeConverter.stringToByteArray("btcTxHashesAP"));
+    private static final DataWord RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY = new DataWord(TypeConverter.stringToByteArray("rskTxsWaitingFC"));
+    private static final DataWord RSK_TXS_WAITING_FOR_SIGNATURES_KEY = new DataWord(TypeConverter.stringToByteArray("rskTxsWaitingFS"));
+    private static final DataWord BRIDGE_ACTIVE_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("bridgeActiveFederation"));
+    private static final DataWord BRIDGE_RETIRING_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("bridgeRetiringFederation"));
+    private static final DataWord BRIDGE_PENDING_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("bridgePendingFederation"));
+    private static final DataWord BRIDGE_FEDERATION_ELECTION_KEY = new DataWord(TypeConverter.stringToByteArray("bridgeFederationElection"));
 
     private static final NetworkParameters networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
     private Repository repository;
-    private String contractAddress;
+    private byte[] contractAddress;
 
     private Map<Sha256Hash, Long> btcTxHashesAlreadyProcessed;
     // RSK release txs follow these steps: First, they are waiting for RSK confirmations, then they are waiting for federators' signatures,
@@ -83,7 +79,7 @@ public class BridgeStorageProvider {
 
     public BridgeStorageProvider(Repository repository, String contractAddress) {
         this.repository = repository;
-        this.contractAddress = contractAddress;
+        this.contractAddress = Hex.decode(contractAddress);
         bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         btcContext = new Context(bridgeConstants.getBtcParams());
     }
@@ -92,36 +88,21 @@ public class BridgeStorageProvider {
         if (activeFederationBtcUTXOs != null)
             return activeFederationBtcUTXOs;
 
-        DataWord address = new DataWord(ACTIVE_FEDERATION_BTC_UTXOS_KEY.getBytes(StandardCharsets.UTF_8));
-
-        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
-
-        activeFederationBtcUTXOs = BridgeSerializationUtils.deserializeUTXOList(data);
-
+        activeFederationBtcUTXOs = getFromRepository(ACTIVE_FEDERATION_BTC_UTXOS_KEY, BridgeSerializationUtils::deserializeUTXOList);
         return activeFederationBtcUTXOs;
     }
 
     public void saveActiveFederationBtcUTXOs() throws IOException {
         if (activeFederationBtcUTXOs == null)
             return;
-
-        byte[] data = BridgeSerializationUtils.serializeUTXOList(activeFederationBtcUTXOs);
-
-        DataWord address = new DataWord(ACTIVE_FEDERATION_BTC_UTXOS_KEY.getBytes(StandardCharsets.UTF_8));
-
-        repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+        saveToRepository(ACTIVE_FEDERATION_BTC_UTXOS_KEY, activeFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
     }
 
     public List<UTXO> getRetiringFederationBtcUTXOs() throws IOException {
         if (retiringFederationBtcUTXOs != null)
             return retiringFederationBtcUTXOs;
 
-        DataWord address = new DataWord(RETIRING_FEDERATION_BTC_UTXOS_KEY.getBytes(StandardCharsets.UTF_8));
-
-        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
-
-        retiringFederationBtcUTXOs = BridgeSerializationUtils.deserializeUTXOList(data);
-
+        retiringFederationBtcUTXOs = getFromRepository(RETIRING_FEDERATION_BTC_UTXOS_KEY, BridgeSerializationUtils::deserializeUTXOList);
         return retiringFederationBtcUTXOs;
     }
 
@@ -129,23 +110,14 @@ public class BridgeStorageProvider {
         if (retiringFederationBtcUTXOs == null)
             return;
 
-        byte[] data = BridgeSerializationUtils.serializeUTXOList(retiringFederationBtcUTXOs);
-
-        DataWord address = new DataWord(RETIRING_FEDERATION_BTC_UTXOS_KEY.getBytes(StandardCharsets.UTF_8));
-
-        repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+        saveToRepository(RETIRING_FEDERATION_BTC_UTXOS_KEY, retiringFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
     }
 
     public Map<Sha256Hash, Long> getBtcTxHashesAlreadyProcessed() throws IOException {
         if (btcTxHashesAlreadyProcessed != null)
             return btcTxHashesAlreadyProcessed;
 
-        DataWord address = new DataWord(BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getBytes(StandardCharsets.UTF_8));
-
-        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
-
-        btcTxHashesAlreadyProcessed = BridgeSerializationUtils.deserializeMapOfHashesToLong(data);
-
+        btcTxHashesAlreadyProcessed = getFromRepository(BTC_TX_HASHES_ALREADY_PROCESSED_KEY, BridgeSerializationUtils::deserializeMapOfHashesToLong);
         return btcTxHashesAlreadyProcessed;
     }
 
@@ -153,23 +125,17 @@ public class BridgeStorageProvider {
         if (btcTxHashesAlreadyProcessed == null)
             return;
 
-        byte[] data = BridgeSerializationUtils.serializeMapOfHashesToLong(btcTxHashesAlreadyProcessed);
-
-        DataWord address = new DataWord(BTC_TX_HASHES_ALREADY_PROCESSED_KEY.getBytes(StandardCharsets.UTF_8));
-
-        repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+        safeSaveToRepository(BTC_TX_HASHES_ALREADY_PROCESSED_KEY, btcTxHashesAlreadyProcessed, BridgeSerializationUtils::serializeMapOfHashesToLong);
     }
 
     public SortedMap<Sha3Hash, BtcTransaction> getRskTxsWaitingForConfirmations() throws IOException {
         if (rskTxsWaitingForConfirmations != null)
             return rskTxsWaitingForConfirmations;
 
-        DataWord address = new DataWord(RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY.getBytes(StandardCharsets.UTF_8));
-
-        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
-
-        rskTxsWaitingForConfirmations = BridgeSerializationUtils.deserializeMap(data, networkParameters, true);
-
+        rskTxsWaitingForConfirmations = getFromRepository(
+                RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY,
+                data -> BridgeSerializationUtils.deserializeMap(data, networkParameters, true)
+        );
         return rskTxsWaitingForConfirmations;
     }
 
@@ -177,23 +143,17 @@ public class BridgeStorageProvider {
         if (rskTxsWaitingForConfirmations == null)
             return;
 
-        byte[] data = BridgeSerializationUtils.serializeMap(rskTxsWaitingForConfirmations);
-
-        DataWord address = new DataWord(RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY.getBytes(StandardCharsets.UTF_8));
-
-        repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+        safeSaveToRepository(RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY, rskTxsWaitingForConfirmations, BridgeSerializationUtils::serializeMap);
     }
 
     public SortedMap<Sha3Hash, BtcTransaction> getRskTxsWaitingForSignatures() throws IOException {
         if (rskTxsWaitingForSignatures != null)
             return rskTxsWaitingForSignatures;
 
-        DataWord address = new DataWord(RSK_TXS_WAITING_FOR_SIGNATURES_KEY.getBytes(StandardCharsets.UTF_8));
-
-        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
-
-        rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(data, networkParameters, false);
-
+        rskTxsWaitingForSignatures = getFromRepository(
+                RSK_TXS_WAITING_FOR_SIGNATURES_KEY,
+                data -> BridgeSerializationUtils.deserializeMap(data, networkParameters, false)
+        );
         return rskTxsWaitingForSignatures;
     }
 
@@ -201,26 +161,14 @@ public class BridgeStorageProvider {
         if (rskTxsWaitingForSignatures == null)
             return;
 
-        byte[] data = BridgeSerializationUtils.serializeMap(rskTxsWaitingForSignatures);
-
-        DataWord address = new DataWord(RSK_TXS_WAITING_FOR_SIGNATURES_KEY.getBytes(StandardCharsets.UTF_8));
-
-        repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+        safeSaveToRepository(RSK_TXS_WAITING_FOR_SIGNATURES_KEY, rskTxsWaitingForSignatures, BridgeSerializationUtils::serializeMap);
     }
 
     public Federation getActiveFederation() {
         if (activeFederation != null)
             return activeFederation;
 
-        DataWord address = new DataWord(BRIDGE_ACTIVE_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
-
-        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
-
-        if (data == null)
-            return null;
-
-        activeFederation = BridgeSerializationUtils.deserializeFederation(data, btcContext);
-
+        activeFederation = safeGetFromRepository(BRIDGE_ACTIVE_FEDERATION_KEY, data -> (data == null)? null :BridgeSerializationUtils.deserializeFederation(data, btcContext));
         return activeFederation;
     }
 
@@ -236,26 +184,14 @@ public class BridgeStorageProvider {
         if (activeFederation == null)
             return;
 
-        byte[] data = BridgeSerializationUtils.serializeFederation(activeFederation);
-
-        DataWord address = new DataWord(BRIDGE_ACTIVE_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
-
-        repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+        safeSaveToRepository(BRIDGE_ACTIVE_FEDERATION_KEY, activeFederation, BridgeSerializationUtils::serializeFederation);
     }
 
     public Federation getRetiringFederation() {
         if (retiringFederation != null)
             return retiringFederation;
 
-        DataWord address = new DataWord(BRIDGE_RETIRING_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
-
-        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
-
-        if (data == null)
-            return null;
-
-        retiringFederation = BridgeSerializationUtils.deserializeFederation(data, btcContext);
-
+        retiringFederation = safeGetFromRepository(BRIDGE_RETIRING_FEDERATION_KEY, data -> (data == null)? null : BridgeSerializationUtils.deserializeFederation(data, btcContext));
         return retiringFederation;
     }
 
@@ -269,14 +205,7 @@ public class BridgeStorageProvider {
      */
     public void saveRetiringFederation() {
         if (shouldSaveRetiringFederation) {
-            DataWord address = new DataWord(BRIDGE_RETIRING_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
-
-            byte[] data = null;
-            if (retiringFederation != null) {
-                data = BridgeSerializationUtils.serializeFederation(retiringFederation);
-            }
-
-            repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+            safeSaveToRepository(BRIDGE_RETIRING_FEDERATION_KEY, retiringFederation, BridgeSerializationUtils::serializeFederation);
         }
     }
 
@@ -284,16 +213,7 @@ public class BridgeStorageProvider {
         if (pendingFederation != null)
             return pendingFederation;
 
-        DataWord address = new DataWord(BRIDGE_PENDING_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
-
-        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
-
-        if (data == null) {
-            return null;
-        }
-
-        pendingFederation = BridgeSerializationUtils.deserializePendingFederation(data);
-
+        pendingFederation = safeGetFromRepository(BRIDGE_PENDING_FEDERATION_KEY, data -> (data == null)? null : BridgeSerializationUtils.deserializePendingFederation(data));
         return pendingFederation;
     }
 
@@ -307,13 +227,7 @@ public class BridgeStorageProvider {
      */
     public void savePendingFederation() {
         if (shouldSavePendingFederation) {
-            DataWord address = new DataWord(BRIDGE_PENDING_FEDERATION_KEY.getBytes(StandardCharsets.UTF_8));
-
-            byte[] data = null;
-            if (pendingFederation != null)
-                data = BridgeSerializationUtils.serializePendingFederation(pendingFederation);
-
-            repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+            safeSaveToRepository(BRIDGE_PENDING_FEDERATION_KEY, pendingFederation, BridgeSerializationUtils::serializePendingFederation);
         }
     }
 
@@ -324,28 +238,14 @@ public class BridgeStorageProvider {
         if (federationElection == null)
             return;
 
-        DataWord address = new DataWord(BRIDGE_FEDERATION_ELECTION_KEY.getBytes(StandardCharsets.UTF_8));
-
-        byte[] data = BridgeSerializationUtils.serializeElection(federationElection);
-
-        repository.addStorageBytes(Hex.decode(contractAddress), address, data);
+        safeSaveToRepository(BRIDGE_FEDERATION_ELECTION_KEY, federationElection, BridgeSerializationUtils::serializeElection);
     }
 
     public ABICallElection getFederationElection(ABICallAuthorizer authorizer) {
         if (federationElection != null)
             return federationElection;
 
-        DataWord address = new DataWord(BRIDGE_FEDERATION_ELECTION_KEY.getBytes(StandardCharsets.UTF_8));
-
-        byte[] data = repository.getStorageBytes(Hex.decode(contractAddress), address);
-
-        if (data == null) {
-            federationElection = new ABICallElection(authorizer);
-            return federationElection;
-        }
-
-        federationElection = BridgeSerializationUtils.deserializeElection(data, authorizer);
-
+        federationElection = safeGetFromRepository(BRIDGE_FEDERATION_ELECTION_KEY, data -> (data == null)? new ABICallElection(authorizer) : BridgeSerializationUtils.deserializeElection(data, authorizer));
         return federationElection;
     }
 
@@ -364,5 +264,42 @@ public class BridgeStorageProvider {
         savePendingFederation();
 
         saveFederationElection();
+    }
+
+    private <T> T safeGetFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) {
+        try {
+            return getFromRepository(keyAddress, deserializer);
+        } catch (IOException ioe) {
+            throw new RuntimeException("Unable to get from repository: " + keyAddress, ioe);
+        }
+    }
+
+    private <T> T getFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) throws IOException {
+        byte[] data = repository.getStorageBytes(contractAddress, keyAddress);
+        return deserializer.deserialize(data);
+    }
+
+    private <T> void safeSaveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer) {
+        try {
+            saveToRepository(addressKey, object, serializer);
+        } catch (IOException ioe) {
+            throw new RuntimeException("Unable to save to repository: " + addressKey, ioe);
+        }
+    }
+
+    private <T> void saveToRepository(DataWord addressKey, T object, RepositorySerializer<T> serializer) throws IOException {
+        byte[] data = null;
+        if (object != null) {
+            data = serializer.serialize(object);
+        }
+        repository.addStorageBytes(contractAddress, addressKey, data);
+    }
+
+    private interface RepositoryDeserializer<T> {
+        T deserialize(byte[] data) throws IOException;
+    }
+
+    private interface RepositorySerializer<T> {
+        byte[] serialize(T object) throws IOException;
     }
 }

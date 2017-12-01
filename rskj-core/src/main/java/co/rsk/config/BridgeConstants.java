@@ -43,6 +43,9 @@ public class BridgeConstants {
     protected Coin minimumLockTxValue;
     protected Coin minimumReleaseTxValue;
 
+    protected long fundsMigrationAgeBegin;
+    protected long fundsMigrationAgeEnd;
+
     protected ABICallAuthorizer federationChangeAuthorizer;
 
     public NetworkParameters getBtcParams() {
@@ -80,4 +83,12 @@ public class BridgeConstants {
     public Coin getMinimumReleaseTxValue() { return minimumReleaseTxValue; }
 
     public ABICallAuthorizer getFederationChangeAuthorizer() { return federationChangeAuthorizer; }
+
+    public long getFundsMigrationAgeBegin() {
+        return fundsMigrationAgeBegin;
+    }
+
+    public long getFundsMigrationAgeEnd() {
+        return fundsMigrationAgeEnd;
+    }
 }

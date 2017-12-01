@@ -22,7 +22,6 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import com.google.common.annotations.VisibleForTesting;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
@@ -37,7 +36,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
@@ -50,11 +48,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
+import javax.annotation.Nullable;
 import java.io.*;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
-import java.util.function.Function;
 
 import static org.ethereum.util.BIUtil.toBI;
 import static org.ethereum.util.BIUtil.transfer;
@@ -68,6 +66,7 @@ public class BridgeSupport {
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
+    private static final Coin MINIMUM_FUNDS_TO_MIGRATE = Coin.CENT;
 
     final List<String> FEDERATION_CHANGE_FUNCTIONS = Collections.unmodifiableList(Arrays.asList(new String[]{
             "create",
@@ -360,6 +359,11 @@ public class BridgeSupport {
                     break;
                 }
             }
+
+            provider.getRetiringFederationBtcUTXOs().removeIf(
+                utxo -> utxo.getHash().equals(transactionInput.getOutpoint().getHash())
+                    && utxo.getIndex() == transactionInput.getOutpoint().getIndex()
+            );
         }
     }
 
@@ -404,11 +408,30 @@ public class BridgeSupport {
      * Iterates rskTxsWaitingForConfirmations map searching for txs with enough confirmations in the RSK blockchain.
      * If it finds one, adds unsigned inputs and change output and moves it to rskTxsWaitingForSignatures map.
      * @throws IOException
+     * @param rskTx current RSK transaction
      */
-    public void updateCollections() throws IOException {
+    public void updateCollections(Transaction rskTx) throws IOException {
         Context.propagate(btcContext);
+        boolean pendingSignatures = !provider.getRskTxsWaitingForSignatures().isEmpty();
+        long activeFederationAge = rskExecutionBlock.getNumber() - getFederationCreationBlockNumber();
+        Wallet retiringFederationWallet = getRetiringFederationWallet();
+
+        if (activeFederationAge > bridgeConstants.getFundsMigrationAgeBegin() && activeFederationAge < bridgeConstants.getFundsMigrationAgeEnd()
+                && retiringFederationWallet.getBalance().isGreaterThan(MINIMUM_FUNDS_TO_MIGRATE)
+                && !pendingSignatures) {
+
+            BtcTransaction btcTx = createMigrationTransaction(retiringFederationWallet, getActiveFederation().getAddress());
+            provider.getRskTxsWaitingForSignatures().put(new Sha3Hash(rskTx.getHash()), btcTx);
+        }
+
+        if (retiringFederationWallet != null && activeFederationAge >= bridgeConstants.getFundsMigrationAgeEnd() && !pendingSignatures) {
+            BtcTransaction btcTx = createMigrationTransaction(retiringFederationWallet, getActiveFederation().getAddress());
+            provider.getRskTxsWaitingForSignatures().put(new Sha3Hash(rskTx.getHash()), btcTx);
+            provider.setRetiringFederation(null);
+        }
+        
         Iterator<Map.Entry<Sha3Hash, BtcTransaction>> iter = provider.getRskTxsWaitingForConfirmations().entrySet().iterator();
-        while (iter.hasNext() && provider.getRskTxsWaitingForSignatures().size() == 0) {
+        while (iter.hasNext() && provider.getRskTxsWaitingForSignatures().isEmpty()) {
             Map.Entry<Sha3Hash, BtcTransaction> entry = iter.next();
             // We copy the entry's key and value to temporary variables because iter.remove() changes the values of entry's key and value
             Sha3Hash rskTxHash = entry.getKey();
@@ -511,7 +534,8 @@ public class BridgeSupport {
      */
     public void addSignature(long executionBlockNumber, BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash) throws Exception {
         Context.propagate(btcContext);
-        if (!getActiveFederation().getPublicKeys().contains(federatorPublicKey)) {
+        Federation retiringFederation = getRetiringFederation();
+        if (!getActiveFederation().getPublicKeys().contains(federatorPublicKey) && (retiringFederation == null || !retiringFederation.getPublicKeys().contains(federatorPublicKey))) {
             logger.warn("Supplied federator public key {} does not belong to any of the federators.", federatorPublicKey);
             return;
         }
@@ -791,6 +815,19 @@ public class BridgeSupport {
         return getActiveFederation().getCreationTime();
     }
 
+
+    public long getFederationCreationBlockNumber() {
+        return getActiveFederation().getCreationBlockNumber();
+    }
+
+    public long getRetiringFederationCreationBlockNumber() {
+        Federation retiringFederation = provider.getRetiringFederation();
+        if (retiringFederation == null) {
+            return -1L;
+        }
+        return retiringFederation.getCreationBlockNumber();
+    }
+
     /**
      * Returns the retiring federation bitcoin address.
      * @return the retiring federation bitcoin address, null if no retiring federation exists
@@ -862,6 +899,7 @@ public class BridgeSupport {
      * Builds and returns the retiring federation (if one exists)
      * @return the retiring federation, null if none exists
      */
+    @Nullable
     private Federation getRetiringFederation() {
         Integer size = getRetiringFederationSize();
         if (size == -1)
@@ -872,8 +910,9 @@ public class BridgeSupport {
             publicKeys.add(BtcECKey.fromPublicOnly(getRetiringFederatorPublicKey(i)));
         }
         Instant creationTime = getRetiringFederationCreationTime();
+        long creationBlockNumber = getRetiringFederationCreationBlockNumber();
 
-        return new Federation(publicKeys, creationTime, bridgeConstants.getBtcParams());
+        return new Federation(publicKeys, creationTime, creationBlockNumber, bridgeConstants.getBtcParams());
     }
 
     /**
@@ -909,7 +948,7 @@ public class BridgeSupport {
             return -1;
         }
 
-        if (provider.getRetiringFederationBtcUTXOs().size() > 0) {
+        if (provider.getRetiringFederation() != null) {
             return -2;
         }
 
@@ -995,7 +1034,7 @@ public class BridgeSupport {
         // Creation time is the block's timestamp.
         Instant creationTime = Instant.ofEpochMilli(rskExecutionBlock.getTimestamp());
         provider.setRetiringFederation(getActiveFederation());
-        provider.setActiveFederation(currentPendingFederation.buildFederation(creationTime, bridgeConstants.getBtcParams()));
+        provider.setActiveFederation(currentPendingFederation.buildFederation(creationTime, rskExecutionBlock.getNumber(), bridgeConstants.getBtcParams()));
         provider.setPendingFederation(null);
 
         // Clear votes on election
@@ -1195,6 +1234,31 @@ public class BridgeSupport {
     @VisibleForTesting
     BtcBlockStore getBtcBlockStore() {
         return btcBlockStore;
+    }
+
+    private static BtcTransaction createMigrationTransaction(Wallet originWallet, Address destinationAddress) {
+        Coin expectedMigrationValue = originWallet.getBalance();
+        for(;;) {
+            BtcTransaction migrationBtcTx = new BtcTransaction(originWallet.getParams());
+            migrationBtcTx.addOutput(expectedMigrationValue, destinationAddress);
+
+            SendRequest sr = SendRequest.forTx(migrationBtcTx);
+            sr.changeAddress = destinationAddress;
+            sr.feePerKb = Coin.MILLICOIN;
+            sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
+            sr.recipientsPayFees = true;
+            try {
+                originWallet.completeTx(sr);
+                for (TransactionInput transactionInput : migrationBtcTx.getInputs()) {
+                    transactionInput.disconnect();
+                }
+                return migrationBtcTx;
+            } catch (InsufficientMoneyException | Wallet.ExceededMaxTransactionSize | Wallet.CouldNotAdjustDownwards e) {
+                expectedMigrationValue = expectedMigrationValue.divide(2);
+            } catch(Wallet.DustySendRequested e) {
+                throw new IllegalStateException("Retiring federation wallet cannot be emptied", e);
+            }
+        }
     }
 }
 

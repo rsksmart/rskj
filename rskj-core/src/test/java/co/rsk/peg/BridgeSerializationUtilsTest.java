@@ -24,7 +24,6 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import javassist.runtime.Inner;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.junit.Assert;
 import org.junit.Test;
@@ -40,6 +39,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyVararg;
@@ -139,12 +139,14 @@ public class BridgeSerializationUtilsTest {
                     BtcECKey.fromPublicOnly(publicKeyBytes[5]),
             }),
             Instant.ofEpochMilli(0xabcdef), //
+            42L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
         byte[] result = BridgeSerializationUtils.serializeFederation(federation);
         StringBuilder expectedBuilder = new StringBuilder();
         expectedBuilder.append("ff00abcdef"); // Creation time
+        expectedBuilder.append("ff2a"); // Creation block number
         federation.getPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
             expectedBuilder.append("dd");
             expectedBuilder.append(Hex.toHexString(key.getPubKey()));
@@ -166,11 +168,13 @@ public class BridgeSerializationUtilsTest {
             .toArray(byte[][]::new);
 
         StringBuilder sampleBuilder = new StringBuilder();
-        sampleBuilder.append("02"); // Length of outer list
+        sampleBuilder.append("03"); // Length of outer list
         sampleBuilder.append("02"); // Length of first element
-        sampleBuilder.append("cd"); // Length of second element
+        sampleBuilder.append("02"); // Length of second element
+        sampleBuilder.append("cd"); // Length of third element
         sampleBuilder.append("1388"); // First element (creation date -> 5000 milliseconds from epoch)
-        sampleBuilder.append("06212121212121"); // Second element (inner list, public keys). 6 elements of 33 bytes (0x21 bytes) each.
+        sampleBuilder.append("002a"); // Second element block number 42
+        sampleBuilder.append("06212121212121"); // third element (inner list, public keys). 6 elements of 33 bytes (0x21 bytes) each.
         for (int i = 0; i < publicKeyBytes.length; i++) {
             sampleBuilder.append(Hex.toHexString(publicKeyBytes[i]));
         }
@@ -181,6 +185,7 @@ public class BridgeSerializationUtilsTest {
         Assert.assertEquals(5000, deserializedFederation.getCreationTime().toEpochMilli());
         Assert.assertEquals(4, deserializedFederation.getNumberOfSignaturesRequired());
         Assert.assertEquals(6, deserializedFederation.getPublicKeys().size());
+        Assert.assertThat(deserializedFederation.getCreationBlockNumber(), is(42L));
         for (int i = 0; i < 6; i++) {
             Assert.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedFederation.getPublicKeys().get(i).getPubKey()));
         }
@@ -194,20 +199,22 @@ public class BridgeSerializationUtilsTest {
         mock_RLP_decode2(InnerListMode.NONE);
 
         StringBuilder sampleBuilder = new StringBuilder();
-        sampleBuilder.append("03"); // Length of outer list
+        sampleBuilder.append("04"); // Length of outer list
         sampleBuilder.append("02"); // Length of first element
         sampleBuilder.append("01"); // Length of second element
-        sampleBuilder.append("04"); // Length of third element
+        sampleBuilder.append("01"); // Length of third element
+        sampleBuilder.append("04"); // Length of fourth element
         sampleBuilder.append("1388"); // First element (creation date -> 5000 milliseconds from epoch)
         sampleBuilder.append("03"); // Second element (# of signatures required - 3)
-        sampleBuilder.append("aabbccdd"); // Third element
+        sampleBuilder.append("03"); // Third element
+        sampleBuilder.append("aabbccdd"); // Fourth element
         byte[] sample = Hex.decode(sampleBuilder.toString());
 
         boolean thrown = false;
         try {
             BridgeSerializationUtils.deserializeFederation(sample, new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
         } catch (Exception e) {
-            Assert.assertTrue(e.getMessage().contains("Expected 2 elements"));
+            Assert.assertTrue(e.getMessage().contains("Expected 3 elements"));
             thrown = true;
         }
         Assert.assertTrue(thrown);

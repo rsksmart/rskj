@@ -98,6 +98,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getFederatorPublicKey", new String[]{"int256"}, new String[]{"bytes"});
     // Returns the creation time of the federation
     public static final CallTransaction.Function GET_FEDERATION_CREATION_TIME = CallTransaction.Function.fromSignature("getFederationCreationTime", new String[]{}, new String[]{"int256"});
+    // Returns the block number of the creation of the federation
+    public static final CallTransaction.Function GET_FEDERATION_CREATION_BLOCK_NUMBER = CallTransaction.Function.fromSignature("getFederationCreationBlockNumber", new String[]{}, new String[]{"int256"});
 
     // Returns the retiring federation bitcoin address
     public static final CallTransaction.Function GET_RETIRING_FEDERATION_ADDRESS = CallTransaction.Function.fromSignature("getRetiringFederationAddress", new String[]{}, new String[]{"string"});
@@ -109,6 +111,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_RETIRING_FEDERATOR_PUBLIC_KEY = CallTransaction.Function.fromSignature("getRetiringFederatorPublicKey", new String[]{"int256"}, new String[]{"bytes"});
     // Returns the creation time of the retiring federation
     public static final CallTransaction.Function GET_RETIRING_FEDERATION_CREATION_TIME = CallTransaction.Function.fromSignature("getRetiringFederationCreationTime", new String[]{}, new String[]{"int256"});
+    // Returns the block number of the creation of the retiring federation
+    public static final CallTransaction.Function GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER = CallTransaction.Function.fromSignature("getRetiringFederationCreationBlockNumber", new String[]{}, new String[]{"int256"});
 
     // Creates a new pending federation and returns its id
     public static final CallTransaction.Function CREATE_FEDERATION = CallTransaction.Function.fromSignature("createFederation", new String[]{}, new String[]{"int256"});
@@ -177,11 +181,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             GET_FEDERATION_THRESHOLD,
             GET_FEDERATOR_PUBLIC_KEY,
             GET_FEDERATION_CREATION_TIME,
+            GET_FEDERATION_CREATION_BLOCK_NUMBER,
             GET_RETIRING_FEDERATION_ADDRESS,
             GET_RETIRING_FEDERATION_SIZE,
             GET_RETIRING_FEDERATION_THRESHOLD,
             GET_RETIRING_FEDERATOR_PUBLIC_KEY,
             GET_RETIRING_FEDERATION_CREATION_TIME,
+            GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER,
             CREATE_FEDERATION,
             ADD_FEDERATOR_PUBLIC_KEY,
             COMMIT_FEDERATION,
@@ -326,7 +332,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("updateCollections");
 
         try {
-            bridgeSupport.updateCollections();
+            bridgeSupport.updateCollections(rskTx);
         } catch (Exception e) {
             logger.warn("Exception onBlock", e);
             throw new RuntimeException("Exception onBlock", e);
@@ -564,6 +570,16 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         // Return the creation time in milliseconds from the epoch
         return bridgeSupport.getFederationCreationTime().toEpochMilli();
+    }
+
+    public long getFederationCreationBlockNumber(Object[] args) {
+        logger.trace("getFederationCreationBlockNumber");
+        return bridgeSupport.getFederationCreationBlockNumber();
+    }
+
+    public long getRetiringFederationCreationBlockNumber(Object[] args) {
+        logger.trace("getRetiringFederationCreationBlockNumber");
+        return bridgeSupport.getRetiringFederationCreationBlockNumber();
     }
 
     public String getRetiringFederationAddress(Object[] args)

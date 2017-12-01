@@ -41,7 +41,7 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.testng.Assert;
+import org.junit.Assert;
 
 import java.util.ArrayList;
 import java.util.List;

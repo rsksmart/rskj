@@ -18,35 +18,28 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.db.RepositoryImpl;
-import co.rsk.trie.TrieStoreImpl;
-import org.ethereum.core.Repository;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.spongycastle.util.encoders.Hex;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.mockito.Matchers.any;
 
 @RunWith(PowerMockRunner.class)
@@ -66,6 +59,7 @@ public class FederationTest {
                         BtcECKey.fromPrivate(BigInteger.valueOf(600)),
                 }),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         sortedPublicKeys = Arrays.asList(new BtcECKey[]{
@@ -190,6 +184,7 @@ public class FederationTest {
                         BtcECKey.fromPrivate(BigInteger.valueOf(700)),
                 }),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Assert.assertFalse(federation.equals(otherFederation));
@@ -207,9 +202,28 @@ public class FederationTest {
                         BtcECKey.fromPrivate(BigInteger.valueOf(600)),
                 }),
                 ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
+                0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Assert.assertFalse(federation.equals(otherFederation));
+    }
+
+    @Test
+    public void testEquals_differentCreationBlockNumber() {
+        Federation otherFederation = new Federation(
+                Arrays.asList(
+                    BtcECKey.fromPrivate(BigInteger.valueOf(100)),
+                    BtcECKey.fromPrivate(BigInteger.valueOf(200)),
+                    BtcECKey.fromPrivate(BigInteger.valueOf(300)),
+                    BtcECKey.fromPrivate(BigInteger.valueOf(400)),
+                    BtcECKey.fromPrivate(BigInteger.valueOf(500)),
+                    BtcECKey.fromPrivate(BigInteger.valueOf(600))
+                ),
+                ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
+                1L,
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+        Assert.assertThat(federation, is(not(otherFederation)));
     }
 
     @Test
@@ -224,6 +238,7 @@ public class FederationTest {
                         BtcECKey.fromPrivate(BigInteger.valueOf(600)),
                 }),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                0L,
                 NetworkParameters.fromID(NetworkParameters.ID_TESTNET)
         );
         Assert.assertFalse(federation.equals(otherFederation));
@@ -241,6 +256,7 @@ public class FederationTest {
                         BtcECKey.fromPrivate(BigInteger.valueOf(610)),
                 }),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Assert.assertFalse(federation.equals(otherFederation));
@@ -258,6 +274,7 @@ public class FederationTest {
                         BtcECKey.fromPrivate(BigInteger.valueOf(600)),
                 }),
                 ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+                0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
         Assert.assertTrue(federation.equals(otherFederation));

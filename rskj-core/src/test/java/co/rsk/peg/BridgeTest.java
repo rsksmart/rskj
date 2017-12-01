@@ -49,6 +49,7 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
@@ -74,24 +75,6 @@ public class BridgeTest {
     @AfterClass
     public static void tearDownAfterClass() throws Exception {
         RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
-    }
-
-    @Test
-    public void callUpdateCollectionsWithoutTransactions() throws IOException {
-        Repository repository = new RepositoryImpl();
-        Repository track = repository.startTracking();
-
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, null, track, null, null, null);
-
-        bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
-
-        track.commit();
-
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
-
-        Assert.assertTrue(provider.getRskTxsWaitingForConfirmations().isEmpty());
-        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
     }
 
     @Test
@@ -709,6 +692,16 @@ public class BridgeTest {
     }
 
     @Test
+    public void getFederationCreationBlockNumber() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        when(bridgeSupportMock.getFederationCreationBlockNumber()).thenReturn(42L);
+
+        Assert.assertThat(bridge.getFederationCreationBlockNumber(new Object[]{}), is(42L));
+    }
+
+    @Test
     public void getFederatorPublicKey() throws IOException {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         bridge.init(null, null, null, null, null, null);
@@ -753,6 +746,16 @@ public class BridgeTest {
         when(bridgeSupportMock.getRetiringFederationCreationTime()).thenReturn(Instant.ofEpochMilli(5000));
 
         Assert.assertEquals(5000, bridge.getRetiringFederationCreationTime(new Object[]{}).intValue());
+    }
+
+    @Test
+    public void getRetiringFederationCreationBlockNumber() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        when(bridgeSupportMock.getRetiringFederationCreationBlockNumber()).thenReturn(42L);
+
+        Assert.assertThat(bridge.getRetiringFederationCreationBlockNumber(new Object[]{}), is(42L));
     }
 
     @Test

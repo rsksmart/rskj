@@ -64,6 +64,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
         genesisFederation = new Federation(
                 federatorPublicKeys,
                 genesisFederationCreatedAt,
+                1L,
                 getBtcParams()
         );
 
@@ -89,6 +90,9 @@ public class BridgeRegTestConstants extends BridgeConstants {
         }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         federationChangeAuthorizer = new ABICallAuthorizer(federationChangeAuthorizedKeys);
+
+        fundsMigrationAgeBegin = 15L;
+        fundsMigrationAgeEnd = 100L;
     }
 
     public List<BtcECKey> getFederatorPrivateKeys() {

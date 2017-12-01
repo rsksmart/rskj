@@ -23,7 +23,6 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.db.ByteArrayWrapper;
 import org.spongycastle.util.encoders.Hex;
 
@@ -43,17 +42,19 @@ import java.util.stream.Collectors;
 public final class Federation {
     private List<BtcECKey> publicKeys;
     private Instant creationTime;
+    private final long creationBlockNumber;
     private NetworkParameters btcParams;
     private Script redeemScript;
     private Script p2shScript;
     private Address address;
 
-    public Federation(List<BtcECKey> publicKeys, Instant creationTime, NetworkParameters btcParams) {
+    public Federation(List<BtcECKey> publicKeys, Instant creationTime, long creationBlockNumber,  NetworkParameters btcParams) {
         // Sorting public keys ensures same order of federators for same public keys
         // Immutability provides protection unless unwanted modification, thus making the Federation instance
         // effectively immutable
         this.publicKeys = Collections.unmodifiableList(publicKeys.stream().sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList()));
         this.creationTime = creationTime;
+        this.creationBlockNumber = creationBlockNumber;
         this.btcParams = btcParams;
         // Calculated once on-demand
         this.redeemScript = null;
@@ -75,6 +76,10 @@ public final class Federation {
 
     public NetworkParameters getBtcParams() {
         return btcParams;
+    }
+
+    public long getCreationBlockNumber() {
+        return creationBlockNumber;
     }
 
     public Script getRedeemScript() {
@@ -145,6 +150,7 @@ public final class Federation {
         return this.getNumberOfSignaturesRequired() == otherFederation.getNumberOfSignaturesRequired() &&
                 this.getSize() == otherFederation.getSize() &&
                 this.getCreationTime().equals(otherFederation.getCreationTime()) &&
+                this.creationBlockNumber == otherFederation.creationBlockNumber &&
                 this.btcParams.equals(otherFederation.btcParams) &&
                 Arrays.equals(thisPublicKeys, otherPublicKeys);
     }
@@ -155,6 +161,7 @@ public final class Federation {
         // well-defined hashCode()s
         return Objects.hash(
                 getCreationTime(),
+                this.creationBlockNumber,
                 getNumberOfSignaturesRequired(),
                 getPublicKeys()
         );

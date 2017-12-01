@@ -155,7 +155,6 @@ dependencies {
     testCompile "org.springframework:spring-test:${springVersion}"
     testCompile "org.mockito:mockito-core:${mockitoVersion}"
     testCompile "org.powermock:powermock-core:${powermockitoVersion}"
-    testCompile "org.powermock:powermock-module-testng:${powermockitoVersion}"
     testCompile "org.powermock:powermock-module-junit4:${powermockitoVersion}"
     testCompile "org.powermock:powermock-api-mockito:${powermockitoVersion}"
     testCompile "co.rsk:lll-compiler:${rskLllVersion}"
@@ -174,7 +173,6 @@ dependencyVerification {
         'ch.qos.logback:logback-core:280be7a9327e7434d214d6b9eb881c083c3e057a22d0ed7663a7ce81a718a494',
         'co.rsk.bitcoinj:bitcoinj-thin:83c0296752a2d50cc543831a808a2964c659a5830b5a565ff313e58b5ca1d591',
         'co.rsk:lll-compiler:a645fdb272f56721761f65dd32caa952453efc07d98d292259d99353b6f647d0',
-        'com.beust:jcommander:0b7873f51a5f292637f49423d9a83b19de15c4be3dc092decbd6afeff56263fa',
         'com.fasterxml.jackson.core:jackson-annotations:4caf3936315439b509b8c3ef494d4e47eaa6d25c3b5299aadb0eafb3944ed32f',
         'com.fasterxml.jackson.core:jackson-core:256ff34118ab292d1b4f3ee4d2c3e5e5f0f609d8e07c57e8ad1f51c46d4fbb46',
         'com.fasterxml.jackson.core:jackson-databind:4f74337b6d18664be0f5b15c6664b17aa3972c9c175092328b139b894ff66f19',
@@ -200,7 +198,6 @@ dependencyVerification {
         'org.apache.commons:commons-collections4:b1fe8b5968b57d8465425357ed2d9dc695504518bed2df5b565c4b8e68c1c8a5',
         'org.apache.commons:commons-lang3:8ac96fc686512d777fca85e144f196cd7cfe0c0aec23127229497d1a38ff651c',
         'org.awaitility:awaitility:a02982e89585a52c1c84296a895bfeb86ea250cca1a53bcfc8a14092fffa87c4',
-        'org.beanshell:bsh:91395c07885839a8c6986d5b7c577cd9bacf01bf129c89141f35e8ea858427b6',
         'org.ethereum:leveldbjni-all:18da00444c77080d4422b16c9d4750c4addabda350b702b4a6d628b86658e585',
         'org.fusesource.hawtjni:hawtjni-runtime:74fe9764e1fb1ef20b159dbca2d29abd6de292082ce3fcf538f81ac912390416',
         'org.fusesource.leveldbjni:leveldbjni:05fe3a006d030aaf8d1e43f6c640a85f9f6b967c4499ce1ad5055ac236c3b944',
@@ -217,8 +214,6 @@ dependencyVerification {
         'org.powermock:powermock-core:9b4da42d513500dda03f4d90e303647f6a7b50c6bc5ed88cd39118680f6b329f',
         'org.powermock:powermock-module-junit4-common:1b4928d42a8e6f0aa196d0f6fcf7831e0bc29b8a925ce755479b4bd29b3643bb',
         'org.powermock:powermock-module-junit4:a90e4bc135e349852eaebed9f1a14d404e14c5a8a7248b4e20e062879a97e63f',
-        'org.powermock:powermock-module-testng-common:e26f4d047bdfe5cee329ebbf54ee878e40b42eec4a07eaf8a64b36dedd4da3c5',
-        'org.powermock:powermock-module-testng:c668057772b6970ba27b6bc5acc5dd7f7d1cc468854e288779fca839e2b55013',
         'org.powermock:powermock-reflect:14e3b046621ddb6a39113f145c5c129709d3af3d36caad2df7d547778d271c3e',
         'org.slf4j:jcl-over-slf4j:5e938457e79efcbfb3ab64bc29c43ec6c3b95fffcda3c155f4a86cc320c11e14',
         'org.slf4j:log4j-over-slf4j:c84c5ce4bbb661369ccd4c7b99682027598a0fb2e3d63a84259dbe5c0bf1f949',
@@ -232,7 +227,6 @@ dependencyVerification {
         'org.springframework:spring-orm:32557ae0c762d842097bc1383f9b98d9264870f047f67618ac6a195c88e2a831',
         'org.springframework:spring-test:5659b135bd6f32e11ea00ae5411a206fd6ae7754bc0a749da9e4722cf354f018',
         'org.springframework:spring-tx:63d0a80c5c87008eb958ee6d8c121d175d5fb69523a1aec91959682c1a4202a7',
-        'org.testng:testng:0811dcf08fe329ef5d4d37d51a6a00032697e7f54ba84c6687bbf7cd39d29fec',
     ]
 }
 

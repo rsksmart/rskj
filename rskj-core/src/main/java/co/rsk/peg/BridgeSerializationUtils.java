@@ -41,6 +41,11 @@ import java.util.stream.Collectors;
  */
 public class BridgeSerializationUtils {
 
+    private static final int FEDERATION_RLP_LIST_SIZE = 3;
+    private static final int FEDERATION_CREATION_TIME_INDEX = 0;
+    private static final int FEDERATION_CREATION_BLOCK_NUMBER_INDEX = 1;
+    private static final int FEDERATION_PUB_KEYS_INDEX = 2;
+
     private BridgeSerializationUtils(){}
 
     public static byte[] serializeMap(SortedMap<Sha3Hash, BtcTransaction> map) {
@@ -232,28 +237,32 @@ public class BridgeSerializationUtils {
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .map(key -> RLP.encodeElement(key.getPubKey()))
                 .collect(Collectors.toList());
-        return RLP.encodeList(
-                RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationTime().toEpochMilli())),
-                RLP.encodeList((byte[][])publicKeys.toArray(new byte[publicKeys.size()][]))
-        );
+        byte[][] rlpElements = new byte[FEDERATION_RLP_LIST_SIZE][];
+        rlpElements[FEDERATION_CREATION_TIME_INDEX] = RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationTime().toEpochMilli()));
+        rlpElements[FEDERATION_CREATION_BLOCK_NUMBER_INDEX] = RLP.encodeBigInteger(BigInteger.valueOf(federation.getCreationBlockNumber()));
+        rlpElements[FEDERATION_PUB_KEYS_INDEX] = RLP.encodeList((byte[][])publicKeys.toArray(new byte[publicKeys.size()][]));
+        return RLP.encodeList(rlpElements);
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederation
     public static Federation deserializeFederation(byte[] data, Context btcContext) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
-        if (rlpList.size() != 2) {
-            throw new RuntimeException(String.format("Invalid serialized Federation. Expected 2 elements but got %d", rlpList.size()));
+        if (rlpList.size() != FEDERATION_RLP_LIST_SIZE) {
+            throw new RuntimeException(String.format("Invalid serialized Federation. Expected %d elements but got %d", FEDERATION_RLP_LIST_SIZE, rlpList.size()));
         }
 
-        byte[] creationTimeBytes = rlpList.get(0).getRLPData();
+        byte[] creationTimeBytes = rlpList.get(FEDERATION_CREATION_TIME_INDEX).getRLPData();
         Instant creationTime = Instant.ofEpochMilli(new BigInteger(creationTimeBytes).longValue());
 
-        List<BtcECKey> pubKeys = ((RLPList) rlpList.get(1)).stream()
+        List<BtcECKey> pubKeys = ((RLPList) rlpList.get(FEDERATION_PUB_KEYS_INDEX)).stream()
                 .map(pubKeyBytes -> BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
                 .collect(Collectors.toList());
 
-        return new Federation(pubKeys, creationTime, btcContext.getParams());
+        byte[] creationBlockNumberBytes = rlpList.get(FEDERATION_CREATION_BLOCK_NUMBER_INDEX).getRLPData();
+        long creationBlockNumber = new BigInteger(creationBlockNumberBytes).longValue();
+
+        return new Federation(pubKeys, creationTime, creationBlockNumber, btcContext.getParams());
     }
 
     // A pending federation is serialized as the
