@@ -1541,14 +1541,21 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void createFederation_pendingUTXOs() throws IOException {
+    public void createFederation_withExistingRetiringFederation() throws IOException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("create", new byte[][]{}, false);
+
+        Federation mockedRetiringFederation = new Federation(
+                getTestFederationPublicKeys(4),
+                Instant.ofEpochMilli(2000),
+                0L,
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
 
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
                 null,
                 null,
-                null,
+                mockedRetiringFederation,
                 null,
                 mocksProvider.getElection(),
                 null
