@@ -68,7 +68,8 @@ public class StateTestRunner {
         Repository track = repository.startTracking();
 
         TransactionExecutor executor =
-                new TransactionExecutor(transaction, 0, env.getCurrentCoinbase(), track, new BlockStoreDummy(), null,
+                new TransactionExecutor(transaction, 0, env.getCurrentCoinbase(), track,
+                        new BlockStoreDummy(), null,null,
                         invokeFactory, blockchain.getBestBlock());
 
         try{
@@ -97,7 +98,11 @@ public class StateTestRunner {
         indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
         BlockStore blockStore = indexedBlockStore;
 
+<<<<<<< HEAD
         blockchain = new BlockChainImpl(repository, blockStore, null, null, null, null, null, RskSystemProperties.CONFIG);
+=======
+        blockchain = new BlockChainImpl(repository, blockStore, null, null, null, null, null, null);
+>>>>>>> EventsTrie super-merge
 
         env = EnvBuilder.build(stateTestCase.getEnv());
         invokeFactory = new TestProgramInvokeFactory(env);

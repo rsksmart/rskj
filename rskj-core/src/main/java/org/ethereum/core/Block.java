@@ -107,6 +107,7 @@ public class Block {
                 header.getBitcoinMergedMiningMerkleProof(),
                 header.getBitcoinMergedMiningCoinbaseTransaction(),
                 header.getReceiptsRoot(),
+                header.getEventsRoot(),
                 header.getTxTrieRoot(),
                 header.getStateRoot(),
                 transactionsList,
@@ -120,11 +121,12 @@ public class Block {
                  byte[] mixHash,
                  byte[] nonce, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                  byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] receiptsRoot,
+                 byte[] eventsRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
-                gasUsed, timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot,
+                gasUsed, timestamp, extraData, mixHash, nonce, receiptsRoot, eventsRoot,transactionsRoot,
                 stateRoot, transactionsList, uncleList, minimumGasPrice, BigInteger.ZERO);
 
         this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
@@ -138,6 +140,7 @@ public class Block {
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp, byte[] extraData,
                  byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
+                 byte[] eventsRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, BigInteger paidFees) {
 
@@ -152,7 +155,7 @@ public class Block {
 
         this.header.setStateRoot(stateRoot);
         this.header.setReceiptsRoot(receiptsRoot);
-
+        this.header.setEventsRoot(eventsRoot);
         this.flushRLP();
     }
 
@@ -283,6 +286,12 @@ public class Block {
             parseRLP();
         }
         return this.header.getStateRoot();
+    }
+
+    public byte[] getEventsRoot() {
+        if (!parsed)
+            parseRLP();
+        return this.header.getEventsRoot();
     }
 
     public void setStateRoot(byte[] stateRoot) {
@@ -426,6 +435,14 @@ public class Block {
 
     @Override
     public String toString() {
+        // This is to prevent the Block changing
+        // its state while debugging. IntelliJ will call Block.toString()
+        // at any time. To implement toString() suitable for debugging,
+        // it should parse the RLP into a temporary Block, then dispose it,
+        // leaving this block untouched.
+        if (!parsed)
+            return "unparsed:"+super.toString();
+
         if (!parsed) {
             parseRLP();
         }

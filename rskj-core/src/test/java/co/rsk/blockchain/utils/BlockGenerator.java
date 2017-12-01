@@ -216,6 +216,7 @@ public class BlockGenerator {
                 EMPTY_BYTE_ARRAY,   // mixHash
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
+                EMPTY_TRIE_HASH,
                 BlockChainImpl.calcTxTrie(txs),  // transaction root
                 stateRoot, //EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
@@ -324,6 +325,7 @@ public class BlockGenerator {
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
                 EMPTY_TRIE_HASH,  // transaction receipts
+                EMPTY_TRIE_HASH,
                 EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 null,        // uncle list
@@ -356,6 +358,7 @@ public class BlockGenerator {
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
                 EMPTY_TRIE_HASH,  // transaction receipts
+                EMPTY_TRIE_HASH,
                 EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 null        // uncle list

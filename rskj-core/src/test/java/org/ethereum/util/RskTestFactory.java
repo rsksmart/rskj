@@ -97,6 +97,7 @@ public class RskTestFactory {
                     getRepository(),
                     getBlockStore(),
                     getReceiptStore(),
+                    getEventsStore(),
                     null, //circular dependency
                     null,
                     null,
@@ -113,6 +114,11 @@ public class RskTestFactory {
     public ReceiptStore getReceiptStore() {
         HashMapDB receiptStore = new HashMapDB();
         return new ReceiptStoreImpl(receiptStore);
+    }
+
+    public EventsStore getEventsStore() {
+        HashMapDB eventsStore = new HashMapDB();
+        return new EventsStoreImpl(eventsStore);
     }
 
     public BlockStore getBlockStore() {

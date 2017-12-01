@@ -114,6 +114,16 @@ public interface Repository {
     byte[] getCode(byte[] addr);
 
     /**
+     * Store the block number associated with the last event
+     *
+     * @param addr for the account
+     * @param value the block number
+     */
+    public void setBlockNumberOfLastEvent(byte[] addr, long value);
+
+    public long getBlockNumberOfLastEvent(byte[] addr);
+
+        /**
      * Put a value in storage of an account at a given key
      *
      * @param addr of the account

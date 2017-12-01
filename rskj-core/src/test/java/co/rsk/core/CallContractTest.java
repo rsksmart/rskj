@@ -61,7 +61,9 @@ public class CallContractTest {
 
         try {
             org.ethereum.core.TransactionExecutor executor = new org.ethereum.core.TransactionExecutor
-                    (tx, 0, bestBlock.getCoinbase(), repository, world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(),
+                    (tx, 0, bestBlock.getCoinbase(), repository, world.getBlockChain().getBlockStore(),
+                            world.getBlockChain().getReceiptStore(),
+                            world.getBlockChain().getEventsStore(),
                             new ProgramInvokeFactoryImpl(), bestBlock)
                     .setLocalCall(true);
 

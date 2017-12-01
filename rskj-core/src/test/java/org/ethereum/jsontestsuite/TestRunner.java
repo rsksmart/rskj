@@ -103,7 +103,15 @@ public class TestRunner {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
+<<<<<<< HEAD
         BlockChainImpl blockchain = new BlockChainImpl(repository, blockStore, receiptStore, null, null, null, new DummyBlockValidator(), RskSystemProperties.CONFIG);
+=======
+        KeyValueDataSource dsp = new HashMapDB();
+        dsp.init();
+        EventsStore eventsStore = new EventsStoreImpl(dsp);
+
+        BlockChainImpl blockchain = new BlockChainImpl(repository, blockStore, receiptStore, eventsStore,null, null, null, new DummyBlockValidator());
+>>>>>>> EventsTrie super-merge
         //BlockchainImpl blockchain = new BlockchainImpl(blockStore, repository, wallet, adminInfo, listener,
         //        new CommonConfig().parentHeaderValidator(), receiptStore);
 

@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
 import org.ethereum.crypto.ECKey;
+import org.spongycastle.util.encoders.Hex;
 
 /**
  * Representation of an actual account or contract.

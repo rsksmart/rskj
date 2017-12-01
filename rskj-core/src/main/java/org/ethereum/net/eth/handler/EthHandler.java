@@ -19,6 +19,7 @@
 
 package org.ethereum.net.eth.handler;
 
+import co.rsk.core.bc.EventInfoItem;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.ethereum.config.SystemProperties;
@@ -62,7 +63,7 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
     protected Block bestBlock;
     protected EthereumListener listener = new EthereumListenerAdapter() {
         @Override
-        public void onBlock(Block block, List<TransactionReceipt> receipts) {
+        public void onBlock(Block block, List<TransactionReceipt> receipts,List<EventInfoItem> events) {
             bestBlock = block;
         }
     };

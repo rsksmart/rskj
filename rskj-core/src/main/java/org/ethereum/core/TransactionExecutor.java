@@ -20,9 +20,13 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.bc.EventInfo;
+import co.rsk.core.bc.EventInfoItem;
+import co.rsk.core.bc.Events;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.EventStore;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
@@ -40,6 +44,7 @@ import org.spongycastle.util.encoders.Hex;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -67,6 +72,7 @@ public class TransactionExecutor {
     private BlockStore blockStore;
     private ReceiptStore receiptStore;
     private String executionError = "";
+    private EventsStore eventsStore;
     private final long gasUsedInTheBlock;
     private BigInteger paidFees;
     private boolean readyToExecute = false;
@@ -88,15 +94,21 @@ public class TransactionExecutor {
     BigInteger mEndGas = BigInteger.ZERO;
     long basicTxCost = 0;
     List<LogInfo> logs = null;
+    List<EventInfoItem> events= null;
+
 
     boolean localCall = false;
 
-    public TransactionExecutor(Transaction tx, int txindex, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
+    public TransactionExecutor(Transaction tx, int txindex,byte[] coinbase, Repository track, BlockStore blockStore,
+                               ReceiptStore receiptStore,
+                               EventsStore eventsStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
-        this(tx, txindex, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0);
+        this(tx, txindex, coinbase, track, blockStore, receiptStore, eventsStore,programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0);
     }
 
-    public TransactionExecutor(Transaction tx, int txindex, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
+    public TransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore,
+                               ReceiptStore receiptStore,
+                               EventsStore eventsStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock,
                                EthereumListener listener, long gasUsedInTheBlock) {
 
@@ -107,6 +119,7 @@ public class TransactionExecutor {
         this.cacheTrack = track.startTracking();
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
+        this.eventsStore = eventsStore;
         this.programInvokeFactory = programInvokeFactory;
         this.executionBlock = executionBlock;
         this.listener = listener;
@@ -445,6 +458,7 @@ public class TransactionExecutor {
         TransactionExecutionSummary.Builder summaryBuilder = TransactionExecutionSummary.builderFor(tx)
                 .gasLeftover(mEndGas)
                 .logs(notRejectedLogInfos)
+                .events(result.getEventInfoItemList())
                 .result(result.getHReturn());
 
         if (result != null) {
@@ -497,6 +511,12 @@ public class TransactionExecutor {
             logs = notRejectedLogInfos;
 
             result.getCodeChanges().forEach((key, value) -> track.saveCode(key.getLast20Bytes(), value));
+         // Is a copy necessary ?
+            events = result.getEventInfoItemList();
+
+            for (Map.Entry<DataWord, byte[]> entry : result.getCodeChanges().entrySet()) {
+                track.saveCode(entry.getKey().getLast20Bytes(), entry.getValue());
+            }
             // Traverse list of suicides
             result.getDeleteAccounts().forEach(address -> track.delete(address.getLast20Bytes()));
         }
@@ -532,6 +552,10 @@ public class TransactionExecutor {
 
     public List<LogInfo> getVMLogs() {
         return logs;
+    }
+
+    public List<EventInfoItem> getVMEvents() {
+        return events;
     }
 
     public ProgramResult getResult() {
