@@ -82,6 +82,9 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         minimumLockTxValue = Coin.valueOf(1000000);
         minimumReleaseTxValue = Coin.valueOf(500000);
+
+        fundsMigrationAgeBegin = 60L;
+        fundsMigrationAgeEnd = 900L;
     }
 
     public static BridgeTestNetConstants getInstance() {

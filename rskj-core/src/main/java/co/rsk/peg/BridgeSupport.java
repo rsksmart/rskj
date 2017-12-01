@@ -67,8 +67,6 @@ public class BridgeSupport {
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final Coin MINIMUM_FUNDS_TO_MIGRATE = Coin.CENT;
-    private static final long FUNDS_MIGRATION_AGE_BEGIN = 50;
-    private static final long FUNDS_MIGRATION_AGE_END = 100;
 
     final List<String> FEDERATION_CHANGE_FUNCTIONS = Collections.unmodifiableList(Arrays.asList(new String[]{
             "create",
@@ -418,7 +416,7 @@ public class BridgeSupport {
         long activeFederationAge = rskExecutionBlock.getNumber() - getFederationCreationBlockNumber();
         Wallet retiringFederationWallet = getRetiringFederationWallet();
 
-        if (activeFederationAge > FUNDS_MIGRATION_AGE_BEGIN && activeFederationAge < FUNDS_MIGRATION_AGE_END
+        if (activeFederationAge > bridgeConstants.getFundsMigrationAgeBegin() && activeFederationAge < bridgeConstants.getFundsMigrationAgeEnd()
                 && retiringFederationWallet.getBalance().isGreaterThan(MINIMUM_FUNDS_TO_MIGRATE)
                 && !pendingSignatures) {
 
@@ -426,7 +424,7 @@ public class BridgeSupport {
             provider.getRskTxsWaitingForSignatures().put(new Sha3Hash(rskTx.getHash()), btcTx);
         }
 
-        if (retiringFederationWallet != null && activeFederationAge >= FUNDS_MIGRATION_AGE_END && !pendingSignatures) {
+        if (retiringFederationWallet != null && activeFederationAge >= bridgeConstants.getFundsMigrationAgeEnd() && !pendingSignatures) {
             BtcTransaction btcTx = createMigrationTransaction(retiringFederationWallet, getActiveFederation().getAddress());
             provider.getRskTxsWaitingForSignatures().put(new Sha3Hash(rskTx.getHash()), btcTx);
             provider.setRetiringFederation(null);
