@@ -18,11 +18,8 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import javassist.runtime.Inner;
+import co.rsk.bitcoinj.core.*;
+import com.google.common.primitives.UnsignedBytes;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.Assert;
@@ -33,11 +30,13 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.spongycastle.util.encoders.Hex;
+import sun.nio.ch.Net;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -259,7 +258,7 @@ public class BridgeSerializationUtilsTest {
 
     @PrepareForTest({ RLP.class })
     @Test
-    public void desserializePendingFederation_ok() throws Exception {
+    public void deserializePendingFederation() throws Exception {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_decode2(InnerListMode.NONE);
 
@@ -291,21 +290,21 @@ public class BridgeSerializationUtilsTest {
         mock_RLP_encodeElement();
         mock_RLP_encodeList();
 
-        ABICallAuthorizer mockedAuthorizer = mock(ABICallAuthorizer.class);
-        when(mockedAuthorizer.isAuthorized(any(ABICallVoter.class))).thenReturn(true);
+        AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
+        when(mockedAuthorizer.isAuthorized(any(TxSender.class))).thenReturn(true);
 
-        Map<ABICallSpec, List<ABICallVoter>> sampleVotes = new HashMap<>();
+        Map<ABICallSpec, List<TxSender>> sampleVotes = new HashMap<>();
         sampleVotes.put(
                 new ABICallSpec("one-function", new byte[][]{}),
-                Arrays.asList(new ABICallVoter(Hex.decode("8899")), new ABICallVoter(Hex.decode("aabb")))
+                Arrays.asList(new TxSender(Hex.decode("8899")), new TxSender(Hex.decode("aabb")))
         );
         sampleVotes.put(
                 new ABICallSpec("another-function", new byte[][]{ Hex.decode("01"), Hex.decode("0203") }),
-                Arrays.asList(new ABICallVoter(Hex.decode("ccdd")), new ABICallVoter(Hex.decode("eeff")), new ABICallVoter(Hex.decode("0011")))
+                Arrays.asList(new TxSender(Hex.decode("ccdd")), new TxSender(Hex.decode("eeff")), new TxSender(Hex.decode("0011")))
         );
         sampleVotes.put(
                 new ABICallSpec("yet-another-function", new byte[][]{ Hex.decode("0405") }),
-                Arrays.asList(new ABICallVoter(Hex.decode("fa")), new ABICallVoter(Hex.decode("ca")))
+                Arrays.asList(new TxSender(Hex.decode("fa")), new TxSender(Hex.decode("ca")))
         );
 
         ABICallElection sample = new ABICallElection(mockedAuthorizer, sampleVotes);
@@ -334,7 +333,7 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void deserializeElection_emptyOrNull() throws Exception {
-        ABICallAuthorizer mockAuthorizer = mock(ABICallAuthorizer.class);
+        AddressBasedAuthorizer mockAuthorizer = mock(AddressBasedAuthorizer.class);
         ABICallElection election;
         election = BridgeSerializationUtils.deserializeElection(null, mockAuthorizer);
         Assert.assertEquals(0, election.getVotes().size());
@@ -348,8 +347,8 @@ public class BridgeSerializationUtilsTest {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_decode2(InnerListMode.STARTING_WITH_FF_RECURSIVE);
 
-        ABICallAuthorizer mockedAuthorizer = mock(ABICallAuthorizer.class);
-        when(mockedAuthorizer.isAuthorized(any(ABICallVoter.class))).thenReturn(true);
+        AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
+        when(mockedAuthorizer.isAuthorized(any(TxSender.class))).thenReturn(true);
 
         StringBuilder sampleBuilder = new StringBuilder();
         sampleBuilder.append("06"); // Total of three specs, two entries for each
@@ -392,14 +391,14 @@ public class BridgeSerializationUtilsTest {
         ABICallElection election = BridgeSerializationUtils.deserializeElection(sample, mockedAuthorizer);
 
         Assert.assertEquals(3, election.getVotes().size());
-        List<ABICallVoter> voters;
+        List<TxSender> voters;
         ABICallSpec spec;
 
         spec = new ABICallSpec("funct", new byte[][]{});
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                new ABICallVoter(Hex.decode("aa")),
-                new ABICallVoter(Hex.decode("bbccdd"))
+                new TxSender(Hex.decode("aa")),
+                new TxSender(Hex.decode("bbccdd"))
         );
         Assert.assertEquals(voters, election.getVotes().get(spec));
 
@@ -409,9 +408,9 @@ public class BridgeSerializationUtilsTest {
         });
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                new ABICallVoter(Hex.decode("55")),
-                new ABICallVoter(Hex.decode("66")),
-                new ABICallVoter(Hex.decode("77"))
+                new TxSender(Hex.decode("55")),
+                new TxSender(Hex.decode("66")),
+                new TxSender(Hex.decode("77"))
         );
         Assert.assertEquals(voters, election.getVotes().get(spec));
 
@@ -420,10 +419,10 @@ public class BridgeSerializationUtilsTest {
         });
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                new ABICallVoter(Hex.decode("1111")),
-                new ABICallVoter(Hex.decode("3333")),
-                new ABICallVoter(Hex.decode("5555")),
-                new ABICallVoter(Hex.decode("77"))
+                new TxSender(Hex.decode("1111")),
+                new TxSender(Hex.decode("3333")),
+                new TxSender(Hex.decode("5555")),
+                new TxSender(Hex.decode("77"))
         );
         Assert.assertEquals(voters, election.getVotes().get(spec));
     }
@@ -434,8 +433,8 @@ public class BridgeSerializationUtilsTest {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_decode2(InnerListMode.STARTING_WITH_FF_RECURSIVE);
 
-        ABICallAuthorizer mockedAuthorizer = mock(ABICallAuthorizer.class);
-        when(mockedAuthorizer.isAuthorized(any(ABICallVoter.class))).thenReturn(true);
+        AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
+        when(mockedAuthorizer.isAuthorized(any(TxSender.class))).thenReturn(true);
 
         StringBuilder sampleBuilder = new StringBuilder();
         sampleBuilder.append("05"); // Five elements, uneven
@@ -460,8 +459,8 @@ public class BridgeSerializationUtilsTest {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_decode2(InnerListMode.STARTING_WITH_FF_RECURSIVE);
 
-        ABICallAuthorizer mockedAuthorizer = mock(ABICallAuthorizer.class);
-        when(mockedAuthorizer.isAuthorized(any(ABICallVoter.class))).thenReturn(true);
+        AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
+        when(mockedAuthorizer.isAuthorized(any(TxSender.class))).thenReturn(true);
 
         StringBuilder sampleBuilder = new StringBuilder();
         sampleBuilder.append("02");
@@ -481,6 +480,70 @@ public class BridgeSerializationUtilsTest {
         }
 
         Assert.fail();
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void serializeLockWhitelist() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_encodeList();
+        mock_RLP_encodeElement();
+
+        byte[][] addressesBytes = new byte[][]{
+                BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKeyHash(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKeyHash(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKeyHash(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKeyHash(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKeyHash(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKeyHash(),
+        };
+
+        LockWhitelist lockWhitelist = new LockWhitelist(
+            Arrays.stream(addressesBytes)
+                .map(bytes -> new Address(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), bytes))
+                .collect(Collectors.toList())
+        );
+
+        byte[] result = BridgeSerializationUtils.serializeLockWhitelist(lockWhitelist);
+        StringBuilder expectedBuilder = new StringBuilder();
+        Arrays.stream(addressesBytes).sorted(
+                (byte[] b1, byte[] b2) -> UnsignedBytes.lexicographicalComparator().compare(b1, b2)
+        ).forEach(bytes -> {
+            expectedBuilder.append("dd");
+            expectedBuilder.append(Hex.toHexString(bytes));
+        });
+        byte[] expected = Hex.decode(expectedBuilder.toString());
+        Assert.assertTrue(Arrays.equals(expected, result));
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void deserializeLockWhitelist() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_decode2(InnerListMode.NONE);
+
+        byte[][] addressesBytes = Arrays.asList(100, 200, 300, 400).stream()
+                .map(k -> BtcECKey.fromPrivate(BigInteger.valueOf(k)))
+                .sorted(BtcECKey.PUBKEY_COMPARATOR)
+                .map(k -> k.getPubKeyHash())
+                .toArray(byte[][]::new);
+
+        StringBuilder sampleBuilder = new StringBuilder();
+        sampleBuilder.append("0414141414"); // 4 elements of 20 bytes (0x14 bytes) each.
+        for (int i = 0; i < addressesBytes.length; i++) {
+            sampleBuilder.append(Hex.toHexString(addressesBytes[i]));
+        }
+        byte[] sample = Hex.decode(sampleBuilder.toString());
+
+        LockWhitelist deserializedLockWhitelist = BridgeSerializationUtils.deserializeLockWhitelist(
+                sample,
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+
+        Assert.assertEquals(4, deserializedLockWhitelist.getSize().intValue());
+        for (int i = 0; i < 4; i++) {
+            Assert.assertTrue(Arrays.equals(addressesBytes[i], deserializedLockWhitelist.getAddresses().get(i).getHash160()));
+        }
     }
 
     private void mock_RLP_encodeElement() {

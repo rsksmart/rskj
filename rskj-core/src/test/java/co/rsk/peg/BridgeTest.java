@@ -868,4 +868,52 @@ public class BridgeTest {
 
         Assert.assertEquals(456, bridge.rollbackFederation(new Object[]{}).intValue());
     }
+
+    @Test
+    public void getLockWhitelistSize() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        when(bridgeSupportMock.getLockWhitelistSize()).thenReturn(1234);
+
+        Assert.assertEquals(1234, bridge.getLockWhitelistSize(new Object[]{}).intValue());
+    }
+
+    @Test
+    public void getLockWhitelistAddress() throws IOException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(null, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        when(bridgeSupportMock.getLockWhitelistAddress(any(int.class))).then((InvocationOnMock invocation) ->
+                BigInteger.valueOf(invocation.getArgumentAt(0, int.class)).toString());
+
+        Assert.assertEquals("10", bridge.getLockWhitelistAddress(new Object[]{BigInteger.valueOf(10)}));
+        Assert.assertEquals("20", bridge.getLockWhitelistAddress(new Object[]{BigInteger.valueOf(20)}));
+    }
+
+    @Test
+    public void addLockWhitelistAddress() throws IOException {
+        Transaction mockedTransaction = mock(Transaction.class);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(mockedTransaction, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        when(bridgeSupportMock.addLockWhitelistAddress(mockedTransaction, "i-am-an-address")).thenReturn(1234);
+
+        Assert.assertEquals(1234, bridge.addLockWhitelistAddress(new Object[]{ "i-am-an-address" }).intValue());
+    }
+
+    @Test
+    public void removeLockWhitelistAddress() throws IOException {
+        Transaction mockedTransaction = mock(Transaction.class);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        bridge.init(mockedTransaction, null, null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        when(bridgeSupportMock.removeLockWhitelistAddress(mockedTransaction, "i-am-an-address")).thenReturn(1234);
+
+        Assert.assertEquals(1234, bridge.removeLockWhitelistAddress(new Object[]{ "i-am-an-address" }).intValue());
+    }
 }

@@ -31,46 +31,62 @@ import java.util.Collections;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ABICallAuthorizerTest {
+public class AddressBasedAuthorizerTest {
     @Test
-    public void numberOfKeys() {
-        ABICallAuthorizer auth = new ABICallAuthorizer(Arrays.asList(
+    public void numberOfKeys_one() {
+        AddressBasedAuthorizer auth = new AddressBasedAuthorizer(Arrays.asList(
                 mock(ECKey.class),
                 mock(ECKey.class),
                 mock(ECKey.class),
                 mock(ECKey.class)
-        ));
+        ), AddressBasedAuthorizer.MinimumRequiredCalculation.ONE);
+
+        Assert.assertEquals(4, auth.getNumberOfAuthorizedKeys());
+        Assert.assertEquals(1, auth.getRequiredAuthorizedKeys());
+    }
+
+    @Test
+    public void numberOfKeys_majority() {
+        AddressBasedAuthorizer auth = new AddressBasedAuthorizer(Arrays.asList(
+                mock(ECKey.class),
+                mock(ECKey.class),
+                mock(ECKey.class),
+                mock(ECKey.class)
+        ), AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
         Assert.assertEquals(4, auth.getNumberOfAuthorizedKeys());
         Assert.assertEquals(3, auth.getRequiredAuthorizedKeys());
     }
 
     @Test
-    public void getVoter() {
-        ABICallAuthorizer auth = new ABICallAuthorizer(Collections.emptyList());
+    public void numberOfKeys_all() {
+        AddressBasedAuthorizer auth = new AddressBasedAuthorizer(Arrays.asList(
+                mock(ECKey.class),
+                mock(ECKey.class),
+                mock(ECKey.class),
+                mock(ECKey.class)
+        ), AddressBasedAuthorizer.MinimumRequiredCalculation.ALL);
 
-        Transaction mockedTx = mock(Transaction.class);
-        when(mockedTx.getSender()).thenReturn(Hex.decode("aabb"));
-
-        Assert.assertEquals(new ABICallVoter(Hex.decode("aabb")), auth.getVoter(mockedTx));
+        Assert.assertEquals(4, auth.getNumberOfAuthorizedKeys());
+        Assert.assertEquals(4, auth.getRequiredAuthorizedKeys());
     }
 
     @Test
     public void isAuthorized() {
-        ABICallAuthorizer auth = new ABICallAuthorizer(Arrays.asList(
+        AddressBasedAuthorizer auth = new AddressBasedAuthorizer(Arrays.asList(
                 ECKey.fromPrivate(BigInteger.valueOf(100L)),
                 ECKey.fromPrivate(BigInteger.valueOf(101L)),
                 ECKey.fromPrivate(BigInteger.valueOf(102L))
-        ));
+        ), AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY);
 
         for (long n = 100L; n <= 102L; n++) {
             Transaction mockedTx = mock(Transaction.class);
             when(mockedTx.getSender()).thenReturn(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress());
-            Assert.assertTrue(auth.isAuthorized(new ABICallVoter(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress())));
+            Assert.assertTrue(auth.isAuthorized(new TxSender(ECKey.fromPrivate(BigInteger.valueOf(n)).getAddress())));
             Assert.assertTrue(auth.isAuthorized(mockedTx));
         }
 
-        Assert.assertFalse(auth.isAuthorized(new ABICallVoter(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress())));
+        Assert.assertFalse(auth.isAuthorized(new TxSender(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress())));
         Transaction mockedTx = mock(Transaction.class);
         when(mockedTx.getSender()).thenReturn(ECKey.fromPrivate(BigInteger.valueOf(50L)).getAddress());
         Assert.assertFalse(auth.isAuthorized(mockedTx));

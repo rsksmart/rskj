@@ -18,20 +18,20 @@
 
 package co.rsk.peg;
 
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Sha3Hash;
-import co.rsk.panic.PanicProcessor;
-import com.google.common.annotations.VisibleForTesting;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
-import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.crypto.Sha3Hash;
+import co.rsk.panic.PanicProcessor;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
@@ -49,7 +49,8 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
@@ -62,7 +63,8 @@ import static org.ethereum.util.BIUtil.transfer;
  * @author Oscar Guindzberg
  */
 public class BridgeSupport {
-    public static final Integer VOTE_GENERIC_ERROR_CODE = -10;
+    public static final Integer FEDERATION_CHANGE_GENERIC_ERROR_CODE = -10;
+    public static final Integer LOCK_WHITELIST_GENERIC_ERROR_CODE = -10;
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
@@ -216,7 +218,7 @@ public class BridgeSupport {
      * @throws BlockStoreException
      * @throws IOException
      */
-    public void registerBtcTransaction(BtcTransaction btcTx, int height, PartialMerkleTree pmt) throws BlockStoreException, IOException {
+    public void registerBtcTransaction(Transaction rskTx, BtcTransaction btcTx, int height, PartialMerkleTree pmt) throws BlockStoreException, IOException {
         Context.propagate(btcContext);
 
         Federation federation = getActiveFederation();
@@ -274,11 +276,6 @@ public class BridgeSupport {
                 panicProcessor.panic("btclock", "First input does not spend a Pay-to-PubkeyHash " + btcTx.getInput(0));
                 return;
             }
-            // Tx is a lock tx, transfer SBTC to the sender of the BTC
-            // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
-            byte[] data = scriptSig.getChunks().get(1).data;
-            org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
-            byte[] sender = key.getAddress();
 
             // Compute the total amount sent. Value could have been sent both to the
             // currently active federation as well as to the currently retiring federation.
@@ -289,13 +286,38 @@ public class BridgeSupport {
             if (retiringFederationWallet != null) {
                 amountToRetiring = btcTx.getValueSentToMe(retiringFederationWallet);
             }
-            long totalValue = amountToActive.getValue() + amountToRetiring.getValue();
-            transfer(
-                    rskRepository,
-                    Hex.decode(PrecompiledContracts.BRIDGE_ADDR),
-                    sender,
-                    Denomination.satoshisToWeis(BigInteger.valueOf(totalValue))
-            );
+            Coin totalAmount = amountToActive.add(amountToRetiring);
+
+            // Get the sender public key
+            byte[] data = scriptSig.getChunks().get(1).data;
+
+            // Tx is a lock tx, check whether the sender is whitelisted
+            BtcECKey senderBtcKey = BtcECKey.fromPublicOnly(data);
+            Address senderBtcAddress = new Address(btcContext.getParams(), senderBtcKey.getPubKeyHash());
+
+            // If the address is not whitelisted, then return the funds
+            // That is, get them in the release cycle
+            // otherwise, transfer SBTC to the sender of the BTC
+            // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
+            if (!provider.getLockWhitelist().isWhitelisted(senderBtcAddress)) {
+                boolean addResult = addToReleaseCycle(rskTx, senderBtcAddress, totalAmount);
+
+                if (addResult) {
+                    logger.info("whitelist money return succesful to {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
+                } else {
+                    logger.warn("whitelist money return ignored because value is considered dust. To {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
+                }
+            } else {
+                org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
+                byte[] sender = key.getAddress();
+
+                transfer(
+                        rskRepository,
+                        Hex.decode(PrecompiledContracts.BRIDGE_ADDR),
+                        sender,
+                        Denomination.satoshisToWeis(BigInteger.valueOf(totalAmount.getValue()))
+                );
+            }
         } else if (BridgeUtils.isReleaseTx(btcTx, federation, bridgeConstants)) {
             logger.debug("This is a release tx {}", btcTx);
             // do-nothing
@@ -376,7 +398,7 @@ public class BridgeSupport {
      * @param rskTx The rsk tx being executed.
      * @throws IOException
      */
-    public void releaseBtc(org.ethereum.core.Transaction rskTx) throws IOException {
+    public void releaseBtc(Transaction rskTx) throws IOException {
         byte[] senderCode = rskRepository.getCode(rskTx.getSender());
 
         //as we can't send btc from contracts we want to send them back to the sender
@@ -389,17 +411,38 @@ public class BridgeSupport {
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
         BigInteger valueInWeis = toBI(rskTx.getValue());
-        // Track tx in the contract memory as "waiting for 100 rsk blocks in order to release BTC
-        BtcTransaction btcTx = new BtcTransaction(btcParams);
         Coin value = Coin.valueOf(Denomination.weisToSatoshis(valueInWeis).longValue());
-        btcTx.addOutput(value, btcDestinationAddress);
+        boolean addResult = addToReleaseCycle(rskTx, btcDestinationAddress, value);
+
+        if (addResult) {
+            logger.info("releaseBtc succesful to {}. Tx {}. Value {}.", btcDestinationAddress, rskTx, value);
+        } else {
+            logger.warn("releaseBtc ignored because value is considered dust. To {}. Tx {}. Value {}.", btcDestinationAddress, rskTx, value);
+        }
+    }
+
+    /**
+     * Creates a BTC transaction for BTC release and
+     * adds it to the confirm/sign/release cycle.
+     *
+     * @param rskTx the RSK transaction that caused this BTC release.
+     * @param destinationAddress the destination BTC address.
+     * @param value the amount of BTC to release.
+     * @return true if the btc transaction was successfully added, false if the value to release was
+     * considered dust and therefore ignored.
+     * @throws IOException
+     */
+    private boolean addToReleaseCycle(Transaction rskTx, Address destinationAddress, Coin value) throws IOException {
+        // Track tx in the contract memory as "waiting for 100 rsk blocks in order to release BTC
+        BtcTransaction btcTx = new BtcTransaction(btcContext.getParams());
+        btcTx.addOutput(value, destinationAddress);
         TransactionOutput btcTxOutput = btcTx.getOutput(0);
 
         if (btcTxOutput.getValue().isGreaterThan(bridgeConstants.getMinimumReleaseTxValue())) {
             provider.getRskTxsWaitingForConfirmations().put(new Sha3Hash(rskTx.getHash()), btcTx);
-            logger.info("releaseBtc succesful to {}. Tx {}. Value {}.", btcDestinationAddress, rskTx, value);
+            return true;
         } else {
-            logger.warn("releaseBtc ignored because value is considered dust. To {}. Tx {}. Value {}.", btcDestinationAddress, rskTx, value);
+            return false;
         }
     }
 
@@ -1071,14 +1114,14 @@ public class BridgeSupport {
     public Integer voteFederationChange(Transaction tx, ABICallSpec callSpec) {
         // Must be on one of the allowed functions
         if (!FEDERATION_CHANGE_FUNCTIONS.contains(callSpec.getFunction())) {
-            return VOTE_GENERIC_ERROR_CODE;
+            return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
         }
 
-        ABICallAuthorizer authorizer = bridgeConstants.getFederationChangeAuthorizer();
+        AddressBasedAuthorizer authorizer = bridgeConstants.getFederationChangeAuthorizer();
 
         // Must be authorized to vote (checking for signature)
         if (!authorizer.isAuthorized(tx)) {
-            return VOTE_GENERIC_ERROR_CODE;
+            return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
         }
 
         // Try to do a dry-run and only register the vote if the
@@ -1087,9 +1130,9 @@ public class BridgeSupport {
         try {
             result = executeVoteFederationChangeFunction(true, callSpec);
         } catch (IOException e) {
-            result = new ABICallVoteResult(false, VOTE_GENERIC_ERROR_CODE);
+            result = new ABICallVoteResult(false, FEDERATION_CHANGE_GENERIC_ERROR_CODE);
         } catch (BridgeIllegalArgumentException e) {
-            result = new ABICallVoteResult(false, VOTE_GENERIC_ERROR_CODE);
+            result = new ABICallVoteResult(false, FEDERATION_CHANGE_GENERIC_ERROR_CODE);
         }
 
         // Return if the dry run failed or we are on a reversible execution
@@ -1099,9 +1142,9 @@ public class BridgeSupport {
 
         ABICallElection election = provider.getFederationElection(authorizer);
         // Register the vote. It is expected to succeed, since all previous checks succeeded
-        if (!election.vote(callSpec, authorizer.getVoter(tx))) {
+        if (!election.vote(callSpec, TxSender.fromTx(tx))) {
             logger.warn("Unexpected federation change vote failure");
-            return VOTE_GENERIC_ERROR_CODE;
+            return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
         }
 
         // If enough votes have been reached, then actually execute the function
@@ -1111,7 +1154,7 @@ public class BridgeSupport {
                 result = executeVoteFederationChangeFunction(false, winnerSpec);
             } catch (IOException e) {
                 logger.warn("Unexpected federation change vote exception: {}", e.getMessage());
-                return VOTE_GENERIC_ERROR_CODE;
+                return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
             } finally {
                 // Clear the winner so that we don't repeat ourselves
                 election.clearWinners();
@@ -1153,7 +1196,7 @@ public class BridgeSupport {
                 break;
             default:
                 // Fail by default
-                result = new ABICallVoteResult(false, VOTE_GENERIC_ERROR_CODE);
+                result = new ABICallVoteResult(false, FEDERATION_CHANGE_GENERIC_ERROR_CODE);
         }
 
         return result;
@@ -1206,6 +1249,102 @@ public class BridgeSupport {
         }
 
         return publicKeys.get(index).getPubKey();
+    }
+
+    /**
+     * Returns the lock whitelist size, that is,
+     * the number of whitelisted addresses
+     * @return the lock whitelist size
+     */
+    public Integer getLockWhitelistSize() {
+        return provider.getLockWhitelist().getSize();
+    }
+
+    /**
+     * Returns the lock whitelist address stored
+     * at the given index, or null if the
+     * index is out of bounds
+     * @param index the index at which to get the address
+     * @return the base58-encoded address stored at the given index, or null if index is out of bounds
+     */
+    public String getLockWhitelistAddress(int index) {
+        List<Address> addresses = provider.getLockWhitelist().getAddresses();
+
+        if (index < 0 || index >= addresses.size()) {
+            return null;
+        }
+
+        return addresses.get(index).toBase58();
+    }
+
+    /**
+     * Adds the given address to the lock whitelist.
+     * Returns 1 upon success, or -1 if the address was
+     * already in the whitelist.
+     * @param addressBase58 the base58-encoded address to add to the whitelist
+     * @return 1 upon success, -1 if the address was already
+     * in the whitelist, -2 if address is invalid
+     * LOCK_WHITELIST_GENERIC_ERROR_CODE otherwise.
+     */
+    public Integer addLockWhitelistAddress(Transaction tx, String addressBase58) {
+        if (!isLockWhitelistChangeAuthorized(tx))
+            return LOCK_WHITELIST_GENERIC_ERROR_CODE;
+
+        LockWhitelist whitelist = provider.getLockWhitelist();
+
+        try {
+            Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
+
+            if (!whitelist.add(address)) {
+                return -1;
+            }
+
+            return 1;
+        } catch (AddressFormatException e) {
+            return -2;
+        } catch (Exception e) {
+            logger.error("Unexpected error in addLockWhitelistAddress: {}", e.getMessage());
+            panicProcessor.panic("lock-whitelist", e.getMessage());
+            return 0;
+        }
+    }
+
+    private boolean isLockWhitelistChangeAuthorized(Transaction tx) {
+        AddressBasedAuthorizer authorizer = bridgeConstants.getLockWhitelistChangeAuthorizer();
+
+        return authorizer.isAuthorized(tx);
+    }
+
+    /**
+     * Removes the given address from the lock whitelist.
+     * Returns 1 upon success, or -1 if the address was
+     * not in the whitelist.
+     * @param addressBase58 the base58-encoded address to remove from the whitelist
+     * @return 1 upon success, -1 if the address was not
+     * in the whitelist, -2 if the address is invalid,
+     * LOCK_WHITELIST_GENERIC_ERROR_CODE otherwise.
+     */
+    public Integer removeLockWhitelistAddress(Transaction tx, String addressBase58) {
+        if (!isLockWhitelistChangeAuthorized(tx))
+            return LOCK_WHITELIST_GENERIC_ERROR_CODE;
+
+        LockWhitelist whitelist = provider.getLockWhitelist();
+
+        try {
+            Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
+
+            if (!whitelist.remove(address)) {
+                return -1;
+            }
+
+            return 1;
+        } catch (AddressFormatException e) {
+            return -2;
+        } catch (Exception e) {
+            logger.error("Unexpected error in removeLockWhitelistAddress: {}", e.getMessage());
+            panicProcessor.panic("lock-whitelist", e.getMessage());
+            return 0;
+        }
     }
 
     /**

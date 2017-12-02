@@ -40,6 +40,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -61,6 +62,7 @@ public class RskForksBridgeTest {
 
     private Repository repository;
     private ECKey keyHoldingRSKs;
+    private ECKey whitelistManipulationKey;
     private Genesis genesis;
     private BlockChainImpl blockChain;
     private Block blockBase;
@@ -71,6 +73,8 @@ public class RskForksBridgeTest {
         blockChain = world.getBlockChain();
         repository = blockChain.getRepository();
 
+        whitelistManipulationKey = ECKey.fromPrivate(Hex.decode("3890187a3071327cee08467ba1b44ed4c13adb2da0d5ffcc0563c371fa88259c"));
+
         genesis = (Genesis)blockChain.getBestBlock();
         keyHoldingRSKs = new ECKey();
         BigInteger balance = new BigInteger("10000000000000000000");
@@ -80,9 +84,11 @@ public class RskForksBridgeTest {
 
         blockChain.getBlockStore().saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
+        Transaction whitelistAddressTx = buildWhitelistTx();
         Transaction receiveHeadersTx = buildReceiveHeadersTx();
         Transaction registerBtctransactionTx = buildRegisterBtcTransactionTx();
-        blockBase = buildBlock(genesis, receiveHeadersTx, registerBtctransactionTx);
+
+        blockBase = buildBlock(genesis, whitelistAddressTx, receiveHeadersTx, registerBtctransactionTx);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(blockBase));
     }
 
@@ -182,7 +188,6 @@ public class RskForksBridgeTest {
         assertReleaseTransactionState(ReleaseTransactionState.NO_TX);
     }
 
-
     @Test
     public void testReleaseTxJustInWinningFork() throws Exception {
         Transaction releaseTx = buildReleaseTx();
@@ -209,8 +214,6 @@ public class RskForksBridgeTest {
         assertReleaseTransactionState(ReleaseTransactionState.WAITING_FOR_SIGNATURES);
     }
 
-
-
     private Block buildBlock(Block parent, long difficulty) {
         World world = new World(blockChain, genesis);
         BlockBuilder blockBuilder = new BlockBuilder(world).difficulty(difficulty).parent(parent);
@@ -226,6 +229,18 @@ public class RskForksBridgeTest {
         World world = new World(blockChain, genesis);
         BlockBuilder blockBuilder = new BlockBuilder(world).difficulty(difficulty).parent(parent).transactions(txList).uncles(new ArrayList<>());
         return blockBuilder.build();
+    }
+
+    private Transaction buildWhitelistTx() throws IOException, ClassNotFoundException {
+        long nonce = 0;
+        long value = 0;
+        BigInteger gasPrice = BigInteger.valueOf(0);
+        BigInteger gasLimit = BigInteger.valueOf(1000000);
+        Transaction rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
+                gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
+                Bridge.ADD_LOCK_WHITELIST_ADDRESS, new Object[]{ "mhxk5q8QdGFoaP4SJ3DPtXjrbxAgxjNm3C" });
+        rskTx.sign(whitelistManipulationKey.getPrivKeyBytes());
+        return rskTx;
     }
 
 

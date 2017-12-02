@@ -18,8 +18,6 @@
 
 package co.rsk.peg;
 
-import org.ethereum.crypto.ECKey;
-
 import java.util.*;
 
 /**
@@ -30,21 +28,21 @@ import java.util.*;
  * @author Ariel Mendelzon
  */
 public class ABICallElection {
-    private ABICallAuthorizer authorizer;
-    private Map<ABICallSpec, List<ABICallVoter>> votes;
+    private AddressBasedAuthorizer authorizer;
+    private Map<ABICallSpec, List<TxSender>> votes;
 
-    public ABICallElection(ABICallAuthorizer authorizer, Map<ABICallSpec, List<ABICallVoter>> votes) {
+    public ABICallElection(AddressBasedAuthorizer authorizer, Map<ABICallSpec, List<TxSender>> votes) {
         this.authorizer = authorizer;
         this.votes = votes;
         validate();
     }
 
-    public ABICallElection(ABICallAuthorizer authorizer) {
+    public ABICallElection(AddressBasedAuthorizer authorizer) {
         this.authorizer = authorizer;
         this.votes = new HashMap<>();
     }
 
-    public Map<ABICallSpec, List<ABICallVoter>> getVotes() {
+    public Map<ABICallSpec, List<TxSender>> getVotes() {
         return votes;
     }
 
@@ -58,7 +56,7 @@ public class ABICallElection {
      * @param voter the voter's key
      * @return whether the voting succeeded
      */
-    public boolean vote(ABICallSpec callSpec, ABICallVoter voter) {
+    public boolean vote(ABICallSpec callSpec, TxSender voter) {
         if (!authorizer.isAuthorized(voter))
             return false;
 
@@ -66,7 +64,7 @@ public class ABICallElection {
             votes.put(callSpec, new ArrayList<>());
         }
 
-        List<ABICallVoter> callVoters = votes.get(callSpec);
+        List<TxSender> callVoters = votes.get(callSpec);
 
         if (callVoters.contains(voter))
             return false;
@@ -83,7 +81,7 @@ public class ABICallElection {
      * @return the winner abi call spec
      */
     public ABICallSpec getWinner() {
-        for (Map.Entry<ABICallSpec, List<ABICallVoter>> specVotes : votes.entrySet()) {
+        for (Map.Entry<ABICallSpec, List<TxSender>> specVotes : votes.entrySet()) {
             if (specVotes.getValue().size() >= authorizer.getRequiredAuthorizedKeys()) {
                 return specVotes.getKey();
             }
@@ -104,8 +102,8 @@ public class ABICallElection {
 
     private void validate() {
         // Make sure all the votes are authorized
-        for (Map.Entry<ABICallSpec, List<ABICallVoter>> specVotes : votes.entrySet())
-            for (ABICallVoter vote : specVotes.getValue())
+        for (Map.Entry<ABICallSpec, List<TxSender>> specVotes : votes.entrySet())
+            for (TxSender vote : specVotes.getValue())
                 if (!authorizer.isAuthorized(vote))
                     throw new RuntimeException("Unauthorized voter");
     }
