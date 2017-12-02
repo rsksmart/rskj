@@ -417,6 +417,7 @@ public class BridgeSupport {
         Wallet retiringFederationWallet = getRetiringFederationWallet();
 
         if (activeFederationAge > bridgeConstants.getFundsMigrationAgeBegin() && activeFederationAge < bridgeConstants.getFundsMigrationAgeEnd()
+                && retiringFederationWallet != null
                 && retiringFederationWallet.getBalance().isGreaterThan(MINIMUM_FUNDS_TO_MIGRATE)
                 && !pendingSignatures) {
 
