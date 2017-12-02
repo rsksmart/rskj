@@ -35,13 +35,10 @@ import java.nio.charset.StandardCharsets;
  */
 public class GenNodeKeyId {
     public static void main(String[] args) {
-        BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-        System.out.print("Enter generator string:\n> ");
-        String generator;
-        try {
-            generator = input.readLine();
-        } catch (IOException e) {
-            generator = "default";
+        String generator = "";
+
+        if (args.length > 0) {
+            generator = args[0];
         }
 
         ECKey key;
