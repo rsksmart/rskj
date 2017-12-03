@@ -24,6 +24,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
+import org.spongycastle.util.BigIntegers;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
@@ -97,7 +98,7 @@ public class AccountState {
         if (items.size() > 4) {
             byte[] data = items.get(4).getRLPData();
 
-            this.stateFlags = data == null ? 0 : new BigInteger(1, data).intValue();
+            this.stateFlags = data == null ? 0 : BigIntegers.fromUnsignedByteArray(data).intValue();
         }
     }
 

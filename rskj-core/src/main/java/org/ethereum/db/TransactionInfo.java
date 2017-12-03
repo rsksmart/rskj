@@ -25,6 +25,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
+import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -56,7 +57,7 @@ public class TransactionInfo {
         if (indexRLP.getRLPData() == null)
             index = 0;
         else
-            index = new BigInteger(1, indexRLP.getRLPData()).intValue();
+            index = BigIntegers.fromUnsignedByteArray(indexRLP.getRLPData()).intValue();
     }
 
     public void setTransaction(Transaction tx){
