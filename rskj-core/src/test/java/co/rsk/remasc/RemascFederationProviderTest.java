@@ -17,7 +17,7 @@ public class RemascFederationProviderTest {
     @Test
     public void getDefaultFederationSize() throws IOException {
         RemascFederationProvider provider = getRemascFederationProvider();
-        Assert.assertEquals(15, provider.getFederationSize());
+        Assert.assertEquals(3, provider.getFederationSize());
     }
 
     @Test
@@ -31,7 +31,7 @@ public class RemascFederationProviderTest {
     }
 
     private static RemascFederationProvider getRemascFederationProvider() {
-        Genesis genesisBlock = BlockGenerator.getInstance().getGenesisBlock();
+        Genesis genesisBlock = new BlockGenerator().getGenesisBlock();
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setRsk(true).setGenesis(genesisBlock);
         Blockchain blockchain = builder.build();
 
