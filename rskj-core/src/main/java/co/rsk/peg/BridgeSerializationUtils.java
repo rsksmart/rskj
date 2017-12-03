@@ -24,6 +24,7 @@ import com.google.common.primitives.UnsignedBytes;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
+import org.spongycastle.util.BigIntegers;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -252,14 +253,14 @@ public class BridgeSerializationUtils {
         }
 
         byte[] creationTimeBytes = rlpList.get(FEDERATION_CREATION_TIME_INDEX).getRLPData();
-        Instant creationTime = Instant.ofEpochMilli(new BigInteger(creationTimeBytes).longValue());
+        Instant creationTime = Instant.ofEpochMilli(BigIntegers.fromUnsignedByteArray(creationTimeBytes).longValue());
 
         List<BtcECKey> pubKeys = ((RLPList) rlpList.get(FEDERATION_PUB_KEYS_INDEX)).stream()
                 .map(pubKeyBytes -> BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
                 .collect(Collectors.toList());
 
         byte[] creationBlockNumberBytes = rlpList.get(FEDERATION_CREATION_BLOCK_NUMBER_INDEX).getRLPData();
-        long creationBlockNumber = new BigInteger(creationBlockNumberBytes).longValue();
+        long creationBlockNumber = BigIntegers.fromUnsignedByteArray(creationBlockNumberBytes).longValue();
 
         return new Federation(pubKeys, creationTime, creationBlockNumber, btcContext.getParams());
     }
