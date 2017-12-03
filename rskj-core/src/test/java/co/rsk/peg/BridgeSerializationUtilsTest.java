@@ -546,6 +546,37 @@ public class BridgeSerializationUtilsTest {
         }
     }
 
+    @Test
+    public void serializeAndDeserializeFederationWithRealRLP() {
+        NetworkParameters networkParms = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        byte[][] publicKeyBytes = new byte[][]{
+                BtcECKey.fromPrivate(BigInteger.valueOf(100)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(200)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(300)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(400)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(500)).getPubKey(),
+                BtcECKey.fromPrivate(BigInteger.valueOf(600)).getPubKey(),
+        };
+
+        Federation federation = new Federation(
+                Arrays.asList(
+                        BtcECKey.fromPublicOnly(publicKeyBytes[0]),
+                        BtcECKey.fromPublicOnly(publicKeyBytes[1]),
+                        BtcECKey.fromPublicOnly(publicKeyBytes[2]),
+                        BtcECKey.fromPublicOnly(publicKeyBytes[3]),
+                        BtcECKey.fromPublicOnly(publicKeyBytes[4]),
+                        BtcECKey.fromPublicOnly(publicKeyBytes[5])
+                ),
+                Instant.ofEpochMilli(0xabcdef),
+                42L,
+                networkParms
+        );
+
+        byte[] result = BridgeSerializationUtils.serializeFederation(federation);
+        Federation deserializedFederation = BridgeSerializationUtils.deserializeFederation(result, new Context(networkParms));
+        Assert.assertThat(federation, is(deserializedFederation));
+    }
+
     private void mock_RLP_encodeElement() {
         // Identity prepending byte '0xdd'
         when(RLP.encodeElement(any(byte[].class))).then((InvocationOnMock invocation) -> {
