@@ -469,8 +469,14 @@ public class BridgeSupport {
         }
 
         if (retiringFederationWallet != null && activeFederationAge >= bridgeConstants.getFundsMigrationAgeEnd() && !pendingSignatures) {
-            BtcTransaction btcTx = createMigrationTransaction(retiringFederationWallet, getActiveFederation().getAddress());
-            provider.getRskTxsWaitingForSignatures().put(new Sha3Hash(rskTx.getHash()), btcTx);
+            if (retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO)) {
+                try {
+                    BtcTransaction btcTx = createMigrationTransaction(retiringFederationWallet, getActiveFederation().getAddress());
+                    provider.getRskTxsWaitingForSignatures().put(new Sha3Hash(rskTx.getHash()), btcTx);
+                } catch (Exception e) {
+                    logger.error("Unable to complete retiring federation migration. Left balance: {} in {}", retiringFederationWallet.getBalance(), getRetiringFederationAddress());
+                }
+            }
             provider.setRetiringFederation(null);
         }
         
