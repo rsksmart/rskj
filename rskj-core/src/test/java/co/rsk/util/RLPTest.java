@@ -831,4 +831,27 @@ public class RLPTest {
             Assert.assertEquals("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have", ex.getMessage());
         }
     }
+
+    @Test
+    public void encodeDecodeInteger() {
+        for (int k = 0; k < 2048; k++) {
+            Assert.assertEquals(k, RLP.decodeInt(RLP.encodeInt(k), 0));
+        }
+    }
+
+    @Test
+    public void encodeDecodeIntegerInList() {
+        for (int k = 1; k < 2048; k++) {
+            byte[] bytes = RLP.encodeList(RLP.encodeInt(k), new byte[0]);
+            byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
+            Assert.assertEquals(k, RLP.decodeInt(bytes2, 0));
+        }
+    }
+
+    @Test
+    public void encodeDecodeInteger238InList() {
+        byte[] bytes = RLP.encodeList(RLP.encodeInt(238));
+        byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
+        Assert.assertEquals(238, RLP.decodeInt(bytes2, 0));
+    }
 }
