@@ -93,9 +93,11 @@ public class AccountState {
                 : new BigInteger(1, items.get(1).getRLPData());
         this.stateRoot = items.get(2).getRLPData();
         this.codeHash = items.get(3).getRLPData();
-        if (items.size() > 4) {
-            this.stateFlags = RLP.decodeInt(items.get(4).getRLPData(), 0);
 
+        if (items.size() > 4) {
+            byte[] data = items.get(4).getRLPData();
+
+            this.stateFlags = data == null ? 0 : new BigInteger(1, data).intValue();
         }
     }
 
