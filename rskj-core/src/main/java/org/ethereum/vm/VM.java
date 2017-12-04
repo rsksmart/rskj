@@ -834,6 +834,15 @@ public class VM {
         program.step();
     }
 
+    protected void doRETURNDATASIZE() {
+        DataWord dataSize = program.getReturnDataBufferSize();
+        if (isLogEnabled) {
+            hint = "size: " + dataSize.value();
+        }
+        program.stackPush(dataSize);
+        program.step();
+    }
+
     protected void doGASPRICE(){
         spendOpCodeGas();
         // EXECUTION PHASE
