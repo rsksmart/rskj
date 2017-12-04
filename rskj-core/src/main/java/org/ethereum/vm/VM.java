@@ -1619,6 +1619,10 @@ public class VM {
             case OpCodes.OP_CODECOPY:
             case OpCodes.OP_EXTCODECOPY: doCODECOPY();
             break;
+            case OpCodes.OP_RETURNDATASIZE: doRETURNDATASIZE();
+            break;
+            case OpCodes.OP_RETURNDATACOPY: doRETURNDATACOPY();
+            break;
             case OpCodes.OP_GASPRICE: doGASPRICE();
             break;
 

@@ -202,6 +202,17 @@ public class OpCodes {
      * environment to memory with given offset
      */
     static final byte OP_EXTCODECOPY =0x3c;
+    /**
+     * (0x3d and 0x3e) A mechanism to allow
+     * returning arbitrary-length data.
+     * After a call, return data is kept inside
+     * a virtual buffer from which the caller
+     * can copy it (or parts thereof) into
+     * memory. At the next call, the buffer is
+     * overwritten.
+     */
+    static final byte OP_RETURNDATASIZE = 0x3d;
+    static final byte OP_RETURNDATACOPY = 0x3e;
 
     /*  Block Information   */
 
