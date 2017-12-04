@@ -843,6 +843,27 @@ public class VM {
         program.step();
     }
 
+    protected void doRETURNDATACOPY() {
+        DataWord memOffsetData = program.stackPop();
+        DataWord dataOffsetData = program.stackPop();
+        DataWord lengthData = program.stackPop();
+
+        byte[] msgData = program.getReturnDataBufferData(dataOffsetData, lengthData)
+                .orElseThrow(() -> {
+                    long returnDataSize = program.getReturnDataBufferSize().longValueSafe();
+                    return new RuntimeException(String.format(
+                            "Illegal RETURNDATACOPY arguments: offset (%s) + size (%s) > RETURNDATASIZE (%d)",
+                            dataOffsetData, lengthData, returnDataSize));
+                });
+
+        if (isLogEnabled) {
+            hint = "data: " + Hex.toHexString(msgData);
+        }
+
+        program.memorySave(memOffsetData.intValueSafe(), msgData);
+        program.step();
+    }
+
     protected void doGASPRICE(){
         spendOpCodeGas();
         // EXECUTION PHASE
