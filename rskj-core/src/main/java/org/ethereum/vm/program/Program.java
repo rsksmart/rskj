@@ -1369,6 +1369,20 @@ public class Program {
         return returnDataBuffer == null ? 0 : returnDataBuffer.length;
     }
 
+    public Optional<byte[]> getReturnDataBufferData(DataWord off, DataWord size) {
+        long endPosition = (long) off.intValueSafe() + size.intValueSafe();
+        if (endPosition > getReturnDataBufferSizeI()) {
+            return Optional.empty();
+        }
+
+        if (returnDataBuffer == null) {
+            return Optional.of(new byte[0]);
+        }
+
+        byte[] copiedData = Arrays.copyOfRange(returnDataBuffer, off.intValueSafe(), Math.toIntExact(endPosition));
+        return Optional.of(copiedData);
+    }
+
     static class ByteCodeIterator {
         byte[] code;
         int pc;
