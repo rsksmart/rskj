@@ -401,12 +401,11 @@ public class Web3ImplLogsTest {
 
         Assert.assertNotNull(id);
         Assert.assertNotNull(logs);
-        Assert.assertEquals(4, logs.length);
+        Assert.assertEquals(2, logs.length);
 
-        for (int k = 0; k < 4; k++) {
+        for (int k = 0; k < 2; k++) {
             LogFilterElement log = (LogFilterElement)logs[0];
-            if (k % 2 == 0)
-                Assert.assertEquals("0x" + mainAddress, ((LogFilterElement)log).address);
+            Assert.assertEquals("0x" + mainAddress, log.address);
         }
     }
 
@@ -466,12 +465,11 @@ public class Web3ImplLogsTest {
 
         Assert.assertNotNull(id);
         Assert.assertNotNull(logs);
-        Assert.assertEquals(5, logs.length);
+        Assert.assertEquals(3, logs.length);
 
-        for (int k = 0; k < 5; k++) {
+        for (int k = 0; k < 3; k++) {
             LogFilterElement log = (LogFilterElement)logs[0];
-            if (k % 2 == 0 || k == 4)
-                Assert.assertEquals("0x" + mainAddress, ((LogFilterElement)log).address);
+            Assert.assertEquals("0x" + mainAddress, log.address);
         }
     }
 

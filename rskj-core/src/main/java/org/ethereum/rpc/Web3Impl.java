@@ -1008,7 +1008,7 @@ public class Web3Impl implements Web3 {
             for (int i = 0; i < logs.length; i++) {
                 LogInfo logInfo = receipt.getLogInfoList().get(i);
                 if (logFilter.matchesContractAddress(logInfo.getAddress())) {
-                    onTransactionReceipt(receipt, b, txIndex);
+                    onLogMatch(logInfo, b, txIndex, receipt.getTransaction(), i);
                 }
             }
         }
