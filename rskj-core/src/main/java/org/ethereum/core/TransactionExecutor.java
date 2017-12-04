@@ -28,6 +28,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.EventStore;
 import org.ethereum.db.ContractDetails;
+import org.ethereum.db.EventsStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
@@ -514,9 +515,7 @@ public class TransactionExecutor {
          // Is a copy necessary ?
             events = result.getEventInfoItemList();
 
-            for (Map.Entry<DataWord, byte[]> entry : result.getCodeChanges().entrySet()) {
-                track.saveCode(entry.getKey().getLast20Bytes(), entry.getValue());
-            }
+            result.getCodeChanges().forEach((key, value) -> track.saveCode(key.getLast20Bytes(), value));
             // Traverse list of suicides
             result.getDeleteAccounts().forEach(address -> track.delete(address.getLast20Bytes()));
         }

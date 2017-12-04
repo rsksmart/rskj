@@ -188,7 +188,7 @@ public class LogOpcodeTest {
 
         Blockchain blockchain = world.getBlockChain();
 
-        Block block1 = BlockGenerator.createChildBlock(blockchain.getBestBlock());
+        Block block1 = BlockGenerator.getInstance().createChildBlock(blockchain.getBestBlock());
 
 
         BigInteger nonce = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
@@ -249,11 +249,10 @@ public class LogOpcodeTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx1);
-        Block block2 = BlockGenerator.createChildBlock(block1,txs);
+        Block block2 = BlockGenerator.getInstance().createChildBlock(block1,txs);
         MinerHelper mh = new MinerHelper(
                 world.getRepository(),
-                world.getBlockChain(),
-                world.getBlockChain().getBlockStore());
+                world.getBlockChain());
 
         // block1 has no transactions
         mh.completeBlock(block1,blockchain.getBestBlock());
@@ -315,7 +314,7 @@ public class LogOpcodeTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx2);
         Block parent = world.getBlockChain().getBestBlock();
-        Block block = BlockGenerator.createChildBlock(parent, txs);
+        Block block = BlockGenerator.getInstance().createChildBlock(parent, txs);
         // Single transaction paying the contract
         mh.completeBlock(block,parent);
 

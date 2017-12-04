@@ -20,6 +20,8 @@ package co.rsk.vm;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockResult;
+import co.rsk.core.bc.EventInfoItem;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
@@ -59,7 +61,7 @@ public class MinerHelper {
     long totalGasUsed = 0;
     BigInteger totalPaidFees = BigInteger.ZERO;
     List<TransactionReceipt> txReceipts;
-    Events events;
+    List<EventInfoItem> events;
 
     private GasLimitCalculator gasLimitCalculator;
 
@@ -76,7 +78,7 @@ public class MinerHelper {
         totalGasUsed = 0;
         totalPaidFees = BigInteger.ZERO;
         txReceipts = new ArrayList<>();
-        events = new Events();
+        events = new ArrayList<>();
 
         //Repository originalRepo  = ((Repository) ethereum.getRepository()).getSnapshotTo(parent.getStateRoot());
 
@@ -141,7 +143,7 @@ public class MinerHelper {
         processBlock(newBlock, parent);
 
         newBlock.getHeader().setReceiptsRoot(BlockChainImpl.calcReceiptsTrie(txReceipts));
-        newBlock.getHeader().setEventsRoot(BlockResult.calculateEventsTrie(events.getList()));
+        newBlock.getHeader().setEventsRoot(BlockResult.calculateEventsTrie(events));
         newBlock.getHeader().setStateRoot(latestStateRootHash);
         newBlock.getHeader().setGasUsed(totalGasUsed);
 
@@ -150,7 +152,7 @@ public class MinerHelper {
             logBloom.or(receipt.getBloomFilter());
         }
 
-        for (EventInfoItem item : events.getList()) {
+        for (EventInfoItem item : events) {
             logBloom.or(item.getBloomFilter());
         }
 

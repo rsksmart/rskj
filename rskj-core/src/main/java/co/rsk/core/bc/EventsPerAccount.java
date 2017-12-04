@@ -48,7 +48,7 @@ public class EventsPerAccount {
             byte[] payload = list.get(i).getEncoded();
             payloads.add(payload);
         }
-        return RLP.encodeList(payloads);
+        return RLP.encodeListFromList(payloads);
     }
 
     }

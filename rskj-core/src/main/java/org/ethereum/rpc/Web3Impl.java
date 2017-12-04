@@ -20,6 +20,7 @@ package org.ethereum.rpc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.SnapshotManager;
+import co.rsk.core.bc.EventInfoItem;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerManager;
@@ -87,7 +88,7 @@ public class Web3Impl implements Web3 {
 
     long initialBlockNumber;
 
-    private final Object filterLock = new Object();
+    protected final Object filterLock = new Object();
 
     private MinerClient minerClient;
     protected MinerServer minerServer;
@@ -95,7 +96,7 @@ public class Web3Impl implements Web3 {
     private final PeerScoringManager peerScoringManager;
     private final PeerServer peerServer;
 
-    private final Blockchain blockchain;
+    protected final Blockchain blockchain;
     private final BlockProcessor nodeBlockProcessor;
     private final HashRateCalculator hashRateCalculator;
     private final ConfigCapabilities configCapabilities;
