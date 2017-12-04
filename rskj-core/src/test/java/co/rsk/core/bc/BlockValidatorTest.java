@@ -55,6 +55,7 @@ public class BlockValidatorTest {
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
 
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
+        genesis.seal();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
         Block block = new BlockBuilder().parent(genesis).build();
@@ -68,7 +69,9 @@ public class BlockValidatorTest {
     public void validateChildBlock() {
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
+        genesis.seal();
         Block block = BlockGenerator.getInstance().createChildBlock(genesis);
+        block.seal();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
         BlockValidatorImpl validator = (BlockValidatorImpl) blockChain.getBlockValidator();
@@ -80,11 +83,15 @@ public class BlockValidatorTest {
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
 
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
+        genesis.seal();
 
         Block parent = new BlockBuilder().parent(genesis).build();
+        parent.seal();
+
         List<Transaction> txs = new ArrayList<>();
         txs.add(BlockExecutorTest.generateBlockWithOneTransaction().getTransaction());
         Block block = new BlockBuilder().parent(parent).transactions(txs).build();;
+        block.seal();
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(parent));
@@ -99,6 +106,7 @@ public class BlockValidatorTest {
     public void invalidChildBlockBadDifficulty() {
         BlockChainImpl blockchain = BlockChainImplTest.createBlockChain();
         Block genesis = BlockChainImplTest.getGenesisBlock(blockchain);
+
         Block block = BlockGenerator.getInstance().createChildBlock(genesis);
 
         block.getHeader().setDifficulty(new byte[]{0x00});
@@ -298,11 +306,15 @@ public class BlockValidatorTest {
         Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
         Block block2 = BlockGenerator.getInstance().createChildBlock(block1, null, uncles1, 1, null);
 
+        genesis.seal();
+        block1.seal();
+        block2.seal();
+
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
         store.saveBlock(uncle1a, BigInteger.ONE, false);
         store.saveBlock(uncle1b, BigInteger.ONE, false);
-        blockChain.tryToConnect(block2);
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(store).blockStore(store).build();
 
@@ -322,6 +334,9 @@ public class BlockValidatorTest {
         uncles1.add(uncle1a.getHeader());
         uncles1.add(uncle1b.getHeader());
         Block block1 = BlockGenerator.getInstance().createChildBlock(genesis, null, uncles1, 1, null);
+
+        genesis.seal();
+        block1.seal();
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         store.saveBlock(uncle1a, BigInteger.ONE, false);
@@ -346,6 +361,9 @@ public class BlockValidatorTest {
         uncles1.add(uncle1a.getHeader());
         Block block1 = BlockGenerator.getInstance().createChildBlock(genesis, null, uncles1, 1, null);
 
+        genesis.seal();
+        block1.seal();
+
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         store.saveBlock(uncle1a, BigInteger.ONE, false);
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
@@ -366,6 +384,9 @@ public class BlockValidatorTest {
         List<BlockHeader> uncles1 = new ArrayList<>();
         uncles1.add(uncle1a.getHeader());
         Block block1 = BlockGenerator.getInstance().createChildBlock(genesis, null, uncles1, 1, null);
+
+        genesis.seal();
+        block1.seal();
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         store.saveBlock(uncle1a, BigInteger.ONE, false);
@@ -420,7 +441,6 @@ public class BlockValidatorTest {
 
         Assert.assertFalse(validator.isValid(block1));
     }
-
 
     @Test
     public void invalidUncleHasNoCommonAncestor() {
@@ -576,10 +596,8 @@ public class BlockValidatorTest {
         Mockito.when(repository.getSnapshotTo(Mockito.any())).thenReturn(repository);
         Mockito.when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
 
-
         Block parent = new BlockBuilder().minGasPrice(BigInteger.ZERO)
                 .parent(BlockGenerator.getInstance().getGenesisBlock()).build();
-
 
         List<Transaction> txs = new ArrayList<>();
         Transaction tx = Transaction.create("06", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN);
@@ -602,7 +620,6 @@ public class BlockValidatorTest {
 
         Mockito.when(repository.getSnapshotTo(Mockito.any())).thenReturn(repository);
         Mockito.when(repository.getNonce(Mockito.any())).thenReturn(BigInteger.ZERO);
-
 
         Block parent = new BlockBuilder().minGasPrice(BigInteger.ZERO)
                 .parent(BlockGenerator.getInstance().getGenesisBlock()).build();
@@ -652,6 +669,9 @@ public class BlockValidatorTest {
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
 
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
+
+        genesis.seal();
+
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
         Block block = new BlockBuilder().parent(genesis).build();
@@ -666,6 +686,9 @@ public class BlockValidatorTest {
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
 
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
+
+        genesis.seal();
+
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
         List<Transaction> txs = new ArrayList<>();
@@ -681,10 +704,12 @@ public class BlockValidatorTest {
 
     @Test
     public void noRemascTx() {
-
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
 
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
+
+        genesis.seal();
+
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
         List<Transaction> txs = new ArrayList<>();
@@ -708,6 +733,9 @@ public class BlockValidatorTest {
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
 
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
+
+        genesis.seal();
+
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
         List<Transaction> txs = new ArrayList<>();
@@ -726,6 +754,9 @@ public class BlockValidatorTest {
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
 
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
+
+        genesis.seal();
+
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
         List<Transaction> txs = new ArrayList<>();
@@ -745,6 +776,9 @@ public class BlockValidatorTest {
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
 
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
+
+        genesis.seal();
+
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
         int validPeriod = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getNewBlockMaxMinInTheFuture();
