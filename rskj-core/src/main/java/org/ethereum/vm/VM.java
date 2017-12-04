@@ -844,6 +844,11 @@ public class VM {
     }
 
     protected void doRETURNDATACOPY() {
+        if (computeGas) {
+            gasCost += computeDataCopyGas();
+            spendOpCodeGas();
+        }
+
         DataWord memOffsetData = program.stackPop();
         DataWord dataOffsetData = program.stackPop();
         DataWord lengthData = program.stackPop();
