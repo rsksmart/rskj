@@ -94,6 +94,7 @@ public class Program {
     private Stack stack;
     private Memory memory;
     private Storage storage;
+    private byte[] returnDataBuffer;
 
     private ProgramResult result = new ProgramResult();
     private ProgramTrace trace = new ProgramTrace();
@@ -634,8 +635,8 @@ public class Program {
                 newBalance, null, track, this.invoke.getBlockStore(), byTestingSuite());
 
         ProgramResult programResult = ProgramResult.empty();
+        returnDataBuffer = null; // reset return buffer right before the call
         if (isNotEmpty(programCode)) {
-
             VM vm = new VM();
             Program program = new Program(programCode, programInvoke, internalTx);
             vm.play(program);
@@ -659,6 +660,8 @@ public class Program {
             stackPushZero();
             if (programResult.getException() != null) {
                 return;
+            } else {
+                returnDataBuffer = result.getHReturn();
             }
         }
         else {
@@ -845,6 +848,7 @@ public class Program {
             byte[] senderAddress,
             byte[] data ) {
 
+        returnDataBuffer = null; // reset return buffer right before the call
         ProgramResult childResult = null;
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
                 this, new DataWord(contextAddress),
@@ -891,6 +895,8 @@ public class Program {
         int size = msg.getOutDataSize().intValue();
 
         memorySaveLimited(offset, buffer, size);
+
+        returnDataBuffer = buffer;
 
         // 5. REFUND THE REMAIN GAS
         BigInteger refundGas = msg.getGas().value().subtract(toBI(childResult.getGasUsed()));
