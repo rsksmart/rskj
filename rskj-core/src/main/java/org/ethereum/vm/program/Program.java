@@ -24,13 +24,14 @@ import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
-import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ContractDetails;
-import org.ethereum.util.*;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.FastByteComparisons;
+import org.ethereum.util.Utils;
 import org.ethereum.vm.*;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
@@ -1358,6 +1359,14 @@ public class Program {
         }
 
         return sb.toString();
+    }
+
+    public DataWord getReturnDataBufferSize() {
+        return new DataWord(getReturnDataBufferSizeI());
+    }
+
+    private int getReturnDataBufferSizeI() {
+        return returnDataBuffer == null ? 0 : returnDataBuffer.length;
     }
 
     static class ByteCodeIterator {
