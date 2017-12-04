@@ -205,6 +205,17 @@ public enum OpCode {
      * environment to memory with given offset
      */
     EXTCODECOPY(0x3c, 4, 0, EXT_TIER),
+    /**
+     * (0x3d and 0x3e) A mechanism to allow
+     * returning arbitrary-length data.
+     * After a call, return data is kept inside
+     * a virtual buffer from which the caller
+     * can copy it (or parts thereof) into
+     * memory. At the next call, the buffer is
+     * overwritten.
+     */
+    RETURNDATASIZE(0x3d, 0, 1, BASE_TIER),
+    RETURNDATACOPY(0x3e, 3, 0, VERY_LOW_TIER),
 
     /*  Block Information   */
 
