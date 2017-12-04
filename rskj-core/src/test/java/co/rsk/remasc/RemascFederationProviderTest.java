@@ -6,6 +6,7 @@ import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Genesis;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.io.IOException;
  * Created by ajlopez on 14/11/2017.
  */
 public class RemascFederationProviderTest {
+    @Ignore
     @Test
     public void getDefaultFederationSize() throws IOException {
         RemascFederationProvider provider = getRemascFederationProvider();
