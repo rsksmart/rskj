@@ -1182,6 +1182,20 @@ public class TrieImpl implements Trie {
         return this.store;
     }
 
+    public boolean hasLongValue() {
+        return this.value != null && this.value.length > 32;
+    }
+
+    public byte[] getValueHash() {
+        if (this.hasLongValue()) {
+            return sha3(this.value);
+        }
+
+        return null;
+    }
+
+    public byte[] getValue() { return this.value; }
+
     private static int getEncodedPathLength(int length, int arity) {
         if (arity == 2) {
             return length / 8 + (length % 8 == 0 ? 0 : 1);
