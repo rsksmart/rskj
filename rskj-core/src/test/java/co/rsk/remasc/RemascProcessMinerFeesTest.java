@@ -67,7 +67,7 @@ public class RemascProcessMinerFeesTest {
         put(cowAddress, cowInitialBalance);
     }};
 
-    private Genesis genesisBlock = (Genesis) BlockGenerator.getInstance().getNewGenesisBlock(initialGasLimit, preMineMap);
+    private Genesis genesisBlock = (Genesis) (new BlockGenerator()).getNewGenesisBlock(initialGasLimit, preMineMap);
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
