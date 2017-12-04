@@ -96,7 +96,7 @@ public class TransactionExecutor {
 
     boolean localCall = false;
 
-    public TransactionExecutor(Transaction tx, int txindex,byte[] coinbase, Repository track, BlockStore blockStore,
+    public TransactionExecutor(Transaction tx, int txindex, byte[] coinbase, Repository track, BlockStore blockStore,
                                ReceiptStore receiptStore,
                                EventsStore eventsStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
@@ -104,7 +104,7 @@ public class TransactionExecutor {
         this(tx, txindex,coinbase, track, blockStore, receiptStore, eventsStore,programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0);
     }
 
-    public TransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore,
+    public TransactionExecutor(Transaction tx, int txindex, byte[] coinbase, Repository track, BlockStore blockStore,
                                ReceiptStore receiptStore,
                                EventsStore eventsStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock,

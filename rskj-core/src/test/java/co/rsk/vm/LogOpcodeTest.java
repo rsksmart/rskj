@@ -345,7 +345,8 @@ public class LogOpcodeTest {
 
     public TransactionExecutor executeTransaction(BlockChainImpl blockchain, Transaction tx) {
         Repository track = blockchain.getRepository().startTracking();
-        TransactionExecutor executor = new TransactionExecutor(tx, new byte[32], blockchain.getRepository(),
+        TransactionExecutor executor = new TransactionExecutor(tx, 0,
+                new byte[32], blockchain.getRepository(),
                 blockchain.getBlockStore(),
                 blockchain.getReceiptStore(),
                 blockchain.getEventsStore(),

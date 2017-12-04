@@ -104,10 +104,10 @@ public class AccountState {
 
         if (items.size() > 4) {
             byte[] stateFlagsData = items.get(4).getRLPData();
-            this.stateFlags = stateFlagsData == null ? 0 : BigIntegers.fromUnsignedByteArray(data).intValue();         
+            this.stateFlags = stateFlagsData == null ? 0 : BigIntegers.fromUnsignedByteArray(stateFlagsData).intValue();
     
             if (items.size() > 5) {
-                byte[] blockNumberData =items.get(5).getRLPData()
+                byte[] blockNumberData =items.get(5).getRLPData();
                 this.blockNumberOfLastEvent = blockNumberData == null ? 0 : BigIntegers.fromUnsignedByteArray(blockNumberData).longValue();
             }
         }

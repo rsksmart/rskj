@@ -160,7 +160,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         DataWord coinbase = program.getCoinbase();
         DataWord timestamp = program.getTimestamp();
         DataWord number = program.getNumber();
-        DataWord transactionIndex = program.getTransactionIndex();
+        int transactionIndex = program.getTransactionIndexAsInt();
         DataWord difficulty = program.getDifficulty();
         DataWord gasLimit = program.getGasLimit();
 
@@ -193,7 +193,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     Hex.toHexString(coinbase.getLast20Bytes()),
                     timestamp.longValue(),
                     number.longValue(),
-                    transactionIndex.intValue(),
+                    transactionIndex,
                     Hex.toHexString(difficulty.getNoLeadZeroesData()),
                     gasLimit.bigIntValue());
         }

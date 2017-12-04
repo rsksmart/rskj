@@ -485,10 +485,6 @@ public class Program {
         return memory.size();
     }
 
-    public int getTxIndex() {
-     // TODO: when ajlopez code is merged, this should point to that code
-        return 0;
-    }
 
     public boolean isEventModeLoggingSet() {
         // Lowest bit of highest byte
@@ -1145,7 +1141,11 @@ public class Program {
     }
 
     public DataWord getTransactionIndex() {
-        return invoke.getTransactionIndex().clone();
+        return new DataWord(invoke.getTransactionIndex());
+    }
+
+    public int getTransactionIndexAsInt() {
+        return invoke.getTransactionIndex();
     }
 
     public DataWord getDifficulty() {
