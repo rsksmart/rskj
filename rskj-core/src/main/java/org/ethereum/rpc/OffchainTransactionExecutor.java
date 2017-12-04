@@ -87,7 +87,7 @@ public class OffchainTransactionExecutor {
         for (Transaction tx : block.getTransactionsList()) {
             logger.info("executeTransactions: [{}] tx: [{}] ", block.getNumber(), i);
 
-            TransactionExecutor executor = new TransactionExecutor(tx, block.getCoinbase(),
+            TransactionExecutor executor = new TransactionExecutor(tx, 0, block.getCoinbase(),
                     track, blockStore, receiptStore,
                     programInvokeFactory, block, null, totalGasUsed);
 

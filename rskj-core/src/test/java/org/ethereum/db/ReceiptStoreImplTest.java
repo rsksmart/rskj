@@ -64,6 +64,42 @@ public class ReceiptStoreImplTest {
     }
 
     @Test
+    public void addAndGetTransactionWith128AsIndex() {
+        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
+
+        TransactionReceipt receipt = createReceipt();
+        byte[] blockHash = Hex.decode("0102030405060708");
+
+        store.add(blockHash, 128, receipt);
+
+        TransactionInfo result = store.get(receipt.getTransaction().getHash());
+
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getBlockHash());
+        Assert.assertArrayEquals(blockHash, result.getBlockHash());
+        Assert.assertEquals(128, result.getIndex());
+        Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
+    }
+
+    @Test
+    public void addAndGetTransactionWith238AsIndex() {
+        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
+
+        TransactionReceipt receipt = createReceipt();
+        byte[] blockHash = Hex.decode("0102030405060708");
+
+        store.add(blockHash, 238, receipt);
+
+        TransactionInfo result = store.get(receipt.getTransaction().getHash());
+
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getBlockHash());
+        Assert.assertArrayEquals(blockHash, result.getBlockHash());
+        Assert.assertEquals(238, result.getIndex());
+        Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
+    }
+
+    @Test
     public void addTwoTransactionsAndGetLastTransaction() {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
 
@@ -192,8 +228,8 @@ public class ReceiptStoreImplTest {
         World world = new World();
         Block genesis = world.getBlockChain().getBestBlock();
 
-        Block block1a = new BlockBuilder().parent(genesis).build();
-        Block block1b = new BlockBuilder().parent(genesis).build();
+        Block block1a = new BlockBuilder().difficulty(10).parent(genesis).build();
+        Block block1b = new BlockBuilder().difficulty(block1a.getDifficultyBI().longValue()-1).parent(genesis).build();
 
         Block block2a = new BlockBuilder().parent(block1a).build();
         Block block2b = new BlockBuilder().parent(block1b).build();

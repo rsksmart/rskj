@@ -24,10 +24,10 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.BIUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
@@ -55,11 +55,6 @@ public class Metrics {
     }
 
     @Nonnull
-    private static String prettyHash(@Nonnull final byte[] hash) {
-        return Hex.toHexString(hash).substring(0, Math.min(hash.length, 6));
-    }
-
-    @Nonnull
     private static String prettyTxs(@Nonnull final List<Transaction> txs) {
         StringBuilder res = new StringBuilder();
 
@@ -70,7 +65,7 @@ public class Metrics {
                 res.append("][");
 
             String nonce = BIUtil.toBI(tx.getNonce()).toString();
-            String pretty = String.format("H:%s - N:%s", prettyHash(tx.getHash()), nonce);
+            String pretty = String.format("H:%s - N:%s", HashUtil.shortHash(tx.getHash()), nonce);
             res.append(pretty);
         }
         res.append(']');
@@ -82,10 +77,10 @@ public class Metrics {
     public static void newBlock(@Nonnull final Block block, @Nonnull final NodeID sender) {
         String event = String.format("event: %s hash: %s number: %d parent: %s sender: %s",
                 "newBlock",
-                prettyHash(block.getHash()),
+                HashUtil.shortHash(block.getHash()),
                 block.getNumber(),
-                prettyHash(block.getParentHash()),
-                prettyHash(sender.getID())
+                HashUtil.shortHash(block.getParentHash()),
+                HashUtil.shortHash(sender.getID())
         );
         logEvent(event);
     }
@@ -93,9 +88,9 @@ public class Metrics {
     public static void broadcastBlock(@Nonnull final Block block) {
         String event = String.format("event: %s hash: %s number: %d parent: %s",
                 "broadcastBlock",
-                prettyHash(block.getHash()),
+                HashUtil.shortHash(block.getHash()),
                 block.getNumber(),
-                prettyHash(block.getParentHash())
+                HashUtil.shortHash(block.getParentHash())
         );
         logEvent(event);
     }
@@ -103,7 +98,7 @@ public class Metrics {
     public static void broadcastTransaction(@Nonnull final Transaction tx) {
         String event = String.format("event: %s hash: %s nonce: %s",
                 "broadcastTransaction",
-                prettyHash(tx.getHash()),
+                HashUtil.shortHash(tx.getHash()),
                 BIUtil.toBI(tx.getNonce()).toString()
         );
         logEvent(event);
@@ -113,9 +108,9 @@ public class Metrics {
     public static void newTransaction(@Nonnull final Transaction tx, @Nonnull final NodeID sender) {
         String event = String.format("event: %s hash: %s nonce: %s sender: %s",
                 "newTransaction",
-                prettyHash(tx.getHash()),
+                HashUtil.shortHash(tx.getHash()),
                 BIUtil.toBI(tx.getNonce()).toString(),
-                prettyHash(sender.getID())
+                HashUtil.shortHash(sender.getID())
         );
 
         logEvent(event);
@@ -125,10 +120,10 @@ public class Metrics {
     public static void newBlockHeader(@Nonnull final BlockHeader header, @Nonnull final NodeID sender) {
         String event = String.format("event: %s hash: %s number: %d parent: %s sender: %s",
                 "newBlockHeader",
-                prettyHash(header.getHash()),
+                HashUtil.shortHash(header.getHash()),
                 header.getNumber(),
-                prettyHash(header.getParentHash()),
-                prettyHash(sender.getID())
+                HashUtil.shortHash(header.getParentHash()),
+                HashUtil.shortHash(sender.getID())
         );
         logEvent(event);
     }
@@ -138,9 +133,9 @@ public class Metrics {
     public static void newBlockHash(@Nonnull final BlockIdentifier identifier, @Nonnull final NodeID sender) {
         String event = String.format("event: %s hash: %s number: %d sender: %s",
                 "newBlockHash",
-                prettyHash(identifier.getHash()),
+                HashUtil.shortHash(identifier.getHash()),
                 identifier.getNumber(),
-                prettyHash(sender.getID())
+                HashUtil.shortHash(sender.getID())
         );
 
         logEvent(event);
@@ -150,7 +145,7 @@ public class Metrics {
         String event = String.format("event: %s bytes: %d sender: %s",
                 "messageBytes",
                 length,
-                prettyHash(sender.getID())
+                HashUtil.shortHash(sender.getID())
         );
 
         logEvent(event);
@@ -161,15 +156,15 @@ public class Metrics {
     }
 
     public static void registerNodeID(byte[] bytes) {
-        nodeID = prettyHash(bytes);
+        nodeID = HashUtil.shortHash(bytes);
     }
 
     public static void rebranch(@Nonnull final Block bestBlock, @Nonnull final Block block, final int rebranchSize) {
         String event = String.format("event: %s bestBlock hash: %s number: %d prevBestBlock hash: %s number: %d size: %d",
                 "rebranch",
-                prettyHash(block.getHash()),
+                HashUtil.shortHash(block.getHash()),
                 block.getNumber(),
-                prettyHash(bestBlock.getHash()),
+                HashUtil.shortHash(bestBlock.getHash()),
                 bestBlock.getNumber(),
                 rebranchSize
         );
@@ -187,7 +182,7 @@ public class Metrics {
 
         Map<String, String> eventInfo = new HashMap<>();
         eventInfo.put("txs", prettyTxs(txs));
-        eventInfo.put("senderNodeId", prettyHash(senderNodeId.getID()));
+        eventInfo.put("senderNodeId", HashUtil.shortHash(senderNodeId.getID()));
 
         if ("start".equals(step)) {
             processTxsMessageEventStart = nanoTime();
@@ -217,10 +212,10 @@ public class Metrics {
         long stepTime = nanoTime();
 
         Map<String, String> info = new HashMap<>();
-        info.put("hash", prettyHash(block.getHash()));
+        info.put("hash", HashUtil.shortHash(block.getHash()));
         info.put("number", String.format("%s", block.getNumber()));
-        info.put("parent", prettyHash(block.getParentHash()));
-        info.put("senderNodeId", prettyHash(senderNodeId.getID()));
+        info.put("parent", HashUtil.shortHash(block.getParentHash()));
+        info.put("senderNodeId", HashUtil.shortHash(senderNodeId.getID()));
 
         if ("start".equals(step)) {
             Metrics.newBlock(block, senderNodeId);

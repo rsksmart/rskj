@@ -24,6 +24,11 @@ package org.ethereum.vm;
  * Created by Sergio on 07/07/2016.
  */
 public class OpCodes {
+
+    private OpCodes() {
+
+    }
+
     /**
      * Halts execution (0x00)
      */
@@ -554,7 +559,10 @@ public class OpCodes {
     static final byte OP_LOG_4 =(byte)0xa4  ;
 
     /*  System operations   */
-    static final byte OP_CODEREPLACE =(byte)0xa8  ;
+    static final byte OP_DUPN = (byte)0xa8;
+    static final byte OP_SWAPN = (byte)0xa9;
+    static final byte OP_TXINDEX = (byte)0xaa;
+    static final byte OP_CODEREPLACE =(byte)0xab;
 
     /**
      * (0xf0) Create a new account with associated code
@@ -579,10 +587,18 @@ public class OpCodes {
      * (0xf4)  similar in idea to CALLCODE except that it propagates the sender and value
      *  from the parent scope to the child scope ie. the call created has the same sender
      *  and value as the original call.
-     *  also the Value parameter is omitted for this opCode
+     *  also the Value parameter is omitted for this opcode
      */
     static final byte OP_DELEGATECALL =(byte)0xf4 ;
     static final byte OP_HEADER =(byte)0xfc  ;
+
+    /**
+     * (0xfd) The `REVERT` instruction will stop execution, roll back all state changes done so far
+     * and provide a pointer to a memory section, which can be interpreted as an error code or message.
+     * While doing so, it will not consume all the remaining gas.
+     */
+    static final byte OP_REVERT = (byte)0xfd;
+
     /**
      * (0xff) Halt execution and register account for
      * later deletion

@@ -24,6 +24,7 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.Map;
 
 /**
@@ -32,14 +33,18 @@ import java.util.Map;
 public class BlockProcessResult {
 
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
+    public static final Duration LOG_TIME_LIMIT = Duration.ofSeconds(1);
 
     private boolean additionalValidationsOk = false;
 
     private Map<ByteArrayWrapper, ImportResult> result;
 
-    public BlockProcessResult(boolean additionalValidations, Map<ByteArrayWrapper, ImportResult> result) {
+    public BlockProcessResult(boolean additionalValidations, Map<ByteArrayWrapper, ImportResult> result, String blockHash, Duration processingTime) {
         this.additionalValidationsOk = additionalValidations;
         this.result = result;
+        if (processingTime.compareTo(LOG_TIME_LIMIT) >= 0) {
+            logResult(blockHash, processingTime);
+        }
     }
 
     public boolean wasBlockAdded(Block block) {
@@ -51,17 +56,16 @@ public class BlockProcessResult {
                 && (blockResult == ImportResult.IMPORTED_BEST || blockResult == ImportResult.IMPORTED_NOT_BEST);
     }
 
-    public boolean anyImportedBestResult() {
-        return this.result != null
-                && this.result.containsValue(ImportResult.IMPORTED_BEST);
+    public boolean isInvalidBlock() {
+        return result != null && this.result.containsValue(ImportResult.INVALID_BLOCK);
     }
 
-    public void logResult(String blockHash, long time) {
+    private void logResult(String blockHash, Duration processingTime) {
         if(result == null || result.isEmpty()) {
-            logger.debug("[MESSAGE PROCESS] Block[{}] After[{}] nano, process result. No block connections were made", time, blockHash);
+            logger.debug("[MESSAGE PROCESS] Block[{}] After[{}] nano, process result. No block connections were made", processingTime.toNanos(), blockHash);
         } else {
             StringBuilder sb = new StringBuilder("[MESSAGE PROCESS] Block[")
-                    .append(blockHash).append("] After[").append(time).append("] nano, process result. Connections attempts: ").append(result.size()).append(" | ");
+                    .append(blockHash).append("] After[").append(processingTime.toNanos()).append("] nano, process result. Connections attempts: ").append(result.size()).append(" | ");
 
             for(Map.Entry<ByteArrayWrapper, ImportResult> entry : this.result.entrySet()) {
                 sb.append(entry.getKey().toString()).append(" - ").append(entry.getValue()).append(" | ");

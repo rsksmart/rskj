@@ -64,4 +64,54 @@ public class BlockTimeStampValidationRuleTest {
         Assert.assertFalse(validationRule.isValid(block));
     }
 
+    @Test
+    public void blockTimeLowerThanParentTime() {
+        int validPeriod = 540;
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod);
+
+        Block block = Mockito.mock(Block.class);
+        Block parent = Mockito.mock(Block.class);
+
+        Mockito.when(block.getTimestamp())
+                .thenReturn(System.currentTimeMillis() / 1000);
+
+        Mockito.when(parent.getTimestamp())
+                .thenReturn((System.currentTimeMillis() / 1000) + 1000);
+
+        Assert.assertFalse(validationRule.isValid(block, parent));
+    }
+
+    @Test
+    public void blockTimeGreaterThanParentTime() {
+        int validPeriod = 540;
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod);
+
+        Block block = Mockito.mock(Block.class);
+        Block parent = Mockito.mock(Block.class);
+
+        Mockito.when(block.getTimestamp())
+                .thenReturn(System.currentTimeMillis() / 1000);
+
+        Mockito.when(parent.getTimestamp())
+                .thenReturn((System.currentTimeMillis() / 1000) - 1000);
+
+        Assert.assertTrue(validationRule.isValid(block, parent));
+    }
+
+    @Test
+    public void blockTimeEqualsParentTime() {
+        int validPeriod = 540;
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod);
+
+        Block block = Mockito.mock(Block.class);
+        Block parent = Mockito.mock(Block.class);
+
+        Mockito.when(block.getTimestamp())
+                .thenReturn(System.currentTimeMillis() / 1000);
+
+        Mockito.when(parent.getTimestamp())
+                .thenReturn(System.currentTimeMillis() / 1000);
+
+        Assert.assertFalse(validationRule.isValid(block, parent));
+    }
 }

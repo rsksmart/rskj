@@ -22,6 +22,7 @@ package org.ethereum.db;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
+import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.List;
 
@@ -42,6 +43,7 @@ public interface BlockStore {
 
     Block getChainBlockByNumber(long blockNumber);
 
+    @Nonnull
     List<Block> getChainBlocksByNumber(long blockNumber);
 
     void removeBlock(Block block);

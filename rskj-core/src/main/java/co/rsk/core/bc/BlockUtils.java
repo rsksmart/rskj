@@ -24,16 +24,16 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.ByteArrayWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by ajlopez on 19/08/2016.
  */
 public class BlockUtils {
-    private static final Logger logger = LoggerFactory.getLogger("blockprocessor");
+
+    private BlockUtils() { }
 
     public static boolean blockInSomeBlockChain(Block block, Blockchain blockChain) {
         return blockInSomeBlockChain(block.getHash(), block.getNumber(), blockChain);
@@ -54,19 +54,6 @@ public class BlockUtils {
         return unknownAncestorsHashes(hashes, blockChain, store, false);
     }
 
-    public static Set<ByteArrayWrapper> unknownAncestorsHashes(Block block, Blockchain blockChain, BlockStore store) {
-        Set<ByteArrayWrapper> hashes = new HashSet<>();
-
-        hashes.add(new ByteArrayWrapper(block.getParentHash()));
-
-        for (BlockHeader uncleHeader : block.getUncleList()) {
-            ByteArrayWrapper uncleHash = new ByteArrayWrapper(uncleHeader.getHash());
-            hashes.add(uncleHash);
-        }
-
-        return unknownAncestorsHashes(hashes, blockChain, store, true);
-    }
-
     public static Set<ByteArrayWrapper> unknownAncestorsHashes(byte[] blockHash, Blockchain blockChain, BlockStore store) {
         Set<ByteArrayWrapper> hashes = new HashSet<>();
         hashes.add(new ByteArrayWrapper(blockHash));
@@ -76,35 +63,43 @@ public class BlockUtils {
 
     public static Set<ByteArrayWrapper> unknownAncestorsHashes(Set<ByteArrayWrapper> hashesToProcess, Blockchain blockChain, BlockStore store, boolean withUncles) {
         Set<ByteArrayWrapper> unknown = new HashSet<>();
-        Set<ByteArrayWrapper> toexpand = new HashSet<>();
         Set<ByteArrayWrapper> hashes = hashesToProcess;
 
         while (!hashes.isEmpty()) {
-            for (ByteArrayWrapper hash : hashes) {
-                if (unknown.contains(hash))
-                    continue;
-
-                Block block = blockChain.getBlockByHash(hash.getData());
-
-                if (block == null)
-                    block = store.getBlockByHash(hash.getData());
-
-                if (block == null)
-                    unknown.add(hash);
-                else if (!block.isGenesis() && !blockInSomeBlockChain(block, blockChain)) {
-                    toexpand.add(new ByteArrayWrapper(block.getParentHash()));
-
-                    if (withUncles)
-                        for (BlockHeader uncleHeader : block.getUncleList())
-                            toexpand.add(new ByteArrayWrapper(uncleHeader.getHash()));
-                }
-            }
-
-            hashes = toexpand;
-            toexpand = new HashSet<>();
+            hashes = getNextHashes(hashes, unknown, blockChain, store, withUncles);
         }
 
         return unknown;
+    }
+
+    private static Set<ByteArrayWrapper> getNextHashes(Set<ByteArrayWrapper> previousHashes, Set<ByteArrayWrapper> unknown, Blockchain blockChain, BlockStore store, boolean withUncles) {
+        Set<ByteArrayWrapper> nextHashes = new HashSet<>();
+        for (ByteArrayWrapper hash : previousHashes) {
+            if (unknown.contains(hash)) {
+                continue;
+            }
+
+            Block block = blockChain.getBlockByHash(hash.getData());
+            if (block == null) {
+                block = store.getBlockByHash(hash.getData());
+            }
+
+            if (block == null) {
+                unknown.add(hash);
+                continue;
+            }
+
+            if (!block.isGenesis() && !blockInSomeBlockChain(block, blockChain)) {
+                nextHashes.add(new ByteArrayWrapper(block.getParentHash()));
+
+                if (withUncles) {
+                    for (BlockHeader uncleHeader : block.getUncleList()) {
+                        nextHashes.add(new ByteArrayWrapper(uncleHeader.getHash()));
+                    }
+                }
+            }
+        }
+        return nextHashes;
     }
 
     public static void addBlockToList(List<Block> blocks, Block block) {
@@ -117,22 +112,10 @@ public class BlockUtils {
         blocks.add(block);
     }
 
-    public static void addBlocksToList(List<Block> blocks, List<Block> newBlocks) {
-        for (Block newBlock : newBlocks)
-            addBlockToList(blocks, newBlock);
-    }
-
     public static List<Block> sortBlocksByNumber(List<Block> blocks) {
-        List<Block> sortedBlocks = new ArrayList<>(blocks);
-
-        Collections.sort(sortedBlocks, new Comparator<Block>() {
-            @Override
-            public int compare(Block b1, Block b2) {
-                return Long.compare(b1.getNumber(), b2.getNumber());
-            }
-        });
-
-        return sortedBlocks;
+        return blocks.stream()
+                .sorted(Comparator.comparingLong(Block::getNumber))
+                .collect(Collectors.toList());
     }
 
 }

@@ -27,7 +27,7 @@ public interface MinerServer {
 
     void start();
 
-    void submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock);
+    SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock);
 
     byte[] getCoinbaseAddress();
 

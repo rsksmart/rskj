@@ -20,6 +20,7 @@ package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.peg.Federation;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
@@ -173,7 +174,9 @@ public class TxValidatorTest {
         Mockito.when(transaction.getSignature()).thenReturn(new ECKey.ECDSASignature(BigInteger.ONE, BigInteger.ONE));
         Mockito.when(transaction.transactionCost(Mockito.any())).thenReturn(new Long(0));
         Mockito.when(transaction.getGasLimitAsInteger()).thenReturn(BigInteger.ZERO);
-        byte[] federator0PubKey = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getFederatorPublicKeys().get(0).getPubKey();
+        // Federation is the genesis federation ATM
+        Federation federation = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getGenesisFederation();
+        byte[] federator0PubKey = federation.getPublicKeys().get(0).getPubKey();
         Mockito.when(transaction.getKey()).thenReturn(ECKey.fromPublicOnly(federator0PubKey));
         return transaction;
     }

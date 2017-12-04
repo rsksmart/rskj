@@ -37,6 +37,9 @@ public class RemascConfig {
     // RSK labs cut. Available reward / rskLabsDivisor is what RSK gets.
     private long rskLabsDivisor = 5;
 
+    // Federation cut. Available reward / rskFederationDivisor is what Federation gets.
+    private long federationDivisor = 100;
+
     // Punishment in case of broken selection rule. The punishment applied is available reward / punishmentDivisor.
     private long punishmentDivisor = 10;
 
@@ -44,6 +47,14 @@ public class RemascConfig {
     private long publishersDivisor = 10;
 
     private long lateUncleInclusionPunishmentDivisor = 20;
+
+    // Multiplier and Divisor for paid fees comparison in selection rule
+    private long paidFeesMultiplier = 2;
+    private long paidFeesDivisor = 1;
+
+    public long getPaidFeesMultiplier() { return paidFeesMultiplier; }
+
+    public long getPaidFeesDivisor() { return paidFeesDivisor; }
 
     public long getMaturity() {
         return maturity;
@@ -59,6 +70,10 @@ public class RemascConfig {
 
     public long getRskLabsDivisor() {
         return rskLabsDivisor;
+    }
+
+    public long getFederationDivisor() {
+        return federationDivisor;
     }
 
     public long getPunishmentDivisor() {

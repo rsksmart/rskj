@@ -32,7 +32,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 public final class ReversibleTransactionExecutor extends TransactionExecutor {
 
     private ReversibleTransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore, ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
-        super(tx, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock);
+        super(tx, 0, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock);
         setLocalCall(true);
     }
 

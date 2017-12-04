@@ -29,7 +29,10 @@ import co.rsk.net.discovery.UDPServer;
 import co.rsk.rpc.CorsConfiguration;
 import org.ethereum.cli.CLIInterface;
 import org.ethereum.config.DefaultConfig;
+import org.ethereum.core.Repository;
+import org.ethereum.manager.WorldManager;
 import org.ethereum.rpc.JsonRpcNettyServer;
+import org.ethereum.rpc.JsonRpcWeb3FilterHandler;
 import org.ethereum.rpc.JsonRpcWeb3ServerHandler;
 import org.ethereum.rpc.Web3;
 import org.slf4j.Logger;
@@ -43,12 +46,14 @@ import org.springframework.stereotype.Component;
 public class Start {
     private static Logger logger = LoggerFactory.getLogger("start");
 
-    private Rsk rsk;
-    private UDPServer udpServer;
-    private MinerServer minerServer;
-    private MinerClient minerClient;
-    private RskSystemProperties rskSystemProperties;
+    private final Rsk rsk;
+    private final WorldManager worldManager;
+    private final UDPServer udpServer;
+    private final MinerServer minerServer;
+    private final MinerClient minerClient;
+    private final RskSystemProperties rskSystemProperties;
     private final Web3Factory web3Factory;
+    private final Repository repository;
 
     public static void main(String[] args) throws Exception {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
@@ -57,13 +62,22 @@ public class Start {
     }
 
     @Autowired
-    public Start(Rsk rsk, UDPServer udpServer, MinerServer minerServer, MinerClient minerClient, RskSystemProperties rskSystemProperties, Web3Factory web3Factory) {
+    public Start(Rsk rsk,
+                 WorldManager worldManager,
+                 UDPServer udpServer,
+                 MinerServer minerServer,
+                 MinerClient minerClient,
+                 RskSystemProperties rskSystemProperties,
+                 Web3Factory web3Factory,
+                 Repository repository) {
         this.rsk = rsk;
+        this.worldManager = worldManager;
         this.udpServer = udpServer;
         this.minerServer = minerServer;
         this.minerClient = minerClient;
         this.rskSystemProperties = rskSystemProperties;
         this.web3Factory = web3Factory;
+        this.repository = repository;
     }
 
     public void startNode(String[] args) throws Exception {
@@ -83,7 +97,7 @@ public class Start {
         }
 
         if (rskSystemProperties.simulateTxsEx()) {
-            enableSimulateTxsEx(rsk);
+            enableSimulateTxsEx(rsk, worldManager);
         }
 
         if (rskSystemProperties.isRpcEnabled()) {
@@ -118,25 +132,27 @@ public class Start {
     private void enableRpc() throws InterruptedException {
         Web3 web3Service = web3Factory.newInstance();
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, rskSystemProperties.getRpcModules());
+        JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler(rskSystemProperties.corsDomains());
         new JsonRpcNettyServer(
             rskSystemProperties.rpcPort(),
             rskSystemProperties.soLingerTime(),
             true,
             new CorsConfiguration(),
+            filterHandler,
             serverHandler
         ).start();
     }
 
     private void enableSimulateTxs(Rsk rsk) {
-        new TxBuilder(rsk).simulateTxs();
+        new TxBuilder(rsk, worldManager.getNodeBlockProcessor(), repository).simulateTxs();
     }
 
-    private void enableSimulateTxsEx(Rsk rsk) {
-        new TxBuilderEx().simulateTxs(rsk, rskSystemProperties);
+    private void enableSimulateTxsEx(Rsk rsk, WorldManager worldManager) {
+        new TxBuilderEx().simulateTxs(rsk, worldManager, rskSystemProperties, repository);
     }
 
     private void waitRskSyncDone(Rsk rsk) throws InterruptedException {
-        while (rsk.isBlockchainEmpty() || rsk.isSyncingBlocks() || rsk.isPlayingBlocks()) {
+        while (rsk.isBlockchainEmpty() || rsk.hasBetterBlockToSync() || rsk.isPlayingBlocks()) {
             try {
                 Thread.sleep(10000);
             } catch (InterruptedException e1) {

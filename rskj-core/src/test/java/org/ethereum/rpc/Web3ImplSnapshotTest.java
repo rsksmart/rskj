@@ -167,18 +167,14 @@ public class Web3ImplSnapshotTest {
     private static Web3Impl createWeb3(World world, SimpleEthereum ethereum, MinerServer minerServer) {
         MinerClientImpl minerClient = new MinerClientImpl();
         PersonalModule pm = new PersonalModuleWalletDisabled();
-        Web3Impl web3 = new Web3Impl(Web3Mocks.getMockEthereum(), Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null);
 
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
         ethereum.repository = (org.ethereum.facade.Repository) world.getRepository();
         ethereum.worldManager = worldManager;
-
-        BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
-
         minerClient.setMinerServer(minerServer);
-        web3.worldManager = worldManager;
-        return web3;
+
+        return new Web3Impl(ethereum, worldManager, Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, Web3Mocks.getMockChannelManager(), ethereum.repository, null, null);
     }
 
     private static Web3Impl createWeb3(World world) {
@@ -189,11 +185,11 @@ public class Web3ImplSnapshotTest {
     static MinerServer getMinerServerForTest(World world, SimpleEthereum ethereum) {
         BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
         return new MinerServerImpl(ethereum, world.getBlockChain(), world.getBlockChain().getBlockStore(),
-                world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), ConfigUtils.getDefaultMiningConfig(), rule);
+                world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), ConfigUtils.getDefaultMiningConfig(), rule, world.getBlockProcessor());
     }
 
     private static void addBlocks(Blockchain blockchain, int size) {
-        List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), size);
+        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(blockchain.getBestBlock(), size);
 
         for (Block block : blocks)
             blockchain.tryToConnect(block);

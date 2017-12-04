@@ -27,6 +27,8 @@ import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.rpc.TypeConverter;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
@@ -36,7 +38,10 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The Remasc contract which manages the distribution of miner fees.
@@ -58,6 +63,8 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
 
     private Remasc remasc;
 
+    static final DataWord MINING_FEE_TOPIC = new DataWord(TypeConverter.stringToByteArray("mining_fee_topic"));
+
     public static final String REMASC_CONFIG = "remasc.json";
 
     public RemascContract(String contractAddress, RemascConfig remascConfig) {
@@ -76,7 +83,7 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public void init(Transaction executionTx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
-        this.remasc = new Remasc(executionTx, repository, contractAddress, executionBlock, blockStore, this.config);
+        this.remasc = new Remasc(executionTx, repository, contractAddress, executionBlock, blockStore, this.config, logs);
     }
 
     @Override

@@ -29,15 +29,9 @@ import java.util.List;
  * Created by ajlopez on 5/11/2016.
  */
 public interface BlockProcessor {
-    BlockProcessResult processBlock(MessageSender sender, Block block);
+    BlockProcessResult processBlock(MessageChannel sender, Block block);
 
-    void processStatus(MessageSender sender, Status status);
-
-    void processGetBlock(MessageSender sender, byte[] hash);
-
-    void processGetBlockHeaders(MessageSender sender, long blockNumber, byte[] hash, int maxHeaders, int skip, boolean reverse);
-
-    void processGetBlockHeaders(MessageSender sender, byte[] hash);
+    void processGetBlock(MessageChannel sender, byte[] hash);
 
     BlockNodeInformation getNodeInformation();
 
@@ -45,9 +39,9 @@ public interface BlockProcessor {
 
     long getLastKnownBlockNumber();
 
-    void processNewBlockHashesMessage(MessageSender sender, NewBlockHashesMessage message);
+    void processNewBlockHashesMessage(MessageChannel sender, NewBlockHashesMessage message);
 
-    void processBlockHeaders(MessageSender sender, List<BlockHeader> blockHeaders);
+    void processBlockHeaders(MessageChannel sender, List<BlockHeader> blockHeaders);
 
     boolean hasBlock(byte[] hash);
 
@@ -55,11 +49,17 @@ public interface BlockProcessor {
 
     boolean hasBlockInSomeBlockchain(byte[] hash);
 
-    boolean isSyncingBlocks();
-
     boolean hasBetterBlockToSync();
 
-    void sendStatusToAll();
+    // New messages for RSK's sync protocol
 
-    void acceptAnyBlock();
+    void processBlockRequest(MessageChannel sender, long requestId, byte[] hash);
+
+    void processBlockHeadersRequest(MessageChannel sender, long requestId, byte[] hash, int count);
+
+    void processBodyRequest(MessageChannel sender, long requestId, byte[] hash);
+
+    void processBlockHashRequest(MessageChannel sender, long requestId, long height);
+
+    void processSkeletonRequest(MessageChannel sender, long requestId, long startNumber);
 }

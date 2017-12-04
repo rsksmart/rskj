@@ -4,7 +4,9 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -830,5 +832,77 @@ public class RLPTest {
         catch (RLPException ex) {
             Assert.assertEquals("The current implementation doesn't support lengths longer than Integer.MAX_VALUE because that is the largest number of elements an array can have", ex.getMessage());
         }
+    }
+
+    @Test
+    public void encodeDecodeInteger() {
+        for (int k = 0; k < 2048; k++) {
+            Assert.assertEquals(k, RLP.decodeInt(RLP.encodeInt(k), 0));
+        }
+    }
+
+    @Test
+    public void encodeDecodeInteger128() {
+        Assert.assertEquals(128, RLP.decodeInt(RLP.encodeInt(128), 0));
+    }
+
+    @Test
+    @Ignore
+    // Known issue, RLP.decodeInt should not be used in this case, to be reviewed
+    public void encodeDecodeIntegerInList() {
+        for (int k = 1; k < 2048; k++) {
+            byte[] bytes = RLP.encodeList(RLP.encodeInt(k), new byte[0]);
+            byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
+            Assert.assertEquals(k, RLP.decodeInt(bytes2, 0));
+        }
+    }
+
+    @Test
+    public void encodeDecodeIntegerInListUsingBigInteger() {
+        for (int k = 1; k < 2048; k++) {
+            byte[] bytes = RLP.encodeList(RLP.encodeInt(k), new byte[0]);
+            byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
+            Assert.assertEquals(k, BigIntegers.fromUnsignedByteArray(bytes2).intValue());
+        }
+    }
+
+    @Test
+    public void encodeDecodeInteger0InList() {
+        byte[] bytes = RLP.encodeList(RLP.encodeInt(0));
+        byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
+        // known issue, the byte array is null
+        Assert.assertNull(bytes2);
+    }
+
+    @Test
+    @Ignore
+    // Known issue, RLP.decodeInt should not be used in this case, to be reviewed
+    public void encodeDecodeInteger128InList() {
+        byte[] bytes = RLP.encodeList(RLP.encodeInt(128));
+        byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
+        Assert.assertEquals(128, RLP.decodeInt(bytes2, 0));
+    }
+
+    @Test
+    public void encodeDecodeInteger128InListUsingBigInteger() {
+        byte[] bytes = RLP.encodeList(RLP.encodeInt(128));
+        byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
+        Assert.assertEquals(128, BigIntegers.fromUnsignedByteArray(bytes2).intValue());
+    }
+
+    @Test
+    @Ignore
+    // Known issue, RLP.decodeInt should not be used in this case, to be reviewed
+    public void encodeDecodeInteger238InList() {
+        byte[] bytes = RLP.encodeList(RLP.encodeInt(238));
+        byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
+        Assert.assertEquals(238, RLP.decodeInt(bytes2, 0));
+    }
+
+    @Test
+    public void encodeDecodeInteger238InListUsingBigInteger() {
+        byte[] bytes = RLP.encodeList(RLP.encodeInt(238));
+        byte[] bytes2 = ((RLPList)(RLP.decode2(bytes).get(0))).get(0).getRLPData();
+        Assert.assertEquals(238, BigIntegers.fromUnsignedByteArray(bytes2).intValue());
     }
 }

@@ -38,7 +38,7 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.validator.ProofOfWorkRule;
+import co.rsk.validators.ProofOfWorkRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.digests.SHA256Digest;
@@ -104,16 +104,27 @@ public class MinerServerImpl implements MinerServer {
 
     private BlockValidationRule validationRules;
 
+    private final BlockProcessor nodeBlockProcessor;
+
     private long timeAdjustment;
+    private long minimumAcceptableTime;
 
     @Autowired
-    public MinerServerImpl(Ethereum ethereum, Blockchain blockchain, BlockStore blockStore, PendingState pendingState, Repository repository, MiningConfig miningConfig, @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules) {
+    public MinerServerImpl(Ethereum ethereum,
+                           Blockchain blockchain,
+                           BlockStore blockStore,
+                           PendingState pendingState,
+                           Repository repository,
+                           MiningConfig miningConfig,
+                           @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
+                           BlockProcessor nodeBlockProcessor) {
         this.ethereum = ethereum;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.pendingState = pendingState;
         this.miningConfig = miningConfig;
         this.validationRules = validationRules;
+        this.nodeBlockProcessor = nodeBlockProcessor;
 
         executor = new BlockExecutor(repository, blockchain, blockStore, null);
 
@@ -146,8 +157,8 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @Override
-    public void submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
-        logger.debug("Received block with hash " + blockHashForMergedMining + " for merged mining");
+    public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
+        logger.debug("Received block with hash {} for merged mining", blockHashForMergedMining);
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningBlock.getTransactions().get(0);
         co.rsk.bitcoinj.core.PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(bitcoinMergedMiningBlock);
 
@@ -158,8 +169,10 @@ public class MinerServerImpl implements MinerServer {
             Block workingBlock = blocksWaitingforPoW.get(key);
 
             if (workingBlock == null) {
-                logger.warn("Cannot publish block, could not find hash " + blockHashForMergedMining + " in the cache");
-                return;
+                String message = "Cannot publish block, could not find hash " + blockHashForMergedMining + " in the cache";
+                logger.warn(message);
+
+                return new SubmitBlockResult("ERROR", message);
             }
 
             // just in case, remove all references to this block.
@@ -172,7 +185,7 @@ public class MinerServerImpl implements MinerServer {
             // clone the block
             newBlock = workingBlock.cloneBlock();
 
-            logger.debug("blocksWaitingforPoW size " + blocksWaitingforPoW.size());
+            logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
         }
 
         logger.info("Received block {} {}", newBlock.getNumber(), Hex.toHexString(newBlock.getHash()));
@@ -183,10 +196,17 @@ public class MinerServerImpl implements MinerServer {
         newBlock.seal();
 
         if (!isValid(newBlock)) {
-            logger.error("Invalid block supplied by miner " + " : " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber() + ". Hash: " + newBlock.getShortHash());
+            String message = "Invalid block supplied by miner: " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber();
+            logger.error(message);
+
+            return new SubmitBlockResult("ERROR", message);
         } else {
             ImportResult importResult = ethereum.addNewMinedBlock(newBlock);
-            logger.info("Mined block import result is " + importResult + " : " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber() + ". Hash: " + newBlock.getShortHash());
+
+            logger.info("Mined block import result is {}: {} {} at height {}", importResult, newBlock.getShortHash(), newBlock.getShortHashForMergedMining(), newBlock.getNumber());
+            SubmittedBlockInfo blockInfo = new SubmittedBlockInfo(importResult, newBlock.getHash(), newBlock.getNumber());
+
+            return new SubmitBlockResult("OK", "OK", blockInfo);
         }
     }
 
@@ -202,12 +222,12 @@ public class MinerServerImpl implements MinerServer {
         return true;
     }
 
-    private byte[] compressCoinbase(byte[] bitcoinMergedMiningCoinbaseTransactionSerialized) {
+    public static byte[] compressCoinbase(byte[] bitcoinMergedMiningCoinbaseTransactionSerialized) {
         int rskTagPosition = Collections.lastIndexOfSubList(java.util.Arrays.asList(ArrayUtils.toObject(bitcoinMergedMiningCoinbaseTransactionSerialized)),
                 java.util.Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG)));
         int remainingByteCount = bitcoinMergedMiningCoinbaseTransactionSerialized.length - rskTagPosition - RskMiningConstants.RSK_TAG.length - RskMiningConstants.BLOCK_HEADER_HASH_SIZE;
         if (remainingByteCount > RskMiningConstants.MAX_BYTES_AFTER_MERGED_MINING_HASH) {
-            throw new IllegalArgumentException("More than 128 bytes after ROOOTSTOCK tag");
+            throw new IllegalArgumentException("More than 128 bytes after RSK tag");
         }
         int sha256Blocks = rskTagPosition / 64;
         int bytesToHash = sha256Blocks * 64;
@@ -228,7 +248,7 @@ public class MinerServerImpl implements MinerServer {
      * @param bitcoinMergedMiningBlock the bitcoin block that includes all the txs.
      * @return A Partial Merkle Branch in which you can validate the coinbase tx.
      */
-    private co.rsk.bitcoinj.core.PartialMerkleTree getBitcoinMergedMerkleBranch(co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
+    public static co.rsk.bitcoinj.core.PartialMerkleTree getBitcoinMergedMerkleBranch(co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
         List<co.rsk.bitcoinj.core.BtcTransaction> txs = bitcoinMergedMiningBlock.getTransactions();
         List<co.rsk.bitcoinj.core.Sha256Hash> txHashes = new ArrayList<>(txs.size());
         for (co.rsk.bitcoinj.core.BtcTransaction tx : txs) {
@@ -277,8 +297,7 @@ public class MinerServerImpl implements MinerServer {
                     return currentWork;
                 }
                 currentWork = new MinerWork(currentWork.getBlockHashForMergedMining(), currentWork.getTarget(),
-                        Long.valueOf(currentWork.getFeesPaidToMiner()),
-                        false, currentWork.getParentBlockHash());
+                                            currentWork.getFeesPaidToMiner(),false, currentWork.getParentBlockHash());
             }
         }
         return work;
@@ -297,8 +316,8 @@ public class MinerServerImpl implements MinerServer {
         byte[] targetArray = new byte[32];
         System.arraycopy(targetUnknownLengthArray, 0, targetArray, 32 - targetUnknownLengthArray.length, targetUnknownLengthArray.length);
 
-        logger.debug("Sending work for merged mining. Hash: " + block.getShortHashForMergedMining());
-        return new MinerWork(TypeConverter.toJsonHex(blockMergedMiningHash.getBytes()), TypeConverter.toJsonHex(targetArray), block.getFeesPaidToMiner(), notify, TypeConverter.toJsonHex(block.getParentHash()));
+        logger.debug("Sending work for merged mining. Hash: {}", block.getShortHashForMergedMining());
+        return new MinerWork(TypeConverter.toJsonHex(blockMergedMiningHash.getBytes()), TypeConverter.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, TypeConverter.toJsonHex(block.getParentHash()));
     }
 
     /**
@@ -332,6 +351,7 @@ public class MinerServerImpl implements MinerServer {
 
         BigInteger minimumGasPrice = new MinimumGasPriceCalculator().calculate(newBlockParent.getMinGasPriceAsInteger(), minerMinGasPriceTarget);
         final List<Transaction> txs = getTransactions(txsToRemove, newBlockParent, minimumGasPrice);
+        minimumAcceptableTime = newBlockParent.getTimestamp() + 1;
 
         final Block newBlock = createBlock(newBlockParent, uncles, txs, minimumGasPrice);
 
@@ -353,12 +373,12 @@ public class MinerServerImpl implements MinerServer {
             latestBlock = newBlock;
             blocksWaitingforPoW.put(latestblockHashWaitingforPoW, latestBlock);
 
-            logger.debug("blocksWaitingForPoW size " + blocksWaitingforPoW.size());
+            logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
         }
 
-        logger.debug("Built block " + newBlock.getShortHashForMergedMining() + ". Parent " + newBlockParent.getShortHashForMergedMining());
+        logger.debug("Built block {}. Parent {}", newBlock.getShortHashForMergedMining(), newBlockParent.getShortHashForMergedMining());
         for (BlockHeader uncleHeader : uncles) {
-            logger.debug("With uncle " + uncleHeader.getShortHashForMergedMining());
+            logger.debug("With uncle {}", uncleHeader.getShortHashForMergedMining());
         }
     }
 
@@ -382,7 +402,8 @@ public class MinerServerImpl implements MinerServer {
 
     @Override
     public long getCurrentTimeInSeconds() {
-        return System.currentTimeMillis() / 1000 + this.timeAdjustment;
+        long ret = System.currentTimeMillis() / 1000 + this.timeAdjustment;
+        return Long.max(ret, minimumAcceptableTime);
     }
 
     @Override
@@ -442,19 +463,14 @@ public class MinerServerImpl implements MinerServer {
                 logger.debug("There is a new best block: {}, number: {}", bestBlock.getShortHashForMergedMining(), bestBlock.getNumber());
                 buildBlockToMine(bestBlock, false);
             } else {
-                logger.debug("New block arrived but there is no need to build a new block to mine: " + block.getShortHashForMergedMining());
+                logger.debug("New block arrived but there is no need to build a new block to mine: {}", block.getShortHashForMergedMining());
             }
 
             logger.trace("End onBlock");
         }
 
         private boolean isSyncing() {
-            BlockProcessor processor = ethereum.getWorldManager().getNodeBlockProcessor();
-
-            if (processor == null)
-                return false;
-
-            return processor.isSyncingBlocks();
+            return nodeBlockProcessor.hasBetterBlockToSync();
         }
     }
 

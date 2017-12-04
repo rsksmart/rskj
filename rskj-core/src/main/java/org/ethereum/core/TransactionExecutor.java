@@ -21,6 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
+import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ReceiptStore;
@@ -38,9 +39,8 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
@@ -57,10 +57,10 @@ import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
 public class TransactionExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger("execute");
-    private static final Logger stateLogger = LoggerFactory.getLogger("state");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private Transaction tx;
+    private int txindex;
     private Repository track;
     private Repository cacheTrack;
     private BlockStore blockStore;
@@ -72,7 +72,6 @@ public class TransactionExecutor {
     private ProgramInvokeFactory programInvokeFactory;
     private byte[] coinbase;
 
-    private TransactionReceipt receipt;
     private ProgramResult result = new ProgramResult();
     private Block executionBlock;
 
@@ -89,17 +88,18 @@ public class TransactionExecutor {
 
     boolean localCall = false;
 
-    public TransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
+    public TransactionExecutor(Transaction tx, int txindex, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
 
-        this(tx, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0);
+        this(tx, txindex, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0);
     }
 
-    public TransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
+    public TransactionExecutor(Transaction tx, int txindex, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock,
                                EthereumListener listener, long gasUsedInTheBlock) {
 
         this.tx = tx;
+        this.txindex = txindex;
         this.coinbase = coinbase;
         this.track = track;
         this.cacheTrack = track.startTracking();
@@ -118,7 +118,6 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     public boolean init() {
-
         basicTxCost = tx.transactionCost(executionBlock);
 
         if (localCall) {
@@ -132,10 +131,9 @@ public class TransactionExecutor {
         boolean cumulativeGasReached = txGasLimit.add(BigInteger.valueOf(gasUsedInTheBlock)).compareTo(curBlockGasLimit) > 0;
         if (cumulativeGasReached) {
 
-            if (logger.isWarnEnabled())
-                logger.warn("Too much gas used in this block: Block Gas Limit: {} , Tx Gas Limit {}, Gas Used in the Block: {}", curBlockGasLimit, txGasLimit, gasUsedInTheBlock);
+            logger.warn("Too much gas used in this block: Block Gas Limit: {} , Tx Gas Limit {}, Gas Used in the Block: {}", curBlockGasLimit, txGasLimit, gasUsedInTheBlock);
 
-                panicProcessor.panic("toomuchgasused", String.format("Too much gas used in this block: Block Gas Limit: {} , Tx Gas Limit {}, Gas Used in the Block: {}", curBlockGasLimit, txGasLimit, gasUsedInTheBlock));
+            panicProcessor.panic("toomuchgasused", String.format("Too much gas used in this block: Block Gas Limit: %d , Tx Gas Limit %d, Gas Used in the Block: %d", curBlockGasLimit.longValue(), txGasLimit.longValue(), gasUsedInTheBlock));
 
             // TODO: save reason for failure
             return false;
@@ -143,8 +141,7 @@ public class TransactionExecutor {
 
         if (txGasLimit.compareTo(BigInteger.valueOf(basicTxCost)) < 0) {
 
-            if (logger.isWarnEnabled())
-                logger.warn("Not enough gas for transaction execution: Require: {} Got: {}", basicTxCost, txGasLimit.longValue());
+            logger.warn("Not enough gas for transaction execution: Require: {} Got: {}", basicTxCost, txGasLimit);
 
             panicProcessor.panic("notenoughgas", String.format("Not enough gas for transaction execution: Require: %d Got: %d", basicTxCost, txGasLimit.longValue()));
 
@@ -158,7 +155,7 @@ public class TransactionExecutor {
 
             if (logger.isWarnEnabled()) {
                 logger.warn("Invalid nonce: sender {}, required: {} , tx.nonce: {}, tx {}", Hex.toHexString(tx.getSender()), reqNonce, txNonce, Hex.toHexString(tx.getHash()));
-                logger.warn("Transaction Data: {}", tx.toString());
+                logger.warn("Transaction Data: {}", tx);
                 logger.warn("Tx Included in the following block: {}", this.executionBlock.getShortDescr());
             }
             // TODO: save reason for failure
@@ -176,8 +173,8 @@ public class TransactionExecutor {
 
             if (logger.isWarnEnabled()) {
                 logger.warn("Not enough cash: Require: {}, Sender cash: {}, tx {}", totalCost, senderBalance, Hex.toHexString(tx.getHash()));
-                logger.warn("Transaction Data: {}", tx.toString());
-                logger.warn("Tx Included in the following block: {}", this.executionBlock.toString());
+                logger.warn("Transaction Data: {}", tx);
+                logger.warn("Tx Included in the following block: {}", this.executionBlock);
             }
 
             return false;
@@ -186,8 +183,8 @@ public class TransactionExecutor {
         if (!tx.acceptTransactionSignature()) {
             if (logger.isWarnEnabled()) {
                 logger.warn("Transaction {} signature not accepted: {}", Hex.toHexString(tx.getHash()), tx.getSignature());
-                logger.warn("Transaction Data: {}", tx.toString());
-                logger.warn("Tx Included in the following block: {}", this.executionBlock.toString());
+                logger.warn("Transaction Data: {}", tx);
+                logger.warn("Tx Included in the following block: {}", this.executionBlock);
             }
 
             panicProcessor.panic("invalidsignature", String.format("Transaction %s signature not accepted: %s", Hex.toHexString(tx.getHash()), tx.getSignature().toString()));
@@ -208,12 +205,6 @@ public class TransactionExecutor {
         logger.info("Execute transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
 
         if (!localCall) {
-
-            // RSK checking when nonce changes
-            if (track.getNonce(tx.getSender()).longValue() == this.executionBlock.getNumber())
-            {
-
-            }
 
             track.increaseNonce(tx.getSender());
 
@@ -272,7 +263,7 @@ public class TransactionExecutor {
                 result.spendGas(basicTxCost);
             } else {
                 ProgramInvoke programInvoke =
-                        programInvokeFactory.createProgramInvoke(tx, executionBlock, cacheTrack, blockStore);
+                        programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
                 this.vm = new VM();
                 this.program = new Program(code, programInvoke, tx);
@@ -291,7 +282,7 @@ public class TransactionExecutor {
             mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
             cacheTrack.createAccount(tx.getContractAddress());
         } else {
-            ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, executionBlock, cacheTrack, blockStore);
+            ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
             this.vm = new VM();
             this.program = new Program(tx.getData(), programInvoke, tx);
@@ -315,6 +306,7 @@ public class TransactionExecutor {
 
         // TODO: transaction call for pre-compiled  contracts
         if (vm == null) {
+            cacheTrack.commit();
             return;
         }
 
@@ -331,26 +323,40 @@ public class TransactionExecutor {
             result = program.getResult();
             mEndGas = toBI(tx.getGasLimit()).subtract(toBI(program.getResult().getGasUsed()));
 
-            if (tx.isContractCreation()) {
-
-                int returnDataGasValue = getLength(program.getResult().getHReturn()) * GasCost.CREATE_DATA;
-                if (mEndGas.compareTo(BigInteger.valueOf(returnDataGasValue)) >= 0) {
-
+            if (tx.isContractCreation() && !result.isRevert()) {
+                int createdContractSize = getLength(program.getResult().getHReturn());
+                int returnDataGasValue = createdContractSize * GasCost.CREATE_DATA;
+                if (mEndGas.compareTo(BigInteger.valueOf(returnDataGasValue)) < 0) {
+                    program.setRuntimeFailure(
+                            Program.ExceptionHelper.notEnoughSpendingGas(
+                                    "No gas to return just created contract",
+                                    returnDataGasValue,
+                                    program));
+                    result = program.getResult();
+                    result.setHReturn(EMPTY_BYTE_ARRAY);
+                } else if (createdContractSize > Constants.getMaxContractSize()) {
+                    program.setRuntimeFailure(
+                            Program.ExceptionHelper.tooLargeContractSize(
+                                    Constants.getMaxContractSize(),
+                                    createdContractSize));
+                    result = program.getResult();
+                    result.setHReturn(EMPTY_BYTE_ARRAY);
+                } else {
                     mEndGas = mEndGas.subtract(BigInteger.valueOf(returnDataGasValue));
                     program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
                     cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
-                } else {
-                    program.setRuntimeFailure(Program.Exception.notEnoughSpendingGas("No gas to return just created contract",
-                                returnDataGasValue, program));
-                    result = program.getResult();
-                    result.setHReturn(EMPTY_BYTE_ARRAY);
                 }
             }
 
-            if (result.getException() != null) {
+            if (result.getException() != null || result.isRevert()) {
                 result.clearFieldsOnException();
+                cacheTrack.rollback();
 
-                throw result.getException();
+                if (result.getException() != null) {
+                    throw result.getException();
+                }
+            } else {
+                cacheTrack.commit();
             }
 
         } catch (Throwable e) {
@@ -377,12 +383,9 @@ public class TransactionExecutor {
         cacheTrack.commit();
 
         // Should include only LogInfo's that was added during not rejected transactions
-        List<LogInfo> notRejectedLogInfos = new ArrayList<>();
-        for (LogInfo logInfo: result.getLogInfoList()) {
-            if (!logInfo.isRejected()) {
-                notRejectedLogInfos.add(logInfo);
-            }
-        }
+        List<LogInfo> notRejectedLogInfos = result.getLogInfoList().stream()
+                .filter(logInfo -> !logInfo.isRejected())
+                .collect(Collectors.toList());
 
         TransactionExecutionSummary.Builder summaryBuilder = TransactionExecutionSummary.builderFor(tx)
                 .gasLeftover(mEndGas)
@@ -391,7 +394,7 @@ public class TransactionExecutor {
 
         if (result != null) {
             // Accumulate refunds for suicides
-            result.addFutureRefund(result.getDeleteAccounts().size() * GasCost.SUICIDE_REFUND);
+            result.addFutureRefund((long)result.getDeleteAccounts().size() * GasCost.SUICIDE_REFUND);
             long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
             byte[] addr = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
             mEndGas = mEndGas.add(BigInteger.valueOf(gasRefund));
@@ -436,13 +439,9 @@ public class TransactionExecutor {
             logger.info("Processing result");
             logs = notRejectedLogInfos;
 
-            for (Map.Entry<DataWord, byte[]> entry : result.getCodeChanges().entrySet()) {
-                track.saveCode(entry.getKey().getLast20Bytes(), entry.getValue());
-            }
+            result.getCodeChanges().forEach((key, value) -> track.saveCode(key.getLast20Bytes(), value));
             // Traverse list of suicides
-            for (DataWord address : result.getDeleteAccounts()) {
-                track.delete(address.getLast20Bytes());
-            }
+            result.getDeleteAccounts().forEach(address -> track.delete(address.getLast20Bytes()));
         }
 
         if (listener != null)
@@ -471,11 +470,6 @@ public class TransactionExecutor {
     public TransactionExecutor setLocalCall(boolean localCall) {
         this.localCall = localCall;
         return this;
-    }
-
-
-    public TransactionReceipt getReceipt() {
-        return receipt;
     }
 
     public List<LogInfo> getVMLogs() {

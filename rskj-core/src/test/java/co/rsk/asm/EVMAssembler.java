@@ -36,7 +36,7 @@ public class EVMAssembler {
     CodeBlock block;
     EVMAssemblerHelper helper;
 
-    // To insert an opcode or a binary string manually by offset, use !num
+    // To insert an code or a binary string manually by offset, use !num
     public static String extractInsertBinary(String str) {
         if ((str.length() >= 1) && (str.charAt(0) == '!')) {
             return str.substring(1);
@@ -120,8 +120,8 @@ public class EVMAssembler {
                 } catch (NumberFormatException e) {
                     byte opcode = OpCode.byteVal(tok);
                     block.writer().write(opcode);
-                /*if ((opcode>=PUSH1.val()) && (opcode<=PUSH32.val())) {
-                    int nPush = opcode - PUSH1.val() + 1;
+                /*if ((code>=PUSH1.val()) && (code<=PUSH32.val())) {
+                    int nPush = code - PUSH1.val() + 1;
                 }*/
                 }
                 errorToken++;

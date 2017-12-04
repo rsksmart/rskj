@@ -24,14 +24,16 @@ import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.math.BigInteger;
+
 /**
  * Created by ajlopez on 5/11/2016.
  */
 public class StatusMessageTest {
     @Test
     public void createWithBestBlockNumberAndHash() {
-        Block genesis = BlockGenerator.getGenesisBlock();
-        Block block = BlockGenerator.createChildBlock(genesis);
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block block = BlockGenerator.getInstance().createChildBlock(genesis);
         Status status = new Status(block.getNumber(), block.getHash());
 
         StatusMessage message = new StatusMessage(status);
@@ -40,11 +42,31 @@ public class StatusMessageTest {
         Assert.assertSame(status, message.getStatus());
         Assert.assertEquals(1, message.getStatus().getBestBlockNumber());
         Assert.assertArrayEquals(block.getHash(), message.getStatus().getBestBlockHash());
+        Assert.assertNull(message.getStatus().getBestBlockParentHash());
+        Assert.assertNull(message.getStatus().getTotalDifficulty());
+    }
+
+    @Test
+    public void createWithCompleteArguments() {
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block block = BlockGenerator.getInstance().createChildBlock(genesis);
+        Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), BigInteger.TEN);
+
+        StatusMessage message = new StatusMessage(status);
+
+        Assert.assertEquals(MessageType.STATUS_MESSAGE, message.getMessageType());
+        Assert.assertSame(status, message.getStatus());
+        Assert.assertEquals(1, message.getStatus().getBestBlockNumber());
+        Assert.assertArrayEquals(block.getHash(), message.getStatus().getBestBlockHash());
+        Assert.assertNotNull(message.getStatus().getBestBlockParentHash());
+        Assert.assertArrayEquals(block.getParentHash(), message.getStatus().getBestBlockParentHash());
+        Assert.assertNotNull(message.getStatus().getTotalDifficulty());
+        Assert.assertEquals(BigInteger.TEN, message.getStatus().getTotalDifficulty());
     }
 
     @Test
     public void createWithGenesisBestBlockNumberAndHash() {
-        Block genesis = BlockGenerator.getGenesisBlock();
+        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
         Status status = new Status(genesis.getNumber(), genesis.getHash());
 
         StatusMessage message = new StatusMessage(status);

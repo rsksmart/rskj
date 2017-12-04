@@ -34,7 +34,7 @@ import java.math.BigInteger;
  */
 public interface ProgramInvokeFactory {
 
-    ProgramInvoke createProgramInvoke(Transaction tx, Block block,
+    ProgramInvoke createProgramInvoke(Transaction tx, int txindex, Block block,
                                       Repository repository, BlockStore blockStore);
 
     ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,

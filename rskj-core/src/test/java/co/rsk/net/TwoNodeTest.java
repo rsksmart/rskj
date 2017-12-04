@@ -21,7 +21,9 @@ package co.rsk.net;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.simples.SimpleNode;
+import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.World;
+import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
@@ -39,13 +41,16 @@ public class TwoNodeTest {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
 
-        List<Block> blocks = BlockGenerator.getBlockChain(blockchain.getBestBlock(), size);
+        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(blockchain.getBestBlock(), size);
 
         for (Block b: blocks)
             blockchain.tryToConnect(b);
 
-        BlockProcessor processor = new NodeBlockProcessor(store, blockchain);
-        NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null, null).disablePoWValidation();
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
+        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        NodeMessageHandler handler = new NodeMessageHandler(processor, null, null, null, null, null, new DummyBlockValidationRule());
 
         return new SimpleNode(handler);
     }
@@ -56,7 +61,7 @@ public class TwoNodeTest {
         SimpleNode node1 = createNode(100);
         SimpleNode node2 = createNode(0);
 
-        node1.sendStatus(node2);
+        node1.sendStatusTo(node2);
 
         Assert.assertEquals(100, node1.getBestBlock().getNumber());
         Assert.assertEquals(100, node2.getBestBlock().getNumber());
@@ -69,17 +74,17 @@ public class TwoNodeTest {
         SimpleNode node1 = createNode(0);
         SimpleNode node2 = createNode(0);
 
-        List<Block> blocks = BlockGenerator.getBlockChain(10);
+        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(10);
 
         for (Block block : blocks) {
             BlockMessage message = new BlockMessage(block);
-            node1.sendMessage(null, message);
+            node1.receiveMessageFrom(null, message);
 
             if (block.getNumber() <= 5)
-                node2.sendMessage(null, message);
+                node2.receiveMessageFrom(null, message);
         }
 
-        node1.sendStatus(node2);
+        node1.sendStatusTo(node2);
 
         Assert.assertEquals(10, node1.getBestBlock().getNumber());
         Assert.assertEquals(10, node2.getBestBlock().getNumber());

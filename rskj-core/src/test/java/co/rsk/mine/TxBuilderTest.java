@@ -18,10 +18,13 @@
 
 package co.rsk.mine;
 
+import co.rsk.net.BlockProcessor;
+import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.rpc.Simples.SimpleEthereum;
+import org.junit.Assert;
 import org.junit.Test;
-import org.testng.Assert;
+import org.mockito.Mockito;
 
 import java.math.BigInteger;
 
@@ -30,7 +33,7 @@ public class TxBuilderTest {
     @Test
     public void createBasicTransaction() {
         SimpleEthereum rsk = new SimpleEthereum();
-        TxBuilder builder = new TxBuilder(rsk);
+        TxBuilder builder = new TxBuilder(rsk, null, (Repository) rsk.repository);
 
         BigInteger gasPrice = BigInteger.ONE;
         BigInteger gasLimit = BigInteger.valueOf(21000);
@@ -46,7 +49,8 @@ public class TxBuilderTest {
     @Test
     public void createAndBroadcastTransaction() {
         SimpleEthereum rsk = new SimpleEthereum();
-        TxBuilder builder = new TxBuilder(rsk);
+        BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
+        TxBuilder builder = new TxBuilder(rsk, blockProcessor, (Repository) rsk.repository);
 
         BigInteger nonce = BigInteger.TEN;
 
