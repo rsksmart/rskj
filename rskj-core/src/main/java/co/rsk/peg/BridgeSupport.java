@@ -475,6 +475,7 @@ public class BridgeSupport {
                     provider.getRskTxsWaitingForSignatures().put(new Sha3Hash(rskTx.getHash()), btcTx);
                 } catch (Exception e) {
                     logger.error("Unable to complete retiring federation migration. Left balance: {} in {}", retiringFederationWallet.getBalance(), getRetiringFederationAddress());
+                    panicProcessor.panic("updateCollection", "Unable to complete retiring federation migration.");
                 }
             }
             provider.setRetiringFederation(null);
