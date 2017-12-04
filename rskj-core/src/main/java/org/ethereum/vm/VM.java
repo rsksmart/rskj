@@ -699,16 +699,8 @@ public class VM {
     }
 
     protected void doCALLDATACOPY() {
-        DataWord size;
-        long newMemSize ;
-        long copySize;
-
         if (computeGas) {
-            size = stack.get(stack.size() - 3);
-            copySize = Program.limitToMaxLong(size);
-            checkSizeArgument(copySize);
-            newMemSize = memNeeded(stack.peek(), copySize);
-            gasCost += calcMemGas(oldMemSize, newMemSize, copySize);
+            gasCost += computeDataCopyGas();
             spendOpCodeGas();
         }
         // EXECUTION PHASE
@@ -726,6 +718,14 @@ public class VM {
         program.disposeWord(dataOffsetData);
         program.disposeWord(lengthData);
         program.step();
+    }
+
+    private long computeDataCopyGas() {
+        DataWord size = stack.get(stack.size() - 3);
+        long copySize = Program.limitToMaxLong(size);
+        checkSizeArgument(copySize);
+        long newMemSize = memNeeded(stack.peek(), copySize);
+        return calcMemGas(oldMemSize, newMemSize, copySize);
     }
 
     protected void doCODESIZE() {
