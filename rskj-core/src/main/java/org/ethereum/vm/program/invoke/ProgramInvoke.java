@@ -57,7 +57,7 @@ public interface ProgramInvoke {
 
     DataWord getNumber();
 
-    DataWord getTransactionIndex();
+    int  getTransactionIndex();
 
     DataWord getDifficulty();
 

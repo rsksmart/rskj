@@ -188,7 +188,7 @@ public class VMExecutionTest {
 
     @Test
     public void txindexExecution() {
-        invoke.setTransactionIndex(new DataWord(42));
+        invoke.setTransactionIndex(42);
         Program program = executeCode("TXINDEX", 1);
         Stack stack = program.getStack();
 

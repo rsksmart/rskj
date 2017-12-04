@@ -58,7 +58,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private final DataWord difficulty;
     private final DataWord gaslimit;
 
-    private final DataWord transactionIndex;
+    private final int transactionIndex;
 
     private Map<DataWord, DataWord> storage;
 
@@ -71,8 +71,9 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                              DataWord gasPrice,
                              long gas,
                              DataWord callValue, byte[] msgData,
-                             DataWord lastHash, DataWord coinbase, DataWord timestamp, DataWord number, DataWord transactionIndex, DataWord
-                                     difficulty,
+                             DataWord lastHash, DataWord coinbase, DataWord timestamp,
+                             DataWord number, int transactionIndex,
+                             DataWord difficulty,
                              DataWord gaslimit, Repository repository, int callDeep, BlockStore blockStore, boolean byTestingSuite) {
 
         // Transaction env
@@ -133,7 +134,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         this.coinbase = new DataWord(coinbase);
         this.timestamp = new DataWord(timestamp);
         this.number = new DataWord(number);
-        this.transactionIndex = new DataWord(transactionIndex);
+        this.transactionIndex = transactionIndex;
         this.difficulty = new DataWord(difficulty);
         this.gaslimit = new DataWord(gaslimit);
 
@@ -259,7 +260,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     /*     TXINDEX op    */
-    public DataWord getTransactionIndex() {
+    public int getTransactionIndex() {
         return transactionIndex;
     }
 

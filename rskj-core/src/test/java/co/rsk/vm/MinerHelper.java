@@ -28,6 +28,7 @@ import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -52,8 +53,7 @@ public class MinerHelper {
     @Autowired
     protected Repository repository;
 
-    @Autowired
-    ProgramInvokeFactory programInvokeFactory;
+    ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
 
 
 

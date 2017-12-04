@@ -1138,7 +1138,7 @@ public class VM {
 
 
         if (isEventslog) {
-            EventInfo eventInfo = new EventInfo(topics, data,program.getTxIndex());
+            EventInfo eventInfo = new EventInfo(topics, data,program.getTransactionIndexAsInt());
             EventInfoItem eventInfoItem =new EventInfoItem(eventInfo,
                             program.getOwnerAddressLast20Bytes());
 

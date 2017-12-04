@@ -38,7 +38,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
     private byte[] msgData;
 
-    private DataWord txindex;
+    private int txindex;
 
     private Repository repository;
     private byte[] ownerAddress = Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
@@ -196,11 +196,11 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     @Override
-    public DataWord getTransactionIndex() {
+    public int getTransactionIndex() {
         return this.txindex;
     }
 
-    public void setTransactionIndex(DataWord txindex) {
+    public void setTransactionIndex(int txindex) {
         this.txindex = txindex;
     }
 
