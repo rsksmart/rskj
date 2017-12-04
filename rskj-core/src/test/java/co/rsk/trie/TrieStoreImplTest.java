@@ -84,6 +84,32 @@ public class TrieStoreImplTest {
     }
 
     @Test
+    public void saveAndRetrieveTrieNodeWith33BytesValue() {
+        HashMapDB map = new HashMapDB();
+        TrieStoreImpl store = new TrieStoreImpl(map);
+
+        byte[] key = sha3("foo".getBytes());
+        byte[] value = new byte[33];
+
+        Trie trie = new TrieImpl(store, false).put(key, value);
+
+        store.save(trie);
+
+        Assert.assertEquals(2, map.keys().size());
+        Assert.assertNotNull(map.get(trie.getHash()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+
+        Assert.assertEquals(2, store.getSaveCount());
+
+        Trie newTrie = store.retrieve(trie.getHash());
+
+        Assert.assertNotNull(newTrie);
+        Assert.assertEquals(1, newTrie.trieSize());
+        Assert.assertNotNull(newTrie.get(key));
+        Assert.assertArrayEquals(value, newTrie.get(key));
+    }
+
+    @Test
     public void saveFullTrie() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
@@ -97,6 +123,40 @@ public class TrieStoreImplTest {
         Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
 
         Assert.assertEquals(trie.trieSize(), store.getSaveCount());
+    }
+
+    @Test
+    public void saveFullTrieWithLongValue() {
+        HashMapDB map = new HashMapDB();
+        TrieStoreImpl store = new TrieStoreImpl(map);
+
+        Trie trie = new TrieImpl(store, false).put("foo", new byte[100]);
+
+        trie.save();
+
+        Assert.assertEquals(trie.trieSize() + 1, map.keys().size());
+        Assert.assertNotNull(map.get(trie.getHash()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+
+        Assert.assertEquals(trie.trieSize() + 1, store.getSaveCount());
+    }
+
+    @Test
+    public void saveFullTrieWithTwoLongValues() {
+        HashMapDB map = new HashMapDB();
+        TrieStoreImpl store = new TrieStoreImpl(map);
+
+        Trie trie = new TrieImpl(store, false)
+                .put("foo", new byte[100])
+                .put("bar", new byte[200]);
+
+        trie.save();
+
+        Assert.assertEquals(trie.trieSize() + 2, map.keys().size());
+        Assert.assertNotNull(map.get(trie.getHash()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+
+        Assert.assertEquals(trie.trieSize() + 2, store.getSaveCount());
     }
 
     @Test

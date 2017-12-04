@@ -195,7 +195,9 @@ public class TrieImpl implements Trie {
 
         try {
             int arity = istream.readByte();
-            boolean isSecure = istream.readByte() == 1;
+            int flags = istream.readByte();
+            boolean isSecure = (flags & 0x01) == 1;
+            boolean hasLongVal = (flags & 0x02) == 2;
             int bhashes = istream.readShort();
             int lshared = istream.readShort();
 
@@ -228,13 +230,23 @@ public class TrieImpl implements Trie {
             }
 
             int offset = MESSAGE_HEADER_LENGTH + lencoded + nhashes * SHA3Helper.DEFAULT_SIZE_BYTES;
-            int lvalue = msglength - offset;
             byte[] value = null;
 
-            if (lvalue > 0) {
-                value = new byte[lvalue];
-                if (istream.read(value) != lvalue) {
+            if (hasLongVal) {
+                byte[] valueHash = new byte[SHA3Helper.DEFAULT_SIZE_BYTES];
+
+                if (istream.read(valueHash) != SHA3Helper.DEFAULT_SIZE_BYTES)
                     throw new EOFException();
+
+                value = store.retrieveValue(valueHash);
+            }
+            else {
+                int lvalue = msglength - offset;
+
+                if (lvalue > 0) {
+                    value = new byte[lvalue];
+                    if (istream.read(value) != lvalue)
+                        throw new EOFException();
                 }
             }
 
