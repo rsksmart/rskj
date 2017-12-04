@@ -31,7 +31,7 @@ import static org.ethereum.vm.OpCode.Tier.*;
  * - Appendix G. Virtual Machine Specification
  */
 public enum OpCode {
-    // opcode, in-args,out-args, cost
+    // code, in-args,out-args, cost
     /**
      * Halts execution (0x00)
      */
@@ -420,7 +420,7 @@ public enum OpCode {
 
     /*  Duplicate Nth item from the stack   */
 
-    /* DUPn opcode "consumes" n elements from stack and pushes (n+1) elements */
+    /* DUPn code "consumes" n elements from stack and pushes (n+1) elements */
 
     /**
      * (0x80) Duplicate 1st item on stack
@@ -565,9 +565,24 @@ public enum OpCode {
 
 
     /**
+     * DUPN
+     */
+    DUPN(0xa8, 2, 2, VERY_LOW_TIER),
+
+    /**
+     * SWAPN
+     */
+    SWAPN(0xa9, 3, 2, VERY_LOW_TIER),
+
+    /**
+     * TXINDEX
+     */
+    TXINDEX(0xaa, 0, 1, BASE_TIER),
+
+    /**
      * CODEREPLACE
      */
-    CODEREPLACE(0xa8, 2, 1, SPECIAL_TIER,1),   //       [in_size] [in_offs] CODEREPLACE -> success
+    CODEREPLACE(0xab, 2, 1, SPECIAL_TIER,1),   //       [in_size] [in_offs] CODEREPLACE -> success
 
     /*  System operations   */
 
@@ -594,16 +609,21 @@ public enum OpCode {
      * (0xf4)  similar in idea to CALLCODE, except that it propagates the sender and value
      *  from the parent scope to the child scope, ie. the call created has the same sender
      *  and value as the original call.
-     *  also the Value parameter is omitted for this opCode
+     *  also the Value parameter is omitted for this code
      */
     DELEGATECALL(0xf4, 6, 1, SPECIAL_TIER),
-
-  /**
+    /**
      * (0xfc) Halt execution as an invalid opcode
      * setting version==256 assures it's never considered valid.
      * (because scriptVersion range is 0..255)
      */
     HEADER(0xfc, 0, 0, ZERO_TIER,256),
+    /**
+     * (0xfd) The `REVERT` instruction will stop execution, roll back all state changes done so far
+     * and provide a pointer to a memory section, which can be interpreted as an error code or message.
+     * While doing so, it will not consume all the remaining gas.
+     */
+    REVERT(0xfd, 2, 0, ZERO_TIER),
 
     /**
      *  (0xff) Halt execution and register account for
@@ -611,46 +631,45 @@ public enum OpCode {
      */
     SUICIDE(0xff, 1, 0, ZERO_TIER);
 
-    public final byte opcode;
+    private final byte code;
     private final int require;
     private final Tier tier;
     private final int ret;
     private final int scriptVersion;
 
-    private static final Map<Byte, OpCode> intToTypeMap = new HashMap<>();
     private static final Map<String, Byte> stringToByteMap = new HashMap<>();
     private static final OpCode[] intToTypeFastMap = new OpCode[256]; //
     static {
         for (OpCode type : OpCode.values()) {
-            if (type.opcode<0)
-                intToTypeFastMap[256+type.opcode]=type;
+            if (type.code <0)
+                intToTypeFastMap[256+type.code]=type;
             else
-                intToTypeFastMap[type.opcode]=type;
+                intToTypeFastMap[type.code]=type;
 
-            intToTypeMap.put(type.opcode, type);
-            stringToByteMap.put(type.name(), type.opcode);
+            stringToByteMap.put(type.name(), type.code);
         }
     }
 
     //require = required elements
     //return = required return
-    private OpCode(int op, int require, int ret, Tier tier) {
-        this.opcode = (byte) op;
+    OpCode(int code, int require, int ret, Tier tier) {
+        this.code = (byte) code;
         this.require = require;
         this.tier = tier;
         this.ret = ret;
         scriptVersion = 0;
     }
 
-    private OpCode(int op, int require, int ret, Tier tier, int scriptVersion) {
-        this.opcode = (byte) op;
+    OpCode(int code, int require, int ret, Tier tier, int scriptVersion) {
+        this.code = (byte) code;
         this.require = require;
         this.tier = tier;
         this.ret = ret;
         this.scriptVersion = scriptVersion;
     }
+
     public byte val() {
-        return opcode;
+        return code;
     }
 
     /**
@@ -667,7 +686,7 @@ public enum OpCode {
     }
 
     public int asInt() {
-        return opcode;
+        return code;
     }
 
     public int scriptVersion() { return scriptVersion; }
@@ -705,7 +724,7 @@ public enum OpCode {
 
         private final int level;
 
-        private Tier(int level) {
+        Tier(int level) {
             this.level = level;
         }
 

@@ -18,61 +18,121 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.net.MessageHandler;
-import co.rsk.net.MessageSender;
+import co.rsk.net.*;
 import co.rsk.net.messages.Message;
+import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.scoring.PeerScoring;
+import co.rsk.scoring.PeerScoringManager;
+import co.rsk.test.World;
+import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.validators.DummyBlockValidationRule;
+import org.ethereum.core.Blockchain;
+import org.ethereum.rpc.Simples.SimpleChannelManager;
+import org.junit.Assert;
+import org.mockito.Mockito;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.*;
+
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 5/15/2016.
  */
-public class SimpleAsyncNode extends SimpleNode implements Runnable {
-    private BlockingQueue<MessageTask> messages = new ArrayBlockingQueue<MessageTask>(1000);
-    private volatile boolean stopped = false;
+public class SimpleAsyncNode extends SimpleNode {
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(5000);
+    private SyncProcessor syncProcessor;
 
     public SimpleAsyncNode(MessageHandler handler) {
         super(handler);
-        (new Thread(this)).start();
+    }
+
+    public SimpleAsyncNode(MessageHandler handler, SyncProcessor syncProcessor) {
+        super(handler);
+        this.syncProcessor = syncProcessor;
     }
 
     @Override
-    public void processMessage(MessageSender sender, Message message) {
-        if (this.stopped)
-            return;
-
-        this.messages.add(new MessageTask(sender, message));
+    public void receiveMessageFrom(SimpleNode peer, Message message) {
+        SimpleNodeChannel senderToPeer = new SimpleNodeChannel(this, peer);
+        futures.add(
+                executor.submit(() -> this.getHandler().processMessage(senderToPeer, message)));
     }
 
-    public void stop() {
-        this.stopped = true;
+    public void joinWithTimeout() {
+        try {
+            executor.shutdown();
+            executor.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+            throw new RuntimeException("Join operation timed out. Remaining tasks: " + this.futures.size() + " .");
+        }
     }
 
-    public void run() {
-        while (!this.stopped || !this.messages.isEmpty()) {
-            MessageTask task = null;
-            try {
-                task = this.messages.take();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                return;
+    public void waitUntilNTasksWithTimeout(int number) {
+        try {
+            for (int i = 0; i < number; i++) {
+                Future task = this.futures.poll(10, TimeUnit.SECONDS);
+                if (task == null) {
+                    throw new RuntimeException("Exceeded waiting time. Expected " + (number - i) + " more tasks.");
+                }
+                task.get();
             }
-            task.execute(this.getHandler());
+        } catch (ExecutionException ex) {
+            ex.printStackTrace();
+            Assert.fail();
+        } catch (InterruptedException ignored) {
         }
     }
 
-    private class MessageTask {
-        private MessageSender sender;
-        private Message message;
+    public void waitExactlyNTasksWithTimeout(int number) {
+        waitUntilNTasksWithTimeout(number);
+        int remaining = this.futures.size();
+        if (remaining > 0)
+            throw new RuntimeException("Too many tasks. Expected " + number + " but got " + (number + remaining));
+    }
 
-        public MessageTask(MessageSender sender, Message message) {
-            this.sender = sender;
-            this.message = message;
-        }
+    public void clearQueue() {
+        this.futures.clear();
+    }
 
-        public void execute(MessageHandler handler) {
-            handler.processMessage(sender, message);
-        }
+    public SyncProcessor getSyncProcessor() {
+        return this.syncProcessor;
+    }
+
+
+
+    public static SimpleAsyncNode createDefaultNode(Blockchain blockChain){
+        return createNode(blockChain, SyncConfiguration.DEFAULT);
+    }
+
+    public static SimpleAsyncNode createNode(Blockchain blockchain, SyncConfiguration syncConfiguration) {
+        final BlockStore store = new BlockStore();
+
+        BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
+        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
+        PeerScoringManager peerScoringManager = Mockito.mock(PeerScoringManager.class);
+        when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
+        when(peerScoringManager.getPeerScoring(isA(NodeID.class))).thenReturn(new PeerScoring());
+        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, blockValidationRule);
+        NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, new SimpleChannelManager(), null, null, peerScoringManager, blockValidationRule);
+        return new SimpleAsyncNode(handler, syncProcessor);
+    }
+
+    // TODO(mc) find out why the following two work differently
+
+    public static SimpleAsyncNode createNodeWithBlockChainBuilder(int size) {
+        final Blockchain blockchain = BlockChainBuilder.ofSize(0);
+        BlockChainBuilder.extend(blockchain, size, false, true);
+        return createNode(blockchain, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+    }
+
+    public static SimpleAsyncNode createNodeWithWorldBlockChain(int size, boolean withUncles, boolean mining) {
+        final World world = new World();
+        final Blockchain blockchain = world.getBlockChain();
+        BlockChainBuilder.extend(blockchain, size, withUncles, mining);
+        return createNode(blockchain, SyncConfiguration.IMMEDIATE_FOR_TESTING);
     }
 }

@@ -24,7 +24,7 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.rpc.TypeConverter;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.testng.Assert;
+import org.junit.Assert;
 
 import java.math.BigInteger;
 import java.util.*;

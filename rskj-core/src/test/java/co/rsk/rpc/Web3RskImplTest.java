@@ -18,12 +18,12 @@
 
 package co.rsk.rpc;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.core.Rsk;
+import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.peg.PegTestUtils;
-import co.rsk.config.RskSystemProperties;
-import co.rsk.core.Wallet;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
@@ -41,7 +41,7 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.testng.Assert;
+import org.junit.Assert;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,15 +66,12 @@ public class Web3RskImplTest {
         Mockito.when(networkStateExporter.exportStatus(Mockito.anyString())).thenReturn(true);
 
         Mockito.when(worldManager.getBlockchain()).thenReturn(blockchain);
-        Mockito.when(worldManager.getNetworkStateExporter()).thenReturn(networkStateExporter);
-        Mockito.when(worldManager.getBlockStore()).thenReturn(blockStore);
         Mockito.when(blockchain.getBestBlock()).thenReturn(block);
-        Mockito.when(rsk.getWorldManager()).thenReturn(worldManager);
 
         Wallet wallet = WalletFactory.createWallet();
-        PersonalModule pm = new PersonalModuleWalletEnabled(rsk, wallet);
-        EthModule em = new EthModule(rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(rsk, wallet));
-        Web3RskImpl web3 = new Web3RskImpl(rsk, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em);
+        PersonalModule pm = new PersonalModuleWalletEnabled(rsk, wallet, null);
+        EthModule em = new EthModule(rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(rsk, wallet, null));
+        Web3RskImpl web3 = new Web3RskImpl(rsk, worldManager, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, networkStateExporter, blockStore, null);
         web3.ext_dumpState();
     }
 

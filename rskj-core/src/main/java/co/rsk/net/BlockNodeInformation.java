@@ -19,12 +19,13 @@
 package co.rsk.net;
 
 import org.ethereum.db.ByteArrayWrapper;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
- * BlockNodeInformation has information about which blocks are known by which blocks,
+ * BlockNodeInformation has information about which blocks are known by which peer,
  * and provides convenient functions to retrieve all the blocks known by a node, and
  * which nodes know a certain block.
  * <p>
@@ -32,6 +33,7 @@ import java.util.*;
  * that aren't accessed frequently will be deleted, as well as peers.
  * Peers will only remember the last maxBlocks blocks that were inserted.
  */
+@Component
 public class BlockNodeInformation {
     private final Map<NodeID, Set<ByteArrayWrapper>> blocksByNode;
     private final LinkedHashMap<ByteArrayWrapper, Set<NodeID>> nodesByBlock;

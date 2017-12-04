@@ -18,9 +18,7 @@
 
 package org.ethereum.rpc.Simples;
 
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
-import org.ethereum.core.CallTransaction;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
 import org.ethereum.facade.Blockchain;
@@ -28,17 +26,12 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.Repository;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
-import org.ethereum.manager.AdminInfo;
 import org.ethereum.manager.WorldManager;
-import org.ethereum.net.rlpx.Node;
-import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Web3;
 import org.ethereum.vm.program.ProgramResult;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
-import java.net.InetAddress;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -47,7 +40,6 @@ import java.util.concurrent.Future;
  */
 public class SimpleEthereum implements Ethereum {
 
-    public PeerServer peerServer;
     public Transaction tx;
     public WorldManager worldManager;
     public Repository repository;
@@ -58,21 +50,6 @@ public class SimpleEthereum implements Ethereum {
 
     public SimpleEthereum(SimpleWorldManager worldManager) {
         this.worldManager = worldManager;
-    }
-
-    @Override
-    public void connect(InetAddress addr, int port, String remoteId) {
-
-    }
-
-    @Override
-    public void connect(String ip, int port, String remoteId) {
-
-    }
-
-    @Override
-    public void connect(Node node) {
-
     }
 
     @Override
@@ -108,19 +85,8 @@ public class SimpleEthereum implements Ethereum {
         return null;
     }
 
-    @Override
-    public ProgramResult callConstantFunction(String receiveAddress, CallTransaction.Function function, Object... funcArgs) {
-        return null;
-    }
-
-    @Override
     public Repository getRepository() {
         return repository;
-    }
-
-    @Override
-    public Repository getPendingState() {
-        return null;
     }
 
     @Override
@@ -129,27 +95,7 @@ public class SimpleEthereum implements Ethereum {
     }
 
     @Override
-    public Repository getSnapshootTo(byte[] root) {
-        return null;
-    }
-
-    @Override
-    public AdminInfo getAdminInfo() {
-        return null;
-    }
-
-    @Override
-    public ChannelManager getChannelManager() {
-        return null;
-    }
-
-    @Override
     public List<Transaction> getWireTransactions() {
-        return null;
-    }
-
-    @Override
-    public List<Transaction> getPendingStateTransactions() {
         return null;
     }
 
@@ -159,27 +105,7 @@ public class SimpleEthereum implements Ethereum {
     }
 
     @Override
-    public void exitOn(long number) {
-
-    }
-
-    @Override
-    public WorldManager getWorldManager() {
-        return worldManager;
-    }
-
-    @Override
-    public PeerServer getPeerServer() {
-        return peerServer;
-    }
-
-    @Override
     public ProgramResult callConstant(Web3.CallArguments args) {
-        return null;
-    }
-
-    @Override
-    public SystemProperties getSystemProperties() {
         return null;
     }
 }

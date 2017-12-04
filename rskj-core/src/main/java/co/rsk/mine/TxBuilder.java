@@ -18,6 +18,7 @@
 
 package co.rsk.mine;
 
+import co.rsk.net.BlockProcessor;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -40,7 +41,9 @@ import java.security.SecureRandom;
 
 public class TxBuilder {
 
-    private Ethereum ethereum;
+    private final Ethereum ethereum;
+    private final BlockProcessor blockProcessor;
+    private final Repository repository;
 
     private static final Logger logger = LoggerFactory.getLogger("txbuilder");
     private volatile boolean stop = false;
@@ -48,8 +51,10 @@ public class TxBuilder {
     private byte[] privateKeyBytes  = HashUtil.sha3("this is a seed".getBytes(StandardCharsets.UTF_8));
     private ECKey key;
 
-    public TxBuilder(Ethereum ethereum){
+    public TxBuilder(Ethereum ethereum, BlockProcessor blockProcessor, Repository repository) {
         this.ethereum = ethereum;
+        this.blockProcessor = blockProcessor;
+        this.repository = repository;
     }
 
     public void simulateTxs( ) {
@@ -62,11 +67,9 @@ public class TxBuilder {
                 try {
                     Thread.sleep(60000);
 
-                    while (ethereum.getWorldManager().getNodeBlockProcessor().isSyncingBlocks()) {
+                    while (blockProcessor.hasBetterBlockToSync()) {
                         Thread.sleep(60000);
                     }
-
-                    Repository repository = (Repository) ethereum.getRepository();
 
                     SecureRandom random = new SecureRandom();
 
@@ -75,7 +78,7 @@ public class TxBuilder {
 
                     while (!stop) {
                         if ((random.nextInt() % 10) == 0)
-                            nonce = ((Repository) ethereum.getRepository()).getAccountState(key.getAddress()).getNonce();
+                            nonce = repository.getAccountState(key.getAddress()).getNonce();
 
                         TxBuilder.this.createNewTx(nonce);
                         

@@ -20,7 +20,6 @@
 package org.ethereum.vm;
 
 import co.rsk.asm.EVMAssembler;
-import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.Program;
@@ -33,7 +32,6 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.oneByteToHexString;
@@ -2443,8 +2441,7 @@ public class VMTest {
         assertEquals(expectedSteps, i);
     }
 
-    @Ignore //TODO #POC9
-    @Test // EXP OP
+    @Test
     public void testEXP_1() {
 
         VM vm = new VM();
@@ -2459,11 +2456,10 @@ public class VMTest {
         long gas = program.getResult().getGasUsed();
 
         assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
-        assertEquals(4, gas);
+        assertEquals(66, gas);
     }
 
-    @Ignore //TODO #POC9
-    @Test // EXP OP
+    @Test
     public void testEXP_2() {
 
         VM vm = new VM();
@@ -2478,11 +2474,10 @@ public class VMTest {
         long gas = program.getResult().getGasUsed();
 
         assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
-        assertEquals(3, gas);
+        assertEquals(16, gas);
     }
 
-    @Ignore //TODO #POC9
-    @Test // EXP OP
+    @Test
     public void testEXP_3() {
 
         VM vm = new VM();
@@ -2497,7 +2492,7 @@ public class VMTest {
         long gas = program.getResult().getGasUsed();
 
         assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
-        assertEquals(5, gas);
+        assertEquals(116, gas);
     }
 
 
@@ -2977,6 +2972,22 @@ public class VMTest {
         String result = Program.stringifyMultiline(Hex.decode(code2));
         assertTrue(result.contains("00000000000000000000000000000000")); // detecting bynary data in bytecode
     }
+
+    @Test
+    public void decompileDupnSwapn() {
+        String code = "6060a8a962";
+        String result = Program.stringifyMultiline(Hex.decode(code));
+        assertTrue(result.contains("PUSH1 0x60 (96)"));
+        assertTrue(result.contains("DUPN"));
+        assertTrue(result.contains("SWAPN"));
+    }
+
+    @Test
+    public void decompileTxindex() {
+        String code = "aa";
+        String result = Program.stringifyMultiline(Hex.decode(code));
+        assertTrue(result.contains("TXINDEX"));
+    }
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Testing an unfinished script header
     // header must be 4 bytes or more to be valid
@@ -2990,7 +3001,7 @@ public class VMTest {
             assertTrue(program.isStopped());
         }
     }
-    // Testing FC opcode with scriptVersion ==0.
+    // Testing FC code with scriptVersion ==0.
     // The header is valid
     // Should produce invalidop exception
     @Test(expected = Program.IllegalOperationException.class)
@@ -3008,14 +3019,14 @@ public class VMTest {
             assertTrue(program.isStopped());
         }
     }
-    // Under scriptVersion == 1, opHEADER in a program is still an invalid opcode.
+    // Under scriptVersion == 1, opHEADER in a program is still an invalid code.
 
     @Test(expected = Program.IllegalOperationException.class)
     public void testScriptVersion2() {
         VM vm = new VM();
         program = new Program(Hex.decode(
                 "FC010100" + //header
-                        "FC" // invalid opcode
+                        "FC" // invalid code
         ), invoke);
         try {
             // Only one step needs to be exaecuted because header is not.
@@ -3033,7 +3044,7 @@ public class VMTest {
         program = new Program(Hex.decode(
                 "FC01010A" + //header with 10 additional bytes
                         "0102030405060708090A" + // additional header bytes
-                        "00" // STOP opcode
+                        "00" // STOP code
         ), invoke);
         try {
             // Only one step needs to be exaecuted because header is not.

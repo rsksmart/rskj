@@ -114,7 +114,7 @@ public class MinerClientImpl implements MinerClient {
     @Override
     public boolean mineBlock() {
         if (this.rsk != null) {
-            if (this.rsk.isSyncingBlocks()) {
+            if (this.rsk.hasBetterBlockToSync()) {
                 try {
                     Thread.sleep(10000);
                 } catch (InterruptedException e1) {

@@ -181,7 +181,7 @@ public class Transaction implements SerializableObject {
         if (!parsed)
             rlpParse();
 
-		//Federators txs to the bridge are free during system setup
+		// Federators txs to the bridge are free during system setup
         if (BridgeUtils.isFreeBridgeTx(this, block.getNumber())) {
             return 0;
         }
@@ -308,16 +308,24 @@ public class Transaction implements SerializableObject {
     }
 
     public boolean acceptTransactionSignature() {
-        if (!getSignature().validateComponents())
+        ECDSASignature signature = getSignature();
+        if (signature == null) {
             return false;
+        }
 
-        if (getSignature().s.compareTo(SECP256K1N_HALF) >= 0)
+        if (!signature.validateComponents()) {
             return false;
+        }
+
+        if (signature.s.compareTo(SECP256K1N_HALF) >= 0) {
+            return false;
+        }
 
         byte chId = this.getChainId();
 
-        if (chId !=0 && chId != RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId())
+        if (chId !=0 && chId != RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId()) {
             return false;
+        }
 
         return true;
     }
@@ -516,13 +524,15 @@ public class Transaction implements SerializableObject {
     }
 
     public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit){
-        return create(to, amount, nonce, gasPrice, gasLimit, null);
+        return create(to, amount, nonce, gasPrice, gasLimit, (byte[]) null);
     }
 
     public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data){
-
         byte[] decodedData = data == null ? null : Hex.decode(data);
+        return create(to, amount, nonce, gasPrice, gasLimit, decodedData);
+    }
 
+    public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData) {
         return new Transaction(BigIntegers.asUnsignedByteArray(nonce),
                 BigIntegers.asUnsignedByteArray(gasPrice),
                 BigIntegers.asUnsignedByteArray(gasLimit),

@@ -133,14 +133,14 @@ public class TransactionTest {
                 "                } " +
                 "            }, " +
                 "            '" + PrecompiledContracts.REMASC_ADDR + "' : { " +
-                "                'balance' : '0x67c3', " +
+                "                'balance' : '0x67EB', " +
                 "                'code' : '0x', " +
                 "                'nonce' : '0x00', " +
                 "                'storage' : { " +
                 "                } " +
                 "            }, " +
                 "            'a94f5374fce5edbc8e2a8697c15331677e6ebf0b' : { " +
-                "                'balance' : '0x0DE0B6B3A762119D', " +
+                "                'balance' : '0x0DE0B6B3A7621175', " +
                 "                'code' : '0x', " +
                 "                'nonce' : '0x01', " +
                 "                'storage' : { " +
@@ -189,13 +189,14 @@ public class TransactionTest {
                     Repository track = repository.startTracking();
 
                     Transaction txConst = CallTransaction.createCallTransaction(0, 0, 100000000000000L,
-                            "095e7baea6a6c7c4c2dfeb977efac326af552d87", 0, CallTransaction.Function.fromSignature("get"));
+                            "095e7baea6a6c7c4c2dfeb977efac326af552d87", 0,
+                            CallTransaction.Function.fromSignature("get"));
                     txConst.sign(new byte[32]);
 
                     Block bestBlock = block;
 
                     TransactionExecutor executor = new TransactionExecutor
-                            (txConst, bestBlock.getCoinbase(), track, new BlockStoreDummy(), null,
+                            (txConst, 0, bestBlock.getCoinbase(), track, new BlockStoreDummy(), null,
                                     invokeFactory, bestBlock)
                             .setLocalCall(true);
 

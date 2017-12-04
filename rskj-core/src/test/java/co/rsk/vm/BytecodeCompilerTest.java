@@ -126,6 +126,47 @@ public class BytecodeCompilerTest {
     }
 
     @Test
+    public void compilePushes() {
+        BytecodeCompiler compiler = new BytecodeCompiler();
+
+        for (int k = 1; k <= 32; k++) {
+            byte[] bytecodes = new byte[k + 1];
+            bytecodes[0] = (byte)(0x60 + k - 1);
+
+            for (int j = 1; j <= k; j++)
+                bytecodes[j] = (byte)j;
+
+            String code = "PUSH" + k;
+
+            for (int j = 1; j <= k; j++)
+                code += " " + j;
+
+            Assert.assertArrayEquals(bytecodes, compiler.compile(code));
+        }
+    }
+
+    @Test
+    public void compileDupNWithValue() {
+        BytecodeCompiler compiler = new BytecodeCompiler();
+
+        Assert.assertArrayEquals(new byte[] { (byte)0xa8, 0x00 }, compiler.compile("DUPN 0x00"));
+    }
+
+    @Test
+    public void compileSwapNWithValue() {
+        BytecodeCompiler compiler = new BytecodeCompiler();
+
+        Assert.assertArrayEquals(new byte[] { (byte)0xa9, 0x01 }, compiler.compile("SWAPN 0x01"));
+    }
+
+    @Test
+    public void compileTxIndex() {
+        BytecodeCompiler compiler = new BytecodeCompiler();
+
+        Assert.assertArrayEquals(new byte[] { (byte)0xaa }, compiler.compile("TXINDEX"));
+    }
+
+    @Test
     public void compileSimplePushWithDecimal() {
         BytecodeCompiler compiler = new BytecodeCompiler();
 

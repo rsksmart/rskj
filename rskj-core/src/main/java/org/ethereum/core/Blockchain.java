@@ -76,4 +76,6 @@ public interface Blockchain {
     Repository getRepository();
 
     List<BlockInformation> getBlocksInformationByNumber(long number);
+
+    boolean hasBlockInSomeBlockchain(byte[] hash);
 }

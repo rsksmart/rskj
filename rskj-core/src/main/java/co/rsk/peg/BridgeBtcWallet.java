@@ -18,7 +18,6 @@
 
 package co.rsk.peg;
 
-import co.rsk.config.BridgeConstants;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -27,18 +26,20 @@ import co.rsk.bitcoinj.wallet.Wallet;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * @author ajlopez
  * @author Oscar Guindzberg
  */
 public class BridgeBtcWallet extends Wallet {
-    private BridgeConstants bridgeConstants;
+    private List<Federation> federations;
     private Context btcContext;
 
-    public BridgeBtcWallet(Context btcContext, BridgeConstants bridgeConstants) {
+    public BridgeBtcWallet(Context btcContext, List<Federation> federations) {
         super(btcContext);
-        this.bridgeConstants = bridgeConstants;
+        this.federations = federations;
         this.btcContext = btcContext;
     }
 
@@ -49,19 +50,10 @@ public class BridgeBtcWallet extends Wallet {
     @Override
     public RedeemData findRedeemDataFromScriptHash(byte[] payToScriptHash) {
         Context.propagate(this.btcContext);
-//      Oscar: Comment out this line since we now have our own bitcoinj wallet and we disabled this feature
-//      I leave the code here just in case we decide to rollback to use the full original bitcoinj Wallet
-//      "keyChainGroupLock.lock();"
-        try {
-            if (!Arrays.equals(bridgeConstants.getFederationPubScript().getPubKeyHash(), payToScriptHash)) {
-                return null;
-            }
-            Script redeemScript = ScriptBuilder.createRedeemScript(bridgeConstants.getFederatorsRequiredToSign(), bridgeConstants.getFederatorPublicKeys());
-            return RedeemData.of(bridgeConstants.getFederatorPublicKeys(), redeemScript);
-        } finally {
-//          Oscar: Comment out this line since we now have our own bitcoinj wallet and we disabled this feature
-//          I leave the code here just in case we decide to rollback to use the full original bitcoinj Wallet
-//          "keyChainGroupLock.unlock();"
+        Optional<Federation> destinationFederation = federations.stream().filter(federation -> Arrays.equals(federation.getP2SHScript().getPubKeyHash(), payToScriptHash)).findFirst();
+        if (!destinationFederation.isPresent()) {
+            return null;
         }
+        return RedeemData.of(destinationFederation.get().getPublicKeys(), destinationFederation.get().getRedeemScript());
     }
 }

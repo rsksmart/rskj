@@ -46,8 +46,8 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
 
 
     @Override
-    public ProgramInvoke createProgramInvoke(Transaction tx, Block block, Repository repository, BlockStore blockStore) {
-        return generalInvoke(tx, repository, blockStore);
+    public ProgramInvoke createProgramInvoke(Transaction tx, int txindex, Block block, Repository repository, BlockStore blockStore) {
+        return generalInvoke(tx, txindex, repository, blockStore);
     }
 
     @Override
@@ -58,8 +58,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
         return null;
     }
 
-
-    private ProgramInvoke generalInvoke(Transaction tx, Repository repository, BlockStore blockStore) {
+    private ProgramInvoke generalInvoke(Transaction tx, int txindex, Repository repository, BlockStore blockStore) {
 
         /***         ADDRESS op       ***/
         // YP: Get address of currently executing account.
@@ -111,7 +110,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
 
         return new ProgramInvokeImpl(address, origin, caller, balance,
                 gasPrice, gas, callValue, data, lastHash, coinbase,
-                timestamp, number, difficulty, gaslimit, repository, blockStore);
+                timestamp, number, txindex, difficulty, gaslimit, repository, blockStore);
     }
 
 }

@@ -55,6 +55,7 @@ public class Genesis extends Block {
     protected static final long NUMBER = 0;
 
     public Genesis(byte[] rawData){
+        // TODO(ajlopez) Genesis block should be sealed
         super(rawData, false);
     }
 
