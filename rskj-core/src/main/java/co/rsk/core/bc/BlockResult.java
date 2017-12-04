@@ -24,6 +24,7 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.crypto.HashUtil;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.RLP;
 
 import java.util.HashMap;
@@ -106,7 +107,7 @@ public class BlockResult {
     }
 
     // from original BlockchainImpl
-    private static byte[] calculateReceiptsTrie(List<TransactionReceipt> receipts) {
+    public static byte[] calculateReceiptsTrie(List<TransactionReceipt> receipts) {
         //TODO Fix Trie hash for receipts - doesnt match cpp
         Trie receiptsTrie = new TrieImpl();
 

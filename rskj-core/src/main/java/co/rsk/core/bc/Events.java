@@ -57,7 +57,7 @@ public Map<ByteArrayWrapper, EventsPerAccount> getMap() {
             byte[] payload = item.getEncoded();
             payloads.add(payload);
         }
-        byte[] rlpEncoded =RLP.encodeList(payloads);
+        byte[] rlpEncoded =RLP.encodeListFromList(payloads);
         return rlpEncoded;
     }
 

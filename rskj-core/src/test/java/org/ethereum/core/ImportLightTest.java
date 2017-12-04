@@ -78,6 +78,7 @@ public class ImportLightTest {
                 blockStore,
                 receiptStore,
                 null,
+                null,
                 listener,
                 new AdminInfo(),
                 new DummyBlockValidator()

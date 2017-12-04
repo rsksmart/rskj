@@ -356,17 +356,21 @@ public class BlockValidatorTest {
     }
 
     @Test
+    // This test is bad and worthless. It is not checking the result of tryToConnect(genesis)
+    // tryToConnect(genesis) is failing.
     public void invalidPOWUncles() {
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
         BlockStore store = blockChain.getBlockStore();
 
         Block genesis = BlockGenerator.getInstance().getGenesisBlock();
 
-        Block uncle1a = BlockGenerator.getInstance().getBlock(1);
+        //Block uncle1a = BlockGenerator.getInstance().getBlock(1);
+        Block uncle1a = BlockGenerator.getInstance().getBlockBadlyEncoded(1);
         List<BlockHeader> uncles1 = new ArrayList<>();
         uncles1.add(uncle1a.getHeader());
         Block block1 = BlockGenerator.getInstance().createChildBlock(genesis, null, uncles1, 1, null);
 
+        // IT SHOULD CHECK THE RETURN VALUE OF blockChain.tryToConnect(genesis)
         blockChain.tryToConnect(genesis);
         store.saveBlock(uncle1a, BigInteger.ONE, false);
 
@@ -431,7 +435,8 @@ public class BlockValidatorTest {
 
 
         Block uncle1a = BlockGenerator.getInstance().createChildBlock(new SimpleBlock(null, null, new byte[]{12, 12}, null, BigInteger.ONE.toByteArray(),
-                0, null, 0L, 0L, new byte[]{}, null, null, null, new byte[]{1, 2}, null, null, null));
+                0, null, 0L, 0L, new byte[]{}, null, null, null,
+                null, new byte[]{1, 2}, null, null, null));
 
         List<BlockHeader> uncles1 = new ArrayList<>();
         uncles1.add(uncle1a.getHeader());

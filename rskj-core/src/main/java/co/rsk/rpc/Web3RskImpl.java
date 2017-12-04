@@ -21,6 +21,8 @@ package co.rsk.rpc;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
+import co.rsk.core.bc.EventInfo;
+import co.rsk.core.bc.EventInfoItem;
 import co.rsk.mine.*;
 import co.rsk.rpc.exception.JsonRpcSubmitBlockException;
 import co.rsk.rpc.modules.eth.EthModule;
@@ -29,6 +31,8 @@ import co.rsk.scoring.PeerScoringManager;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
@@ -48,9 +52,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
 /**
  * Created by adrian.eidelman on 3/11/2016.
@@ -318,10 +323,10 @@ public class Web3RskImpl extends Web3Impl {
 
             if (blockFrom != null) {
                 // need to add historical data
-                blockTo = blockTo == null ? worldManager.getBlockchain().getBestBlock() : blockTo;
+                blockTo = blockTo == null ? this.blockchain.getBestBlock() : blockTo;
                 for (long blockNum = blockFrom.getNumber(); blockNum <= blockTo.getNumber(); blockNum++) {
-                    filter.onBlock(worldManager.getBlockchain().getBlockByNumber(blockNum),
-                            worldManager.getBlockchain().getEventsByBlockNumber(blockNum));
+                    filter.onBlock(this.blockchain.getBlockByNumber(blockNum),
+                            this.blockchain.getEventsByBlockNumber(blockNum));
                 }
             }
 
@@ -335,7 +340,7 @@ public class Web3RskImpl extends Web3Impl {
             // RSK brute force
             filter.onNewBlock = true;
 
-            return str = toJsonHex(id);
+            return str = TypeConverter.toJsonHex(id);
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_newEventFilter(" + fr + "): " + str);

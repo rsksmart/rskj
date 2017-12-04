@@ -224,6 +224,7 @@ class RemascTestRunner {
                 new byte[0],                    // mixHash
                 BigInteger.ZERO.toByteArray(),         // provisory nonce
                 HashUtil.EMPTY_TRIE_HASH,       // receipts root
+                HashUtil.EMPTY_TRIE_HASH,       // contractsLog root
                 BlockChainImpl.calcTxTrie(txs), // transaction root
                 genesis.getStateRoot(),         //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list

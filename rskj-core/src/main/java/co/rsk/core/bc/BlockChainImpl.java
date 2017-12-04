@@ -28,10 +28,7 @@ import co.rsk.validators.BlockValidator;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.BlockInformation;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.TransactionInfo;
+import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.RLP;
@@ -85,6 +82,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     private final Repository repository;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
+    private final EventsStore eventsStore;
     private PendingState pendingState;
     private EthereumListener listener;
     private final AdminInfo adminInfo;
@@ -422,7 +420,9 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public Block getBlockByNumber(long number) { return blockStore.getChainBlockByNumber(number); }
+    public Block getBlockByNumber(long number) {
+        return blockStore.getChainBlockByNumber(number);
+    }
 
     @Override
     public List<EventInfoItem> getEventsByBlockNumber(long blockNr) {
