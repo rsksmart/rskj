@@ -439,6 +439,7 @@ public class TrieImpl implements Trie {
         int nnodes = this.getNodeCount();
         int lshared = this.sharedPathLength;
         int lencoded = getEncodedPathLength(lshared, this.arity);
+        boolean hasLongVal = this.hasLongValue();
 
         int bits = 0;
 
@@ -452,10 +453,10 @@ public class TrieImpl implements Trie {
             bits |= 1 << k;
         }
 
-        ByteBuffer buffer = ByteBuffer.allocate(MESSAGE_HEADER_LENGTH + lencoded + nnodes * SHA3Helper.DEFAULT_SIZE_BYTES + lvalue);
+        ByteBuffer buffer = ByteBuffer.allocate(MESSAGE_HEADER_LENGTH + lencoded + nnodes * SHA3Helper.DEFAULT_SIZE_BYTES + (hasLongVal ? SHA3Helper.DEFAULT_SIZE_BYTES : lvalue));
 
         buffer.put((byte) this.arity);
-        buffer.put((byte) (this.isSecure ? 1 : 0));
+        buffer.put((byte) ((this.isSecure ? 1 : 0) + (hasLongVal ? 2 : 0)));
         buffer.putShort((short) bits);
         buffer.putShort((short) lshared);
 
@@ -474,7 +475,12 @@ public class TrieImpl implements Trie {
         }
 
         if (lvalue > 0) {
-            buffer.put(this.value);
+            if (hasLongVal) {
+                buffer.put(this.getValueHash());
+            }
+            else {
+                buffer.put(this.value);
+            }
         }
 
         return buffer.array();

@@ -65,6 +65,28 @@ public class TrieImplMessageTest {
     }
 
     @Test
+    public void trieWithLongValueToMessage() {
+        Trie trie = new TrieImpl().put(new byte[0], new byte[33]);
+
+        byte[] message = trie.toMessage();
+
+        Assert.assertNotNull(message);
+        Assert.assertEquals(38, message.length);
+        Assert.assertEquals(2, message[0]);
+        Assert.assertEquals(2, message[1]);
+        Assert.assertEquals(0, message[2]);
+        Assert.assertEquals(0, message[3]);
+        Assert.assertEquals(0, message[4]);
+        Assert.assertEquals(0, message[5]);
+
+        byte[] valueHash = trie.getValueHash();
+
+        for (int k = 0; k < valueHash.length; k++) {
+            Assert.assertEquals(valueHash[k], message[k + 6]);
+        }
+    }
+
+    @Test
     public void trieWithSubtrieAndNoValueToMessage() {
         Trie trie = new TrieImpl().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 });
 

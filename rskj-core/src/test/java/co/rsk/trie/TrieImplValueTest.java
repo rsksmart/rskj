@@ -72,6 +72,7 @@ public class TrieImplValueTest {
 
         Assert.assertTrue(trie.hasLongValue());
         Assert.assertNotNull(trie.getValueHash());
+        Assert.assertEquals(32, trie.getValueHash().length);
         Assert.assertArrayEquals(value, trie.getValue());
     }
 }
