@@ -46,8 +46,6 @@ public class TrieImplSerializationTest {
 
         Assert.assertNotNull(bytes);
 
-        byte[] message = trie.toMessage();
-
         ByteArrayInputStream bstream = new ByteArrayInputStream(bytes);
         DataInputStream ostream = new DataInputStream(bstream);
 
@@ -68,8 +66,6 @@ public class TrieImplSerializationTest {
         byte[] bytes = trie.serialize();
 
         Assert.assertNotNull(bytes);
-
-        byte[] message = trie.toMessage();
 
         ByteArrayInputStream bstream = new ByteArrayInputStream(bytes);
         DataInputStream ostream = new DataInputStream(bstream);
