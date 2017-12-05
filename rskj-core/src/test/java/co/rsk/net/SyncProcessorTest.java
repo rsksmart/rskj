@@ -587,7 +587,7 @@ public class SyncProcessorTest {
         BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
         Assert.assertEquals(1, block.getTransactionsList().size());
         blockExecutor.executeAndFillAll(block, genesis);
-        Assert.assertEquals(21000, block.getFeesPaidToMiner());
+        Assert.assertEquals(21000, block.getFeesPaidToMiner().intValueExact());
         Assert.assertEquals(1, block.getTransactionsList().size());
 
         Assert.assertEquals(1, block.getNumber());

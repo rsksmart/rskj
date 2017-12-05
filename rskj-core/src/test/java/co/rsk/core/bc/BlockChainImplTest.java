@@ -295,7 +295,7 @@ public class BlockChainImplTest {
         Block genesis = getGenesisBlock(blockChain);
         Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
 
-        block1.getHeader().setPaidFees(block1.getHeader().getPaidFees() - 1);
+        block1.getHeader().setPaidFees(block1.getHeader().getPaidFees().subtract(BigInteger.ONE));
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
@@ -575,7 +575,7 @@ public class BlockChainImplTest {
                 block1b.getHash(), 0, 32) < 0;
         Block block2b = BlockGenerator.getInstance().createChildBlock(block1b);
 
-        block2b.getHeader().setPaidFees(block2b.getHeader().getPaidFees() + 1);
+        block2b.getHeader().setPaidFees(block2b.getHeader().getPaidFees().add(BigInteger.ONE));
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(

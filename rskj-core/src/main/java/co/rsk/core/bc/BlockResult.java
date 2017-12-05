@@ -26,6 +26,7 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.ethereum.util.RLP;
 
+import java.math.BigInteger;
 import java.util.List;
 
 /**
@@ -40,7 +41,7 @@ public class BlockResult {
     private byte[] stateRoot;
     private byte[] receiptsRoot;
     private long gasUsed;
-    private long paidFees;
+    private BigInteger paidFees;
     private byte[] logsBloom;
 
     private BlockResult(boolean interruptedExecution) {
@@ -48,7 +49,8 @@ public class BlockResult {
         this.interruptedExecution = interruptedExecution;
     }
 
-    public BlockResult(List<Transaction> executedTransactions, List<TransactionReceipt> transactionReceipts, byte[] stateRoot, long gasUsed, long paidFees) {
+    public BlockResult(List<Transaction> executedTransactions, List<TransactionReceipt> transactionReceipts,
+                       byte[] stateRoot, long gasUsed, BigInteger paidFees) {
         interruptedExecution = false;
         this.executedTransactions = executedTransactions;
         this.transactionReceipts = transactionReceipts;
@@ -80,7 +82,7 @@ public class BlockResult {
         return this.gasUsed;
     }
 
-    public long getPaidFees() {
+    public BigInteger getPaidFees() {
         return this.paidFees;
     }
 

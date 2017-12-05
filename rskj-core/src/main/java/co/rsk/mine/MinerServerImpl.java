@@ -90,7 +90,7 @@ public class MinerServerImpl implements MinerServer {
     @GuardedBy("lock")
     private Block latestBlock;
     @GuardedBy("lock")
-    private long latestPaidFeesWithNotify;
+    private BigInteger latestPaidFeesWithNotify;
     @GuardedBy("lock")
     private volatile MinerWork currentWork; // This variable can be read at anytime without the lock.
     private final Object lock = new Object();
@@ -143,7 +143,7 @@ public class MinerServerImpl implements MinerServer {
             }
         };
 
-        latestPaidFeesWithNotify = 0;
+        latestPaidFeesWithNotify = BigInteger.ZERO;
         latestParentHash = null;
         coinbaseAddress = miningConfig.getCoinbaseAddress();
         minFeesNotifyInDollars = miningConfig.getMinFeesNotifyInDollars();
@@ -396,13 +396,24 @@ public class MinerServerImpl implements MinerServer {
      * @param parentHash block's parent hash.
      * @return true if miners should be notified about this new block to mine.
      */
+    final BigInteger _100 = BigInteger.valueOf(100);
+    final BigInteger _1M = BigInteger.valueOf(1000*1000); // for scaling
+    final BigInteger _NOTIFY_FEES_PERCENTAGE_INCREASE = BigInteger.valueOf(RskMiningConstants.NOTIFY_FEES_PERCENTAGE_INCREASE);
+    final BigInteger _100_mult_NOTIFY_FEES_PERCENTAGE_INCREASE = _100.multiply(_NOTIFY_FEES_PERCENTAGE_INCREASE );
+
     @GuardedBy("lock")
     private boolean getNotify(Block block, Sha3Hash parentHash) {
         boolean notify;
-        long feesPaidToMiner = block.getFeesPaidToMiner();
+        BigInteger feesPaidToMiner = block.getFeesPaidToMiner();
 
         notify = !parentHash.equals(latestParentHash);
-        notify = notify || (feesPaidToMiner > (latestPaidFeesWithNotify * (100 + RskMiningConstants.NOTIFY_FEES_PERCENTAGE_INCREASE) / 100)) && (feesPaidToMiner * gasUnitInDollars) >= minFeesNotifyInDollars;
+        BigInteger v = latestPaidFeesWithNotify.multiply(_100_mult_NOTIFY_FEES_PERCENTAGE_INCREASE).divide(_100);
+
+        BigInteger scaledGasUnitInDollars = BigInteger.valueOf((int)(gasUnitInDollars*1000*1000));
+        BigInteger scaledMinFeesNotifyInDollars =BigInteger.valueOf((int)(minFeesNotifyInDollars*1000*1000));
+        int cresult = feesPaidToMiner.multiply(scaledGasUnitInDollars).compareTo(scaledMinFeesNotifyInDollars );
+
+        notify = notify || (feesPaidToMiner.compareTo(v) >0 ) && (cresult >=0);
 
         return notify;
     }

@@ -66,7 +66,7 @@ public class TransactionExecutor {
     private BlockStore blockStore;
     private ReceiptStore receiptStore;
     private final long gasUsedInTheBlock;
-    private long paidFees;
+    private BigInteger paidFees;
     private boolean readyToExecute = false;
 
     private ProgramInvokeFactory programInvokeFactory;
@@ -180,6 +180,17 @@ public class TransactionExecutor {
             return false;
         }
 
+        // Prevent transactions with excessive address size
+        if ((tx.getReceiveAddress()!=null) && (tx.getReceiveAddress().length>32)) {
+            if (logger.isWarnEnabled()) {
+                logger.warn("Receiver address to long: size: {}, tx {}",tx.getReceiveAddress().length , Hex.toHexString(tx.getHash()));
+                logger.warn("Transaction Data: {}", tx);
+                logger.warn("Tx Included in the following block: {}", this.executionBlock);
+            }
+            return false;
+
+        }
+
         if (!tx.acceptTransactionSignature()) {
             if (logger.isWarnEnabled()) {
                 logger.warn("Transaction {} signature not accepted: {}", Hex.toHexString(tx.getHash()), tx.getSignature());
@@ -232,6 +243,11 @@ public class TransactionExecutor {
         logger.info("Call transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
 
         byte[] targetAddress = tx.getReceiveAddress();
+
+        // DataWord(targetAddress)) can fail with exception:
+        // java.lang.RuntimeException: Data word can't exceed 32 bytes:
+        // if targetAddress size is greater than 32 bytes.
+        // But init() will detect this earlier
         precompiledContract = PrecompiledContracts.getContractForAddress(new DataWord(targetAddress));
 
         if (precompiledContract != null) {
@@ -437,7 +453,7 @@ public class TransactionExecutor {
             track.addBalance(coinbase, summaryFee);
         }
 
-        this.paidFees = summaryFee.longValue();
+        this.paidFees = summaryFee;
 
         if (result != null) {
             logger.info("Processing result");
@@ -489,5 +505,5 @@ public class TransactionExecutor {
         return toBI(tx.getGasLimit()).subtract(mEndGas).longValue();
     }
 
-    public long getPaidFees() { return paidFees; }
+    public BigInteger getPaidFees() { return paidFees; }
 }

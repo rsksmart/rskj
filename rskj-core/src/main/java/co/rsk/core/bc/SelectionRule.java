@@ -28,7 +28,8 @@ public class SelectionRule {
         }
 
         if (compareDifficulties == 0) {
-            if (block.getHeader().getPaidFees() > PAID_FEES_MULTIPLIER_CRITERIA * currentBlock.getHeader().getPaidFees()) {
+            BigInteger pfm = currentBlock.getHeader().getPaidFees().multiply(BigInteger.valueOf(PAID_FEES_MULTIPLIER_CRITERIA));
+            if (block.getHeader().getPaidFees().compareTo(pfm) >  0 ) {
                 return true;
             }
             if (isThisBlockHashSmaller(block.getHash(), currentBlock.getHash())) {
@@ -43,8 +44,8 @@ public class SelectionRule {
         int maxUncleCount = 0;
         for (Sibling sibling : siblings) {
             maxUncleCount = Math.max(maxUncleCount, sibling.getUncleCount());
-            if (sibling.getPaidFees() > PAID_FEES_MULTIPLIER_CRITERIA
-                    * processingBlockHeader.getPaidFees()) {
+            BigInteger pfm = processingBlockHeader.getPaidFees().multiply(BigInteger.valueOf(PAID_FEES_MULTIPLIER_CRITERIA));
+            if (sibling.getPaidFees().compareTo(pfm) > 0) {
                 return true;
             }
             if (isThisBlockHashSmaller(sibling.getHash(), processingBlockHeader.getHash())) {

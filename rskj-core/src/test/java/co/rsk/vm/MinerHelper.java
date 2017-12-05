@@ -57,7 +57,7 @@ public class MinerHelper {
 
     byte[] latestStateRootHash = null;
     long totalGasUsed = 0;
-    long totalPaidFees = 0;
+    BigInteger totalPaidFees = BigInteger.ZERO;
     List<TransactionReceipt> txReceipts;
     private GasLimitCalculator gasLimitCalculator;
 
@@ -72,7 +72,7 @@ public class MinerHelper {
     public void processBlock( Block block, Block parent) {
         latestStateRootHash = null;
         totalGasUsed = 0;
-        totalPaidFees = 0;
+        totalPaidFees = BigInteger.ZERO;
         txReceipts = new ArrayList<>();
 
         //Repository originalRepo  = ((Repository) ethereum.getRepository()).getSnapshotTo(parent.getStateRoot());
@@ -109,9 +109,9 @@ public class MinerHelper {
             executor.finalization();
 
             long gasUsed = executor.getGasUsed();
-            long paidFees = executor.getPaidFees();
+            BigInteger paidFees = executor.getPaidFees();
             totalGasUsed += gasUsed;
-            totalPaidFees += paidFees;
+            totalPaidFees =totalPaidFees.add(paidFees);
 
             track.commit();
 

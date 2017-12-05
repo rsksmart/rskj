@@ -70,6 +70,14 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
         Map<ByteArrayWrapper, BigInteger> curNonce = new HashMap<>();
 
         for (Transaction tx : txs) {
+            try {
+                tx.verify();
+            } catch (RuntimeException e) {
+                logger.warn("Invalid transaction: {}: {}",
+                        e.getMessage(), tx);
+
+                return false;
+            }
             byte[] txSender = tx.getSender();
             ByteArrayWrapper key = new ByteArrayWrapper(txSender);
             BigInteger expectedNonce = curNonce.get(key);

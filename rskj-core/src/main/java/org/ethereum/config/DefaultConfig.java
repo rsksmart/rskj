@@ -158,13 +158,14 @@ public class DefaultConfig {
             RskSystemProperties config,
             DifficultyCalculator difficultyCalculator) {
         BlockTxsValidationRule blockTxsValidationRule = new BlockTxsValidationRule(repository);
+        BlockTxsFieldsValidationRule blockTxsFieldsValidationRule = new BlockTxsFieldsValidationRule();
         PrevMinGasPriceRule prevMinGasPriceRule = new PrevMinGasPriceRule();
         BlockParentNumberRule parentNumberRule = new BlockParentNumberRule();
         BlockDifficultyRule difficultyRule = new BlockDifficultyRule(difficultyCalculator);
         BlockParentGasLimitRule parentGasLimitRule = new BlockParentGasLimitRule(config.getBlockchainConfig().
                 getCommonConstants().getGasLimitBoundDivisor());
 
-        return new BlockParentCompositeRule(blockTxsValidationRule, prevMinGasPriceRule, parentNumberRule, difficultyRule, parentGasLimitRule);
+        return new BlockParentCompositeRule(blockTxsFieldsValidationRule,blockTxsValidationRule, prevMinGasPriceRule, parentNumberRule, difficultyRule, parentGasLimitRule);
     }
 
     @Bean(name = "blockValidationRule")

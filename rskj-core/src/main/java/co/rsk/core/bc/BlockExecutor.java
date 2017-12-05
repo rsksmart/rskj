@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -73,6 +74,12 @@ public class BlockExecutor {
     public void executeAndFillAll(Block block, Block parent) {
         BlockResult result = executeAll(block, parent.getStateRoot());
         fill(block, result);
+    }
+
+    public void executeAndFillReal(Block block, Block parent) {
+        BlockResult result = execute(block, parent.getStateRoot(),false,false);
+        if (result!=BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT)
+            fill(block, result);
     }
 
     private void fill(Block block, BlockResult result) {
@@ -146,10 +153,10 @@ public class BlockExecutor {
             return false;
         }
 
-        long paidFees = result.getPaidFees();
-        long feesPaidToMiner = block.getFeesPaidToMiner();
+        BigInteger paidFees = result.getPaidFees();
+        BigInteger feesPaidToMiner = block.getFeesPaidToMiner();
 
-        if (paidFees != feesPaidToMiner)  {
+        if (!paidFees.equals(feesPaidToMiner))  {
             logger.error("Block's given paidFees doesn't match: {} != {} Block {} {}", feesPaidToMiner, paidFees, block.getNumber(), block.getShortHash());
             panicProcessor.panic("invalidpaidfees",
                     String.format("Block's given logBloom Hash doesn't match: %s != %s",
@@ -195,7 +202,7 @@ public class BlockExecutor {
         Repository track = initialRepository.startTracking();
         int i = 1;
         long totalGasUsed = 0;
-        long totalPaidFees = 0;
+        BigInteger totalPaidFees = BigInteger.ZERO;
         List<TransactionReceipt> receipts = new ArrayList<>();
         List<Transaction> executedTransactions = new ArrayList<>();
 
@@ -232,8 +239,9 @@ public class BlockExecutor {
 
             long gasUsed = txExecutor.getGasUsed();
             totalGasUsed += gasUsed;
-            long paidFees = txExecutor.getPaidFees();
-            totalPaidFees += paidFees;
+            BigInteger paidFees = txExecutor.getPaidFees();
+            if (paidFees !=null)
+                totalPaidFees = totalPaidFees.add(paidFees);
 
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setGasUsed(gasUsed);

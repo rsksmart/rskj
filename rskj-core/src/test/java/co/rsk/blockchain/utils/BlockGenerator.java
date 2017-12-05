@@ -34,6 +34,8 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPList;
 import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 import org.spongycastle.util.encoders.Hex;
 
@@ -146,8 +148,60 @@ public class BlockGenerator {
 
     public Block getBlock(int number) {
         return new Block(Hex.decode(blockRlps[number]));
+        //return getBlockBadlyEncoded(number);
     }
 
+    public static byte[] nullReplace(byte[] e) {
+        if (e==null)
+            e = new byte[0];
+        return e;
+    }
+
+    public static byte[] removeLastElement(byte[] rlpEncoded) {
+        ArrayList<RLPElement> params = RLP.decode2(rlpEncoded);
+        RLPList block = (RLPList) params.get(0);
+        RLPList header = (RLPList) block.get(0);
+        if (header.size()<20)
+            return rlpEncoded;
+
+        header.remove(header.size()-1); // remove last element
+        header.remove(header.size()-1); // remove second last element
+
+        List<byte[]> newHeader =new ArrayList<>();
+        for (int i=0;i<header.size();i++)
+        {
+            byte[] e =nullReplace(header.get(i).getRLPData());
+            if ((e.length>32) && (i==15))// fix bad feePaid
+                e = new byte[32];
+
+            newHeader.add(RLP.encodeElement(e));
+        }
+        byte[][] newHeaderElements = newHeader.toArray(new byte[newHeader.size()][]);
+        byte[] newEncodedHeader = RLP.encodeList(newHeaderElements );
+        byte[] list =RLP.encodeList(
+                newEncodedHeader,
+                // If you request the .getRLPData() of a list you DO get the encoding prefix.
+                // very weird.
+                nullReplace(block.get(1).getRLPData()),
+                nullReplace(block.get(2).getRLPData()));
+        byte[] p1 = new byte[10];
+        byte[] p2 = new byte[20];
+
+        return list;
+        //return RLP.encodeList(list,p1);
+        //return RLP.encodeList(p1,p2);
+    }
+
+    public static Block decodeBlockBadlyEncoded(String hex) {
+        byte[] decoded =Hex.decode(hex);
+        byte[] redecoded = removeLastElement(decoded);
+        return new Block(redecoded);
+    }
+
+    public static Block getBlockBadlyEncoded(int number) {
+        return decodeBlockBadlyEncoded(blockRlps[number]);
+
+    }
     public Block createChildBlock(Block parent) {
         return createChildBlock(parent, 0);
     }
@@ -175,7 +229,7 @@ public class BlockGenerator {
                 txs,       // transaction list
                 uncles,        // uncle list
                 null,
-                fees
+                BigInteger.valueOf(fees)
         );
 //        return createChildBlock(parent, 0);
     }
@@ -209,7 +263,7 @@ public class BlockGenerator {
                 txs,       // transaction list
                 null,        // uncle list
                 null,
-                0L
+                BigInteger.ZERO
         );
     }
 
@@ -312,7 +366,7 @@ public class BlockGenerator {
                 txs,       // transaction list
                 null,        // uncle list
                 minimumGasPrice.toByteArray(),
-                0L
+                BigInteger.ZERO
         );
     }
 

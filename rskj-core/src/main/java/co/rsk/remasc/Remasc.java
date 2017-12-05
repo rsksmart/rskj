@@ -108,7 +108,7 @@ public class Remasc {
         }
         BlockHeader processingBlockHeader = blockStore.getBlockByHashAndDepth(executionBlock.getParentHash(), remascConstants.getMaturity() - 1).getHeader();
         // Adds current block fees to accumulated rewardBalance
-        BigInteger processingBlockReward = BigInteger.valueOf(processingBlockHeader.getPaidFees());
+        BigInteger processingBlockReward = processingBlockHeader.getPaidFees();
         BigInteger rewardBalance = provider.getRewardBalance();
         rewardBalance = rewardBalance.add(processingBlockReward);
         provider.setRewardBalance(rewardBalance);

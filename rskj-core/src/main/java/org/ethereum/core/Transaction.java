@@ -65,6 +65,10 @@ public class Transaction implements SerializableObject {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final BigInteger SECP256K1N_HALF = Constants.getSECP256K1N().divide(BigInteger.valueOf(2));
 
+    public static final int DATAWORD_LENGTH = 32;
+    public static final int ADDRESS_LENGTH = 20;
+    public static final int SIG_ELEMENT_LENGTH = 32;
+
     /* SHA3 hash of the RLP encoded transaction */
     private byte[] hash;
 
@@ -194,6 +198,31 @@ public class Transaction implements SerializableObject {
         long zeroVals  = ArrayUtils.getLength(this.getData()) - nonZeroes;
 
         return GasCost.TRANSACTION + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;
+    }
+
+    public void verify() {
+        rlpParse();
+        validate();
+    }
+
+    private void validate() {
+        if (getNonce().length > DATAWORD_LENGTH ) throw new RuntimeException("Nonce is not valid");
+        if (receiveAddress != null && receiveAddress.length != 0 && receiveAddress.length != ADDRESS_LENGTH)
+            throw new RuntimeException("Receive address is not valid");
+        if (gasLimit.length > DATAWORD_LENGTH )
+            throw new RuntimeException("Gas Limit is not valid");
+        if (gasPrice != null && gasPrice.length > DATAWORD_LENGTH )
+            throw new RuntimeException("Gas Price is not valid");
+        if (value != null  && value.length > DATAWORD_LENGTH )
+            throw new RuntimeException("Value is not valid");
+        if (getSignature() != null) {
+            if (BigIntegers.asUnsignedByteArray(signature.r).length > DATAWORD_LENGTH )
+                throw new RuntimeException("Signature R is not valid");
+            if (BigIntegers.asUnsignedByteArray(signature.s).length > DATAWORD_LENGTH )
+                throw new RuntimeException("Signature S is not valid");
+            if (getSender() != null && getSender().length != ADDRESS_LENGTH)
+                throw new RuntimeException("Sender is not valid");
+        }
     }
 
     public void rlpParse() {
