@@ -19,9 +19,11 @@
 package co.rsk.remasc;
 
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Sha3Hash;
+import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
@@ -915,7 +917,15 @@ public class RemascProcessMinerFeesTest {
     }
 
     private void validateFederatorsBalanceIsCorrect(Repository repository, long federationReward) throws IOException, BlockStoreException {
-        RemascFederationProvider provider = new RemascFederationProvider(repository);
+        BridgeSupport bridgeSupport = new BridgeSupport(
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            null,
+            null,
+            null,
+            BridgeRegTestConstants.getInstance(),
+            null);
+        RemascFederationProvider provider = new RemascFederationProvider(bridgeSupport);
 
         int nfederators = provider.getFederationSize();
 

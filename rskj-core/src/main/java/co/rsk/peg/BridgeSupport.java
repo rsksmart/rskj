@@ -96,16 +96,16 @@ public class BridgeSupport {
     private StoredBlock initialBtcStoredBlock;
 
     // Used by bridge
-    public BridgeSupport(Repository repository, String contractAddress, Block rskExecutionBlock, ReceiptStore rskReceiptStore, BlockStore rskBlockStore, List<LogInfo> logs) throws IOException, BlockStoreException {
-        this(repository, contractAddress, new BridgeStorageProvider(repository, contractAddress), rskExecutionBlock, rskReceiptStore, rskBlockStore, logs);
+    public BridgeSupport(Repository repository, String contractAddress, Block rskExecutionBlock, ReceiptStore rskReceiptStore, BlockStore rskBlockStore, BridgeConstants bridgeConstants, List<LogInfo> logs) throws IOException, BlockStoreException {
+        this(repository, contractAddress, new BridgeStorageProvider(repository, contractAddress), rskExecutionBlock, rskReceiptStore, rskBlockStore, bridgeConstants, logs);
     }
 
 
     // Used by unit tests
-    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, Block rskExecutionBlock, ReceiptStore rskReceiptStore, BlockStore rskBlockStore, List<LogInfo> logs) throws IOException, BlockStoreException {
+    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, Block rskExecutionBlock, ReceiptStore rskReceiptStore, BlockStore rskBlockStore, BridgeConstants bridgeConstants, List<LogInfo> logs) throws IOException, BlockStoreException {
         this.provider = provider;
 
-        bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        this.bridgeConstants = bridgeConstants;
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         btcContext = new Context(btcParams);
 

@@ -29,6 +29,7 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.db.RepositoryImpl;
@@ -125,7 +126,7 @@ public class BridgeSupportTest {
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, BridgeRegTestConstants.getInstance(), Collections.emptyList());
         Assert.assertEquals(0, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
         Assert.assertEquals(_networkParameters.getGenesisBlock(), bridgeSupport.getBtcBlockStore().getChainHead().getHeader());
 
@@ -141,7 +142,7 @@ public class BridgeSupportTest {
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, BridgeTestNetConstants.getInstance(), Collections.emptyList());
         Assert.assertEquals(1229760, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
 
         RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
@@ -157,7 +158,7 @@ public class BridgeSupportTest {
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, BridgeRegTestConstants.getInstance(), Collections.emptyList());
         Assert.assertEquals(0, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
         Assert.assertEquals(_networkParameters.getGenesisBlock(), bridgeSupport.getBtcBlockStore().getChainHead().getHeader());
 
@@ -191,7 +192,7 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
         List<BtcBlock> checkpoints = createBtcBlocks(_networkParameters, _networkParameters.getGenesisBlock(), 10);
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, Collections.emptyList()) {
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, BridgeRegTestConstants.getInstance(), Collections.emptyList()) {
             @Override
             InputStream getCheckPoints() {
                 return getCheckpoints(_networkParameters, checkpoints);
@@ -327,7 +328,7 @@ public class BridgeSupportTest {
         org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
         Transaction tx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, BridgeRegTestConstants.getInstance(), Collections.emptyList());
 
         bridgeSupport.updateCollections(tx);
 
@@ -392,7 +393,7 @@ public class BridgeSupportTest {
         org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
         Transaction tx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, BridgeRegTestConstants.getInstance(), Collections.emptyList());
 
         bridgeSupport.updateCollections(tx);
 
@@ -456,7 +457,7 @@ public class BridgeSupportTest {
         org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
         Transaction tx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, BridgeRegTestConstants.getInstance(), Collections.emptyList());
 
         bridgeSupport.updateCollections(tx);
 
@@ -517,7 +518,7 @@ public class BridgeSupportTest {
         track = repository.startTracking();
         Transaction tx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, BridgeRegTestConstants.getInstance(), Collections.emptyList());
 
         bridgeSupport.updateCollections(tx);
 
@@ -586,7 +587,7 @@ public class BridgeSupportTest {
         org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
         Transaction rskTx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, rskCurrentBlock, rskReceiptStore, rskBlockStore, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, rskCurrentBlock, rskReceiptStore, rskBlockStore, BridgeRegTestConstants.getInstance(), Collections.emptyList());
 
         bridgeSupport.updateCollections(rskTx);
         bridgeSupport.save();
@@ -660,7 +661,7 @@ public class BridgeSupportTest {
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, (Block) null, null, null, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, (Block) null, null, null, BridgeRegTestConstants.getInstance(), Collections.emptyList());
 
         bridgeSupport.addSignature(1, federation.getPublicKeys().get(0), null, PegTestUtils.createHash().getBytes());
         bridgeSupport.save();
@@ -677,7 +678,7 @@ public class BridgeSupportTest {
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, (Block) null, null, null, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, (Block) null, null, null, BridgeRegTestConstants.getInstance(), Collections.emptyList());
 
         bridgeSupport.addSignature(1, new BtcECKey(), null, PegTestUtils.createHash().getBytes());
         bridgeSupport.save();
@@ -765,7 +766,7 @@ public class BridgeSupportTest {
 
         track = repository.startTracking();
         List<LogInfo> logs = new ArrayList<>();
-        BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, (Block) null, null, null, logs);
+        BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, (Block) null, null, null, BridgeRegTestConstants.getInstance(), logs);
 
         Script inputScript = t.getInputs().get(0).getScriptSig();
         List<ScriptChunk> chunks = inputScript.getChunks();
@@ -852,7 +853,7 @@ public class BridgeSupportTest {
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, BridgeRegTestConstants.getInstance(), Collections.emptyList());
 
         bridgeSupport.releaseBtc(tx);
         bridgeSupport.save();
@@ -876,7 +877,7 @@ public class BridgeSupportTest {
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, BridgeRegTestConstants.getInstance(), Collections.emptyList());
 
         bridgeSupport.releaseBtc(tx);
         bridgeSupport.save();
@@ -900,7 +901,7 @@ public class BridgeSupportTest {
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
         track.saveCode(tx.getSender(), new byte[] {0x1});
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null,null, null, null);
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null,null, null, BridgeRegTestConstants.getInstance(), Collections.emptyList());
 
         try {
             bridgeSupport.releaseBtc(tx);
@@ -920,7 +921,7 @@ public class BridgeSupportTest {
 
         provider.getBtcTxHashesAlreadyProcessed().put(tx.getHash(), 1L);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, BridgeRegTestConstants.getInstance(), Collections.emptyList());
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx, 0, null);
         bridgeSupport.save();
@@ -943,7 +944,7 @@ public class BridgeSupportTest {
         BtcTransaction tx = createTransaction();
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, BridgeRegTestConstants.getInstance(), Collections.emptyList());
 
         byte[] bits = new byte[1];
         bits[0] = 0x01;
@@ -973,7 +974,7 @@ public class BridgeSupportTest {
         BtcTransaction tx = createTransaction();
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, BridgeRegTestConstants.getInstance(), Collections.emptyList());
 
         byte[] bits = new byte[1];
         bits[0] = 0x01;
@@ -1007,7 +1008,7 @@ public class BridgeSupportTest {
         BtcTransaction tx = createTransaction();
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, null, null, BridgeRegTestConstants.getInstance(), Collections.emptyList());
 
         byte[] bits = new byte[1];
         bits[0] = 0x01;
@@ -1089,7 +1090,7 @@ public class BridgeSupportTest {
         Block executionBlock = Mockito.mock(Block.class);
         Mockito.when(executionBlock.getNumber()).thenReturn(10L);
 
-        BridgeRegTestConstants bridgeConstants = (BridgeRegTestConstants) RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
 
         BtcTransaction tx = new BtcTransaction(this.btcParams);
         Address address = ScriptBuilder.createP2SHOutputScript(2, Lists.newArrayList(new BtcECKey(), new BtcECKey(), new BtcECKey())).getToAddress(bridgeConstants.getBtcParams());
@@ -2445,7 +2446,7 @@ public class BridgeSupportTest {
         when(currentBlock.getNumber()).thenReturn(Long.valueOf(currentBlockNumber));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, currentBlock, receiptStore, blockStore, Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, currentBlock, receiptStore, blockStore, BridgeRegTestConstants.getInstance(), Collections.emptyList());
 
         Sha3Hash txHash = Sha3Hash.ZERO_HASH;
 
