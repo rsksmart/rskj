@@ -130,7 +130,7 @@ public class TrieStoreImplTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(store, false).put("foo", new byte[100]);
+        Trie trie = new TrieImpl(store, false).put("foo", TrieImplValueTest.makeValue(100));
 
         trie.save();
 
@@ -147,8 +147,8 @@ public class TrieStoreImplTest {
         TrieStoreImpl store = new TrieStoreImpl(map);
 
         Trie trie = new TrieImpl(store, false)
-                .put("foo", new byte[100])
-                .put("bar", new byte[200]);
+                .put("foo", TrieImplValueTest.makeValue(100))
+                .put("bar", TrieImplValueTest.makeValue(200));
 
         trie.save();
 
