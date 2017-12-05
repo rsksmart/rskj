@@ -612,12 +612,10 @@ public class Program {
         Repository track = getStorage().startTracking();
 
         //In case of hashing collisions, check for any balance before createAccount()
-        if (track.isExist(newAddress)) {
-            BigInteger oldBalance = track.getBalance(newAddress);
-            track.createAccount(newAddress);
-            track.addBalance(newAddress, oldBalance);
-        } else
-            track.createAccount(newAddress);
+        BigInteger oldBalance = track.getBalance(newAddress);
+        track.createAccount(newAddress);
+        track.increaseNonce(newAddress);
+        track.addBalance(newAddress, oldBalance);
 
         // [4] TRANSFER THE BALANCE
         track.addBalance(senderAddress, endowment.negate());
@@ -869,7 +867,6 @@ public class Program {
 
             internalTx.reject();
             childResult .rejectInternalTransactions();
-            childResult.rejectLogInfos();
 
             track.rollback();
             // when there's an exception we skip applying results and refunding gas,

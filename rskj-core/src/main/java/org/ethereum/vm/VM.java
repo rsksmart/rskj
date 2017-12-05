@@ -137,6 +137,9 @@ public class VM {
         return gasCost;
     }
 
+    private boolean isDeadAccount(Program program, byte[] addr) {
+        return !program.getStorage().isExist(addr) || program.getStorage().getAccountState(addr).isEmpty();
+    }
 
     public void step(Program aprogram) {
         steps(aprogram,1);
@@ -1357,6 +1360,10 @@ public class VM {
     private void callToAddress(DataWord codeAddress, MessageCall msg) {
         PrecompiledContracts.PrecompiledContract contract = PrecompiledContracts.getContractForAddress(codeAddress);
 
+        if (op == OpCode.CALL) {
+            program.getResult().addTouchedAccount(codeAddress);
+        }
+
         if (contract != null) {
             program.callToPrecompiledAddress(msg, contract);
         } else {
@@ -1373,7 +1380,7 @@ public class VM {
         long callGas = GasCost.CALL;
 
         //check to see if account does not exist and is not a precompiled contract
-        if (op == OpCode.CALL && !program.getStorage().isExist(codeAddress.getLast20Bytes())) {
+        if (op == OpCode.CALL && isDeadAccount(program, codeAddress.getLast20Bytes()) && !value.isZero()) {
             callGas += GasCost.NEW_ACCT_CALL;
         }
 
@@ -1434,13 +1441,16 @@ public class VM {
         if (computeGas) {
             gasCost = GasCost.SUICIDE;
             DataWord suicideAddressWord = stack.get(stack.size() - 1);
-            if (!program.getStorage().isExist(suicideAddressWord.getLast20Bytes()))
+            if (isDeadAccount(program, suicideAddressWord.getLast20Bytes()) &&
+                    !program.getBalance(program.getOwnerAddress()).isZero()) {
                 gasCost += GasCost.NEW_ACCT_SUICIDE;
+            }
             spendOpCodeGas();
         }
         // EXECUTION PHASE
         DataWord address = program.stackPop();
         program.suicide(address);
+        program.getResult().addTouchedAccount(address);
 
         if (isLogEnabled)
             hint = "address: " + Hex.toHexString(program.getOwnerAddress().getLast20Bytes());

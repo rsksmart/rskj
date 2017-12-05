@@ -23,6 +23,7 @@ import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
@@ -46,6 +47,7 @@ public class ProgramResult {
     private Map<DataWord, byte[]> codeChanges;
 
     private Set<DataWord> deleteAccounts;
+    private final Set<DataWord> touchedAccounts = new HashSet<>();
     private List<InternalTransaction> internalTransactions;
     private List<LogInfo> logInfoList;
     private long futureRefund = 0;
@@ -104,6 +106,15 @@ public class ProgramResult {
             deleteAccounts = new HashSet<>();
         }
         return deleteAccounts;
+    }
+
+    @Nonnull
+    public Set<DataWord> getTouchedAccounts() {
+        return touchedAccounts;
+    }
+
+    public void addTouchedAccount(@Nonnull DataWord addr) {
+        touchedAccounts.add(addr);
     }
 
     public Map<DataWord, byte[]> getCodeChanges() {
@@ -215,6 +226,7 @@ public class ProgramResult {
             addDeleteAccounts(another.getDeleteAccounts());
             addLogInfos(another.getLogInfoList());
             addFutureRefund(another.getFutureRefund());
+            touchedAccounts.addAll(another.getTouchedAccounts());
         }
     }
     

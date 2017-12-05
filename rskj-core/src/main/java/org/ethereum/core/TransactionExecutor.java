@@ -19,7 +19,6 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
@@ -39,7 +38,9 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.ArrayUtils.getLength;
@@ -76,11 +77,10 @@ public class TransactionExecutor {
     private Block executionBlock;
 
     private final EthereumListener listener;
+    private final Set<DataWord> touchedAccounts = new HashSet<>();
 
     private VM vm;
     private Program program;
-
-    PrecompiledContracts.PrecompiledContract precompiledContract;
 
     BigInteger mEndGas = BigInteger.ZERO;
     long basicTxCost = 0;
@@ -231,7 +231,8 @@ public class TransactionExecutor {
         logger.info("Call transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
 
         byte[] targetAddress = tx.getReceiveAddress();
-        precompiledContract = PrecompiledContracts.getContractForAddress(new DataWord(targetAddress));
+        DataWord targetAddressDW = new DataWord(targetAddress);
+        PrecompiledContracts.PrecompiledContract precompiledContract = PrecompiledContracts.getContractForAddress(targetAddressDW);
 
         if (precompiledContract != null) {
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
@@ -273,14 +274,22 @@ public class TransactionExecutor {
         if (result.getException() == null) {
             BigInteger endowment = toBI(tx.getValue());
             transfer(cacheTrack, tx.getSender(), targetAddress, endowment);
+            touchedAccounts.add(targetAddressDW);
         }
     }
 
     private void create() {
         byte[] newContractAddress = tx.getContractAddress();
+        DataWord newContractAddressDW = new DataWord(newContractAddress);
+
+        //In case of hashing collisions, check for any balance before createAccount()
+        BigInteger oldBalance = track.getBalance(newContractAddress);
+        cacheTrack.createAccount(newContractAddress);
+        cacheTrack.addBalance(newContractAddress, oldBalance);
+        cacheTrack.increaseNonce(newContractAddress);
+
         if (isEmpty(tx.getData())) {
             mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
-            cacheTrack.createAccount(tx.getContractAddress());
         } else {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
@@ -297,6 +306,7 @@ public class TransactionExecutor {
 
         BigInteger endowment = toBI(tx.getValue());
         transfer(cacheTrack, tx.getSender(), newContractAddress, endowment);
+        touchedAccounts.add(newContractAddressDW);
     }
 
     public void go() {
@@ -356,6 +366,7 @@ public class TransactionExecutor {
                     throw result.getException();
                 }
             } else {
+                touchedAccounts.addAll(result.getTouchedAccounts());
                 cacheTrack.commit();
             }
 
@@ -425,13 +436,8 @@ public class TransactionExecutor {
         // Transfer fees to miner
         BigInteger summaryFee = summary.getFee();
 
-        //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-        if(RskSystemProperties.CONFIG.isRemascEnabled()) {
-            logger.info("Adding fee to remasc contract account");
-            track.addBalance(Hex.decode(PrecompiledContracts.REMASC_ADDR), summaryFee);
-        } else {
-            track.addBalance(coinbase, summaryFee);
-        }
+        logger.info("Adding fee to remasc contract account");
+        track.addBalance(Hex.decode(PrecompiledContracts.REMASC_ADDR), summaryFee);
 
         this.paidFees = summaryFee.longValue();
 
@@ -443,6 +449,8 @@ public class TransactionExecutor {
             // Traverse list of suicides
             result.getDeleteAccounts().forEach(address -> track.delete(address.getLast20Bytes()));
         }
+
+        clearEmptyAccountsFromStateTrie();
 
         if (listener != null)
             listener.onTransactionExecuted(summary);
@@ -465,6 +473,19 @@ public class TransactionExecutor {
         }
 
         logger.info("tx finalization done");
+    }
+
+    /**
+     * Invariant-preserving state trie clearing as specified in EIP-161
+     */
+    private void clearEmptyAccountsFromStateTrie() {
+        for (DataWord acctAddrDW : touchedAccounts) {
+            byte[] acctAddr = acctAddrDW.getData();
+            AccountState state = track.getAccountState(acctAddr);
+            if (state != null && state.isEmpty()) {
+                track.delete(acctAddr);
+            }
+        }
     }
 
     public TransactionExecutor setLocalCall(boolean localCall) {

@@ -21,6 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.FastByteComparisons;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
@@ -209,6 +210,12 @@ public class AccountState {
         accountState.setDirty(false);
         accountState.setStateFlags(this.stateFlags);
         return accountState;
+    }
+
+    public boolean isEmpty() {
+        return FastByteComparisons.equalBytes(codeHash, EMPTY_DATA_HASH) &&
+                BigInteger.ZERO.equals(balance) &&
+                BigInteger.ZERO.equals(nonce);
     }
 
     public String toString() {
