@@ -47,7 +47,7 @@ public class TrieImplValueTest {
 
     @Test
     public void noValueInTrieWith32BytesValue() {
-        byte[] value = new byte[32];
+        byte[] value = makeValue(32);
 
         for (int k = 0; k < value.length; k++)
             value[k] = (byte)(k + 1);
@@ -62,7 +62,7 @@ public class TrieImplValueTest {
 
     @Test
     public void longValueInTrieWith33BytesValue() {
-        byte[] value = new byte[33];
+        byte[] value = makeValue(33);
 
         for (int k = 0; k < value.length; k++)
             value[k] = (byte)(k + 1);
@@ -74,6 +74,16 @@ public class TrieImplValueTest {
         Assert.assertNotNull(trie.getValueHash());
         Assert.assertEquals(32, trie.getValueHash().length);
         Assert.assertArrayEquals(value, trie.getValue());
+    }
+
+    public static byte[] makeValue(int length) {
+        byte[] value = new byte[length];
+
+        for (int k = 0; k < length; k++) {
+            value[k] = (byte)((k + 1) % 256);
+        }
+
+        return value;
     }
 }
 
