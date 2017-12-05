@@ -32,6 +32,17 @@ public class TrieImplDeleteTest {
     }
 
     @Test
+    public void deleteOneLongValueGivesTheSameHash() {
+        Trie trie1 = new TrieImpl().put("key1", TrieImplValueTest.makeValue(1024))
+                .put("key2", "value2".getBytes())
+                .delete("key1");
+
+        Trie trie2 = new TrieImpl().put("key2", "value2".getBytes());
+
+        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+    }
+
+    @Test
     public void deleteOneValueTwiceGivesTheSameHash() {
         Trie trie1 = new TrieImpl().put("key1", "value1".getBytes())
                 .put("key2", "value2".getBytes())
@@ -62,6 +73,24 @@ public class TrieImplDeleteTest {
     }
 
     @Test
+    public void deleteOneHundredLongValuesGivesTheSameHash() {
+        Trie trie1 = new TrieImpl();
+
+        for (int k = 0; k < 200; k++)
+            trie1 = trie1.put("key" + k, TrieImplValueTest.makeValue(k + 100));
+
+        for (int k = 1; k < 200; k += 2)
+            trie1 = trie1.delete("key" + k);
+
+        Trie trie2 = new TrieImpl();
+
+        for (int k = 0; k < 200; k += 2)
+            trie2 = trie2.put("key" + k, TrieImplValueTest.makeValue(k + 100));
+
+        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+    }
+
+    @Test
     public void deleteOneHundredValuesGivesTheSameHashUsingArity16() {
         Trie trie1 = new TrieImpl(16, false);
 
@@ -75,6 +104,24 @@ public class TrieImplDeleteTest {
 
         for (int k = 0; k < 200; k += 2)
             trie2 = trie2.put("key" + k, ("value" + k).getBytes());
+
+        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+    }
+
+    @Test
+    public void deleteOneHundredLongValuesGivesTheSameHashUsingArity16() {
+        Trie trie1 = new TrieImpl(16, false);
+
+        for (int k = 0; k < 200; k++)
+            trie1 = trie1.put("key" + k, TrieImplValueTest.makeValue(k + 200));
+
+        for (int k = 1; k < 200; k += 2)
+            trie1 = trie1.delete("key" + k);
+
+        Trie trie2 = new TrieImpl(16, false);
+
+        for (int k = 0; k < 200; k += 2)
+            trie2 = trie2.put("key" + k, TrieImplValueTest.makeValue(k + 200));
 
         Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
     }
@@ -98,6 +145,24 @@ public class TrieImplDeleteTest {
     }
 
     @Test
+    public void deleteOneHundredLongValuesGivesTheSameHashUsingArity16AndSecureKeys() {
+        Trie trie1 = new TrieImpl(16, true);
+
+        for (int k = 0; k < 200; k++)
+            trie1 = trie1.put("key" + k, TrieImplValueTest.makeValue(k + 200));
+
+        for (int k = 1; k < 200; k += 2)
+            trie1 = trie1.delete("key" + k);
+
+        Trie trie2 = new TrieImpl(16, true);
+
+        for (int k = 0; k < 200; k += 2)
+            trie2 = trie2.put("key" + k, TrieImplValueTest.makeValue(k + 200));
+
+        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+    }
+
+    @Test
     public void deleteTwoHundredValuesGivesTheEmptyHash() {
         Trie trie1 = new TrieImpl();
 
@@ -111,7 +176,20 @@ public class TrieImplDeleteTest {
     }
 
     @Test
-    public void deleteOneHundredAndOneHundrerValuesGivesTheEmptyHash() {
+    public void deleteTwoHundredLongValuesGivesTheEmptyHash() {
+        Trie trie1 = new TrieImpl();
+
+        for (int k = 0; k < 200; k++)
+            trie1 = trie1.put("key" + k, TrieImplValueTest.makeValue(k + 200));
+
+        for (int k = 0; k < 200; k++)
+            trie1 = trie1.delete("key" + k);
+
+        Assert.assertArrayEquals(makeEmptyHash(), trie1.getHash());
+    }
+
+    @Test
+    public void deleteOneHundredAndOneHundredValuesGivesTheEmptyHash() {
         Trie trie1 = new TrieImpl();
 
         for (int k = 0; k < 200; k++)
@@ -127,7 +205,23 @@ public class TrieImplDeleteTest {
     }
 
     @Test
-    public void deleteOneHundredAndOneHundrerValuesGivesTheEmptyHashUsingArity16() {
+    public void deleteOneHundredAndOneHundredLongValuesGivesTheEmptyHash() {
+        Trie trie1 = new TrieImpl();
+
+        for (int k = 0; k < 200; k++)
+            trie1 = trie1.put("key" + k, TrieImplValueTest.makeValue(k + 200));
+
+        for (int k = 0; k < 200; k += 2)
+            trie1 = trie1.delete("key" + k);
+
+        for (int k = 1; k < 200; k += 2)
+            trie1 = trie1.delete("key" + k);
+
+        Assert.assertArrayEquals(makeEmptyHash(), trie1.getHash());
+    }
+
+    @Test
+    public void deleteOneHundredAndOneHundredValuesGivesTheEmptyHashUsingArity16() {
         Trie trie1 = new TrieImpl(16, false);
 
         for (int k = 0; k < 200; k++)
@@ -143,11 +237,43 @@ public class TrieImplDeleteTest {
     }
 
     @Test
-    public void deleteOneHundredAndOneHundrerValuesGivesTheEmptyHashUsingArity16AndSecureKeys() {
+    public void deleteOneHundredAndOneHundredLongValuesGivesTheEmptyHashUsingArity16() {
+        Trie trie1 = new TrieImpl(16, false);
+
+        for (int k = 0; k < 200; k++)
+            trie1 = trie1.put("key" + k, TrieImplValueTest.makeValue(k + 200));
+
+        for (int k = 0; k < 200; k += 2)
+            trie1 = trie1.delete("key" + k);
+
+        for (int k = 1; k < 200; k += 2)
+            trie1 = trie1.delete("key" + k);
+
+        Assert.assertArrayEquals(makeEmptyHash(), trie1.getHash());
+    }
+
+    @Test
+    public void deleteOneHundredAndOneHundredValuesGivesTheEmptyHashUsingArity16AndSecureKeys() {
         Trie trie1 = new TrieImpl(16, true);
 
         for (int k = 0; k < 200; k++)
             trie1 = trie1.put("key" + k, ("value" + k).getBytes());
+
+        for (int k = 0; k < 200; k += 2)
+            trie1 = trie1.delete("key" + k);
+
+        for (int k = 1; k < 200; k += 2)
+            trie1 = trie1.delete("key" + k);
+
+        Assert.assertArrayEquals(makeEmptyHash(), trie1.getHash());
+    }
+
+    @Test
+    public void deleteOneHundredAndOneHundredLongValuesGivesTheEmptyHashUsingArity16AndSecureKeys() {
+        Trie trie1 = new TrieImpl(16, true);
+
+        for (int k = 0; k < 200; k++)
+            trie1 = trie1.put("key" + k, TrieImplValueTest.makeValue(k + 200));
 
         for (int k = 0; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
