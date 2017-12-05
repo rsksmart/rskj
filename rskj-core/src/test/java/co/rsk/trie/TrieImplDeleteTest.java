@@ -22,7 +22,8 @@ public class TrieImplDeleteTest {
 
     @Test
     public void deleteOneValueGivesTheSameHash() {
-        Trie trie1 = new TrieImpl().put("key1", "value1".getBytes())
+        Trie trie1 = new TrieImpl()
+                .put("key1", "value1".getBytes())
                 .put("key2", "value2".getBytes())
                 .delete("key1");
 
@@ -33,7 +34,8 @@ public class TrieImplDeleteTest {
 
     @Test
     public void deleteOneLongValueGivesTheSameHash() {
-        Trie trie1 = new TrieImpl().put("key1", TrieImplValueTest.makeValue(1024))
+        Trie trie1 = new TrieImpl()
+                .put("key1", TrieImplValueTest.makeValue(1024))
                 .put("key2", "value2".getBytes())
                 .delete("key1");
 
@@ -44,7 +46,8 @@ public class TrieImplDeleteTest {
 
     @Test
     public void deleteOneValueTwiceGivesTheSameHash() {
-        Trie trie1 = new TrieImpl().put("key1", "value1".getBytes())
+        Trie trie1 = new TrieImpl()
+                .put("key1", "value1".getBytes())
                 .put("key2", "value2".getBytes())
                 .put("key2", "value2".getBytes())
                 .delete("key1");
