@@ -33,25 +33,18 @@ import java.util.List;
  * Created by ajlopez on 01/08/2016.
  */
 public class BlockResult {
-    public static final BlockResult INTERRUPTED_EXECUTION_BLOCK_RESULT = new BlockResult(true);
+    public static final BlockResult INTERRUPTED_EXECUTION_BLOCK_RESULT = new InterruptedExecutionBlockResult();
 
-    private boolean interruptedExecution;
-    private List<Transaction> executedTransactions;
-    private List<TransactionReceipt> transactionReceipts;
-    private byte[] stateRoot;
-    private byte[] receiptsRoot;
-    private long gasUsed;
-    private BigInteger paidFees;
-    private byte[] logsBloom;
-
-    private BlockResult(boolean interruptedExecution) {
-        // Just to create INTERRUPTED_EXECUTION_BLOCK_RESULT
-        this.interruptedExecution = interruptedExecution;
-    }
+    private final List<Transaction> executedTransactions;
+    private final List<TransactionReceipt> transactionReceipts;
+    private final byte[] stateRoot;
+    private final byte[] receiptsRoot;
+    private final long gasUsed;
+    private final BigInteger paidFees;
+    private final byte[] logsBloom;
 
     public BlockResult(List<Transaction> executedTransactions, List<TransactionReceipt> transactionReceipts,
                        byte[] stateRoot, long gasUsed, BigInteger paidFees) {
-        interruptedExecution = false;
         this.executedTransactions = executedTransactions;
         this.transactionReceipts = transactionReceipts;
         this.stateRoot = stateRoot;
@@ -105,14 +98,18 @@ public class BlockResult {
     private static byte[] calculateLogsBloom(List<TransactionReceipt> receipts) {
         Bloom logBloom = new Bloom();
 
-        for (TransactionReceipt receipt : receipts) {
-            logBloom.or(receipt.getBloomFilter());
+        if (receipts != null) {
+            for (TransactionReceipt receipt : receipts) {
+                logBloom.or(receipt.getBloomFilter());
+            }
         }
 
         return logBloom.getData();
     }
 
-    public boolean getInterruptedExecution() {
-        return interruptedExecution;
+    private static class InterruptedExecutionBlockResult extends BlockResult {
+        public InterruptedExecutionBlockResult() {
+            super(null, null, null, 0, null);
+        }
     }
 }

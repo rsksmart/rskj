@@ -13,7 +13,7 @@ public class SelectionRule {
     private static final int BYTE_ARRAY_OFFSET = 0;
     private static final int BYTE_ARRAY_LENGTH = 32;
 
-    private static final int PAID_FEES_MULTIPLIER_CRITERIA = 2;
+    private static final BigInteger PAID_FEES_MULTIPLIER_CRITERIA = BigInteger.valueOf(2);
 
     public static boolean shouldWeAddThisBlock(
             BigInteger blockDifficulty,
@@ -27,16 +27,18 @@ public class SelectionRule {
             return true;
         }
 
-        if (compareDifficulties == 0) {
-            BigInteger pfm = currentBlock.getHeader().getPaidFees().multiply(BigInteger.valueOf(PAID_FEES_MULTIPLIER_CRITERIA));
-            if (block.getHeader().getPaidFees().compareTo(pfm) >  0 ) {
-                return true;
-            }
-            if (isThisBlockHashSmaller(block.getHash(), currentBlock.getHash())) {
-                return true;
-            }
+        if (compareDifficulties < 0) {
+            return false;
         }
-        return false;
+
+        BigInteger pfm = currentBlock.getHeader().getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
+        // fees over PAID_FEES_MULTIPLIER_CRITERIA times higher
+        if (block.getHeader().getPaidFees().compareTo(pfm) > 0) {
+            return true;
+        }
+
+        // as a last resort, choose the block with the lower hash
+        return isThisBlockHashSmaller(block.getHash(), currentBlock.getHash());
     }
     
     public static boolean isBrokenSelectionRule(
@@ -44,7 +46,7 @@ public class SelectionRule {
         int maxUncleCount = 0;
         for (Sibling sibling : siblings) {
             maxUncleCount = Math.max(maxUncleCount, sibling.getUncleCount());
-            BigInteger pfm = processingBlockHeader.getPaidFees().multiply(BigInteger.valueOf(PAID_FEES_MULTIPLIER_CRITERIA));
+            BigInteger pfm = processingBlockHeader.getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
             if (sibling.getPaidFees().compareTo(pfm) > 0) {
                 return true;
             }

@@ -77,9 +77,10 @@ public class BlockExecutor {
     }
 
     public void executeAndFillReal(Block block, Block parent) {
-        BlockResult result = execute(block, parent.getStateRoot(),false,false);
-        if (result!=BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT)
+        BlockResult result = execute(block, parent.getStateRoot(), false, false);
+        if (result != BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
             fill(block, result);
+        }
     }
 
     private void fill(Block block, BlockResult result) {
@@ -240,8 +241,9 @@ public class BlockExecutor {
             long gasUsed = txExecutor.getGasUsed();
             totalGasUsed += gasUsed;
             BigInteger paidFees = txExecutor.getPaidFees();
-            if (paidFees !=null)
+            if (paidFees != null) {
                 totalPaidFees = totalPaidFees.add(paidFees);
+            }
 
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setGasUsed(gasUsed);

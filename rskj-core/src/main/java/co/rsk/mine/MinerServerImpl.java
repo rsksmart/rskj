@@ -29,6 +29,7 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.BlockValidationRule;
+import co.rsk.validators.ProofOfWorkRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -39,7 +40,6 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
-import co.rsk.validators.ProofOfWorkRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.digests.SHA256Digest;
@@ -51,6 +51,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.GuardedBy;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -98,8 +99,8 @@ public class MinerServerImpl implements MinerServer {
     private final byte[] coinbaseAddress;
 
     private final BigInteger minerMinGasPriceTarget;
-    private final double minFeesNotifyInDollars;
-    private final double gasUnitInDollars;
+    private final BigDecimal minFeesNotifyInDollars;
+    private final BigDecimal gasUnitInDollars;
 
     private MiningConfig miningConfig;
 
@@ -146,8 +147,8 @@ public class MinerServerImpl implements MinerServer {
         latestPaidFeesWithNotify = BigInteger.ZERO;
         latestParentHash = null;
         coinbaseAddress = miningConfig.getCoinbaseAddress();
-        minFeesNotifyInDollars = miningConfig.getMinFeesNotifyInDollars();
-        gasUnitInDollars = miningConfig.getGasUnitInDollars();
+        minFeesNotifyInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
+        gasUnitInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
         minerMinGasPriceTarget = toBI(miningConfig.getMinGasPriceTarget());
     }
 
@@ -396,26 +397,22 @@ public class MinerServerImpl implements MinerServer {
      * @param parentHash block's parent hash.
      * @return true if miners should be notified about this new block to mine.
      */
-    final BigInteger _100 = BigInteger.valueOf(100);
-    final BigInteger _1M = BigInteger.valueOf(1000*1000); // for scaling
-    final BigInteger _NOTIFY_FEES_PERCENTAGE_INCREASE = BigInteger.valueOf(RskMiningConstants.NOTIFY_FEES_PERCENTAGE_INCREASE);
-    final BigInteger _100_mult_NOTIFY_FEES_PERCENTAGE_INCREASE = _100.multiply(_NOTIFY_FEES_PERCENTAGE_INCREASE );
-
     @GuardedBy("lock")
     private boolean getNotify(Block block, Sha3Hash parentHash) {
-        boolean notify;
+        if (!parentHash.equals(latestParentHash)) {
+            return true;
+        }
+
+        // note: integer divisions might truncate values
+        BigInteger percentage = BigInteger.valueOf(100L + RskMiningConstants.NOTIFY_FEES_PERCENTAGE_INCREASE);
+        BigInteger minFeesNotify = latestPaidFeesWithNotify.multiply(percentage).divide(BigInteger.valueOf(100L));
         BigInteger feesPaidToMiner = block.getFeesPaidToMiner();
+        if (feesPaidToMiner.compareTo(minFeesNotify) > 0) {
+            return true;
+        }
 
-        notify = !parentHash.equals(latestParentHash);
-        BigInteger v = latestPaidFeesWithNotify.multiply(_100_mult_NOTIFY_FEES_PERCENTAGE_INCREASE).divide(_100);
-
-        BigInteger scaledGasUnitInDollars = BigInteger.valueOf((int)(gasUnitInDollars*1000*1000));
-        BigInteger scaledMinFeesNotifyInDollars =BigInteger.valueOf((int)(minFeesNotifyInDollars*1000*1000));
-        int cresult = feesPaidToMiner.multiply(scaledGasUnitInDollars).compareTo(scaledMinFeesNotifyInDollars );
-
-        notify = notify || (feesPaidToMiner.compareTo(v) >0 ) && (cresult >=0);
-
-        return notify;
+        BigDecimal feesPaidToMinerInDollars = new BigDecimal(feesPaidToMiner).multiply(gasUnitInDollars);
+        return feesPaidToMinerInDollars.compareTo(minFeesNotifyInDollars) >= 0;
     }
 
     @Override
