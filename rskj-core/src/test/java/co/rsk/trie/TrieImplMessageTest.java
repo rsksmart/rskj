@@ -66,7 +66,7 @@ public class TrieImplMessageTest {
 
     @Test
     public void trieWithLongValueToMessage() {
-        Trie trie = new TrieImpl().put(new byte[0], new byte[33]);
+        Trie trie = new TrieImpl().put(new byte[0], TrieImplValueTest.makeValue(33));
 
         byte[] message = trie.toMessage();
 
