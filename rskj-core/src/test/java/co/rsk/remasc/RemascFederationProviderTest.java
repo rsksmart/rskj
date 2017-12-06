@@ -15,7 +15,6 @@ import java.io.IOException;
  * Created by ajlopez on 14/11/2017.
  */
 public class RemascFederationProviderTest {
-    @Ignore
     @Test
     @Ignore
     public void getDefaultFederationSize() throws IOException {
