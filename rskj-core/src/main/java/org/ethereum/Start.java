@@ -31,7 +31,7 @@ import static co.rsk.config.RskSystemProperties.CONFIG;
 public class Start {
 
     public static void main(String args[]) throws Exception {
-        CLIInterface.call(args);
+        CLIInterface.call(CONFIG, args);
 
         if (!CONFIG.blocksLoader().equals("")) {
             CONFIG.setSyncEnabled(false);
