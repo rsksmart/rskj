@@ -1,6 +1,7 @@
 package org.ethereum.util;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.db.RepositoryImpl;
@@ -99,7 +100,8 @@ public class RskTestFactory {
                     null, //circular dependency
                     null,
                     null,
-                    new DummyBlockValidator()
+                    new DummyBlockValidator(),
+                    RskSystemProperties.CONFIG
             );
             PendingState pendingState = getPendingState();
             blockchain.setPendingState(pendingState);

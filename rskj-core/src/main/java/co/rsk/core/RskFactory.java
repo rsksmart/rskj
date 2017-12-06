@@ -246,7 +246,8 @@ public class RskFactory {
                                         ReceiptStore receiptStore,
                                         EthereumListener listener,
                                         AdminInfo adminInfo,
-                                        BlockValidator blockValidator) {
+                                        BlockValidator blockValidator,
+                                        RskSystemProperties config) {
         return new BlockChainImpl(
                 repository,
                 blockStore,
@@ -254,7 +255,8 @@ public class RskFactory {
                 null, // circular dependency
                 listener,
                 adminInfo,
-                blockValidator
+                blockValidator,
+                config
         );
     }
 
