@@ -19,6 +19,8 @@
 package co.rsk.mine;
 
 import co.rsk.config.ConfigUtils;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
 import co.rsk.test.World;
@@ -349,7 +351,8 @@ public class MinerManagerTest {
         worldManager.setBlockchain(blockchain);
         ethereum.repository = (org.ethereum.facade.Repository)blockchain.getRepository();
         ethereum.worldManager = worldManager;
-        return new MinerServerImpl(ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), new BlockValidationRuleDummy(), worldManager.getNodeBlockProcessor());
+        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(RskSystemProperties.CONFIG);
+        return new MinerServerImpl(ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), new BlockValidationRuleDummy(), worldManager.getNodeBlockProcessor(), difficultyCalculator);
     }
 
     public static class BlockValidationRuleDummy implements BlockValidationRule {

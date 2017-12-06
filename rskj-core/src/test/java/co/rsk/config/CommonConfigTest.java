@@ -18,6 +18,7 @@
 
 package co.rsk.config;
 
+import co.rsk.core.DifficultyCalculator;
 import co.rsk.db.RepositoryImpl;
 import org.ethereum.config.CommonConfig;
 import org.ethereum.core.PendingTransaction;
@@ -67,7 +68,7 @@ public class CommonConfigTest {
     public void createParentHeaderValidator() {
         CommonConfig config = new CommonConfig();
 
-        ParentBlockHeaderValidator result = config.parentHeaderValidator();
+        ParentBlockHeaderValidator result = config.parentHeaderValidator(RskSystemProperties.CONFIG, new DifficultyCalculator(RskSystemProperties.CONFIG));
 
         Assert.assertNotNull(result);
     }

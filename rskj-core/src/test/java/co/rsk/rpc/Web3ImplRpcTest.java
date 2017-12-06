@@ -18,6 +18,7 @@
 
 package co.rsk.rpc;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import org.ethereum.facade.Ethereum;
@@ -40,7 +41,7 @@ public class Web3ImplRpcTest {
         WorldManager worldManager = Web3Mocks.getMockWorldManager();
         PersonalModule pm = new PersonalModuleWalletDisabled();
         Repository repository = Web3Mocks.getMockRepository();
-        Web3Impl web3 = new Web3RskImpl(eth, worldManager, null, null, null, pm, null, null, repository, null, null, null, null);
+        Web3Impl web3 = new Web3RskImpl(eth, worldManager, RskSystemProperties.CONFIG, null, null, pm, null, null, repository, null, null, null, null);
 
         Map<String, String> result = web3.rpc_modules();
 

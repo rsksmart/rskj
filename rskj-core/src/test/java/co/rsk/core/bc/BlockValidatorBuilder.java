@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.DifficultyCalculator;
 import co.rsk.validators.*;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
@@ -109,7 +110,7 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addDifficultyRule() {
-        this.difficultyRule =  new BlockDifficultyRule();
+        this.difficultyRule = new BlockDifficultyRule(new DifficultyCalculator(RskSystemProperties.CONFIG));
         return this;
     }
 

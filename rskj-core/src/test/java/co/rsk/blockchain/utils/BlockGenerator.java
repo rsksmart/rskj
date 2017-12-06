@@ -18,6 +18,8 @@
 
 package co.rsk.blockchain.utils;
 
+import co.rsk.config.RskSystemProperties;
+import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
@@ -75,7 +77,7 @@ public class BlockGenerator {
         return INSTANCE;
     }
 
-
+    private final DifficultyCalculator difficultyCalculator = new DifficultyCalculator(RskSystemProperties.CONFIG);
     private int count = 0;
 
     public Genesis getGenesisBlock() {
@@ -264,7 +266,7 @@ public class BlockGenerator {
         );
 
         if (difficulty == 0)
-            newHeader.setDifficulty(newHeader.calcDifficulty(parent.getHeader()).toByteArray());
+            newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader()).toByteArray());
         else
             newHeader.setDifficulty(BigInteger.valueOf(difficulty).toByteArray());
 

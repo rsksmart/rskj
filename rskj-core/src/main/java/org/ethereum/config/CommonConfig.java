@@ -20,6 +20,7 @@
 package org.ethereum.config;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.DifficultyCalculator;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.PendingTransaction;
@@ -88,12 +89,12 @@ public class CommonConfig {
     }
 
     @Bean
-    public ParentBlockHeaderValidator parentHeaderValidator() {
+    public ParentBlockHeaderValidator parentHeaderValidator(RskSystemProperties config, DifficultyCalculator difficultyCalculator) {
 
         List<DependentBlockHeaderRule> rules = new ArrayList<>(asList(
                 new ParentNumberRule(),
-                new DifficultyRule(),
-                new ParentGasLimitRule(RskSystemProperties.CONFIG.getBlockchainConfig().
+                new DifficultyRule(difficultyCalculator),
+                new ParentGasLimitRule(config.getBlockchainConfig().
                         getCommonConstants().getGasLimitBoundDivisor())));
 
         return new ParentBlockHeaderValidator(rules);

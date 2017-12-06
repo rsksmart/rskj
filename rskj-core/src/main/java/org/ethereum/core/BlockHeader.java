@@ -18,7 +18,6 @@
  */
 package org.ethereum.core;
 
-import co.rsk.config.RskSystemProperties;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.HashUtil;
@@ -502,11 +501,6 @@ public class BlockHeader implements SerializableObject {
 
     public byte[] getPowBoundary() {
         return BigIntegers.asUnsignedByteArray(32, BigInteger.ONE.shiftLeft(256).divide(getDifficultyBI()));
-    }
-
-    public BigInteger calcDifficulty(BlockHeader parent) {
-        return RskSystemProperties.CONFIG.getBlockchainConfig().getConfigForBlock(getNumber()).
-                calcDifficulty(this, parent);
     }
 
     public String toString() {

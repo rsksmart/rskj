@@ -21,6 +21,7 @@ package co.rsk.validators;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.DifficultyCalculator;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.Block;
@@ -63,10 +64,10 @@ public class BlockDifficultyValidationRuleTest {
         return header;
     }
 
-
     @Test
     public void testDifficulty() {
-        BlockDifficultyRule validationRule = new BlockDifficultyRule();
+        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(RskSystemProperties.CONFIG);
+        BlockDifficultyRule validationRule = new BlockDifficultyRule(difficultyCalculator);
 
         Block block = Mockito.mock(Block.class);
         Block parent= Mockito.mock(Block.class);

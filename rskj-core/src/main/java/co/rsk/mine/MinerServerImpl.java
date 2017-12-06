@@ -20,6 +20,7 @@ package co.rsk.mine;
 
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskMiningConstants;
+import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Sha3Hash;
@@ -105,6 +106,7 @@ public class MinerServerImpl implements MinerServer {
     private BlockValidationRule validationRules;
 
     private final BlockProcessor nodeBlockProcessor;
+    private final DifficultyCalculator difficultyCalculator;
 
     private long timeAdjustment;
     private long minimumAcceptableTime;
@@ -117,7 +119,8 @@ public class MinerServerImpl implements MinerServer {
                            Repository repository,
                            MiningConfig miningConfig,
                            @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
-                           BlockProcessor nodeBlockProcessor) {
+                           BlockProcessor nodeBlockProcessor,
+                           DifficultyCalculator difficultyCalculator) {
         this.ethereum = ethereum;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -125,6 +128,7 @@ public class MinerServerImpl implements MinerServer {
         this.miningConfig = miningConfig;
         this.validationRules = validationRules;
         this.nodeBlockProcessor = nodeBlockProcessor;
+        this.difficultyCalculator = difficultyCalculator;
 
         executor = new BlockExecutor(repository, blockchain, blockStore, null);
 
@@ -504,7 +508,7 @@ public class MinerServerImpl implements MinerServer {
                 minimumGasPrice.toByteArray(),
                 CollectionUtils.size(uncles)
         );
-        newHeader.setDifficulty(newHeader.calcDifficulty(newBlockParent.getHeader()).toByteArray());
+        newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()).toByteArray());
         newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash());
         return newHeader;
     }

@@ -1,5 +1,7 @@
 package co.rsk.net;
 
+import co.rsk.config.RskSystemProperties;
+import co.rsk.core.DifficultyCalculator;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
@@ -15,6 +17,7 @@ import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 
 public class NodeMessageHandlerUtil {
+    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(RskSystemProperties.CONFIG);
 
     public static NodeMessageHandler createHandler(BlockValidationRule validationRule) {
         final World world = new World();
@@ -24,7 +27,7 @@ public class NodeMessageHandlerUtil {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
-        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), syncConfiguration, new DummyBlockValidationRule());
+        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), syncConfiguration, new DummyBlockValidationRule(), DIFFICULTY_CALCULATOR);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         return new NodeMessageHandler(processor, syncProcessor, new SimpleChannelManager(), null, null, RskMockFactory.getPeerScoringManager(), validationRule);
@@ -49,7 +52,7 @@ public class NodeMessageHandlerUtil {
         ProofOfWorkRule blockValidationRule = new ProofOfWorkRule();
         PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
         Mockito.when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
-        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, blockValidationRule);
+        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, blockValidationRule, DIFFICULTY_CALCULATOR);
         return new NodeMessageHandler(processor, syncProcessor, null, null, null, null, blockValidationRule);
     }
 }

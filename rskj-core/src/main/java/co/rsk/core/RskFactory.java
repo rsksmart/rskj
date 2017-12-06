@@ -179,10 +179,11 @@ public class RskFactory {
     public SyncProcessor getSyncProcessor(Blockchain blockchain,
                                           BlockSyncService blockSyncService,
                                           PeerScoringManager peerScoringManager,
-                                          SyncConfiguration syncConfiguration) {
+                                          SyncConfiguration syncConfiguration,
+                                          DifficultyCalculator difficultyCalculator) {
 
         // TODO(lsebrie): add new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
-        return new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, new ProofOfWorkRule());
+        return new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, new ProofOfWorkRule(), difficultyCalculator);
     }
 
     @Bean
