@@ -407,12 +407,10 @@ public class MinerServerImpl implements MinerServer {
         BigInteger percentage = BigInteger.valueOf(100L + RskMiningConstants.NOTIFY_FEES_PERCENTAGE_INCREASE);
         BigInteger minFeesNotify = latestPaidFeesWithNotify.multiply(percentage).divide(BigInteger.valueOf(100L));
         BigInteger feesPaidToMiner = block.getFeesPaidToMiner();
-        if (feesPaidToMiner.compareTo(minFeesNotify) > 0) {
-            return true;
-        }
-
         BigDecimal feesPaidToMinerInDollars = new BigDecimal(feesPaidToMiner).multiply(gasUnitInDollars);
-        return feesPaidToMinerInDollars.compareTo(minFeesNotifyInDollars) >= 0;
+        return feesPaidToMiner.compareTo(minFeesNotify) > 0
+                && feesPaidToMinerInDollars.compareTo(minFeesNotifyInDollars) >= 0;
+
     }
 
     @Override
