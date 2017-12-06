@@ -42,9 +42,9 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
-import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.util.ByteUtil.toHexString;
@@ -58,6 +58,7 @@ public class TransactionExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger("execute");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
+    private static final int MAX_ADDRESS_LENGTH = 32;
 
     private Transaction tx;
     private int txindex;
@@ -181,14 +182,15 @@ public class TransactionExecutor {
         }
 
         // Prevent transactions with excessive address size
-        if ((tx.getReceiveAddress()!=null) && (tx.getReceiveAddress().length>32)) {
+        byte[] receiveAddress = tx.getReceiveAddress();
+        if (receiveAddress != null && receiveAddress.length > MAX_ADDRESS_LENGTH) {
             if (logger.isWarnEnabled()) {
-                logger.warn("Receiver address to long: size: {}, tx {}",tx.getReceiveAddress().length , Hex.toHexString(tx.getHash()));
+                logger.warn("Receiver address to long: size: {}, tx {}", receiveAddress.length, Hex.toHexString(tx.getHash()));
                 logger.warn("Transaction Data: {}", tx);
                 logger.warn("Tx Included in the following block: {}", this.executionBlock);
             }
-            return false;
 
+            return false;
         }
 
         if (!tx.acceptTransactionSignature()) {

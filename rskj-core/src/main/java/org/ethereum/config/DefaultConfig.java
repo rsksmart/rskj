@@ -165,7 +165,7 @@ public class DefaultConfig {
         BlockParentGasLimitRule parentGasLimitRule = new BlockParentGasLimitRule(config.getBlockchainConfig().
                 getCommonConstants().getGasLimitBoundDivisor());
 
-        return new BlockParentCompositeRule(blockTxsFieldsValidationRule,blockTxsValidationRule, prevMinGasPriceRule, parentNumberRule, difficultyRule, parentGasLimitRule);
+        return new BlockParentCompositeRule(blockTxsFieldsValidationRule, blockTxsValidationRule, prevMinGasPriceRule, parentNumberRule, difficultyRule, parentGasLimitRule);
     }
 
     @Bean(name = "blockValidationRule")

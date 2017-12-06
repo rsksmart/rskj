@@ -111,7 +111,7 @@ public class MinerHelper {
             long gasUsed = executor.getGasUsed();
             BigInteger paidFees = executor.getPaidFees();
             totalGasUsed += gasUsed;
-            totalPaidFees =totalPaidFees.add(paidFees);
+            totalPaidFees = totalPaidFees.add(paidFees);
 
             track.commit();
 

@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.BlockchainDummy;
+import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieStoreImpl;
 import com.google.common.collect.Lists;
@@ -28,7 +29,6 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.cryptohash.Keccak256;
 import org.ethereum.datasource.HashMapDB;
-import co.rsk.db.RepositoryImpl;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.Message;
@@ -42,7 +42,6 @@ import org.junit.Test;
 import org.spongycastle.util.BigIntegers;
 import org.spongycastle.util.encoders.Hex;
 
-import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -122,8 +121,9 @@ public class BlockExecutorTest {
 
         Assert.assertNotNull(result.getLogsBloom());
         Assert.assertEquals(256, result.getLogsBloom().length);
-        for (int k = 0; k < result.getLogsBloom().length; k++)
+        for (int k = 0; k < result.getLogsBloom().length; k++) {
             Assert.assertEquals(0, result.getLogsBloom()[k]);
+        }
 
         AccountState accountState = repository.getAccountState(account.getAddress());
 
@@ -426,15 +426,22 @@ public class BlockExecutorTest {
     // Testing strange Txs
     /////////////////////////////////////////////
     @Test
-    public void executeBlocksWithOneStrangeTransactions() {
-        executeBlockWithOneStrangeTransaction(0,true,false);
-        executeBlockWithOneStrangeTransaction(1,true,true);
-        executeBlockWithOneStrangeTransaction(2,true,false);
+    public void executeBlocksWithOneStrangeTransactions1() {
+        executeBlockWithOneStrangeTransaction(true, false, generateBlockWithOneStrangeTransaction(0));
     }
 
-    public void executeBlockWithOneStrangeTransaction(int strangeTransactionType,boolean mustFailValidation,boolean mustFailExecution) {
+    @Test
+    public void executeBlocksWithOneStrangeTransactions2() {
+        executeBlockWithOneStrangeTransaction(true, true, generateBlockWithOneStrangeTransaction(1));
+    }
+
+    @Test
+    public void executeBlocksWithOneStrangeTransactions3() {
+        executeBlockWithOneStrangeTransaction(true, false, generateBlockWithOneStrangeTransaction(2));
+    }
+
+    public void executeBlockWithOneStrangeTransaction(boolean mustFailValidation, boolean mustFailExecution, TestObjects objects) {
         SimpleEthereumListener listener = new SimpleEthereumListener();
-        TestObjects objects = generateBlockWithOneStrangeTransaction(strangeTransactionType);
         Block block = objects.getBlock();
         BlockExecutor executor = new BlockExecutor(objects.getRepository(), new BlockchainDummy(), null, listener);
         Repository repository = objects.getRepository();
@@ -447,16 +454,17 @@ public class BlockExecutorTest {
         validatorBuilder.addBlockTxsFieldsValidationRule();
         BlockValidatorImpl validator = validatorBuilder.build();
 
-        Assert.assertEquals(validator.isValid(block),!mustFailValidation);
-        if (mustFailValidation)
+        Assert.assertEquals(validator.isValid(block), !mustFailValidation);
+        if (mustFailValidation) {
             // If it fails validation, is it important if it fails or not execution? I don't think so.
             return;
+        }
 
         BlockResult result = executor.execute(block, repository.getRoot(), false);
 
         Assert.assertNotNull(result);
         if (mustFailExecution) {
-            Assert.assertEquals(result,BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT);
+            Assert.assertEquals(result, BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT);
             return;
         }
         Assert.assertNotNull(listener.getLatestSummary());
@@ -497,7 +505,6 @@ public class BlockExecutorTest {
         Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance());
     }
 
-
     public static TestObjects generateBlockWithOneStrangeTransaction(int strangeTransactionType) {
 
         BlockChainImpl blockchain = new BlockChainBuilder().build();
@@ -514,7 +521,7 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = new BlockExecutor(repository, new BlockchainDummy(), null, null);
 
-        Transaction tx = createStrangeTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()),strangeTransactionType);
+        Transaction tx = createStrangeTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()), strangeTransactionType);
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
 
@@ -530,7 +537,7 @@ public class BlockExecutorTest {
     }
 
     private static Transaction createStrangeTransaction(Account sender, Account receiver,
-                                                        BigInteger value, BigInteger nonce,int strangeTransactionType) {
+                                                        BigInteger value, BigInteger nonce, int strangeTransactionType) {
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
         byte[] to = receiver.getAddress();
         byte[] gasLimitData = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(21000));
@@ -539,26 +546,23 @@ public class BlockExecutorTest {
         if (strangeTransactionType==0) {
             to = new byte[1]; // one zero
             to[0] = 127;
-        }
-        if (strangeTransactionType==1) {
-            //
+        } else if (strangeTransactionType==1) {
             to = new byte[1024];
-            java.util.Arrays.fill(to,(byte) -1); // fill with 0xff
+            java.util.Arrays.fill(to, (byte) -1); // fill with 0xff
         } else {
-
-         // Bad encoding for value
+            // Bad encoding for value
             byte[] newValueData = new byte[1024];
             System.arraycopy(valueData,0,newValueData ,1024- valueData.length,valueData.length);
             valueData = newValueData;
         }
 
-        Transaction tx =
-                new Transaction(BigIntegers.asUnsignedByteArray(nonce),
-                        BigIntegers.asUnsignedByteArray(BigInteger.ONE), //gasPrice
-                        gasLimitData , // gasLimit
-                        to,
-                        valueData,
-                        null); // no data
+        Transaction tx = new Transaction(
+                BigIntegers.asUnsignedByteArray(nonce),
+                BigIntegers.asUnsignedByteArray(BigInteger.ONE), //gasPrice
+                gasLimitData, // gasLimit
+                to,
+                valueData,
+                null); // no data
         tx.sign(privateKeyBytes);
         return tx;
     }

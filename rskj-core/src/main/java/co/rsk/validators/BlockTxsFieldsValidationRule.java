@@ -1,21 +1,36 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2017 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.validators;
 
-
-import co.rsk.panic.PanicProcessor;
-import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.List;
 
+import java.util.List;
 
 /**
  * Created by SDL on 12/4/2017.
  */
 public class BlockTxsFieldsValidationRule implements BlockParentDependantValidationRule {
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
+
     @Override
     public boolean isValid(Block block, Block parent) {
         if (block == null) {
@@ -24,22 +39,15 @@ public class BlockTxsFieldsValidationRule implements BlockParentDependantValidat
         }
 
         List<Transaction> txs = block.getTransactionsList();
-        if (CollectionUtils.isEmpty(txs))
-            return true;
-
         for (Transaction tx : txs) {
             try {
                 tx.verify();
             } catch (RuntimeException e) {
-                logger.warn("Invalid transaction: {}: {}",
-                        e.getMessage(), tx);
-
+                logger.warn("Unable to verify transaction", e);
                 return false;
             }
         }
 
         return true;
-
     }
 }
-

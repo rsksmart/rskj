@@ -34,7 +34,6 @@ public class BlockValidatorBuilder {
 
     private BlockTxsFieldsValidationRule blockTxsFieldsValidationRule;
 
-
     private PrevMinGasPriceRule prevMinGasPriceRule;
 
     private TxsMinGasPriceRule txsMinGasPriceRule;
@@ -149,17 +148,14 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorImpl build() {
-        if(this.blockCompositeRule == null) {
-            this. blockCompositeRule = new BlockCompositeRule(this.txsMinGasPriceRule, this.blockUnclesValidationRule, this.blockRootValidationRule, this.remascValidationRule, this.blockTimeStampValidationRule);
+        if (this.blockCompositeRule == null) {
+            this.blockCompositeRule = new BlockCompositeRule(this.txsMinGasPriceRule, this.blockUnclesValidationRule, this.blockRootValidationRule, this.remascValidationRule, this.blockTimeStampValidationRule);
         }
 
-        if(this.blockParentCompositeRule == null) {
-            this.blockParentCompositeRule = new BlockParentCompositeRule(this.blockTxsFieldsValidationRule,this.blockTxsValidationRule, this.prevMinGasPriceRule, this.parentNumberRule, this.difficultyRule, this.parentGasLimitRule);
+        if (this.blockParentCompositeRule == null) {
+            this.blockParentCompositeRule = new BlockParentCompositeRule(this.blockTxsFieldsValidationRule, this.blockTxsValidationRule, this.prevMinGasPriceRule, this.parentNumberRule, this.difficultyRule, this.parentGasLimitRule);
         }
 
         return new BlockValidatorImpl(this.blockStore, this.blockParentCompositeRule, this.blockCompositeRule);
-
     }
-
-
 }

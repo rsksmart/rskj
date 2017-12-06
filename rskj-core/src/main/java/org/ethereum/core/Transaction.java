@@ -67,7 +67,6 @@ public class Transaction implements SerializableObject {
 
     public static final int DATAWORD_LENGTH = 32;
     public static final int ADDRESS_LENGTH = 20;
-    public static final int SIG_ELEMENT_LENGTH = 32;
 
     /* SHA3 hash of the RLP encoded transaction */
     private byte[] hash;
@@ -206,22 +205,31 @@ public class Transaction implements SerializableObject {
     }
 
     private void validate() {
-        if (getNonce().length > DATAWORD_LENGTH ) throw new RuntimeException("Nonce is not valid");
-        if (receiveAddress != null && receiveAddress.length != 0 && receiveAddress.length != ADDRESS_LENGTH)
+        if (getNonce().length > DATAWORD_LENGTH) {
+            throw new RuntimeException("Nonce is not valid");
+        }
+        if (receiveAddress != null && receiveAddress.length != 0 && receiveAddress.length != ADDRESS_LENGTH) {
             throw new RuntimeException("Receive address is not valid");
-        if (gasLimit.length > DATAWORD_LENGTH )
+        }
+        if (gasLimit.length > DATAWORD_LENGTH) {
             throw new RuntimeException("Gas Limit is not valid");
-        if (gasPrice != null && gasPrice.length > DATAWORD_LENGTH )
+        }
+        if (gasPrice != null && gasPrice.length > DATAWORD_LENGTH) {
             throw new RuntimeException("Gas Price is not valid");
-        if (value != null  && value.length > DATAWORD_LENGTH )
+        }
+        if (value != null  && value.length > DATAWORD_LENGTH) {
             throw new RuntimeException("Value is not valid");
+        }
         if (getSignature() != null) {
-            if (BigIntegers.asUnsignedByteArray(signature.r).length > DATAWORD_LENGTH )
+            if (BigIntegers.asUnsignedByteArray(signature.r).length > DATAWORD_LENGTH) {
                 throw new RuntimeException("Signature R is not valid");
-            if (BigIntegers.asUnsignedByteArray(signature.s).length > DATAWORD_LENGTH )
+            }
+            if (BigIntegers.asUnsignedByteArray(signature.s).length > DATAWORD_LENGTH) {
                 throw new RuntimeException("Signature S is not valid");
-            if (getSender() != null && getSender().length != ADDRESS_LENGTH)
+            }
+            if (getSender() != null && getSender().length != ADDRESS_LENGTH) {
                 throw new RuntimeException("Sender is not valid");
+            }
         }
     }
 

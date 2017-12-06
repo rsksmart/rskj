@@ -205,10 +205,10 @@ class RemascTestRunner {
         byte[] diffBytes = BigInteger.valueOf(difficultyAsLong).toByteArray();
 
         BigInteger paidFees = BigInteger.ZERO;
-
         for (Transaction tx : txs) {
-            paidFees  = paidFees.add(BigIntegers.fromUnsignedByteArray(tx.getGasLimit()).multiply(
-                    BigIntegers.fromUnsignedByteArray(tx.getGasPrice())));
+            BigInteger gasLimit = BigIntegers.fromUnsignedByteArray(tx.getGasLimit());
+            BigInteger gasPrice = BigIntegers.fromUnsignedByteArray(tx.getGasPrice());
+            paidFees = paidFees.add(gasLimit.multiply(gasPrice));
         }
 
         Block block =  new Block(
