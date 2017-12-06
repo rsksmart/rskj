@@ -77,7 +77,7 @@ public class Web3ImplLogsTest {
     //
     private final static String GET_VALUED_EVENT_SIGNATURE = "1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b";
     private final static String INCREMENT_METHOD_SIGNATURE = "371303c0";
-    private final static String GET_VALUE_METHOD_SIGNATURE ="20965255";
+    private final static String GET_VALUE_METHOD_SIGNATURE = "20965255";
 
     //20965255 getValue()
     //371303c0 inc()
