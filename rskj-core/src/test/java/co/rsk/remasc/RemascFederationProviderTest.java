@@ -17,6 +17,7 @@ import java.io.IOException;
 public class RemascFederationProviderTest {
     @Ignore
     @Test
+    @Ignore
     public void getDefaultFederationSize() throws IOException {
         RemascFederationProvider provider = getRemascFederationProvider();
         Assert.assertEquals(3, provider.getFederationSize());
