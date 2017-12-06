@@ -101,6 +101,7 @@ public class Web3Impl implements Web3 {
     private final ConfigCapabilities configCapabilities;
     private final BlockStore blockStore;
     private final PendingState pendingState;
+    private final RskSystemProperties properties;
 
     private PersonalModule personalModule;
     private EthModule ethModule;
@@ -131,6 +132,7 @@ public class Web3Impl implements Web3 {
         this.configCapabilities = worldManager.getConfigCapabilities();
         this.blockStore = worldManager.getBlockStore();
         this.pendingState = worldManager.getPendingState();
+        this.properties = properties;
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 
         compositeEthereumListener = new CompositeEthereumListener();
@@ -138,7 +140,7 @@ public class Web3Impl implements Web3 {
         compositeEthereumListener.addListener(this.setupListener());
 
         this.eth.addListener(compositeEthereumListener);
-        personalModule.init(properties);
+        personalModule.init(this.properties);
     }
 
     public EthereumListener setupListener() {
@@ -202,9 +204,9 @@ public class Web3Impl implements Web3 {
     @Override
     public String web3_clientVersion() {
 
-        String clientVersion = baseClientVersion + "/" + RskSystemProperties.CONFIG.projectVersion() + "/" +
+        String clientVersion = baseClientVersion + "/" + properties.projectVersion() + "/" +
                 System.getProperty("os.name") + "/Java1.8/" +
-                RskSystemProperties.CONFIG.projectVersionModifier() + "-" + BuildInfo.getBuildHash();
+                properties.projectVersionModifier() + "-" + BuildInfo.getBuildHash();
 
         if (logger.isDebugEnabled()) {
             logger.debug("web3_clientVersion(): " + clientVersion);
@@ -231,7 +233,7 @@ public class Web3Impl implements Web3 {
     public String net_version() {
         String s = null;
         try {
-            byte netVersion = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId();
+            byte netVersion = properties.getBlockchainConfig().getCommonConstants().getChainId();
             return s = Byte.toString(netVersion);
         }
         finally {
@@ -1212,7 +1214,7 @@ public class Web3Impl implements Web3 {
 
         Map<String, String> map = new HashMap<>();
 
-        for (ModuleDescription module : RskSystemProperties.CONFIG.getRpcModules())
+        for (ModuleDescription module : properties.getRpcModules())
             if (module.isEnabled())
                 map.put(module.getName(), module.getVersion());
 
