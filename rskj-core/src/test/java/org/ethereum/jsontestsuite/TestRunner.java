@@ -109,7 +109,7 @@ public class TestRunner {
 
         blockchain.setNoValidation(true);
 
-        PendingStateImpl pendingState = new PendingStateImpl(blockchain, repository, null, null, listener, 10, 100);
+        PendingStateImpl pendingState = new PendingStateImpl(blockchain, repository, null, null, listener, RskSystemProperties.CONFIG, 10, 100);
         pendingState.init();
 
         blockchain.setBestBlock(genesis);

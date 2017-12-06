@@ -264,11 +264,13 @@ public class RskFactory {
     @Bean
     public PendingState getPendingState(BlockChainImpl blockchain,
                                         org.ethereum.db.BlockStore blockStore,
-                                        org.ethereum.core.Repository repository) {
+                                        org.ethereum.core.Repository repository,
+                                        RskSystemProperties config) {
         PendingStateImpl pendingState = new PendingStateImpl(
                 blockchain,
                 blockStore,
-                repository
+                repository,
+                config
         );
         // circular dependency
         blockchain.setPendingState(pendingState);

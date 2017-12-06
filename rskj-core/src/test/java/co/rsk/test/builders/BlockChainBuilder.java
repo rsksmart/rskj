@@ -130,7 +130,7 @@ public class BlockChainBuilder {
 
         blockChain.setRsk(this.rsk);
 
-        PendingStateImpl pendingState = new PendingStateImpl(blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+        PendingStateImpl pendingState = new PendingStateImpl(blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), RskSystemProperties.CONFIG, 10, 100);
 
         blockChain.setPendingState(pendingState);
 
