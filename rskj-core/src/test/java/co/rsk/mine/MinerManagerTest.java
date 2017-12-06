@@ -25,6 +25,7 @@ import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
 import co.rsk.test.World;
 import co.rsk.validators.BlockValidationRule;
+import co.rsk.validators.ProofOfWorkRule;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.ethereum.core.Block;
@@ -351,7 +352,7 @@ public class MinerManagerTest {
         ethereum.repository = (org.ethereum.facade.Repository)blockchain.getRepository();
         ethereum.worldManager = worldManager;
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(RskSystemProperties.CONFIG);
-        return new MinerServerImpl(ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), new BlockValidationRuleDummy(), worldManager.getNodeBlockProcessor(), difficultyCalculator, new GasLimitCalculator(RskSystemProperties.CONFIG));
+        return new MinerServerImpl(ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), new BlockValidationRuleDummy(), worldManager.getNodeBlockProcessor(), difficultyCalculator, new GasLimitCalculator(RskSystemProperties.CONFIG), new ProofOfWorkRule(RskSystemProperties.CONFIG));
     }
 
     public static class BlockValidationRuleDummy implements BlockValidationRule {

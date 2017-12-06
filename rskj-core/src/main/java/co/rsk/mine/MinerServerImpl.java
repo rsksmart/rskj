@@ -78,6 +78,7 @@ public class MinerServerImpl implements MinerServer {
     private final PendingState pendingState;
     private final BlockExecutor executor;
     private final GasLimitCalculator gasLimitCalculator;
+    private final ProofOfWorkRule powRule;
 
     @GuardedBy("lock")
     private LinkedHashMap<Sha3Hash, Block> blocksWaitingforPoW;
@@ -100,8 +101,6 @@ public class MinerServerImpl implements MinerServer {
     private final double minFeesNotifyInDollars;
     private final double gasUnitInDollars;
 
-    private ProofOfWorkRule powRule;
-
     private MiningConfig miningConfig;
 
     private BlockValidationRule validationRules;
@@ -122,7 +121,8 @@ public class MinerServerImpl implements MinerServer {
                            @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
                            BlockProcessor nodeBlockProcessor,
                            DifficultyCalculator difficultyCalculator,
-                           GasLimitCalculator gasLimitCalculator) {
+                           GasLimitCalculator gasLimitCalculator,
+                           ProofOfWorkRule powRule) {
         this.ethereum = ethereum;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -132,6 +132,7 @@ public class MinerServerImpl implements MinerServer {
         this.nodeBlockProcessor = nodeBlockProcessor;
         this.difficultyCalculator = difficultyCalculator;
         this.gasLimitCalculator = gasLimitCalculator;
+        this.powRule = powRule;
 
         executor = new BlockExecutor(repository, blockchain, blockStore, null);
 
@@ -148,7 +149,6 @@ public class MinerServerImpl implements MinerServer {
         minFeesNotifyInDollars = miningConfig.getMinFeesNotifyInDollars();
         gasUnitInDollars = miningConfig.getGasUnitInDollars();
         minerMinGasPriceTarget = toBI(miningConfig.getMinGasPriceTarget());
-        powRule = new ProofOfWorkRule();
     }
 
     @VisibleForTesting

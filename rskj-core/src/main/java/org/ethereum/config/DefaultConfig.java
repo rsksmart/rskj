@@ -168,7 +168,11 @@ public class DefaultConfig {
     }
 
     @Bean(name = "blockValidationRule")
-    public BlockValidationRule blockValidationRule(BlockStore blockStore, RskSystemProperties config, DifficultyCalculator difficultyCalculator) {
+    public BlockValidationRule blockValidationRule(
+            BlockStore blockStore,
+            RskSystemProperties config,
+            DifficultyCalculator difficultyCalculator,
+            ProofOfWorkRule proofOfWorkRule) {
         int uncleListLimit = config.getBlockchainConfig().getCommonConstants().getUncleListLimit();
         int uncleGenLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
         int validPeriod = config.getBlockchainConfig().getCommonConstants().getNewBlockMaxMinInTheFuture();
@@ -177,7 +181,7 @@ public class DefaultConfig {
         BlockParentGasLimitRule parentGasLimitRule = new BlockParentGasLimitRule(config.getBlockchainConfig().getCommonConstants().getGasLimitBoundDivisor());
         BlockParentCompositeRule unclesBlockParentHeaderValidator = new BlockParentCompositeRule(new PrevMinGasPriceRule(), new BlockParentNumberRule(), blockTimeStampValidationRule, new BlockDifficultyRule(difficultyCalculator), parentGasLimitRule);
 
-        BlockCompositeRule unclesBlockHeaderValidator = new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
+        BlockCompositeRule unclesBlockHeaderValidator = new BlockCompositeRule(proofOfWorkRule, blockTimeStampValidationRule, new ValidGasUsedRule());
 
         BlockUnclesValidationRule blockUnclesValidationRule = new BlockUnclesValidationRule(blockStore, uncleListLimit, uncleGenLimit, unclesBlockHeaderValidator, unclesBlockParentHeaderValidator);
 
@@ -198,7 +202,8 @@ public class DefaultConfig {
     public BlockValidationRule minerServerBlockValidationRule(
             BlockStore blockStore,
             RskSystemProperties config,
-            DifficultyCalculator difficultyCalculator) {
+            DifficultyCalculator difficultyCalculator,
+            ProofOfWorkRule proofOfWorkRule) {
         int uncleListLimit = config.getBlockchainConfig().getCommonConstants().getUncleListLimit();
         int uncleGenLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
 
@@ -207,7 +212,7 @@ public class DefaultConfig {
 
         int validPeriod = config.getBlockchainConfig().getCommonConstants().getNewBlockMaxMinInTheFuture();
         BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod);
-        BlockCompositeRule unclesBlockHeaderValidator = new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
+        BlockCompositeRule unclesBlockHeaderValidator = new BlockCompositeRule(proofOfWorkRule, blockTimeStampValidationRule, new ValidGasUsedRule());
 
         return new BlockUnclesValidationRule(blockStore, uncleListLimit, uncleGenLimit, unclesBlockHeaderValidator, unclesBlockParentHeaderValidator);
     }

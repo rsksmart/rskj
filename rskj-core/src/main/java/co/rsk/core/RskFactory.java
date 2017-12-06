@@ -180,10 +180,11 @@ public class RskFactory {
                                           BlockSyncService blockSyncService,
                                           PeerScoringManager peerScoringManager,
                                           SyncConfiguration syncConfiguration,
-                                          DifficultyCalculator difficultyCalculator) {
+                                          DifficultyCalculator difficultyCalculator,
+                                          ProofOfWorkRule proofOfWorkRule) {
 
         // TODO(lsebrie): add new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
-        return new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, new ProofOfWorkRule(), difficultyCalculator);
+        return new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, proofOfWorkRule, difficultyCalculator);
     }
 
     @Bean
@@ -200,7 +201,8 @@ public class RskFactory {
                                                     ChannelManager channelManager,
                                                     PendingState pendingState,
                                                     TxHandler txHandler,
-                                                    PeerScoringManager peerScoringManager) {
+                                                    PeerScoringManager peerScoringManager,
+                                                    ProofOfWorkRule ProofOfWorkRule) {
 
         NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(nodeBlockProcessor,
                 syncProcessor,
@@ -208,7 +210,7 @@ public class RskFactory {
                 pendingState,
                 txHandler,
                 peerScoringManager,
-                new ProofOfWorkRule());
+                ProofOfWorkRule);
 
         nodeMessageHandler.start();
         return nodeMessageHandler;

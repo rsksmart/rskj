@@ -49,7 +49,7 @@ public class NodeMessageHandlerUtil {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        ProofOfWorkRule blockValidationRule = new ProofOfWorkRule();
+        ProofOfWorkRule blockValidationRule = new ProofOfWorkRule(RskSystemProperties.CONFIG);
         PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
         Mockito.when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
         SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, blockValidationRule, DIFFICULTY_CALCULATOR);

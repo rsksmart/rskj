@@ -22,6 +22,7 @@ package co.rsk.validators;
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.PartialMerkleTree;
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.util.DifficultyUtils;
@@ -31,6 +32,8 @@ import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.digests.SHA256Digest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -41,9 +44,16 @@ import java.util.List;
 /**
  * Checks proof value against its boundary for the block header.
  */
+@Component
 public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
+    private final BridgeConstants bridgeConstants;
+
+    @Autowired
+    public ProofOfWorkRule(RskSystemProperties config) {
+        this.bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+    }
 
     @Override
     public boolean isValid(Block block) {
@@ -52,7 +62,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
 
     @Override
     public boolean isValid(BlockHeader header) {
-        co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+        co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = bridgeConstants.getBtcParams();
         byte[] bitcoinMergedMiningCoinbaseTransactionCompressed = header.getBitcoinMergedMiningCoinbaseTransaction();
         BtcBlock bitcoinMergedMiningBlock = bitcoinNetworkParameters.getDefaultSerializer().makeBlock(header.getBitcoinMergedMiningHeader());
         PartialMerkleTree bitcoinMergedMiningMerkleBranch  = new PartialMerkleTree(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof(), 0);
