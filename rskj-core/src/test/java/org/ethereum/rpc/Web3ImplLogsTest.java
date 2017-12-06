@@ -75,11 +75,9 @@ public class Web3ImplLogsTest {
     // Examples:
     // Incremented(bool indexed odd, uint x) -> Keccak-256("Incremented(bool,uint256)")
     //
-    String GetValuedEventSignature="1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b";
-
-
-    String IncrementMethodSignature ="371303c0";
-    String GetValueMethodSignature ="20965255";
+    private final static String GET_VALUED_EVENT_SIGNATURE = "1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b";
+    private final static String INCREMENT_METHOD_SIGNATURE = "371303c0";
+    private final static String GET_VALUE_METHOD_SIGNATURE ="20965255";
 
     //20965255 getValue()
     //371303c0 inc()
@@ -287,7 +285,7 @@ public class Web3ImplLogsTest {
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         fr.topics = new Object[1];
-        fr.topics[0] = GetValuedEventSignature;
+        fr.topics[0] = GET_VALUED_EVENT_SIGNATURE;
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
@@ -304,7 +302,7 @@ public class Web3ImplLogsTest {
         fr.fromBlock = "earliest";
         fr.topics = new Object[1];
         List<String> topics = new ArrayList<>();
-        topics.add(GetValuedEventSignature);
+        topics.add(GET_VALUED_EVENT_SIGNATURE);
         fr.topics[0] = topics;
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -703,7 +701,7 @@ public class Web3ImplLogsTest {
                 .receiverAddress(receiverAddress)
                 .gasLimit(BigInteger.valueOf(100000))
                 .gasPrice(BigInteger.ONE)
-                .data(IncrementMethodSignature)   // invoke incr()
+                .data(INCREMENT_METHOD_SIGNATURE)   // invoke incr()
                 .nonce(1)
                 .build();
     }
@@ -714,7 +712,7 @@ public class Web3ImplLogsTest {
                 .receiverAddress(receiverAddress)
                 .gasLimit(BigInteger.valueOf(100000))
                 .gasPrice(BigInteger.ONE)
-                .data(GetValueMethodSignature)   // call getValue()
+                .data(GET_VALUE_METHOD_SIGNATURE)   // call getValue()
                 .nonce(2)
                 .build();
     }
