@@ -352,7 +352,7 @@ public class MinerManagerTest {
         ethereum.repository = (org.ethereum.facade.Repository)blockchain.getRepository();
         ethereum.worldManager = worldManager;
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(RskSystemProperties.CONFIG);
-        return new MinerServerImpl(ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), new BlockValidationRuleDummy(), worldManager.getNodeBlockProcessor(), difficultyCalculator);
+        return new MinerServerImpl(ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), new BlockValidationRuleDummy(), worldManager.getNodeBlockProcessor(), difficultyCalculator, new GasLimitCalculator(RskSystemProperties.CONFIG));
     }
 
     public static class BlockValidationRuleDummy implements BlockValidationRule {

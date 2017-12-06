@@ -23,10 +23,7 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.mine.MinerClientImpl;
-import co.rsk.mine.MinerManagerTest;
-import co.rsk.mine.MinerServer;
-import co.rsk.mine.MinerServerImpl;
+import co.rsk.mine.*;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.test.World;
@@ -187,7 +184,7 @@ public class Web3ImplSnapshotTest {
     static MinerServer getMinerServerForTest(World world, SimpleEthereum ethereum) {
         BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
         return new MinerServerImpl(ethereum, world.getBlockChain(), world.getBlockChain().getBlockStore(),
-                world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), ConfigUtils.getDefaultMiningConfig(), rule, world.getBlockProcessor(), new DifficultyCalculator(RskSystemProperties.CONFIG));
+                world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), ConfigUtils.getDefaultMiningConfig(), rule, world.getBlockProcessor(), new DifficultyCalculator(RskSystemProperties.CONFIG), new GasLimitCalculator(RskSystemProperties.CONFIG));
     }
 
     private static void addBlocks(Blockchain blockchain, int size) {

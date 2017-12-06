@@ -77,6 +77,7 @@ public class MinerServerImpl implements MinerServer {
     private final Blockchain blockchain;
     private final PendingState pendingState;
     private final BlockExecutor executor;
+    private final GasLimitCalculator gasLimitCalculator;
 
     @GuardedBy("lock")
     private LinkedHashMap<Sha3Hash, Block> blocksWaitingforPoW;
@@ -120,7 +121,8 @@ public class MinerServerImpl implements MinerServer {
                            MiningConfig miningConfig,
                            @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
                            BlockProcessor nodeBlockProcessor,
-                           DifficultyCalculator difficultyCalculator) {
+                           DifficultyCalculator difficultyCalculator,
+                           GasLimitCalculator gasLimitCalculator) {
         this.ethereum = ethereum;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -129,6 +131,7 @@ public class MinerServerImpl implements MinerServer {
         this.validationRules = validationRules;
         this.nodeBlockProcessor = nodeBlockProcessor;
         this.difficultyCalculator = difficultyCalculator;
+        this.gasLimitCalculator = gasLimitCalculator;
 
         executor = new BlockExecutor(repository, blockchain, blockStore, null);
 
@@ -489,7 +492,7 @@ public class MinerServerImpl implements MinerServer {
         BigInteger parentGasLimit = new BigInteger(1, newBlockParent.getGasLimit());
         BigInteger gasUsed = BigInteger.valueOf(newBlockParent.getGasUsed());
         boolean forceLimit = miningConfig.getGasLimit().isTargetForced();
-        BigInteger gasLimit = new GasLimitCalculator().calculateBlockGasLimit(parentGasLimit,
+        BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit,
                 gasUsed, minGasLimit, targetGasLimit, forceLimit);
 
         final BlockHeader newHeader = new BlockHeader(newBlockParent.getHash(),
