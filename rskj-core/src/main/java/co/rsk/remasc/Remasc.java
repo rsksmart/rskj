@@ -139,7 +139,7 @@ public class Remasc {
         // the storage when getChainHead is null (specially in production)
         processingRepository = processingRepository.startTracking();
         BridgeSupport bridgeSupport = new BridgeSupport(
-                repository,
+                processingRepository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 null,
                 null,
