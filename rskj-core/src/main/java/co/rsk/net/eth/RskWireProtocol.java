@@ -82,14 +82,14 @@ public class RskWireProtocol extends EthHandler {
     private final SystemProperties config;
     private MessageRecorder messageRecorder;
 
-    public RskWireProtocol(PeerScoringManager peerScoringManager, MessageHandler messageHandler, Blockchain blockchain, SystemProperties config, CompositeEthereumListener ethereumListener) {
+    public RskWireProtocol(PeerScoringManager peerScoringManager, MessageHandler messageHandler, Blockchain blockchain, RskSystemProperties config, CompositeEthereumListener ethereumListener) {
         super(blockchain, config, ethereumListener, V62);
         this.peerScoringManager = peerScoringManager;
         this.messageHandler = messageHandler;
         this.blockchain = blockchain;
         this.config = config;
         this.messageSender = new EthMessageSender(this);
-        this.messageRecorder = RskSystemProperties.CONFIG.getMessageRecorder();
+        this.messageRecorder = config.getMessageRecorder();
     }
 
     @Override

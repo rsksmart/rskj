@@ -312,7 +312,7 @@ public class RskFactory {
     public EthHandlerFactoryImpl.RskWireProtocolFactory getRskWireProtocolFactory(ApplicationContext ctx,
                                                                                   PeerScoringManager peerScoringManager,
                                                                                   Blockchain blockchain,
-                                                                                  SystemProperties config,
+                                                                                  RskSystemProperties config,
                                                                                   CompositeEthereumListener ethereumListener){
         // TODO: break MessageHandler circular dependency
         return () -> new RskWireProtocol(peerScoringManager, ctx.getBean(MessageHandler.class), blockchain, config, ethereumListener);
