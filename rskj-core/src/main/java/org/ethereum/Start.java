@@ -38,6 +38,6 @@ public class Start {
             CONFIG.setDiscoveryEnabled(false);
         }
 
-        EthereumFactory.createEthereum();
+        EthereumFactory.createEthereum(CONFIG, null);
     }
 }
