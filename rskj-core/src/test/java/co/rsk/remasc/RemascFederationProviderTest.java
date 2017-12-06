@@ -17,7 +17,6 @@ import java.io.IOException;
  * Created by ajlopez on 14/11/2017.
  */
 public class RemascFederationProviderTest {
-
     @Test
     public void getDefaultFederationSize() throws IOException, BlockStoreException {
         RemascFederationProvider provider = getRemascFederationProvider();
