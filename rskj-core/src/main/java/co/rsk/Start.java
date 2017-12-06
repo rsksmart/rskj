@@ -137,7 +137,7 @@ public class Start {
             rskSystemProperties.rpcPort(),
             rskSystemProperties.soLingerTime(),
             true,
-            new CorsConfiguration(),
+            new CorsConfiguration(rskSystemProperties.corsDomains()),
             filterHandler,
             serverHandler
         ).start();
