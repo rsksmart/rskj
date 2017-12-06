@@ -146,17 +146,16 @@ public class MinerManagerTest {
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
-        MinerServerImpl minerServer = getMinerServer(blockchain);
-        MinerClientImpl minerClient = getMinerClient(minerServer);
-
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
-
-        minerClient.setRsk(new RskImplForTest() {
+        RskImplForTest rsk = new RskImplForTest() {
             @Override
             public boolean hasBetterBlockToSync() {
                 return true;
             }
-        });
+        };
+        MinerServerImpl minerServer = getMinerServer(blockchain);
+        MinerClientImpl minerClient = getMinerClient(rsk, minerServer);
+
+        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
 
         Assert.assertFalse(minerClient.mineBlock());
 
@@ -170,12 +169,7 @@ public class MinerManagerTest {
 
         Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
 
-        MinerServerImpl minerServer = getMinerServer(blockchain);
-        MinerClientImpl minerClient = getMinerClient(minerServer);
-
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
-
-        minerClient.setRsk(new RskImplForTest() {
+        RskImplForTest rsk = new RskImplForTest() {
             @Override
             public boolean hasBetterBlockToSync() {
                 return false;
@@ -185,7 +179,11 @@ public class MinerManagerTest {
             public boolean isPlayingBlocks() {
                 return true;
             }
-        });
+        };
+        MinerServerImpl minerServer = getMinerServer(blockchain);
+        MinerClientImpl minerClient = getMinerClient(rsk, minerServer);
+
+        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
 
         Assert.assertFalse(minerClient.mineBlock());
 
@@ -329,9 +327,7 @@ public class MinerManagerTest {
     }
 
     private static MinerClientImpl getMinerClient(MinerServerImpl minerServer) {
-        MinerClientImpl minerClient = new MinerClientImpl();
-        minerClient.setMinerServer(minerServer);
-        minerClient.setRsk(new RskImplForTest() {
+        return getMinerClient(new RskImplForTest() {
             @Override
             public boolean hasBetterBlockToSync() {
                 return false;
@@ -341,8 +337,11 @@ public class MinerManagerTest {
             public boolean isPlayingBlocks() {
                 return false;
             }
-        });
-        return minerClient;
+        }, minerServer);
+    }
+
+    private static MinerClientImpl getMinerClient(RskImplForTest rsk, MinerServerImpl minerServer) {
+        return new MinerClientImpl(rsk, minerServer, RskSystemProperties.CONFIG);
     }
 
     private static MinerServerImpl getMinerServer(Blockchain blockchain) {

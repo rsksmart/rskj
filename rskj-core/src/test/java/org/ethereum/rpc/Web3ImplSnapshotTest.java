@@ -164,14 +164,13 @@ public class Web3ImplSnapshotTest {
     }
 
     private static Web3Impl createWeb3(World world, SimpleEthereum ethereum, MinerServer minerServer) {
-        MinerClientImpl minerClient = new MinerClientImpl();
+        MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, RskSystemProperties.CONFIG);
         PersonalModule pm = new PersonalModuleWalletDisabled();
 
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
         ethereum.repository = (org.ethereum.facade.Repository) world.getRepository();
         ethereum.worldManager = worldManager;
-        minerClient.setMinerServer(minerServer);
 
         return new Web3Impl(ethereum, worldManager, Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, Web3Mocks.getMockChannelManager(), ethereum.repository, null, null);
     }
