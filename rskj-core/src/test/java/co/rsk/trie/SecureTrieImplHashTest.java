@@ -77,33 +77,70 @@ public class SecureTrieImplHashTest {
 
     @Test
     public void triesWithSameKeyValuesHaveSameHash() {
-        Trie trie1 = new TrieImpl(true).put("foo", "bar".getBytes())
+        Trie trie1 = new TrieImpl(true)
+                .put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes());
-        Trie trie2 = new TrieImpl(true).put("foo", "bar".getBytes())
+        Trie trie2 = new TrieImpl(true)
+                .put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes());
+
+        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+    }
+
+    @Test
+    public void triesWithSameKeyLongValuesHaveSameHash() {
+        byte[] value1 = TrieImplValueTest.makeValue(100);
+        byte[] value2 = TrieImplValueTest.makeValue(200);
+
+        Trie trie1 = new TrieImpl(true)
+                .put("foo", value1)
+                .put("bar", value2);
+        Trie trie2 = new TrieImpl(true)
+                .put("foo", value1)
+                .put("bar", value2);
 
         Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
     public void triesWithSameKeyValuesInsertedInDifferentOrderHaveSameHash() {
-        Trie trie1 = new TrieImpl(true).put("foo", "bar".getBytes())
+        Trie trie1 = new TrieImpl(true)
+                .put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes());
-        Trie trie2 = new TrieImpl(true).put("bar", "baz".getBytes())
+        Trie trie2 = new TrieImpl(true)
+                .put("bar", "baz".getBytes())
                 .put("foo", "bar".getBytes());
 
         Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
+    public void triesWithSameKeyLongValuesInsertedInDifferentOrderHaveSameHash() {
+        byte[] value1 = TrieImplValueTest.makeValue(100);
+        byte[] value2 = TrieImplValueTest.makeValue(200);
+
+        Trie trie1 = new TrieImpl(true)
+                .put("foo", value1)
+                .put("bar", value2);
+        Trie trie2 = new TrieImpl(true)
+                .put("bar", value2)
+                .put("foo", value1);
+
+        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+    }
+
+    @Test
     public void threeTriesWithSameKeyValuesInsertedInDifferentOrderHaveSameHash() {
-        Trie trie1 = new TrieImpl(true).put("foo".getBytes(), "bar".getBytes())
+        Trie trie1 = new TrieImpl(true)
+                .put("foo".getBytes(), "bar".getBytes())
                 .put("bar".getBytes(), "baz".getBytes())
                 .put("baz".getBytes(), "foo".getBytes());
-        Trie trie2 = new TrieImpl(true).put("bar".getBytes(), "baz".getBytes())
+        Trie trie2 = new TrieImpl(true)
+                .put("bar".getBytes(), "baz".getBytes())
                 .put("baz".getBytes(), "foo".getBytes())
                 .put("foo".getBytes(), "bar".getBytes());
-        Trie trie3 = new TrieImpl(true).put("baz".getBytes(), "foo".getBytes())
+        Trie trie3 = new TrieImpl(true)
+                .put("baz".getBytes(), "foo".getBytes())
                 .put("bar".getBytes(), "baz".getBytes())
                 .put("foo".getBytes(), "bar".getBytes());
 
@@ -112,11 +149,48 @@ public class SecureTrieImplHashTest {
     }
 
     @Test
+    public void threeTriesWithSameKeyLongValuesInsertedInDifferentOrderHaveSameHash() {
+        byte[] value1 = TrieImplValueTest.makeValue(100);
+        byte[] value2 = TrieImplValueTest.makeValue(150);
+        byte[] value3 = TrieImplValueTest.makeValue(200);
+
+        Trie trie1 = new TrieImpl(true)
+                .put("foo".getBytes(), value1)
+                .put("bar".getBytes(), value2)
+                .put("baz".getBytes(), value3);
+        Trie trie2 = new TrieImpl(true)
+                .put("bar".getBytes(), value2)
+                .put("baz".getBytes(), value3)
+                .put("foo".getBytes(), value1);
+        Trie trie3 = new TrieImpl(true)
+                .put("baz".getBytes(), value3)
+                .put("bar".getBytes(), value2)
+                .put("foo".getBytes(), value1);
+
+        Assert.assertArrayEquals(trie1.getHash(), trie2.getHash());
+        Assert.assertArrayEquals(trie3.getHash(), trie2.getHash());
+    }
+
+    @Test
     public void triesWithDifferentKeyValuesHaveDifferentHashes() {
-        Trie trie1 = new TrieImpl(true).put("foo", "bar".getBytes())
+        Trie trie1 = new TrieImpl(true)
+                .put("foo", "bar".getBytes())
                 .put("bar", "42".getBytes());
-        Trie trie2 = new TrieImpl(true).put("foo", "bar".getBytes())
+        Trie trie2 = new TrieImpl(true)
+                .put("foo", "bar".getBytes())
                 .put("bar", "baz".getBytes());
+
+        Assert.assertFalse(Arrays.equals(trie1.getHash(), trie2.getHash()));
+    }
+
+    @Test
+    public void triesWithDifferentKeyLongValuesHaveDifferentHashes() {
+        Trie trie1 = new TrieImpl(true)
+                .put("foo", TrieImplValueTest.makeValue(100))
+                .put("bar", TrieImplValueTest.makeValue(110));
+        Trie trie2 = new TrieImpl(true)
+                .put("foo", TrieImplValueTest.makeValue(120))
+                .put("bar", TrieImplValueTest.makeValue(130));
 
         Assert.assertFalse(Arrays.equals(trie1.getHash(), trie2.getHash()));
     }
