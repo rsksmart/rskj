@@ -37,8 +37,12 @@ public class SelectionRule {
             return true;
         }
 
-        // as a last resort, choose the block with the lower hash
-        return isThisBlockHashSmaller(block.getHash(), currentBlock.getHash());
+        BigInteger blockFeesCriteria = block.getHeader().getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
+
+        // As a last resort, choose the block with the lower hash. We ask that
+        // the fees are at least bigger than the half of current block.
+        return currentBlock.getHeader().getPaidFees().compareTo(blockFeesCriteria) < 0 &&
+                isThisBlockHashSmaller(block.getHash(), currentBlock.getHash());
     }
     
     public static boolean isBrokenSelectionRule(
@@ -50,7 +54,9 @@ public class SelectionRule {
             if (sibling.getPaidFees().compareTo(pfm) > 0) {
                 return true;
             }
-            if (isThisBlockHashSmaller(sibling.getHash(), processingBlockHeader.getHash())) {
+            BigInteger blockFeesCriteria = sibling.getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
+            if (processingBlockHeader.getPaidFees().compareTo(blockFeesCriteria) < 0 &&
+                    isThisBlockHashSmaller(sibling.getHash(), processingBlockHeader.getHash())) {
                 return true;
             }
         }
