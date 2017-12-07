@@ -113,7 +113,7 @@ public class PendingStateImpl implements PendingState {
 
     @Override
     @PostConstruct
-    public final void init() {
+    public final synchronized void init() {
         if (this.repository != null)
             this.pendingStateRepository = repository.startTracking();
 
@@ -374,7 +374,7 @@ public class PendingStateImpl implements PendingState {
         return ret;
     }
 
-    public void updateState() {
+    public synchronized void updateState() {
         logger.trace("update state");
         pendingStateRepository = repository.startTracking();
 

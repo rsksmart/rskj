@@ -444,7 +444,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         }
     };
 
-    public void printChain() {
+    public synchronized void printChain() {
         Long number = getMaxNumber();
 
         for (long i = 0; i < number; ++i){

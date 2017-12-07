@@ -52,7 +52,7 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
     }
 
     @Override
-    public String sendTransaction(Web3.CallArguments args) {
+    public synchronized String sendTransaction(Web3.CallArguments args) {
         Account account = this.getAccount(args.from);
         String s = null;
         try {

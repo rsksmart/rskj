@@ -178,11 +178,6 @@ public class SyncPool implements Iterable<Channel> {
         return null;
     }
 
-    @Nullable
-    public Channel getByNodeId(byte[] nodeId) {
-        return peers.get(new ByteArrayWrapper(nodeId));
-    }
-
     public void onDisconnect(Channel peer) {
 
         if (peer.getNodeId() == null) {
@@ -253,7 +248,9 @@ public class SyncPool implements Iterable<Channel> {
     }
 
     public boolean isEmpty() {
-        return peers.isEmpty();
+        synchronized (peers) {
+            return peers.isEmpty();
+        }
     }
 
     @Override

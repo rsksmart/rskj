@@ -119,7 +119,12 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     @Override
     public boolean isAlive() {
-        return alive;
+        try {
+            resetDbLock.readLock().lock();
+            return alive;
+        } finally {
+            resetDbLock.readLock().unlock();
+        }
     }
 
     public void destroyDB(File fileLocation) {

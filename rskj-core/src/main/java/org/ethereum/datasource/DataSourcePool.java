@@ -90,7 +90,7 @@ public class DataSourcePool {
             return this.dataSource;
         }
 
-        public int getUseCounter() {
+        public synchronized int getUseCounter() {
             return this.counter;
         }
 
