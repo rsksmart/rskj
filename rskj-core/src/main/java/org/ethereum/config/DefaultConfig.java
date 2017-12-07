@@ -77,12 +77,6 @@ public class DefaultConfig {
 
     @PostConstruct
     public void init() {
-        String databaseDir = config.databaseDir();
-        if (config.databaseReset()){
-            FileUtil.recursiveDelete(databaseDir);
-            logger.info("Database reset done");
-        }
-
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> logger.error("Uncaught exception", e));
     }
 
