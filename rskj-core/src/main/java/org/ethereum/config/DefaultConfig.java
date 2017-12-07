@@ -173,20 +173,21 @@ public class DefaultConfig {
             RskSystemProperties config,
             DifficultyCalculator difficultyCalculator,
             ProofOfWorkRule proofOfWorkRule) {
-        int uncleListLimit = config.getBlockchainConfig().getCommonConstants().getUncleListLimit();
-        int uncleGenLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
-        int validPeriod = config.getBlockchainConfig().getCommonConstants().getNewBlockMaxMinInTheFuture();
+        Constants commonConstants = config.getBlockchainConfig().getCommonConstants();
+        int uncleListLimit = commonConstants.getUncleListLimit();
+        int uncleGenLimit = commonConstants.getUncleGenerationLimit();
+        int validPeriod = commonConstants.getNewBlockMaxMinInTheFuture();
         BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod);
 
-        BlockParentGasLimitRule parentGasLimitRule = new BlockParentGasLimitRule(config.getBlockchainConfig().getCommonConstants().getGasLimitBoundDivisor());
+        BlockParentGasLimitRule parentGasLimitRule = new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor());
         BlockParentCompositeRule unclesBlockParentHeaderValidator = new BlockParentCompositeRule(new PrevMinGasPriceRule(), new BlockParentNumberRule(), blockTimeStampValidationRule, new BlockDifficultyRule(difficultyCalculator), parentGasLimitRule);
 
         BlockCompositeRule unclesBlockHeaderValidator = new BlockCompositeRule(proofOfWorkRule, blockTimeStampValidationRule, new ValidGasUsedRule());
 
         BlockUnclesValidationRule blockUnclesValidationRule = new BlockUnclesValidationRule(blockStore, uncleListLimit, uncleGenLimit, unclesBlockHeaderValidator, unclesBlockParentHeaderValidator);
 
-        int minGasLimit = config.getBlockchainConfig().getCommonConstants().getMinGasLimit();
-        int maxExtraDataSize = config.getBlockchainConfig().getCommonConstants().getMaximumExtraDataSize();
+        int minGasLimit = commonConstants.getMinGasLimit();
+        int maxExtraDataSize = commonConstants.getMaximumExtraDataSize();
 
         return new BlockCompositeRule(new TxsMinGasPriceRule(), blockUnclesValidationRule, new BlockRootValidationRule(), new RemascValidationRule(), blockTimeStampValidationRule, new GasLimitRule(minGasLimit), new ExtraDataRule(maxExtraDataSize));
     }
@@ -204,13 +205,14 @@ public class DefaultConfig {
             RskSystemProperties config,
             DifficultyCalculator difficultyCalculator,
             ProofOfWorkRule proofOfWorkRule) {
-        int uncleListLimit = config.getBlockchainConfig().getCommonConstants().getUncleListLimit();
-        int uncleGenLimit = config.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
+        Constants commonConstants = config.getBlockchainConfig().getCommonConstants();
+        int uncleListLimit = commonConstants.getUncleListLimit();
+        int uncleGenLimit = commonConstants.getUncleGenerationLimit();
 
-        BlockParentGasLimitRule parentGasLimitRule = new BlockParentGasLimitRule(config.getBlockchainConfig().getCommonConstants().getGasLimitBoundDivisor());
+        BlockParentGasLimitRule parentGasLimitRule = new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor());
         BlockParentCompositeRule unclesBlockParentHeaderValidator = new BlockParentCompositeRule(new PrevMinGasPriceRule(), new BlockParentNumberRule(), new BlockDifficultyRule(difficultyCalculator), parentGasLimitRule);
 
-        int validPeriod = config.getBlockchainConfig().getCommonConstants().getNewBlockMaxMinInTheFuture();
+        int validPeriod = commonConstants.getNewBlockMaxMinInTheFuture();
         BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod);
         BlockCompositeRule unclesBlockHeaderValidator = new BlockCompositeRule(proofOfWorkRule, blockTimeStampValidationRule, new ValidGasUsedRule());
 
