@@ -342,6 +342,107 @@ public class BridgeSerializationUtils {
         return new LockWhitelist(deserializeBtcAddresses(data, parameters));
     }
 
+    // A ReleaseRequestQueue is serialized as follows:
+    // [address_1, amount_1, ..., address_n, amount_n]
+    // with address_i being the encoded bytes of each btc address
+    // and amount_i the RLP-encoded biginteger corresponding to each amount
+    // To preserve order amongst different implementations of lists,
+    // entries are first sorted on the lexicographical order of the
+    // address bytes and then by the amount ascending
+    // (see ReleaseTransactionSet.Entry.DESTINATION_AMOUNT_COMPARATOR)
+    public static byte[] serializeReleaseRequestQueue(ReleaseRequestQueue queue) {
+        List<ReleaseRequestQueue.Entry> entries = queue.getEntries();
+        entries.sort(ReleaseRequestQueue.Entry.DESTINATION_AMOUNT_COMPARATOR);
+
+        byte[][] bytes = new byte[entries.size() * 2][];
+        int n = 0;
+
+        for (ReleaseRequestQueue.Entry entry : entries) {
+            bytes[n++] = RLP.encodeElement(entry.getDestination().getHash160());
+            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getAmount().getValue()));
+        }
+
+        return RLP.encodeList(bytes);
+    }
+
+    // For the serialization format, see BridgeSerializationUtils::serializeReleaseRequestQueue
+    public static ReleaseRequestQueue deserializeReleaseRequestQueue(byte[] data, NetworkParameters networkParameters) {
+        List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
+
+        if (data == null || data.length == 0)
+            return new ReleaseRequestQueue(entries);
+
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+
+        // Must have an even number of items
+        if (rlpList.size() % 2 != 0) {
+            throw new RuntimeException(String.format("Invalid serialized ReleaseRequestQueue. Expected an even number of elements, but got %d", rlpList.size()));
+        }
+
+        int n = rlpList.size() / 2;
+
+        for (int k = 0; k < n; k++) {
+            byte[] addressBytes = rlpList.get(k * 2).getRLPData();
+            Address address = new Address(networkParameters, addressBytes);
+            Long amount = new BigInteger(rlpList.get(k * 2 + 1).getRLPData()).longValue();
+
+            entries.add(new ReleaseRequestQueue.Entry(address, Coin.valueOf(amount)));
+        }
+
+        return new ReleaseRequestQueue(entries);
+    }
+
+    // A ReleaseTransactionSet is serialized as follows:
+    // [btctx_1, height_1, ..., btctx_n, height_n]
+    // with btctx_i being the bitcoin serialization of each btc tx
+    // and height_i the RLP-encoded biginteger corresponding to each height
+    // To preserve order amongst different implementations of sets,
+    // entries are first sorted on the lexicographical order of the
+    // serialized btc transaction bytes
+    // (see ReleaseTransactionSet.Entry.BTC_TX_COMPARATOR)
+    public static byte[] serializeReleaseTransactionSet(ReleaseTransactionSet set) {
+        List<ReleaseTransactionSet.Entry> entries = set.getEntries().stream().collect(Collectors.toList());
+        entries.sort(ReleaseTransactionSet.Entry.BTC_TX_COMPARATOR);
+
+        byte[][] bytes = new byte[entries.size() * 2][];
+        int n = 0;
+
+        for (ReleaseTransactionSet.Entry entry : entries) {
+            bytes[n++] = RLP.encodeElement(entry.getTransaction().bitcoinSerialize());
+            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getRskBlockNumber()));
+        }
+
+        return RLP.encodeList(bytes);
+    }
+
+    // For the serialization format, see BridgeSerializationUtils::serializeReleaseTransactionSet
+    public static ReleaseTransactionSet deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters) {
+        Set<ReleaseTransactionSet.Entry> entries = new HashSet<>();
+
+        if (data == null || data.length == 0)
+            return new ReleaseTransactionSet(entries);
+
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+
+        // Must have an even number of items
+        if (rlpList.size() % 2 != 0) {
+            throw new RuntimeException(String.format("Invalid serialized ReleaseTransactionSet. Expected an even number of elements, but got %d", rlpList.size()));
+        }
+
+        int n = rlpList.size() / 2;
+
+        for (int k = 0; k < n; k++) {
+            byte[] txPayload = rlpList.get(k * 2).getRLPData();
+            BtcTransaction tx =  new BtcTransaction(networkParameters, txPayload);
+
+            Long height = new BigInteger(rlpList.get(k * 2 + 1).getRLPData()).longValue();
+
+            entries.add(new ReleaseTransactionSet.Entry(tx, height));
+        }
+
+        return new ReleaseTransactionSet(entries);
+    }
+
     // An ABI call spec is serialized as:
     // function name encoded in UTF-8
     // arg_1, ..., arg_n
