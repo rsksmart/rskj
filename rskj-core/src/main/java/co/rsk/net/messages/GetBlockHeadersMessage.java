@@ -89,7 +89,6 @@ public class GetBlockHeadersMessage extends Message {
         this.parsed = false;
     }
 
-
     public GetBlockHeadersMessage(long blockNumber, byte[] blockHash, int maxHeaders, int skipBlocks, boolean reverse) {
         this.blockNumber = blockNumber;
         this.blockHash = blockHash;
@@ -196,11 +195,11 @@ public class GetBlockHeadersMessage extends Message {
 
     @Override
     public byte[] getEncodedMessage() {
-            if (encoded == null) {
-                encode();
-            }
+        if (encoded == null) {
+            encode();
+        }
 
-            return encoded;
+        return encoded;
     }
 
     @Override
