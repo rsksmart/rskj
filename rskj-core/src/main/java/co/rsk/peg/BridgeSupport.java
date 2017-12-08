@@ -36,6 +36,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
@@ -54,6 +55,7 @@ import java.io.InputStream;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static org.ethereum.util.BIUtil.toBI;
 import static org.ethereum.util.BIUtil.transfer;
@@ -303,7 +305,7 @@ public class BridgeSupport {
             // otherwise, transfer SBTC to the sender of the BTC
             // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
             if (!provider.getLockWhitelist().isWhitelisted(senderBtcAddress)) {
-                boolean addResult = addToReleaseCycle(rskTx, senderBtcAddress, totalAmount);
+                boolean addResult = requestRelease(senderBtcAddress, totalAmount);
 
                 if (addResult) {
                     logger.info("whitelist money return succesful to {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
@@ -417,7 +419,7 @@ public class BridgeSupport {
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
         BigInteger valueInWeis = toBI(rskTx.getValue());
         Coin value = Coin.valueOf(Denomination.weisToSatoshis(valueInWeis).longValue());
-        boolean addResult = addToReleaseCycle(rskTx, btcDestinationAddress, value);
+        boolean addResult = requestRelease(btcDestinationAddress, value);
 
         if (addResult) {
             logger.info("releaseBtc succesful to {}. Tx {}. Value {}.", btcDestinationAddress, rskTx, value);
@@ -427,39 +429,50 @@ public class BridgeSupport {
     }
 
     /**
-     * Creates a BTC transaction for BTC release and
-     * adds it to the confirm/sign/release cycle.
+     * Creates a request for BTC release and
+     * adds it to the request queue for it
+     * to be processed later.
      *
-     * @param rskTx the RSK transaction that caused this BTC release.
      * @param destinationAddress the destination BTC address.
      * @param value the amount of BTC to release.
-     * @return true if the btc transaction was successfully added, false if the value to release was
+     * @return true if the request was successfully added, false if the value to release was
      * considered dust and therefore ignored.
      * @throws IOException
      */
-    private boolean addToReleaseCycle(Transaction rskTx, Address destinationAddress, Coin value) throws IOException {
-        // Track tx in the contract memory as "waiting for 100 rsk blocks in order to release BTC
-        BtcTransaction btcTx = new BtcTransaction(btcContext.getParams());
-        btcTx.addOutput(value, destinationAddress);
-        TransactionOutput btcTxOutput = btcTx.getOutput(0);
-
-        if (btcTxOutput.getValue().isGreaterThan(bridgeConstants.getMinimumReleaseTxValue())) {
-            provider.getRskTxsWaitingForConfirmations().put(new Sha3Hash(rskTx.getHash()), btcTx);
-            return true;
-        } else {
+    private boolean requestRelease(Address destinationAddress, Coin value) throws IOException {
+        if (!value.isGreaterThan(bridgeConstants.getMinimumReleaseTxValue())) {
             return false;
         }
+
+        provider.getReleaseRequestQueue().add(destinationAddress, value);
+
+        return true;
+    }
+
+    private Coin getFeePerKb() {
+        return Coin.MILLICOIN;
     }
 
     /**
      * Executed every now and then.
-     * Iterates rskTxsWaitingForConfirmations map searching for txs with enough confirmations in the RSK blockchain.
-     * If it finds one, adds unsigned inputs and change output and moves it to rskTxsWaitingForSignatures map.
+     * Performs a few tasks: processing of any pending btc funds
+     * migrations from retiring federations;
+     * processing of any outstanding btc release requests; and
+     * processing of any outstanding release btc transactions.
      * @throws IOException
      * @param rskTx current RSK transaction
      */
     public void updateCollections(Transaction rskTx) throws IOException {
         Context.propagate(btcContext);
+
+//        processFundsMigration(rskTx);
+
+        processReleaseRequests();
+
+        processReleaseTransactions(rskTx);
+    }
+
+    private void processFundsMigration(Transaction rskTx) throws IOException {
         boolean pendingSignatures = !provider.getRskTxsWaitingForSignatures().isEmpty();
         long activeFederationAge = rskExecutionBlock.getNumber() - getFederationCreationBlockNumber();
         Wallet retiringFederationWallet = getRetiringFederationWallet();
@@ -485,52 +498,140 @@ public class BridgeSupport {
             }
             provider.setRetiringFederation(null);
         }
-        
-        Iterator<Map.Entry<Sha3Hash, BtcTransaction>> iter = provider.getRskTxsWaitingForConfirmations().entrySet().iterator();
-        while (iter.hasNext() && provider.getRskTxsWaitingForSignatures().isEmpty()) {
-            Map.Entry<Sha3Hash, BtcTransaction> entry = iter.next();
-            // We copy the entry's key and value to temporary variables because iter.remove() changes the values of entry's key and value
-            Sha3Hash rskTxHash = entry.getKey();
-            if (hasEnoughConfirmations(rskTxHash)) {
-                // We create a new Transaction instance because if ExceededMaxTransactionSize is thrown, the tx included in the SendRequest
-                // is altered and then we would try to persist the altered version in the waiting for confirmations collection
-                // Inputs would not be disconnected, so we would have a second problem trying to persist non java serializable objects.
-                BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
-                btcTx.parseNoInputs(entry.getValue().bitcoinSerialize());
-                try {
-                    SendRequest sr = SendRequest.forTx(btcTx);
-                    sr.feePerKb = Coin.MILLICOIN;
-                    sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
-                    sr.changeAddress = getActiveFederation().getAddress();
-                    sr.shuffleOutputs = false;
-                    sr.recipientsPayFees = true;
-                    getActiveFederationWallet().completeTx(sr);
-                } catch (InsufficientMoneyException e) {
-                    logger.warn("Not enough confirmed BTC in the federation wallet to complete " + rskTxHash + " " + btcTx, e);
-                    // Comment out panic logging for now
-                    // panicProcessor.panic("nomoney", "Not enough confirmed BTC in the federation wallet to complete " + rskTxHash + " " + btcTx);
-                    continue;
-                } catch (Wallet.CouldNotAdjustDownwards e) {
-                    logger.warn("A user output could not be adjusted downwards to pay tx fees " + rskTxHash + " " + btcTx, e);
-                    // Comment out panic logging for now
-                    // panicProcessor.panic("couldnotadjustdownwards", "A user output could not be adjusted downwards to pay tx fees " + rskTxHash + " " + btcTx);
-                    continue;
-                } catch (Wallet.ExceededMaxTransactionSize e) {
-                    logger.warn("Tx size too big " + rskTxHash + " " + btcTx, e);
-                    // Comment out panic logging for now
-                    // panicProcessor.panic("exceededmaxtransactionsize", "Tx size too big " + rskTxHash + " " + btcTx);
-                    continue;
-                }
-                adjustBalancesIfChangeOutputWasDust(btcTx, entry.getValue().getOutput(0).getValue());
+    }
 
+    /**
+     * Processes the current btc release request queue
+     * and tries to build btc transactions using (and marking as spent)
+     * the current active federation's utxos.
+     * Newly created btc transactions are added to the btc release tx set,
+     * and failed attempts are kept in the release queue for future
+     * processing.
+     */
+    private void processReleaseRequests() {
+        final Wallet activeFederationWallet;
+        final ReleaseRequestQueue releaseRequestQueue;
 
-                // Disconnect input from output because we don't need the reference and it interferes serialization
-                for (TransactionInput transactionInput : btcTx.getInputs()) {
-                    transactionInput.disconnect();
-                }
-                iter.remove();
-                provider.getRskTxsWaitingForSignatures().put(rskTxHash, btcTx);
+        try {
+            activeFederationWallet = getActiveFederationWallet();
+            releaseRequestQueue = provider.getReleaseRequestQueue();
+        } catch (IOException e) {
+            logger.error("Unexpected error accessing storage while attempting to process release requests", e);
+            return;
+        }
+
+        // Releases are attempted using the currently active federation
+        // wallet.
+        final ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
+                activeFederationWallet,
+                getFederationAddress(),
+                getFeePerKb()
+        );
+
+        releaseRequestQueue.process((ReleaseRequestQueue.Entry releaseRequest) -> {
+            Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.build(
+                    releaseRequest.getDestination(),
+                    releaseRequest.getAmount()
+            );
+
+            // Couldn't build a transaction to release these funds
+            // Log the event and return false so that the request remains in the
+            // queue for future processing.
+            // Further logging is done at the tx builder level.
+            if (!result.isPresent()) {
+                logger.warn(
+                        "Couldn't build a release BTC tx for <{}, {}>",
+                        releaseRequest.getDestination().toBase58(),
+                        releaseRequest.getAmount().toString()
+                );
+                return false;
             }
+
+            // We have a BTC transaction, mark the UTXOs as spent and add the tx
+            // to the release set.
+
+            List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();
+            BtcTransaction generatedTransaction = result.get().getBtcTx();
+            List<UTXO> availableUTXOs;
+            ReleaseTransactionSet releaseTransactionSet;
+
+            // Attempt access to storage first
+            // (any of these could fail and would invalidate both
+            // the tx build and utxo selection, so treat as atomic)
+            try {
+                availableUTXOs = provider.getActiveFederationBtcUTXOs();
+                releaseTransactionSet = provider.getReleaseTransactionSet();
+            } catch (IOException exception) {
+                // Unexpected error accessing storage, log and fail
+                logger.error(
+                        String.format(
+                                "Unexpected error accessing storage while attempting to add a release BTC tx for <%s, %s>",
+                                releaseRequest.getDestination().toString(),
+                                releaseRequest.getAmount().toString()
+                        ),
+                        exception
+                );
+                return false;
+            }
+
+            // Add the TX
+            releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
+
+            // Mark UTXOs as spent
+            availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
+                utxo.getHash().equals(selectedUtxo.getHash()) &&
+                utxo.getIndex() == selectedUtxo.getIndex()
+            ));
+
+            // TODO: (Ariel Mendelzon, 07/12/2017)
+            // TODO: Balance adjustment assumes that change output is output with index 1.
+            // TODO: This will change if we implement multiple releases per BTC tx, so
+            // TODO: it would eventually need to be fixed.
+            // Adjust balances in edge cases
+            adjustBalancesIfChangeOutputWasDust(generatedTransaction, releaseRequest.getAmount());
+
+            return true;
+        });
+    }
+
+    /**
+     * Processes the current btc release transaction set.
+     * It basically looks for transactions with enough confirmations
+     * and marks them as ready for signing as well as removes them
+     * from the set.
+     * @param rskTx the RSK transaction that is causing this processing.
+     */
+    private void processReleaseTransactions(Transaction rskTx) {
+        final Map<Sha3Hash, BtcTransaction> txsWaitingForSignatures;
+        final ReleaseTransactionSet releaseTransactionSet;
+
+        try {
+            txsWaitingForSignatures = provider.getRskTxsWaitingForSignatures();
+            releaseTransactionSet = provider.getReleaseTransactionSet();
+        } catch (IOException e) {
+            logger.error("Unexpected error accessing storage while attempting to process release btc transactions", e);
+            return;
+        }
+
+        // TODO: (Ariel Mendelzon - 07/12/2017)
+        // TODO: at the moment, there can only be one btc transaction
+        // TODO: per rsk transaction in the txsWaitingForSignatures
+        // TODO: map, and the rest of the processing logic is
+        // TODO: dependant upon this. That is the reason we
+        // TODO: add only one btc transaction at a time
+        // TODO: (at least at this stage).
+
+        // IMPORTANT: sliceWithEnoughConfirmations also modifies the transaction set in place
+        Set<BtcTransaction> txsWithEnoughConfirmations = releaseTransactionSet.sliceWithConfirmations(
+                rskExecutionBlock.getNumber(),
+                bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations(),
+                Optional.of(1)
+        );
+
+        // Add the btc transaction to the 'awaiting signatures' list
+        if (txsWithEnoughConfirmations.size() > 0) {
+            Sha3Hash rskTxHash = new Sha3Hash(rskTx.getHash());
+            txsWaitingForSignatures.put(rskTxHash, txsWithEnoughConfirmations.iterator().next());
         }
     }
 

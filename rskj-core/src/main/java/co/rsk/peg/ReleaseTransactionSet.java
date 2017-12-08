@@ -24,6 +24,7 @@ import org.ethereum.core.Block;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Representation of a queue of BTC release
@@ -87,22 +88,39 @@ public class ReleaseTransactionSet {
         return new HashSet<>(entries);
     }
 
-    public void add(BtcTransaction transaction, Block rskBlock) {
-        entries.add(new Entry(transaction, rskBlock.getNumber()));
+    public void add(BtcTransaction transaction, Long blockNumber) {
+        entries.add(new Entry(transaction, blockNumber));
     }
 
-    public Set<BtcTransaction> sliceWithConfirmations(Block rskBlock, Long minimumConfirmations) {
-        Set<BtcTransaction> output = entries.stream()
-            .filter(e -> hasEnoughConfirmations(e, rskBlock, minimumConfirmations))
-            .map(e -> e.getTransaction())
-            .collect(Collectors.toSet());
+    /**
+     * Given a block number and a minimum number of confirmations,
+     * returns a subset of transactions within the set that have
+     * at least that number of confirmations.
+     * Optionally supply a maximum slice size to limit the output
+     * size.
+     * Sliced items are also removed from the set (thus the name, slice).
+     * @param currentBlockNumber the current execution block number (height).
+     * @param minimumConfirmations the minimum desired confirmations for the slice elements.
+     * @param maximumSliceSize (optional) the maximum number of elements in the slice.
+     * @return the slice of btc transactions.
+     */
+    public Set<BtcTransaction> sliceWithConfirmations(Long currentBlockNumber, Integer minimumConfirmations, Optional<Integer> maximumSliceSize) {
+        Stream<BtcTransaction> selection = entries.stream()
+            .filter(e -> hasEnoughConfirmations(e, currentBlockNumber, minimumConfirmations))
+            .map(e -> e.getTransaction());
 
-        entries.removeIf(e -> hasEnoughConfirmations(e, rskBlock, minimumConfirmations));
+        if (maximumSliceSize.isPresent()) {
+            selection = selection.limit(maximumSliceSize.get());
+        }
+
+        Set<BtcTransaction> output = selection.collect(Collectors.toSet());
+
+        entries.removeIf(e -> hasEnoughConfirmations(e, currentBlockNumber, minimumConfirmations));
 
         return output;
     }
 
-    private boolean hasEnoughConfirmations(Entry entry, Block rskBlock, Long minimumConfirmations) {
-        return (rskBlock.getNumber() - entry.getRskBlockNumber()) >= minimumConfirmations;
+    private boolean hasEnoughConfirmations(Entry entry, Long currentBlockNumber, Integer minimumConfirmations) {
+        return (currentBlockNumber - entry.getRskBlockNumber()) >= minimumConfirmations;
     }
 }
