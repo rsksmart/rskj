@@ -45,8 +45,9 @@ public class WriterMessageRecorder implements MessageRecorder {
 
     @Override
     public synchronized void recordMessage(NodeID sender, Message message) {
-        if (this.filter != null && !this.filter.acceptMessage(message))
+        if (this.filter != null && !this.filter.acceptMessage(message)) {
             return;
+        }
 
         try {
             writer.write(formatter.format(new Date()));
@@ -57,8 +58,9 @@ public class WriterMessageRecorder implements MessageRecorder {
             writer.write(String.valueOf(message.getCommand()));
             writer.write(",");
 
-            if (message instanceof RskMessage)
+            if (message instanceof RskMessage) {
                 writer.write(String.valueOf(((RskMessage) message).getMessage().getMessageType()));
+            }
 
             writer.write(",");
 
@@ -66,8 +68,9 @@ public class WriterMessageRecorder implements MessageRecorder {
 
             writer.write(",");
 
-            if (sender != null)
+            if (sender != null) {
                 writer.write(Hex.toHexString(sender.getID()));
+            }
 
             writer.newLine();
             writer.flush();
