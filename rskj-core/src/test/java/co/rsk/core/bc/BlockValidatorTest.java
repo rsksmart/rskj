@@ -25,17 +25,21 @@ import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.validators.BlockParentDependantValidationRule;
 import co.rsk.validators.BlockValidationRule;
+import co.rsk.validators.BlockValidator;
 import org.ethereum.core.*;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
 import co.rsk.validators.ProofOfWorkRule;
+import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -53,29 +57,28 @@ public class BlockValidatorTest {
 
     @Test
     public void validateEmptyBlock() {
-        BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
-
-        Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
-        genesis.seal();
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
+        IndexedBlockStore blockStore = new IndexedBlockStore();
+        blockStore.init(new HashMap<>(), new HashMapDB(), null);
+        Block genesis = new BlockGenerator().getGenesisBlock();
+        blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
         Block block = new BlockBuilder().parent(genesis).build();
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addParentBlockHeaderValidator().blockStore(blockChain.getBlockStore())
-                .addBlockRootValidationRule().addBlockUnclesValidationRule(blockChain.getBlockStore()).build();
+        BlockValidator validator = createValidator(blockStore);
 
         Assert.assertTrue(validator.isValid(block));
     }
 
     @Test
     public void validateChildBlock() {
-        BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
-        Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
-        genesis.seal();
-        Block block = new BlockGenerator().createChildBlock(genesis);
-        block.seal();
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
+        IndexedBlockStore blockStore = new IndexedBlockStore();
+        blockStore.init(new HashMap<>(), new HashMapDB(), null);
+        Block genesis = new BlockGenerator().getGenesisBlock();
+        blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
-        BlockValidatorImpl validator = (BlockValidatorImpl) blockChain.getBlockValidator();
+        Block block = new BlockGenerator().createChildBlock(genesis);
+
+        BlockValidator validator = createValidator(blockStore);
+
         Assert.assertTrue(validator.isValid(block));
     }
 
@@ -97,22 +100,22 @@ public class BlockValidatorTest {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(parent));
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addParentBlockHeaderValidator().blockStore(blockChain.getBlockStore())
-                .addBlockRootValidationRule().addBlockUnclesValidationRule(blockChain.getBlockStore()).build();
+        BlockValidator validator = createValidator(blockChain.getBlockStore());
 
         Assert.assertTrue(validator.isValid(block));
     }
 
     @Test
     public void invalidChildBlockBadDifficulty() {
-        BlockChainImpl blockchain = BlockChainImplTest.createBlockChain();
-        Block genesis = BlockChainImplTest.getGenesisBlock(blockchain);
-
+        Block genesis = new BlockGenerator().getGenesisBlock();
         Block block = new BlockGenerator().createChildBlock(genesis);
-
         block.getHeader().setDifficulty(new byte[]{0x00});
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addDifficultyRule().blockStore(new SimpleBlockStore(block)).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addDifficultyRule()
+                .blockStore(new SimpleBlockStore(block))
+                .build();
+
         // If the parent difficulty is zero, the child difficulty will always be zero
         // because the child  difficulty is always the parent diff multiplied by a factor.
         // However, the calcDifficulty will put the minimum configured difficulty, so that the child
@@ -132,7 +135,10 @@ public class BlockValidatorTest {
         parent.getHeader().setGasLimit(new byte[]{0x00});
         Block block = blockGenerator.createChildBlock(parent);
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addParentGasLimitRule().blockStore(blockchain.getBlockStore()).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addParentGasLimitRule()
+                .blockStore(blockchain.getBlockStore())
+                .build();
 
         Assert.assertFalse(validator.isValid(block));
     }
@@ -145,8 +151,10 @@ public class BlockValidatorTest {
         Block block1 = blockGenerator.createChildBlock(genesis);
         Block block2 = blockGenerator.createChildBlock(block1);
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addParentBlockHeaderValidator().blockStore(blockChain.getBlockStore())
-                .addBlockRootValidationRule().addBlockUnclesValidationRule(blockChain.getBlockStore()).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addParentBlockHeaderValidator()
+                .blockStore(blockChain.getBlockStore())
+                .build();
 
         Assert.assertFalse(validator.isValid(block2));
     }
@@ -158,11 +166,13 @@ public class BlockValidatorTest {
         Block block1 = new BlockGenerator().createChildBlock(genesis);
 
         BlockStore validatorStore = blockchain.getBlockStore();
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(validatorStore).blockStore(validatorStore).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockUnclesValidationRule(validatorStore)
+                .blockStore(validatorStore)
+                .build();
 
         Assert.assertTrue(validator.isValid(block1));
     }
-
 
     @Test
     public void invalidUnclesHash() {
@@ -172,14 +182,15 @@ public class BlockValidatorTest {
         block1.getHeader().setUnclesHash(new byte[]{0x01});
 
         BlockStore validatorStore = blockchain.getBlockStore();
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(validatorStore).blockStore(validatorStore).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockUnclesValidationRule(validatorStore)
+                .blockStore(validatorStore).build();
 
         Assert.assertFalse(validator.isValid(block1));
     }
 
     @Test
     public void validateHeader() {
-
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
         Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
         Block parent = new BlockBuilder().parent(genesis).build();
@@ -187,8 +198,12 @@ public class BlockValidatorTest {
 
         blockChain.getBlockStore().saveBlock(parent, BigInteger.ONE, true);
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addParentBlockHeaderValidator().blockStore(blockChain.getBlockStore())
-                .addBlockRootValidationRule().addBlockUnclesValidationRule(blockChain.getBlockStore()).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addParentBlockHeaderValidator()
+                .addBlockRootValidationRule()
+                .addBlockUnclesValidationRule(blockChain.getBlockStore())
+                .blockStore(blockChain.getBlockStore())
+                .build();
 
         Assert.assertTrue(validator.isValid(block));
     }
@@ -297,7 +312,10 @@ public class BlockValidatorTest {
 
         block.getHeader().setTransactionsRoot(new byte[]{0x01});
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockRootValidationRule().build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockRootValidationRule()
+                .build();
+
         Assert.assertFalse(validator.isValid(block));
     }
 
@@ -328,7 +346,10 @@ public class BlockValidatorTest {
         store.saveBlock(uncle1b, BigInteger.ONE, false);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(store).blockStore(store).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockUnclesValidationRule(store)
+                .blockStore(store)
+                .build();
 
         Assert.assertTrue(validator.isValid(block1));
     }
@@ -357,7 +378,10 @@ public class BlockValidatorTest {
         store.saveBlock(uncle1b, BigInteger.ONE, false);
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(store).blockStore(store).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockUnclesValidationRule(store)
+                .blockStore(store)
+                .build();
 
         Assert.assertFalse(validator.isValid(block1));
     }
@@ -384,7 +408,10 @@ public class BlockValidatorTest {
         store.saveBlock(uncle1a, BigInteger.ONE, false);
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(store).blockStore(store).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockUnclesValidationRule(store)
+                .blockStore(store)
+                .build();
 
         Assert.assertFalse(validator.isValid(block1));
     }
@@ -412,8 +439,10 @@ public class BlockValidatorTest {
         BlockParentDependantValidationRule parentValidationRule = Mockito.mock(BlockParentDependantValidationRule.class);
         Mockito.when(parentValidationRule.isValid(Mockito.any(), Mockito.any())).thenReturn(true);
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(store, new ProofOfWorkRule(), parentValidationRule)
-                .blockStore(store).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockUnclesValidationRule(store, new ProofOfWorkRule(), parentValidationRule)
+                .blockStore(store)
+                .build();
 
         Assert.assertFalse(validator.isValid(block1));
     }
@@ -437,7 +466,10 @@ public class BlockValidatorTest {
         store.saveBlock(uncle1a, BigInteger.ONE, false);
         store.saveBlock(block1, BigInteger.ONE, true);
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(store).blockStore(store).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockUnclesValidationRule(store)
+                .blockStore(store)
+                .build();
 
         Assert.assertFalse(validator.isValid(block1));
     }
@@ -459,7 +491,10 @@ public class BlockValidatorTest {
         store.saveBlock(genesis, BigInteger.ONE, true);
         store.saveBlock(block1, BigInteger.ONE, true);
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(store).blockStore(store).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockUnclesValidationRule(store)
+                .blockStore(store)
+                .build();
 
         Assert.assertFalse(validator.isValid(block1));
     }
@@ -484,7 +519,10 @@ public class BlockValidatorTest {
         store.saveBlock(uncle1a, BigInteger.ONE, false);
         store.saveBlock(block1, BigInteger.ONE, true);
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(store).blockStore(store).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockUnclesValidationRule(store)
+                .blockStore(store)
+                .build();
 
         Assert.assertFalse(validator.isValid(block1));
     }
@@ -516,7 +554,9 @@ public class BlockValidatorTest {
         store.saveBlock(block2, BigInteger.ONE, true);
         store.saveBlock(block3, BigInteger.ONE, true);
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(store).blockStore(store).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockUnclesValidationRule(store)
+                .blockStore(store).build();
 
         Assert.assertFalse(validator.isValid(block3));
     }
@@ -554,7 +594,9 @@ public class BlockValidatorTest {
         store.saveBlock(uncle2b, BigInteger.ONE, false);
         store.saveBlock(block2, BigInteger.ONE, true);
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(store).blockStore(store).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockUnclesValidationRule(store)
+                .blockStore(store).build();
 
         Assert.assertFalse(validator.isValid(block3));
     }
@@ -593,7 +635,9 @@ public class BlockValidatorTest {
         store.saveBlock(uncle2a, BigInteger.ONE, false);
         store.saveBlock(uncle2b, BigInteger.ONE, false);
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(store).blockStore(store).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockUnclesValidationRule(store)
+                .blockStore(store).build();
 
         Assert.assertFalse(validator.isValid(block2));
     }
@@ -613,7 +657,9 @@ public class BlockValidatorTest {
         Block block = blockGenerator.createChildBlock(genesis);
         block.setTransactionsList(txs);
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockTxsValidationRule(objects.getRepository()).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockTxsValidationRule(objects.getRepository())
+                .build();
 
         Assert.assertFalse(validator.isValid(block));
     }
@@ -638,7 +684,10 @@ public class BlockValidatorTest {
 
         Mockito.when(blockStore.getBlockByHash(block.getParentHash())).thenReturn(parent);
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addTxsMinGasPriceRule().blockStore(blockStore).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addTxsMinGasPriceRule()
+                .blockStore(blockStore)
+                .build();
 
         Assert.assertFalse(validator.isValid(block));
     }
@@ -659,8 +708,10 @@ public class BlockValidatorTest {
 
         Mockito.when(blockStore.getBlockByHash(block.getParentHash())).thenReturn(parent);
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addPrevMinGasPriceRule().blockStore(blockStore).build();
-
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addPrevMinGasPriceRule()
+                .blockStore(blockStore)
+                .build();
 
         Assert.assertFalse(validator.isValid(block));
     }
@@ -686,11 +737,13 @@ public class BlockValidatorTest {
 
         Mockito.when(blockStore.getBlockByHash(block.getParentHash())).thenReturn(parent);
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addPrevMinGasPriceRule()
-                .addTxsMinGasPriceRule().blockStore(blockStore).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addPrevMinGasPriceRule()
+                .addTxsMinGasPriceRule()
+                .blockStore(blockStore)
+                .build();
 
         Assert.assertTrue(validator.isValid(block));
-
     }
 
     @Test
@@ -705,7 +758,10 @@ public class BlockValidatorTest {
 
         Block block = new BlockBuilder().parent(genesis).build();
         block.getHeader().setNumber(25L);
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addParentNumberRule().blockStore(blockChain.getBlockStore()).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addParentNumberRule()
+                .blockStore(blockChain.getBlockStore())
+                .build();
 
         Assert.assertFalse(validator.isValid(block));
     }
@@ -726,7 +782,11 @@ public class BlockValidatorTest {
         txs.add(tx);
         Block block = new BlockBuilder().parent(genesis).transactions(txs).build();
         block.getHeader().setNumber(25L);
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockTxsValidationRule(blockChain.getRepository()).blockStore(blockChain.getBlockStore()).build();
+
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockTxsValidationRule(blockChain.getRepository())
+                .blockStore(blockChain.getBlockStore())
+                .build();
 
         Assert.assertFalse(validator.isValid(block));
     }
@@ -746,7 +806,11 @@ public class BlockValidatorTest {
         tx.sign(new byte[]{});
         txs.add(tx);
         Block block = new BlockBuilder().parent(genesis).transactions(txs).build();
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addRemascValidationRule().blockStore(blockChain.getBlockStore()).build();
+
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addRemascValidationRule()
+                .blockStore(blockChain.getBlockStore())
+                .build();
 
         Assert.assertFalse(validator.isValid(block));
 
@@ -773,7 +837,10 @@ public class BlockValidatorTest {
         txs.add(new RemascTransaction(BigInteger.ONE.longValue()));
         txs.add(tx);
         Block block = new BlockBuilder().parent(genesis).transactions(txs).build();
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addRemascValidationRule().blockStore(blockChain.getBlockStore()).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addRemascValidationRule()
+                .blockStore(blockChain.getBlockStore())
+                .build();
 
         Assert.assertFalse(validator.isValid(block));
     }
@@ -794,7 +861,10 @@ public class BlockValidatorTest {
         txs.add(tx);
         txs.add(new RemascTransaction(BigInteger.ONE.longValue()));
         Block block = new BlockBuilder().parent(genesis).transactions(txs).build();
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addRemascValidationRule().blockStore(blockChain.getBlockStore()).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addRemascValidationRule()
+                .blockStore(blockChain.getBlockStore())
+                .build();
 
         Assert.assertTrue(validator.isValid(block));
     }
@@ -818,8 +888,10 @@ public class BlockValidatorTest {
 
         Mockito.when(block.getParentHash()).thenReturn(genesis.getHash());
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockTimeStampValidationRule(validPeriod)
-                .blockStore(blockChain.getBlockStore()).build();
+        BlockValidatorImpl validator = new BlockValidatorBuilder()
+                .addBlockTimeStampValidationRule(validPeriod)
+                .blockStore(blockChain.getBlockStore())
+                .build();
 
         Assert.assertFalse(validator.isValid(block));
 
@@ -827,6 +899,19 @@ public class BlockValidatorTest {
                 .thenReturn((System.currentTimeMillis() / 1000) + validPeriod);
 
         Assert.assertTrue(validator.isValid(block));
+    }
+
+    private static BlockValidator createValidator(BlockStore blockStore) {
+        BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
+
+        validatorBuilder
+                .addBlockRootValidationRule()
+                .addParentGasLimitRule()
+                .addBlockRootValidationRule()
+                .addBlockUnclesValidationRule(blockStore)
+                .blockStore(blockStore);
+
+        return validatorBuilder.build();
     }
 
     private static class SimpleBlockStore implements BlockStore {
