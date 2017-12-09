@@ -50,7 +50,6 @@ public class RevertOpCodeTest {
         processor.processCommands(parser);
 
         Assert.assertNotNull(world.getAccountByName("acc1"));
-        Assert.assertEquals(0, world.getAccountByName("acc1").getPendingTransactions().size());
         Assert.assertTrue(world.getTransactionByName("contract_with_revert").isContractCreation());
         Assert.assertTrue(!world.getTransactionByName("tx02").isContractCreation());
         Assert.assertTrue(!world.getTransactionByName("tx03").isContractCreation());
@@ -64,7 +63,6 @@ public class RevertOpCodeTest {
         processor.processCommands(parser);
 
         Assert.assertNotNull(world.getAccountByName("acc1"));
-        Assert.assertEquals(0, world.getAccountByName("acc1").getPendingTransactions().size());
         Assert.assertTrue(world.getTransactionByName("contract_with_revert").isContractCreation());
         Assert.assertTrue(!world.getTransactionByName("tx02").isContractCreation());
         Assert.assertTrue(!world.getTransactionByName("tx03").isContractCreation());

@@ -21,64 +21,18 @@ package org.ethereum.core;
 
 import org.ethereum.crypto.ECKey;
 
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
 /**
- * Representation of an actual account or contract
+ * Representation of an actual account or contract.
  */
 public class Account {
 
-    private ECKey ecKey;
-    private byte[] address;
-
-    private Set<Transaction> pendingTransactions =
-            Collections.synchronizedSet(new HashSet<Transaction>());
-
-    Repository repository;
+    private final ECKey ecKey;
+    private final byte[] address;
 
     public Account(ECKey ecKey) {
         this.ecKey = ecKey;
-        address = this.ecKey.getAddress();
+        this.address = this.ecKey.getAddress();
     }
-
-    public Account(ECKey ecKey, Repository repository) {
-        this(ecKey);
-        this.repository = repository;
-    }
-
-    public BigInteger getNonce() {
-        return repository.getNonce(getAddress());
-    }
-
-    public BigInteger getBalance() {
-
-        BigInteger balance =
-                repository.getBalance(this.getAddress());
-
-        synchronized (getPendingTransactions()) {
-            if (!getPendingTransactions().isEmpty()) {
-
-                for (Transaction tx : getPendingTransactions()) {
-                    if (Arrays.equals(getAddress(), tx.getSender())) {
-                        balance = balance.subtract(new BigInteger(1, tx.getValue()));
-                    }
-
-                    if (Arrays.equals(getAddress(), tx.getReceiveAddress())) {
-                        balance = balance.add(new BigInteger(1, tx.getValue()));
-                    }
-                }
-                // todo: calculate the fee for pending
-            }
-        }
-
-
-        return balance;
-    }
-
 
     public ECKey getEcKey() {
         return ecKey;
@@ -86,25 +40,5 @@ public class Account {
 
     public byte[] getAddress() {
         return address;
-    }
-
-    public void setAddress(byte[] address) {
-        this.address = address;
-    }
-
-    public Set<Transaction> getPendingTransactions() {
-        return this.pendingTransactions;
-    }
-
-    public void addPendingTransaction(Transaction transaction) {
-        synchronized (pendingTransactions) {
-            pendingTransactions.add(transaction);
-        }
-    }
-
-    public void clearAllPendingTransactions() {
-        synchronized (pendingTransactions) {
-            pendingTransactions.clear();
-        }
     }
 }
