@@ -321,13 +321,12 @@ public class BlockValidatorTest {
 
     @Test
     public void validUncles() {
-        BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
-        BlockStore store = blockChain.getBlockStore();
-
-        Block genesis = BlockChainImplTest.getGenesisBlock(blockChain);
+        IndexedBlockStore store = new IndexedBlockStore();
+        store.init(new HashMap<>(), new HashMapDB(), null);
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
+        Block genesis = blockGenerator.getGenesisBlock();
         Block uncle1a = blockGenerator.createChildBlock(genesis);
         Block uncle1b = blockGenerator.createChildBlock(genesis);
         List<BlockHeader> uncles1 = new ArrayList<>();
@@ -336,15 +335,12 @@ public class BlockValidatorTest {
         Block block1 = blockGenerator.createChildBlock(genesis);
         Block block2 = blockGenerator.createChildBlock(block1, null, uncles1, 1, null);
 
-        genesis.seal();
-        block1.seal();
-        block2.seal();
+        store.saveBlock(genesis, BigInteger.ONE, true);
+        store.saveBlock(block1, BigInteger.ONE, true);
+        store.saveBlock(block2, BigInteger.ONE, true);
 
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
         store.saveBlock(uncle1a, BigInteger.ONE, false);
         store.saveBlock(uncle1b, BigInteger.ONE, false);
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(store)
