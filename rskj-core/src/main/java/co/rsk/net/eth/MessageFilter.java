@@ -31,40 +31,49 @@ public class MessageFilter {
     private Set<String> commands;
 
     public MessageFilter(List<String> commands) {
-        if (commands != null)
+        if (commands != null) {
             this.commands = new HashSet<>(commands);
-        else
+        }
+        else {
             this.commands = new HashSet<>();
+        }
     }
 
     public boolean acceptMessage(Message message) {
-        if (commands.isEmpty())
+        if (commands.isEmpty()) {
             return true;
+        }
 
         String command = String.valueOf(message.getCommand());
 
-        if (commands.contains(command))
+        if (commands.contains(command)) {
             return true;
+        }
 
-        if (!(message instanceof RskMessage))
+        if (!(message instanceof RskMessage)) {
             return false;
+        }
 
         String messageType = String.valueOf(((RskMessage)message).getMessage().getMessageType());
 
         for (String cmd : commands) {
-            if (!cmd.contains(":"))
+            if (!cmd.contains(":")) {
                 continue;
+            }
 
             String[] parts = cmd.split("\\:");
 
-            if (parts.length != 2)
+            if (parts.length != 2) {
                 continue;
+            }
 
-            if (!parts[0].equals(command))
+            if (!parts[0].equals(command)) {
                 continue;
+            }
 
-            if (parts[1].equals(messageType))
+            if (parts[1].equals(messageType)) {
                 return true;
+            }
         }
 
         return false;

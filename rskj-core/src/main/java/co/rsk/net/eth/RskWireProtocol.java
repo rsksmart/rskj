@@ -108,8 +108,9 @@ public class RskWireProtocol extends EthHandler {
     public void channelRead0(final ChannelHandlerContext ctx, EthMessage msg) throws InterruptedException {
         super.channelRead0(ctx, msg);
 
-        if (this.messageRecorder != null)
+        if (this.messageRecorder != null) {
             this.messageRecorder.recordMessage(messageSender.getPeerNodeID(), msg);
+        }
 
         if (!hasGoodReputation(ctx)) {
             ctx.disconnect();
