@@ -30,7 +30,7 @@
         </encoder>
     <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
         <fileNamePattern>./logs/rskj-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
-        <maxFileSize>100MB</maxFileSize>    
+        <maxFileSize>100MB</maxFileSize>
         <maxHistory>7</maxHistory>
         <totalSizeCap>1GB</totalSizeCap>
     </rollingPolicy>
@@ -79,6 +79,7 @@
     <logger name="state" level="TRACE"/>
     <logger name="org.bitcoinj" level="INFO"/>
     <logger name="metrics" level="INFO"/>
+    <logger name="messageProcess" level="INFO"/>
 
     <root level="DEBUG">
         <appender-ref ref="stdout"/>
