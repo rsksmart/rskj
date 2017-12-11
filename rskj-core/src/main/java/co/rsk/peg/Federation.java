@@ -24,7 +24,6 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import org.ethereum.db.ByteArrayWrapper;
-import org.spongycastle.util.encoders.Hex;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -111,12 +110,12 @@ public final class Federation {
     }
 
     public Integer getPublicKeyIndex(BtcECKey key) {
-        for (int i = 0; i < publicKeys.size(); i++) {
-            if (Arrays.equals(key.getPubKey(), publicKeys.get(i).getPubKey())) {
-                return i;
-            }
+        int index = publicKeys.indexOf(key);
+        if (index == -1) {
+            return null;
         }
-        return null;
+
+        return index;
     }
 
     public boolean hasPublicKey(BtcECKey key) {
