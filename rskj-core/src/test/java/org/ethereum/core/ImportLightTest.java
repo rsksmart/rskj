@@ -80,12 +80,13 @@ public class ImportLightTest {
                 null,
                 listener,
                 new AdminInfo(),
-                new DummyBlockValidator()
+                new DummyBlockValidator(),
+                RskSystemProperties.CONFIG
         );
 
         blockchain.setNoValidation(true);
 
-        PendingStateImpl pendingState = new PendingStateImpl(blockchain, null, null, null, listener, 10, 100);
+        PendingStateImpl pendingState = new PendingStateImpl(blockchain, null, null, null, listener, RskSystemProperties.CONFIG, 10, 100);
 
         blockchain.setPendingState(pendingState);
 

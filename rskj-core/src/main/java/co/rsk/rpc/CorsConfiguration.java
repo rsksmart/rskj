@@ -18,7 +18,6 @@
 
 package co.rsk.rpc;
 
-import co.rsk.config.RskSystemProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,20 +26,18 @@ import org.slf4j.LoggerFactory;
  */
 public class CorsConfiguration {
     private static final Logger logger = LoggerFactory.getLogger("cors");
-    private String header;
-
-    public CorsConfiguration() {
-        this(RskSystemProperties.CONFIG.corsDomains());
-    }
+    private final String header;
 
     public CorsConfiguration(String header) {
         this.header = header;
 
-        if ("*".equals(header))
+        if ("*".equals(header)) {
             logger.warn("CORS header set to '*'");
+        }
 
-        if (header != null && (header.contains("\n") || header.contains("\r")))
+        if (header != null && (header.contains("\n") || header.contains("\r"))) {
             throw new IllegalArgumentException("corsheader");
+        }
     }
 
     public String getHeader() {

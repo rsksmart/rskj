@@ -20,6 +20,7 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.DifficultyCalculator;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.BlockHeader;
@@ -45,6 +46,8 @@ import static org.junit.Assert.assertEquals;
 public class GitHubBasicTest {
 
     private static final Logger logger = LoggerFactory.getLogger("TCK-Test");
+    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(RskSystemProperties.CONFIG);
+
     public String shacommit = "99afe8f5aad7bca5d0f1b1685390a4dea32d73c3";
 
     @After
@@ -68,7 +71,7 @@ public class GitHubBasicTest {
             BlockHeader current = testCase.getCurrent();
             BlockHeader parent = testCase.getParent();
 
-            assertEquals(testCase.getExpectedDifficulty(), current.calcDifficulty(parent));
+            assertEquals(testCase.getExpectedDifficulty(), DIFFICULTY_CALCULATOR.calcDifficulty(current, parent));
         }
     }
 
@@ -88,7 +91,7 @@ public class GitHubBasicTest {
             BlockHeader current = testCase.getCurrent();
             BlockHeader parent = testCase.getParent();
 
-            assertEquals(testCase.getExpectedDifficulty(), current.calcDifficulty(parent));
+            assertEquals(testCase.getExpectedDifficulty(), DIFFICULTY_CALCULATOR.calcDifficulty(current, parent));
         }
     }
 
@@ -108,7 +111,7 @@ public class GitHubBasicTest {
             BlockHeader current = testCase.getCurrent();
             BlockHeader parent = testCase.getParent();
 
-            assertEquals(testCase.getExpectedDifficulty(), current.calcDifficulty(parent));
+            assertEquals(testCase.getExpectedDifficulty(), DIFFICULTY_CALCULATOR.calcDifficulty(current, parent));
         }
     }
 }

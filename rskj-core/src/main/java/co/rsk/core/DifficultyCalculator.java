@@ -1,7 +1,6 @@
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,27 +16,26 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.ethereum;
+package co.rsk.core;
 
-import org.ethereum.cli.CLIInterface;
-import org.ethereum.facade.EthereumFactory;
+import co.rsk.config.RskSystemProperties;
+import org.ethereum.core.BlockHeader;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import static co.rsk.config.RskSystemProperties.CONFIG;
+import java.math.BigInteger;
 
-/**
- * @author Roman Mandeleil
- * @since 14.11.2014
- */
-public class Start {
+@Component
+public class DifficultyCalculator {
+    private final RskSystemProperties config;
 
-    public static void main(String args[]) throws Exception {
-        CLIInterface.call(args);
+    @Autowired
+    public DifficultyCalculator(RskSystemProperties config) {
+        this.config = config;
+    }
 
-        if (!CONFIG.blocksLoader().equals("")) {
-            CONFIG.setSyncEnabled(false);
-            CONFIG.setDiscoveryEnabled(false);
-        }
-
-        EthereumFactory.createEthereum();
+    public BigInteger calcDifficulty(BlockHeader header, BlockHeader parentHeader) {
+        return config.getBlockchainConfig().getConfigForBlock(header.getNumber()).
+                calcDifficulty(header, parentHeader);
     }
 }

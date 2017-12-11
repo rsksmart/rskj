@@ -179,10 +179,12 @@ public class RskFactory {
     public SyncProcessor getSyncProcessor(Blockchain blockchain,
                                           BlockSyncService blockSyncService,
                                           PeerScoringManager peerScoringManager,
-                                          SyncConfiguration syncConfiguration) {
+                                          SyncConfiguration syncConfiguration,
+                                          DifficultyCalculator difficultyCalculator,
+                                          ProofOfWorkRule proofOfWorkRule) {
 
         // TODO(lsebrie): add new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
-        return new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, new ProofOfWorkRule());
+        return new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, proofOfWorkRule, difficultyCalculator);
     }
 
     @Bean
@@ -199,7 +201,8 @@ public class RskFactory {
                                                     ChannelManager channelManager,
                                                     PendingState pendingState,
                                                     TxHandler txHandler,
-                                                    PeerScoringManager peerScoringManager) {
+                                                    PeerScoringManager peerScoringManager,
+                                                    ProofOfWorkRule proofOfWorkRule) {
 
         NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(nodeBlockProcessor,
                 syncProcessor,
@@ -207,7 +210,7 @@ public class RskFactory {
                 pendingState,
                 txHandler,
                 peerScoringManager,
-                new ProofOfWorkRule());
+                proofOfWorkRule);
 
         nodeMessageHandler.start();
         return nodeMessageHandler;
@@ -246,7 +249,8 @@ public class RskFactory {
                                         ReceiptStore receiptStore,
                                         EthereumListener listener,
                                         AdminInfo adminInfo,
-                                        BlockValidator blockValidator) {
+                                        BlockValidator blockValidator,
+                                        RskSystemProperties config) {
         return new BlockChainImpl(
                 repository,
                 blockStore,
@@ -254,18 +258,21 @@ public class RskFactory {
                 null, // circular dependency
                 listener,
                 adminInfo,
-                blockValidator
+                blockValidator,
+                config
         );
     }
 
     @Bean
     public PendingState getPendingState(BlockChainImpl blockchain,
                                         org.ethereum.db.BlockStore blockStore,
-                                        org.ethereum.core.Repository repository) {
+                                        org.ethereum.core.Repository repository,
+                                        RskSystemProperties config) {
         PendingStateImpl pendingState = new PendingStateImpl(
                 blockchain,
                 blockStore,
-                repository
+                repository,
+                config
         );
         // circular dependency
         blockchain.setPendingState(pendingState);
@@ -305,7 +312,7 @@ public class RskFactory {
     public EthHandlerFactoryImpl.RskWireProtocolFactory getRskWireProtocolFactory(ApplicationContext ctx,
                                                                                   PeerScoringManager peerScoringManager,
                                                                                   Blockchain blockchain,
-                                                                                  SystemProperties config,
+                                                                                  RskSystemProperties config,
                                                                                   CompositeEthereumListener ethereumListener){
         // TODO: break MessageHandler circular dependency
         return () -> new RskWireProtocol(peerScoringManager, ctx.getBean(MessageHandler.class), blockchain, config, ethereumListener);

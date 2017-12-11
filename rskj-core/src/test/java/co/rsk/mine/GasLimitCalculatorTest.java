@@ -18,6 +18,7 @@
 
 package co.rsk.mine;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.config.Constants;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.validator.ParentGasLimitRule;
@@ -38,7 +39,7 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitIsDecreasedByAFactor() {
-        GasLimitCalculator calc = new GasLimitCalculator();
+        GasLimitCalculator calc = new GasLimitCalculator(RskSystemProperties.CONFIG);
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger parentGasLimit = minGasLimit.add(BigInteger.valueOf(21000));
         BigInteger targetGasLimit = BigInteger.valueOf(constants.getTargetGasLimit());
@@ -52,7 +53,7 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitIsNotDecreasedLowerThanMinGasLimit() {
-        GasLimitCalculator calc = new GasLimitCalculator();
+        GasLimitCalculator calc = new GasLimitCalculator(RskSystemProperties.CONFIG);
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger targetGasLimit = BigInteger.valueOf(constants.getTargetGasLimit());
         BigInteger newGasLimit = calc.calculateBlockGasLimit(minGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, false);
@@ -62,7 +63,7 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitIsIncreasedBasedOnGasUsed() {
-        GasLimitCalculator calc = new GasLimitCalculator();
+        GasLimitCalculator calc = new GasLimitCalculator(RskSystemProperties.CONFIG);
         BigInteger parentGas = BigInteger.valueOf(3500000);
         BigInteger gasUsed = BigInteger.valueOf(3000000);
         BigInteger targetGasLimit = BigInteger.valueOf(constants.getTargetGasLimit());
@@ -76,7 +77,7 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitIsIncreasedBasedOnFullGasUsed() {
-        GasLimitCalculator calc = new GasLimitCalculator();
+        GasLimitCalculator calc = new GasLimitCalculator(RskSystemProperties.CONFIG);
         BigInteger parentGas = BigInteger.valueOf(3500000);
         BigInteger gasUsed = BigInteger.valueOf(3500000);
         BigInteger targetGasLimit = BigInteger.valueOf(constants.getTargetGasLimit());
@@ -89,7 +90,7 @@ public class GasLimitCalculatorTest {
     }
     @Test
     public void NextBlockGasLimitIsNotIncreasedMoreThanTargetGasLimit() {
-        GasLimitCalculator calc = new GasLimitCalculator();
+        GasLimitCalculator calc = new GasLimitCalculator(RskSystemProperties.CONFIG);
         BigInteger targetGasLimit = BigInteger.valueOf(constants.getTargetGasLimit());
         BigInteger gasUsed = targetGasLimit;
 
@@ -100,7 +101,7 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitRemainsTheSame() {
-        GasLimitCalculator calc = new GasLimitCalculator();
+        GasLimitCalculator calc = new GasLimitCalculator(RskSystemProperties.CONFIG);
         BigInteger minGasLimit = BigInteger.valueOf(constants.getTargetGasLimit());
         BigInteger targetGasLimit = BigInteger.valueOf(constants.getTargetGasLimit());
         BigInteger newGasLimit = calc.calculateBlockGasLimit(targetGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
@@ -110,7 +111,7 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitIsIncreasedByMaximumValue() {
-        GasLimitCalculator calc = new GasLimitCalculator();
+        GasLimitCalculator calc = new GasLimitCalculator(RskSystemProperties.CONFIG);
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger targetGasLimit = BigInteger.valueOf(constants.getTargetGasLimit());
         BigInteger newGasLimit = calc.calculateBlockGasLimit(minGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
@@ -124,7 +125,7 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitIsIncreasedToTarget() {
-        GasLimitCalculator calc = new GasLimitCalculator();
+        GasLimitCalculator calc = new GasLimitCalculator(RskSystemProperties.CONFIG);
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger targetGasLimit = minGasLimit.add(BigInteger.ONE);
         BigInteger newGasLimit = calc.calculateBlockGasLimit(minGasLimit, BigInteger.ZERO, minGasLimit, targetGasLimit, true);
@@ -137,7 +138,7 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitIsDecreasedToTarget() {
-        GasLimitCalculator calc = new GasLimitCalculator();
+        GasLimitCalculator calc = new GasLimitCalculator(RskSystemProperties.CONFIG);
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger targetGasLimit = minGasLimit.add(BigInteger.ONE);
         BigInteger usedGas = targetGasLimit.add(BigInteger.ONE);
@@ -151,7 +152,7 @@ public class GasLimitCalculatorTest {
 
     @Test
     public void NextBlockGasLimitIsDecreasedToMinimum() {
-        GasLimitCalculator calc = new GasLimitCalculator();
+        GasLimitCalculator calc = new GasLimitCalculator(RskSystemProperties.CONFIG);
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger targetGasLimit = minGasLimit.subtract(BigInteger.ONE);
         BigInteger usedGas = minGasLimit.add(BigInteger.ONE);
@@ -164,7 +165,7 @@ public class GasLimitCalculatorTest {
     }
     @Test
     public void NextBlockGasLimitIsDecreasedByMaximumValue() {
-        GasLimitCalculator calc = new GasLimitCalculator();
+        GasLimitCalculator calc = new GasLimitCalculator(RskSystemProperties.CONFIG);
         BigInteger minGasLimit = BigInteger.valueOf(constants.getMinGasLimit());
         BigInteger targetGasLimit = BigInteger.valueOf(constants.getTargetGasLimit());
         BigInteger usedGas = targetGasLimit.multiply(BigInteger.valueOf(2));

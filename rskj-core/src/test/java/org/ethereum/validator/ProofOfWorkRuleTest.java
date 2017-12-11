@@ -19,6 +19,7 @@
 
 package org.ethereum.validator;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.Block;
 import org.junit.Assert;
@@ -38,7 +39,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class ProofOfWorkRuleTest {
 
-    private ProofOfWorkRule rule = new ProofOfWorkRule();
+    private ProofOfWorkRule rule = new ProofOfWorkRule(RskSystemProperties.CONFIG);
 
     @Ignore
     @Test // valid block

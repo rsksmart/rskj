@@ -66,7 +66,7 @@ public class MinerHelper {
         this.repository = repository;
         this.blockchain = blockchain;
        // this.blockStore =blockStore;
-        gasLimitCalculator = new GasLimitCalculator();
+        gasLimitCalculator = new GasLimitCalculator(RskSystemProperties.CONFIG);
     }
 
     public void processBlock( Block block, Block parent) {

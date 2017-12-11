@@ -1,5 +1,6 @@
 package co.rsk.net;
 
+import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.*;
@@ -35,19 +36,26 @@ public class SyncProcessor implements SyncEventsHandler {
     private final PeerScoringManager peerScoringManager;
     private final SyncConfiguration syncConfiguration;
     private final PeersInformation peerStatuses;
+    private final DifficultyCalculator difficultyCalculator;
 
     private final PendingMessages pendingMessages;
     private final SyncInformationImpl syncInformation;
     private SyncState syncState;
     private NodeID selectedPeerId;
 
-    public SyncProcessor(Blockchain blockchain, BlockSyncService blockSyncService, PeerScoringManager peerScoringManager, SyncConfiguration syncConfiguration, BlockHeaderValidationRule blockHeaderValidationRule) {
+    public SyncProcessor(Blockchain blockchain,
+                         BlockSyncService blockSyncService,
+                         PeerScoringManager peerScoringManager,
+                         SyncConfiguration syncConfiguration,
+                         BlockHeaderValidationRule blockHeaderValidationRule,
+                         DifficultyCalculator difficultyCalculator) {
         this.blockchain = blockchain;
         this.blockSyncService = blockSyncService;
         this.peerScoringManager = peerScoringManager;
         this.syncConfiguration = syncConfiguration;
-        this.syncInformation = new SyncInformationImpl(blockHeaderValidationRule);
+        this.syncInformation = new SyncInformationImpl(blockHeaderValidationRule, difficultyCalculator);
         this.peerStatuses = new PeersInformation(syncConfiguration, syncInformation);
+        this.difficultyCalculator = difficultyCalculator;
         this.pendingMessages = new PendingMessages();
         setSyncState(new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses));
     }
@@ -285,11 +293,12 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     private class SyncInformationImpl implements SyncInformation {
-        private DependentBlockHeaderRule blockParentValidationRule = new DifficultyRule();
-        private BlockHeaderValidationRule blockHeaderValidationRule;
+        private final DependentBlockHeaderRule blockParentValidationRule;
+        private final BlockHeaderValidationRule blockHeaderValidationRule;
 
-        public SyncInformationImpl(BlockHeaderValidationRule blockHeaderValidationRule) {
+        public SyncInformationImpl(BlockHeaderValidationRule blockHeaderValidationRule, DifficultyCalculator difficultyCalculator) {
             this.blockHeaderValidationRule = blockHeaderValidationRule;
+            this.blockParentValidationRule = new DifficultyRule(difficultyCalculator);
         }
 
         public boolean isKnownBlock(byte[] hash) {

@@ -373,7 +373,7 @@ public class BlockValidatorTest {
         BlockParentDependantValidationRule parentValidationRule = Mockito.mock(BlockParentDependantValidationRule.class);
         Mockito.when(parentValidationRule.isValid(Mockito.any(), Mockito.any())).thenReturn(true);
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(store, new ProofOfWorkRule(), parentValidationRule)
+        BlockValidatorImpl validator = new BlockValidatorBuilder().addBlockUnclesValidationRule(store, new ProofOfWorkRule(RskSystemProperties.CONFIG), parentValidationRule)
                                             .blockStore(store).build();
 
         Assert.assertFalse(validator.isValid(block1));

@@ -18,6 +18,8 @@
 
 package co.rsk.net.simples;
 
+import co.rsk.config.RskSystemProperties;
+import co.rsk.core.DifficultyCalculator;
 import co.rsk.net.*;
 import co.rsk.net.messages.Message;
 import co.rsk.net.sync.SyncConfiguration;
@@ -116,7 +118,7 @@ public class SimpleAsyncNode extends SimpleNode {
         PeerScoringManager peerScoringManager = Mockito.mock(PeerScoringManager.class);
         when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
         when(peerScoringManager.getPeerScoring(isA(NodeID.class))).thenReturn(new PeerScoring());
-        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, blockValidationRule);
+        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, blockValidationRule, new DifficultyCalculator(RskSystemProperties.CONFIG));
         NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, new SimpleChannelManager(), null, null, peerScoringManager, blockValidationRule);
         return new SimpleAsyncNode(handler, syncProcessor);
     }
