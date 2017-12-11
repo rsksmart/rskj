@@ -48,19 +48,25 @@ public class TransactionsMessage extends Message {
     @Override
     public byte[] getEncodedMessage() {
         List<byte[]> encodedElements = new ArrayList<>();
-        for (Transaction tx : transactions)
+
+        for (Transaction tx : transactions) {
             encodedElements.add(tx.getEncoded());
+        }
+
         byte[][] encodedElementArray = encodedElements.toArray(new byte[encodedElements.size()][]);
+
         return RLP.encodeList(encodedElementArray);
     }
 
     public String getMessageContentInfo() {
         int size = CollectionUtils.size(this.transactions);
         StringBuilder sb = new StringBuilder(size).append(" Received.");
+
         if(size > 0) {
             sb.append(": ");
             this.getTransactions().forEach(tx -> sb.append(Hex.toHexString(tx.getHash())).append(", "));
         }
+
         return sb.toString();
     }
 }

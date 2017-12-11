@@ -32,11 +32,13 @@ public class BodyResponseMessage extends MessageWithId {
         byte[][] rlpTransactions = new byte[this.transactions.size()][];
         byte[][] rlpUncles = new byte[this.uncles.size()][];
 
-        for (int k = 0; k < this.transactions.size(); k++)
+        for (int k = 0; k < this.transactions.size(); k++) {
             rlpTransactions[k] = this.transactions.get(k).getEncoded();
+        }
 
-        for (int k = 0; k < this.uncles.size(); k++)
+        for (int k = 0; k < this.uncles.size(); k++) {
             rlpUncles[k] = this.uncles.get(k).getEncoded();
+        }
 
         return RLP.encodeList(RLP.encodeList(rlpTransactions), RLP.encodeList(rlpUncles));
     }

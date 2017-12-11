@@ -58,6 +58,7 @@ public class NewBlockHashesMessage extends Message {
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
 
         blockIdentifiers = new ArrayList<>();
+
         for (int i = 0; i < paramsList.size(); ++i) {
             RLPList rlpData = ((RLPList) paramsList.get(i));
             blockIdentifiers.add(new BlockIdentifier(rlpData));
@@ -67,8 +68,11 @@ public class NewBlockHashesMessage extends Message {
 
     private void encode() {
         List<byte[]> encodedElements = new ArrayList<>();
-        for (BlockIdentifier identifier : blockIdentifiers)
+
+        for (BlockIdentifier identifier : blockIdentifiers) {
             encodedElements.add(identifier.getEncoded());
+        }
+
         byte[][] encodedElementArray = encodedElements.toArray(new byte[encodedElements.size()][]);
         this.encoded = RLP.encodeList(encodedElementArray);
     }
