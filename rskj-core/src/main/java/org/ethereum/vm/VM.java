@@ -835,6 +835,7 @@ public class VM {
     }
 
     protected void doRETURNDATASIZE() {
+        spendOpCodeGas();
         DataWord dataSize = program.getReturnDataBufferSize();
         if (isLogEnabled) {
             hint = "size: " + dataSize.value();

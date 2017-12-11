@@ -294,6 +294,16 @@ public class VMExecutionTest {
         System.out.println(String.format("Delta memory %s", finalMemory - initialMemory));
     }
 
+    @Test
+    public void returnDataSizeBasicGasCost() {
+        Program program = executeCode("0x3d", 1);
+
+        Assert.assertNotNull(program);
+        Assert.assertNotNull(program.getResult());
+        Assert.assertNull(program.getResult().getException());
+        Assert.assertEquals(2, program.getResult().getGasUsed());
+    }
+
     private Program executeCode(String code, int nsteps) {
         return executeCode(compiler.compile(code), nsteps);
     }
