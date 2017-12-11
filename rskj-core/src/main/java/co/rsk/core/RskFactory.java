@@ -202,7 +202,7 @@ public class RskFactory {
                                                     PendingState pendingState,
                                                     TxHandler txHandler,
                                                     PeerScoringManager peerScoringManager,
-                                                    ProofOfWorkRule ProofOfWorkRule) {
+                                                    ProofOfWorkRule proofOfWorkRule) {
 
         NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(nodeBlockProcessor,
                 syncProcessor,
@@ -210,7 +210,7 @@ public class RskFactory {
                 pendingState,
                 txHandler,
                 peerScoringManager,
-                ProofOfWorkRule);
+                proofOfWorkRule);
 
         nodeMessageHandler.start();
         return nodeMessageHandler;

@@ -80,7 +80,8 @@ public class ImportLightTest {
                 null,
                 listener,
                 new AdminInfo(),
-                new DummyBlockValidator(), RskSystemProperties.CONFIG
+                new DummyBlockValidator(),
+                RskSystemProperties.CONFIG
         );
 
         blockchain.setNoValidation(true);
