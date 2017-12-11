@@ -42,7 +42,7 @@ public class SimpleBlock extends Block {
                        List<Transaction> transactionsList, List<BlockHeader> uncleList) {
         super(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit, gasUsed,
                 timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot, stateRoot,
-                transactionsList, uncleList, BigInteger.TEN.toByteArray(), 0L);
+                    transactionsList, uncleList, BigInteger.TEN.toByteArray(), 0L);
 
         if (transactionsList != null)
             this.transactionList = Collections.unmodifiableList(transactionsList);
