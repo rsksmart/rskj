@@ -21,7 +21,6 @@ package co.rsk.mine;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
 import co.rsk.panic.PanicProcessor;
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
@@ -45,16 +44,14 @@ import java.util.TimerTask;
 public class MinerClientImpl implements MinerClient {
     private long nextNonceToUse = 0;
 
-    @Autowired
-    private Rsk rsk;
-
-    @Autowired
-    private MinerServer minerServer;
-
     private static final Logger logger = LoggerFactory.getLogger("minerClient");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private static final long DELAY_BETWEEN_GETWORK_REFRESH_MS = 1000;
+
+    private final Rsk rsk;
+    private final MinerServer minerServer;
+    private final RskSystemProperties config;
 
     private volatile boolean stop = false;
 
@@ -64,13 +61,12 @@ public class MinerClientImpl implements MinerClient {
 
     private volatile MinerWork work;
 
-    @VisibleForTesting
-    public void setMinerServer(MinerServer minerServer) {
+    @Autowired
+    public MinerClientImpl(Rsk rsk, MinerServer minerServer, RskSystemProperties config) {
+        this.rsk = rsk;
         this.minerServer = minerServer;
+        this.config = config;
     }
-
-    @VisibleForTesting
-    public void setRsk(Rsk rsk) { this.rsk = rsk; }
 
     public void mine() {
         new Timer("Refresh work for mining").schedule(createRefreshWork(), 0, DELAY_BETWEEN_GETWORK_REFRESH_MS);
@@ -103,7 +99,7 @@ public class MinerClientImpl implements MinerClient {
 
     public void doWork() {
         try {
-            if (mineBlock() && !(RskSystemProperties.CONFIG.getBlockchainConfig() instanceof TestNetConfig))
+            if (mineBlock() && !(config.getBlockchainConfig() instanceof TestNetConfig))
                 Thread.sleep(20000);
         } catch (Exception e) {
             logger.error("Error on mining", e);

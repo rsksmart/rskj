@@ -20,6 +20,7 @@ package co.rsk.mine;
 
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskMiningConstants;
+import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Sha3Hash;
@@ -76,6 +77,8 @@ public class MinerServerImpl implements MinerServer {
     private final Blockchain blockchain;
     private final PendingState pendingState;
     private final BlockExecutor executor;
+    private final GasLimitCalculator gasLimitCalculator;
+    private final ProofOfWorkRule powRule;
 
     @GuardedBy("lock")
     private LinkedHashMap<Sha3Hash, Block> blocksWaitingforPoW;
@@ -98,13 +101,12 @@ public class MinerServerImpl implements MinerServer {
     private final double minFeesNotifyInDollars;
     private final double gasUnitInDollars;
 
-    private ProofOfWorkRule powRule;
-
     private MiningConfig miningConfig;
 
     private BlockValidationRule validationRules;
 
     private final BlockProcessor nodeBlockProcessor;
+    private final DifficultyCalculator difficultyCalculator;
 
     private long timeAdjustment;
     private long minimumAcceptableTime;
@@ -117,7 +119,10 @@ public class MinerServerImpl implements MinerServer {
                            Repository repository,
                            MiningConfig miningConfig,
                            @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
-                           BlockProcessor nodeBlockProcessor) {
+                           BlockProcessor nodeBlockProcessor,
+                           DifficultyCalculator difficultyCalculator,
+                           GasLimitCalculator gasLimitCalculator,
+                           ProofOfWorkRule powRule) {
         this.ethereum = ethereum;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -125,6 +130,9 @@ public class MinerServerImpl implements MinerServer {
         this.miningConfig = miningConfig;
         this.validationRules = validationRules;
         this.nodeBlockProcessor = nodeBlockProcessor;
+        this.difficultyCalculator = difficultyCalculator;
+        this.gasLimitCalculator = gasLimitCalculator;
+        this.powRule = powRule;
 
         executor = new BlockExecutor(repository, blockchain, blockStore, null);
 
@@ -141,7 +149,6 @@ public class MinerServerImpl implements MinerServer {
         minFeesNotifyInDollars = miningConfig.getMinFeesNotifyInDollars();
         gasUnitInDollars = miningConfig.getGasUnitInDollars();
         minerMinGasPriceTarget = toBI(miningConfig.getMinGasPriceTarget());
-        powRule = new ProofOfWorkRule();
     }
 
     @VisibleForTesting
@@ -485,7 +492,7 @@ public class MinerServerImpl implements MinerServer {
         BigInteger parentGasLimit = new BigInteger(1, newBlockParent.getGasLimit());
         BigInteger gasUsed = BigInteger.valueOf(newBlockParent.getGasUsed());
         boolean forceLimit = miningConfig.getGasLimit().isTargetForced();
-        BigInteger gasLimit = new GasLimitCalculator().calculateBlockGasLimit(parentGasLimit,
+        BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit,
                 gasUsed, minGasLimit, targetGasLimit, forceLimit);
 
         final BlockHeader newHeader = new BlockHeader(newBlockParent.getHash(),
@@ -504,7 +511,7 @@ public class MinerServerImpl implements MinerServer {
                 minimumGasPrice.toByteArray(),
                 CollectionUtils.size(uncles)
         );
-        newHeader.setDifficulty(newHeader.calcDifficulty(newBlockParent.getHeader()).toByteArray());
+        newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()).toByteArray());
         newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash());
         return newHeader;
     }

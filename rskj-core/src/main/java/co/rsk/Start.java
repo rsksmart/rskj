@@ -83,7 +83,7 @@ public class Start {
     public void startNode(String[] args) throws Exception {
         logger.info("Starting RSK");
 
-        CLIInterface.call(args);
+        CLIInterface.call(rskSystemProperties, args);
 
         if (!"".equals(rskSystemProperties.blocksLoader())) {
             rskSystemProperties.setSyncEnabled(Boolean.FALSE);
@@ -137,7 +137,7 @@ public class Start {
             rskSystemProperties.rpcPort(),
             rskSystemProperties.soLingerTime(),
             true,
-            new CorsConfiguration(),
+            new CorsConfiguration(rskSystemProperties.corsDomains()),
             filterHandler,
             serverHandler
         ).start();

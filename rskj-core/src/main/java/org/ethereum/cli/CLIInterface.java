@@ -29,7 +29,8 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.lang.System.*;
+import static java.lang.System.exit;
+import static java.lang.System.out;
 
 /**
  * @author Roman Mandeleil
@@ -40,7 +41,7 @@ public class CLIInterface {
 
     private static final Logger logger = LoggerFactory.getLogger("cli");
 
-    public static Map<String, String> call(String[] args) {
+    public static Map<String, String> call(RskSystemProperties config, String[] args) {
 
         Map<String, String> cliOptions = new HashMap<>();
 
@@ -114,7 +115,7 @@ public class CLIInterface {
             }
 
             logger.info("Overriding config file with CLI options: " + cliOptions);
-            RskSystemProperties.CONFIG.overrideParams(cliOptions);
+            config.overrideParams(cliOptions);
 
         } catch (Exception e) {
             logger.error("Error parsing command line", e);

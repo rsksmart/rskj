@@ -19,6 +19,7 @@
 
 package org.ethereum.jsontestsuite.runners;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -96,7 +97,7 @@ public class StateTestRunner {
         indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
         BlockStore blockStore = indexedBlockStore;
 
-        blockchain = new BlockChainImpl(repository, blockStore, null, null, null, null, null);
+        blockchain = new BlockChainImpl(repository, blockStore, null, null, null, null, null, RskSystemProperties.CONFIG);
 
         env = EnvBuilder.build(stateTestCase.getEnv());
         invokeFactory = new TestProgramInvokeFactory(env);

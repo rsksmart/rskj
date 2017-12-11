@@ -20,6 +20,7 @@
 package org.ethereum.config;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.DifficultyCalculator;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.PendingTransaction;
@@ -27,6 +28,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.util.FileUtil;
 import org.ethereum.validator.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +54,12 @@ public class CommonConfig {
 
     @Bean
     public Repository repository() {
+        String databaseDir = config.databaseDir();
+        if (config.databaseReset()){
+            FileUtil.recursiveDelete(databaseDir);
+            logger.info("Database reset done");
+        }
+
         KeyValueDataSource ds = makeDataSource("state");
         KeyValueDataSource detailsDS = makeDataSource("details");
 
@@ -81,12 +89,12 @@ public class CommonConfig {
     }
 
     @Bean
-    public ParentBlockHeaderValidator parentHeaderValidator() {
+    public ParentBlockHeaderValidator parentHeaderValidator(RskSystemProperties config, DifficultyCalculator difficultyCalculator) {
 
         List<DependentBlockHeaderRule> rules = new ArrayList<>(asList(
                 new ParentNumberRule(),
-                new DifficultyRule(),
-                new ParentGasLimitRule(RskSystemProperties.CONFIG.getBlockchainConfig().
+                new DifficultyRule(difficultyCalculator),
+                new ParentGasLimitRule(config.getBlockchainConfig().
                         getCommonConstants().getGasLimitBoundDivisor())));
 
         return new ParentBlockHeaderValidator(rules);

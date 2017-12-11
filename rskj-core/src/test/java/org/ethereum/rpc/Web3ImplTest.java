@@ -224,7 +224,7 @@ public class Web3ImplTest {
         World world = new World();
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
-        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, RskSystemProperties.CONFIG, 10, 100);
         worldManager.setPendingState(pendingState);
         Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(10000000)).build();
         Account acc2 = new AccountBuilder(world).name("acc2").build();
@@ -412,7 +412,7 @@ public class Web3ImplTest {
         World world = new World();
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
-        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, RskSystemProperties.CONFIG, 10, 100);
         worldManager.setPendingState(pendingState);
         Web3Impl web3 = createWeb3(worldManager);
 
@@ -1241,7 +1241,7 @@ public class Web3ImplTest {
     private Web3Impl createWeb3Mocked(World world, Block block1) {
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
-        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, RskSystemProperties.CONFIG, 10, 100);
         worldManager.setPendingState(pendingState);
         Ethereum ethMock = Mockito.mock(Ethereum.class);
         ProgramResult res = new ProgramResult();

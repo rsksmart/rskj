@@ -38,7 +38,6 @@ import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
@@ -89,6 +88,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     private EthereumListener listener;
     private final AdminInfo adminInfo;
     private BlockValidator blockValidator;
+    private final RskSystemProperties config;
 
     private volatile BlockChainStatus status = new BlockChainStatus(null, BigInteger.ZERO);
     private final Object connectLock = new Object();
@@ -98,20 +98,21 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     private boolean isrsk;
     private boolean noValidation;
 
-    @Autowired
     public BlockChainImpl(Repository repository,
                           BlockStore blockStore,
                           ReceiptStore receiptStore,
                           PendingState pendingState,
                           EthereumListener listener,
                           AdminInfo adminInfo,
-                          BlockValidator blockValidator) {
+                          BlockValidator blockValidator,
+                          RskSystemProperties config) {
         this.repository = repository;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.listener = listener;
         this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
+        this.config = config;
         this.blockExecutor = new BlockExecutor(repository, this, blockStore, listener);
 
         setPendingState(pendingState);
@@ -544,7 +545,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     private int nFlush = 0;
 
     private void flushData() {
-        if (RskSystemProperties.CONFIG.isFlushEnabled() && nFlush == 0)  {
+        if (config.isFlushEnabled() && nFlush == 0)  {
             long saveTime = System.nanoTime();
             repository.flush();
             long totalTime = System.nanoTime() - saveTime;
@@ -555,7 +556,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
             logger.info("blockstore flush: [{}]nano", totalTime);
         }
         nFlush++;
-        nFlush = nFlush % RskSystemProperties.CONFIG.flushNumberOfBlocks();
+        nFlush = nFlush % config.flushNumberOfBlocks();
     }
 
     public static byte[] calcTxTrie(List<Transaction> transactions) {

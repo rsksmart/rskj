@@ -136,6 +136,11 @@ public class VMExecutionTest {
         executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x13 DUPN", 21);
     }
 
+    @Test(expected = Program.StackTooSmallException.class)
+    public void dupnTooManyItemsWithOverflow() {
+        executeCode("PUSH1 0x01 PUSH4 0x7f 0xff 0xff 0xff DUPN", 3);
+    }
+
     @Test
     public void swapnSecondItem() {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x00 SWAPN", 4);
@@ -169,6 +174,11 @@ public class VMExecutionTest {
 
         for (int k = 1; k < 19; k++)
             Assert.assertEquals(new DataWord(k + 1), stack.get(k));
+    }
+
+    @Test(expected = Program.StackTooSmallException.class)
+    public void swapnTooManyItemsWithOverflow() {
+        executeCode("PUSH1 0x01 PUSH1 0x01 PUSH4 0x7f 0xff 0xff 0xff SWAPN", 4);
     }
 
     @Test(expected = Program.StackTooSmallException.class)

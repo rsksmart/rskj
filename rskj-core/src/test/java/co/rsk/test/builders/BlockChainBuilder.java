@@ -19,6 +19,7 @@
 package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.RepositoryBlockStore;
@@ -120,7 +121,7 @@ public class BlockChainBuilder {
         if (this.adminInfo == null)
             this.adminInfo = new AdminInfo();
 
-        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, null, listener, this.adminInfo, blockValidator);
+        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, null, listener, this.adminInfo, blockValidator, RskSystemProperties.CONFIG);
 
         if (this.testing && this.rsk) {
             blockChain.setBlockValidator(new DummyBlockValidator());
@@ -129,7 +130,7 @@ public class BlockChainBuilder {
 
         blockChain.setRsk(this.rsk);
 
-        PendingStateImpl pendingState = new PendingStateImpl(blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+        PendingStateImpl pendingState = new PendingStateImpl(blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), RskSystemProperties.CONFIG, 10, 100);
 
         blockChain.setPendingState(pendingState);
 

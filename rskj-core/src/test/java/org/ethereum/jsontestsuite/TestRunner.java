@@ -19,6 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.db.RepositoryImpl;
@@ -102,13 +103,13 @@ public class TestRunner {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        BlockChainImpl blockchain = new BlockChainImpl(repository, blockStore, receiptStore, null, null, null, new DummyBlockValidator());
+        BlockChainImpl blockchain = new BlockChainImpl(repository, blockStore, receiptStore, null, null, null, new DummyBlockValidator(), RskSystemProperties.CONFIG);
         //BlockchainImpl blockchain = new BlockchainImpl(blockStore, repository, wallet, adminInfo, listener,
         //        new CommonConfig().parentHeaderValidator(), receiptStore);
 
         blockchain.setNoValidation(true);
 
-        PendingStateImpl pendingState = new PendingStateImpl(blockchain, repository, null, null, listener, 10, 100);
+        PendingStateImpl pendingState = new PendingStateImpl(blockchain, repository, null, null, listener, RskSystemProperties.CONFIG, 10, 100);
         pendingState.init();
 
         blockchain.setBestBlock(genesis);

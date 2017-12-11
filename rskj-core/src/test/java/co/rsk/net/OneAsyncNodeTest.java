@@ -19,6 +19,8 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.core.DifficultyCalculator;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.net.sync.SyncConfiguration;
@@ -47,7 +49,7 @@ public class OneAsyncNodeTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), syncConfiguration, new DummyBlockValidationRule());
+        SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), syncConfiguration, new DummyBlockValidationRule(), new DifficultyCalculator(RskSystemProperties.CONFIG));
         NodeMessageHandler handler = new NodeMessageHandler(processor, syncProcessor, new SimpleChannelManager(), null, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule());
 
         return new SimpleAsyncNode(handler);

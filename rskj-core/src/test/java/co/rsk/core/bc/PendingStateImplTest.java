@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -461,7 +462,7 @@ public class PendingStateImplTest {
     private static PendingStateImpl createSampleNewPendingState() {
         BlockChainImpl blockChain = createBlockchain();
 
-        return new PendingStateImpl(blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+        return new PendingStateImpl(blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), RskSystemProperties.CONFIG, 10, 100);
     }
 
     private static PendingStateImpl createSampleNewPendingStateWithAccounts(int naccounts, BigInteger balance) {
@@ -483,7 +484,7 @@ public class PendingStateImplTest {
         best.setStateRoot(repository.getRoot());
         best.flushRLP();
 
-        PendingStateImpl pendingState = new PendingStateImpl(blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+        PendingStateImpl pendingState = new PendingStateImpl(blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), RskSystemProperties.CONFIG, 10, 100);
         blockChain.setPendingState(pendingState);
 
         return pendingState;

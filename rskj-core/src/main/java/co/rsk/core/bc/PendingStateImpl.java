@@ -53,6 +53,7 @@ import static org.ethereum.util.BIUtil.toBI;
 public class PendingStateImpl implements PendingState {
     private static final Logger logger = LoggerFactory.getLogger("pendingstate");
     private static final byte[] emptyUncleHashList = sha3(RLP.encodeList(new byte[0]));
+    private final RskSystemProperties config;
 
     private Map<ByteArrayWrapper, Transaction> pendingTransactions = new HashMap<>();
     private Map<ByteArrayWrapper, Transaction> wireTransactions = new HashMap<>();
@@ -85,10 +86,12 @@ public class PendingStateImpl implements PendingState {
     @Autowired
     public PendingStateImpl(Blockchain blockChain,
                             BlockStore blockStore,
-                            Repository repository) {
+                            Repository repository,
+                            RskSystemProperties config) {
         this.blockChain = blockChain;
         this.blockStore = blockStore;
         this.repository = repository;
+        this.config = config;
     }
 
     public PendingStateImpl(Blockchain blockChain,
@@ -96,9 +99,10 @@ public class PendingStateImpl implements PendingState {
                             BlockStore blockStore,
                             ProgramInvokeFactory programInvokeFactory,
                             EthereumListener listener,
+                            RskSystemProperties config,
                             int outdatedThreshold,
                             int outdatedTimeout) {
-        this(blockChain, blockStore, repository);
+        this(blockChain, blockStore, repository, config);
         this.programInvokeFactory = programInvokeFactory;
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
@@ -117,9 +121,9 @@ public class PendingStateImpl implements PendingState {
             this.bestBlock = blockChain.getBestBlock();
 
         if (this.outdatedThreshold == 0)
-            this.outdatedThreshold = RskSystemProperties.CONFIG.txOutdatedThreshold();
+            this.outdatedThreshold = config.txOutdatedThreshold();
         if (this.outdatedTimeout == 0)
-            this.outdatedTimeout = RskSystemProperties.CONFIG.txOutdatedTimeout();
+            this.outdatedTimeout = config.txOutdatedTimeout();
 
         if (this.outdatedTimeout > 0)
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "PendingStateCleanerTimer"));
