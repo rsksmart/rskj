@@ -22,7 +22,6 @@ package co.rsk.config;
  * Created by mario on 10/01/17.
  */
 public class RskConfigurationException extends RuntimeException {
-
     public RskConfigurationException(String message) {
         super(message);
     }

@@ -37,9 +37,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
 public class BridgeRegTestConstants extends BridgeConstants {
-
     private static final Logger logger = LoggerFactory.getLogger("BridgeRegTestConstants");
 
     private static BridgeRegTestConstants instance = new BridgeRegTestConstants();
@@ -60,6 +58,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
         List<BtcECKey> federatorPublicKeys = federatorPrivateKeys.stream().map(key -> BtcECKey.fromPublicOnly(key.getPubKey())).collect(Collectors.toList());
 
         Instant genesisFederationCreatedAt = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
+
         genesisFederation = new Federation(
                 federatorPublicKeys,
                 genesisFederationCreatedAt,
@@ -110,5 +109,4 @@ public class BridgeRegTestConstants extends BridgeConstants {
     public List<BtcECKey> getFederatorPrivateKeys() {
         return federatorPrivateKeys;
     }
-
 }

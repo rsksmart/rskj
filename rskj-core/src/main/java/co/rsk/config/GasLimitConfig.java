@@ -22,7 +22,6 @@ package co.rsk.config;
  * Wraps configuration for Mining, which is usually derived from configuration files.
  */
 public class GasLimitConfig {
-
     private final int minGasLimit;
     private final long targetGasLimit;
     private final boolean isTargetGasLimitForced;
