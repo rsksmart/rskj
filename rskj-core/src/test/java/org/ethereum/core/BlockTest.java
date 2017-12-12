@@ -46,8 +46,6 @@ public class BlockTest {
 
     private static final Logger logger = LoggerFactory.getLogger("test");
 
-    private String GENESIS_STATE_ROOT = "59c6704f11a243a47899e79ea038c5da46965a81ae75b710d57fab10f82c086f";
-
     static String TEST_GENESIS =
             "{" +
                     "'0000000000000000000000000000000000000001': { 'wei': '1' }" +
@@ -63,6 +61,8 @@ public class BlockTest {
                     "'6c386a4b26f73c802f34673f7248bb118f97424a': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }" +
                     "'e4157b34ea9615cfbde6b4fda419828124b70c78': { 'wei': '1606938044258990275541962092341162602522202993782792835301376' }" +
                     "}";
+
+    private String GENESIS_STATE_ROOT = "59c6704f11a243a47899e79ea038c5da46965a81ae75b710d57fab10f82c086f";
 
     static {
         TEST_GENESIS = TEST_GENESIS.replace("'", "\"");

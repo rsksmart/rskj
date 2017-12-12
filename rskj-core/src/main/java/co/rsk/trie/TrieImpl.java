@@ -253,8 +253,9 @@ public class TrieImpl implements Trie {
             if (hasLongVal) {
                 byte[] valueHash = new byte[SHA3Helper.DEFAULT_SIZE_BYTES];
 
-                if (istream.read(valueHash) != SHA3Helper.DEFAULT_SIZE_BYTES)
+                if (istream.read(valueHash) != SHA3Helper.DEFAULT_SIZE_BYTES) {
                     throw new EOFException();
+                }
 
                 value = store.retrieveValue(valueHash);
             }
@@ -263,8 +264,9 @@ public class TrieImpl implements Trie {
 
                 if (lvalue > 0) {
                     value = new byte[lvalue];
-                    if (istream.read(value) != lvalue)
+                    if (istream.read(value) != lvalue) {
                         throw new EOFException();
+                    }
                 }
             }
 
@@ -946,7 +948,8 @@ public class TrieImpl implements Trie {
 
         if (trie.sharedPathLength == 0) {
             trieSharedPath = positionPath;
-        } else {
+        }
+        else {
             trieSharedPath = ByteUtils.concatenate(decodePath(trie.encodedSharedPath, trie.arity, trie.sharedPathLength), positionPath);
         }
 
@@ -954,7 +957,8 @@ public class TrieImpl implements Trie {
 
         if (firstChild.sharedPathLength == 0) {
             newSharedPath = trieSharedPath;
-        } else {
+        }
+        else {
             byte[] childSharedPath = decodePath(firstChild.encodedSharedPath, firstChild.arity, firstChild.sharedPathLength);
             newSharedPath = ByteUtils.concatenate(trieSharedPath, childSharedPath);
         }
@@ -976,7 +980,8 @@ public class TrieImpl implements Trie {
 
             if (k >= sharedPath.length) {
                 position += sharedPath.length;
-            } else {
+            }
+            else {
                 return this.split(k).put(key, length, position, value);
             }
         }
@@ -1201,7 +1206,6 @@ public class TrieImpl implements Trie {
             return new TrieImpl(this.store, this.isSecure);
         }
 
-
         Trie newTrie = this.store.retrieve(hash);
 
         if (newTrie == null) {
@@ -1290,6 +1294,7 @@ public class TrieImpl implements Trie {
 
         for (int k = 0; k < lpath; k++) {
             int offset = k % 8;
+
             if (k > 0 && offset == 0) {
                 nbyte++;
             }
