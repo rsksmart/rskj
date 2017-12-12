@@ -21,7 +21,6 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.CallTransaction;
@@ -333,7 +332,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     private BridgeSupport setup() throws Exception {
-        return new BridgeSupport(repository, contractAddress, rskExecutionBlock, rskReceiptStore, rskBlockStore, logs);
+        return new BridgeSupport(repository, contractAddress, rskExecutionBlock, rskReceiptStore, rskBlockStore, bridgeConstants, logs);
     }
 
     private void teardown() throws IOException {

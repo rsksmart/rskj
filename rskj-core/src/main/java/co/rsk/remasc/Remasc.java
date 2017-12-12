@@ -20,7 +20,9 @@ package co.rsk.remasc;
 
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.RemascConfig;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.SelectionRule;
+import co.rsk.peg.BridgeSupport;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -28,10 +30,9 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.RepositoryTrack;
-
 import org.ethereum.util.BIUtil;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -137,7 +138,15 @@ public class Remasc {
         // the update of bytes is needed, because BridgeSupport creation could alter
         // the storage when getChainHead is null (specially in production)
         processingRepository = processingRepository.startTracking();
-        RemascFederationProvider federationProvider = new RemascFederationProvider(processingRepository);
+        BridgeSupport bridgeSupport = new BridgeSupport(
+                processingRepository,
+                PrecompiledContracts.BRIDGE_ADDR,
+                null,
+                null,
+                null,
+                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
+                null);
+        RemascFederationProvider federationProvider = new RemascFederationProvider(bridgeSupport);
 
         BigInteger payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
 
