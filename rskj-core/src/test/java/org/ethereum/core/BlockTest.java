@@ -46,7 +46,7 @@ public class BlockTest {
 
     private static final Logger logger = LoggerFactory.getLogger("test");
 
-    private String GENESIS_STATE_ROOT = "d37ff1381258582a6f793b59a97391324f1a3c555588313d30c8c1dfcc288d32";
+    private String GENESIS_STATE_ROOT = "59c6704f11a243a47899e79ea038c5da46965a81ae75b710d57fab10f82c086f";
 
     static String TEST_GENESIS =
             "{" +
@@ -86,8 +86,11 @@ public class BlockTest {
 
             BigInteger wei = Denomination.valueOf(denom.toUpperCase()).value().multiply(new BigInteger(value));
 
-            AccountState acctState = new AccountState(BigInteger.ZERO, wei);
-            state = state.put(Hex.decode(key.toString()), acctState.getEncoded());
+            AccountState accountState = new AccountState(BigInteger.ZERO, wei);
+            byte[] encodedAccountState = accountState.getEncoded();
+            byte[] accountKey = Hex.decode(key.toString());
+            state = state.put(accountKey, encodedAccountState);
+            Assert.assertArrayEquals(encodedAccountState, state.get(accountKey));
         }
 
         logger.info("root: " + Hex.toHexString(state.getHash()));
