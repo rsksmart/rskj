@@ -455,8 +455,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         } catch (BridgeIllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            logger.warn("Exception in releaseBtc", e);
-            throw new RuntimeException("Exception in releaseBtc", e);
+            logger.warn("Exception in addSignature", e);
+            throw new RuntimeException("Exception in addSignature", e);
         }
     }
 
