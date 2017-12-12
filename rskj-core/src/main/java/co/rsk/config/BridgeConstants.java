@@ -24,7 +24,6 @@ import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 
 public class BridgeConstants {
-
     protected String btcParamsString;
 
     protected Federation genesisFederation;

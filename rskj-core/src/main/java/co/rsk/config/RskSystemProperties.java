@@ -176,18 +176,21 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public List<WalletAccount> walletAccounts() {
-        if (!configFromFiles.hasPath("wallet.accounts"))
+        if (!configFromFiles.hasPath("wallet.accounts")) {
             return Collections.emptyList();
+        }
 
         List<WalletAccount> ret = new ArrayList<>();
         List<? extends ConfigObject> list = configFromFiles.getObjectList("wallet.accounts");
+
         for (ConfigObject configObject : list) {
             WalletAccount acc = null;
             if (configObject.get("privateKey") != null)
                 acc = new WalletAccount(configObject.toConfig().getString("privateKey"));
 
-            if (acc != null)
+            if (acc != null) {
                 ret.add(acc);
+            }
         }
 
         return ret;
@@ -232,7 +235,6 @@ public class RskSystemProperties extends SystemProperties {
     public int acceptorsNumber() {
         return configFromFiles.hasPath("rpc.acceptors.number") ?
                 configFromFiles.getInt("rpc.acceptors.number") : -1;
-
     }
 
     public int acceptQueueSize() {
@@ -290,10 +292,13 @@ public class RskSystemProperties extends SystemProperties {
             List<String> enabledMethods = null;
             List<String> disabledMethods = null;
 
-            if (configElement.hasPath("methods.enabled"))
-                enabledMethods = configElement.getStringList ("methods.enabled");
-            if (configElement.hasPath("methods.disabled"))
-                disabledMethods = configElement.getStringList ("methods.disabled");
+            if (configElement.hasPath("methods.enabled")) {
+                enabledMethods = configElement.getStringList("methods.enabled");
+            }
+
+            if (configElement.hasPath("methods.disabled")) {
+                disabledMethods = configElement.getStringList("methods.disabled");
+            }
 
             modules.add(new ModuleDescription(name, version, enabled, enabledMethods, disabledMethods));
         }
@@ -309,27 +314,32 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public List<String> getMessageRecorderCommands() {
-        if (!configFromFiles.hasPath("messages.recorder.commands"))
+        if (!configFromFiles.hasPath("messages.recorder.commands")) {
             return new ArrayList<>();
+        }
 
         return configFromFiles.getStringList("messages.recorder.commands");
     }
 
     public MessageRecorder getMessageRecorder() {
-        if (messageRecorder != null)
+        if (messageRecorder != null) {
             return messageRecorder;
+        }
 
-        if (!hasMessageRecorderEnabled())
+        if (!hasMessageRecorderEnabled()) {
             return null;
+        }
 
         String database = this.databaseDir();
         String filename = "messages";
         Path filePath;
 
-        if (Paths.get(database).isAbsolute())
+        if (Paths.get(database).isAbsolute()) {
             filePath = Paths.get(database, filename);
-        else
+        }
+        else {
             filePath = Paths.get(System.getProperty("user.dir"), database, filename);
+        }
 
         String fullFilename = filePath.toString();
 

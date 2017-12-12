@@ -24,7 +24,6 @@ import org.spongycastle.util.encoders.Hex;
  * Created by mario on 12/12/16.
  */
 public class RemascConfig {
-
     // Number of blocks until mining fees are processed
     private long maturity;
 

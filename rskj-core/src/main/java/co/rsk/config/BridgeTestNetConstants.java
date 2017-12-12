@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class BridgeTestNetConstants extends BridgeConstants {
-
     private static BridgeTestNetConstants instance = new BridgeTestNetConstants();
 
     BridgeTestNetConstants() {
@@ -108,6 +107,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
                 lockWhitelistAuthorizedKeys,
                 AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
+
         fundsMigrationAgeBegin = 60L;
         fundsMigrationAgeEnd = 900L;
     }

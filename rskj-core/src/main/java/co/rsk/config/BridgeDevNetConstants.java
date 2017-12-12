@@ -34,9 +34,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
 public class BridgeDevNetConstants extends BridgeConstants {
-
     private static final Logger logger = LoggerFactory.getLogger("BridgeDevNetConstants");
 
     private static BridgeDevNetConstants instance = new BridgeDevNetConstants();

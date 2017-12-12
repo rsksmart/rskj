@@ -44,6 +44,7 @@ public class RemascConfigFactory {
 
     public RemascConfig createRemascConfig(String config) {
         RemascConfig remascConfig;
+
         try (InputStream is = RemascConfigFactory.class.getClassLoader()
                 .getResourceAsStream(this.configPath); InputStreamReader fileReader = new InputStreamReader(is)){
 
@@ -56,6 +57,7 @@ public class RemascConfigFactory {
             logger.error("Error reading REMASC configuration[{}]: {}", config, ex);
             throw new RemascException("Error reading REMASC configuration[" + config +"]: ", ex);
         }
+
         return remascConfig;
     }
 }

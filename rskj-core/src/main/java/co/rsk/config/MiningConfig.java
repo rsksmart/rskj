@@ -22,7 +22,6 @@ package co.rsk.config;
  * Wraps configuration for Mining, which is usually derived from configuration files.
  */
 public class MiningConfig {
-
     private final byte[] coinbaseAddress;
     private final double minFeesNotifyInDollars;
     private final double minerGasUnitInDollars;
