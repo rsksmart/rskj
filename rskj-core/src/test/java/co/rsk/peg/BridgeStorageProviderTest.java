@@ -67,10 +67,15 @@ public class BridgeStorageProviderTest {
         Assert.assertNotNull(processed);
         Assert.assertTrue(processed.isEmpty());
 
-        SortedMap<Sha3Hash, BtcTransaction> confirmations = provider.getRskTxsWaitingForConfirmations();
+        ReleaseRequestQueue releaseRequestQueue = provider.getReleaseRequestQueue();
 
-        Assert.assertNotNull(confirmations);
-        Assert.assertTrue(confirmations.isEmpty());
+        Assert.assertNotNull(releaseRequestQueue);
+        Assert.assertEquals(0, releaseRequestQueue.getEntries().size());
+
+        ReleaseTransactionSet releaseTransactionSet = provider.getReleaseTransactionSet();
+
+        Assert.assertNotNull(releaseTransactionSet);
+        Assert.assertEquals(0, releaseTransactionSet.getEntries().size());
 
         SortedMap<Sha3Hash, BtcTransaction> signatures = provider.getRskTxsWaitingForSignatures();
 
@@ -90,7 +95,8 @@ public class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
         provider0.getBtcTxHashesAlreadyProcessed();
-        provider0.getRskTxsWaitingForConfirmations();
+        provider0.getReleaseRequestQueue();
+        provider0.getReleaseTransactionSet();
         provider0.getRskTxsWaitingForSignatures();
         provider0.getActiveFederationBtcUTXOs();
         provider0.getRetiringFederationBtcUTXOs();
@@ -103,7 +109,8 @@ public class BridgeStorageProviderTest {
 
         Assert.assertNotNull(repository.getContractDetails(contractAddress));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("btcTxHashesAP".getBytes())));
-        Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("rskTxsWaitingFC".getBytes())));
+        Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("releaseRequestQueue".getBytes())));
+        Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("releaseTransactionSet".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("rskTxsWaitingFS".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("activeFederationBtcUTXOs".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("retiringFederationBtcUTXOs".getBytes())));
@@ -115,10 +122,15 @@ public class BridgeStorageProviderTest {
         Assert.assertNotNull(processed);
         Assert.assertTrue(processed.isEmpty());
 
-        SortedMap<Sha3Hash, BtcTransaction> confirmations = provider.getRskTxsWaitingForConfirmations();
+        ReleaseRequestQueue releaseRequestQueue = provider.getReleaseRequestQueue();
 
-        Assert.assertNotNull(confirmations);
-        Assert.assertTrue(confirmations.isEmpty());
+        Assert.assertNotNull(releaseRequestQueue);
+        Assert.assertEquals(0, releaseRequestQueue.getEntries().size());
+
+        ReleaseTransactionSet releaseTransactionSet = provider.getReleaseTransactionSet();
+
+        Assert.assertNotNull(releaseTransactionSet);
+        Assert.assertEquals(0, releaseTransactionSet.getEntries().size());
 
         SortedMap<Sha3Hash, BtcTransaction> signatures = provider.getRskTxsWaitingForSignatures();
 
@@ -159,43 +171,6 @@ public class BridgeStorageProviderTest {
 
         Assert.assertTrue(processedHashes.contains(hash1));
         Assert.assertTrue(processedHashes.contains(hash2));
-    }
-
-    @Test
-    public void createSaveAndRecreateInstanceWithTxsWaitingForConfirmations() throws IOException {
-        BtcTransaction tx1 = createTransaction();
-        BtcTransaction tx2 = createTransaction();
-        BtcTransaction tx3 = createTransaction();
-        Sha3Hash hash1 = PegTestUtils.createHash3();
-        Sha3Hash hash2 = PegTestUtils.createHash3();
-        Sha3Hash hash3 = PegTestUtils.createHash3();
-
-        Repository repository = new RepositoryImpl();
-        Repository track = repository.startTracking();
-
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
-        provider0.getRskTxsWaitingForConfirmations().put(hash1, tx1);
-        provider0.getRskTxsWaitingForConfirmations().put(hash2, tx2);
-        provider0.getRskTxsWaitingForConfirmations().put(hash3, tx3);
-
-        provider0.save();
-        track.commit();
-
-        track = repository.startTracking();
-
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
-
-        SortedMap<Sha3Hash, BtcTransaction> confirmations = provider.getRskTxsWaitingForConfirmations();
-
-        Assert.assertNotNull(confirmations);
-
-        Assert.assertTrue(confirmations.containsKey(hash1));
-        Assert.assertTrue(confirmations.containsKey(hash2));
-        Assert.assertTrue(confirmations.containsKey(hash3));
-
-        Assert.assertEquals(tx1.getHash(), confirmations.get(hash1).getHash());
-        Assert.assertEquals(tx2.getHash(), confirmations.get(hash2).getHash());
-        Assert.assertEquals(tx3.getHash(), confirmations.get(hash3).getHash());
     }
 
     @Test

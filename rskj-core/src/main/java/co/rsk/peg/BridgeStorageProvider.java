@@ -45,7 +45,6 @@ public class BridgeStorageProvider {
     private static final DataWord BTC_TX_HASHES_ALREADY_PROCESSED_KEY = new DataWord(TypeConverter.stringToByteArray("btcTxHashesAP"));
     private static final DataWord RELEASE_REQUEST_QUEUE = new DataWord(TypeConverter.stringToByteArray("releaseRequestQueue"));
     private static final DataWord RELEASE_TX_SET = new DataWord(TypeConverter.stringToByteArray("releaseTransactionSet"));
-    private static final DataWord RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY = new DataWord(TypeConverter.stringToByteArray("rskTxsWaitingFC"));
     private static final DataWord RSK_TXS_WAITING_FOR_SIGNATURES_KEY = new DataWord(TypeConverter.stringToByteArray("rskTxsWaitingFS"));
     private static final DataWord BRIDGE_ACTIVE_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("bridgeActiveFederation"));
     private static final DataWord BRIDGE_RETIRING_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("bridgeRetiringFederation"));
@@ -59,14 +58,15 @@ public class BridgeStorageProvider {
     private byte[] contractAddress;
 
     private Map<Sha256Hash, Long> btcTxHashesAlreadyProcessed;
+
+    // RSK release txs follow these steps: First, they are waiting for coin selection (releaseRequestQueue),
+    // then they are waiting for enough confirmations on the RSK network (releaseTransactionSet),
+    // then they are waiting for federators' signatures (rskTxsWaitingForSignatures),
+    // then they are logged into the block that has them as completely signed for btc release
+    // and are removed from rskTxsWaitingForSignatures.
+    // key = rsk tx hash, value = btc tx
     private ReleaseRequestQueue releaseRequestQueue;
     private ReleaseTransactionSet releaseTransactionSet;
-    // RSK release txs follow these steps: First, they are waiting for RSK confirmations, then they are waiting for federators' signatures,
-    // then they are waiting for broadcasting in the bitcoin network (a tx is kept in this state for a while, even if already broadcasted, giving the chance to federators to rebroadcast it just in case),
-    // then they are removed from contract's memory.
-    // key = rsk tx hash, value = btc tx
-    private SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForConfirmations;
-    // key = rsk tx hash, value = btc tx
     private SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForSignatures;
 
     private List<UTXO> activeFederationBtcUTXOs;
@@ -179,26 +179,6 @@ public class BridgeStorageProvider {
             return;
 
         safeSaveToRepository(RELEASE_TX_SET, releaseTransactionSet, BridgeSerializationUtils::serializeReleaseTransactionSet);
-    }
-
-    public SortedMap<Sha3Hash, BtcTransaction> getRskTxsWaitingForConfirmations() throws IOException {
-        if (rskTxsWaitingForConfirmations != null) {
-            return rskTxsWaitingForConfirmations;
-        }
-
-        rskTxsWaitingForConfirmations = getFromRepository(
-                RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY,
-                data -> BridgeSerializationUtils.deserializeMap(data, networkParameters, true)
-        );
-        return rskTxsWaitingForConfirmations;
-    }
-
-    public void saveRskTxsWaitingForConfirmations() {
-        if (rskTxsWaitingForConfirmations == null) {
-            return;
-        }
-
-        safeSaveToRepository(RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY, rskTxsWaitingForConfirmations, BridgeSerializationUtils::serializeMap);
     }
 
     public SortedMap<Sha3Hash, BtcTransaction> getRskTxsWaitingForSignatures() throws IOException {
@@ -342,7 +322,6 @@ public class BridgeStorageProvider {
 
         saveReleaseRequestQueue();
         saveReleaseTransactionSet();
-        saveRskTxsWaitingForConfirmations();
         saveRskTxsWaitingForSignatures();
 
         saveActiveFederation();

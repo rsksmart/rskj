@@ -62,21 +62,6 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static byte[] serializePairMap(SortedMap<Sha3Hash, Pair<BtcTransaction, Long>> map) {
-        int ntxs = map.size();
-
-        byte[][] bytes = new byte[ntxs * 3][];
-        int n = 0;
-
-        for (Map.Entry<Sha3Hash, Pair<BtcTransaction, Long>> entry : map.entrySet()) {
-            bytes[n++] = RLP.encodeElement(entry.getKey().getBytes());
-            bytes[n++] = RLP.encodeElement(entry.getValue().getLeft().bitcoinSerialize());
-            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getValue().getRight()));
-        }
-
-        return RLP.encodeList(bytes);
-    }
-
     public static SortedMap<Sha3Hash, BtcTransaction> deserializeMap(byte[] data, NetworkParameters networkParameters, boolean noInputsTxs) {
         SortedMap<Sha3Hash, BtcTransaction> map = new TreeMap<>();
 
@@ -99,28 +84,6 @@ public class BridgeSerializationUtils {
                 tx.parseNoInputs(payload);
             }
             map.put(hash, tx);
-        }
-
-        return map;
-    }
-
-    public static SortedMap<Sha3Hash, Pair<BtcTransaction, Long>> deserializePairMap(byte[] data, NetworkParameters networkParameters) {
-        SortedMap<Sha3Hash, Pair<BtcTransaction, Long>> map = new TreeMap<>();
-
-        if (data == null || data.length == 0) {
-            return map;
-        }
-
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
-
-        int ntxs = rlpList.size() / 3;
-
-        for (int k = 0; k < ntxs; k++) {
-            Sha3Hash hash = new Sha3Hash(rlpList.get(k * 3).getRLPData());
-            BtcTransaction tx = new BtcTransaction(networkParameters, rlpList.get(k * 3 + 1).getRLPData());
-            byte[] lkeyBytes = rlpList.get(k * 3 + 2).getRLPData();
-            Long lkey = lkeyBytes == null ? 0 : (new BigInteger(1, lkeyBytes)).longValue();
-            map.put(hash, Pair.of(tx, lkey));
         }
 
         return map;
@@ -228,7 +191,7 @@ public class BridgeSerializationUtils {
 
         for (int k = 0; k < numEntries; k++) {
             Sha256Hash hash = Sha256Hash.wrap(rlpList.get(k * 2).getRLPData());
-            Long number = new BigInteger(rlpList.get(k * 2 + 1).getRLPData()).longValue();
+            Long number = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
             map.put(hash, number);
         }
 
@@ -384,7 +347,7 @@ public class BridgeSerializationUtils {
         for (int k = 0; k < n; k++) {
             byte[] addressBytes = rlpList.get(k * 2).getRLPData();
             Address address = new Address(networkParameters, addressBytes);
-            Long amount = new BigInteger(rlpList.get(k * 2 + 1).getRLPData()).longValue();
+            Long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
 
             entries.add(new ReleaseRequestQueue.Entry(address, Coin.valueOf(amount)));
         }
@@ -435,7 +398,7 @@ public class BridgeSerializationUtils {
             byte[] txPayload = rlpList.get(k * 2).getRLPData();
             BtcTransaction tx =  new BtcTransaction(networkParameters, txPayload);
 
-            Long height = new BigInteger(rlpList.get(k * 2 + 1).getRLPData()).longValue();
+            Long height = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
 
             entries.add(new ReleaseTransactionSet.Entry(tx, height));
         }

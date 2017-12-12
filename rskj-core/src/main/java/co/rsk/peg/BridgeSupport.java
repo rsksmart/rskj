@@ -32,6 +32,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
@@ -55,6 +56,7 @@ import java.io.InputStream;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.ethereum.util.BIUtil.toBI;
@@ -465,7 +467,7 @@ public class BridgeSupport {
     public void updateCollections(Transaction rskTx) throws IOException {
         Context.propagate(btcContext);
 
-//        processFundsMigration(rskTx);
+        processFundsMigration(rskTx);
 
         processReleaseRequests();
 
@@ -473,24 +475,44 @@ public class BridgeSupport {
     }
 
     private void processFundsMigration(Transaction rskTx) throws IOException {
-        boolean pendingSignatures = !provider.getRskTxsWaitingForSignatures().isEmpty();
         long activeFederationAge = rskExecutionBlock.getNumber() - getFederationCreationBlockNumber();
         Wallet retiringFederationWallet = getRetiringFederationWallet();
+        List<UTXO> availableUTXOs = provider.getRetiringFederationBtcUTXOs();
+        ReleaseTransactionSet releaseTransactionSet = provider.getReleaseTransactionSet();
 
         if (activeFederationAge > bridgeConstants.getFundsMigrationAgeBegin() && activeFederationAge < bridgeConstants.getFundsMigrationAgeEnd()
                 && retiringFederationWallet != null
-                && retiringFederationWallet.getBalance().isGreaterThan(MINIMUM_FUNDS_TO_MIGRATE)
-                && !pendingSignatures) {
+                && retiringFederationWallet.getBalance().isGreaterThan(MINIMUM_FUNDS_TO_MIGRATE)) {
 
-            BtcTransaction btcTx = createMigrationTransaction(retiringFederationWallet, getActiveFederation().getAddress());
-            provider.getRskTxsWaitingForSignatures().put(new Sha3Hash(rskTx.getHash()), btcTx);
+            Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, getActiveFederation().getAddress());
+            BtcTransaction btcTx = createResult.getLeft();
+            List<UTXO> selectedUTXOs = createResult.getRight();
+
+            // Add the TX to the release set
+            releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
+
+            // Mark UTXOs as spent
+            availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
+                    utxo.getHash().equals(selectedUtxo.getHash()) &&
+                            utxo.getIndex() == selectedUtxo.getIndex()
+            ));
         }
 
-        if (retiringFederationWallet != null && activeFederationAge >= bridgeConstants.getFundsMigrationAgeEnd() && !pendingSignatures) {
+        if (retiringFederationWallet != null && activeFederationAge >= bridgeConstants.getFundsMigrationAgeEnd()) {
             if (retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO)) {
                 try {
-                    BtcTransaction btcTx = createMigrationTransaction(retiringFederationWallet, getActiveFederation().getAddress());
-                    provider.getRskTxsWaitingForSignatures().put(new Sha3Hash(rskTx.getHash()), btcTx);
+                    Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, getActiveFederation().getAddress());
+                    BtcTransaction btcTx = createResult.getLeft();
+                    List<UTXO> selectedUTXOs = createResult.getRight();
+
+                    // Add the TX to the release set
+                    releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
+
+                    // Mark UTXOs as spent
+                    availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
+                            utxo.getHash().equals(selectedUtxo.getHash()) &&
+                                    utxo.getIndex() == selectedUtxo.getIndex()
+                    ));
                 } catch (Exception e) {
                     logger.error("Unable to complete retiring federation migration. Left balance: {} in {}", retiringFederationWallet.getBalance(), getRetiringFederationAddress());
                     panicProcessor.panic("updateCollection", "Unable to complete retiring federation migration.");
@@ -658,26 +680,6 @@ public class BridgeSupport {
             byte[] burnAddress = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress();
             transfer(rskRepository, Hex.decode(PrecompiledContracts.BRIDGE_ADDR), burnAddress, Denomination.satoshisToWeis(BigInteger.valueOf(coinsToBurn.getValue())));
         }
-    }
-
-    /**
-     * Return true if txToSendToBtc has enough confirmations so bitcoins can be released
-     */
-    boolean hasEnoughConfirmations(Sha3Hash rskTxHash) {
-        //Search the TransactionInfo using the parent block because execution block may not be in the blockstore yet.
-        TransactionInfo info = rskReceiptStore.get(rskTxHash.getBytes(), rskExecutionBlock.getParentHash(), rskBlockStore);
-        if (info == null) {
-            return false;
-        }
-        
-        byte[] includedBlockHash = info.getBlockHash();
-        org.ethereum.core.Block includedBlock = rskBlockStore.getBlockByHash(includedBlockHash);
-
-        if (includedBlock == null) {
-            return false;
-        }
-
-        return (rskExecutionBlock.getNumber() - includedBlock.getNumber() + 1) >= bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations();
     }
 
     /**
@@ -1517,7 +1519,7 @@ public class BridgeSupport {
         return btcBlockStore;
     }
 
-    private static BtcTransaction createMigrationTransaction(Wallet originWallet, Address destinationAddress) {
+    private static Pair<BtcTransaction, List<UTXO>> createMigrationTransaction(Wallet originWallet, Address destinationAddress) {
         Coin expectedMigrationValue = originWallet.getBalance();
         for(;;) {
             BtcTransaction migrationBtcTx = new BtcTransaction(originWallet.getParams());
@@ -1533,11 +1535,24 @@ public class BridgeSupport {
                 for (TransactionInput transactionInput : migrationBtcTx.getInputs()) {
                     transactionInput.disconnect();
                 }
-                return migrationBtcTx;
+
+                List<UTXO> selectedUTXOs = originWallet
+                        .getUTXOProvider().getOpenTransactionOutputs(originWallet.getWatchedAddresses()).stream()
+                        .filter(utxo ->
+                                migrationBtcTx.getInputs().stream().anyMatch(input ->
+                                        input.getOutpoint().getHash().equals(utxo.getHash()) &&
+                                                input.getOutpoint().getIndex() == utxo.getIndex()
+                                )
+                        )
+                        .collect(Collectors.toList());
+
+                return Pair.of(migrationBtcTx, selectedUTXOs);
             } catch (InsufficientMoneyException | Wallet.ExceededMaxTransactionSize | Wallet.CouldNotAdjustDownwards e) {
                 expectedMigrationValue = expectedMigrationValue.divide(2);
             } catch(Wallet.DustySendRequested e) {
                 throw new IllegalStateException("Retiring federation wallet cannot be emptied", e);
+            } catch (UTXOProviderException e) {
+                throw new RuntimeException("Unexpected UTXO provider error", e);
             }
         }
     }

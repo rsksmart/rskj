@@ -105,17 +105,21 @@ public class ReleaseTransactionSet {
      * @return the slice of btc transactions.
      */
     public Set<BtcTransaction> sliceWithConfirmations(Long currentBlockNumber, Integer minimumConfirmations, Optional<Integer> maximumSliceSize) {
-        Stream<BtcTransaction> selection = entries.stream()
-            .filter(e -> hasEnoughConfirmations(e, currentBlockNumber, minimumConfirmations))
-            .map(e -> e.getTransaction());
+        Set<BtcTransaction> output = new HashSet<>();
 
-        if (maximumSliceSize.isPresent()) {
-            selection = selection.limit(maximumSliceSize.get());
+        int count = 0;
+        Iterator<Entry> iterator = entries.iterator();
+        while (iterator.hasNext()) {
+            Entry entry = iterator.next();
+            if (hasEnoughConfirmations(entry, currentBlockNumber, minimumConfirmations) && (!maximumSliceSize.isPresent() || count < maximumSliceSize.get())) {
+                output.add(entry.getTransaction());
+                iterator.remove();
+                count++;
+                if (maximumSliceSize.isPresent() && count == maximumSliceSize.get()) {
+                    break;
+                }
+            }
         }
-
-        Set<BtcTransaction> output = selection.collect(Collectors.toSet());
-
-        entries.removeIf(e -> hasEnoughConfirmations(e, currentBlockNumber, minimumConfirmations));
 
         return output;
     }
