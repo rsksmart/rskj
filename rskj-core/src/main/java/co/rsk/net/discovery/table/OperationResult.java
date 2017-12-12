@@ -22,7 +22,6 @@ package co.rsk.net.discovery.table;
  * Created by mario on 21/02/17.
  */
 public class OperationResult {
-
     private final boolean success;
     private final BucketEntry affectedEntry;
 
@@ -39,5 +38,4 @@ public class OperationResult {
     public BucketEntry getAffectedEntry() {
         return affectedEntry;
     }
-
 }

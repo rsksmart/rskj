@@ -36,9 +36,12 @@ public enum DiscoveryMessageType {
     }
 
     public static DiscoveryMessageType valueOfType(int type) {
-        for(DiscoveryMessageType t : DiscoveryMessageType.values())
-            if(t.getTypeValue() == type)
+        for(DiscoveryMessageType t : DiscoveryMessageType.values()) {
+            if (t.getTypeValue() == type) {
                 return t;
+            }
+        }
+
         throw new IllegalArgumentException("Invalid peer discovery message type");
     }
 

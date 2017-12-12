@@ -40,7 +40,7 @@ public class PeerExplorerCleaner {
     }
 
     public void run() {
-        if(!running) {
+        if (!running) {
             this.startUpdateTask();
             running = true;
         }

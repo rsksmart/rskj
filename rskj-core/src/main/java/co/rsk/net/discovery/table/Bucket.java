@@ -27,7 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by mario on 21/02/17.
  */
 public class Bucket {
-
     private Map<String, BucketEntry> entries;
     private final int bucketSize;
     private final int id;
@@ -59,6 +58,7 @@ public class Bucket {
 
     public synchronized OperationResult removeNode(Node node) {
         BucketEntry toRemove = this.entries.remove(node.getHexId());
+
         if (toRemove != null) {
             return new OperationResult(true, toRemove);
         } else {
@@ -79,9 +79,9 @@ public class Bucket {
 
     public void updateEntry(Node node) {
         BucketEntry entry = this.entries.get(node.getHexId());
-        if(entry != null) {
+
+        if (entry != null) {
             entry.updateTime();
         }
     }
-
 }

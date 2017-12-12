@@ -24,7 +24,6 @@ import org.ethereum.net.rlpx.Node;
  * Created by mario on 21/02/17.
  */
 public class BucketEntry {
-
     private final Node node;
     private long lastSeenTime;
 
@@ -44,5 +43,4 @@ public class BucketEntry {
     public void updateTime() {
         this.lastSeenTime = System.currentTimeMillis();
     }
-
 }

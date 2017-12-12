@@ -80,12 +80,14 @@ public class UDPServer {
             logger.warn("UDP channel closed. Recreating after 5 sec pause...");
             TimeUnit.SECONDS.sleep(5);
         }
+
         group.shutdownGracefully().sync();
     }
 
     public void stop() throws InterruptedException {
         logger.info("Closing UDPListener...");
         shutdown = true;
+
         if (channel != null) {
             try {
                 channel.close().await(10, TimeUnit.SECONDS);
@@ -110,3 +112,4 @@ public class UDPServer {
                 });
     }
 }
+

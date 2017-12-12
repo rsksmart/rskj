@@ -24,7 +24,6 @@ import org.ethereum.crypto.HashUtil;
  * Calculates the distance between 2 nodes
  */
 public class DistanceCalculator {
-
     private final int maxDistance;
 
     public DistanceCalculator(int maxDistance) {
@@ -57,6 +56,7 @@ public class DistanceCalculator {
      */
     private int msbPosition(byte[] result) {
         int distance = this.maxDistance;
+
         for (byte b : result) {
             if (b == 0) {
                 distance -= 8;
@@ -65,11 +65,13 @@ public class DistanceCalculator {
                 return distance;
             }
         }
+
         return distance;
     }
 
     private int positionsToMove(byte b) {
         int count = 0;
+
         for (int i = 7; i >= 0; i--) {
             if (((b & 0xff)& (1 << i)) == 0) {
                 count++;
@@ -77,6 +79,7 @@ public class DistanceCalculator {
                 return count;
             }
         }
+
         return count;
     }
 }

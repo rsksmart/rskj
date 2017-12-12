@@ -28,9 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 
-
 public class UDPChannel extends SimpleChannelInboundHandler<DiscoveryEvent> {
-
     static final Logger logger = LoggerFactory.getLogger(UDPChannel.class);
 
     private Channel channel;

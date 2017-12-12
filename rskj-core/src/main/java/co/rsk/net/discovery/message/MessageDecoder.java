@@ -32,9 +32,9 @@ public class MessageDecoder {
     private MessageDecoder() {}
 
     public static PeerDiscoveryMessage decode(byte[] wire) {
-
-        if (wire.length < 98)
+        if (wire.length < 98) {
             throw new PeerDiscoveryException("Bad message");
+        }
 
         byte[] mdc = new byte[32];
         System.arraycopy(wire, 0, mdc, 0, 32);
@@ -52,8 +52,9 @@ public class MessageDecoder {
 
         int check = FastByteComparisons.compareTo(mdc, 0, mdc.length, mdcCheck, 0, mdcCheck.length);
 
-        if (check != 0)
+        if (check != 0) {
             throw new PeerDiscoveryException("MDC check failed");
+        }
 
         return PeerDiscoveryMessageFactory.createMessage(wire, mdc, signature, type, data);
   }

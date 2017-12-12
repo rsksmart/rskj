@@ -35,6 +35,7 @@ public class NodeDistanceTable {
     public NodeDistanceTable(int numberOfBuckets, int entriesPerBucket, Node localNode) {
         this.localNode = localNode;
         this.distanceCalculator = new DistanceCalculator(KademliaOptions.BINS);
+
         for (int i = 0; i < numberOfBuckets; i++) {
             buckets.put(i, new Bucket(entriesPerBucket, i));
         }
@@ -51,21 +52,25 @@ public class NodeDistanceTable {
     public synchronized List<Node> getClosestNodes(byte[] nodeId) {
         List<Node> closeNodes = new ArrayList<>(getAllNodes());
         Collections.sort(closeNodes, new NodeDistanceComparator(nodeId, this.distanceCalculator));
+
         return closeNodes;
     }
 
     private Bucket getNodeBucket(Node node) {
         int distance = this.distanceCalculator.calculateDistance(this.localNode.getId(), node.getId()) - 1;
         distance = (distance >= 0) ? distance : 0;
+
         return this.buckets.get(distance);
     }
 
     public Set<Node> getAllNodes() {
         Set<Node> ret = new HashSet<>();
+
         for (Bucket bucket : this.buckets.values()) {
             ret.addAll(bucket.getEntries().stream()
                     .map(BucketEntry::getNode).collect(Collectors.toList()));
         }
+
         return ret;
     }
 
