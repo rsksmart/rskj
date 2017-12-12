@@ -36,7 +36,6 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Genesis;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -292,7 +291,7 @@ public class BridgeUtilsTest {
         }, BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKeyBytes());
     }
 
-    @Test @Ignore
+    @Test
     public void isFreeBridgeTxNonFederatorKey() {
         isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, new UnitTestBlockchainNetConfig(), new BtcECKey().getPrivKeyBytes());
     }

@@ -18,15 +18,15 @@
 
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.apache.commons.lang3.StringUtils;
-import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.bitcoinj.store.BlockStoreException;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
@@ -50,14 +50,14 @@ public class BridgeUtils {
             return null;
         }
         for (int i = 0; i < (headHeight - height); i++) {
-            if (storedBlock==null) {
+            if (storedBlock == null) {
                 return null;
             }
-            
+
             Sha256Hash prevBlockHash = storedBlock.getHeader().getPrevBlockHash();
             storedBlock = blockStore.get(prevBlockHash);
         }
-        if (storedBlock!=null) {
+        if (storedBlock != null) {
             if (storedBlock.getHeight() != height) {
                 throw new IllegalStateException("Block height is " + storedBlock.getHeight() + " but should be " + headHeight);
             }
@@ -139,15 +139,16 @@ public class BridgeUtils {
     public static Address recoverBtcAddressFromEthTransaction(org.ethereum.core.Transaction tx, NetworkParameters networkParameters) {
         org.ethereum.crypto.ECKey key = tx.getKey();
         byte[] pubKey = key.getPubKey(true);
-        return  BtcECKey.fromPublicOnly(pubKey).toAddress(networkParameters);
+        return BtcECKey.fromPublicOnly(pubKey).toAddress(networkParameters);
     }
 
     public static boolean isFreeBridgeTx(org.ethereum.core.Transaction rskTx, long blockNumber) {
         BlockchainNetConfig blockchainConfig = RskSystemProperties.CONFIG.getBlockchainConfig();
         byte[] receiveAddress = rskTx.getReceiveAddress();
 
-        if (receiveAddress == null)
+        if (receiveAddress == null) {
             return false;
+        }
 
         BridgeConstants bridgeConstants = blockchainConfig.getCommonConstants().getBridgeConstants();
 
@@ -158,14 +159,15 @@ public class BridgeUtils {
                blockchainConfig.getConfigForBlock(blockNumber).areBridgeTxsFree() &&
                rskTx.acceptTransactionSignature() &&
                (
-                       isFromFederateMember(rskTx) ||
+                       isFromFederateMember(rskTx, bridgeConstants.getGenesisFederation()) ||
                        isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants) ||
                        isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants)
                );
     }
 
-    private static boolean isFromFederateMember(org.ethereum.core.Transaction rskTx) {
-        return true;
+    private static boolean isFromFederateMember(org.ethereum.core.Transaction rskTx, Federation federation) {
+        BtcECKey btcKey = BtcECKey.fromPublicOnly(rskTx.getKey().getPubKeyPoint());
+        return federation.hasPublicKey(btcKey);
     }
 
     private static boolean isFromFederationChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
