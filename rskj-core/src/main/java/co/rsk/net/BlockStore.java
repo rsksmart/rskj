@@ -62,8 +62,9 @@ public class BlockStore {
     }
 
     public synchronized void removeBlock(Block block) {
-        if (!this.hasBlock(block.getHash()))
+        if (!this.hasBlock(block.getHash())) {
             return;
+        }
 
         ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
         ByteArrayWrapper pkey = new ByteArrayWrapper(block.getParentHash());
@@ -91,8 +92,9 @@ public class BlockStore {
             if (toremove != null){
                 byparent.remove(toremove);
 
-                if (byparent.isEmpty())
+                if (byparent.isEmpty()) {
                     this.blocksbyparent.remove(pkey);
+                }
             }
         }
     }
@@ -112,8 +114,9 @@ public class BlockStore {
 
             if (toremove != null) {
                 bynumber.remove(toremove);
-                if (bynumber.isEmpty())
+                if (bynumber.isEmpty()) {
                     this.blocksbynumber.remove(nkey);
+                }
             }
         }
     }
@@ -129,8 +132,9 @@ public class BlockStore {
 
         Set<Block> blockSet = this.blocksbynumber.get(nkey);
 
-        if (blockSet == null)
+        if (blockSet == null) {
             blockSet = new HashSet<>();
+        }
 
         return new ArrayList<>(blockSet);
     }
@@ -140,8 +144,9 @@ public class BlockStore {
 
         Set<Block> blockSet = this.blocksbyparent.get(key);
 
-        if (blockSet == null)
+        if (blockSet == null) {
             blockSet = new HashSet<>();
+        }
 
         return new ArrayList<>(blockSet);
     }
@@ -174,9 +179,11 @@ public class BlockStore {
     public synchronized long minimalHeight() {
         long value = 0;
 
-        for (Block b : this.blocks.values())
-            if (value == 0 || b.getNumber() < value)
+        for (Block b : this.blocks.values()) {
+            if (value == 0 || b.getNumber() < value) {
                 value = b.getNumber();
+            }
+        }
 
         return value;
     }
@@ -184,17 +191,21 @@ public class BlockStore {
     public synchronized long maximumHeight() {
         long value = 0;
 
-        for (Block b : this.blocks.values())
-            if (value == 0 || b.getNumber() > value)
+        for (Block b : this.blocks.values()) {
+            if (value == 0 || b.getNumber() > value) {
                 value = b.getNumber();
+            }
+        }
 
         return value;
     }
 
     public synchronized void releaseRange(long from, long to) {
-        for (long k = from; k <= to; k++)
-            for (Block b : this.getBlocksByNumber(k))
+        for (long k = from; k <= to; k++) {
+            for (Block b : this.getBlocksByNumber(k)) {
                 this.removeBlock(b);
+            }
+        }
     }
 
     /**
@@ -224,8 +235,9 @@ public class BlockStore {
      * @param header the header to remove.
      */
     public synchronized void removeHeader(@Nonnull final BlockHeader header) {
-        if (!this.hasHeader(header.getHash()))
+        if (!this.hasHeader(header.getHash())) {
             return;
+        }
 
         ByteArrayWrapper key = new ByteArrayWrapper(header.getHash());
 

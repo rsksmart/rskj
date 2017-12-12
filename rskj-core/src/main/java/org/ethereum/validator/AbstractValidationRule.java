@@ -40,10 +40,11 @@ public abstract class AbstractValidationRule implements ValidationRule {
     }
 
     public void logErrors(Logger logger) {
-        if (logger.isErrorEnabled())
+        if (logger.isErrorEnabled()) {
             for (String msg : errors) {
                 logger.warn("{} invalid: {}", getEntityClass().getSimpleName(), msg);
             }
+        }
     }
 
     public abstract Class getEntityClass();

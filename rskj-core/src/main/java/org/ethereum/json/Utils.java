@@ -89,14 +89,16 @@ public class Utils {
         if (data.startsWith("0x")) {
             data = data.substring(2);
             return data.equals("") ? 0 : Byte.parseByte(data, 16);
-        } else
+        } else {
             return data.equals("") ? 0 : Byte.parseByte(data);
+        }
     }
 
 
     public static String parseUnidentifiedBase(String number) {
-        if (number.startsWith("0x"))
-          number = new BigInteger(number.substring(2), 16).toString(10);
+        if (number.startsWith("0x")) {
+            number = new BigInteger(number.substring(2), 16).toString(10);
+        }
         return number;
     }
 }

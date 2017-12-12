@@ -46,10 +46,11 @@ public class TransactionResultDTO {
     public TransactionResultDTO (Block b, Integer index, Transaction tx) {
         hash =  TypeConverter.toJsonHex(tx.getHash());
 
-        if (Arrays.equals(tx.getNonce(), ByteUtil.EMPTY_BYTE_ARRAY))
+        if (Arrays.equals(tx.getNonce(), ByteUtil.EMPTY_BYTE_ARRAY)) {
             nonce = "0";
-        else
+        } else {
             nonce = TypeConverter.toJsonHex(tx.getNonce());
+        }
 
         blockHash = b != null ? TypeConverter.toJsonHex(b.getHash()) : null;
         blockNumber = b != null ? TypeConverter.toJsonHex(b.getNumber()) : null;
@@ -60,10 +61,11 @@ public class TransactionResultDTO {
 
         gasPrice = TypeConverter.toJsonHex(tx.getGasPrice());
 
-        if (Arrays.equals(tx.getValue(), ByteUtil.EMPTY_BYTE_ARRAY))
+        if (Arrays.equals(tx.getValue(), ByteUtil.EMPTY_BYTE_ARRAY)) {
             value = "0";
-        else
+        } else {
             value = TypeConverter.toJsonHex(tx.getValue());
+        }
 
         input = TypeConverter.toJsonHex(tx.getData());
     }

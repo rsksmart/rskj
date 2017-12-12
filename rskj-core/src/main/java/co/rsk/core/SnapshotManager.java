@@ -61,15 +61,17 @@ public class SnapshotManager {
         pendingState.clearWire(pendingState.getWireTransactions());
 
         // Remove removed blocks from store
-        for (long nb = blockchain.getBestBlock().getNumber() + 1; nb <= bestNumber; nb++)
+        for (long nb = blockchain.getBestBlock().getNumber() + 1; nb <= bestNumber; nb++) {
             blockchain.removeBlocksByNumber(nb);
+        }
 
         return true;
     }
 
     public boolean revertToSnapshot(Blockchain blockchain, int snapshotId) {
-        if (snapshotId <= 0 || snapshotId > this.snapshots.size())
+        if (snapshotId <= 0 || snapshotId > this.snapshots.size()) {
             return false;
+        }
 
         long newBestBlockNumber = this.snapshots.get(snapshotId - 1).longValue();
 
@@ -81,8 +83,9 @@ public class SnapshotManager {
 
         long currentBestBlockNumber = blockchain.getBestBlock().getNumber();
 
-        if (newBestBlockNumber >= currentBestBlockNumber)
+        if (newBestBlockNumber >= currentBestBlockNumber) {
             return true;
+        }
 
         BlockStore store = blockchain.getBlockStore();
 
@@ -98,8 +101,9 @@ public class SnapshotManager {
         pendingState.clearWire(pendingState.getWireTransactions());
 
         // Remove removed blocks from store
-        for (long nb = blockchain.getBestBlock().getNumber() + 1; nb <= currentBestBlockNumber; nb++)
+        for (long nb = blockchain.getBestBlock().getNumber() + 1; nb <= currentBestBlockNumber; nb++) {
             blockchain.removeBlocksByNumber(nb);
+        }
 
         return true;
     }

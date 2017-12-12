@@ -84,11 +84,13 @@ public class Peer {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null)
+        if (obj == null) {
             return false;
+        }
 
-        if (this.getClass() != obj.getClass())
+        if (this.getClass() != obj.getClass()) {
             return false;
+        }
 
         Peer peerData = (Peer) obj;
         return peerData.peerId.equals(this.peerId)

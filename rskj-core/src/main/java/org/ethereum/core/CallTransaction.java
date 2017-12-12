@@ -203,8 +203,9 @@ public class CallTransaction {
 
         @Override
         public byte[] encode(Object value) {
-            if (!(value instanceof Boolean))
+            if (!(value instanceof Boolean)) {
                 throw new RuntimeException("Wrong value for bool type: " + value);
+            }
             return super.encode(value == Boolean.TRUE ? 1 : 0);
         }
 
@@ -249,8 +250,9 @@ public class CallTransaction {
         }
 
         public byte[] encodeArguments(Param[] params, Object ... args) {
-            if (args.length > params.length)
+            if (args.length > params.length) {
                 throw new RuntimeException("Too many arguments: " + args.length + " > " + params.length);
+            }
 
             int staticSize = 0;
             int dynamicCnt = 0;
@@ -282,8 +284,9 @@ public class CallTransaction {
         }
 
         public byte[] encodeArguments(Object ... args) {
-            if (args.length > inputs.length)
+            if (args.length > inputs.length) {
                 throw new CallTransactionException("Too many arguments: " + args.length + " > " + inputs.length);
+            }
 
             int staticSize = 0;
             int dynamicCnt = 0;
@@ -448,11 +451,13 @@ public class CallTransaction {
          * Parses function and its arguments from transaction invocation binary data
          */
         public Invocation parseInvocation(byte[] data) {
-            if (data.length < 4)
+            if (data.length < 4) {
                 throw new CallTransactionException("Invalid data length: " + data.length);
+            }
             Function function = getBySignatureHash(Arrays.copyOfRange(data, 0, 4));
-            if (function == null)
+            if (function == null) {
                 throw new CallTransactionException("Can't find function/event by it signature");
+            }
             Object[] args = function.decode(data);
             return new Invocation(this, function, args);
         }

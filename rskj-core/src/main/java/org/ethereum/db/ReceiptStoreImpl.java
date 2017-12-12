@@ -51,8 +51,9 @@ public class ReceiptStoreImpl implements ReceiptStore {
 
         List<byte[]> encodedTxs = new ArrayList<>();
 
-        for (TransactionInfo ti : txsInfo)
+        for (TransactionInfo ti : txsInfo) {
             encodedTxs.add(ti.getEncoded());
+        }
 
         byte[][] txsBytes = encodedTxs.toArray(new byte[encodedTxs.size()][]);
 
@@ -63,8 +64,9 @@ public class ReceiptStoreImpl implements ReceiptStore {
     public TransactionInfo get(byte[] transactionHash){
         List<TransactionInfo> txs = getAll(transactionHash);
 
-        if (txs.isEmpty())
+        if (txs.isEmpty()) {
             return null;
+        }
 
         return txs.get(txs.size() - 1);
     }
@@ -73,8 +75,9 @@ public class ReceiptStoreImpl implements ReceiptStore {
     public TransactionInfo get(byte[] transactionHash, byte[] blockHash, BlockStore store) {
         List<TransactionInfo> txsInfo = getAll(transactionHash);
 
-        if (txsInfo.isEmpty())
+        if (txsInfo.isEmpty()) {
             return null;
+        }
 
         Block block = null;
         Map<ByteArrayWrapper, Block> tiblocks = new HashMap();
@@ -103,34 +106,41 @@ public class ReceiptStoreImpl implements ReceiptStore {
                         continue;
                     }
 
-                    if (tiblock.getNumber() < block.getNumber())
+                    if (tiblock.getNumber() < block.getNumber()) {
                         continue;
+                    }
                 }
 
-                if (Arrays.equals(ti.getBlockHash(), blockHash))
+                if (Arrays.equals(ti.getBlockHash(), blockHash)) {
                     return ti;
+                }
             }
 
-            if (nless >= txsInfo.size())
+            if (nless >= txsInfo.size()) {
                 return null;
+            }
 
-            if (store == null)
+            if (store == null) {
                 return null;
+            }
 
             if (block == null) {
                 block = store.getBlockByHash(blockHash);
 
-                if (block == null)
+                if (block == null) {
                     return null;
+                }
             }
 
-            if (block.isGenesis())
+            if (block.isGenesis()) {
                 return null;
+            }
 
             block = store.getBlockByHash(block.getParentHash());
 
-            if (block == null)
+            if (block == null) {
                 return null;
+            }
 
             blockHash = block.getHash();
         }
@@ -140,24 +150,28 @@ public class ReceiptStoreImpl implements ReceiptStore {
     public TransactionInfo getInMainChain(byte[] transactionHash, BlockStore store) {
         List<TransactionInfo> tis = this.getAll(transactionHash);
 
-        if (tis.isEmpty())
+        if (tis.isEmpty()) {
             return null;
+        }
 
         for (TransactionInfo ti : tis) {
             byte[] bhash = ti.getBlockHash();
 
             Block block = store.getBlockByHash(bhash);
 
-            if (block == null)
+            if (block == null) {
                 continue;
+            }
 
             Block mblock = store.getChainBlockByNumber(block.getNumber());
 
-            if (mblock == null)
+            if (mblock == null) {
                 continue;
+            }
 
-            if (new ByteArrayWrapper(bhash).equals(new ByteArrayWrapper(mblock.getHash())))
+            if (new ByteArrayWrapper(bhash).equals(new ByteArrayWrapper(mblock.getHash()))) {
                 return ti;
+            }
         }
 
         return null;
@@ -167,8 +181,9 @@ public class ReceiptStoreImpl implements ReceiptStore {
     public List<TransactionInfo> getAll(byte[] transactionHash) {
         byte[] txsBytes = receiptsDS.get(transactionHash);
 
-        if (txsBytes == null || txsBytes.length == 0)
+        if (txsBytes == null || txsBytes.length == 0) {
             return new ArrayList<TransactionInfo>();
+        }
 
         List<TransactionInfo> txsInfo = new ArrayList<>();
         RLPList txsList = (RLPList) RLP.decode2(txsBytes).get(0);

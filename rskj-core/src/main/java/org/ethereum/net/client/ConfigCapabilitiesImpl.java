@@ -51,8 +51,9 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
                 allCaps.add(new Capability(RSK, eth.getCode()));
             }
         } else {
-            for (EthVersion v : EthVersion.supported())
+            for (EthVersion v : EthVersion.supported()) {
                 allCaps.add(new Capability(RSK, v.getCode()));
+            }
         }
     }
 

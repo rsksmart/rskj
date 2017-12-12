@@ -87,17 +87,22 @@ public class GasLimitCalculator {
         newGasLimit = newGasLimit.add(contrib);
 
         // Gas limit can never be lesser than a certain threshold
-       if (newGasLimit.compareTo(minGasLimit) < 0)
+       if (newGasLimit.compareTo(minGasLimit) < 0) {
            newGasLimit = minGasLimit;
+       }
 
-       if (newGasLimit.compareTo(targetGasLimit) > 0)
+       if (newGasLimit.compareTo(targetGasLimit) > 0) {
            newGasLimit = targetGasLimit;
+       }
 
        // I've never done enough calculations, but neither of these two should ever happen
-       if (newGasLimit.compareTo(parentGasLimit.subtract(deltaMax)) < 0)
+       if (newGasLimit.compareTo(parentGasLimit.subtract(deltaMax)) < 0) {
            newGasLimit = parentGasLimit;
-       if (newGasLimit.compareTo(parentGasLimit.add(deltaMax)) > 0)
+       }
+
+       if (newGasLimit.compareTo(parentGasLimit.add(deltaMax)) > 0) {
            newGasLimit = parentGasLimit;
+       }
 
         return newGasLimit;
     }

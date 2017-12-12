@@ -39,17 +39,21 @@ public class InetAddressBlock {
     public boolean contains(InetAddress address) {
         byte[] addressBytes = address.getAddress();
 
-        if (addressBytes.length != this.bytes.length)
+        if (addressBytes.length != this.bytes.length) {
             return false;
+        }
 
         int k;
 
-        for (k = 0; k < this.nbytes; k++)
-            if (addressBytes[k] != this.bytes[k])
+        for (k = 0; k < this.nbytes; k++) {
+            if (addressBytes[k] != this.bytes[k]) {
                 return false;
+            }
+        }
 
-        if (this.mask != (byte)0xff)
+        if (this.mask != (byte)0xff) {
             return (addressBytes[k] & this.mask) == (this.bytes[k] & this.mask);
+        }
 
         return true;
     }
@@ -81,11 +85,13 @@ public class InetAddressBlock {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null)
+        if (obj == null) {
             return false;
+        }
 
-        if (!(obj instanceof InetAddressBlock))
+        if (!(obj instanceof InetAddressBlock)) {
             return false;
+        }
 
         InetAddressBlock block = (InetAddressBlock)obj;
 

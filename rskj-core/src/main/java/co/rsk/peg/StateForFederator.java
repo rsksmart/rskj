@@ -19,7 +19,6 @@
 package co.rsk.peg;
 
 import co.rsk.crypto.Sha3Hash;
-import org.apache.commons.lang3.tuple.Pair;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import org.ethereum.util.RLP;

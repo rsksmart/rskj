@@ -38,8 +38,9 @@ public class BlockCompositeRule implements BlockValidationRule {
         this.rules = new ArrayList<>();
         if(rules != null) {
             for (BlockValidationRule rule : rules) {
-                if(rule != null)
+                if(rule != null) {
                     this.rules.add(rule);
+                }
             }
         }
     }

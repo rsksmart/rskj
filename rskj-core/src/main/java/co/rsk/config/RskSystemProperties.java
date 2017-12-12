@@ -185,8 +185,9 @@ public class RskSystemProperties extends SystemProperties {
 
         for (ConfigObject configObject : list) {
             WalletAccount acc = null;
-            if (configObject.get("privateKey") != null)
+            if (configObject.get("privateKey") != null) {
                 acc = new WalletAccount(configObject.toConfig().getString("privateKey"));
+            }
 
             if (acc != null) {
                 ret.add(acc);
@@ -274,13 +275,15 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public List<ModuleDescription> getRpcModules() {
-        if (this.moduleDescriptions != null)
+        if (this.moduleDescriptions != null) {
             return this.moduleDescriptions;
+        }
 
         List<ModuleDescription> modules = new ArrayList<>();
 
-        if (!configFromFiles.hasPath("rpc.modules"))
+        if (!configFromFiles.hasPath("rpc.modules")) {
             return modules;
+        }
 
         List<? extends ConfigObject> list = configFromFiles.getObjectList("rpc.modules");
 
@@ -336,8 +339,7 @@ public class RskSystemProperties extends SystemProperties {
 
         if (Paths.get(database).isAbsolute()) {
             filePath = Paths.get(database, filename);
-        }
-        else {
+        } else {
             filePath = Paths.get(System.getProperty("user.dir"), database, filename);
         }
 

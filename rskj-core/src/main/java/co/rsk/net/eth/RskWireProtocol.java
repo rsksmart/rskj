@@ -200,14 +200,16 @@ public class RskWireProtocol extends EthHandler {
 
             InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
 
-            if (!peerScoringManager.hasGoodReputation(address))
+            if (!peerScoringManager.hasGoodReputation(address)) {
                 return false;
+            }
 
             byte[] nid = channel.getNodeId();
             NodeID nodeID = nid != null ? new NodeID(nid) : null;
 
-            if (nodeID != null && !peerScoringManager.hasGoodReputation(nodeID))
+            if (nodeID != null && !peerScoringManager.hasGoodReputation(nodeID)) {
                 return false;
+            }
 
         }
 

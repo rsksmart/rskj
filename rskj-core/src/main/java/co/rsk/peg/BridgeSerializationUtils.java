@@ -80,8 +80,9 @@ public class BridgeSerializationUtils {
     public static SortedMap<Sha3Hash, BtcTransaction> deserializeMap(byte[] data, NetworkParameters networkParameters, boolean noInputsTxs) {
         SortedMap<Sha3Hash, BtcTransaction> map = new TreeMap<>();
 
-        if (data == null || data.length == 0)
+        if (data == null || data.length == 0) {
             return map;
+        }
 
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
@@ -106,8 +107,9 @@ public class BridgeSerializationUtils {
     public static SortedMap<Sha3Hash, Pair<BtcTransaction, Long>> deserializePairMap(byte[] data, NetworkParameters networkParameters) {
         SortedMap<Sha3Hash, Pair<BtcTransaction, Long>> map = new TreeMap<>();
 
-        if (data == null || data.length == 0)
+        if (data == null || data.length == 0) {
             return map;
+        }
 
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
@@ -143,8 +145,9 @@ public class BridgeSerializationUtils {
     public static List<UTXO> deserializeUTXOList(byte[] data) throws IOException {
         List<UTXO> list = new ArrayList<>();
 
-        if (data == null || data.length == 0)
+        if (data == null || data.length == 0) {
             return list;
+        }
 
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
@@ -166,8 +169,9 @@ public class BridgeSerializationUtils {
         byte[][] bytes = new byte[nhashes][];
         int n = 0;
 
-        for (Sha256Hash hash : set)
+        for (Sha256Hash hash : set) {
             bytes[n++] = RLP.encodeElement(hash.getBytes());
+        }
 
         return RLP.encodeList(bytes);
     }
@@ -175,15 +179,17 @@ public class BridgeSerializationUtils {
     public static SortedSet<Sha256Hash> deserializeSet(byte[] data) {
         SortedSet<Sha256Hash> set = new TreeSet<>();
 
-        if (data == null || data.length == 0)
+        if (data == null || data.length == 0) {
             return set;
+        }
 
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         int nhashes = rlpList.size();
 
-        for (int k = 0; k < nhashes; k++)
+        for (int k = 0; k < nhashes; k++) {
             set.add(Sha256Hash.wrap(rlpList.get(k).getRLPData()));
+        }
 
         return set;
     }
@@ -207,8 +213,9 @@ public class BridgeSerializationUtils {
     public static Map<Sha256Hash, Long> deserializeMapOfHashesToLong(byte[] data) {
         Map<Sha256Hash, Long> map = new HashMap<>();
 
-        if (data == null || data.length == 0)
+        if (data == null || data.length == 0) {
             return map;
+        }
 
         RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
 
@@ -299,8 +306,9 @@ public class BridgeSerializationUtils {
 
     // For the serialization format, see BridgeSerializationUtils::serializeElection
     public static ABICallElection deserializeElection(byte[] data, AddressBasedAuthorizer authorizer) {
-        if (data == null || data.length == 0)
+        if (data == null || data.length == 0) {
             return new ABICallElection(authorizer);
+        }
 
         RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
 

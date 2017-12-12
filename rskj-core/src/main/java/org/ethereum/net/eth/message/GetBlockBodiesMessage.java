@@ -63,8 +63,9 @@ public class GetBlockBodiesMessage extends EthMessage {
 
     private void encode() {
         List<byte[]> encodedElements = new ArrayList<>();
-        for (byte[] hash : blockHashes)
+        for (byte[] hash : blockHashes) {
             encodedElements.add(RLP.encodeElement(hash));
+        }
         byte[][] encodedElementArray = encodedElements.toArray(new byte[encodedElements.size()][]);
         this.encoded = RLP.encodeList(encodedElementArray);
     }

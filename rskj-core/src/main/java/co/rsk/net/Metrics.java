@@ -61,8 +61,9 @@ public class Metrics {
         res.append('[');
         for( Transaction tx : txs )
         {
-            if(res.length() > 1)
+            if(res.length() > 1) {
                 res.append("][");
+            }
 
             String nonce = BIUtil.toBI(tx.getNonce()).toString();
             String pretty = String.format("H:%s - N:%s", HashUtil.shortHash(tx.getHash()), nonce);

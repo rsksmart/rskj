@@ -34,10 +34,11 @@ public class TypeConverter {
     }
 
     public static BigInteger stringNumberAsBigInt(String input) {
-        if (input.startsWith("0x"))
+        if (input.startsWith("0x")) {
             return TypeConverter.stringHexToBigInteger(input);
-        else
+        } else {
             return TypeConverter.stringDecimalToBigInteger(input);
+        }
     }
 
     public static BigInteger stringHexToBigInteger(String input) {
@@ -67,8 +68,9 @@ public class TypeConverter {
     public static String toJsonHex(byte[] x) {
         String result = "0x" + Hex.toHexString(x == null ? ByteUtil.EMPTY_BYTE_ARRAY : x);
 
-        if ("0x".equals(result))
+        if ("0x".equals(result)) {
             return "0x00";
+        }
 
         return result;
     }

@@ -129,12 +129,15 @@ public class ProgramResult {
     }
 
     public void clearFieldsOnException() {
-        if (deleteAccounts!=null)
+        if (deleteAccounts!=null) {
             deleteAccounts.clear();
-        if (logInfoList!=null)
+        }
+        if (logInfoList!=null) {
             logInfoList.clear();
-        if (codeChanges!=null)
+        }
+        if (codeChanges!=null) {
             codeChanges.clear();
+        }
         resetFutureRefund();
     }
 

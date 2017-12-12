@@ -56,8 +56,9 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
         Account account = this.getAccount(args.from);
         String s = null;
         try {
-            if (account == null)
+            if (account == null) {
                 throw new JsonRpcInvalidParamException("From address private key could not be found in this node");
+            }
 
             String toAddress = args.to != null ? Hex.toHexString(stringHexToByteArray(args.to)) : null;
 
@@ -65,8 +66,9 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
             BigInteger gasPrice = args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
             BigInteger gasLimit = args.gas != null ? TypeConverter.stringNumberAsBigInt(args.gas) : BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
 
-            if (args.data != null && args.data.startsWith("0x"))
+            if (args.data != null && args.data.startsWith("0x")) {
                 args.data = args.data.substring(2);
+            }
 
             synchronized (pendingState) {
                 BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : (pendingState.getRepository().getNonce(account.getAddress()));
@@ -86,8 +88,9 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
         String s = null;
         try {
             Account account = this.wallet.getAccount(stringHexToByteArray(addr));
-            if (account == null)
+            if (account == null) {
                 throw new JsonRpcInvalidParamException("Account not found");
+            }
 
             return s = this.sign(data, account.getEcKey());
         } finally {

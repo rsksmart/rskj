@@ -147,8 +147,9 @@ public class BlockSyncService {
     }
 
     private void trySaveStore(@Nonnull Block block) {
-        if (!this.store.hasBlock(block))
+        if (!this.store.hasBlock(block)) {
             this.store.saveBlock(block);
+        }
     }
 
     private Map<ByteArrayWrapper, ImportResult> connectBlocksAndDescendants(MessageChannel sender, List<Block> blocks, boolean ignoreMissingHashes) {
@@ -191,13 +192,15 @@ public class BlockSyncService {
     private void requestMissingHashes(MessageChannel sender, Set<ByteArrayWrapper> hashes) {
         logger.trace("Missing blocks to process {}", hashes.size());
 
-        for (ByteArrayWrapper hash : hashes)
+        for (ByteArrayWrapper hash : hashes) {
             this.requestMissingHash(sender, hash);
+        }
     }
 
     private void requestMissingHash(MessageChannel sender, ByteArrayWrapper hash) {
-        if (sender == null)
+        if (sender == null) {
             return;
+        }
 
         unknownBlockHashes.put(hash, 1);
 

@@ -31,11 +31,12 @@ import java.util.Arrays;
  * @author Ariel Mendelzon
  */
 public final class TxSender {
-    private byte[] senderBytes;
 
     public static TxSender fromTx(Transaction tx) {
         return new TxSender(tx.getSender());
     }
+    
+    private byte[] senderBytes;
 
     public TxSender(byte[] senderBytes) {
         this.senderBytes = senderBytes;
@@ -47,11 +48,13 @@ public final class TxSender {
 
     @Override
     public boolean equals(Object other) {
-        if (this == other)
+        if (this == other) {
             return true;
+        }
 
-        if (other == null || this.getClass() != other.getClass())
+        if (other == null || this.getClass() != other.getClass()) {
             return false;
+        }
 
         TxSender otherSender = (TxSender) other;
         return Arrays.equals(getBytes(), otherSender.getBytes());

@@ -28,7 +28,6 @@ import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -90,52 +89,60 @@ public class BridgeStorageProvider {
     }
 
     public List<UTXO> getActiveFederationBtcUTXOs() throws IOException {
-        if (activeFederationBtcUTXOs != null)
+        if (activeFederationBtcUTXOs != null) {
             return activeFederationBtcUTXOs;
+        }
 
         activeFederationBtcUTXOs = getFromRepository(ACTIVE_FEDERATION_BTC_UTXOS_KEY, BridgeSerializationUtils::deserializeUTXOList);
         return activeFederationBtcUTXOs;
     }
 
     public void saveActiveFederationBtcUTXOs() throws IOException {
-        if (activeFederationBtcUTXOs == null)
+        if (activeFederationBtcUTXOs == null) {
             return;
+        }
+
         saveToRepository(ACTIVE_FEDERATION_BTC_UTXOS_KEY, activeFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
     }
 
     public List<UTXO> getRetiringFederationBtcUTXOs() throws IOException {
-        if (retiringFederationBtcUTXOs != null)
+        if (retiringFederationBtcUTXOs != null) {
             return retiringFederationBtcUTXOs;
+        }
 
         retiringFederationBtcUTXOs = getFromRepository(RETIRING_FEDERATION_BTC_UTXOS_KEY, BridgeSerializationUtils::deserializeUTXOList);
         return retiringFederationBtcUTXOs;
     }
 
     public void saveRetiringFederationBtcUTXOs() throws IOException {
-        if (retiringFederationBtcUTXOs == null)
+        if (retiringFederationBtcUTXOs == null) {
             return;
+        }
 
         saveToRepository(RETIRING_FEDERATION_BTC_UTXOS_KEY, retiringFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
     }
 
     public Map<Sha256Hash, Long> getBtcTxHashesAlreadyProcessed() throws IOException {
-        if (btcTxHashesAlreadyProcessed != null)
+        if (btcTxHashesAlreadyProcessed != null) {
             return btcTxHashesAlreadyProcessed;
+        }
 
         btcTxHashesAlreadyProcessed = getFromRepository(BTC_TX_HASHES_ALREADY_PROCESSED_KEY, BridgeSerializationUtils::deserializeMapOfHashesToLong);
         return btcTxHashesAlreadyProcessed;
     }
 
     public void saveBtcTxHashesAlreadyProcessed() {
-        if (btcTxHashesAlreadyProcessed == null)
+        if (btcTxHashesAlreadyProcessed == null) {
             return;
+        }
 
         safeSaveToRepository(BTC_TX_HASHES_ALREADY_PROCESSED_KEY, btcTxHashesAlreadyProcessed, BridgeSerializationUtils::serializeMapOfHashesToLong);
     }
 
     public SortedMap<Sha3Hash, BtcTransaction> getRskTxsWaitingForConfirmations() throws IOException {
-        if (rskTxsWaitingForConfirmations != null)
+        if (rskTxsWaitingForConfirmations != null) {
             return rskTxsWaitingForConfirmations;
+        }
 
         rskTxsWaitingForConfirmations = getFromRepository(
                 RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY,
@@ -145,15 +152,17 @@ public class BridgeStorageProvider {
     }
 
     public void saveRskTxsWaitingForConfirmations() {
-        if (rskTxsWaitingForConfirmations == null)
+        if (rskTxsWaitingForConfirmations == null) {
             return;
+        }
 
         safeSaveToRepository(RSK_TXS_WAITING_FOR_CONFIRMATIONS_KEY, rskTxsWaitingForConfirmations, BridgeSerializationUtils::serializeMap);
     }
 
     public SortedMap<Sha3Hash, BtcTransaction> getRskTxsWaitingForSignatures() throws IOException {
-        if (rskTxsWaitingForSignatures != null)
+        if (rskTxsWaitingForSignatures != null) {
             return rskTxsWaitingForSignatures;
+        }
 
         rskTxsWaitingForSignatures = getFromRepository(
                 RSK_TXS_WAITING_FOR_SIGNATURES_KEY,
@@ -163,15 +172,17 @@ public class BridgeStorageProvider {
     }
 
     public void saveRskTxsWaitingForSignatures() {
-        if (rskTxsWaitingForSignatures == null)
+        if (rskTxsWaitingForSignatures == null) {
             return;
+        }
 
         safeSaveToRepository(RSK_TXS_WAITING_FOR_SIGNATURES_KEY, rskTxsWaitingForSignatures, BridgeSerializationUtils::serializeMap);
     }
 
     public Federation getActiveFederation() {
-        if (activeFederation != null)
+        if (activeFederation != null) {
             return activeFederation;
+        }
 
         activeFederation = safeGetFromRepository(BRIDGE_ACTIVE_FEDERATION_KEY, data -> (data == null)? null :BridgeSerializationUtils.deserializeFederation(data, btcContext));
         return activeFederation;
@@ -186,15 +197,17 @@ public class BridgeStorageProvider {
      * Only saved if a federation was set with BridgeStorageProvider::setActiveFederation
      */
     public void saveActiveFederation() {
-        if (activeFederation == null)
+        if (activeFederation == null) {
             return;
+        }
 
         safeSaveToRepository(BRIDGE_ACTIVE_FEDERATION_KEY, activeFederation, BridgeSerializationUtils::serializeFederation);
     }
 
     public Federation getRetiringFederation() {
-        if (retiringFederation != null)
+        if (retiringFederation != null) {
             return retiringFederation;
+        }
 
         retiringFederation = safeGetFromRepository(BRIDGE_RETIRING_FEDERATION_KEY, data -> (data == null)? null : BridgeSerializationUtils.deserializeFederation(data, btcContext));
         return retiringFederation;
@@ -215,8 +228,9 @@ public class BridgeStorageProvider {
     }
 
     public PendingFederation getPendingFederation() {
-        if (pendingFederation != null)
+        if (pendingFederation != null) {
             return pendingFederation;
+        }
 
         pendingFederation = safeGetFromRepository(BRIDGE_PENDING_FEDERATION_KEY, data -> (data == null)? null : BridgeSerializationUtils.deserializePendingFederation(data));
         return pendingFederation;
@@ -240,15 +254,17 @@ public class BridgeStorageProvider {
      * Save the federation election
      */
     public void saveFederationElection() {
-        if (federationElection == null)
+        if (federationElection == null) {
             return;
+        }
 
         safeSaveToRepository(BRIDGE_FEDERATION_ELECTION_KEY, federationElection, BridgeSerializationUtils::serializeElection);
     }
 
     public ABICallElection getFederationElection(AddressBasedAuthorizer authorizer) {
-        if (federationElection != null)
+        if (federationElection != null) {
             return federationElection;
+        }
 
         federationElection = safeGetFromRepository(BRIDGE_FEDERATION_ELECTION_KEY, data -> (data == null)? new ABICallElection(authorizer) : BridgeSerializationUtils.deserializeElection(data, authorizer));
         return federationElection;
@@ -258,14 +274,17 @@ public class BridgeStorageProvider {
      * Save the lock whitelist
      */
     public void saveLockWhitelist() {
-        if (lockWhitelist == null)
+        if (lockWhitelist == null) {
             return;
+        }
+
         safeSaveToRepository(LOCK_WHITELIST_KEY, lockWhitelist, BridgeSerializationUtils::serializeLockWhitelist);
     }
 
     public LockWhitelist getLockWhitelist() {
-        if (lockWhitelist != null)
+        if (lockWhitelist != null) {
             return lockWhitelist;
+        }
 
         lockWhitelist = safeGetFromRepository(LOCK_WHITELIST_KEY,
             data -> (data == null)?

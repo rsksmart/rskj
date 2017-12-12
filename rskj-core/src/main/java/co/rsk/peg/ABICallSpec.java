@@ -85,11 +85,13 @@ public final class ABICallSpec {
 
     @Override
     public boolean equals(Object other) {
-        if (this == other)
+        if (this == other) {
             return true;
+        }
 
-        if (other == null || this.getClass() != other.getClass())
+        if (other == null || this.getClass() != other.getClass()) {
             return false;
+        }
 
         ABICallSpec otherSpec = ((ABICallSpec) other);
         return otherSpec.getFunction().equals(getFunction()) &&
@@ -103,12 +105,15 @@ public final class ABICallSpec {
     }
 
     private boolean areEqual(byte[][] first, byte[][] second) {
-        if (first.length != second.length)
+        if (first.length != second.length) {
             return false;
+        }
 
-        for (int i = 0; i < first.length; i++)
-            if (!Arrays.equals(first[i], second[i]))
+        for (int i = 0; i < first.length; i++) {
+            if (!Arrays.equals(first[i], second[i])) {
                 return false;
+            }
+        }
 
         return true;
     }

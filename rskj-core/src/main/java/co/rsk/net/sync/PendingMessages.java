@@ -22,8 +22,9 @@ public class PendingMessages {
 
     public boolean isPending(MessageWithId message) {
         long messageId = message.getId();
-        if (!this.messages.containsKey(messageId) || this.messages.get(messageId) != message.getMessageType())
+        if (!this.messages.containsKey(messageId) || this.messages.get(messageId) != message.getMessageType()) {
             return false;
+        }
 
         this.messages.remove(messageId);
 

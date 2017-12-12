@@ -19,19 +19,15 @@
 
 package co.rsk;
 
-import co.rsk.bitcoinj.core.BtcECKey;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.spongycastle.util.encoders.Hex;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 /**
  * Created by ajlopez on 3/9/2016.
- * Used by testnet generator, to generate each node private key and node id
+ * Don't modify
  */
 public class GenNodeKeyId {
     public static void main(String[] args) {
@@ -42,10 +38,11 @@ public class GenNodeKeyId {
         }
 
         ECKey key;
-        if (generator.equals(""))
+        if (generator.equals("")) {
             key = new ECKey();
-        else
+        } else {
             key = ECKey.fromPrivate(HashUtil.sha3(generator.getBytes(StandardCharsets.UTF_8)));
+        }
 
         String keybytes = Hex.toHexString(key.getPrivKeyBytes());
         String pubkeybytes = Hex.toHexString(key.getPubKey());

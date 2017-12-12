@@ -68,16 +68,18 @@ public class TxsPerAccount {
         List<Transaction> newlist = new LinkedList<>();
 
         for (Transaction tx : this.txs) {
-            if (new BigInteger(1, tx.getNonce()).compareTo(nonce) == 0)
+            if (new BigInteger(1, tx.getNonce()).compareTo(nonce) == 0) {
                 continue;
+            }
 
             newlist.add(tx);
         }
 
         this.txs = newlist;
 
-        if (newlist.isEmpty())
+        if (newlist.isEmpty()) {
             this.nextNonce = null;
+        }
     }
 
     @VisibleForTesting

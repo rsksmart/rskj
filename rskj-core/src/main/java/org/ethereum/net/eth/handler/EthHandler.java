@@ -85,8 +85,9 @@ public abstract class EthHandler extends SimpleChannelInboundHandler<EthMessage>
     public void channelRead0(final ChannelHandlerContext ctx, EthMessage msg) throws InterruptedException {
         logger.debug("Read message: " + msg.toString());
 
-        if (EthMessageCodes.inRange(msg.getCommand().asByte(), version))
+        if (EthMessageCodes.inRange(msg.getCommand().asByte(), version)) {
             logger.trace("EthHandler invoke: [{}]", msg.getCommand());
+        }
 
         ethereumListener.trace(String.format("EthHandler invoke: [%s]", msg.getCommand()));
 

@@ -111,8 +111,9 @@ public class GenesisLoader {
 
         Trie state = new TrieImpl(null, true);
 
-        for (ByteArrayWrapper key : premine.keySet())
+        for (ByteArrayWrapper key : premine.keySet()) {
             state = state.put(key.getData(), premine.get(key).getAccountState().getEncoded());
+        }
 
         return state.getHash();
     }

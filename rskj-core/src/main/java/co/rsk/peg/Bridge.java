@@ -294,8 +294,9 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         {
             BridgeParsedData bridgeParsedData = parseData(data);
 
-            if (bridgeParsedData == null)
+            if (bridgeParsedData == null) {
                 return null;
+            }
 
             this.bridgeSupport = setup();
 

@@ -114,25 +114,32 @@ public class PendingStateImpl implements PendingState {
     @Override
     @PostConstruct
     public final synchronized void init() {
-        if (this.repository != null)
+        if (this.repository != null) {
             this.pendingStateRepository = repository.startTracking();
+        }
 
-        if (this.blockChain != null)
+        if (this.blockChain != null) {
             this.bestBlock = blockChain.getBestBlock();
+        }
 
-        if (this.outdatedThreshold == 0)
+        if (this.outdatedThreshold == 0) {
             this.outdatedThreshold = config.txOutdatedThreshold();
-        if (this.outdatedTimeout == 0)
-            this.outdatedTimeout = config.txOutdatedTimeout();
+        }
 
-        if (this.outdatedTimeout > 0)
+        if (this.outdatedTimeout == 0) {
+            this.outdatedTimeout = config.txOutdatedTimeout();
+        }
+
+        if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "PendingStateCleanerTimer"));
+        }
     }
 
     @Override
     public void start() {
-        if (this.outdatedTimeout <= 0 || this.cleanerTimer == null)
+        if (this.outdatedTimeout <= 0 || this.cleanerTimer == null) {
             return;
+        }
 
         this.cleanerFuture = this.cleanerTimer.scheduleAtFixedRate(this::cleanUp, this.outdatedTimeout, this.outdatedTimeout, TimeUnit.SECONDS);
     }
@@ -166,8 +173,9 @@ public class PendingStateImpl implements PendingState {
     public int getOutdatedTimeout() { return outdatedTimeout; }
 
     public synchronized Block getBestBlock() {
-        if (bestBlock == null)
+        if (bestBlock == null) {
             bestBlock = blockChain.getBestBlock();
+        }
 
         return bestBlock;
     }
@@ -180,8 +188,9 @@ public class PendingStateImpl implements PendingState {
         logger.info("Trying add {} wire transactions using block {} {}", transactions.size(), bnumber, getBestBlock().getShortHash());
 
         for (Transaction tx : transactions) {
-            if (!shouldAcceptTx(tx))
+            if (!shouldAcceptTx(tx)) {
                 continue;
+            }
 
             logger.info("Trying add wire transaction nonce {} hash {}", tx.getHash(), toBI(tx.getNonce()));
 
@@ -233,16 +242,18 @@ public class PendingStateImpl implements PendingState {
 
     @Override
     public synchronized void addPendingTransaction(final Transaction tx) {
-        if (!shouldAcceptTx(tx))
+        if (!shouldAcceptTx(tx)) {
             return;
+        }
 
         logger.trace("add pending transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
 
         ByteArrayWrapper hash = new ByteArrayWrapper(tx.getHash());
         Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
 
-        if (pendingTransactions.containsKey(hash))
+        if (pendingTransactions.containsKey(hash)) {
             return;
+        }
 
         pendingTransactions.put(hash, tx);
         transactionBlocks.put(hash, bnumber);
@@ -251,11 +262,12 @@ public class PendingStateImpl implements PendingState {
 
         executeTransaction(tx);
 
-        if (listener != null)
+        if (listener != null) {
             EventDispatchThread.invokeLater(() -> {
                 listener.onPendingTransactionsReceived(Collections.singletonList(tx));
                 listener.onPendingStateChanged(PendingStateImpl.this);
             });
+        }
     }
 
     @Override
@@ -265,19 +277,22 @@ public class PendingStateImpl implements PendingState {
         BlockFork fork = new BlockFork();
         fork.calculate(getBestBlock(), block, blockStore);
 
-        for (Block blk : fork.getOldBlocks())
+        for (Block blk : fork.getOldBlocks()) {
             retractBlock(blk);
+        }
 
-        for (Block blk : fork.getNewBlocks())
+        for (Block blk : fork.getNewBlocks()) {
             acceptBlock(blk);
+        }
 
         removeObsoleteTransactions(block.getNumber(), this.outdatedThreshold, this.outdatedTimeout);
 
         updateState();
         bestBlock = block;
 
-        if (listener != null)
+        if (listener != null) {
             EventDispatchThread.invokeLater(() -> listener.onPendingStateChanged(PendingStateImpl.this));
+        }
     }
 
     @VisibleForTesting
@@ -314,8 +329,9 @@ public class PendingStateImpl implements PendingState {
 
         removeTransactionList(toremove);
 
-        if (timeout > 0)
+        if (timeout > 0) {
             this.removeObsoleteTransactions(timestampSeconds - timeout);
+        }
     }
 
     @VisibleForTesting
@@ -381,8 +397,9 @@ public class PendingStateImpl implements PendingState {
         TransactionSortedSet sorted = new TransactionSortedSet();
         sorted.addAll(pendingTransactions.values());
 
-        for (Transaction tx : sorted.toArray(new Transaction[0]))
+        for (Transaction tx : sorted.toArray(new Transaction[0])) {
             executeTransaction(tx);
+        }
     }
 
     private void executeTransaction(Transaction tx) {
@@ -406,11 +423,13 @@ public class PendingStateImpl implements PendingState {
     }
 
     private long getCurrentBestBlockNumber() {
-        if (bestBlock == null)
+        if (bestBlock == null) {
             bestBlock = this.blockChain.getBestBlock();
+        }
 
-        if (bestBlock == null)
+        if (bestBlock == null) {
             return 0;
+        }
 
         return bestBlock.getNumber();
     }
@@ -443,8 +462,10 @@ public class PendingStateImpl implements PendingState {
     }
 
     private boolean shouldAcceptTx(Transaction tx) {
-        if (bestBlock == null)
+        if (bestBlock == null) {
             return true;
+        }
+
         return validator.isValid(tx, bestBlock.getGasLimitAsInteger());
     }
 

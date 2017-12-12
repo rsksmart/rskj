@@ -47,10 +47,11 @@ public class DisconnectMessage extends P2pMessage {
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
 
         byte[] reasonBytes = paramsList.get(0).getRLPData();
-        if (reasonBytes == null)
+        if (reasonBytes == null) {
             this.reason = REQUESTED;
-        else
+        } else {
             this.reason = ReasonCode.fromInt(reasonBytes[0]);
+        }
 
         parsed = true;
     }

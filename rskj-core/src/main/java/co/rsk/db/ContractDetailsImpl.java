@@ -128,8 +128,9 @@ public class ContractDetailsImpl implements ContractDetails {
 
         value = this.trie.get(key.getData());
 
-        if (value == null || value.length == 0)
+        if (value == null || value.length == 0) {
             return null;
+        }
 
         return new DataWord(value);
     }
@@ -186,15 +187,17 @@ public class ContractDetailsImpl implements ContractDetails {
         this.externalStorage = rlpIsExternalStorage.getRLPData() != null;
         this.originalExternalStorage = this.externalStorage;
 
-        if (this.externalStorage)
+        if (this.externalStorage) {
             this.trie = new TrieImpl(new TrieStoreImpl(levelDbByName(getDataSourceName())), true).getSnapshotTo(rlpStorage.getRLPData());
-        else
+        } else {
             this.trie = TrieImpl.deserialize(rlpStorage.getRLPData());
+        }
 
         this.code = (rlpCode.getRLPData() == null) ? EMPTY_BYTE_ARRAY : rlpCode.getRLPData();
 
-        for (RLPElement key : rlpKeys)
+        for (RLPElement key : rlpKeys) {
             addKey(key.getRLPData());
+        }
 
         logger.trace("decoding contract details from bytes, hash {}, address {}, storage size {}, has external storage {}", this.getStorageHashAsString(), this.getAddressAsString(), this.getStorageSize(), this.hasExternalStorage());
     }
@@ -244,8 +247,9 @@ public class ContractDetailsImpl implements ContractDetails {
     public synchronized Set<DataWord> getStorageKeys() {
         Set<DataWord> result = new HashSet<>();
 
-        for (ByteArrayWrapper key : keys)
+        for (ByteArrayWrapper key : keys) {
             result.add(new DataWord(key));
+        }
 
         return result;
     }
@@ -254,25 +258,28 @@ public class ContractDetailsImpl implements ContractDetails {
     public synchronized Map<DataWord, DataWord> getStorage(@Nullable Collection<DataWord> keys) {
         Map<DataWord, DataWord> storage = new HashMap<>();
 
-        if (keys == null)
+        if (keys == null) {
             for (ByteArrayWrapper keyBytes : this.keys) {
                 DataWord key = new DataWord(keyBytes);
                 DataWord value = get(key);
 
                 // we check if the value is not null,
                 // cause we keep all historical keys
-                if (value != null)
+                if (value != null) {
                     storage.put(key, value);
+                }
             }
-        else
+        } else {
             for (DataWord key : keys) {
                 DataWord value = get(key);
 
                 // we check if the value is not null,
                 // cause we keep all historical keys
-                if (value != null)
+                if (value != null) {
                     storage.put(key, value);
+                }
             }
+        }
 
         return storage;
     }
@@ -284,14 +291,16 @@ public class ContractDetailsImpl implements ContractDetails {
 
     @Override
     public synchronized void setStorage(List<DataWord> storageKeys, List<DataWord> storageValues) {
-        for (int i = 0; i < storageKeys.size(); ++i)
+        for (int i = 0; i < storageKeys.size(); ++i) {
             put(storageKeys.get(i), storageValues.get(i));
+        }
     }
 
     @Override
     public synchronized void setStorage(Map<DataWord, DataWord> storage) {
-        for (Map.Entry<DataWord, DataWord> entry : storage.entrySet())
+        for (Map.Entry<DataWord, DataWord> entry : storage.entrySet()) {
             put(entry.getKey(), entry.getValue());
+        }
     }
 
     @Override
@@ -359,8 +368,9 @@ public class ContractDetailsImpl implements ContractDetails {
         details.externalStorage = this.externalStorage;
         details.originalExternalStorage = this.originalExternalStorage;
 
-        if (this.externalStorage)
+        if (this.externalStorage) {
             levelDbByName(getDataSourceName());
+        }
 
         logger.trace("getting contract details snapshot hash {}, address {}, storage size {}, has external storage {}", details.getStorageHashAsString(), details.getAddressAsString(), details.getStorageSize(), details.hasExternalStorage());
 
@@ -400,18 +410,21 @@ public class ContractDetailsImpl implements ContractDetails {
     private String getAddressAsString() {
         byte[] addr = this.getAddress();
 
-        if (addr == null)
+        if (addr == null) {
             return "";
+        }
 
         return Hex.toHexString(addr);
     }
 
     private void checkDataSourceIsOpened() {
-        if (!this.closed)
+        if (!this.closed) {
             return;
+        }
 
-        if (!this.externalStorage)
+        if (!this.externalStorage) {
             return;
+        }
 
         logger.trace("reopening contract details data source");
         KeyValueDataSource ds = levelDbByName(this.getDataSourceName());
@@ -426,8 +439,9 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
     private static String getHashAsString(byte[] hash) {
-        if (hash == null)
+        if (hash == null) {
             return "";
+        }
 
         return Hex.toHexString(hash);
     }

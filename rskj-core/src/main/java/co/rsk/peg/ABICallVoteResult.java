@@ -18,10 +18,6 @@
 
 package co.rsk.peg;
 
-import org.ethereum.crypto.ECKey;
-
-import java.util.List;
-
 /**
  * Immutable representation of the result of a vote
  * on a given ABI function call.

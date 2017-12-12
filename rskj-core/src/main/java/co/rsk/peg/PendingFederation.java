@@ -93,11 +93,13 @@ public final class PendingFederation {
 
     @Override
     public boolean equals(Object other) {
-        if (this == other)
+        if (this == other) {
             return true;
+        }
 
-        if (other == null || this.getClass() != other.getClass())
+        if (other == null || this.getClass() != other.getClass()) {
             return false;
+        }
 
         PendingFederation otherFederation = (PendingFederation) other;
         ByteArrayWrapper[] thisPublicKeys = this.getPublicKeys().stream()

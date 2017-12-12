@@ -61,8 +61,9 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
         }
 
         List<Transaction> txs = block.getTransactionsList();
-        if (CollectionUtils.isEmpty(txs))
+        if (CollectionUtils.isEmpty(txs)) {
             return true;
+        }
 
         Repository parentRepo = repository.getSnapshotTo(parent.getStateRoot());
 

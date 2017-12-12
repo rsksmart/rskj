@@ -53,13 +53,15 @@ public class Wallet {
         Set<ByteArrayWrapper> keys = new HashSet<>();
 
         synchronized(accessLock) {
-            for (byte[] address: keyDS.keys())
+            for (byte[] address: keyDS.keys()) {
                 keys.add(new ByteArrayWrapper(address));
+            }
 
             keys.addAll(accounts.keySet());
 
-            for (ByteArrayWrapper address: keys)
+            for (ByteArrayWrapper address: keys) {
                 addresses.add(address.getData());
+            }
         }
 
         return addresses;
@@ -92,8 +94,9 @@ public class Wallet {
         ByteArrayWrapper key = new ByteArrayWrapper(address);
 
         synchronized (accessLock) {
-            if (!accounts.containsKey(key))
+            if (!accounts.containsKey(key)) {
                 return null;
+            }
 
             if (unlocksTimeouts.containsKey(key)) {
                 long ending = unlocksTimeouts.get(key);
@@ -112,8 +115,9 @@ public class Wallet {
         synchronized (accessLock) {
             byte[] encrypted = keyDS.get(address);
 
-            if (encrypted == null)
+            if (encrypted == null) {
                 return null;
+            }
 
             return new Account(ECKey.fromPrivate(decryptAES(encrypted, passphrase.getBytes(StandardCharsets.UTF_8))));
         }
@@ -138,8 +142,9 @@ public class Wallet {
         synchronized (accessLock) {
             byte[] encrypted = keyDS.get(address);
 
-            if (encrypted == null)
+            if (encrypted == null) {
                 return false;
+            }
 
             account = new Account(ECKey.fromPrivate(decryptAES(encrypted, passphrase.getBytes(StandardCharsets.UTF_8))));
         }
@@ -153,8 +158,9 @@ public class Wallet {
         synchronized (accessLock) {
             ByteArrayWrapper key = new ByteArrayWrapper(address);
 
-            if (!accounts.containsKey(key))
+            if (!accounts.containsKey(key)) {
                 return false;
+            }
 
             accounts.remove(key);
 

@@ -54,10 +54,11 @@ public class TransactionInfo {
 
         receipt = new TransactionReceipt(receiptRLP.getRLPData());
         blockHash = blockHashRLP.getRLPData();
-        if (indexRLP.getRLPData() == null)
+        if (indexRLP.getRLPData() == null) {
             index = 0;
-        else
+        } else {
             index = BigIntegers.fromUnsignedByteArray(indexRLP.getRLPData()).intValue();
+        }
     }
 
     public void setTransaction(Transaction tx){

@@ -110,42 +110,46 @@ public class DataWord implements Comparable<DataWord> {
     // Assign does not assume data!=null to be able to be called
     // from contructor
     public void assign(byte[] data) {
-        if (data == null)
+        if (data == null) {
             this.data = ByteUtil.EMPTY_BYTE_ARRAY;
-        else if (data.length == 32) {
+        } else if (data.length == 32) {
             this.data = data;
         }
         else if (data.length <= 32) {
-            if (this.data==null)
+            if (this.data==null) {
                 newZeroData();
-                else
+            } else {
                 zero();  // first clear
+            }
             System.arraycopy(data, 0, this.data, 32 - data.length, data.length);
-        }else
+        }else {
             throw new RuntimeException("Data word can't exceed 32 bytes: " + data);
+        }
     }
 
     public void assignDataRange(byte[] data,int ofs,int len) {
-        if (data == null)
+        if (data == null) {
             this.data = ByteUtil.EMPTY_BYTE_ARRAY;
-        else if (len <= 32) {
+        } else if (len <= 32) {
             //if there is not enough data
             // trailing zeros are assumed (this is required  for PUSH opcode semantic
             Arrays.fill(this.data, (byte) 0); // first clear
             int dlen =Integer.min(len,data.length-ofs);
             System.arraycopy(data, ofs, this.data, 32 - len ,dlen );
 
-        } else
+        } else {
             throw new RuntimeException("Data word can't exceed 32 bytes: " + data);
+        }
     }
 
     public void assignData(byte[] data) {
-        if (data == null)
+        if (data == null) {
             this.data = ByteUtil.EMPTY_BYTE_ARRAY;
-        else if (data.length <= 32)
+        } else if (data.length <= 32) {
             System.arraycopy(data, 0, this.data, 32 - data.length, data.length);
-        else
+        } else {
             throw new RuntimeException("Data word can't exceed 32 bytes: " + data);
+        }
     }
 
     public byte[] getData() {
@@ -188,8 +192,9 @@ public class DataWord implements Comparable<DataWord> {
      * @throws ArithmeticException - if this will not fit in an int.
      */
     public int intValueCheck() {
-        if (bitsOccupied()>31)
+        if (bitsOccupied()>31) {
             throw new ArithmeticException();
+        }
 
         return intValue();
     }
@@ -235,8 +240,9 @@ public class DataWord implements Comparable<DataWord> {
      * @throws ArithmeticException - if this will not fit in a long.
      */
     public long longValueCheck() {
-        if (bitsOccupied()>63)
+        if (bitsOccupied()>63) {
             throw new ArithmeticException();
+        }
 
         return longValue();
     }
@@ -266,8 +272,9 @@ public class DataWord implements Comparable<DataWord> {
 
     public boolean isZero() {
         for (int i = this.data.length-1; i>=0;i--) {
-            if (data[i] != 0)
+            if (data[i] != 0) {
                 return false;
+            }
         }
         return true;
     }
@@ -468,8 +475,9 @@ public class DataWord implements Comparable<DataWord> {
             return "";
         }
 
-        if (pref.length < 7)
+        if (pref.length < 7) {
             return Hex.toHexString(pref);
+        }
 
         return Hex.toHexString(pref).substring(0, 6);
     }
@@ -527,8 +535,9 @@ public class DataWord implements Comparable<DataWord> {
     }
 
     public void signExtend(byte k) {
-        if (0 > k || k > 31)
+        if (0 > k || k > 31) {
             throw new IndexOutOfBoundsException();
+        }
         byte mask = this.sValue().testBit((k * 8) + 7) ? (byte) 0xff : 0;
         for (int i = 31; i > k; i--) {
             this.data[31 - i] = mask;
@@ -549,8 +558,9 @@ public class DataWord implements Comparable<DataWord> {
 
     public static int numberOfLeadingZeros(byte i) {
         // UNTESTED: Needs unit testing
-        if (i == 0)
+        if (i == 0) {
             return 8;
+        }
         int n = 0;
         int v = i;
         if (v >>> 4 == 0) {

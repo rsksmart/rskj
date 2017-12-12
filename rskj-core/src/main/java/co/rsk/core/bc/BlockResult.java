@@ -74,9 +74,7 @@ public class BlockResult {
         return this.receiptsRoot;
     }
 
-    public byte[] getLogsBloom() {
-        return this.logsBloom;
-    }
+    public byte[] getLogsBloom() { return this.logsBloom; }
 
     public long getGasUsed() {
         return this.gasUsed;
@@ -91,11 +89,13 @@ public class BlockResult {
         //TODO Fix Trie hash for receipts - doesnt match cpp
         Trie receiptsTrie = new TrieImpl();
 
-        if (receipts == null || receipts.isEmpty())
+        if (receipts == null || receipts.isEmpty()) {
             return HashUtil.EMPTY_TRIE_HASH;
+        }
 
-        for (int i = 0; i < receipts.size(); i++)
+        for (int i = 0; i < receipts.size(); i++) {
             receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
+        }
 
         return receiptsTrie.getHash();
     }

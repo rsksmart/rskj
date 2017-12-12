@@ -57,8 +57,9 @@ public enum Denomination {
         else if(value.compareTo(SZABO.value()) == 1 || value.compareTo(SZABO.value()) == 0) {
             return Float.toString(value.divide(SZABO.value()).floatValue()) +  " SZABO";
         }
-        else
+        else {
             return Float.toString(value.divide(WEI.value()).floatValue()) +  " WEI";
+        }
     }
 
     public static BigInteger weisToSatoshis(BigInteger weis) {

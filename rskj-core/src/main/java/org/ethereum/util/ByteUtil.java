@@ -48,8 +48,9 @@ public class ByteUtil {
     }
 
     public static byte[] cloneBytes(byte[] bytes) {
-        if (bytes == null)
+        if (bytes == null) {
             return EMPTY_BYTE_ARRAY;
+        }
 
         return Arrays.copyOf(bytes, bytes.length);
     }
@@ -63,8 +64,9 @@ public class ByteUtil {
      * @return numBytes byte long array.
      */
     public static byte[] bigIntegerToBytes(BigInteger b, int numBytes) {
-        if (b == null)
+        if (b == null) {
             return EMPTY_BYTE_ARRAY;
+        }
         byte[] bytes = new byte[numBytes];
         byte[] biBytes = b.toByteArray();
         int start = (biBytes.length == numBytes + 1) ? 1 : 0;
@@ -84,8 +86,9 @@ public class ByteUtil {
      *      BigInteger.ZERO will return an array with length 1 and byte-value 0.
      */
     public static byte[] bigIntegerToBytes(BigInteger value) {
-        if (value == null)
+        if (value == null) {
             return EMPTY_BYTE_ARRAY;
+        }
 
         byte[] data = value.toByteArray();
 
@@ -104,8 +107,9 @@ public class ByteUtil {
      */
     public static byte[] parseBytes(byte[] input, int offset, int len) {
 
-        if (offset >= input.length || len == 0)
+        if (offset >= input.length || len == 0) {
             return EMPTY_BYTE_ARRAY;
+        }
 
         byte[] bytes = new byte[len];
         System.arraycopy(input, offset, bytes, 0, Math.min(input.length - offset, len));
@@ -124,8 +128,9 @@ public class ByteUtil {
         int i = 0;
         int length = a.length < b.length ? a.length : b.length;
         while (i < length) {
-            if (a[i] != b[i])
+            if (a[i] != b[i]) {
                 return i;
+            }
             i++;
         }
         return i;
@@ -238,8 +243,9 @@ public class ByteUtil {
      * @return unsigned positive int value.
      */
     public static int byteArrayToInt(byte[] b) {
-        if (b == null || b.length == 0)
+        if (b == null || b.length == 0) {
             return 0;
+        }
         return new BigInteger(1, b).intValue();
     }
 
@@ -252,8 +258,9 @@ public class ByteUtil {
      * @return unsigned positive long value.
      */
     public static long byteArrayToLong(byte[] b) {
-        if (b == null || b.length == 0)
+        if (b == null || b.length == 0) {
             return 0;
+        }
         return new BigInteger(1, b).longValue();
     }
 
@@ -317,8 +324,9 @@ public class ByteUtil {
 
     public static byte[] stripLeadingZeroes(byte[] data) {
 
-        if (data == null)
+        if (data == null) {
             return null;
+        }
 
         final int firstNonZero = firstNonZeroByte(data);
 
@@ -348,8 +356,9 @@ public class ByteUtil {
         int i;
         for (i = bytes.length - 1; i >= startIndex; i--) {
             bytes[i]++;
-            if (bytes[i] != 0)
+            if (bytes[i] != 0) {
                 break;
+            }
         }
         // we return false when all bytes are 0 again
         return (i >= startIndex || bytes[startIndex] != 0);
@@ -381,18 +390,20 @@ public class ByteUtil {
 
     public static byte[] setBit(byte[] data, int pos, int val) {
 
-        if ((data.length * 8) - 1 < pos)
+        if ((data.length * 8) - 1 < pos) {
             throw new Error("outside byte array limit, pos: " + pos);
+        }
 
         int posByte = data.length - 1 - (pos) / 8;
         int posBit = (pos) % 8;
         byte setter = (byte) (1 << (posBit));
         byte toBeSet = data[posByte];
         byte result;
-        if (val == 1)
+        if (val == 1) {
             result = (byte) (toBeSet | setter);
-        else
+        } else {
             result = (byte) (toBeSet & ~setter);
+        }
 
         data[posByte] = result;
         return data;
@@ -400,8 +411,9 @@ public class ByteUtil {
 
     public static int getBit(byte[] data, int pos) {
 
-        if ((data.length * 8) - 1 < pos)
+        if ((data.length * 8) - 1 < pos) {
             throw new Error("outside byte array limit, pos: " + pos);
+        }
 
         int posByte = data.length - 1 - pos / 8;
         int posBit = pos % 8;

@@ -185,10 +185,11 @@ public class RLP {
         final byte[] result = new byte[4];
         for (int i = 0; i < 4; i++) {
             result[i] = decodeOneByteItem(data, index + offset);
-            if ((data[index + offset] & 0xFF) > OFFSET_SHORT_ITEM)
+            if ((data[index + offset] & 0xFF) > OFFSET_SHORT_ITEM) {
                 offset += 2;
-            else
+            } else {
                 offset += 1;
+            }
         }
 
         // return IP address
@@ -197,8 +198,9 @@ public class RLP {
 
     public static int getFirstListElement(byte[] payload, int pos) {
 
-        if (pos >= payload.length)
+        if (pos >= payload.length) {
             return -1;
+        }
 
         if ((payload[pos] & 0xFF) >= OFFSET_LONG_LIST) {
             byte lengthOfLength = (byte) (payload[pos] - OFFSET_LONG_LIST);
@@ -218,8 +220,9 @@ public class RLP {
 
     public static int getNextElementIndex(byte[] payload, int pos) {
 
-        if (pos >= payload.length)
+        if (pos >= payload.length) {
             return -1;
+        }
 
         if ((payload[pos] & 0xFF) >= OFFSET_LONG_LIST) {
             byte lengthOfLength = (byte) (payload[pos] - OFFSET_LONG_LIST);
@@ -262,14 +265,16 @@ public class RLP {
 
         try {
 
-            if (msgData == null || msgData.length == 0)
+            if (msgData == null || msgData.length == 0) {
                 return;
+            }
             int pos = startPos;
 
             while (pos < endPos) {
 
-                if (level == levelToIndex)
+                if (level == levelToIndex) {
                     index.add(pos);
+                }
 
                 // It's a list with a payload more than 55 bytes
                 // data[0] - 0xF7 = how many next bytes allocated
@@ -388,15 +393,17 @@ public class RLP {
      */
     @Nonnull
     public static ArrayList<RLPElement> decode2(@CheckForNull byte[] msgData) {
-        if (msgData == null)
+        if (msgData == null) {
             return new ArrayList<>();
+        }
         return decode(ByteBuffer.wrap(msgData));
     }
 
     @Nullable
     public static RLPElement decode2OneItem(@CheckForNull byte[] msgData, int startPos) {
-        if (msgData == null)
+        if (msgData == null) {
             return null;
+        }
         return RLPElementView.calculateFirstElementInfo(ByteBuffer.wrap(msgData, startPos, msgData.length - startPos))
                 .getOrCreateElement();
     }
@@ -472,10 +479,11 @@ public class RLP {
             return new byte[]{firstByte};
         } else if (length < MAX_ITEM_LENGTH) {
             byte[] binaryLength;
-            if (length > 0xFF)
+            if (length > 0xFF) {
                 binaryLength = intToBytesNoLeadZeroes(length);
-            else
+            } else {
                 binaryLength = new byte[]{(byte) length};
+            }
             byte firstByte = (byte) (binaryLength.length + offset + SIZE_THRESHOLD - 1);
             return concatenate(new byte[]{firstByte}, binaryLength);
         } else {
@@ -494,9 +502,9 @@ public class RLP {
     }
 
     public static byte[] encodeShort(short singleShort) {
-        if ((singleShort & 0xFF) == singleShort)
+        if ((singleShort & 0xFF) == singleShort) {
             return encodeByte((byte) singleShort);
-        else {
+        } else {
             return new byte[]{(byte) (OFFSET_SHORT_ITEM + 2),
                     (byte) (singleShort >> 8 & 0xFF),
                     (byte) (singleShort >> 0 & 0xFF)};
@@ -504,16 +512,16 @@ public class RLP {
     }
 
     public static byte[] encodeInt(int singleInt) {
-        if ((singleInt & 0xFF) == singleInt)
+        if ((singleInt & 0xFF) == singleInt) {
             return encodeByte((byte) singleInt);
-        else if ((singleInt & 0xFFFF) == singleInt)
+        } else if ((singleInt & 0xFFFF) == singleInt) {
             return encodeShort((short) singleInt);
-        else if ((singleInt & 0xFFFFFF) == singleInt)
+        } else if ((singleInt & 0xFFFFFF) == singleInt) {
             return new byte[]{(byte) (OFFSET_SHORT_ITEM + 3),
                     (byte) (singleInt >>> 16),
                     (byte) (singleInt >>> 8),
                     (byte) singleInt};
-        else {
+        } else {
             return new byte[]{(byte) (OFFSET_SHORT_ITEM + 4),
                     (byte) (singleInt >>> 24),
                     (byte) (singleInt >>> 16),
@@ -527,19 +535,20 @@ public class RLP {
     }
 
     public static byte[] encodeBigInteger(BigInteger srcBigInteger) {
-        if (srcBigInteger.equals(BigInteger.ZERO))
+        if (srcBigInteger.equals(BigInteger.ZERO)) {
             return encodeByte((byte) 0);
-        else
+        } else {
             return encodeElement(asUnsignedByteArray(srcBigInteger));
+        }
     }
 
     public static byte[] encodeElement(byte[] srcData) {
 
-        if (isNullOrZeroArray(srcData))
+        if (isNullOrZeroArray(srcData)) {
             return new byte[]{(byte) OFFSET_SHORT_ITEM};
-        else if (isSingleZero(srcData))
+        } else if (isSingleZero(srcData)) {
             return srcData;
-        else if (srcData.length == 1 && (srcData[0] & 0xFF) < OFFSET_SHORT_ITEM) {
+        } else if (srcData.length == 1 && (srcData[0] & 0xFF) < OFFSET_SHORT_ITEM) {
             return srcData;
         } else if (srcData.length < SIZE_THRESHOLD) {
             // length = 8X
@@ -574,11 +583,11 @@ public class RLP {
 
     public static int calcElementPrefixSize(byte[] srcData) {
 
-        if (isNullOrZeroArray(srcData))
+        if (isNullOrZeroArray(srcData)) {
             return 0;
-        else if (isSingleZero(srcData))
+        } else if (isSingleZero(srcData)) {
             return 0;
-        else if (srcData.length == 1 && (srcData[0] & 0xFF) < 0x80) {
+        } else if (srcData.length == 1 && (srcData[0] & 0xFF) < 0x80) {
             return 0;
         } else if (srcData.length < SIZE_THRESHOLD) {
             return 1;
@@ -640,10 +649,11 @@ public class RLP {
 
         if (length < SIZE_THRESHOLD) {
 
-            if (length == 0)
+            if (length == 0) {
                 return new byte[]{(byte) 0x80};
-            else
+            } else {
                 return new byte[]{(byte) (0x80 + length)};
+            }
 
         } else {
 

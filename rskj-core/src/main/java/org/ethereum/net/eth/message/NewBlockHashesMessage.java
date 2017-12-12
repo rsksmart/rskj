@@ -63,8 +63,9 @@ public class NewBlockHashesMessage extends EthMessage {
 
     private void encode() {
         List<byte[]> encodedElements = new ArrayList<>();
-        for (BlockIdentifier identifier : blockIdentifiers)
+        for (BlockIdentifier identifier : blockIdentifiers) {
             encodedElements.add(identifier.getEncoded());
+        }
         byte[][] encodedElementArray = encodedElements.toArray(new byte[encodedElements.size()][]);
         this.encoded = RLP.encodeList(encodedElementArray);
     }

@@ -66,8 +66,9 @@ public class TransactionsMessage extends EthMessage {
 
     private void encode() {
         List<byte[]> encodedElements = new ArrayList<>();
-        for (Transaction tx : transactions)
+        for (Transaction tx : transactions) {
             encodedElements.add(tx.getEncoded());
+        }
         byte[][] encodedElementArray = encodedElements.toArray(new byte[encodedElements.size()][]);
         this.encoded = RLP.encodeList(encodedElementArray);
     }
@@ -104,8 +105,9 @@ public class TransactionsMessage extends EthMessage {
         }
         final StringBuilder sb = new StringBuilder();
         if (transactions.size() < 8) {
-            for (Transaction transaction : transactions)
+            for (Transaction transaction : transactions) {
                 sb.append("\n   ").append(transaction);
+            }
         } else {
             for (int i = 0; i < 3; i++) {
                 sb.append("\n   ").append(transactions.get(i));

@@ -38,12 +38,14 @@ public class PunishmentCalculator {
 
         while (counter-- > 0) {
             result = multiplyExact(result, rate) / 100;
-            if (maxDuration > 0 && result > maxDuration)
+            if (maxDuration > 0 && result > maxDuration) {
                 return maxDuration;
+            }
         }
 
-        if (score < 0)
+        if (score < 0) {
             result *= -score;
+        }
 
         return maxDuration > 0 ? Math.min(maxDuration, result) : result;
     }

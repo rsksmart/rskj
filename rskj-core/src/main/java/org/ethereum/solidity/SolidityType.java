@@ -170,8 +170,9 @@ public abstract class SolidityType {
 
         @Override
         public byte[] encodeList(List l) {
-            if (l.size() != size)
+            if (l.size() != size) {
                 throw new RuntimeException("List size (" + l.size() + ") != " + size + " for type " + getName());
+            }
             byte[][] elems = new byte[size][];
             for (int i = 0; i < l.size(); i++) {
                 elems[i] = elementType.encode(l.get(i));

@@ -26,8 +26,9 @@ public class BitSet {
     private int size;
 
     public BitSet(int size) {
-        if (size < 0)
+        if (size < 0) {
             throw new IllegalArgumentException(String.format("Negative size: %s", size));
+        }
 
         this.size = size;
         int bsize = (size + 7) / 8;
@@ -35,8 +36,9 @@ public class BitSet {
     }
 
     public void set(int position) {
-        if (position < 0 || position >= this.size)
+        if (position < 0 || position >= this.size) {
             throw new IndexOutOfBoundsException(String.format("Index: %s, Size: %s", position, this.size));
+        }
         
         int offset = position / 8;
         int bitoffset = position % 8;
@@ -45,13 +47,15 @@ public class BitSet {
     }
 
     public void setAll() {
-        for (int k = 0; k < bytes.length; k++)
-            bytes[k] = (byte)0xff;
+        for (int k = 0; k < bytes.length; k++) {
+            bytes[k] = (byte) 0xff;
+        }
     }
 
     public boolean get(int position) {
-        if (position < 0 || position >= this.size)
+        if (position < 0 || position >= this.size) {
             throw new IndexOutOfBoundsException(String.format("Index: %s, Size: %s", position, this.size));
+        }
 
         int offset = position / 8;
         int bitoffset = position % 8;

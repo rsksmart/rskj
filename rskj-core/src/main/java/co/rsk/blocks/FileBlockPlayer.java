@@ -49,8 +49,9 @@ public class FileBlockPlayer implements BlockPlayer, AutoCloseable {
         try {
             String line = this.reader.readLine();
 
-            if (line == null)
+            if (line == null) {
                 return null;
+            }
 
             String[] parts = line.split(",");
 

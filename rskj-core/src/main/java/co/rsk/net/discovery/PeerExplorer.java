@@ -109,7 +109,6 @@ public class PeerExplorer {
 
     public void handleMessage(DiscoveryEvent event) {
         DiscoveryMessageType type = event.getMessage().getMessageType();
-
         if (type == DiscoveryMessageType.PING) {
             this.handlePingMessage(event.getAddressIp(), (PingPeerMessage) event.getMessage());
         }
@@ -145,7 +144,6 @@ public class PeerExplorer {
         if (request != null && request.validateMessageResponse(message)) {
             this.pendingPingRequests.remove(message.getMessageId());
             NodeChallenge challenge = this.challengeManager.removeChallenge(message.getMessageId());
-
             if (challenge == null) {
                 this.addConnection(message, ip, message.getPort());
             }

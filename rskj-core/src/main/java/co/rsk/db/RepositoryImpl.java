@@ -102,8 +102,9 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
 
         accountData = this.trie.get(addr);
 
-        if (accountData != null && accountData.length != 0)
+        if (accountData != null && accountData.length != 0) {
             result = new AccountState(accountData);
+        }
 
         return result;
     }
@@ -145,11 +146,14 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
         // saved in the account
         AccountState accountState = getAccountState(addr);
         byte[] storageRoot = EMPTY_TRIE_HASH;
-        if (accountState != null)
+        if (accountState != null) {
             storageRoot = getAccountState(addr).getStateRoot();
+        }
+
         ContractDetails details =  detailsDataStore.get(addr);
-        if (details != null)
+        if (details != null) {
             details = details.getSnapshotTo(storageRoot);
+        }
 
         return  details;
     }
@@ -173,18 +177,21 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
 
     @Override
     public synchronized byte[] getCode(byte[] addr) {
-        if (!isExist(addr))
+        if (!isExist(addr)) {
             return EMPTY_BYTE_ARRAY;
+        }
 
         AccountState  account = getAccountState(addr);
 
-        if (account.isHibernated())
+        if (account.isHibernated()) {
             return EMPTY_BYTE_ARRAY;
+        }
 
         byte[] codeHash = account.getCodeHash();
 
-        if (Arrays.equals(codeHash, EMPTY_DATA_HASH))
+        if (Arrays.equals(codeHash, EMPTY_DATA_HASH)) {
             return EMPTY_BYTE_ARRAY;
+        }
 
         ContractDetails details = getContractDetails(addr);
         return (details == null) ? null : details.getCode();
@@ -249,9 +256,11 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     public synchronized Set<ByteArrayWrapper> getAccountsKeys() {
         Set<ByteArrayWrapper> result = new HashSet<>();
 
-        for (ByteArrayWrapper key : detailsDataStore.keys())
-            if (this.isExist(key.getData()))
+        for (ByteArrayWrapper key : detailsDataStore.keys()) {
+            if (this.isExist(key.getData())) {
                 result.add(key);
+            }
+        }
 
         return result;
     }
@@ -268,11 +277,13 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
 
     @Override
     public synchronized void flush() {
-        if (this.detailsDataStore != null)
+        if (this.detailsDataStore != null) {
             this.detailsDataStore.flush();
+        }
 
-        if (this.store != null)
+        if (this.store != null) {
             this.trie.save();
+        }
     }
 
     @Override
@@ -326,8 +337,9 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
                 logger.debug("delete: [{}]",
                         Hex.toHexString(hash.getData()));
             } else {
-                if (!contractDetails.isDirty())
+                if (!contractDetails.isDirty()) {
                     continue;
+                }
 
                 ContractDetailsCacheImpl contractDetailsCache = (ContractDetailsCacheImpl) contractDetails;
 
@@ -343,8 +355,9 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
                 byte[] data = hash.getData();
                 updateContractDetails(data, contractDetails);
 
-                if (!Arrays.equals(accountState.getCodeHash(), EMPTY_TRIE_HASH))
+                if (!Arrays.equals(accountState.getCodeHash(), EMPTY_TRIE_HASH)) {
                     accountState.setStateRoot(contractDetails.getStorageHash());
+                }
 
                 updateAccountState(data, accountState);
             }
@@ -358,8 +371,9 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
 
     @Override
     public synchronized byte[] getRoot() {
-        if (this.trie.hasStore())
+        if (this.trie.hasStore()) {
             this.trie.save();
+        }
 
         byte[] rootHash = this.trie.getHash();
 

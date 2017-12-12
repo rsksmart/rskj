@@ -66,16 +66,18 @@ public class PeerScoringManager {
     public void recordEvent(NodeID id, InetAddress address, EventType event) {
         synchronized (accessLock) {
             if (id != null) {
-                if (!peersByNodeID.containsKey(id))
+                if (!peersByNodeID.containsKey(id)) {
                     peersByNodeID.put(id, new PeerScoring());
+                }
 
                 PeerScoring scoring = peersByNodeID.get(id);
                 recordEvent(scoring, event, this.nodePunishmentCalculator);
             }
 
             if (address != null) {
-                if (!peersByAddress.containsKey(address))
+                if (!peersByAddress.containsKey(address)) {
                     peersByAddress.put(address, new PeerScoring());
+                }
 
                 PeerScoring scoring = peersByAddress.get(address);
                 recordEvent(scoring, event, this.ipPunishmentCalculator);
@@ -103,8 +105,9 @@ public class PeerScoringManager {
      */
     public boolean hasGoodReputation(InetAddress address)
     {
-        if (this.addressTable.contains(address))
+        if (this.addressTable.contains(address)) {
             return false;
+        }
 
         synchronized (accessLock) {
             return this.getPeerScoring(address).hasGoodReputation();
@@ -128,10 +131,11 @@ public class PeerScoringManager {
      * @param address   the address or address block to be banned
      */
     public void banAddress(String address) throws InvalidInetAddressException {
-        if (InetAddressUtils.hasMask(address))
+        if (InetAddressUtils.hasMask(address)) {
             this.banAddressBlock(InetAddressUtils.parse(address));
-        else
+        } else {
             this.banAddress(InetAddressUtils.getAddressForBan(address));
+        }
     }
 
     /**
@@ -151,10 +155,11 @@ public class PeerScoringManager {
      * @param address   the address or address block to be removed
      */
     public void unbanAddress(String address) throws InvalidInetAddressException {
-        if (InetAddressUtils.hasMask(address))
+        if (InetAddressUtils.hasMask(address)) {
             this.unbanAddressBlock(InetAddressUtils.parse(address));
-        else
+        } else {
             this.unbanAddress(InetAddressUtils.getAddressForBan(address));
+        }
     }
 
     /**
@@ -217,8 +222,9 @@ public class PeerScoringManager {
     @VisibleForTesting
     public PeerScoring getPeerScoring(NodeID id) {
         synchronized (accessLock) {
-            if (peersByNodeID.containsKey(id))
+            if (peersByNodeID.containsKey(id)) {
                 return peersByNodeID.get(id);
+            }
 
             return new PeerScoring();
         }
@@ -227,8 +233,9 @@ public class PeerScoringManager {
     @VisibleForTesting
     public PeerScoring getPeerScoring(InetAddress address) {
         synchronized (accessLock) {
-            if (peersByAddress.containsKey(address))
+            if (peersByAddress.containsKey(address)) {
                 return peersByAddress.get(address);
+            }
 
             return new PeerScoring();
         }
@@ -245,7 +252,8 @@ public class PeerScoringManager {
         scoring.recordEvent(event);
         boolean reputation = scoringCalculator.hasGoodReputation(scoring);
 
-        if (!reputation && scoring.hasGoodReputation())
+        if (!reputation && scoring.hasGoodReputation()) {
             scoring.startPunishment(calculator.calculate(scoring.getPunishmentCounter(), scoring.getScore()));
+        }
     }
 }

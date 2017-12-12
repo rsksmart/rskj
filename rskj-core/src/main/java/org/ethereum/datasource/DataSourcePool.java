@@ -55,18 +55,21 @@ public class DataSourcePool {
     public static void closeDataSource(String name){
         DataSourceEx dataSourceEx = pool.get(name);
 
-        if (dataSourceEx == null)
+        if (dataSourceEx == null) {
             return;
+        }
 
         DataSource dataSource = dataSourceEx.getDataSource();
 
-        if (dataSource instanceof HashMapDB)
+        if (dataSource instanceof HashMapDB) {
             return;
+        }
 
         dataSourceEx.release();
 
-        if (dataSourceEx.getUseCounter() > 0)
+        if (dataSourceEx.getUseCounter() > 0) {
             return;
+        }
 
         pool.remove(name);
 

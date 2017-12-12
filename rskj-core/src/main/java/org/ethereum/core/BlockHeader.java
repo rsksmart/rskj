@@ -107,16 +107,19 @@ public class BlockHeader implements SerializableObject {
         this.unclesHash = rlpHeader.get(1).getRLPData();
         this.coinbase = rlpHeader.get(2).getRLPData();
         this.stateRoot = rlpHeader.get(3).getRLPData();
-        if (this.stateRoot == null)
+        if (this.stateRoot == null) {
             this.stateRoot = EMPTY_TRIE_HASH;
+        }
 
         this.txTrieRoot = rlpHeader.get(4).getRLPData();
-        if (this.txTrieRoot == null)
+        if (this.txTrieRoot == null) {
             this.txTrieRoot = EMPTY_TRIE_HASH;
+        }
 
         this.receiptTrieRoot = rlpHeader.get(5).getRLPData();
-        if (this.receiptTrieRoot == null)
+        if (this.receiptTrieRoot == null) {
             this.receiptTrieRoot = EMPTY_TRIE_HASH;
+        }
 
         this.logsBloom = rlpHeader.get(6).getRLPData();
         this.difficulty = rlpHeader.get(7).getRLPData();
@@ -235,8 +238,9 @@ public class BlockHeader implements SerializableObject {
 
     public void setUnclesHash(byte[] unclesHash) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter uncles hash");
+        }
 
         this.unclesHash = unclesHash;
     }
@@ -247,8 +251,9 @@ public class BlockHeader implements SerializableObject {
 
     public void setCoinbase(byte[] coinbase) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter coinbase");
+        }
 
         this.coinbase = coinbase;
     }
@@ -259,8 +264,9 @@ public class BlockHeader implements SerializableObject {
 
     public void setStateRoot(byte[] stateRoot) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter state root");
+        }
 
         this.stateRoot = stateRoot;
     }
@@ -271,8 +277,9 @@ public class BlockHeader implements SerializableObject {
 
     public void setReceiptsRoot(byte[] receiptTrieRoot) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter receipts root");
+        }
 
         this.receiptTrieRoot = receiptTrieRoot;
     }
@@ -283,8 +290,9 @@ public class BlockHeader implements SerializableObject {
 
     public void setTransactionsRoot(byte[] stateRoot) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter transactions root");
+        }
 
         this.txTrieRoot = stateRoot;
     }
@@ -304,8 +312,9 @@ public class BlockHeader implements SerializableObject {
 
     public void setDifficulty(byte[] difficulty) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter difficulty");
+        }
 
         this.difficulty = difficulty;
     }
@@ -316,8 +325,9 @@ public class BlockHeader implements SerializableObject {
 
     public void setTimestamp(long timestamp) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter timestamp");
+        }
 
         this.timestamp = timestamp;
     }
@@ -328,8 +338,9 @@ public class BlockHeader implements SerializableObject {
 
     public void setNumber(long number) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter number");
+        }
 
         this.number = number;
     }
@@ -340,8 +351,9 @@ public class BlockHeader implements SerializableObject {
 
     public void setGasLimit(byte[] gasLimit) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter gas limit");
+        }
 
         this.gasLimit = gasLimit;
     }
@@ -352,8 +364,9 @@ public class BlockHeader implements SerializableObject {
 
     public void setPaidFees(long paidFees) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter paid fees");
+        }
 
         this.paidFees = paidFees;
     }
@@ -364,8 +377,9 @@ public class BlockHeader implements SerializableObject {
 
     public void setGasUsed(long gasUsed) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter gas used");
+        }
 
         this.gasUsed = gasUsed;
     }
@@ -376,16 +390,18 @@ public class BlockHeader implements SerializableObject {
 
     public void setLogsBloom(byte[] logsBloom) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter logs bloom");
+        }
 
         this.logsBloom = logsBloom;
     }
 
     public void setExtraData(byte[] extraData) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter extra data");
+        }
 
         this.extraData = extraData;
     }
@@ -408,8 +424,9 @@ public class BlockHeader implements SerializableObject {
 
     public void setMinimumGasPrice(byte[] minimumGasPrice) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter minimum gas price");
+        }
 
         this.minimumGasPrice = minimumGasPrice;
     }
@@ -476,14 +493,17 @@ public class BlockHeader implements SerializableObject {
     }
 
     public boolean hasMiningFields() {
-        if (this.bitcoinMergedMiningCoinbaseTransaction != null && this.bitcoinMergedMiningCoinbaseTransaction.length > 0)
+        if (this.bitcoinMergedMiningCoinbaseTransaction != null && this.bitcoinMergedMiningCoinbaseTransaction.length > 0) {
             return true;
+        }
 
-        if (this.bitcoinMergedMiningHeader != null && this.bitcoinMergedMiningHeader.length > 0)
+        if (this.bitcoinMergedMiningHeader != null && this.bitcoinMergedMiningHeader.length > 0) {
             return true;
+        }
 
-        if (this.bitcoinMergedMiningMerkleProof != null && this.bitcoinMergedMiningMerkleProof.length > 0)
+        if (this.bitcoinMergedMiningMerkleProof != null && this.bitcoinMergedMiningMerkleProof.length > 0) {
             return true;
+        }
 
         return false;
     }
@@ -546,8 +566,9 @@ public class BlockHeader implements SerializableObject {
 
     public void setBitcoinMergedMiningHeader(byte[] bitcoinMergedMiningHeader) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter bitcoin merged mining header");
+        }
 
         this.bitcoinMergedMiningHeader = bitcoinMergedMiningHeader;
     }
@@ -558,8 +579,9 @@ public class BlockHeader implements SerializableObject {
 
     public void setBitcoinMergedMiningMerkleProof(byte[] bitcoinMergedMiningMerkleProof) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter bitcoin merged mining merkle proof");
+        }
 
         this.bitcoinMergedMiningMerkleProof = bitcoinMergedMiningMerkleProof;
     }
@@ -570,8 +592,9 @@ public class BlockHeader implements SerializableObject {
 
     public void setBitcoinMergedMiningCoinbaseTransaction(byte[] bitcoinMergedMiningCoinbaseTransaction) {
         /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter bitcoin merged mining coinbase transaction");
+        }
 
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
     }

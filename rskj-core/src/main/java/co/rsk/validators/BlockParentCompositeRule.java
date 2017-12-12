@@ -38,8 +38,9 @@ public class BlockParentCompositeRule implements BlockParentDependantValidationR
         this.rules = new ArrayList<>();
         if(rules != null) {
             for (BlockParentDependantValidationRule rule : rules) {
-                if(rule != null)
+                if(rule != null) {
                     this.rules.add(rule);
+                }
             }
         }
     }

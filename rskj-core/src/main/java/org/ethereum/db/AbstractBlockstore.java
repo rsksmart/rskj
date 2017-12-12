@@ -42,8 +42,9 @@ public abstract class AbstractBlockstore implements BlockStore {
     public Block getBlockByHashAndDepth(byte[] hash, long depth) {
         Block block = this.getBlockByHash(hash);
 
-        for (long i = 0; i < depth; i++)
+        for (long i = 0; i < depth; i++) {
             block = this.getBlockByHash(block.getParentHash());
+        }
 
         return block;
     }

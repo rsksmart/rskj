@@ -76,9 +76,9 @@ public class ContractDetailsCacheImpl implements ContractDetails {
     public DataWord get(DataWord key) {
 
         DataWord value = storage.get(key);
-        if (value != null)
+        if (value != null) {
             value = value.clone();
-        else{
+        } else{
             if (origContract == null) {
                 return null;
             }
@@ -87,19 +87,20 @@ public class ContractDetailsCacheImpl implements ContractDetails {
             storage.put(key.clone(), value == null ? DataWord.ZERO.clone() : value.clone());
         }
 
-        if (value == null || value.isZero())
+        if (value == null || value.isZero()) {
             return null;
-        else
+        } else {
             return value;
+        }
     }
 
     @Override
     public byte[] getBytes(DataWord key) {
 
         byte[] value = bytesStorage.get(key);
-        if (value != null)
+        if (value != null) {
             value = value.clone();
-        else{
+        } else{
             if (origContract == null) {
                 return null;
             }
@@ -108,10 +109,11 @@ public class ContractDetailsCacheImpl implements ContractDetails {
             bytesStorage.put(key.clone(), value == null ? null : value.clone());
         }
 
-        if (value == null)
+        if (value == null) {
             return null;
-        else
+        } else {
             return value;
+        }
     }
 
     @Override
@@ -218,8 +220,9 @@ public class ContractDetailsCacheImpl implements ContractDetails {
             DataWord key   = storageKeys.get(i);
             DataWord value = storageValues.get(i);
 
-            if (value.isZero())
+            if (value.isZero()) {
                 storage.put(key, null);
+            }
         }
 
     }

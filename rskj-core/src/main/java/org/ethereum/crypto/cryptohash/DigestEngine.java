@@ -191,8 +191,9 @@ public abstract class DigestEngine implements Digest {
 	{
 		while (len > 0) {
 			int copyLen = blockLen - inputLen;
-			if (copyLen > len)
-				copyLen = len;
+			if (copyLen > len) {
+                copyLen = len;
+            }
 			System.arraycopy(input, offset, inputBuf, inputLen,
 				copyLen);
 			offset += copyLen;

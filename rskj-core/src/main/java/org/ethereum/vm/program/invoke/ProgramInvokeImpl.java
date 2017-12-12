@@ -192,10 +192,12 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         int size = 32; // maximum datavalue size
 
         if (msgData == null || index >= msgData.length
-                || tempIndex.compareTo(maxMsgData) == 1)
+                || tempIndex.compareTo(maxMsgData) == 1) {
             return new DataWord();
-        if (index + size > msgData.length)
+        }
+        if (index + size > msgData.length) {
             size = msgData.length - index;
+        }
 
         byte[] data = new byte[32];
         System.arraycopy(msgData, index, data, 0, size);

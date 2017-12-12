@@ -61,39 +61,49 @@ public class ModuleDescription {
     }
 
     public boolean methodIsInModule(String methodName) {
-        if (methodName == null)
+        if (methodName == null) {
             return false;
+        }
 
-        if (!methodName.startsWith(this.name))
+        if (!methodName.startsWith(this.name)) {
             return false;
+        }
 
-        if (methodName.length() == this.name.length())
+        if (methodName.length() == this.name.length()) {
             return false;
+        }
 
-        if (methodName.charAt(this.name.length()) != '_')
+        if (methodName.charAt(this.name.length()) != '_') {
             return false;
+        }
 
         return true;
     }
 
     public boolean methodIsEnable(String methodName) {
-        if (!this.isEnabled())
+        if (!this.isEnabled()) {
             return false;
+        }
 
-        if (!this.methodIsInModule(methodName))
+        if (!this.methodIsInModule(methodName)) {
             return false;
+        }
 
-        if (this.disabledMethods.contains(methodName))
+        if (this.disabledMethods.contains(methodName)) {
             return false;
+        }
 
-        if (this.enabledMethods.isEmpty() && this.disabledMethods.isEmpty())
+        if (this.enabledMethods.isEmpty() && this.disabledMethods.isEmpty()) {
             return true;
+        }
 
-        if (this.enabledMethods.contains(methodName))
+        if (this.enabledMethods.contains(methodName)) {
             return true;
+        }
 
-        if (!this.enabledMethods.isEmpty())
+        if (!this.enabledMethods.isEmpty()) {
             return false;
+        }
 
         return true;
     }

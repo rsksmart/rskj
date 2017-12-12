@@ -49,8 +49,9 @@ public class FamilyUtils {
     public static Set<ByteArrayWrapper> getAncestors(BlockStore blockStore, long blockNumber, byte[] parentHash, int limitNum) {
         Set<ByteArrayWrapper> ret = new HashSet<>();
 
-        if (blockStore == null)
+        if (blockStore == null) {
             return ret;
+        }
 
         int limit = (int) max(0, blockNumber - limitNum);
         Block it = blockStore.getBlockByHash(parentHash);
@@ -79,15 +80,17 @@ public class FamilyUtils {
     public static Set<ByteArrayWrapper> getUsedUncles(BlockStore blockStore, long blockNumber, byte[] parentHash, int limitNum) {
         Set<ByteArrayWrapper> ret = new HashSet<>();
 
-        if (blockStore == null)
+        if (blockStore == null) {
             return ret;
+        }
 
         long minNumber = max(0, blockNumber - limitNum);
         Block it = blockStore.getBlockByHash(parentHash);
 
         while(it != null && it.getNumber() >= minNumber) {
-            for (BlockHeader uncle : it.getUncleList())
+            for (BlockHeader uncle : it.getUncleList()) {
                 ret.add(new ByteArrayWrapper(uncle.getHash()));
+            }
             it = blockStore.getBlockByHash(it.getParentHash());
         }
 
@@ -105,8 +108,9 @@ public class FamilyUtils {
         for (ByteArrayWrapper uncleHash : unclesHeaders) {
             Block uncle = store.getBlockByHash(uncleHash.getData());
 
-            if (uncle != null)
+            if (uncle != null) {
                 uncles.add(uncle.getHeader());
+            }
         }
 
         return uncles;
@@ -142,8 +146,9 @@ public class FamilyUtils {
             parent = store.getBlockByHash(parent.getParentHash());
         }
 
-        for (Block b : ancestors)
+        for (Block b : ancestors) {
             family.add(new ByteArrayWrapper(b.getHash()));
+        }
 
         for (int k = 1; k < ancestors.size(); k++) {
             Block ancestorParent = ancestors.get(k - 1);
@@ -151,10 +156,12 @@ public class FamilyUtils {
             List<Block> uncles = store.getChainBlocksByNumber(ancestor.getNumber());
 
             for (Block uncle : uncles) {
-                if (!Arrays.equals(ancestorParent.getHash(), uncle.getParentHash()))
+                if (!Arrays.equals(ancestorParent.getHash(), uncle.getParentHash())) {
                     continue;
-                if (Arrays.equals(ancestor.getHash(), uncle.getHash()))
+                }
+                if (Arrays.equals(ancestor.getHash(), uncle.getHash())) {
                     continue;
+                }
                 family.add(new ByteArrayWrapper(uncle.getHash()));
             }
         }

@@ -25,8 +25,6 @@ import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.ECKey;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 import java.time.Instant;
@@ -35,8 +33,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class BridgeDevNetConstants extends BridgeConstants {
-    private static final Logger logger = LoggerFactory.getLogger("BridgeDevNetConstants");
-
     private static BridgeDevNetConstants instance = new BridgeDevNetConstants();
 
     BridgeDevNetConstants() {

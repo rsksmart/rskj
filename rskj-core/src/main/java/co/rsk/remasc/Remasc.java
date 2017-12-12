@@ -159,10 +159,11 @@ public class Remasc {
         for (int k = 0; k < nfederators; k++) {
             byte[] federatorAddress = federationProvider.getFederatorAddress(k);
 
-            if (k == nfederators - 1 && restToLastFederator.compareTo(BigInteger.ZERO) > 0)
+            if (k == nfederators - 1 && restToLastFederator.compareTo(BigInteger.ZERO) > 0) {
                 feesPayer.payMiningFees(processingBlockHash, payToFederator.add(restToLastFederator), federatorAddress, logs);
-            else
+            } else {
                 feesPayer.payMiningFees(processingBlockHash, payToFederator, federatorAddress, logs);
+            }
 
             paidToFederation = paidToFederation.add(payToFederator);
         }
@@ -207,8 +208,10 @@ public class Remasc {
         if (CollectionUtils.isNotEmpty(uncles)) {
             for (BlockHeader uncleHeader : uncles) {
                 List<Sibling> siblings = provider.getSiblings().get(uncleHeader.getNumber());
-                if (siblings == null)
+                if (siblings == null) {
                     siblings = new ArrayList<>();
+                }
+
                 siblings.add(new Sibling(uncleHeader, executionBlock.getHeader().getCoinbase(), executionBlock.getNumber()));
                 provider.getSiblings().put(uncleHeader.getNumber(), siblings);
             }
@@ -253,8 +256,5 @@ public class Remasc {
         }
     }
 
-    private void transfer(byte[] toAddr, BigInteger value) {
-        BIUtil.transfer(repository, Hex.decode(PrecompiledContracts.REMASC_ADDR), toAddr, value);
-    }
 }
 

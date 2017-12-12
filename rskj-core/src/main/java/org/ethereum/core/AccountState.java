@@ -178,7 +178,9 @@ public class AccountState {
                 this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash, stateFlags);
             } else
                 // do not serialize if zero to keep compatibility
-            this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash);
+            {
+                this.rlpEncoded = RLP.encodeList(nonce, balance, stateRoot, codeHash);
+            }
         }
         return rlpEncoded;
     }

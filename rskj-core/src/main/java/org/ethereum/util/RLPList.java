@@ -42,14 +42,16 @@ public class RLPList extends ArrayList<RLPElement> implements RLPElement {
 
     public static void recursivePrint(RLPElement element) {
 
-        if (element == null)
+        if (element == null) {
             throw new RuntimeException("RLPElement object can't be null");
+        }
         if (element instanceof RLPList) {
 
             RLPList rlpList = (RLPList) element;
             System.out.print("[");
-            for (RLPElement singleElement : rlpList)
+            for (RLPElement singleElement : rlpList) {
                 recursivePrint(singleElement);
+            }
             System.out.print("]");
         } else {
             String hex = ByteUtil.toHexString(element.getRLPData());
@@ -59,8 +61,9 @@ public class RLPList extends ArrayList<RLPElement> implements RLPElement {
 
     public static void recursivePrint(@Nonnull ArrayList<RLPElement> list) {
         System.out.print('[');
-        for (RLPElement singleElement : list)
+        for (RLPElement singleElement : list) {
             recursivePrint(singleElement);
+        }
         System.out.print(']');
     }
 }

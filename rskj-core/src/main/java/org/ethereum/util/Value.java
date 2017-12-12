@@ -150,14 +150,16 @@ public class Value {
      * *****************/
 
     public byte[] encode() {
-        if (rlp == null)
+        if (rlp == null) {
             rlp = RLP.encode(value);
+        }
         return rlp;
     }
 
     public byte[] hash(){
-        if (sha3 == null)
+        if (sha3 == null) {
             sha3 = HashUtil.sha3(encode());
+        }
         return sha3;
     }
 
@@ -217,8 +219,9 @@ public class Value {
         for (byte aData : data) {
 
             if ((aData >= 48 && aData <= 57)
-                    || (aData >= 97 && aData <= 102))
+                    || (aData >= 97 && aData <= 102)) {
                 ++hexChars;
+            }
         }
 
         return (double) hexChars / (double) data.length > 0.9;
@@ -296,8 +299,9 @@ public class Value {
                 } else {
                     stringBuilder.append(val.toString());
                 }
-                if (i < list.length - 1)
+                if (i < list.length - 1) {
                     stringBuilder.append(", ");
+                }
             }
             stringBuilder.append("] ");
 

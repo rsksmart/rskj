@@ -133,8 +133,9 @@ public class MessageQueue {
             if (waitingMessage.getAnswerMessage() != null
                     && msg.getClass() == waitingMessage.getAnswerMessage()) {
                 messageRoundtrip.answer();
-                if (waitingMessage instanceof EthMessage)
+                if (waitingMessage instanceof EthMessage) {
                     channel.getPeerStats().pong(messageRoundtrip.lastTimestamp);
+                }
                 logger.trace("Message round trip covered: [{}] ",
                         messageRoundtrip.getMsg().getClass());
             }
@@ -142,8 +143,9 @@ public class MessageQueue {
     }
 
     private void removeAnsweredMessage(MessageRoundtrip messageRoundtrip) {
-        if (messageRoundtrip != null && messageRoundtrip.isAnswered())
+        if (messageRoundtrip != null && messageRoundtrip.isAnswered()) {
             requestQueue.remove();
+        }
     }
 
     private void nudgeQueue() {

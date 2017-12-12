@@ -77,8 +77,9 @@ public class TxBuilder {
                     BigInteger nonce = accountState.getNonce();
 
                     while (!stop) {
-                        if ((random.nextInt() % 10) == 0)
+                        if ((random.nextInt() % 10) == 0) {
                             nonce = repository.getAccountState(key.getAddress()).getNonce();
+                        }
 
                         TxBuilder.this.createNewTx(nonce);
                         

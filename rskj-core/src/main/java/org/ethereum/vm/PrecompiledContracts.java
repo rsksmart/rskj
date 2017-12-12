@@ -90,8 +90,9 @@ public class PrecompiledContracts {
         if (address.isHex(BIG_INT_MODEXP_ADDR)) {
             return bigIntegerModexp;
         }
-        if (address.isHex(REMASC_ADDR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + REMASC_ADDR))
+        if (address.isHex(REMASC_ADDR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + REMASC_ADDR)) {
             return new RemascContract(REMASC_ADDR, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(RskSystemProperties.CONFIG.netName()));
+        }
 
         return null;
     }
@@ -175,7 +176,9 @@ public class PrecompiledContracts {
             if (data == null) {
                 result = HashUtil.ripemd160(ByteUtil.EMPTY_BYTE_ARRAY);
             }
-            else result = HashUtil.ripemd160(data);
+            else {
+                result = HashUtil.ripemd160(data);
+            }
 
             return new DataWord(result).getData();
         }
@@ -286,8 +289,9 @@ public class PrecompiledContracts {
         @Override
         public byte[] execute(byte[] data) {
 
-            if (data == null)
+            if (data == null) {
                 return EMPTY_BYTE_ARRAY;
+            }
 
             try {
                 int baseLen = parseLen(data, BASE);

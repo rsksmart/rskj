@@ -235,99 +235,115 @@ public class Block {
     // TODO(mc) remove this method and create a new ExecutedBlock class or similar
     public void setTransactionsList(@Nonnull List<Transaction> transactionsList) {
         /* A sealed block is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockException("trying to alter transaction list");
+        }
 
         this.transactionsList = Collections.unmodifiableList(transactionsList);
         rlpEncoded = null;
     }
 
     public BlockHeader getHeader() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header;
     }
 
     public byte[] getHash() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getHash();
     }
 
     public byte[] getParentHash() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getParentHash();
     }
 
     public byte[] getUnclesHash() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getUnclesHash();
     }
 
     public byte[] getCoinbase() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getCoinbase();
     }
 
     public byte[] getStateRoot() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getStateRoot();
     }
 
     public void setStateRoot(byte[] stateRoot) {
         /* A sealed block is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockException("trying to alter state root");
+        }
 
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         this.header.setStateRoot(stateRoot);
     }
 
     public byte[] getTxTrieRoot() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getTxTrieRoot();
     }
 
     public byte[] getReceiptsRoot() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getReceiptsRoot();
     }
 
 
     public byte[] getLogBloom() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getLogsBloom();
     }
 
     public byte[] getDifficulty() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getDifficulty();
     }
 
     public BigInteger getDifficultyBI() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getDifficultyBI();
     }
 
     public long getFeesPaidToMiner() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getPaidFees();
     }
 
     public BigInteger getCumulativeDifficulty() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         BigInteger calcDifficulty = new BigInteger(1, this.header.getDifficulty());
         for (BlockHeader uncle : uncleList) {
             calcDifficulty = calcDifficulty.add(new BigInteger(1, uncle.getDifficulty()));
@@ -336,61 +352,70 @@ public class Block {
     }
 
     public long getTimestamp() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getTimestamp();
     }
 
     public long getNumber() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getNumber();
     }
 
     public byte[] getGasLimit() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getGasLimit();
     }
 
     public long getGasUsed() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getGasUsed();
     }
 
     public byte[] getExtraData() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getExtraData();
     }
 
   public void setExtraData(byte[] data) {
       /* A sealed block is immutable, cannot be changed */
-      if (this.sealed)
+      if (this.sealed) {
           throw new SealedBlockException("trying to alter extra data");
+      }
 
         this.header.setExtraData(data);
         rlpEncoded = null;
     }
 
     public List<Transaction> getTransactionsList() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
 
         return Collections.unmodifiableList(this.transactionsList);
     }
 
     public List<BlockHeader> getUncleList() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
 
         return Collections.unmodifiableList(this.uncleList);
     }
 
     public byte[] getMinimumGasPrice() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
         return this.header.getMinimumGasPrice();
     }
 
@@ -401,8 +426,9 @@ public class Block {
 
     @Override
     public String toString() {
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
 
         toStringBuff.setLength(0);
         toStringBuff.append(Hex.toHexString(this.getEncoded())).append("\n");
@@ -550,8 +576,9 @@ public class Block {
     }
 
     public void addUncle(BlockHeader uncle) {
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockException("trying to add uncle");
+        }
 
         uncleList.add(uncle);
         this.getHeader().setUnclesHash(SHA3Helper.sha3(getUnclesEncoded()));
@@ -640,11 +667,13 @@ public class Block {
 
     public void setBitcoinMergedMiningHeader(byte[] bitcoinMergedMiningHeader) {
         /* A sealed block is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockException("trying to alter bitcoin merged mining header");
+        }
 
-        if (!parsed)
+        if (!parsed) {
             parseRLP();
+        }
 
         this.header.setBitcoinMergedMiningHeader(bitcoinMergedMiningHeader);
         rlpEncoded = null;
@@ -660,8 +689,9 @@ public class Block {
 
     public void setBitcoinMergedMiningMerkleProof(byte[] bitcoinMergedMiningMerkleProof) {
         /* A sealed block is immutable, cannot be changed */
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockException("trying to alter bitcoin merged mining Merkle proof");
+        }
 
         this.header.setBitcoinMergedMiningMerkleProof(bitcoinMergedMiningMerkleProof);
         rlpEncoded = null;
@@ -676,8 +706,9 @@ public class Block {
     }
 
     public void setBitcoinMergedMiningCoinbaseTransaction(byte[] bitcoinMergedMiningCoinbaseTransaction) {
-        if (this.sealed)
+        if (this.sealed) {
             throw new SealedBlockException("trying to alter bitcoin merged mining coinbase transaction");
+        }
 
         this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
         rlpEncoded = null;

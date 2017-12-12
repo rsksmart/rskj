@@ -57,8 +57,9 @@ public class ABICallElection {
      * @return whether the voting succeeded
      */
     public boolean vote(ABICallSpec callSpec, TxSender voter) {
-        if (!authorizer.isAuthorized(voter))
+        if (!authorizer.isAuthorized(voter)) {
             return false;
+        }
 
         if (!votes.containsKey(callSpec)) {
             votes.put(callSpec, new ArrayList<>());
@@ -66,8 +67,9 @@ public class ABICallElection {
 
         List<TxSender> callVoters = votes.get(callSpec);
 
-        if (callVoters.contains(voter))
+        if (callVoters.contains(voter)) {
             return false;
+        }
 
         callVoters.add(voter);
         return true;
@@ -102,9 +104,12 @@ public class ABICallElection {
 
     private void validate() {
         // Make sure all the votes are authorized
-        for (Map.Entry<ABICallSpec, List<TxSender>> specVotes : votes.entrySet())
-            for (TxSender vote : specVotes.getValue())
-                if (!authorizer.isAuthorized(vote))
+        for (Map.Entry<ABICallSpec, List<TxSender>> specVotes : votes.entrySet()) {
+            for (TxSender vote : specVotes.getValue()) {
+                if (!authorizer.isAuthorized(vote)) {
                     throw new RuntimeException("Unauthorized voter");
+                }
+            }
+        }
     }
 }
