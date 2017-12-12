@@ -988,18 +988,6 @@ public class Web3Impl implements Web3 {
             add(new LogFilterEvent(new LogFilterElement(logInfo, b, txIndex, tx, logIdx)));
         }
 
-        void onTransactionReceipt(TransactionReceipt receipt, Block b, int txIndex) {
-            if (logFilter.matchBloom(receipt.getBloomFilter())) {
-                int logIdx = 0;
-                for (LogInfo logInfo : receipt.getLogInfoList()) {
-                    if (logFilter.matchBloom(logInfo.getBloom()) && logFilter.matchesExactly(logInfo)) {
-                        onLogMatch(logInfo, b, txIndex, receipt.getTransaction(), logIdx);
-                    }
-                    logIdx++;
-                }
-            }
-        }
-
         void onTransaction(Transaction tx, Block b, int txIndex) {
             TransactionInfo txInfo = blockchain.getTransactionInfo(tx.getHash());
             TransactionReceipt receipt = txInfo.getReceipt();
