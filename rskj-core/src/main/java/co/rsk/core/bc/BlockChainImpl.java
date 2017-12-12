@@ -563,7 +563,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         return Block.getTxTrie(transactions).getHash();
     }
 
-    public synchronized static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts) {
+    public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts) {
         Trie receiptsTrie = new TrieImpl();
 
         if (receipts == null || receipts.isEmpty())
