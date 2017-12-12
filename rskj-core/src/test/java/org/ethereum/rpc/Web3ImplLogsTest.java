@@ -391,6 +391,7 @@ public class Web3ImplLogsTest {
 
         Transaction tx2;
         tx2 = getCallerContractTransaction(acc1, mainAddress);
+        String callerAddress = Hex.toHexString(tx2.getContractAddress());
 
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
@@ -401,13 +402,10 @@ public class Web3ImplLogsTest {
 
         Assert.assertNotNull(id);
         Assert.assertNotNull(logs);
-        Assert.assertEquals(4, logs.length);
+        Assert.assertEquals(2, logs.length);
 
-        for (int k = 0; k < 4; k++) {
-            LogFilterElement log = (LogFilterElement)logs[0];
-            if (k % 2 == 0)
-                Assert.assertEquals("0x" + mainAddress, ((LogFilterElement)log).address);
-        }
+        Assert.assertEquals("0x" + mainAddress, ((LogFilterElement)logs[0]).address);
+        Assert.assertEquals("0x" + callerAddress, ((LogFilterElement)logs[1]).address);
     }
 
     @Test
@@ -448,6 +446,7 @@ public class Web3ImplLogsTest {
 
         Transaction tx2;
         tx2 = getCallerContractTransaction(acc1, mainAddress);
+        String callerAddress = Hex.toHexString(tx2.getContractAddress());
 
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
@@ -466,13 +465,11 @@ public class Web3ImplLogsTest {
 
         Assert.assertNotNull(id);
         Assert.assertNotNull(logs);
-        Assert.assertEquals(5, logs.length);
+        Assert.assertEquals(3, logs.length);
 
-        for (int k = 0; k < 5; k++) {
-            LogFilterElement log = (LogFilterElement)logs[0];
-            if (k % 2 == 0 || k == 4)
-                Assert.assertEquals("0x" + mainAddress, ((LogFilterElement)log).address);
-        }
+        Assert.assertEquals("0x" + mainAddress, ((LogFilterElement)logs[0]).address);
+        Assert.assertEquals("0x" + callerAddress, ((LogFilterElement)logs[1]).address);
+        Assert.assertEquals("0x" + mainAddress, ((LogFilterElement)logs[2]).address);
     }
 
     private Web3Impl createWeb3(SimpleWorldManager worldManager) {
