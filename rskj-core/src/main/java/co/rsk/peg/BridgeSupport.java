@@ -628,10 +628,22 @@ public class BridgeSupport {
                     inputScript.getChunks());
 
             if (!alreadySignedByThisFederator) {
-                int sigIndex = inputScript.getSigInsertionIndex(sighash, federatorPublicKey);
-                inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSig.encodeToBitcoin(), sigIndex, 1, 1);
-                txIn.setScriptSig(inputScript);
-                logger.debug("Tx input for tx {} signed.", new Sha3Hash(rskTxHash));
+                try {
+                    int sigIndex = inputScript.getSigInsertionIndex(sighash, federatorPublicKey);
+                    inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSig.encodeToBitcoin(), sigIndex, 1, 1);
+                    txIn.setScriptSig(inputScript);
+                    logger.debug("Tx input for tx {} signed.", new Sha3Hash(rskTxHash));
+                } catch (IllegalStateException e) {
+                    Federation retiringFederation = getRetiringFederation();
+                    if (getActiveFederation().hasPublicKey(federatorPublicKey)) {
+                        logger.debug("A member of the active federation is trying to sign a tx of the retiring one");
+                        return;
+                    } else if (retiringFederation != null && retiringFederation.hasPublicKey(federatorPublicKey)) {
+                        logger.debug("A member of the retiring federation is trying to sign a tx of the active one");
+                        return;
+                    }
+                    throw e;
+                }
             } else {
                 logger.warn("Tx {} already signed by this federator.", new Sha3Hash(rskTxHash));
                 break;
