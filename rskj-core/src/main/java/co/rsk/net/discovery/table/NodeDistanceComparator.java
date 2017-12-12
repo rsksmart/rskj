@@ -27,7 +27,6 @@ import java.util.Comparator;
  * Created by mario on 22/02/17.
  */
 public class NodeDistanceComparator implements Comparator<Node>, Serializable {
-
     private static final long serialVersionUID = -6306937255806222133L;
 
     private byte[] targetNodeId;

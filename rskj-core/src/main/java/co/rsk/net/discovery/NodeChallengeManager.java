@@ -28,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by mario on 22/02/17.
  */
 public class NodeChallengeManager {
-
     private Map<String, NodeChallenge> activeChallenges = new ConcurrentHashMap<>();
 
     public NodeChallenge startChallenge(Node challengedNode, Node challenger, PeerExplorer explorer) {
@@ -42,6 +41,4 @@ public class NodeChallengeManager {
     public NodeChallenge removeChallenge(String challengeId) {
         return activeChallenges.remove(challengeId);
     }
-
-
 }

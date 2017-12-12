@@ -64,11 +64,13 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
 
     @Override
     public final void parse(byte[] data) {
-
         RLPList dataList = (RLPList) RLP.decode2OneItem(data, 0);
         RLPItem chk = (RLPItem) dataList.get(1);
+
         this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
+
         RLPItem nodeRlp = (RLPItem) dataList.get(0);
+
         this.nodeId = nodeRlp.getRLPData();
     }
 
@@ -84,7 +86,8 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append(Hex.toHexString(this.nodeId))
+        return new ToStringBuilder(this)
+                .append(Hex.toHexString(this.nodeId))
                 .append(this.messageId).toString();
     }
 

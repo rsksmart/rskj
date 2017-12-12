@@ -18,7 +18,6 @@
 
 package co.rsk.net.discovery;
 
-
 import co.rsk.net.discovery.message.PeerDiscoveryMessage;
 
 import java.net.InetSocketAddress;

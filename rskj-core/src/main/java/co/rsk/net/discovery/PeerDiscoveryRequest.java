@@ -28,7 +28,6 @@ import java.net.InetSocketAddress;
  * Created by mario on 17/02/17.
  */
 public class PeerDiscoveryRequest {
-
     private final String messageId;
     private final PeerDiscoveryMessage message;
     private final InetSocketAddress address;

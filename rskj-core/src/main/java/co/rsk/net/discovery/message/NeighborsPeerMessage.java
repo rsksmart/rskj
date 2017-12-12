@@ -35,7 +35,6 @@ import java.util.List;
  * Created by mario on 16/02/17.
  */
 public class NeighborsPeerMessage extends PeerDiscoveryMessage {
-
     private List<Node> nodes;
     private String messageId;
 
@@ -59,13 +58,13 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
             Node node = new Node(nodeRLP.getRLPData());
             nodes.add(node);
         }
-        RLPItem chk = (RLPItem) list.get(1);
-        this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
 
+        RLPItem chk = (RLPItem) list.get(1);
+
+        this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
     }
 
     public static NeighborsPeerMessage create(List<Node> nodes, String check, ECKey privKey) {
-
         byte[][] nodeRLPs = null;
 
         if (nodes != null) {
@@ -107,9 +106,11 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
     public int countNodes() {
         return CollectionUtils.size(this.nodes);
     }
+
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append(this.nodes)
+        return new ToStringBuilder(this)
+                .append(this.nodes)
                 .append(this.messageId).toString();
     }
 

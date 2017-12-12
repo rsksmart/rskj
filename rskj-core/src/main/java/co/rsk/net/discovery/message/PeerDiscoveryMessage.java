@@ -33,7 +33,6 @@ import static org.ethereum.util.ByteUtil.merge;
 public abstract class PeerDiscoveryMessage {
     private static final Logger logger = LoggerFactory.getLogger(PeerDiscoveryMessage.class);
 
-
     private byte[] wire;
 
     private byte[] mdc;
@@ -51,7 +50,6 @@ public abstract class PeerDiscoveryMessage {
         this.wire = wire;
     }
     public PeerDiscoveryMessage encode(byte[] type, byte[] data, ECKey privKey) {
-
         /* [1] Calc sha3 - prepare for sig */
         byte[] payload = new byte[type.length + data.length];
         payload[0] = type[0];
@@ -87,10 +85,13 @@ public abstract class PeerDiscoveryMessage {
         byte[] s = new byte[32];
         byte v = signature[64];
 
-        if (v == 1)
+        if (v == 1) {
             v = 28;
-        if (v == 0)
+        }
+
+        if (v == 0) {
             v = 27;
+        }
 
         System.arraycopy(signature, 0, r, 0, 32);
         System.arraycopy(signature, 32, s, 0, 32);
@@ -109,7 +110,9 @@ public abstract class PeerDiscoveryMessage {
 
     public byte[] getNodeId() {
         byte[] nodeID = new byte[64];
+
         System.arraycopy(getKey().getPubKey(), 1, nodeID, 0, 64);
+
         return nodeID;
     }
 
@@ -141,7 +144,8 @@ public abstract class PeerDiscoveryMessage {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("mdc", Hex.toHexString(mdc))
+        return new ToStringBuilder(this)
+                .append("mdc", Hex.toHexString(mdc))
                 .append("signature", Hex.toHexString(signature))
                 .append("type", Hex.toHexString(type))
                 .append("data", Hex.toHexString(data)).toString();

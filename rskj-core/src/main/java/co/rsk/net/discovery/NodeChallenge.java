@@ -24,7 +24,6 @@ import org.ethereum.net.rlpx.Node;
  * Created by mario on 22/02/17.
  */
 public class NodeChallenge {
-
     private final Node challengedNode;
     private final Node challenger;
     private final String challengeId;
@@ -33,7 +32,6 @@ public class NodeChallenge {
         this.challengedNode = challengedNode;
         this.challenger = challenger;
         this.challengeId = challengeId;
-
     }
 
     public Node getChallengedNode() {
@@ -47,6 +45,4 @@ public class NodeChallenge {
     public String getChallengeId() {
         return challengeId;
     }
-
-
 }

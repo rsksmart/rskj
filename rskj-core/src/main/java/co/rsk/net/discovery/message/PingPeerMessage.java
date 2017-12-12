@@ -47,7 +47,6 @@ public class PingPeerMessage extends PeerDiscoveryMessage {
     private PingPeerMessage() {}
 
     public static PingPeerMessage create(String host, int port, String check, ECKey privKey) {
-
         /* RLP Encode data */
         byte[] rlpIp = RLP.encodeElement(host.getBytes(StandardCharsets.UTF_8));
 
@@ -77,12 +76,12 @@ public class PingPeerMessage extends PeerDiscoveryMessage {
 
     @Override
     public final void parse(byte[] data) {
-
         RLPList dataList = (RLPList) RLP.decode2OneItem(data, 0);
         RLPList fromList = (RLPList) dataList.get(1);
         RLPItem chk = (RLPItem) dataList.get(2);
 
         byte[] ipB = fromList.get(0).getRLPData();
+
         this.host = new String(ipB, Charset.forName("UTF-8"));
         this.port = ByteUtil.byteArrayToInt(fromList.get(1).getRLPData());
         this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
@@ -108,7 +107,8 @@ public class PingPeerMessage extends PeerDiscoveryMessage {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append(this.host)
+        return new ToStringBuilder(this)
+                .append(this.host)
                 .append(this.port)
                 .append(this.messageId).toString();
     }
