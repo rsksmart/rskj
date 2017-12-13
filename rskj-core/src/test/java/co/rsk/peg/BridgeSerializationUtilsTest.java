@@ -576,6 +576,206 @@ public class BridgeSerializationUtilsTest {
         Assert.assertThat(federation, is(deserializedFederation));
     }
 
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void serializeRequestQueue() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_encodeElement();
+        mock_RLP_encodeBigInteger();
+        mock_RLP_encodeList();
+
+        List<ReleaseRequestQueue.Entry> sampleEntries = Arrays.asList(
+                new ReleaseRequestQueue.Entry(mockAddressHash160("ccdd"), Coin.valueOf(10)),
+                new ReleaseRequestQueue.Entry(mockAddressHash160("bb"), Coin.valueOf(50)),
+                new ReleaseRequestQueue.Entry(mockAddressHash160("bb"), Coin.valueOf(20)),
+                new ReleaseRequestQueue.Entry(mockAddressHash160("aa"), Coin.valueOf(30))
+        );
+        ReleaseRequestQueue sample = new ReleaseRequestQueue(sampleEntries);
+
+        byte[] result = BridgeSerializationUtils.serializeReleaseRequestQueue(sample);
+        String hexResult = Hex.toHexString(result);
+        StringBuilder expectedBuilder = new StringBuilder();
+        expectedBuilder.append("ddaa");
+        expectedBuilder.append("ff1e");
+        expectedBuilder.append("ddbb");
+        expectedBuilder.append("ff14");
+        expectedBuilder.append("ddbb");
+        expectedBuilder.append("ff32");
+        expectedBuilder.append("ddccdd");
+        expectedBuilder.append("ff0a");
+        assertEquals(expectedBuilder.toString(), hexResult);
+    }
+
+    @Test
+    public void deserializeRequestQueue_emptyOrNull() throws Exception {
+        assertEquals(0, BridgeSerializationUtils.deserializeReleaseRequestQueue(null, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).getEntries().size());
+        assertEquals(0, BridgeSerializationUtils.deserializeReleaseRequestQueue(new byte[]{}, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).getEntries().size());
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void deserializeRequestQueue_nonEmpty() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_decode2(InnerListMode.NONE);
+
+        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+
+        Address a1 = Address.fromBase58(params, "mynmcQfJnVjheAqh9XL6htnxPZnaDFbqkB");
+        Address a2 = Address.fromBase58(params, "mfrfxeo5L2f5NDURS6YTtCNfVw2t5HAfty");
+        Address a3 = Address.fromBase58(params, "myw7AMh5mpKHao6MArhn7EvkeASGsGJzrZ");
+        List<ReleaseRequestQueue.Entry> expectedEntries = Arrays.asList(
+                new ReleaseRequestQueue.Entry(a1, Coin.valueOf(10)),
+                new ReleaseRequestQueue.Entry(a2, Coin.valueOf(7)),
+                new ReleaseRequestQueue.Entry(a3, Coin.valueOf(8))
+        );
+
+        StringBuilder sampleBuilder = new StringBuilder();
+        sampleBuilder.append("06140114011401");
+        sampleBuilder.append(Hex.toHexString(a1.getHash160()));
+        sampleBuilder.append("0a");
+        sampleBuilder.append(Hex.toHexString(a2.getHash160()));
+        sampleBuilder.append("07");
+        sampleBuilder.append(Hex.toHexString(a3.getHash160()));
+        sampleBuilder.append("08");
+        byte[] sample = Hex.decode(sampleBuilder.toString());
+        ReleaseRequestQueue result = BridgeSerializationUtils.deserializeReleaseRequestQueue(sample, params);
+        List<ReleaseRequestQueue.Entry> entries = result.getEntries();
+        assertEquals(expectedEntries, entries);
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void deserializeRequestQueue_nonEmptyOddSize() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_decode2(InnerListMode.NONE);
+
+        try {
+            byte[] sample = new byte[]{(byte)'b', 7, (byte)'d', 76, (byte) 'a'};
+            BridgeSerializationUtils.deserializeReleaseRequestQueue(sample, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        } catch (RuntimeException e) {
+            return;
+        }
+        Assert.fail();
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void serializeTransactionSet() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_encodeElement();
+        mock_RLP_encodeBigInteger();
+        mock_RLP_encodeList();
+
+        Set<ReleaseTransactionSet.Entry> sampleEntries = new HashSet<>(Arrays.asList(
+                new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("ccdd"), 10L),
+                new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("bb"), 20L),
+                new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("ba"), 30L),
+                new ReleaseTransactionSet.Entry(mockBtcTransactionSerialize("aa"), 40L)
+        ));
+        ReleaseTransactionSet sample = new ReleaseTransactionSet(sampleEntries);
+
+        byte[] result = BridgeSerializationUtils.serializeReleaseTransactionSet(sample);
+        String hexResult = Hex.toHexString(result);
+        StringBuilder expectedBuilder = new StringBuilder();
+        expectedBuilder.append("ddaa");
+        expectedBuilder.append("ff28");
+        expectedBuilder.append("ddba");
+        expectedBuilder.append("ff1e");
+        expectedBuilder.append("ddbb");
+        expectedBuilder.append("ff14");
+        expectedBuilder.append("ddccdd");
+        expectedBuilder.append("ff0a");
+        assertEquals(expectedBuilder.toString(), hexResult);
+    }
+
+    @Test
+    public void deserializeTransactionSet_emptyOrNull() throws Exception {
+        assertEquals(0, BridgeSerializationUtils.deserializeReleaseTransactionSet(null, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).getEntries().size());
+        assertEquals(0, BridgeSerializationUtils.deserializeReleaseTransactionSet(new byte[]{}, NetworkParameters.fromID(NetworkParameters.ID_REGTEST)).getEntries().size());
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void deserializeTransactionSet_nonEmpty() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_decode2(InnerListMode.NONE);
+
+        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+
+        BtcTransaction input = new BtcTransaction(params);
+        input.addOutput(Coin.FIFTY_COINS, Address.fromBase58(params, "mvc8mwDcdLEq2jGqrL43Ub3sxTR13tB8LL"));
+
+        BtcTransaction t1 = new BtcTransaction(params);
+        t1.addInput(input.getOutput(0));
+        t1.addOutput(Coin.COIN, Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
+        BtcTransaction t2 = new BtcTransaction(params);
+        t2.addInput(input.getOutput(0));
+        t2.addOutput(Coin.COIN.multiply(10), Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
+        BtcTransaction t3 = new BtcTransaction(params);
+        t3.addInput(input.getOutput(0));
+        t3.addOutput(Coin.valueOf(15), Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
+        BtcTransaction t4 = new BtcTransaction(params);
+        t4.addInput(input.getOutput(0));
+        t4.addOutput(Coin.MILLICOIN, Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
+
+        Set<ReleaseTransactionSet.Entry> expectedEntries = new HashSet<>(Arrays.asList(
+                new ReleaseTransactionSet.Entry(t1, 32L),
+                new ReleaseTransactionSet.Entry(t2, 14L),
+                new ReleaseTransactionSet.Entry(t3, 102L),
+                new ReleaseTransactionSet.Entry(t4, 20L)
+        ));
+
+        StringBuilder sampleBuilder = new StringBuilder();
+        sampleBuilder.append("08");
+        sampleBuilder.append(Integer.toHexString(t1.bitcoinSerialize().length));
+        sampleBuilder.append("01");
+        sampleBuilder.append(Integer.toHexString(t2.bitcoinSerialize().length));
+        sampleBuilder.append("01");
+        sampleBuilder.append(Integer.toHexString(t3.bitcoinSerialize().length));
+        sampleBuilder.append("01");
+        sampleBuilder.append(Integer.toHexString(t4.bitcoinSerialize().length));
+        sampleBuilder.append("01");
+        sampleBuilder.append(Hex.toHexString(t1.bitcoinSerialize()));
+        sampleBuilder.append("20");
+        sampleBuilder.append(Hex.toHexString(t2.bitcoinSerialize()));
+        sampleBuilder.append("0e");
+        sampleBuilder.append(Hex.toHexString(t3.bitcoinSerialize()));
+        sampleBuilder.append("66");
+        sampleBuilder.append(Hex.toHexString(t4.bitcoinSerialize()));
+        sampleBuilder.append("14");
+        byte[] sample = Hex.decode(sampleBuilder.toString());
+        ReleaseTransactionSet result = BridgeSerializationUtils.deserializeReleaseTransactionSet(sample, params);
+        Set<ReleaseTransactionSet.Entry> entries = result.getEntries();
+        assertEquals(expectedEntries, entries);
+    }
+
+    @PrepareForTest({ RLP.class })
+    @Test
+    public void deserializeTransactionSet_nonEmptyOddSize() throws Exception {
+        PowerMockito.mockStatic(RLP.class);
+        mock_RLP_decode2(InnerListMode.NONE);
+
+        try {
+            byte[] sample = new byte[]{(byte)'b', 7, (byte)'d', 76, (byte) 'a'};
+            BridgeSerializationUtils.deserializeReleaseTransactionSet(sample, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        } catch (RuntimeException e) {
+            return;
+        }
+        Assert.fail();
+    }
+
+    private Address mockAddressHash160(String hash160) {
+        Address result = mock(Address.class);
+        when(result.getHash160()).thenReturn(Hex.decode(hash160));
+        return result;
+    }
+
+    private BtcTransaction mockBtcTransactionSerialize(String serialized) {
+        BtcTransaction result = mock(BtcTransaction.class);
+        when(result.bitcoinSerialize()).thenReturn(Hex.decode(serialized));
+        return result;
+    }
+
     private void mock_RLP_encodeElement() {
         // Identity prepending byte '0xdd'
         when(RLP.encodeElement(any(byte[].class))).then((InvocationOnMock invocation) -> {

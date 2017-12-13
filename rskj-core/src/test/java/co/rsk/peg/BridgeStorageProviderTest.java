@@ -547,6 +547,70 @@ public class BridgeStorageProviderTest {
         Assert.assertEquals(1, serializeCalls.size());
     }
 
+    @PrepareForTest({ BridgeSerializationUtils.class })
+    @Test
+    public void getReleaseRequestQueue() throws IOException {
+        List<Integer> calls = new ArrayList<>();
+        ReleaseRequestQueue requestQueueMock = mock(ReleaseRequestQueue.class);
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd");
+
+        when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+            calls.add(0);
+            byte[] contractAddress = invocation.getArgumentAt(0, byte[].class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+            // Make sure the bytes are got from the correct address in the repo
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress));
+            Assert.assertEquals(new DataWord("releaseRequestQueue".getBytes(StandardCharsets.UTF_8)), address);
+            return new byte[]{(byte)0xaa};
+        });
+        PowerMockito.when(BridgeSerializationUtils.deserializeReleaseRequestQueue(any(byte[].class), any(NetworkParameters.class))).then((InvocationOnMock invocation) -> {
+            calls.add(0);
+            byte[] data = invocation.getArgumentAt(0, byte[].class);
+            NetworkParameters parameters = invocation.getArgumentAt(1, NetworkParameters.class);
+            Assert.assertEquals(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), parameters);
+            // Make sure we're deserializing what just came from the repo
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa}, data));
+            return requestQueueMock;
+        });
+
+        Assert.assertSame(requestQueueMock, storageProvider.getReleaseRequestQueue());
+        Assert.assertEquals(2, calls.size()); // 1 for each call to deserializeFederation & getStorageBytes
+    }
+
+    @PrepareForTest({ BridgeSerializationUtils.class })
+    @Test
+    public void getReleaseTransactionSet() throws IOException {
+        List<Integer> calls = new ArrayList<>();
+        ReleaseTransactionSet transactionSetMock = mock(ReleaseTransactionSet.class);
+        PowerMockito.mockStatic(BridgeSerializationUtils.class);
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd");
+
+        when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+            calls.add(0);
+            byte[] contractAddress = invocation.getArgumentAt(0, byte[].class);
+            DataWord address = invocation.getArgumentAt(1, DataWord.class);
+            // Make sure the bytes are got from the correct address in the repo
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa, (byte)0xbb, (byte)0xcc, (byte)0xdd}, contractAddress));
+            Assert.assertEquals(new DataWord("releaseTransactionSet".getBytes(StandardCharsets.UTF_8)), address);
+            return new byte[]{(byte)0xaa};
+        });
+        PowerMockito.when(BridgeSerializationUtils.deserializeReleaseTransactionSet(any(byte[].class), any(NetworkParameters.class))).then((InvocationOnMock invocation) -> {
+            calls.add(0);
+            byte[] data = invocation.getArgumentAt(0, byte[].class);
+            NetworkParameters parameters = invocation.getArgumentAt(1, NetworkParameters.class);
+            Assert.assertEquals(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), parameters);
+            // Make sure we're deserializing what just came from the repo
+            Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xaa}, data));
+            return transactionSetMock;
+        });
+
+        Assert.assertSame(transactionSetMock, storageProvider.getReleaseTransactionSet());
+        Assert.assertEquals(2, calls.size()); // 1 for each call to deserializeFederation & getStorageBytes
+    }
+
     private BtcTransaction createTransaction() {
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addInput(PegTestUtils.createHash(), transactionOffset++, ScriptBuilder.createInputScript(new TransactionSignature(BigInteger.ONE, BigInteger.TEN)));

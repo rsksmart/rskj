@@ -89,7 +89,10 @@ public class ReleaseTransactionSet {
     }
 
     public void add(BtcTransaction transaction, Long blockNumber) {
-        entries.add(new Entry(transaction, blockNumber));
+        // Disallow duplicate transactions
+        if (!entries.stream().anyMatch(e -> e.getTransaction().equals(transaction))) {
+            entries.add(new Entry(transaction, blockNumber));
+        }
     }
 
     /**
