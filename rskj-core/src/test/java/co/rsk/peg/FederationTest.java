@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,6 +47,7 @@ import static org.mockito.Matchers.any;
 public class FederationTest {
     private Federation federation;
     private List<BtcECKey> sortedPublicKeys;
+    private List<byte[]> rskAddresses;
 
     @Before
     public void createFederation() {
@@ -70,6 +72,9 @@ public class FederationTest {
                 BtcECKey.fromPrivate(BigInteger.valueOf(500)),
                 BtcECKey.fromPrivate(BigInteger.valueOf(600)),
         }).stream().sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+        rskAddresses = sortedPublicKeys.stream()
+                .map(FederationTest::getRskAddressFromBtcKey)
+                .collect(Collectors.toList());
     }
 
     @Test
@@ -297,7 +302,22 @@ public class FederationTest {
     }
 
     @Test
+    public void hasMemberWithRskAddress() {
+        for (int i = 0; i < federation.getPublicKeys().size(); i++) {
+            Assert.assertTrue(federation.hasMemberWithRskAddress(rskAddresses.get(i)));
+        }
+
+        BtcECKey nonFederateKey = BtcECKey.fromPrivate(BigInteger.valueOf(1234));
+        byte[] nonFederateRskAddress = getRskAddressFromBtcKey(nonFederateKey);
+        Assert.assertFalse(federation.hasMemberWithRskAddress(nonFederateRskAddress));
+    }
+
+    @Test
     public void testToString() {
         Assert.assertEquals("4 of 6 signatures federation", federation.toString());
+    }
+
+    private static byte[] getRskAddressFromBtcKey(BtcECKey btcECKey) {
+        return ECKey.fromPublicOnly(btcECKey.getPubKey()).getAddress();
     }
 }
