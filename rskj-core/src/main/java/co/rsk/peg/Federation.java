@@ -73,10 +73,6 @@ public final class Federation {
         return publicKeys;
     }
 
-    public List<ECKey> getRskPublicKeys() {
-        return rskPublicKeys;
-    }
-
     public int getNumberOfSignaturesRequired() {
         return publicKeys.size() / 2 + 1;
     }
@@ -135,6 +131,11 @@ public final class Federation {
 
     public boolean hasPublicKey(BtcECKey key) {
         return getPublicKeyIndex(key) != null;
+    }
+
+    public boolean hasMemberWithRskAddress(byte[] address) {
+        return rskPublicKeys.stream()
+                .anyMatch(k -> Arrays.equals(k.getAddress(), address));
     }
 
     @Override
