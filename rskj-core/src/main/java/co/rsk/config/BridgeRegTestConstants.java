@@ -93,7 +93,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
         );
 
         fundsMigrationAgeBegin = 15L;
-        fundsMigrationAgeEnd = 100L;
+        fundsMigrationAgeEnd = 150L;
 
         // Key generated with GenNodeKey using generator 'auth-lock-whitelist'
         List<ECKey> lockWhitelistAuthorizedKeys = Arrays.stream(new String[]{
