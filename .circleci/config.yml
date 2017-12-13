@@ -16,7 +16,7 @@ jobs:
       - run: unzip sonar-scanner-cli-$SONAR_VERSION-linux.zip
       - run: ./configure.sh
       - run: ./gradlew --no-daemon dependencies
-      - run: ./gradlew --no-daemon shadow test
+      - run: ./gradlew --no-daemon --stacktrace shadow test
       - run:
           name: Save test results
           command: |
