@@ -330,9 +330,11 @@ public class BridgeSupport {
             // When is not guaranteed to be called in the chronological order, so a Federator can inform
             // b) In prod: Federator created a tx manually or the federation was compromised and some utxos were spent. Better not try to spend them.
             // Open problem: For performance removeUsedUTXOs() just removes 1 utxo
+        } else if (BridgeUtils.isMigrationTx(btcTx, getActiveFederation(), getRetiringFederation(), btcContext, bridgeConstants)) {
+            logger.debug("This is a migration tx {}", btcTx);
         } else {
-            logger.warn("This is not a lock nor a release tx {}", btcTx);
-            panicProcessor.panic("btclock", "This is not a lock nor a release tx " + btcTx);
+            logger.warn("This is not a lock, a release nor a migration tx {}", btcTx);
+            panicProcessor.panic("btclock", "This is not a lock, a release nor a migration tx " + btcTx);
             return;
         }
 
