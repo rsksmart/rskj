@@ -1,5 +1,7 @@
 account_new acc1 10000000
 
+# Create empty.sol contract
+
 transaction_build tx01
     sender acc1
     receiverAddress 00
@@ -18,3 +20,4 @@ block_connect b01
 # Assert best block
 assert_best b01
 
+# The code test checks the gas used

@@ -728,7 +728,7 @@ contract main {
 
         return new TransactionBuilder()
                 .sender(acc1)
-                .gasLimit(BigInteger.valueOf(100000))
+                .gasLimit(BigInteger.valueOf(1000000))
                 .gasPrice(BigInteger.ONE)
                 .data(compiledLogExample)
                 .build();
