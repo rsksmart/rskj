@@ -62,6 +62,7 @@ import org.mockito.Mockito;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -293,6 +294,31 @@ public class Web3ImplTest {
         org.junit.Assert.assertArrayEquals(acc1.getAddress(), eth.tx.getSender());
         org.junit.Assert.assertArrayEquals(acc2.getAddress(), eth.tx.getReceiveAddress());
         org.junit.Assert.assertEquals(BigInteger.valueOf(1000000), new BigInteger(1, eth.tx.getValue()));
+    }
+
+    @Test
+    public void sendTooMuchGasRawTransaction() throws Exception {
+        Web3Impl web3 = createWeb3();
+        SimpleEthereum eth = new SimpleEthereum();
+        web3.eth = eth;
+
+        Account acc1 = new AccountBuilder().name("acc1").build();
+        Account acc2 = new AccountBuilder().name("acc2").build();
+        Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2)
+                .value(BigInteger.valueOf(1000000))
+                .gasLimit(new BigDecimal(Math.pow(2, 63)).toBigInteger()).build();
+
+        String rawData = Hex.toHexString(tx.getEncoded());
+
+        String txHash = null;
+        try {
+            txHash = web3.eth_sendRawTransaction(rawData);
+        } catch (JsonRpcInvalidParamException e) {
+                Assert.assertEquals(e.getMessage(), "Gas limit exceeds Transaction max value tolerated");
+        } catch (Exception e) {
+            Assert.assertFalse(e instanceof JsonRpcInvalidParamException);
+        }
+        Assert.assertNull(txHash);
     }
 
     @Test
@@ -1228,6 +1254,44 @@ public class Web3ImplTest {
         String expectedHash = TypeConverter.toJsonHex(tx.getHash());
 
         Assert.assertTrue("Method is not creating the expected transaction", expectedHash.compareTo(txHash) == 0);
+    }
+
+    @Test
+    public void eth_sendTooMuchGasTransaction()
+    {
+        BigInteger nonce = BigInteger.ONE;
+        Web3Impl web3 = createWeb3();
+
+        // **** Initializes data ******************
+        String addr1 = web3.personal_newAccountWithSeed("sampleSeed1");
+        String addr2 = web3.personal_newAccountWithSeed("sampleSeed2");
+
+        BigInteger value = BigInteger.valueOf(7);
+        BigInteger gasPrice = BigInteger.valueOf(8);
+        BigInteger gasLimit = new BigDecimal(Math.pow(2, 63)).toBigInteger();
+
+        String data = "0xff";
+
+        // ***** Executes the transaction *******************
+        Web3.CallArguments args = new Web3.CallArguments();
+        args.from = addr1;
+        args.to = addr2;
+        args.data = data;
+        args.gas = TypeConverter.toJsonHex(gasLimit);
+        args.gasPrice = TypeConverter.toJsonHex(gasPrice);
+        args.value = value.toString();
+        args.nonce = nonce.toString();
+
+        String txHash = null;
+        try {
+            txHash = web3.eth_sendTransaction(args);
+        }
+        catch (JsonRpcInvalidParamException e) {
+            Assert.assertEquals(e.getMessage(), "Gas limit exceeds Transaction max value tolerated");
+        } catch (Exception e) {
+            Assert.assertFalse(e instanceof JsonRpcInvalidParamException);
+        }
+        Assert.assertNull(txHash);
     }
 
     private Web3Impl createWeb3() {
