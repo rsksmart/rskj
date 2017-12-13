@@ -61,23 +61,27 @@ public class BlockValidatorImpl implements BlockValidator {
      */
     @Override
     public boolean isValid(Block block) {
-        if (block.isGenesis())
+        if (block.isGenesis()) {
             return true;
+        }
 
         Block parent = getParent(block);
 
-        if(!this.blockParentValidator.isValid(block, parent))
+        if(!this.blockParentValidator.isValid(block, parent)) {
             return false;
+        }
 
-        if(!this.blockValidator.isValid(block))
+        if(!this.blockValidator.isValid(block)) {
             return false;
+        }
 
         return true;
     }
 
     private Block getParent(Block block) {
-        if (this.blockStore == null)
+        if (this.blockStore == null) {
             return null;
+        }
 
         return blockStore.getBlockByHash(block.getParentHash());
     }

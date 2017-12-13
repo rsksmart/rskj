@@ -60,17 +60,21 @@ public class InetAddressTable {
      * or is contained in some address block
      */
     public boolean contains(InetAddress address) {
-        if (this.addresses.contains(address))
+        if (this.addresses.contains(address)) {
             return true;
+        }
 
-        if (this.blocks.isEmpty())
+        if (this.blocks.isEmpty()) {
             return false;
+        }
 
         //TODO(mmarquez): we need to check if this is thread safe
         InetAddressBlock[] bs = this.blocks.toArray(new InetAddressBlock[0]);
-        for (InetAddressBlock mask : bs)
-            if (mask.contains(address))
+        for (InetAddressBlock mask : bs) {
+            if (mask.contains(address)) {
                 return true;
+            }
+        }
 
         return false;
     }
@@ -81,8 +85,9 @@ public class InetAddressTable {
      * @return  the list of known addresses
      */
     public List<InetAddress> getAddressList() {
-        if (this.addresses.isEmpty())
+        if (this.addresses.isEmpty()) {
             return new ArrayList<>();
+        }
 
         //TODO(mmarquez): we need to check if this is thread safe
         InetAddress[] as = this.addresses.toArray(new InetAddress[0]);
@@ -101,8 +106,9 @@ public class InetAddressTable {
      * @return  the list of known address blocks
      */
     public List<InetAddressBlock> getAddressBlockList() {
-        if (this.blocks.isEmpty())
+        if (this.blocks.isEmpty()) {
             return new ArrayList<>();
+        }
 
         //TODO(mmarquez): we need to check if this is thread safe
         InetAddressBlock[] bs = this.blocks.toArray(new InetAddressBlock[0]);

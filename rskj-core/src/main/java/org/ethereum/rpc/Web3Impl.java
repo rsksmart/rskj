@@ -172,22 +172,25 @@ public class Web3Impl implements Web3 {
     }
 
     public long JSonHexToLong(String x) throws Exception {
-        if (!x.startsWith("0x"))
+        if (!x.startsWith("0x")) {
             throw new Exception("Incorrect hex syntax");
+        }
         x = x.substring(2);
         return Long.parseLong(x, 16);
     }
 
     public int JSonHexToInt(String x) throws Exception {
-        if (!x.startsWith("0x"))
+        if (!x.startsWith("0x")) {
             throw new Exception("Incorrect hex syntax");
+        }
         x = x.substring(2);
         return Integer.parseInt(x, 16);
     }
 
     public String JSonHexToHex(String x) throws Exception {
-        if (!x.startsWith("0x"))
+        if (!x.startsWith("0x")) {
             throw new Exception("Incorrect hex syntax");
+        }
         x = x.substring(2);
         return x;
     }
@@ -223,8 +226,9 @@ public class Web3Impl implements Web3 {
             byte[] result = HashUtil.sha3(data.getBytes(StandardCharsets.UTF_8));
             return s = TypeConverter.toJsonHex(result);
         } finally {
-            if (logger.isDebugEnabled())
+            if (logger.isDebugEnabled()) {
                 logger.debug("web3_sha3({}): {}", data, s);
+            }
         }
     }
 
@@ -421,8 +425,9 @@ public class Web3Impl implements Web3 {
         */
         Repository repository = getRepoByJsonBlockId(block);
 
-        if (repository == null)
+        if (repository == null) {
             throw new NullPointerException();
+        }
 
         byte[] addressAsByteArray = stringHexToByteArray(address);
         BigInteger balance = repository.getBalance(addressAsByteArray);
@@ -444,8 +449,9 @@ public class Web3Impl implements Web3 {
         try {
             byte[] addressAsByteArray = stringHexToByteArray(address);
             Repository repository = getRepoByJsonBlockId(blockId);
-            if(repository == null)
+            if(repository == null) {
                 return null;
+            }
             DataWord storageValue = repository.
                     getStorageValue(addressAsByteArray, new DataWord(stringHexToByteArray(storageIdx)));
             if (storageValue != null) {
@@ -454,8 +460,9 @@ public class Web3Impl implements Web3 {
                 return null;
             }
         } finally {
-            if (logger.isDebugEnabled())
+            if (logger.isDebugEnabled()) {
                 logger.debug("eth_getStorageAt(" + address + ", " + storageIdx + ", " + blockId + "): " + s);
+            }
         }
     }
 
@@ -473,8 +480,9 @@ public class Web3Impl implements Web3 {
                 return null;
             }
         } finally {
-            if (logger.isDebugEnabled())
+            if (logger.isDebugEnabled()) {
                 logger.debug("eth_getTransactionCount(" + address + ", " + blockId + "): " + s);
+            }
         }
     }
 
@@ -503,13 +511,13 @@ public class Web3Impl implements Web3 {
     public Block getBlockByNumberOrStr(String bnOrId) throws Exception {
         synchronized (this.blockchain) {
             Block b;
-            if (bnOrId.equals("latest"))
+            if (bnOrId.equals("latest")) {
                 b = this.blockchain.getBestBlock();
-            else if (bnOrId.equals("earliest"))
+            } else if (bnOrId.equals("earliest")) {
                 b = this.blockchain.getBlockByNumber(0);
-            else if (bnOrId.equals("pending"))
+            } else if (bnOrId.equals("pending")) {
                 throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
-            else {
+            } else {
                 long bn = JSonHexToLong(bnOrId);
                 b = this.blockchain.getBlockByNumber(bn);
             }
@@ -550,8 +558,9 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getCode(String address, String blockId) throws Exception {
-        if (blockId == null)
+        if (blockId == null) {
             throw new NullPointerException();
+        }
 
         String s = null;
         try {
@@ -625,8 +634,9 @@ public class Web3Impl implements Web3 {
     }
 
     public BlockResult getBlockResult(Block b, boolean fullTx) {
-        if (b==null)
+        if (b==null) {
             return null;
+        }
 
         byte[] mergeHeader = b.getBitcoinMergedMiningHeader();
 
@@ -687,8 +697,9 @@ public class Web3Impl implements Web3 {
 
         List<BlockInformation> binfos = blockchain.getBlocksInformationByNumber(blockNumber);
 
-        for (BlockInformation binfo : binfos)
+        for (BlockInformation binfo : binfos) {
             result.add(getBlockInformationResult(binfo));
+        }
 
         return result.toArray(new BlockInformationResult[result.size()]);
     }
@@ -730,8 +741,9 @@ public class Web3Impl implements Web3 {
             TransactionInfo txInfo = blockchain.getTransactionInfo(txHash);
 
             if (txInfo == null) {
-                if (transactionHash != null && transactionHash.startsWith("0x"))
+                if (transactionHash != null && transactionHash.startsWith("0x")) {
                     transactionHash = transactionHash.substring(2);
+                }
 
                 List<Transaction> txs = this.getTransactionsByJsonBlockId("pending");
 
@@ -1202,9 +1214,11 @@ public class Web3Impl implements Web3 {
 
         Map<String, String> map = new HashMap<>();
 
-        for (ModuleDescription module : properties.getRpcModules())
-            if (module.isEnabled())
+        for (ModuleDescription module : properties.getRpcModules()) {
+            if (module.isEnabled()) {
                 map.put(module.getName(), module.getVersion());
+            }
+        }
 
         return map;
     }
@@ -1336,23 +1350,26 @@ public class Web3Impl implements Web3 {
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
             throw new JsonRpcInvalidParamException("invalid snapshot id " + snapshotId, e);
         } finally {
-            if (logger.isDebugEnabled())
+            if (logger.isDebugEnabled()) {
                 logger.debug("evm_revert({})", snapshotId);
+            }
         }
     }
 
     @Override
     public void evm_reset() {
         snapshotManager.resetSnapshots(this.blockchain);
-        if (logger.isDebugEnabled())
+        if (logger.isDebugEnabled()) {
             logger.debug("evm_reset()");
+        }
     }
 
     @Override
     public void evm_mine() {
         minerManager.mineBlock(this.blockchain, minerClient, minerServer);
-        if (logger.isDebugEnabled())
+        if (logger.isDebugEnabled()) {
             logger.debug("evm_mine()");
+        }
     }
 
     @Override
@@ -1360,8 +1377,9 @@ public class Web3Impl implements Web3 {
         try {
             long nseconds = stringHexToBigInteger(seconds).longValue();
             String result = toJsonHex(minerServer.increaseTime(nseconds));
-            if (logger.isDebugEnabled())
+            if (logger.isDebugEnabled()) {
                 logger.debug("evm_increaseTime({}): {}", seconds, result);
+            }
             return result;
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
             throw new JsonRpcInvalidParamException("invalid number of seconds " + seconds, e);
@@ -1379,8 +1397,9 @@ public class Web3Impl implements Web3 {
      */
     @Override
     public void sco_banAddress(String address) {
-        if (this.peerScoringManager == null)
+        if (this.peerScoringManager == null) {
             return;
+        }
 
         try {
             this.peerScoringManager.banAddress(address);
@@ -1400,8 +1419,9 @@ public class Web3Impl implements Web3 {
      */
     @Override
     public void sco_unbanAddress(String address) {
-        if (this.peerScoringManager == null)
+        if (this.peerScoringManager == null) {
             return;
+        }
 
         try {
             this.peerScoringManager.unbanAddress(address);
@@ -1418,8 +1438,9 @@ public class Web3Impl implements Web3 {
      */
     @Override
     public PeerScoringInformation[] sco_peerList() {
-        if (this.peerScoringManager != null)
+        if (this.peerScoringManager != null) {
             return this.peerScoringManager.getPeersInformation().toArray(new PeerScoringInformation[0]);
+        }
 
         return null;
     }

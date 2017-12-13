@@ -153,10 +153,11 @@ public class HashUtil {
         byte[] peerIdBytes = new BigInteger(512, Utils.getRandom()).toByteArray();
 
         final String peerId;
-        if (peerIdBytes.length > 64)
+        if (peerIdBytes.length > 64) {
             peerId = Hex.toHexString(peerIdBytes, 1, 64);
-        else
+        } else {
             peerId = Hex.toHexString(peerIdBytes);
+        }
 
         return Hex.decode(peerId);
     }

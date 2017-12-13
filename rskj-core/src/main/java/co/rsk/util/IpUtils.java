@@ -24,16 +24,19 @@ public class IpUtils {
 
 
     public static InetSocketAddress parseAddress(String address) {
-        if(StringUtils.isBlank(address))
+        if(StringUtils.isBlank(address)) {
             return null;
+        }
         
         Matcher matcher = ipv6Pattern.matcher(address);
-        if(matcher.matches())
+        if(matcher.matches()) {
             return parseMatch(matcher);
+        }
 
         matcher = ipv4Pattern.matcher(address);
-        if(StringUtils.countMatches(address, ":") == 1 && matcher.matches())
+        if(StringUtils.countMatches(address, ":") == 1 && matcher.matches()) {
             return parseMatch(matcher);
+        }
 
         logger.debug("Invalid address: {}. For ipv6 use de convention [address]:port. For ipv4 address:port", address);
         return null;
@@ -44,8 +47,9 @@ public class IpUtils {
         if(CollectionUtils.isNotEmpty(addresses)) {
             for(String a : addresses) {
                 InetSocketAddress res = parseAddress(a);
-                if (res != null)
+                if (res != null) {
                     result.add(res);
+                }
             }
         }
         return result;

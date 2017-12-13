@@ -131,8 +131,9 @@ abstract class KeccakCore extends DigestEngine {
 	protected void processBlock(byte[] data)
 	{
 		/* Input block */
-		for (int i = 0; i < data.length; i += 8)
-			a[i >>> 3] ^= decodeLELong(data, i);
+		for (int i = 0; i < data.length; i += 8) {
+            a[i >>> 3] ^= decodeLELong(data, i);
+        }
 
 		long t0;
 		long t1;
@@ -560,8 +561,9 @@ abstract class KeccakCore extends DigestEngine {
 			buf[ptr] = (byte)0x81;
 		} else {
 			buf[ptr] = (byte)0x01;
-			for (int i = ptr + 1; i < (buf.length - 1); i ++)
-				buf[i] = 0;
+			for (int i = ptr + 1; i < (buf.length - 1); i ++) {
+                buf[i] = 0;
+            }
 			buf[buf.length - 1] = (byte)0x80;
 		}
 		processBlock(buf);
@@ -572,8 +574,9 @@ abstract class KeccakCore extends DigestEngine {
 		a[17] = ~a[17];
 		a[20] = ~a[20];
 		int dlen = getDigestLength();
-		for (int i = 0; i < dlen; i += 8)
-			encodeLELong(a[i >>> 3], tmpOut, i);
+		for (int i = 0; i < dlen; i += 8) {
+            encodeLELong(a[i >>> 3], tmpOut, i);
+        }
 		System.arraycopy(tmpOut, 0, out, off, dlen);
 	}
 
@@ -593,8 +596,9 @@ abstract class KeccakCore extends DigestEngine {
 
 	private final void doReset()
 	{
-		for (int i = 0; i < 25; i ++)
-			a[i] = 0;
+		for (int i = 0; i < 25; i ++) {
+            a[i] = 0;
+        }
 		a[ 1] = 0xFFFFFFFFFFFFFFFFL;
 		a[ 2] = 0xFFFFFFFFFFFFFFFFL;
 		a[ 8] = 0xFFFFFFFFFFFFFFFFL;

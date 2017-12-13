@@ -26,8 +26,6 @@ import co.rsk.peg.Federation;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 import java.nio.charset.StandardCharsets;
@@ -38,12 +36,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class BridgeRegTestConstants extends BridgeConstants {
-    private static final Logger logger = LoggerFactory.getLogger("BridgeRegTestConstants");
-
     private static BridgeRegTestConstants instance = new BridgeRegTestConstants();
-    public static BridgeRegTestConstants getInstance() {
-        return instance;
-    }
 
     protected List<BtcECKey> federatorPrivateKeys;
 
@@ -108,5 +101,9 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
     public List<BtcECKey> getFederatorPrivateKeys() {
         return federatorPrivateKeys;
+    }
+
+    public static BridgeRegTestConstants getInstance() {
+        return instance;
     }
 }

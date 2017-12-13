@@ -212,8 +212,9 @@ public class TransactionExecutor {
             BigInteger txGasCost = toBI(tx.getGasPrice()).multiply(txGasLimit);
             track.addBalance(tx.getSender(), txGasCost.negate());
 
-            if (logger.isInfoEnabled())
+            if (logger.isInfoEnabled()) {
                 logger.info("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, toBI(tx.getGasPrice()), txGasLimit);
+            }
         }
 
         if (tx.isContractCreation()) {
@@ -317,8 +318,9 @@ public class TransactionExecutor {
             // Charge basic cost of the transaction
             program.spendGas(tx.transactionCost(executionBlock), "TRANSACTION COST");
 
-            if (CONFIG.playVM())
+            if (CONFIG.playVM()) {
                 vm.play(program);
+            }
 
             result = program.getResult();
             mEndGas = toBI(tx.getGasLimit()).subtract(toBI(program.getResult().getGasUsed()));
@@ -407,11 +409,13 @@ public class TransactionExecutor {
 
             ContractDetails cdetails = track.getContractDetails(addr);
 
-            if (cdetails != null)
+            if (cdetails != null) {
                 summaryBuilder.storageDiff(cdetails.getStorage());
+            }
 
-            if (result.getException() != null)
+            if (result.getException() != null) {
                 summaryBuilder.markAsFailed();
+            }
         }
 
         logger.info("Building transaction execution summary");
@@ -444,8 +448,9 @@ public class TransactionExecutor {
             result.getDeleteAccounts().forEach(address -> track.delete(address.getLast20Bytes()));
         }
 
-        if (listener != null)
+        if (listener != null) {
             listener.onTransactionExecuted(summary);
+        }
 
         logger.info("tx listener done");
 

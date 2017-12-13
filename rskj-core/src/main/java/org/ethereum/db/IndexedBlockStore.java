@@ -66,14 +66,17 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
         List<BlockInfo> binfos = this.index.get(block.getNumber());
 
-        if (binfos == null)
+        if (binfos == null) {
             return;
+        }
 
         List<BlockInfo> toremove = new ArrayList<>();
 
-        for (BlockInfo binfo : binfos)
-            if (Arrays.equals(binfo.getHash(), block.getHash()))
+        for (BlockInfo binfo : binfos) {
+            if (Arrays.equals(binfo.getHash(), block.getHash())) {
                 toremove.add(binfo);
+            }
+        }
 
         binfos.removeAll(toremove);
     }
@@ -107,8 +110,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
         List<BlockInfo> infos = this.index.get(blockNumber);
         if (infos != null) {
             Optional<BlockInfo> info =  infos.stream().filter(BlockInfo::isMainChain).findAny();
-            if (info.isPresent())
+            if (info.isPresent()) {
                 return info.get().getHash();
+            }
 
         }
         return getChainBlockByNumber(blockNumber).getHash();
@@ -118,8 +122,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
     public synchronized void flush() {
         long t1 = System.nanoTime();
 
-        if (indexDB != null)
+        if (indexDB != null) {
             indexDB.commit();
+        }
 
         long t2 = System.nanoTime();
 
@@ -150,8 +155,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
         blockInfo.setHash(block.getHash());
         blockInfo.setMainChain(mainChain);
 
-        if (blocks.get(block.getHash()) == null)
+        if (blocks.get(block.getHash()) == null) {
             blocks.put(block.getHash(), block.getEncoded());
+        }
         index.put(block.getNumber(), blockInfos);
         blockCache.addBlock(block);
     }
@@ -162,8 +168,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
         List<BlockInfo> blockInfos = index.get(number);
 
-        if (blockInfos == null)
+        if (blockInfos == null) {
             return result;
+        }
 
         for (BlockInfo blockInfo : blockInfos) {
             byte[] hash = ByteUtils.clone(blockInfo.getHash());
@@ -199,12 +206,14 @@ public class IndexedBlockStore extends AbstractBlockstore {
     public synchronized Block getBlockByHash(byte[] hash) {
         Block block = this.blockCache.getBlockByHash(hash);
 
-        if (block != null)
+        if (block != null) {
             return block;
+        }
 
         byte[] blockRlp = blocks.get(hash);
-        if (blockRlp == null)
+        if (blockRlp == null) {
             return null;
+        }
 
         block = new Block(blockRlp);
         this.blockCache.put(new ByteArrayWrapper(hash), block);
@@ -226,13 +235,15 @@ public class IndexedBlockStore extends AbstractBlockstore {
         Long level  =  block.getNumber();
         List<BlockInfo> blockInfos =  index.get(level);
 
-        if (blockInfos == null)
+        if (blockInfos == null) {
             return ZERO;
+        }
 
-        for (BlockInfo blockInfo : blockInfos)
-             if (areEqual(blockInfo.getHash(), hash)) {
-                 return blockInfo.cummDifficulty;
-             }
+        for (BlockInfo blockInfo : blockInfos) {
+            if (areEqual(blockInfo.getHash(), hash)) {
+                return blockInfo.cummDifficulty;
+            }
+        }
 
         return ZERO;
     }
@@ -307,8 +318,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
                 BlockInfo blockInfo = getBlockInfoForHash(blocks, forkLine.getHash());
                 if (blockInfo != null) {
                     blockInfo.setMainChain(true);
-                    if (index.containsKey(currentLevel))
+                    if (index.containsKey(currentLevel)) {
                         index.put(currentLevel, blocks);
+                    }
                 }
                 forkLine = getBlockByHash(forkLine.getParentHash());
                 --currentLevel;
@@ -323,8 +335,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
                 BlockInfo blockInfo = getBlockInfoForHash(blocks, bestLine.getHash());
                 if (blockInfo != null) {
                     blockInfo.setMainChain(false);
-                    if (index.containsKey(currentLevel))
+                    if (index.containsKey(currentLevel)) {
                         index.put(currentLevel, blocks);
+                    }
                 }
                 bestLine = getBlockByHash(bestLine.getParentHash());
                 --currentLevel;
@@ -338,15 +351,17 @@ public class IndexedBlockStore extends AbstractBlockstore {
             BlockInfo bestInfo = getBlockInfoForHash(levelBlocks, bestLine.getHash());
             if (bestInfo != null) {
                 bestInfo.setMainChain(false);
-                if (index.containsKey(currentLevel))
+                if (index.containsKey(currentLevel)) {
                     index.put(currentLevel, levelBlocks);
+                }
             }
 
             BlockInfo forkInfo = getBlockInfoForHash(levelBlocks, forkLine.getHash());
             if (forkInfo != null) {
                 forkInfo.setMainChain(true);
-                if (index.containsKey(currentLevel))
+                if (index.containsKey(currentLevel)) {
                     index.put(currentLevel, levelBlocks);
+                }
             }
 
             bestLine = getBlockByHash(bestLine.getParentHash());
@@ -368,11 +383,12 @@ public class IndexedBlockStore extends AbstractBlockstore {
                 break;
             }
 
-            for (BlockInfo blockInfo : blockInfos)
-               if (blockInfo.isMainChain()) {
-                   result.add(blockInfo.getHash());
-                   break;
-               }
+            for (BlockInfo blockInfo : blockInfos) {
+                if (blockInfo.isMainChain()) {
+                    result.add(blockInfo.getHash());
+                    break;
+                }
+            }
 
             ++number;
         }
@@ -453,10 +469,11 @@ public class IndexedBlockStore extends AbstractBlockstore {
             if (levelInfos != null) {
                 System.out.print(i);
                 for (BlockInfo blockInfo : levelInfos){
-                    if (blockInfo.isMainChain())
+                    if (blockInfo.isMainChain()) {
                         System.out.print(" [" + shortHash(blockInfo.getHash()) + "] ");
-                    else
+                    } else {
                         System.out.print(" " + shortHash(blockInfo.getHash()) + " ");
+                    }
                 }
                 System.out.println();
             }
@@ -465,13 +482,15 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     private static BlockInfo getBlockInfoForHash(List<BlockInfo> blocks, byte[] hash){
-        if (blocks == null)
+        if (blocks == null) {
             return null;
+        }
 
-        for (BlockInfo blockInfo : blocks)
+        for (BlockInfo blockInfo : blocks) {
             if (areEqual(hash, blockInfo.getHash())) {
                 return blockInfo;
             }
+        }
 
         return null;
     }

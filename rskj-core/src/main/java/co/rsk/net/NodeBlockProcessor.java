@@ -153,8 +153,9 @@ public class NodeBlockProcessor implements BlockProcessor {
         logger.trace("Processing get block by hash {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID().toString());
         final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
-        if (block == null)
+        if (block == null) {
             return;
+        }
 
         nodeInformation.addBlockToNode(new ByteArrayWrapper(hash), sender.getPeerNodeID());
         sender.sendMessage(new BlockResponseMessage(requestId, block));
@@ -172,8 +173,9 @@ public class NodeBlockProcessor implements BlockProcessor {
     public void processBlockHeadersRequest(@Nonnull final MessageChannel sender, long requestId, @Nonnull final byte[] hash, int count) {
         Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
-        if (block == null)
+        if (block == null) {
             return;
+        }
 
         List<BlockHeader> headers = new ArrayList<>();
 
@@ -182,8 +184,9 @@ public class NodeBlockProcessor implements BlockProcessor {
         for (int k = 1; k < count; k++) {
             block = blockSyncService.getBlockFromStoreOrBlockchain(block.getParentHash());
 
-            if (block == null)
+            if (block == null) {
                 break;
+            }
 
             headers.add(block.getHeader());
         }

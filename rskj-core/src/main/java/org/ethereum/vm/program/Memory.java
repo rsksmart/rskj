@@ -77,20 +77,23 @@ public class Memory implements ProgramListenerAware {
 
     public void write(int address, byte[] data, int dataSize, boolean limited) {
 
-        if (data.length < dataSize)
+        if (data.length < dataSize) {
             dataSize = data.length;
+        }
 
-        if (!limited)
+        if (!limited) {
             extend(address, dataSize);
+        }
 
         int chunkIndex = address / CHUNK_SIZE;
         int chunkOffset = address % CHUNK_SIZE;
 
         int toCapture = 0;
-        if (limited)
+        if (limited) {
             toCapture = (address + dataSize > softSize) ? softSize - address : dataSize;
-        else
+        } else {
             toCapture = dataSize;
+        }
 
         int start = 0;
         while (toCapture > 0) {

@@ -40,8 +40,9 @@ public class FileUtil {
                 }
             }
 
-            if (!file.setWritable(true))
+            if (!file.setWritable(true)) {
                 LOGGER.error("File is not writable");
+            }
 
             boolean result = file.delete();
             return result;

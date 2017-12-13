@@ -31,27 +31,34 @@ class PathEncoder {
 
     @Nonnull
     static byte[] encode(byte[] path, int arity) {
-        if (path == null)
+        if (path == null) {
             throw new IllegalArgumentException("path");
+        }
 
-        if (arity == 2)
+        if (arity == 2) {
             return encodeBinaryPath(path);
+        }
 
-        if (arity == 16)
+        if (arity == 16) {
             return encodeHexadecimalPath(path);
+        }
 
         throw new IllegalArgumentException(INVALID_ARITY);
     }
 
     @Nonnull
     static byte[] decode(byte[] encoded, int arity, int length) {
-        if (encoded == null)
+        if (encoded == null) {
             throw new IllegalArgumentException("encoded");
+        }
 
-        if (arity == 2)
+        if (arity == 2) {
             return decodeBinaryPath(encoded, length);
-        if (arity == 16)
+        }
+
+        if (arity == 16) {
             return decodeHexadecimalPath(encoded, length);
+        }
 
         throw new IllegalArgumentException(INVALID_ARITY);
     }
@@ -66,10 +73,14 @@ class PathEncoder {
 
         for (int k = 0; k < lpath; k++) {
             int offset = k % 8;
-            if (k > 0 && offset == 0)
+            if (k > 0 && offset == 0) {
                 nbyte++;
-            if (path[k] == 0)
+            }
+
+            if (path[k] == 0) {
                 continue;
+            }
+
             encoded[nbyte] |= 0x80 >> offset;
         }
 
@@ -84,8 +95,9 @@ class PathEncoder {
             int nbyte = k / 8;
             int offset = k % 8;
 
-            if (((encoded[nbyte] >> (7 - offset)) & 0x01) != 0)
+            if (((encoded[nbyte] >> (7 - offset)) & 0x01) != 0) {
                 path[k] = 1;
+            }
         }
 
         return path;
@@ -99,10 +111,14 @@ class PathEncoder {
         int nbyte = 0;
 
         for (int k = 0; k < lpath; k++) {
-            if (k > 0 && k % 2 == 0)
+            if (k > 0 && k % 2 == 0) {
                 nbyte++;
-            if (path[k] == 0)
+            }
+
+            if (path[k] == 0) {
                 continue;
+            }
+            
             int offset = k % 2;
             encoded[nbyte] |= (path[k] & 0x0f) << ((1 - offset) * 4);
         }

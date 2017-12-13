@@ -168,8 +168,9 @@ public class Channel {
         frameCodec.writeFrame(new FrameCodec.Frame(helloMessage.getCode(), payload), byteBufMsg);
         ctx.writeAndFlush(byteBufMsg).sync();
 
-        if (logger.isInfoEnabled())
+        if (logger.isInfoEnabled()) {
             logger.info("To: \t{} \tSend: \t{}", ctx.channel().remoteAddress(), helloMessage);
+        }
         getNodeStatistics().rlpxOutHello.add();
     }
 

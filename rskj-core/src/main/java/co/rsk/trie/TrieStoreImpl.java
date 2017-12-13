@@ -101,8 +101,9 @@ public class TrieStoreImpl implements TrieStore {
         for (byte[] key : this.store.keys()) {
             byte[] value = this.store.get(key);
 
-            if (value == null || value.length == 0)
+            if (value == null || value.length == 0) {
                 continue;
+            }
 
             keys.add(key);
             values.add(value);
@@ -135,8 +136,9 @@ public class TrieStoreImpl implements TrieStore {
     public void copyFrom(TrieStoreImpl originalTrieStore) {
         KeyValueDataSource ds = originalTrieStore.store;
 
-        for (byte[] key : ds.keys())
+        for (byte[] key : ds.keys()) {
             this.store.put(key, ds.get(key));
+        }
     }
 
     public static TrieStoreImpl deserialize(byte[] bytes) {
@@ -155,13 +157,15 @@ public class TrieStoreImpl implements TrieStore {
             for (int k = 0; k < nkeys; k++) {
                 int lkey = dstream.readInt();
                 byte[] key = new byte[lkey];
-                if (dstream.read(key) != lkey)
+                if (dstream.read(key) != lkey) {
                     throw new EOFException();
+                }
 
                 int lvalue = dstream.readInt();
                 byte[] value = new byte[lvalue];
-                if (dstream.read(value) != lvalue)
+                if (dstream.read(value) != lvalue) {
                     throw new EOFException();
+                }
 
                 ds.put(key, value);
             }

@@ -111,10 +111,11 @@ public class MinerUtils {
 
                 BigInteger expectedNonce;
 
-                if (accountNonces.containsKey(wrappedSender))
+                if (accountNonces.containsKey(wrappedSender)) {
                     expectedNonce = new BigInteger(1, accountNonces.get(wrappedSender).toByteArray()).add(BigInteger.ONE);
-                else
+                } else {
                     expectedNonce = originalRepo.getNonce(txSender);
+                }
 
                 if (!(tx instanceof RemascTransaction) && tx.getGasPriceAsInteger().compareTo(minGasPrice) < 0) {
                     logger.warn("Rejected transaction {} because of low gas account {}, removing tx from pending state.", Hex.toHexString(tx.getHash()), Hex.toHexString(txSender));

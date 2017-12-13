@@ -102,42 +102,43 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         MessageType mType = message.getMessageType();
 
-        if (mType == MessageType.GET_BLOCK_MESSAGE)
+        if (mType == MessageType.GET_BLOCK_MESSAGE) {
             this.processGetBlockMessage(sender, (GetBlockMessage) message);
-        else if (mType == MessageType.BLOCK_MESSAGE)
+        } else if (mType == MessageType.BLOCK_MESSAGE) {
             this.processBlockMessage(sender, (BlockMessage) message);
-        else if (mType == MessageType.STATUS_MESSAGE)
+        } else if (mType == MessageType.STATUS_MESSAGE) {
             this.processStatusMessage(sender, (StatusMessage) message);
-        else if (mType == MessageType.BLOCK_REQUEST_MESSAGE)
+        } else if (mType == MessageType.BLOCK_REQUEST_MESSAGE) {
             this.processBlockRequestMessage(sender, (BlockRequestMessage) message);
-        else if (mType == MessageType.BLOCK_RESPONSE_MESSAGE)
+        } else if (mType == MessageType.BLOCK_RESPONSE_MESSAGE) {
             this.processBlockResponseMessage(sender, (BlockResponseMessage) message);
-        else if (mType == MessageType.BODY_REQUEST_MESSAGE)
+        } else if (mType == MessageType.BODY_REQUEST_MESSAGE) {
             this.processBodyRequestMessage(sender, (BodyRequestMessage) message);
-        else if (mType == MessageType.BODY_RESPONSE_MESSAGE)
+        } else if (mType == MessageType.BODY_RESPONSE_MESSAGE) {
             this.processBodyResponseMessage(sender, (BodyResponseMessage) message);
-        else if (mType == MessageType.BLOCK_HEADERS_REQUEST_MESSAGE)
+        } else if (mType == MessageType.BLOCK_HEADERS_REQUEST_MESSAGE) {
             this.processBlockHeadersRequestMessage(sender, (BlockHeadersRequestMessage) message);
-        else if (mType == MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE)
+        } else if (mType == MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE) {
             this.processBlockHeadersResponseMessage(sender, (BlockHeadersResponseMessage) message);
-        else if (mType == MessageType.BLOCK_HASH_REQUEST_MESSAGE)
+        } else if (mType == MessageType.BLOCK_HASH_REQUEST_MESSAGE) {
             this.processBlockHashRequestMessage(sender, (BlockHashRequestMessage) message);
-        else if (mType == MessageType.BLOCK_HASH_RESPONSE_MESSAGE)
+        } else if (mType == MessageType.BLOCK_HASH_RESPONSE_MESSAGE) {
             this.processBlockHashResponseMessage(sender, (BlockHashResponseMessage) message);
-        else if (mType == MessageType.SKELETON_REQUEST_MESSAGE)
+        } else if (mType == MessageType.SKELETON_REQUEST_MESSAGE) {
             this.processSkeletonRequestMessage(sender, (SkeletonRequestMessage) message);
-        else if (mType == MessageType.SKELETON_RESPONSE_MESSAGE)
+        } else if (mType == MessageType.SKELETON_RESPONSE_MESSAGE) {
             this.processSkeletonResponseMessage(sender, (SkeletonResponseMessage) message);
-        else if (mType == MessageType.NEW_BLOCK_HASH_MESSAGE)
+        } else if (mType == MessageType.NEW_BLOCK_HASH_MESSAGE) {
             this.processNewBlockHashMessage(sender, (NewBlockHashMessage) message);
-        else if(!blockProcessor.hasBetterBlockToSync()) {
-            if (mType == MessageType.NEW_BLOCK_HASHES)
+        } else if(!blockProcessor.hasBetterBlockToSync()) {
+            if (mType == MessageType.NEW_BLOCK_HASHES) {
                 this.processNewBlockHashesMessage(sender, (NewBlockHashesMessage) message);
-            else if (mType == MessageType.TRANSACTIONS)
+            } else if (mType == MessageType.TRANSACTIONS) {
                 this.processTransactionsMessage(sender, (TransactionsMessage) message);
-        }
-        else
+            }
+        } else {
             loggerMessageProcess.debug("Message[{}] not processed.", message.getMessageType());
+        }
 
         loggerMessageProcess.debug("Message[{}] processed after [{}] nano.", message.getMessageType(), System.nanoTime() - start);
     }
@@ -300,8 +301,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private void tryRelayBlock(@Nonnull MessageChannel sender, Block block, boolean wasOrphan, BlockProcessResult result) {
         // is new block and it is not orphan, it is in some blockchain
-        if (!wasOrphan && result.wasBlockAdded(block) && !this.blockProcessor.hasBetterBlockToSync())
+        if (!wasOrphan && result.wasBlockAdded(block) && !this.blockProcessor.hasBetterBlockToSync()) {
             relayBlock(sender, block);
+        }
     }
 
     private void relayBlock(@Nonnull MessageChannel sender, Block block) {
@@ -433,8 +435,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private void recordEvent(MessageChannel sender, EventType event) {
-        if (sender == null)
+        if (sender == null) {
             return;
+        }
 
         this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
     }

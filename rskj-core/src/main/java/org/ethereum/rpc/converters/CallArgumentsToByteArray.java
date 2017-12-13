@@ -35,8 +35,9 @@ public class CallArgumentsToByteArray {
 
     public byte[] getGasPrice() {
         byte[] gasPrice = new byte[] {0};
-        if (args.gasPrice != null && args.gasPrice.length() != 0)
+        if (args.gasPrice != null && args.gasPrice.length() != 0) {
             gasPrice = stringHexToByteArray(args.gasPrice);
+        }
 
         return gasPrice;
     }
@@ -45,24 +46,27 @@ public class CallArgumentsToByteArray {
         // maxGasLimit value is 100000000000000
         String maxGasLimit = "0x5AF3107A4000";
         byte[] gasLimit = stringHexToByteArray(maxGasLimit);
-        if (args.gas != null && args.gas.length() != 0)
+        if (args.gas != null && args.gas.length() != 0) {
             gasLimit = stringHexToByteArray(args.gas);
+        }
 
         return gasLimit;
     }
 
     public byte[] getToAddress() {
         byte[] toAddress = null;
-        if (args.to != null)
+        if (args.to != null) {
             toAddress = stringHexToByteArray(args.to);
+        }
 
         return toAddress;
     }
 
     public byte[] getValue() {
         byte[] value = new byte[] { 0 };
-        if (args.value != null && args.value.length() != 0)
+        if (args.value != null && args.value.length() != 0) {
             value = stringHexToByteArray(args.value);
+        }
 
         return value;
     }
@@ -70,16 +74,18 @@ public class CallArgumentsToByteArray {
     public byte[] getData() {
         byte[] data = null;
 
-        if (args.data != null && args.data.length() != 0)
+        if (args.data != null && args.data.length() != 0) {
             data = stringHexToByteArray(args.data);
+        }
 
         return data;
     }
 
     public byte[] getFromAddress() {
         byte[] fromAddress = null;
-        if (args.from != null)
+        if (args.from != null) {
             fromAddress = stringHexToByteArray(args.from);
+        }
 
         return fromAddress;
     }

@@ -28,12 +28,17 @@ public class SyncPeerStatus {
         BigInteger ttd = this.status.getTotalDifficulty();
         BigInteger otd = other.status.getTotalDifficulty();
 
-        if (ttd == null && otd == null)
+        if (ttd == null && otd == null) {
             return 0;
-        if (ttd == null)
+        }
+
+        if (ttd == null) {
             return -1;
-        if (otd == null)
+        }
+
+        if (otd == null) {
             return 1;
+        }
 
         return ttd.compareTo(otd);
     }

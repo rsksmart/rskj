@@ -163,10 +163,12 @@ public class BridgeSupport {
      * @param headers The bitcoin headers
      */
     public void receiveHeaders(BtcBlock[] headers) {
-        if (headers.length > 0)
+        if (headers.length > 0) {
             logger.debug("Received {} headers. First {}, last {}.", headers.length, headers[0].getHash(), headers[headers.length - 1].getHash());
-        else
+        } else {
             logger.warn("Received 0 headers");
+        }
+
         Context.propagate(btcContext);
         for (int i = 0; i < headers.length; i++) {
             try {
@@ -201,8 +203,9 @@ public class BridgeSupport {
      */
     public Wallet getRetiringFederationWallet() throws IOException {
         Federation federation = getRetiringFederation();
-        if (federation == null)
+        if (federation == null) {
             return null;
+        }
 
         List<UTXO> utxos = provider.getRetiringFederationBtcUTXOs();
 
@@ -567,8 +570,9 @@ public class BridgeSupport {
         byte[] includedBlockHash = info.getBlockHash();
         org.ethereum.core.Block includedBlock = rskBlockStore.getBlockByHash(includedBlockHash);
 
-        if (includedBlock == null)
+        if (includedBlock == null) {
             return false;
+        }
 
         return (rskExecutionBlock.getNumber() - includedBlock.getNumber() + 1) >= bridgeConstants.getRsk2BtcMinimumAcceptableConfirmations();
     }
@@ -667,8 +671,9 @@ public class BridgeSupport {
         for (int j = 1; j < chunkList.size() - 1; j++) {
             ScriptChunk scriptChunk = chunkList.get(j);
 
-            if (scriptChunk.data.length == 0)
+            if (scriptChunk.data.length == 0) {
                 continue;
+            }
 
             TransactionSignature sig2 = TransactionSignature.decodeFromBitcoin(scriptChunk.data, false, false);
 
@@ -763,8 +768,9 @@ public class BridgeSupport {
     }
 
     private StoredBlock getPrevBlockAtHeight(StoredBlock cursor, int height) throws BlockStoreException {
-        if (cursor.getHeight() == height)
+        if (cursor.getHeight() == height) {
             return cursor;
+        }
 
         boolean stop = false;
         StoredBlock current = cursor;
@@ -813,8 +819,9 @@ public class BridgeSupport {
     public Federation getActiveFederation() {
         Federation currentFederation = provider.getActiveFederation();
 
-        if (currentFederation == null)
+        if (currentFederation == null) {
             currentFederation = bridgeConstants.getGenesisFederation();
+        }
 
         return currentFederation;
     }
@@ -885,8 +892,9 @@ public class BridgeSupport {
      */
     public Address getRetiringFederationAddress() {
         Federation retiringFederation = provider.getRetiringFederation();
-        if (retiringFederation == null)
+        if (retiringFederation == null) {
             return null;
+        }
 
         return retiringFederation.getAddress();
     }
@@ -897,8 +905,9 @@ public class BridgeSupport {
      */
     public Integer getRetiringFederationSize() {
         Federation retiringFederation = provider.getRetiringFederation();
-        if (retiringFederation == null)
+        if (retiringFederation == null) {
             return -1;
+        }
 
         return retiringFederation.getPublicKeys().size();
     }
@@ -909,8 +918,9 @@ public class BridgeSupport {
      */
     public Integer getRetiringFederationThreshold() {
         Federation retiringFederation = provider.getRetiringFederation();
-        if (retiringFederation == null)
+        if (retiringFederation == null) {
             return -1;
+        }
 
         return retiringFederation.getNumberOfSignaturesRequired();
     }
@@ -922,8 +932,9 @@ public class BridgeSupport {
      */
     public byte[] getRetiringFederatorPublicKey(int index) {
         Federation retiringFederation = provider.getRetiringFederation();
-        if (retiringFederation == null)
+        if (retiringFederation == null) {
             return null;
+        }
 
         List<BtcECKey> publicKeys = retiringFederation.getPublicKeys();
 
@@ -940,8 +951,9 @@ public class BridgeSupport {
      */
     public Instant getRetiringFederationCreationTime() {
         Federation retiringFederation = provider.getRetiringFederation();
-        if (retiringFederation == null)
+        if (retiringFederation == null) {
             return null;
+        }
 
         return retiringFederation.getCreationTime();
     }
@@ -953,8 +965,9 @@ public class BridgeSupport {
     @Nullable
     private Federation getRetiringFederation() {
         Integer size = getRetiringFederationSize();
-        if (size == -1)
+        if (size == -1) {
             return null;
+        }
 
         List<BtcECKey> publicKeys = new ArrayList<>();
         for (int i = 0; i < size; i++) {
@@ -1003,8 +1016,9 @@ public class BridgeSupport {
             return -2;
         }
 
-        if (dryRun)
+        if (dryRun) {
             return 1;
+        }
 
         currentPendingFederation = new PendingFederation(Collections.emptyList());
 
@@ -1033,8 +1047,9 @@ public class BridgeSupport {
             return -2;
         }
 
-        if (dryRun)
+        if (dryRun) {
             return 1;
+        }
 
         currentPendingFederation = currentPendingFederation.addPublicKey(key);
 
@@ -1070,8 +1085,9 @@ public class BridgeSupport {
             return -3;
         }
 
-        if (dryRun)
+        if (dryRun) {
             return 1;
+        }
 
         // Move UTXOs from the active federation into the retiring federation
         // and clear the active federation's UTXOs
@@ -1107,8 +1123,9 @@ public class BridgeSupport {
             return -1;
         }
 
-        if (dryRun)
+        if (dryRun) {
             return 1;
+        }
 
         provider.setPendingFederation(null);
 
@@ -1294,8 +1311,9 @@ public class BridgeSupport {
      * LOCK_WHITELIST_GENERIC_ERROR_CODE otherwise.
      */
     public Integer addLockWhitelistAddress(Transaction tx, String addressBase58) {
-        if (!isLockWhitelistChangeAuthorized(tx))
+        if (!isLockWhitelistChangeAuthorized(tx)) {
             return LOCK_WHITELIST_GENERIC_ERROR_CODE;
+        }
 
         LockWhitelist whitelist = provider.getLockWhitelist();
 
@@ -1332,8 +1350,9 @@ public class BridgeSupport {
      * LOCK_WHITELIST_GENERIC_ERROR_CODE otherwise.
      */
     public Integer removeLockWhitelistAddress(Transaction tx, String addressBase58) {
-        if (!isLockWhitelistChangeAuthorized(tx))
+        if (!isLockWhitelistChangeAuthorized(tx)) {
             return LOCK_WHITELIST_GENERIC_ERROR_CODE;
+        }
 
         LockWhitelist whitelist = provider.getLockWhitelist();
 

@@ -75,8 +75,9 @@ public class OffchainTransactionExecutor {
         // executes transactions offline BUT does not store receipts nor allows to
         // set gastPrice. This method allows fine grained debugging.
 
-        if (header==null)
+        if (header==null) {
             header = getEmptyBlockHeader();
+        }
         Block block = new Block(header,txList,null);
         logger.info("executeTransactions: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
         long saveTime = System.nanoTime();
@@ -113,8 +114,9 @@ public class OffchainTransactionExecutor {
 
             logger.info("[{}] ", receipt.toString());
 
-            if (logger.isInfoEnabled())
+            if (logger.isInfoEnabled()) {
                 logger.info("tx[{}].receipt: [{}] ", i, Hex.toHexString(receipt.getEncoded()));
+            }
 
             receipts.add(receipt);
         }

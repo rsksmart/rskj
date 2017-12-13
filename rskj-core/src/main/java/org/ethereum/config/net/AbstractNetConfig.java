@@ -32,10 +32,12 @@ public class AbstractNetConfig implements BlockchainNetConfig {
     private int count;
 
     public void add(long startBlockNumber, BlockchainConfig config) {
-        if (count >= blockNumbers.length)
+        if (count >= blockNumbers.length) {
             throw new RuntimeException();
-        if (count > 0 && blockNumbers[count] >= startBlockNumber)
+        }
+        if (count > 0 && blockNumbers[count] >= startBlockNumber) {
             throw new RuntimeException("Block numbers should increase");
+        }
         if (count == 0 && startBlockNumber > 0) {
             throw new RuntimeException("First config should start from block 0");
         }

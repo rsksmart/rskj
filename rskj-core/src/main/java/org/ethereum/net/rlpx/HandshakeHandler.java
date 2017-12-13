@@ -139,8 +139,9 @@ public class HandshakeHandler extends ByteToMessageDecoder {
 
         channel.getNodeStatistics().rlpxAuthMessagesSent.add();
 
-        if (loggerNet.isInfoEnabled())
+        if (loggerNet.isInfoEnabled()) {
             loggerNet.info("To: \t{} \tSend: \t{}", ctx.channel().remoteAddress(), msg);
+        }
     }
 
     // consume handshake, producing no resulting message to upper layers
@@ -150,8 +151,9 @@ public class HandshakeHandler extends ByteToMessageDecoder {
             if (frameCodec == null) {
 
                 byte[] responsePacket = new byte[AuthResponseMessage.getLength() + ECIESCoder.getOverhead()];
-                if (!buffer.isReadable(responsePacket.length))
+                if (!buffer.isReadable(responsePacket.length)) {
                     return;
+                }
                 buffer.readBytes(responsePacket);
 
                 try {
@@ -183,21 +185,24 @@ public class HandshakeHandler extends ByteToMessageDecoder {
             } else {
                 loggerWire.info("MessageCodec: Buffer bytes: " + buffer.readableBytes());
                 List<Frame> frames = frameCodec.readFrames(buffer);
-                if (frames == null || frames.isEmpty())
+                if (frames == null || frames.isEmpty()) {
                     return;
+                }
                 Frame frame = frames.get(0);
                 byte[] payload = ByteStreams.toByteArray(frame.getStream());
                 if (frame.getType() == P2pMessageCodes.HELLO.asByte()) {
                     HelloMessage helloMessage = new HelloMessage(payload);
-                    if (loggerNet.isInfoEnabled())
+                    if (loggerNet.isInfoEnabled()) {
                         loggerNet.info("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), helloMessage);
+                    }
                     isHandshakeDone = true;
                     this.channel.publicRLPxHandshakeFinished(ctx, frameCodec, helloMessage);
                     recordSuccessfulHandshake(ctx);
                 } else {
                     DisconnectMessage message = new DisconnectMessage(payload);
-                    if (loggerNet.isInfoEnabled())
+                    if (loggerNet.isInfoEnabled()) {
                         loggerNet.info("From: \t{} \tRecv: \t{}", channel, message);
+                    }
                     channel.getNodeStatistics().nodeDisconnectedRemote(message.getReason());
                 }
             }
@@ -206,8 +211,9 @@ public class HandshakeHandler extends ByteToMessageDecoder {
             if (frameCodec == null) {
                 loggerWire.debug("FrameCodec == null");
                 byte[] authInitPacket = new byte[AuthInitiateMessage.getLength() + ECIESCoder.getOverhead()];
-                if (!buffer.isReadable(authInitPacket.length))
+                if (!buffer.isReadable(authInitPacket.length)) {
                     return;
+                }
                 buffer.readBytes(authInitPacket);
 
                 this.handshake = new EncryptionHandshake();
@@ -267,8 +273,9 @@ public class HandshakeHandler extends ByteToMessageDecoder {
                 ctx.writeAndFlush(byteBufMsg).sync();
             } else {
                 List<Frame> frames = frameCodec.readFrames(buffer);
-                if (frames == null || frames.isEmpty())
+                if (frames == null || frames.isEmpty()) {
                     return;
+                }
                 Frame frame = frames.get(0);
 
                 Message message = new P2pMessageFactory().create((byte) frame.getType(),
@@ -299,14 +306,16 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     private byte[] readEIP8Packet(ByteBuf buffer, byte[] plainPacket) {
 
         int size = bigEndianToShort(plainPacket);
-        if (size < plainPacket.length)
+        if (size < plainPacket.length) {
             throw new IllegalArgumentException("AuthResponse packet size is too low");
+        }
 
         int bytesLeft = size - plainPacket.length + 2;
         byte[] restBytes = new byte[bytesLeft];
 
-        if (!buffer.isReadable(restBytes.length))
+        if (!buffer.isReadable(restBytes.length)) {
             return null;
+        }
 
         buffer.readBytes(restBytes);
 

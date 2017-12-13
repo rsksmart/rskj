@@ -85,10 +85,13 @@ public class Sha3Hash implements Serializable, Comparable<Sha3Hash> {
         for (int i = 32 - 1; i >= 0; i--) {
             final int thisByte = this.bytes[i] & 0xff;
             final int otherByte = o.bytes[i] & 0xff;
-            if (thisByte > otherByte)
+            if (thisByte > otherByte) {
                 return 1;
-            if (thisByte < otherByte)
+            }
+
+            if (thisByte < otherByte) {
                 return -1;
+            }
         }
         return 0;
     }

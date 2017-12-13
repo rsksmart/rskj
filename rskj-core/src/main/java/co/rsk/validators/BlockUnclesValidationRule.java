@@ -74,8 +74,9 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
     @Override
     public boolean isValid(Block block) {
 
-        if (!blockValidationRule.isValid(block))
+        if (!blockValidationRule.isValid(block)) {
             return false;
+        }
 
         List<BlockHeader> uncles = block.getUncleList();
         if (CollectionUtils.isNotEmpty(uncles) &&

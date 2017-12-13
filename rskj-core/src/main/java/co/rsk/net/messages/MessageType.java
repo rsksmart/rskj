@@ -20,7 +20,6 @@ package co.rsk.net.messages;
 
 import co.rsk.net.Status;
 import co.rsk.remasc.RemascTransaction;
-import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
@@ -50,8 +49,9 @@ public enum MessageType {
             long number = rlpdata == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpdata).longValue();
             byte[] hash = list.get(1).getRLPData();
 
-            if (list.size() == 2)
+            if (list.size() == 2) {
                 return new StatusMessage(new Status(number, hash));
+            }
 
             byte[] parentHash = list.get(2).getRLPData();
             byte[] rlpTotalDifficulty = list.get(3).getRLPData();
@@ -216,8 +216,9 @@ public enum MessageType {
                 byte[] txdata = rlpTransactions.get(k).getRLPData();
                 Transaction tx = new ImmutableTransaction(txdata);
 
-                if (Block.isRemascTransaction(tx, k, rlpTransactions.size()))
+                if (Block.isRemascTransaction(tx, k, rlpTransactions.size())) {
                     tx = new RemascTransaction(txdata);
+                }
 
                 transactions.add(tx);
             }
@@ -262,8 +263,9 @@ public enum MessageType {
 
     public static MessageType valueOfType(int type) {
         for(MessageType mt : MessageType.values()) {
-            if(mt.type == type)
+            if(mt.type == type) {
                 return mt;
+            }
         }
         throw new IllegalArgumentException(String.format("Invalid Message Type: %d", type));
     }

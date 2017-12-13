@@ -79,8 +79,10 @@ public class BlockHeadersMessage extends Message {
 
     private void encode() {
         List<byte[]> encodedElements = new ArrayList<>();
-        for (BlockHeader blockHeader : blockHeaders)
+        for (BlockHeader blockHeader : blockHeaders) {
             encodedElements.add(blockHeader.getEncoded());
+        }
+
         byte[][] encodedElementArray = encodedElements.toArray(new byte[encodedElements.size()][]);
         this.encoded = RLP.encodeList(encodedElementArray);
     }

@@ -145,11 +145,13 @@ public final class Federation {
 
     @Override
     public boolean equals(Object other) {
-        if (this == other)
+        if (this == other) {
             return true;
+        }
 
-        if (other == null || this.getClass() != other.getClass())
+        if (other == null || this.getClass() != other.getClass()) {
             return false;
+        }
 
         Federation otherFederation = (Federation) other;
 

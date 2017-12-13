@@ -149,8 +149,9 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         String s = null;
         try {
             Account account = wallet.getAccount(TypeConverter.stringHexToByteArray(convertFromJsonHexToHex(address)));
-            if (account == null)
+            if (account == null) {
                 throw new Exception("Address private key is locked or could not be found in this node");
+            }
 
             return s = TypeConverter.toJsonHex(Hex.toHexString(account.getEcKey().getPrivKeyBytes()));
         } finally {
@@ -163,8 +164,9 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     }
 
     private String sendTransaction(Web3.CallArguments args, Account account) throws Exception {
-        if (account == null)
+        if (account == null) {
             throw new Exception("From address private key could not be found in this node");
+        }
 
         String toAddress = args.to != null ? Hex.toHexString(TypeConverter.stringHexToByteArray(args.to)) : null;
 
@@ -173,8 +175,9 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         BigInteger gasPrice = args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
         BigInteger gasLimit = args.gas != null ? TypeConverter.stringNumberAsBigInt(args.gas) : BigInteger.valueOf(GasCost.TRANSACTION);
 
-        if (args.data != null && args.data.startsWith("0x"))
+        if (args.data != null && args.data.startsWith("0x")) {
             args.data = args.data.substring(2);
+        }
 
         Transaction tx = Transaction.create(toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
 
@@ -186,14 +189,17 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     }
 
     private String convertFromJsonHexToHex(String x) throws Exception {
-        if (!x.startsWith("0x"))
+        if (!x.startsWith("0x")) {
             throw new Exception("Incorrect hex syntax");
+        }
+
         return x.substring(2);
     }
 
     private long convertFromJsonHexToLong(String x) throws Exception {
-        if (!x.startsWith("0x"))
+        if (!x.startsWith("0x")) {
             throw new Exception("Incorrect hex syntax");
+        }
         return Long.parseLong(x.substring(2), 16);
     }
 }

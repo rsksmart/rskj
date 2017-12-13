@@ -74,8 +74,9 @@ public class CLIInterface {
                     String connectStr = args[i + 1];
                     logger.info("Connect URI set to [{}]", connectStr);
                     URI uri = new URI(connectStr);
-                    if (!"enode".equals(uri.getScheme()))
+                    if (!"enode".equals(uri.getScheme())) {
                         throw new RuntimeException("expecting URL in the format enode://PUBKEY@HOST:PORT");
+                    }
                     cliOptions.put(SystemProperties.PROPERTY_PEER_ACTIVE, "[{url='" + connectStr + "'}]");
                 }
 
@@ -103,8 +104,9 @@ public class CLIInterface {
                     if (i + 1 < args.length && !args[i + 1].startsWith("-")) {
                         String headerStr =  args[i + 1];
 
-                        if (headerStr.contains("\r") || headerStr.contains("\n"))
+                        if (headerStr.contains("\r") || headerStr.contains("\n")) {
                             throw new IllegalArgumentException("rpccors");
+                        }
 
                         cliOptions.put(SystemProperties.PROPERTY_RPC_CORS, headerStr);
                         logger.info("RPC CORS header set to [{}]", headerStr);
@@ -127,10 +129,12 @@ public class CLIInterface {
 
     private static Boolean interpret(String arg) {
 
-        if ("on".equals(arg) || "true".equals(arg) || "yes".equals(arg))
+        if ("on".equals(arg) || "true".equals(arg) || "yes".equals(arg)) {
             return Boolean.TRUE;
-        if ("off".equals(arg) || "false".equals(arg) || "no".equals(arg))
+        }
+        if ("off".equals(arg) || "false".equals(arg) || "no".equals(arg)) {
             return Boolean.FALSE;
+        }
 
         throw new Error("Can't interpret the answer: " + arg);
     }

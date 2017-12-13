@@ -98,8 +98,9 @@ public class RepositoryTrack implements Repository {
 
         synchronized (repository) {
             AccountState accountState = cacheAccounts.get(wrap(addr));
-            if (accountState != null)
+            if (accountState != null) {
                 return !accountState.isDeleted();
+            }
 
             return repository.isExist(addr);
         }
@@ -157,8 +158,9 @@ public class RepositoryTrack implements Repository {
         synchronized (repository) {
             AccountState accountState = getAccountState(addr);
 
-            if (accountState == null)
+            if (accountState == null) {
                 accountState = createAccount(addr);
+            }
 
             getContractDetails(addr).setDirty(true);
 
@@ -178,8 +180,9 @@ public class RepositoryTrack implements Repository {
         synchronized (repository) {
             AccountState accountState = getAccountState(addr);
 
-            if (accountState == null)
+            if (accountState == null) {
                 accountState = createAccount(addr);
+            }
 
             getContractDetails(addr).setDirty(true);
 
@@ -192,8 +195,9 @@ public class RepositoryTrack implements Repository {
         synchronized (repository) {
             AccountState accountState = getAccountState(addr);
 
-            if (accountState == null)
+            if (accountState == null) {
                 accountState = createAccount(addr);
+            }
 
             getContractDetails(addr).setDirty(true);
 
@@ -254,12 +258,14 @@ public class RepositoryTrack implements Repository {
     public byte[] getCode(byte[] addr) {
 
         synchronized (repository) {
-            if (!isExist(addr))
+            if (!isExist(addr)) {
                 return EMPTY_BYTE_ARRAY;
+            }
 
             byte[] codeHash = getAccountState(addr).getCodeHash();
-            if (Arrays.equals(codeHash, EMPTY_DATA_HASH))
+            if (Arrays.equals(codeHash, EMPTY_DATA_HASH)) {
                 return EMPTY_BYTE_ARRAY;
+            }
 
             return getContractDetails(addr).getCode();
         }
@@ -398,10 +404,11 @@ public class RepositoryTrack implements Repository {
 
                 ContractDetailsCacheImpl contractDetailsCache = (ContractDetailsCacheImpl) entry.getValue();
                 if (    contractDetailsCache.origContract != null
-                        && !(contractDetailsCache.origContract instanceof ContractDetailsImpl))
+                        && !(contractDetailsCache.origContract instanceof ContractDetailsImpl)) {
                     cacheDetails.put(entry.getKey(), contractDetailsCache.origContract);
-                else
+                } else {
                     cacheDetails.put(entry.getKey(), contractDetailsCache);
+                }
             }
         }
     }

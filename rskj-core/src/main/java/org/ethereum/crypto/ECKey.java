@@ -152,8 +152,9 @@ public class ECKey implements Serializable {
 
     public ECKey(@Nullable BigInteger priv, ECPoint pub) {
         this.priv = priv;
-        if (pub == null)
+        if (pub == null) {
             throw new IllegalArgumentException("Public key may not be null");
+        }
         this.pub = pub;
     }
 
@@ -359,8 +360,9 @@ public class ECKey implements Serializable {
      * @throws java.lang.IllegalStateException if the private key bytes are not available.
      */
     public BigInteger getPrivKey() {
-        if (priv == null)
+        if (priv == null) {
             throw new MissingPrivateKeyException();
+        }
         return priv;
     }
 
@@ -536,8 +538,9 @@ public class ECKey implements Serializable {
      */
     public ECDSASignature doSign(byte[] input) {
         // No decryption of private key required.
-        if (priv == null)
+        if (priv == null) {
             throw new MissingPrivateKeyException();
+        }
         ECDSASigner signer = new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest()));
         ECPrivateKeyParameters privKey = new ECPrivateKeyParameters(priv, CURVE);
         signer.init(true, privKey);
@@ -554,8 +557,9 @@ public class ECKey implements Serializable {
      * @throws IllegalStateException if this ECKey does not have the private part.
      */
     public ECDSASignature sign(byte[] messageHash) {
-        if (priv == null)
+        if (priv == null) {
             throw new MissingPrivateKeyException();
+        }
         ECDSASignature sig = doSign(messageHash);
         // Now we have to work backwards to figure out the recId needed to recover the signature.
         int recId = -1;
@@ -566,8 +570,9 @@ public class ECKey implements Serializable {
                 break;
             }
         }
-        if (recId == -1)
+        if (recId == -1) {
             throw new RuntimeException("Could not construct a recoverable key. This should never happen.");
+        }
         sig.v = (byte) (recId + 27);
         return sig;
     }
@@ -593,13 +598,15 @@ public class ECKey implements Serializable {
             throw new SignatureException("Could not decode base64", e);
         }
         // Parse the signature bytes into r/s and the selector value.
-        if (signatureEncoded.length < 65)
+        if (signatureEncoded.length < 65) {
             throw new SignatureException("Signature truncated, expected 65 bytes and got " + signatureEncoded.length);
+        }
         int header = signatureEncoded[0] & 0xFF;
         // The header byte: 0x1B = first key with even y, 0x1C = first key with odd y,
         //                  0x1D = second key with even y, 0x1E = second key with odd y
-        if (header < 27 || header > 34)
+        if (header < 27 || header > 34) {
             throw new SignatureException("Header byte out of range: " + header);
+        }
         BigInteger r = new BigInteger(1, Arrays.copyOfRange(signatureEncoded, 1, 33));
         BigInteger s = new BigInteger(1, Arrays.copyOfRange(signatureEncoded, 33, 65));
         ECDSASignature sig = new ECDSASignature(r, s);
@@ -610,8 +617,9 @@ public class ECKey implements Serializable {
         }
         int recId = header - 27;
         ECKey key = ECKey.recoverFromSignature(recId, sig, messageHash, compressed);
-        if (key == null)
+        if (key == null) {
             throw new SignatureException("Could not recover public key from signature");
+        }
         return key;
     }
 
@@ -624,8 +632,9 @@ public class ECKey implements Serializable {
      */
     public byte[] decryptAES(byte[] cipher){
 
-        if (priv == null)
+        if (priv == null) {
             throw new MissingPrivateKeyException();
+        }
 
 
         AESFastEngine engine = new AESFastEngine();
@@ -641,8 +650,9 @@ public class ECKey implements Serializable {
         while(i < cipher.length){
             ctrEngine.processBlock(cipher, i, out, i);
             i += engine.getBlockSize();
-            if (cipher.length - i  < engine.getBlockSize())
+            if (cipher.length - i  < engine.getBlockSize()) {
                 break;
+            }
         }
 
         // process left bytes
@@ -713,14 +723,17 @@ public class ECKey implements Serializable {
     public static boolean isPubKeyCanonical(byte[] pubkey) {
         if (pubkey[0] == 0x04) {
             // Uncompressed pubkey
-            if (pubkey.length != 65)
+            if (pubkey.length != 65) {
                 return false;
+            }
         } else if (pubkey[0] == 0x02 || pubkey[0] == 0x03) {
             // Compressed pubkey
-            if (pubkey.length != 33)
+            if (pubkey.length != 33) {
                 return false;
-        } else
+            }
+        } else {
             return false;
+        }
         return true;
     }
 
@@ -772,8 +785,9 @@ public class ECKey implements Serializable {
         // So it's encoded in the recId.
         ECPoint r = decompressKey(x, (recId & 1) == 1);
         //   1.4. If nR != point at infinity, then do another iteration of Step 1 (callers responsibility).
-        if (!r.multiply(n).isInfinity())
+        if (!r.multiply(n).isInfinity()) {
             return null;
+        }
         //   1.5. Compute e from M using Steps 2 and 3 of ECDSA signature verification.
         BigInteger e = new BigInteger(1, messageHash);
         //   1.6. For k from 1 to 2 do the following.   (loop is outside this function via iterating recId)

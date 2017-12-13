@@ -46,8 +46,9 @@ public class AuthResponseMessage {
         offset += message.nonce.length;
         byte tokenUsed = wire[offset];
         offset += 1;
-        if (tokenUsed != 0x00 && tokenUsed != 0x01)
+        if (tokenUsed != 0x00 && tokenUsed != 0x01) {
             throw new RuntimeException("invalid boolean"); // TODO specific exception
+        }
         message.isTokenUsed = (tokenUsed == 0x01);
         return message;
     }

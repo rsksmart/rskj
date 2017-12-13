@@ -139,8 +139,9 @@ public class TxBuilderEx {
     private static long getNonce(Transaction tx) {
         byte[] bytes = tx.getNonce();
 
-        if (bytes == null || bytes.length == 0)
+        if (bytes == null || bytes.length == 0) {
             return 0;
+        }
 
         return new BigInteger(1, bytes).longValue();
     }

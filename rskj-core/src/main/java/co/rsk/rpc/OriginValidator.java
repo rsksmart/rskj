@@ -41,11 +41,11 @@ public class OriginValidator {
     }
 
     public OriginValidator(String uriList) {
-        if (uriList == null)
+        if (uriList == null) {
             this.origins = new URI[0];
-        else if ("*".equals(uriList.trim()))
+        } else if ("*".equals(uriList.trim())) {
             this.allowAllOrigins = true;
-        else {
+        } else {
             try {
                 this.origins = toUris(uriList);
             } catch (URISyntaxException e) {
@@ -58,8 +58,9 @@ public class OriginValidator {
     }
 
     public boolean isValidOrigin(String origin) {
-        if (this.allowAllOrigins)
+        if (this.allowAllOrigins) {
             return true;
+        }
 
         URI originUri = null;
 
@@ -69,16 +70,19 @@ public class OriginValidator {
             return false;
         }
 
-        for (URI uri : origins)
-            if (originUri.equals(uri))
+        for (URI uri : origins) {
+            if (originUri.equals(uri)) {
                 return true;
+            }
+        }
 
         return false;
     }
 
     public boolean isValidReferer(String referer) {
-        if (this.allowAllOrigins)
+        if (this.allowAllOrigins) {
             return true;
+        }
 
         URL refererUrl = null;
 
@@ -90,21 +94,24 @@ public class OriginValidator {
 
         String refererProtocol = refererUrl.getProtocol();
 
-        if (refererProtocol == null)
+        if (refererProtocol == null) {
             return false;
+        }
 
         String refererHost = refererUrl.getHost();
 
-        if (refererHost == null)
+        if (refererHost == null) {
             return false;
+        }
 
         int refererPort = refererUrl.getPort();
 
         for (int k = 0; k < origins.length; k++) {
             if (refererProtocol.equals(origins[k].getScheme()) &&
                     refererHost.equals(origins[k].getHost()) &&
-                    refererPort == origins[k].getPort())
+                    refererPort == origins[k].getPort()) {
                 return true;
+            }
         }
 
         return false;
@@ -114,8 +121,9 @@ public class OriginValidator {
         String[] elements = list.split(" ");
         URI[] uris = new URI[elements.length];
 
-        for (int k = 0; k < elements.length; k++)
+        for (int k = 0; k < elements.length; k++) {
             uris[k] = new URI(elements[k].trim());
+        }
 
         return uris;
     }

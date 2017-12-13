@@ -115,13 +115,15 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     private ReasonCode getNewPeerDisconnectionReason(Channel peer) {
-        if(activePeers.containsKey(peer.getNodeIdWrapper()))
+        if(activePeers.containsKey(peer.getNodeIdWrapper())) {
             return ReasonCode.DUPLICATE_PEER;
+        }
 
         if (!peer.isActive() &&
                 activePeers.size() >= maxActivePeers &&
-                !trustedPeers.accept(peer.getNode()))
+                !trustedPeers.accept(peer.getNode())) {
             return ReasonCode.TOO_MANY_PEERS;
+        }
 
         return null;
     }
@@ -332,8 +334,9 @@ public class ChannelManagerImpl implements ChannelManager {
     public void onSyncDone(boolean done) {
 
         synchronized (activePeers) {
-            for (Channel channel : activePeers.values())
+            for (Channel channel : activePeers.values()) {
                 channel.onSyncDone(done);
+            }
         }
     }
 

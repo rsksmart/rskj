@@ -13,7 +13,6 @@ public class ChunksDownloadHelper {
     private SyncConfiguration syncConfiguration;
 
     // Block identifiers retrieved in skeleton
-    private Map<NodeID, List<BlockIdentifier>> skeletons;
     private List<BlockIdentifier> skeleton;
     private long connectionPoint;
     private int lastRequestedLinkIndex;

@@ -60,9 +60,11 @@ public class JsonRpcFilterServer extends JsonRpcBasicServer {
     }
 
     public void checkMethod(String methodName) throws IOException {
-        for (ModuleDescription module: this.modules)
-            if (module.methodIsEnable(methodName))
+        for (ModuleDescription module: this.modules) {
+            if (module.methodIsEnable(methodName)) {
                 return;
+            }
+        }
 
         throw new IOException("Method not supported: " + methodName);
     }

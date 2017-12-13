@@ -50,8 +50,9 @@ public class TransactionReceiptDTO {
         blockHash = toJsonHex(txInfo.getBlockHash());
         blockNumber = toJsonHex(block.getNumber());
 
-        if (receipt.getTransaction().getContractAddress() != null)
+        if (receipt.getTransaction().getContractAddress() != null) {
             contractAddress = toJsonHex(receipt.getTransaction().getContractAddress());
+        }
 
         cumulativeGasUsed = toJsonHex(receipt.getCumulativeGas());
         from = toJsonHex(receipt.getTransaction().getSender());

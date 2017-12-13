@@ -24,8 +24,9 @@ public final class InetAddressUtils {
      * @return <tt>true</tt> or <tt>false</tt>
      */
     public static boolean hasMask(String text) {
-        if (text == null)
+        if (text == null) {
             return false;
+        }
 
         String[] parts = text.split("/");
 
@@ -41,19 +42,22 @@ public final class InetAddressUtils {
      * @return  the text converted to an InetAddress
      */
     public static InetAddress getAddressForBan(@CheckForNull String hostname) throws InvalidInetAddressException {
-        if (hostname == null)
+        if (hostname == null) {
             throw new InvalidInetAddressException("null address", null);
+        }
 
         String name = hostname.trim();
-        if (name.length() == 0)
+        if (name.length() == 0) {
             throw new InvalidInetAddressException("empty address", null);
+        }
 
         //TODO(mmarquez): should we validate address format ??
         try {
             InetAddress address = InetAddress.getByName(name);
 
-            if (address.isLoopbackAddress() || address.isAnyLocalAddress())
+            if (address.isLoopbackAddress() || address.isAnyLocalAddress()) {
                 throw new InvalidInetAddressException("local address: '" + name + "'", null);
+            }
 
             return address;
         }
@@ -90,8 +94,9 @@ public final class InetAddressUtils {
             throw new InvalidInetAddressBlockException("Invalid mask", ex);
         }
 
-        if (nbits <= 0 || nbits > address.getAddress().length * 8)
+        if (nbits <= 0 || nbits > address.getAddress().length * 8) {
             throw new InvalidInetAddressBlockException("Invalid mask", null);
+        }
 
         return new InetAddressBlock(address, nbits);
     }

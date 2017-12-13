@@ -145,10 +145,11 @@ public class SyncPool implements Iterable<Channel> {
 
         synchronized (peers) {
 
-            for (Channel peer : peers.values())
+            for (Channel peer : peers.values()) {
                 if (peer.isMaster()) {
                     return peer;
                 }
+            }
 
             return null;
         }
@@ -170,8 +171,9 @@ public class SyncPool implements Iterable<Channel> {
         synchronized (activePeers) {
 
             for (Channel peer : activePeers) {
-                if (peer.isIdle())
+                if (peer.isIdle()) {
                     return peer;
+                }
             }
         }
 

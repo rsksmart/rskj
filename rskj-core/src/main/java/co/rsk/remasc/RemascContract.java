@@ -154,8 +154,9 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
     }
 
     private byte[] encodeResult(CallTransaction.Function function, Object result) {
-        if (result == null)
+        if (result == null) {
             return new byte[0];
+        }
 
         return function.encodeOutputs(result);
     }

@@ -73,8 +73,9 @@ public class TestNetAfterBridgeSyncConfig extends GenesisConfig {
     @Override
     public BigInteger calcDifficulty(BlockHeader curBlock, BlockHeader parent) {
         // If more than 10 minutes, reset to original difficulty 0x00100000
-        if (curBlock.getTimestamp() >= parent.getTimestamp() + 600)
+        if (curBlock.getTimestamp() >= parent.getTimestamp() + 600) {
             return getConstants().getMinimumDifficulty();
+        }
 
         return super.calcDifficulty(curBlock, parent);
     }

@@ -193,8 +193,9 @@ public class SyncProcessor implements SyncEventsHandler {
         List<BlockIdentifier> selectedSkeleton = skeletons.get(selectedPeerId);
         final long peerBestBlockNumber = selectedSkeleton.get(selectedSkeleton.size() - 1).getNumber();
 
-        if (peerBestBlockNumber > blockSyncService.getLastKnownBlockNumber())
+        if (peerBestBlockNumber > blockSyncService.getLastKnownBlockNumber()) {
             blockSyncService.setLastKnownBlockNumber(peerBestBlockNumber);
+        }
 
         setSyncState(new DownloadingBodiesSyncState(this.syncConfiguration, this, syncInformation, pendingHeaders, skeletons));
     }
@@ -257,8 +258,9 @@ public class SyncProcessor implements SyncEventsHandler {
     int getNoAdvancedPeers() {
         BlockChainStatus chainStatus = this.blockchain.getStatus();
 
-        if (chainStatus == null)
+        if (chainStatus == null) {
             return this.peerStatuses.count();
+        }
 
         return this.peerStatuses.countIf(s -> chainStatus.hasLowerTotalDifficultyThan(s.getStatus()));
     }
@@ -328,14 +330,17 @@ public class SyncProcessor implements SyncEventsHandler {
 
         @Override
         public boolean blockHeaderIsValid(@Nonnull BlockHeader header, @Nonnull BlockHeader parentHeader) {
-            if (!ByteUtil.fastEquals(parentHeader.getHash(), header.getParentHash()))
+            if (!ByteUtil.fastEquals(parentHeader.getHash(), header.getParentHash())) {
                 return false;
+            }
 
-            if (header.getNumber() != parentHeader.getNumber() + 1)
+            if (header.getNumber() != parentHeader.getNumber() + 1) {
                 return false;
+            }
 
-            if (!blockHeaderIsValid(header))
+            if (!blockHeaderIsValid(header)) {
                 return false;
+            }
 
             return blockParentValidationRule.validate(header, parentHeader);
         }

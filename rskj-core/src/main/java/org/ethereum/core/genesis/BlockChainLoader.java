@@ -58,8 +58,9 @@ public class BlockChainLoader {
 
     public void loadBlockchain() {
 
-        if (!properties.databaseReset())
+        if (!properties.databaseReset()) {
             blockStore.load();
+        }
 
         Block bestBlock = blockStore.getBestBlock();
         if (bestBlock == null) {

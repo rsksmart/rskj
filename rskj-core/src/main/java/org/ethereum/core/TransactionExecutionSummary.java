@@ -65,22 +65,25 @@ public class TransactionExecutionSummary {
     }
 
     public BigInteger getFee() {
-        if (failed)
+        if (failed) {
             return calcCost(gasLimit);
+        }
 
         return calcCost(gasLimit.subtract(gasLeftover.add(gasRefund)));
     }
 
     public BigInteger getRefund() {
-        if (failed)
+        if (failed) {
             return BigInteger.ZERO;
+        }
 
         return calcCost(gasRefund);
     }
 
     public BigInteger getLeftover() {
-        if (failed)
+        if (failed) {
             return BigInteger.ZERO;
+        }
 
         return calcCost(gasLeftover);
     }

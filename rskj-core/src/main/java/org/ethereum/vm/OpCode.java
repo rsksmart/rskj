@@ -641,10 +641,11 @@ public enum OpCode {
     private static final OpCode[] intToTypeFastMap = new OpCode[256]; //
     static {
         for (OpCode type : OpCode.values()) {
-            if (type.code <0)
+            if (type.code <0) {
                 intToTypeFastMap[256+type.code]=type;
-            else
+            } else {
                 intToTypeFastMap[type.code]=type;
+            }
 
             stringToByteMap.put(type.name(), type.code);
         }
@@ -700,10 +701,11 @@ public enum OpCode {
     }
 
     public static OpCode code(byte code) {
-        if (code<0)
+        if (code<0) {
             return intToTypeFastMap[256+code];
-        else
+        } else {
             return intToTypeFastMap[code];
+        }
     }
 
     public Tier getTier() {

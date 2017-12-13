@@ -102,11 +102,11 @@ public class TxHandlerImpl implements TxHandler {
                 String accountId = TypeConverter.toJsonHex(txt.tx.getSender());
                 TxsPerAccount txsPerAccount = txsPerAccounts.get(accountId);
 
-                if (txsPerAccount != null)
-                {
+                if (txsPerAccount != null) {
                     txsPerAccount.removeNonce(new BigInteger(1, txt.tx.getNonce()));
-                    if (txsPerAccount.getTransactions().isEmpty())
+                    if (txsPerAccount.getTransactions().isEmpty()) {
                         txsPerAccounts.remove(accountId);
+                    }
                 }
 
                 continue;

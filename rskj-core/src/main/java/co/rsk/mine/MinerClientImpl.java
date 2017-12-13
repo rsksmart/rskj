@@ -85,8 +85,9 @@ public class MinerClientImpl implements MinerClient {
             public void run() {
                 isMining = true;
 
-                while (!stop)
+                while (!stop) {
                     doWork();
+                }
 
                 isMining = false;
             }
@@ -99,8 +100,9 @@ public class MinerClientImpl implements MinerClient {
 
     public void doWork() {
         try {
-            if (mineBlock() && !(config.getBlockchainConfig() instanceof TestNetConfig))
+            if (mineBlock() && !(config.getBlockchainConfig() instanceof TestNetConfig)) {
                 Thread.sleep(20000);
+            }
         } catch (Exception e) {
             logger.error("Error on mining", e);
             panicProcessor.panic("mine", e.getMessage());
@@ -145,11 +147,13 @@ public class MinerClientImpl implements MinerClient {
         BigInteger target = new BigInteger(1, TypeConverter.stringHexToByteArray(work.getTarget()));
         boolean foundNonce = findNonce(bitcoinMergedMiningBlock, target);
 
-        if (newBestBlockArrivedFromAnotherNode)
+        if (newBestBlockArrivedFromAnotherNode) {
             logger.info("Interrupted mining because another best block arrived");
+        }
 
-        if (stop)
+        if (stop) {
             logger.info("Interrupted mining because MinerClient was stopped");
+        }
 
         if (foundNonce) {
             logger.info("Mined block: " + work.getBlockHashForMergedMining());

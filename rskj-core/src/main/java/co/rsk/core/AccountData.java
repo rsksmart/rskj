@@ -47,8 +47,9 @@ public class AccountData {
     }
 
     private boolean compare(byte[] valid, byte[] toCompare) {
-        if(toCompare == null)
+        if(toCompare == null) {
             return false;
+        }
         ByteArrayWrapper toValidate = new ByteArrayWrapper(toCompare);
         ByteArrayWrapper compare = new ByteArrayWrapper(valid);
         return compare.equals(toValidate);

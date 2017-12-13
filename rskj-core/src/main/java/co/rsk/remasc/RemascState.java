@@ -67,10 +67,11 @@ public class RemascState {
         byte[] rlpSiblings = RemascStorageProvider.getSiblingsBytes(this.siblings);
         byte[] rlpBrokenSelectionRule = new byte[1];
 
-        if (brokenSelectionRule)
+        if (brokenSelectionRule) {
             rlpBrokenSelectionRule[0] = 1;
-        else
+        } else {
             rlpBrokenSelectionRule[0] = 0;
+        }
 
         return RLP.encodeList(rlpRewardBalance, rlpBurnedBalance, rlpSiblings, rlpBrokenSelectionRule);
     }
@@ -89,10 +90,11 @@ public class RemascState {
 
         Boolean rlpBrokenSelectionRule;
 
-        if (rlpBrokenSelectionRuleBytes != null && rlpBrokenSelectionRuleBytes.length != 0 && rlpBrokenSelectionRuleBytes[0] != 0)
+        if (rlpBrokenSelectionRuleBytes != null && rlpBrokenSelectionRuleBytes.length != 0 && rlpBrokenSelectionRuleBytes[0] != 0) {
             rlpBrokenSelectionRule = Boolean.TRUE;
-        else
+        } else {
             rlpBrokenSelectionRule = Boolean.FALSE;
+        }
 
         return new RemascState(rlpRewardBalance, rlpBurnedBalance, rlpSiblings, rlpBrokenSelectionRule);
     }

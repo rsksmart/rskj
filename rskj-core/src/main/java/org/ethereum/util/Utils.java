@@ -48,9 +48,9 @@ public class Utils {
     public static BigInteger unifiedNumericToBigInteger(String number) {
 
         boolean match = Pattern.matches("0[xX][0-9a-fA-F]+", number);
-        if (!match)
+        if (!match) {
             return (new BigInteger(number));
-        else{
+        } else{
             number = number.substring(2);
             number = number.length() % 2 != 0 ? "0".concat(number) : number;
             byte[] numberBytes = Hex.decode(number);
@@ -97,8 +97,9 @@ public class Utils {
             return null;
         }
 
-        if (isValidAddress(addr))
+        if (isValidAddress(addr)) {
             return addr;
+        }
         return null;
     }
 

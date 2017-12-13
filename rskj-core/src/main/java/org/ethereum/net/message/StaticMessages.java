@@ -73,10 +73,12 @@ public class StaticMessages {
             numberVersion = numberVersion.substring(matcher.start(), matcher.end());
         }
         String system = System.getProperty("os.name");
-        if (system.contains(" "))
+        if (system.contains(" ")) {
             system = system.substring(0, system.indexOf(" "));
-        if (System.getProperty("java.vm.vendor").contains("Android"))
+        }
+        if (System.getProperty("java.vm.vendor").contains("Android")) {
             system = "Android";
+        }
         String phrase = config.helloPhrase();
 
         return String.format("Ethereum(J)/v%s/%s/%s/Java/%s", numberVersion, system,

@@ -56,15 +56,17 @@ class RemascStorageProvider {
     }
 
     public BigInteger getRewardBalance() {
-        if (rewardBalance!= null)
+        if (rewardBalance!= null) {
             return rewardBalance;
+        }
 
         DataWord address = new DataWord(REWARD_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
 
         DataWord value = this.repository.getStorageValue(this.contractAddress, address);
 
-        if (value == null)
+        if (value == null) {
             return BigInteger.ZERO;
+        }
 
         return BigIntegers.fromUnsignedByteArray(value.getData());
     }
@@ -74,8 +76,9 @@ class RemascStorageProvider {
     }
 
     private void saveRewardBalance() {
-        if (rewardBalance == null)
+        if (rewardBalance == null) {
             return;
+        }
 
         DataWord address = new DataWord(REWARD_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
 
@@ -83,15 +86,17 @@ class RemascStorageProvider {
     }
 
     public BigInteger getBurnedBalance() {
-        if (burnedBalance!= null)
+        if (burnedBalance!= null) {
             return burnedBalance;
+        }
 
         DataWord address = new DataWord(BURNED_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
 
         DataWord value = this.repository.getStorageValue(this.contractAddress, address);
 
-        if (value == null)
+        if (value == null) {
             return BigInteger.ZERO;
+        }
 
         return BigIntegers.fromUnsignedByteArray(value.getData());
     }
@@ -105,8 +110,9 @@ class RemascStorageProvider {
     }
 
     private void saveBurnedBalance() {
-        if (burnedBalance == null)
+        if (burnedBalance == null) {
             return;
+        }
 
         DataWord address = new DataWord(BURNED_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
 
@@ -114,8 +120,9 @@ class RemascStorageProvider {
     }
 
     public SortedMap<Long, List<Sibling>> getSiblings() {
-        if (siblings != null)
+        if (siblings != null) {
             return siblings;
+        }
 
         DataWord address = new DataWord(SIBLINGS_KEY.getBytes(StandardCharsets.UTF_8));
 
@@ -129,8 +136,9 @@ class RemascStorageProvider {
     public static SortedMap<Long, List<Sibling>> getSiblingsFromBytes(byte[] bytes) {
         SortedMap<Long, List<Sibling>> siblings = new TreeMap<>();
 
-        if (bytes == null || bytes.length == 0)
+        if (bytes == null || bytes.length == 0) {
             return siblings;
+        }
 
         RLPList rlpList = (RLPList) RLP.decode2(bytes).get(0);
 
@@ -163,8 +171,9 @@ class RemascStorageProvider {
     }
 
     private void saveSiblings() {
-        if (this.siblings == null)
+        if (this.siblings == null) {
             return;
+        }
 
         byte[] bytes = getSiblingsBytes(this.siblings);
 
@@ -191,8 +200,9 @@ class RemascStorageProvider {
 
             int j = 0;
 
-            for (Sibling element : list)
+            for (Sibling element : list) {
                 siblingsBytes[j++] = element.getEncoded();
+            }
 
             entriesBytes[n++] = RLP.encodeList(siblingsBytes);
         }
@@ -201,20 +211,23 @@ class RemascStorageProvider {
     }
 
     public Boolean getBrokenSelectionRule() {
-        if (brokenSelectionRule!= null)
+        if (brokenSelectionRule!= null) {
             return brokenSelectionRule;
+        }
 
         DataWord address = new DataWord(BROKEN_SELECTION_RULE_KEY.getBytes(StandardCharsets.UTF_8));
 
         byte[] bytes = this.repository.getStorageBytes(this.contractAddress, address);
 
-        if (bytes == null || bytes.length == 0)
+        if (bytes == null || bytes.length == 0) {
             return Boolean.FALSE;
+        }
 
-        if (bytes[0] == 0)
+        if (bytes[0] == 0) {
             return Boolean.FALSE;
-        else
+        } else {
             return Boolean.TRUE;
+        }
     }
 
     public void setBrokenSelectionRule(Boolean brokenSelectionRule) {
@@ -222,8 +235,9 @@ class RemascStorageProvider {
     }
 
     private void saveBrokenSelectionRule() {
-        if (brokenSelectionRule == null)
+        if (brokenSelectionRule == null) {
             return;
+        }
 
         DataWord address = new DataWord(BROKEN_SELECTION_RULE_KEY.getBytes(StandardCharsets.UTF_8));
 

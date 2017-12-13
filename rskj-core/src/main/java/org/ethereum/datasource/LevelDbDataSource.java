@@ -95,10 +95,11 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 logger.debug("Opening database");
                 Path dbPath;
 
-                if (Paths.get(config.databaseDir()).isAbsolute())
+                if (Paths.get(config.databaseDir()).isAbsolute()) {
                     dbPath = Paths.get(config.databaseDir(), name);
-                else
+                } else {
                     dbPath = Paths.get(getProperty("user.dir"), config.databaseDir(), name);
+                }
 
                 Files.createDirectories(dbPath.getParent());
 

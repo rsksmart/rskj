@@ -66,27 +66,32 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
 
         int uncleCount = curBlockHeader.getUncleCount();
         long delta = curBlockHeader.getTimestamp()-parent.getTimestamp();
-        if (delta<0)
+        if (delta<0) {
             return pd;
+        }
 
         int calcDur =(1+uncleCount)*getConstants().getDurationLimit();
         int sign = 0;
-        if (calcDur>delta)
+        if (calcDur>delta) {
             sign =1;
-        if (calcDur<delta)
+        }
+        if (calcDur<delta) {
             sign =-1;
+        }
 
-        if (sign==0)
+        if (sign==0) {
             return pd;
+        }
 
         BigInteger quotient = pd.divide(getConstants().getDifficultyBoundDivisor());
         BigInteger difficulty;
 
         BigInteger fromParent;
-        if (sign==1)
+        if (sign==1) {
             fromParent =pd.add(quotient);
-        else
+        } else {
             fromParent =pd.subtract(quotient);
+        }
 
         // If parent difficulty is zero (maybe a genesis block), then the first child difficulty MUST
         // be greater or equal getMinimumDifficulty(). That's why the max() is applied in both the add and the sub

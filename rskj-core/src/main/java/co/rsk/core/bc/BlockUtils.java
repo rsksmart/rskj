@@ -105,9 +105,11 @@ public class BlockUtils {
     public static void addBlockToList(List<Block> blocks, Block block) {
         byte[] hash = block.getHash();
 
-        for (Block b : blocks)
-            if (Arrays.equals(b.getHash(), hash))
+        for (Block b : blocks) {
+            if (Arrays.equals(b.getHash(), hash)) {
                 return;
+            }
+        }
 
         blocks.add(block);
     }

@@ -78,8 +78,9 @@ public class JSONHelper {
                     "0x" + Hex.toHexString(details.getStorage().get(key).getNoLeadZeroesData()));
         }
 
-        if (state == null)
+        if (state == null) {
             state = AccountState.EMPTY;
+        }
 
         account.put("balance", state.getBalance() == null ? "0" : state.getBalance().toString());
         account.put("code", details.getCode() == null ? "0x" : "0x" + Hex.toHexString(details.getCode()));

@@ -631,10 +631,11 @@ public abstract class SystemProperties {
     @ValidateMe
     public String genesisInfo() {
 
-        if (genesisInfo == null)
+        if (genesisInfo == null) {
             return configFromFiles.getString("genesis");
-        else
+        } else {
             return genesisInfo;
+        }
     }
 
     @ValidateMe

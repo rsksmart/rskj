@@ -76,8 +76,9 @@ public class RskAllowUnconfirmedCoinSelector implements CoinSelector{
                 BigInteger aHash = a.getParentTransactionHash().toBigInteger();
                 BigInteger bHash = b.getParentTransactionHash().toBigInteger();
                 int ret = aHash.compareTo(bHash);
-                if(ret == 0)
+                if(ret == 0) {
                     ret = Integer.compare(a.getIndex(), b.getIndex());
+                }
                 return ret;
             }
         });

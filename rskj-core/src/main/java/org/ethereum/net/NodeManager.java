@@ -130,8 +130,9 @@ public class NodeManager {
             Collections.sort(sorted, (o1, o2) -> Integer.compare(o1.getNodeStatistics().getReputation(), o2.getNodeStatistics().getReputation()));
             for (NodeHandler handler : sorted) {
                 nodeHandlerMap.remove(handler.getNode().getAddressAsString());
-                if (nodeHandlerMap.size() <= MAX_NODES)
+                if (nodeHandlerMap.size() <= MAX_NODES) {
                     break;
+                }
             }
         }
     }

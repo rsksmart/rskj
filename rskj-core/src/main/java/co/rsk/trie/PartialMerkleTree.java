@@ -63,14 +63,16 @@ public class PartialMerkleTree {
     public byte[] toMessage() {
         List<byte[]> trieMessages = new ArrayList<>();
 
-        for (Trie trie : this.tries)
+        for (Trie trie : this.tries) {
             trieMessages.add(trie.toMessage());
+        }
 
         int nmessages = this.tries.size();
         int lmessages = 0;
 
-        for (byte[] msg : trieMessages)
+        for (byte[] msg : trieMessages) {
             lmessages += msg.length;
+        }
 
         byte[] message = new byte[1 + lmessages + 4 * nmessages + (nmessages - 1)];
 
@@ -82,8 +84,9 @@ public class PartialMerkleTree {
             byte[] msg = trieMessages.get(k);
             int lmsg = msg.length;
 
-            if (k > 0)
+            if (k > 0) {
                 message[position++] = this.insertions.get(k - 1).byteValue();
+            }
 
             message[position] = (byte)((lmsg >> 24) & 0x00ff);
             message[position + 1] = (byte)((lmsg >> 16) & 0x00ff);
@@ -108,20 +111,22 @@ public class PartialMerkleTree {
         for (int k = 0; k < ntries; k++) {
             int insertion = 0;
 
-            if (k > 0)
+            if (k > 0) {
                 insertion = message[position++];
+            }
 
             int lmsg = getInteger(message, position);
             byte[] trieMsg = new byte[lmsg];
             System.arraycopy(message, position + 4, trieMsg, 0, lmsg);
             TrieImpl trie = TrieImpl.fromMessage(trieMsg, null);
 
-            if (k == 0)
+            if (k == 0) {
                 tree = new PartialMerkleTree(trie);
-            else if (tree == null)
+            } else if (tree == null) {
                 throw new NullPointerException();
-            else
+            } else {
                 tree.addTrie(trie, insertion);
+            }
 
             position += 4 + lmsg;
         }

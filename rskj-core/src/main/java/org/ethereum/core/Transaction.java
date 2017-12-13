@@ -159,18 +159,21 @@ public class Transaction implements SerializableObject {
     }
 
     private byte extractChainIdFromV(byte v) {
-        if (v == LOWER_REAL_V || v == (LOWER_REAL_V + 1))
+        if (v == LOWER_REAL_V || v == (LOWER_REAL_V + 1)) {
             return 0;
+        }
         return (byte) (((0x00FF & v) - CHAIN_ID_INC) / 2);
     }
 
     private byte getRealV(byte v) {
-        if (v == LOWER_REAL_V || v == (LOWER_REAL_V + 1))
+        if (v == LOWER_REAL_V || v == (LOWER_REAL_V + 1)) {
             return v;
+        }
         byte realV = LOWER_REAL_V;
         int inc = 0;
-        if ((int) v % 2 == 0)
+        if ((int) v % 2 == 0) {
             inc = 1;
+        }
         return (byte) (realV + inc);
     }
 
@@ -178,8 +181,9 @@ public class Transaction implements SerializableObject {
     // "return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION)
     //         + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;"
     public long transactionCost(Block block){
-        if (!parsed)
+        if (!parsed) {
             rlpParse();
+        }
 
 		// Federators txs to the bridge are free during system setup
         if (BridgeUtils.isFreeBridgeTx(this, block.getNumber())) {
@@ -204,8 +208,9 @@ public class Transaction implements SerializableObject {
         // only parse signature in case tx is signed
         if (transaction.get(6).getRLPData() != null) {
             byte[] vData =  transaction.get(6).getRLPData();
-            if (vData.length != 1 )
+            if (vData.length != 1 ) {
                 throw new TransactionException("Signature V is invalid");
+            }
             byte v = vData[0];
             this.chainId = extractChainIdFromV(v);
             byte[] r = transaction.get(7).getRLPData();
@@ -223,52 +228,59 @@ public class Transaction implements SerializableObject {
     }
 
     public byte[] getHash() {
-        if (!parsed)
+        if (!parsed) {
             rlpParse();
+        }
 
         byte[] plainMsg = this.getEncoded();
         return HashUtil.sha3(plainMsg);
     }
 
     public byte[] getRawHash() {
-        if (!parsed)
+        if (!parsed) {
             rlpParse();
+        }
 
         byte[] plainMsg = this.getEncodedRaw();
         return HashUtil.sha3(plainMsg);
     }
 
     public byte[] getNonce() {
-        if (!parsed)
+        if (!parsed) {
             rlpParse();
+        }
 
         return nonce == null ? ZERO_BYTE_ARRAY : nonce;
     }
 
     public byte[] getValue() {
-        if (!parsed)
+        if (!parsed) {
             rlpParse();
+        }
 
         return value == null ? ZERO_BYTE_ARRAY : value;
     }
 
     public byte[] getReceiveAddress() {
-        if (!parsed)
+        if (!parsed) {
             rlpParse();
+        }
 
         return receiveAddress;
     }
 
     public byte[] getGasPrice() {
-        if (!parsed)
+        if (!parsed) {
             rlpParse();
+        }
 
         return gasPrice == null ? ZERO_BYTE_ARRAY : gasPrice;
     }
 
     public byte[] getGasLimit() {
-        if (!parsed)
+        if (!parsed) {
             rlpParse();
+        }
 
         return gasLimit;
     }
@@ -282,27 +294,31 @@ public class Transaction implements SerializableObject {
     }
 
     public long nonZeroDataBytes() {
-        if (data == null)
+        if (data == null) {
             return 0;
+        }
 
         int counter = 0;
         for (final byte aData : data) {
-            if (aData != 0)
+            if (aData != 0) {
                 ++counter;
+            }
         }
         return counter;
     }
 
     public byte[] getData() {
-        if (!parsed)
+        if (!parsed) {
             rlpParse();
+        }
 
         return data;
     }
 
     public ECDSASignature getSignature() {
-        if (!parsed)
+        if (!parsed) {
             rlpParse();
+        }
 
         return signature;
     }
@@ -338,22 +354,27 @@ public class Transaction implements SerializableObject {
     }
 
     public byte[] getContractAddress() {
-        if (!isContractCreation())
+        if (!isContractCreation()) {
             return null;
+        }
 
         return HashUtil.calcNewAddr(this.getSender(), this.getNonce());
     }
 
     public boolean isContractCreation() {
-        if (!parsed)
+        if (!parsed) {
             rlpParse();
+        }
 
-        if (this.receiveAddress == null)
+        if (this.receiveAddress == null) {
             return true;
+        }
 
-        for (int k = 0; k < this.receiveAddress.length; k++)
-            if (this.receiveAddress[k] != 0)
+        for (int k = 0; k < this.receiveAddress.length; k++) {
+            if (this.receiveAddress[k] != 0) {
                 return false;
+            }
+        }
 
         return true;
     }
@@ -383,15 +404,17 @@ public class Transaction implements SerializableObject {
     }
 
     public byte getChainId() {
-        if (!parsed)
+        if (!parsed) {
             rlpParse();
+        }
         return chainId;
     }
 
     @Override
     public String toString() {
-        if (!parsed)
+        if (!parsed) {
             rlpParse();
+        }
 
         return "TransactionData [" + "hash=" + ByteUtil.toHexString(hash) +
                 "  nonce=" + ByteUtil.toHexString(nonce) +
@@ -412,11 +435,13 @@ public class Transaction implements SerializableObject {
      */
     public byte[] getEncodedRaw() {
 
-        if (!parsed)
+        if (!parsed) {
             rlpParse();
+        }
 
-        if (rlpRaw != null)
+        if (rlpRaw != null) {
             return rlpRaw;
+        }
 
         // parse null as 0 for nonce
         byte[] toEncodeNonce = null;
@@ -449,8 +474,9 @@ public class Transaction implements SerializableObject {
     }
 
     public byte[] getEncoded() {
-        if (rlpEncoded != null)
+        if (rlpEncoded != null) {
             return rlpEncoded;
+        }
 
         // parse null as 0 for nonce
         byte[] toEncodeNonce = null;
@@ -515,8 +541,9 @@ public class Transaction implements SerializableObject {
     @Override
     public boolean equals(Object obj) {
 
-        if (!(obj instanceof Transaction))
+        if (!(obj instanceof Transaction)) {
             return false;
+        }
 
         Transaction tx = (Transaction) obj;
 

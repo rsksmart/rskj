@@ -415,8 +415,9 @@ public class MinerServerImpl implements MinerServer {
 
     @Override
     public long increaseTime(long seconds) {
-        if (seconds <= 0)
+        if (seconds <= 0) {
             return this.timeAdjustment;
+        }
 
         this.timeAdjustment += seconds;
 
@@ -424,9 +425,11 @@ public class MinerServerImpl implements MinerServer {
     }
 
     private void removePendingTransactions(List<Transaction> transactions) {
-        if (transactions != null)
-            for (Transaction tx : transactions)
+        if (transactions != null) {
+            for (Transaction tx : transactions) {
                 logger.info("Removing transaction {}", Hex.toHexString(tx.getHash()));
+            }
+        }
 
         pendingState.clearPendingState(transactions);
         pendingState.clearWire(transactions);
@@ -458,8 +461,9 @@ public class MinerServerImpl implements MinerServer {
          * TODO(???): It would be cleaner to just send this when the blockchain's best block changes.
          * **/
         public void onBlock(Block block, List<TransactionReceipt> receipts) {
-            if (isSyncing())
+            if (isSyncing()) {
                 return;
+            }
 
             logger.trace("Start onBlock");
             Block bestBlock = blockchain.getBestBlock();

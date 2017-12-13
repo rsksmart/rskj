@@ -58,10 +58,11 @@ public class Capability implements Comparable<Capability> {
         }
 
         Capability other = (Capability) obj;
-        if (this.name == null)
+        if (this.name == null) {
             return other.name == null;
-        else
+        } else {
             return this.name.equals(other.name) && this.version == other.version;
+        }
     }
 
     @Override
