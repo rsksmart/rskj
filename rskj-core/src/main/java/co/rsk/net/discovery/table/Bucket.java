@@ -66,7 +66,7 @@ public class Bucket {
         }
     }
 
-    public Set<BucketEntry> getEntries() {
+    public synchronized Set<BucketEntry> getEntries() {
         return new HashSet<>(this.entries.values());
     }
 

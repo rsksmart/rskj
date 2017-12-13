@@ -35,6 +35,8 @@ import java.net.InetSocketAddress;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 /**
@@ -46,23 +48,25 @@ public class PeerExplorer {
     private static final int MAX_NODES_TO_ASK = 24;
     private static final int MAX_NODES_TO_CHECK = 16;
 
-    private Set<InetSocketAddress> bootNodes = ConcurrentHashMap.newKeySet();
-    private Map<String, PeerDiscoveryRequest> pendingPingRequests = new ConcurrentHashMap<>();
-    private Map<String, PeerDiscoveryRequest> pendingFindNodeRequests = new ConcurrentHashMap<>();
+    private final Set<InetSocketAddress> bootNodes = ConcurrentHashMap.newKeySet();
+    private final Map<String, PeerDiscoveryRequest> pendingPingRequests = new ConcurrentHashMap<>();
+    private final Map<String, PeerDiscoveryRequest> pendingFindNodeRequests = new ConcurrentHashMap<>();
 
-    private Map<ByteArrayWrapper, Node> establishedConnections = new ConcurrentHashMap<>();
+    private final Map<ByteArrayWrapper, Node> establishedConnections = new ConcurrentHashMap<>();
 
     private UDPChannel udpChannel;
 
-    private ECKey key;
+    private final ECKey key;
 
-    private Node localNode;
+    private final Node localNode;
 
-    private NodeDistanceTable distanceTable;
+    private final NodeDistanceTable distanceTable;
 
-    private PeerExplorerCleaner cleaner;
+    private final Lock updateEntryLock;
 
-    private NodeChallengeManager challengeManager;
+    private final PeerExplorerCleaner cleaner;
+
+    private final NodeChallengeManager challengeManager;
 
     private long requestTimeout;
 
@@ -70,6 +74,7 @@ public class PeerExplorer {
         this.localNode = localNode;
         this.key = key;
         this.distanceTable = distanceTable;
+        this.updateEntryLock = new ReentrantLock();
 
         loadInitialBootNodes(initialBootNodes);
 
@@ -130,7 +135,7 @@ public class PeerExplorer {
         if (connectedNode == null) {
             this.sendPing(new InetSocketAddress(ip, message.getPort()), 1);
         } else {
-            this.distanceTable.updateEntry(connectedNode);
+            updateEntry(connectedNode);
         }
     }
 
@@ -154,7 +159,7 @@ public class PeerExplorer {
             List<Node> nodesToSend = this.distanceTable.getClosestNodes(message.getNodeId());
             logger.debug("About to send [{}] neighbors to ip[{}] port[{}] nodeId[{}]", nodesToSend.size(), connectedNode.getHost(), connectedNode.getPort(), connectedNode.getHexIdShort());
             this.sendNeighbors(connectedNode.getAddress(), nodesToSend, message.getMessageId());
-            this.distanceTable.updateEntry(connectedNode);
+            updateEntry(connectedNode);
         }
     }
 
@@ -171,8 +176,7 @@ public class PeerExplorer {
                         .forEach(node -> this.bootNodes.add(new InetSocketAddress(node.getAddress().getHostName(), node.getPort())));
                 this.startConversationWithNewNodes();
             }
-
-            this.distanceTable.updateEntry(connectedNode);
+            updateEntry(connectedNode);
         }
     }
 
@@ -203,6 +207,15 @@ public class PeerExplorer {
         pendingPingRequests.put(nodeMessage.getMessageId(), request);
 
         return nodeMessage;
+    }
+
+    private void updateEntry(Node connectedNode) {
+        try{
+            updateEntryLock.lock();
+            this.distanceTable.updateEntry(connectedNode);
+        } finally {
+            updateEntryLock.unlock();
+        }
     }
 
     private PingPeerMessage checkPendingPeerToAddress(InetSocketAddress address) {

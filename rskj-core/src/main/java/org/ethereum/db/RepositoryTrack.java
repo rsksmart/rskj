@@ -307,11 +307,6 @@ public class RepositoryTrack implements Repository {
     }
 
 
-    public Set<ByteArrayWrapper> getFullAddressSet() {
-        return cacheAccounts.keySet();
-    }
-
-
     @Override
     public void dumpState(Block block, long gasUsed, int txNumber, byte[] txHash) {
         throw new UnsupportedOperationException();

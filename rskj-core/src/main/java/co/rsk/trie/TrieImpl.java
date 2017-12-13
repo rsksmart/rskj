@@ -253,7 +253,13 @@ public class TrieImpl implements Trie {
     /**
      * getHash calculates and/or returns the hash associated with this node content
      *
-     * the internal variable hash could contains the cached hash
+     * the internal variable hash could contains the cached hash.
+     *
+     * This method is not synchronized because the result of it's execution
+     *
+     * disregarding the lazy initialization is idempotent. It's better to keep
+     *
+     * it out of synchronized.
      *
      * @return  a byte array with the node serialized to bytes
      */

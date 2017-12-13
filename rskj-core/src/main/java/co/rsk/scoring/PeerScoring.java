@@ -75,7 +75,12 @@ public class PeerScoring {
      *          with a good reputation. Negative values indicates a possible punishment.
      */
     public int getScore() {
-        return score;
+        try {
+            rwlock.readLock().lock();
+            return score;
+        } finally {
+            rwlock.readLock().unlock();
+        }
     }
 
     /**
@@ -88,7 +93,6 @@ public class PeerScoring {
     public int getEventCounter(EventType evt) {
         try {
             rwlock.readLock().lock();
-
             return counters[evt.ordinal()];
         } finally {
             rwlock.readLock().unlock();
@@ -137,11 +141,14 @@ public class PeerScoring {
     public boolean hasGoodReputation() {
         try {
             rwlock.writeLock().lock();
-            if (this.goodReputation)
+            if (this.goodReputation) {
                 return true;
+            }
 
-            if (this.punishmentTime > 0 && this.timeLostGoodReputation > 0 && this.punishmentTime + this.timeLostGoodReputation <= System.currentTimeMillis())
+            if (this.punishmentTime > 0 && this.timeLostGoodReputation > 0
+                    && this.punishmentTime + this.timeLostGoodReputation <= System.currentTimeMillis()) {
                 this.endPunishment();
+            }
 
             return this.goodReputation;
         } finally {
