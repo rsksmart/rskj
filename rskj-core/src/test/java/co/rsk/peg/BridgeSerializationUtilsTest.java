@@ -595,14 +595,14 @@ public class BridgeSerializationUtilsTest {
         byte[] result = BridgeSerializationUtils.serializeReleaseRequestQueue(sample);
         String hexResult = Hex.toHexString(result);
         StringBuilder expectedBuilder = new StringBuilder();
-        expectedBuilder.append("ddaa");
-        expectedBuilder.append("ff1e");
-        expectedBuilder.append("ddbb");
-        expectedBuilder.append("ff14");
-        expectedBuilder.append("ddbb");
-        expectedBuilder.append("ff32");
         expectedBuilder.append("ddccdd");
         expectedBuilder.append("ff0a");
+        expectedBuilder.append("ddbb");
+        expectedBuilder.append("ff32");
+        expectedBuilder.append("ddbb");
+        expectedBuilder.append("ff14");
+        expectedBuilder.append("ddaa");
+        expectedBuilder.append("ff1e");
         assertEquals(expectedBuilder.toString(), hexResult);
     }
 

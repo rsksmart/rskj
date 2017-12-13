@@ -309,13 +309,10 @@ public class BridgeSerializationUtils {
     // [address_1, amount_1, ..., address_n, amount_n]
     // with address_i being the encoded bytes of each btc address
     // and amount_i the RLP-encoded biginteger corresponding to each amount
-    // To preserve order amongst different implementations of lists,
-    // entries are first sorted on the lexicographical order of the
-    // address bytes and then by the amount ascending
-    // (see ReleaseTransactionSet.Entry.DESTINATION_AMOUNT_COMPARATOR)
+    // Order of entries in serialized output is order of the request queue entries
+    // so that we enforce a FIFO policy on release requests.
     public static byte[] serializeReleaseRequestQueue(ReleaseRequestQueue queue) {
         List<ReleaseRequestQueue.Entry> entries = queue.getEntries();
-        entries.sort(ReleaseRequestQueue.Entry.DESTINATION_AMOUNT_COMPARATOR);
 
         byte[][] bytes = new byte[entries.size() * 2][];
         int n = 0;

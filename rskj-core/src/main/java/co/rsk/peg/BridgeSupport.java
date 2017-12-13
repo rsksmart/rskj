@@ -467,14 +467,14 @@ public class BridgeSupport {
     public void updateCollections(Transaction rskTx) throws IOException {
         Context.propagate(btcContext);
 
-        processFundsMigration(rskTx);
+        processFundsMigration();
 
         processReleaseRequests();
 
         processReleaseTransactions(rskTx);
     }
 
-    private void processFundsMigration(Transaction rskTx) throws IOException {
+    private void processFundsMigration() throws IOException {
         long activeFederationAge = rskExecutionBlock.getNumber() - getFederationCreationBlockNumber();
         Wallet retiringFederationWallet = getRetiringFederationWallet();
         List<UTXO> availableUTXOs = provider.getRetiringFederationBtcUTXOs();
