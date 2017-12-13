@@ -24,6 +24,7 @@ import co.rsk.config.BridgeTestNetConstants;
 import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 import org.spongycastle.util.encoders.Hex;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 /**
@@ -33,10 +34,12 @@ import java.math.BigInteger;
  */
 public class Constants {
     private static final int MAX_CONTRACT_SIZE = 0x6000;
+    private static final BigInteger TRANSACTION_GAS_CAP = new BigDecimal(Math.pow(2,  63)).subtract(new BigDecimal(1)).toBigInteger();
     private int maximumExtraDataSize = 32;
     private int minGasLimit = 3000000;
     private int gasLimitBoundDivisor = 1024;
     private int targetGasLimit = 5000000;
+
 
     private BigInteger minimumDifficulty = BigInteger.valueOf(131072);
     private BigInteger difficultyBoundDivisor = BigInteger.valueOf(2048);
@@ -54,6 +57,10 @@ public class Constants {
     private static final byte[] BURN_ADDRESS = Hex.decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 
     private static final byte CHAIN_ID = 30;
+
+    public static BigInteger getTransactionGasCap() {
+        return TRANSACTION_GAS_CAP;
+    }
 
     public static int getMaxContractSize() {
         return MAX_CONTRACT_SIZE;
