@@ -166,8 +166,7 @@ public class BridgeUtils {
     }
 
     private static boolean isFromFederateMember(org.ethereum.core.Transaction rskTx, Federation federation) {
-        BtcECKey btcKey = BtcECKey.fromPublicOnly(rskTx.getKey().getPubKeyPoint());
-        return federation.hasPublicKey(btcKey);
+        return federation.hasMemberWithRskAddress(rskTx.getSender());
     }
 
     private static boolean isFromFederationChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {

@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.db.ByteArrayWrapper;
 
 import java.time.Instant;
@@ -39,10 +40,12 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 public final class Federation {
-    private List<BtcECKey> publicKeys;
-    private Instant creationTime;
+    private final List<BtcECKey> publicKeys;
+    private final List<ECKey> rskPublicKeys;
+    private final Instant creationTime;
     private final long creationBlockNumber;
-    private NetworkParameters btcParams;
+    private final NetworkParameters btcParams;
+
     private Script redeemScript;
     private Script p2shScript;
     private Address address;
@@ -52,6 +55,11 @@ public final class Federation {
         // Immutability provides protection unless unwanted modification, thus making the Federation instance
         // effectively immutable
         this.publicKeys = Collections.unmodifiableList(publicKeys.stream().sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList()));
+        // using this.publicKeys ensures order in rskPublicKeys
+        this.rskPublicKeys = Collections.unmodifiableList(this.publicKeys.stream()
+                .map(BtcECKey::getPubKey)
+                .map(ECKey::fromPublicOnly)
+                .collect(Collectors.toList()));
         this.creationTime = creationTime;
         this.creationBlockNumber = creationBlockNumber;
         this.btcParams = btcParams;
@@ -110,16 +118,24 @@ public final class Federation {
     }
 
     public Integer getPublicKeyIndex(BtcECKey key) {
-        int index = publicKeys.indexOf(key);
-        if (index == -1) {
-            return null;
+        for (int i = 0; i < publicKeys.size(); i++) {
+            // note that this comparison doesn't take into account
+            // key compression
+            if (Arrays.equals(key.getPubKey(), publicKeys.get(i).getPubKey())) {
+                return i;
+            }
         }
 
-        return index;
+        return null;
     }
 
     public boolean hasPublicKey(BtcECKey key) {
         return getPublicKeyIndex(key) != null;
+    }
+
+    public boolean hasMemberWithRskAddress(byte[] address) {
+        return rskPublicKeys.stream()
+                .anyMatch(k -> Arrays.equals(k.getAddress(), address));
     }
 
     @Override
