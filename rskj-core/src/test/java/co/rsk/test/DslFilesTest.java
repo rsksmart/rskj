@@ -23,12 +23,16 @@ import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import org.ethereum.core.Block;
+import org.ethereum.core.Transaction;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
+import org.spongycastle.util.BigIntegers;
+import org.spongycastle.util.encoders.Hex;
 
 import java.io.FileNotFoundException;
+import java.math.BigInteger;
 import java.util.Arrays;
 
 /**
@@ -56,6 +60,27 @@ public class DslFilesTest {
         Assert.assertNotNull(world.getAccountByName("acc2"));
         Assert.assertNotNull(world.getTransactionByName("tx01"));
         Assert.assertNotNull(world.getBlockByName("b01"));
+    }
+
+    @Test
+    public void runCreate01Resource() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/create01.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Transaction transaction = world.getTransactionByName("tx01");
+
+        Assert.assertNotNull(transaction);
+
+        TransactionInfo txinfo = world.getBlockChain().getTransactionInfo(transaction.getHash());
+
+        Assert.assertNotNull(txinfo);
+        BigInteger gasUsed = BigIntegers.fromUnsignedByteArray(txinfo.getReceipt().getGasUsed());
+
+        Assert.assertNotEquals(BigInteger.ZERO, gasUsed);
+        // According to TestRPC and geth, the gas used is 0x010c2d
+        Assert.assertEquals(BigIntegers.fromUnsignedByteArray(Hex.decode("010c2d")), gasUsed);
     }
 
     @Test
