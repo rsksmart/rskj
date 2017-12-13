@@ -55,10 +55,11 @@ public final class Federation {
         // Immutability provides protection unless unwanted modification, thus making the Federation instance
         // effectively immutable
         this.publicKeys = Collections.unmodifiableList(publicKeys.stream().sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList()));
-        this.rskPublicKeys = publicKeys.stream()
+        // using this.publicKeys ensures order in rskPublicKeys
+        this.rskPublicKeys = Collections.unmodifiableList(this.publicKeys.stream()
                 .map(BtcECKey::getPubKey)
                 .map(ECKey::fromPublicOnly)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
         this.creationTime = creationTime;
         this.creationBlockNumber = creationBlockNumber;
         this.btcParams = btcParams;
