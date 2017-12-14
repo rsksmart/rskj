@@ -731,16 +731,8 @@ public class VM {
     }
 
     protected void doCALLDATACOPY() {
-        DataWord size;
-        long newMemSize ;
-        long copySize;
-
         if (computeGas) {
-            size = stack.get(stack.size() - 3);
-            copySize = Program.limitToMaxLong(size);
-            checkSizeArgument(copySize);
-            newMemSize = memNeeded(stack.peek(), copySize);
-            gasCost += calcMemGas(oldMemSize, newMemSize, copySize);
+            gasCost += computeDataCopyGas();
             spendOpCodeGas();
         }
         // EXECUTION PHASE
@@ -759,6 +751,14 @@ public class VM {
         program.disposeWord(dataOffsetData);
         program.disposeWord(lengthData);
         program.step();
+    }
+
+    private long computeDataCopyGas() {
+        DataWord size = stack.get(stack.size() - 3);
+        long copySize = Program.limitToMaxLong(size);
+        checkSizeArgument(copySize);
+        long newMemSize = memNeeded(stack.peek(), copySize);
+        return calcMemGas(oldMemSize, newMemSize, copySize);
     }
 
     protected void doCODESIZE() {
@@ -873,6 +873,42 @@ public class VM {
         program.disposeWord(codeOffsetDW);
         program.disposeWord(lengthDataDW);
 
+        program.step();
+    }
+
+    protected void doRETURNDATASIZE() {
+        spendOpCodeGas();
+        DataWord dataSize = program.getReturnDataBufferSize();
+        if (isLogEnabled) {
+            hint = "size: " + dataSize.value();
+        }
+        program.stackPush(dataSize);
+        program.step();
+    }
+
+    protected void doRETURNDATACOPY() {
+        if (computeGas) {
+            gasCost += computeDataCopyGas();
+            spendOpCodeGas();
+        }
+
+        DataWord memOffsetData = program.stackPop();
+        DataWord dataOffsetData = program.stackPop();
+        DataWord lengthData = program.stackPop();
+
+        byte[] msgData = program.getReturnDataBufferData(dataOffsetData, lengthData)
+                .orElseThrow(() -> {
+                    long returnDataSize = program.getReturnDataBufferSize().longValueSafe();
+                    return new RuntimeException(String.format(
+                            "Illegal RETURNDATACOPY arguments: offset (%s) + size (%s) > RETURNDATASIZE (%d)",
+                            dataOffsetData, lengthData, returnDataSize));
+                });
+
+        if (isLogEnabled) {
+            hint = "data: " + Hex.toHexString(msgData);
+        }
+
+        program.memorySave(memOffsetData.intValueSafe(), msgData);
         program.step();
     }
 
@@ -1654,6 +1690,10 @@ public class VM {
                 break;
             case OpCodes.OP_CODECOPY:
             case OpCodes.OP_EXTCODECOPY: doCODECOPY();
+            break;
+            case OpCodes.OP_RETURNDATASIZE: doRETURNDATASIZE();
+            break;
+            case OpCodes.OP_RETURNDATACOPY: doRETURNDATACOPY();
             break;
             case OpCodes.OP_GASPRICE: doGASPRICE();
             break;
