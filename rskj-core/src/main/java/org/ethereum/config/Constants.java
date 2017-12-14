@@ -34,7 +34,9 @@ import java.math.BigInteger;
  */
 public class Constants {
     private static final int MAX_CONTRACT_SIZE = 0x6000;
-    private static final BigInteger TRANSACTION_GAS_CAP = new BigDecimal(Math.pow(2,  63)).subtract(new BigDecimal(1)).toBigInteger();
+    // we defined it be large enough for to allow large tx and also to have space still to operate on vm
+    private static final BigInteger TRANSACTION_GAS_CAP = BigDecimal.valueOf(Math.pow(2,  60)).toBigInteger();
+    public static final int DURATION_LIMIT = 8;
     private int maximumExtraDataSize = 32;
     private int minGasLimit = 3000000;
     private int gasLimitBoundDivisor = 1024;
@@ -67,7 +69,7 @@ public class Constants {
     }
 
     public int getDurationLimit() {
-        return 8;
+        return DURATION_LIMIT;
     }
 
     public BigInteger

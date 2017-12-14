@@ -306,19 +306,16 @@ public class Web3ImplTest {
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2)
                 .value(BigInteger.valueOf(1000000))
-                .gasLimit(new BigDecimal(Math.pow(2, 63)).toBigInteger()).build();
+                .gasLimit(BigDecimal.valueOf(Math.pow(2, 60)).add(BigDecimal.valueOf(1)).toBigInteger()).build();
 
         String rawData = Hex.toHexString(tx.getEncoded());
 
-        String txHash = null;
         try {
-            txHash = web3.eth_sendRawTransaction(rawData);
+            web3.eth_sendRawTransaction(rawData);
+            Assert.fail();
         } catch (JsonRpcInvalidParamException e) {
-                Assert.assertEquals(e.getMessage(), "Gas limit exceeds Transaction max value tolerated");
-        } catch (Exception e) {
-            Assert.assertFalse(e instanceof JsonRpcInvalidParamException);
+            Assert.assertEquals(e.getMessage(), "Gas limit exceeds Transaction max value tolerated");
         }
-        Assert.assertNull(txHash);
     }
 
     @Test
@@ -1268,7 +1265,7 @@ public class Web3ImplTest {
 
         BigInteger value = BigInteger.valueOf(7);
         BigInteger gasPrice = BigInteger.valueOf(8);
-        BigInteger gasLimit = new BigDecimal(Math.pow(2, 63)).toBigInteger();
+        BigInteger gasLimit = BigDecimal.valueOf(Math.pow(2, 60)).add(BigDecimal.valueOf(1)).toBigInteger();
 
         String data = "0xff";
 
@@ -1282,16 +1279,14 @@ public class Web3ImplTest {
         args.value = value.toString();
         args.nonce = nonce.toString();
 
-        String txHash = null;
         try {
-            txHash = web3.eth_sendTransaction(args);
-        }
-        catch (JsonRpcInvalidParamException e) {
+            web3.eth_sendTransaction(args);
+        } catch (JsonRpcInvalidParamException e) {
             Assert.assertEquals(e.getMessage(), "Gas limit exceeds Transaction max value tolerated");
+            return;
         } catch (Exception e) {
-            Assert.assertFalse(e instanceof JsonRpcInvalidParamException);
         }
-        Assert.assertNull(txHash);
+        Assert.fail();
     }
 
     private Web3Impl createWeb3() {
