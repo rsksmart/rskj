@@ -48,7 +48,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -219,6 +222,53 @@ public class BridgeUtilsTest {
         tx4.addOutput(Coin.FIFTY_COINS, address2);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertTrue(BridgeUtils.isLockTx(tx4, federations, btcContext, bridgeConstants));
+    }
+
+    @Test
+    public void testIsMigrationTx() {
+        BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        NetworkParameters parameters = bridgeConstants.getBtcParams();
+        Context btcContext = new Context(parameters);
+
+        List<BtcECKey> activeFederationKeys = Stream.of(
+            BtcECKey.fromPrivate(Hex.decode("fa01")),
+            BtcECKey.fromPrivate(Hex.decode("fa02"))
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+        Federation activeFederation = new Federation(activeFederationKeys, Instant.ofEpochMilli(2000L), 2L, parameters);
+
+        List<BtcECKey> retiringFederationKeys = Stream.of(
+                BtcECKey.fromPrivate(Hex.decode("fb01")),
+                BtcECKey.fromPrivate(Hex.decode("fb02")),
+                BtcECKey.fromPrivate(Hex.decode("fb03"))
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+        Federation retiringFederation = new Federation(retiringFederationKeys, Instant.ofEpochMilli(1000L), 1L, parameters);
+
+        Address activeFederationAddress = activeFederation.getAddress();
+
+        BtcTransaction migrationTx = new BtcTransaction(parameters);
+        migrationTx.addOutput(Coin.COIN, activeFederationAddress);
+        TransactionInput migrationTxInput = new TransactionInput(parameters, migrationTx, new byte[]{}, new TransactionOutPoint(parameters, 0, Sha256Hash.ZERO_HASH));
+        migrationTx.addInput(migrationTxInput);
+        signWithNecessaryKeys(retiringFederation, retiringFederationKeys, migrationTxInput, migrationTx, bridgeConstants);
+        assertThat(BridgeUtils.isMigrationTx(migrationTx, activeFederation, retiringFederation, btcContext, bridgeConstants), is(true));
+
+        BtcTransaction toActiveFederationTx = new BtcTransaction(parameters);
+        toActiveFederationTx.addOutput(Coin.COIN, activeFederationAddress);
+        toActiveFederationTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        assertThat(BridgeUtils.isMigrationTx(toActiveFederationTx, activeFederation, retiringFederation, btcContext, bridgeConstants), is(false));
+
+        Address randomAddress = Address.fromBase58(
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
+        );
+        BtcTransaction fromRetiringFederationTx = new BtcTransaction(parameters);
+        fromRetiringFederationTx.addOutput(Coin.COIN, randomAddress);
+        TransactionInput fromRetiringFederationTxInput = new TransactionInput(parameters, fromRetiringFederationTx, new byte[]{}, new TransactionOutPoint(parameters, 0, Sha256Hash.ZERO_HASH));
+        fromRetiringFederationTx.addInput(fromRetiringFederationTxInput);
+        signWithNecessaryKeys(retiringFederation, retiringFederationKeys, fromRetiringFederationTxInput, fromRetiringFederationTx, bridgeConstants);
+        assertThat(BridgeUtils.isMigrationTx(fromRetiringFederationTx, activeFederation, retiringFederation, btcContext, bridgeConstants), is(false));
+
+        assertThat(BridgeUtils.isMigrationTx(migrationTx, activeFederation, null, btcContext, bridgeConstants), is(false));
     }
 
     @Test

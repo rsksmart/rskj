@@ -75,6 +75,7 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
@@ -1160,6 +1161,94 @@ public class BridgeSupportTest {
         Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertEquals(1, provider2.getBtcTxHashesAlreadyProcessed().size());
+    }
+
+    @Test
+    public void registerBtcTransactionMigrationTx() throws BlockStoreException, AddressFormatException, IOException {
+        BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        NetworkParameters parameters = bridgeConstants.getBtcParams();
+
+        List<BtcECKey> activeFederationKeys = Stream.of(
+            BtcECKey.fromPrivate(Hex.decode("fa01")),
+            BtcECKey.fromPrivate(Hex.decode("fa02"))
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+        Federation activeFederation = new Federation(activeFederationKeys, Instant.ofEpochMilli(2000L), 2L, parameters);
+
+        List<BtcECKey> retiringFederationKeys = Stream.of(
+            BtcECKey.fromPrivate(Hex.decode("fb01")),
+            BtcECKey.fromPrivate(Hex.decode("fb02"))
+        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
+        Federation retiringFederation = new Federation(retiringFederationKeys, Instant.ofEpochMilli(1000L), 1L, parameters);
+
+        Repository repository = new RepositoryImpl();
+        repository.addBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
+        Block executionBlock = Mockito.mock(Block.class);
+        Mockito.when(executionBlock.getNumber()).thenReturn(10L);
+
+        Repository track = repository.startTracking();
+
+        BtcTransaction tx = new BtcTransaction(parameters);
+        Address activeFederationAddress = activeFederation.getAddress();
+        tx.addOutput(Coin.COIN, activeFederationAddress);
+
+        // Create previous tx
+        BtcTransaction prevTx = new BtcTransaction(btcParams);
+        TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, retiringFederation.getAddress());
+        prevTx.addOutput(prevOut);
+        // Create tx input
+        tx.addInput(prevOut);
+        // Create tx input base script sig
+        Script scriptSig = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(retiringFederation);
+        // Create sighash
+        Script redeemScript = ScriptBuilder.createRedeemScript(retiringFederation.getNumberOfSignaturesRequired(), retiringFederation.getPublicKeys());
+        Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
+        // Sign by federator 0
+        BtcECKey.ECDSASignature sig0 = retiringFederationKeys.get(0).sign(sighash);
+        TransactionSignature txSig0 = new TransactionSignature(sig0, BtcTransaction.SigHash.ALL, false);
+        int sigIndex0 = scriptSig.getSigInsertionIndex(sighash, retiringFederation.getPublicKeys().get(0));
+        scriptSig = ScriptBuilder.updateScriptWithSignature(scriptSig, txSig0.encodeToBitcoin(), sigIndex0, 1, 1);
+        // Sign by federator 1
+        BtcECKey.ECDSASignature sig1 = retiringFederationKeys.get(1).sign(sighash);
+        TransactionSignature txSig1 = new TransactionSignature(sig1, BtcTransaction.SigHash.ALL, false);
+        int sigIndex1 = scriptSig.getSigInsertionIndex(sighash, retiringFederation.getPublicKeys().get(1));
+        scriptSig = ScriptBuilder.updateScriptWithSignature(scriptSig, txSig1.encodeToBitcoin(), sigIndex1, 1, 1);
+        // Set scipt sign to tx input
+        tx.getInput(0).setScriptSig(scriptSig);
+
+
+        Context btcContext = new Context(bridgeConstants.getBtcParams());
+        BtcBlockStore btcBlockStore = new RepositoryBlockStore(track, contractAddress);
+        BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress);
+        provider.setActiveFederation(activeFederation);
+        provider.setRetiringFederation(retiringFederation);
+        BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, provider, btcBlockStore, btcBlockChain);
+        Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(tx.getHash());
+
+        PartialMerkleTree pmt = new PartialMerkleTree(btcParams, bits, hashes, 1);
+        List<Sha256Hash> hashlist = new ArrayList<>();
+        Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
+
+        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+
+        btcBlockChain.add(block);
+        ((SimpleBlockChain)btcBlockChain).useHighBlock();
+        bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx, 1, pmt);
+        bridgeSupport.save();
+        ((SimpleBlockChain)btcBlockChain).useBlock();
+
+        track.commit();
+
+        List<UTXO> activeFederationBtcUTXOs = provider.getActiveFederationBtcUTXOs();
+        List<Coin> activeFederationBtcCoins = activeFederationBtcUTXOs.stream().map(UTXO::getValue).collect(Collectors.toList());
+        Assert.assertThat(activeFederationBtcUTXOs, hasSize(1));
+        Assert.assertThat(activeFederationBtcCoins, hasItem(Coin.COIN));
     }
 
     @Test

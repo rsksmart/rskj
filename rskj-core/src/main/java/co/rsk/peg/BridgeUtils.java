@@ -136,6 +136,16 @@ public class BridgeUtils {
         return false;
     }
 
+    public static boolean isMigrationTx(BtcTransaction btcTx, Federation activeFederation, Federation retiringFederation, Context btcContext, BridgeConstants bridgeConstants) {
+        if (retiringFederation == null) {
+            return false;
+        }
+        boolean moveFromRetiring = isReleaseTx(btcTx, retiringFederation, bridgeConstants);
+        boolean moveToActive = isLockTx(btcTx, activeFederation, btcContext, bridgeConstants);
+
+        return moveFromRetiring && moveToActive;
+    }
+
     public static Address recoverBtcAddressFromEthTransaction(org.ethereum.core.Transaction tx, NetworkParameters networkParameters) {
         org.ethereum.crypto.ECKey key = tx.getKey();
         byte[] pubKey = key.getPubKey(true);

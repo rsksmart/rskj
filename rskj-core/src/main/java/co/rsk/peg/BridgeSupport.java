@@ -333,9 +333,11 @@ public class BridgeSupport {
             // When is not guaranteed to be called in the chronological order, so a Federator can inform
             // b) In prod: Federator created a tx manually or the federation was compromised and some utxos were spent. Better not try to spend them.
             // Open problem: For performance removeUsedUTXOs() just removes 1 utxo
+        } else if (BridgeUtils.isMigrationTx(btcTx, getActiveFederation(), getRetiringFederation(), btcContext, bridgeConstants)) {
+            logger.debug("This is a migration tx {}", btcTx);
         } else {
-            logger.warn("This is not a lock nor a release tx {}", btcTx);
-            panicProcessor.panic("btclock", "This is not a lock nor a release tx " + btcTx);
+            logger.warn("This is not a lock, a release nor a migration tx {}", btcTx);
+            panicProcessor.panic("btclock", "This is not a lock, a release nor a migration tx " + btcTx);
             return;
         }
 
@@ -632,10 +634,22 @@ public class BridgeSupport {
                     inputScript.getChunks());
 
             if (!alreadySignedByThisFederator) {
-                int sigIndex = inputScript.getSigInsertionIndex(sighash, federatorPublicKey);
-                inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSig.encodeToBitcoin(), sigIndex, 1, 1);
-                txIn.setScriptSig(inputScript);
-                logger.debug("Tx input for tx {} signed.", new Sha3Hash(rskTxHash));
+                try {
+                    int sigIndex = inputScript.getSigInsertionIndex(sighash, federatorPublicKey);
+                    inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSig.encodeToBitcoin(), sigIndex, 1, 1);
+                    txIn.setScriptSig(inputScript);
+                    logger.debug("Tx input for tx {} signed.", new Sha3Hash(rskTxHash));
+                } catch (IllegalStateException e) {
+                    Federation retiringFederation = getRetiringFederation();
+                    if (getActiveFederation().hasPublicKey(federatorPublicKey)) {
+                        logger.debug("A member of the active federation is trying to sign a tx of the retiring one");
+                        return;
+                    } else if (retiringFederation != null && retiringFederation.hasPublicKey(federatorPublicKey)) {
+                        logger.debug("A member of the retiring federation is trying to sign a tx of the active one");
+                        return;
+                    }
+                    throw e;
+                }
             } else {
                 logger.warn("Tx {} already signed by this federator.", new Sha3Hash(rskTxHash));
                 break;
