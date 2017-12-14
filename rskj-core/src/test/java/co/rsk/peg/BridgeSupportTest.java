@@ -319,6 +319,8 @@ public class BridgeSupportTest {
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
         // Check value sent to user is 10 BTC minus fee
         Assert.assertEquals(Coin.valueOf(999962800l), provider.getReleaseTransactionSet().getEntries().iterator().next().getTransaction().getOutput(0).getValue());
+        // Check the wallet has been emptied
+        Assert.assertTrue(provider.getActiveFederationBtcUTXOs().isEmpty());
     }
 
     @Test
@@ -372,7 +374,10 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
         Assert.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
+        // Check the wallet has not been emptied
+        Assert.assertFalse(provider.getActiveFederationBtcUTXOs().isEmpty());
     }
 
     @Test
@@ -427,7 +432,10 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
         Assert.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
+        // Check the wallet has not been emptied
+        Assert.assertFalse(provider.getActiveFederationBtcUTXOs().isEmpty());
     }
 
     @Test
@@ -483,6 +491,8 @@ public class BridgeSupportTest {
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
         Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(21000000-2600)), repository.getBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR)));
         Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(2600)), repository.getBalance(RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress()));
+        // Check the wallet has been emptied
+        Assert.assertTrue(provider.getActiveFederationBtcUTXOs().isEmpty());
     }
 
     @PrepareForTest({ BridgeUtils.class })
@@ -705,8 +715,8 @@ public class BridgeSupportTest {
         BtcTransaction prevTx = new BtcTransaction(btcParams);
         TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, federation.getAddress());
         prevTx.addOutput(prevOut);
-        UTXO utxo = new UTXO(prevTx.getHash(), 0, prevOut.getValue(), 0, false, prevOut.getScriptPubKey());
-        provider.getActiveFederationBtcUTXOs().add(utxo);
+//        UTXO utxo = new UTXO(prevTx.getHash(), 0, prevOut.getValue(), 0, false, prevOut.getScriptPubKey());
+//        provider.getActiveFederationBtcUTXOs().add(utxo);
 
         BtcTransaction t = new BtcTransaction(btcParams);
         TransactionOutput output = new TransactionOutput(btcParams, t, Coin.COIN, new BtcECKey().toAddress(btcParams));
@@ -772,7 +782,6 @@ public class BridgeSupportTest {
             Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
             Assert.assertEquals(true, retrievedScriptSig.getChunks().get(1).data.length > 0);
             Assert.assertEquals(true, retrievedScriptSig.getChunks().get(2).data.length > 0);
-            Assert.assertTrue(provider.getActiveFederationBtcUTXOs().isEmpty());
         } else {
             Script retrievedScriptSig = provider.getRskTxsWaitingForSignatures().get(sha3Hash).getInput(0).getScriptSig();
             Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
@@ -782,7 +791,6 @@ public class BridgeSupportTest {
             }
             Assert.assertEquals(expectSignatureToBePersisted, retrievedScriptSig.getChunks().get(1).data.length > 0);
             Assert.assertEquals(false, retrievedScriptSig.getChunks().get(2).data.length > 0);
-            Assert.assertFalse(provider.getActiveFederationBtcUTXOs().isEmpty());
         }
     }
 

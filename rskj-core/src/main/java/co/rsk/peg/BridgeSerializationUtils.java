@@ -329,8 +329,9 @@ public class BridgeSerializationUtils {
     public static ReleaseRequestQueue deserializeReleaseRequestQueue(byte[] data, NetworkParameters networkParameters) {
         List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
 
-        if (data == null || data.length == 0)
+        if (data == null || data.length == 0) {
             return new ReleaseRequestQueue(entries);
+        }
 
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
@@ -379,8 +380,9 @@ public class BridgeSerializationUtils {
     public static ReleaseTransactionSet deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters) {
         Set<ReleaseTransactionSet.Entry> entries = new HashSet<>();
 
-        if (data == null || data.length == 0)
+        if (data == null || data.length == 0) {
             return new ReleaseTransactionSet(entries);
+        }
 
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 

@@ -144,8 +144,9 @@ public class BridgeStorageProvider {
     }
 
     public ReleaseRequestQueue getReleaseRequestQueue() throws IOException {
-        if (releaseRequestQueue != null)
+        if (releaseRequestQueue != null) {
             return releaseRequestQueue;
+        }
 
         releaseRequestQueue = getFromRepository(
                 RELEASE_REQUEST_QUEUE,
@@ -156,15 +157,17 @@ public class BridgeStorageProvider {
     }
 
     public void saveReleaseRequestQueue() {
-        if (releaseRequestQueue == null)
+        if (releaseRequestQueue == null) {
             return;
+        }
 
         safeSaveToRepository(RELEASE_REQUEST_QUEUE, releaseRequestQueue, BridgeSerializationUtils::serializeReleaseRequestQueue);
     }
 
     public ReleaseTransactionSet getReleaseTransactionSet() throws IOException {
-        if (releaseTransactionSet != null)
+        if (releaseTransactionSet != null) {
             return releaseTransactionSet;
+        }
 
         releaseTransactionSet = getFromRepository(
                 RELEASE_TX_SET,
@@ -175,8 +178,9 @@ public class BridgeStorageProvider {
     }
 
     public void saveReleaseTransactionSet() {
-        if (releaseTransactionSet == null)
+        if (releaseTransactionSet == null) {
             return;
+        }
 
         safeSaveToRepository(RELEASE_TX_SET, releaseTransactionSet, BridgeSerializationUtils::serializeReleaseTransactionSet);
     }

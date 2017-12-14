@@ -377,28 +377,6 @@ public class BridgeSupport {
         }
     }
 
-    /*
-      Removes the outputs spent by btcTx inputs from the UTXO list
-     */
-    private void removeUsedUTXOs(BtcTransaction btcTx) throws IOException {
-        for (TransactionInput transactionInput : btcTx.getInputs()) {
-            Iterator<UTXO> iter = provider.getActiveFederationBtcUTXOs().iterator();
-            while (iter.hasNext()) {
-                UTXO utxo = iter.next();
-                if (utxo.getHash().equals(transactionInput.getOutpoint().getHash()) && utxo.getIndex() == transactionInput.getOutpoint().getIndex()) {
-                    iter.remove();
-                    break;
-                }
-            }
-
-            provider.getRetiringFederationBtcUTXOs().removeIf(
-                utxo -> utxo.getHash().equals(transactionInput.getOutpoint().getHash())
-                    && utxo.getIndex() == transactionInput.getOutpoint().getIndex()
-            );
-        }
-    }
-
-
     /**
      * Initiates the process of sending coins back to BTC.
      * This is the default contract method.
@@ -600,10 +578,7 @@ public class BridgeSupport {
             releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
 
             // Mark UTXOs as spent
-            availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
-                utxo.getHash().equals(selectedUtxo.getHash()) &&
-                utxo.getIndex() == selectedUtxo.getIndex()
-            ));
+            availableUTXOs.removeAll(selectedUTXOs);
 
             // TODO: (Ariel Mendelzon, 07/12/2017)
             // TODO: Balance adjustment assumes that change output is output with index 1.
@@ -763,7 +738,6 @@ public class BridgeSupport {
         // If tx fully signed
         if (hasEnoughSignatures(btcTx)) {
             logger.info("Tx fully signed {}. Hex: {}", btcTx, Hex.toHexString(btcTx.bitcoinSerialize()));
-            removeUsedUTXOs(btcTx);
             provider.getRskTxsWaitingForSignatures().remove(new Sha3Hash(rskTxHash));
             logs.add(
                 new LogInfo(
