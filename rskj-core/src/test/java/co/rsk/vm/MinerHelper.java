@@ -120,6 +120,7 @@ public class MinerHelper {
             receipt.setCumulativeGas(totalGasUsed);
             latestStateRootHash = originalRepo.getRoot();
             receipt.setPostTxState(latestStateRootHash);
+            receipt.setTxStatus(executor.getReceipt().isSuccessful());
             receipt.setTransaction(tx);
             receipt.setLogInfoList(executor.getVMLogs());
 

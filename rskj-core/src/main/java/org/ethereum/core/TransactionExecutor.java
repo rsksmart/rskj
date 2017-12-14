@@ -66,6 +66,7 @@ public class TransactionExecutor {
     private Repository cacheTrack;
     private BlockStore blockStore;
     private ReceiptStore receiptStore;
+    private String executionError;
     private final long gasUsedInTheBlock;
     private BigInteger paidFees;
     private boolean readyToExecute = false;
@@ -73,6 +74,7 @@ public class TransactionExecutor {
     private ProgramInvokeFactory programInvokeFactory;
     private byte[] coinbase;
 
+    private TransactionReceipt receipt;
     private ProgramResult result = new ProgramResult();
     private Block executionBlock;
 
@@ -91,7 +93,6 @@ public class TransactionExecutor {
 
     public TransactionExecutor(Transaction tx, int txindex, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
-
         this(tx, txindex, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0);
     }
 
@@ -136,7 +137,10 @@ public class TransactionExecutor {
 
             panicProcessor.panic("toomuchgasused", String.format("Too much gas used in this block: Block Gas Limit: %d , Tx Gas Limit %d, Gas Used in the Block: %d", curBlockGasLimit.longValue(), txGasLimit.longValue(), gasUsedInTheBlock));
 
-            // TODO: save reason for failure
+            execError(String.format("Too much gas used in this block: Require: %s Got: %s",
+                    curBlockGasLimit.longValue() - toBI(tx.getGasLimit()).longValue(),
+                    toBI(tx.getGasLimit()).longValue()));
+
             return false;
         }
 
@@ -146,7 +150,8 @@ public class TransactionExecutor {
 
             panicProcessor.panic("notenoughgas", String.format("Not enough gas for transaction execution: Require: %d Got: %d", basicTxCost, txGasLimit.longValue()));
 
-            // TODO: save reason for failure
+            execError(String.format("Not enough gas for transaction execution: Require: %s Got: %s", basicTxCost, txGasLimit));
+
             return false;
         }
 
@@ -159,7 +164,8 @@ public class TransactionExecutor {
                 logger.warn("Transaction Data: {}", tx);
                 logger.warn("Tx Included in the following block: {}", this.executionBlock.getShortDescr());
             }
-            // TODO: save reason for failure
+
+            execError(String.format("Invalid nonce: required: %s , tx.nonce: %s", reqNonce, txNonce));
 
             panicProcessor.panic("invalidnonce", String.format("Invalid nonce: sender %s, required: %d , tx.nonce: %d, tx %s", Hex.toHexString(tx.getSender()), reqNonce.longValue(), txNonce.longValue(), Hex.toHexString(tx.getHash())));
 
@@ -177,6 +183,8 @@ public class TransactionExecutor {
                 logger.warn("Transaction Data: {}", tx);
                 logger.warn("Tx Included in the following block: {}", this.executionBlock);
             }
+
+            execError(String.format("Not enough cash: Require: %s, Sender cash: %s", totalCost, senderBalance));
 
             return false;
         }
@@ -201,6 +209,7 @@ public class TransactionExecutor {
             }
 
             panicProcessor.panic("invalidsignature", String.format("Transaction %s signature not accepted: %s", Hex.toHexString(tx.getHash()), tx.getSignature().toString()));
+            execError("Transaction signature not accepted: " + tx.getSignature());
 
             return false;
         }
@@ -260,6 +269,9 @@ public class TransactionExecutor {
             if (!localCall && txGasLimit.compareTo(BigInteger.valueOf(requiredGas)) < 0) {
                 // no refund
                 // no endowment
+                execError("Out of Gas calling precompiled contract 0x" + Hex.toHexString(targetAddress) +
+                        ", required: " + (requiredGas + basicTxCost) + ", left: " + mEndGas);
+                mEndGas = BigInteger.ZERO;
                 return;
             } else {
                 long gasUsed = requiredGas + basicTxCost;
@@ -318,6 +330,11 @@ public class TransactionExecutor {
         transfer(cacheTrack, tx.getSender(), newContractAddress, endowment);
     }
 
+    private void execError(String err) {
+        logger.warn(err);
+        executionError = err;
+    }
+
     public void go() {
         if (!readyToExecute) {
             return;
@@ -374,6 +391,8 @@ public class TransactionExecutor {
 
                 if (result.getException() != null) {
                     throw result.getException();
+                } else {
+                    execError("REVERT opcode executed");
                 }
             } else {
                 cacheTrack.commit();
@@ -385,8 +404,26 @@ public class TransactionExecutor {
 //            https://github.com/ethereum/cpp-ethereum/blob/develop/libethereum/Executive.cpp#L241
             cacheTrack.rollback();
             mEndGas = BigInteger.ZERO;
+            execError(e.getMessage());
+
         }
     }
+
+    public TransactionReceipt getReceipt() {
+        if (receipt == null) {
+            receipt = new TransactionReceipt();
+            long totalGasUsed = gasUsedInTheBlock + getGasUsed();
+            receipt.setCumulativeGas(totalGasUsed);
+            receipt.setTransaction(tx);
+            receipt.setLogInfoList(getVMLogs());
+            receipt.setGasUsed(getGasUsed());
+            receipt.setExecutionResult(getResult().getHReturn());
+            receipt.setError(executionError);
+//            receipt.setPostTxState(tr`ack.getRoot()); // TODO later when RepositoryTrack.getRoot() is implemented
+        }
+        return receipt;
+    }
+
 
     public void finalization() {
         if (!readyToExecute) {

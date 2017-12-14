@@ -109,7 +109,7 @@ public class BlockExecutorTest {
         Assert.assertEquals(tx, receipt.getTransaction());
         Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
         Assert.assertEquals(21000, new BigInteger(1, receipt.getCumulativeGas()).longValue());
-        Assert.assertArrayEquals(result.getStateRoot(), receipt.getPostTxState());
+        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK());
 
         Assert.assertEquals(21000, result.getGasUsed());
         Assert.assertEquals(21000, result.getPaidFees().intValueExact());
@@ -175,12 +175,13 @@ public class BlockExecutorTest {
         Assert.assertEquals(tx1, receipt.getTransaction());
         Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
         Assert.assertEquals(21000, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
+        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK());
 
         receipt = result.getTransactionReceipts().get(1);
         Assert.assertEquals(tx2, receipt.getTransaction());
         Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
         Assert.assertEquals(42000, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
-        Assert.assertArrayEquals(result.getStateRoot(), receipt.getPostTxState());
+        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK());
 
         Assert.assertEquals(42000, result.getGasUsed());
         Assert.assertEquals(42000, result.getPaidFees().intValueExact());

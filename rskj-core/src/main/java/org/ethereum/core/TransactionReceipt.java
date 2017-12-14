@@ -30,9 +30,11 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -48,6 +50,9 @@ public class TransactionReceipt {
     private byte[] postTxState = EMPTY_BYTE_ARRAY;
     private byte[] cumulativeGas = EMPTY_BYTE_ARRAY;
     private byte[] gasUsed = EMPTY_BYTE_ARRAY;
+    private byte[] executionResult = EMPTY_BYTE_ARRAY;
+    private String error = "";
+
     private Bloom bloomFilter = new Bloom();
     private List<LogInfo> logInfoList = new ArrayList<>();
 
@@ -68,10 +73,22 @@ public class TransactionReceipt {
         RLPList logs = (RLPList) receipt.get(3);
         RLPItem gasUsedRLP = (RLPItem) receipt.get(4);
 
-        postTxState = postTxStateRLP.getRLPData();
+        postTxState = nullToEmpty(postTxStateRLP.getRLPData());
         cumulativeGas = cumulativeGasRLP.getRLPData() == null ? EMPTY_BYTE_ARRAY : cumulativeGasRLP.getRLPData();
         bloomFilter = new Bloom(bloomRLP.getRLPData());
         gasUsed = gasUsedRLP.getRLPData() == null ? EMPTY_BYTE_ARRAY : gasUsedRLP.getRLPData();
+
+        if (receipt.size() > 5 ) {
+            RLPItem result = (RLPItem) receipt.get(5);
+            executionResult = (executionResult = result.getRLPData()) == null ? EMPTY_BYTE_ARRAY : executionResult;
+        }
+
+
+        if (receipt.size() > 6) {
+            byte[] errBytes = receipt.get(6).getRLPData();
+            error = errBytes != null ? new String(errBytes, StandardCharsets.UTF_8) : "";
+        }
+
 
         for (RLPElement log : logs) {
             LogInfo logInfo = new LogInfo(log.getRLPData());
@@ -117,7 +134,6 @@ public class TransactionReceipt {
         return logInfoList;
     }
 
-
     /* [postTxState, cumulativeGas, bloomFilter, logInfoList] */
     public byte[] getEncoded() {
 
@@ -129,6 +145,8 @@ public class TransactionReceipt {
         byte[] cumulativeGasRLP = RLP.encodeElement(this.cumulativeGas);
         byte[] gasUsedRLP = RLP.encodeElement(this.gasUsed);
         byte[] bloomRLP = RLP.encodeElement(this.bloomFilter.data);
+        byte[] result = RLP.encodeElement(this.executionResult);
+        byte[] err = RLP.encodeElement(this.error.getBytes(StandardCharsets.UTF_8));
 
         final byte[] logInfoListRLP;
         if (logInfoList != null) {
@@ -144,9 +162,26 @@ public class TransactionReceipt {
             logInfoListRLP = RLP.encodeList();
         }
 
-        rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP);
+        rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, result, err);
 
         return rlpEncoded;
+    }
+
+    public boolean isSuccessful() {
+        return error.isEmpty();
+    }
+
+    public void setTxStatus(boolean success) {
+        this.postTxState = success ? new byte[]{1} : new byte[0];
+        rlpEncoded = null;
+    }
+
+    public boolean hasTxStatus() {
+        return postTxState != null && postTxState.length <= 1;
+    }
+
+    public boolean isTxStatusOK() {
+        return postTxState != null && postTxState.length == 1 && postTxState[0] == 1;
     }
 
     public void setPostTxState(byte[] postTxState) {
@@ -196,11 +231,23 @@ public class TransactionReceipt {
         // todo: fix that
 
         return "TransactionReceipt[" +
-                "\n  , postTxState=" + Hex.toHexString(postTxState) +
+                "\n  , " + (hasTxStatus() ? ("txStatus=" + (isTxStatusOK() ? "OK" : "FAILED"))
+                        : ("postTxState=" + Hex.toHexString(postTxState))) +
                 "\n  , cumulativeGas=" + Hex.toHexString(cumulativeGas) +
                 "\n  , bloom=" + bloomFilter.toString() +
                 "\n  , logs=" + logInfoList +
                 ']';
     }
 
+    public void setExecutionResult(byte[] executionResult) {
+        this.executionResult = executionResult;
+    }
+
+    public void setError(String error) {
+        this.error = error == null?"":error;
+    }
+
+    public String getError() {
+        return this.error;
+    }
 }
