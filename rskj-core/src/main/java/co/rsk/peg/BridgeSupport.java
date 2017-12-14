@@ -214,6 +214,18 @@ public class BridgeSupport {
     }
 
     /**
+     * Get the wallet for the currently live federations
+     * but limited to a specific list of UTXOs
+     * @return A BTC wallet for the currently live federation(s)
+     * limited to the given list of UTXOs
+     *
+     * @throws IOException
+     */
+    public Wallet getUTXOBasedWalletForLiveFederations(List<UTXO> utxos) throws IOException {
+        return BridgeUtils.getFederationsSpendWallet(btcContext, getLiveFederations(), utxos);
+    }
+
+    /**
      * In case of a lock tx: Transfers some SBTCs to the sender of the btc tx and keeps track of the new UTXOs available for spending.
      * In case of a release tx: Keeps track of the change UTXOs, now available for spending.
      * @param btcTx The bitcoin transaction
@@ -520,13 +532,14 @@ public class BridgeSupport {
         // Releases are attempted using the currently active federation
         // wallet.
         final ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
+                btcContext.getParams(),
                 activeFederationWallet,
                 getFederationAddress(),
                 getFeePerKb()
         );
 
         releaseRequestQueue.process((ReleaseRequestQueue.Entry releaseRequest) -> {
-            Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.build(
+            Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.buildAmountTo(
                     releaseRequest.getDestination(),
                     releaseRequest.getAmount()
             );
