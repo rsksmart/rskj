@@ -68,7 +68,7 @@ import static org.ethereum.crypto.SHA3Helper.sha3;
  * @since 22.05.2014
  */
 public abstract class SystemProperties {
-    public static final String DEFAULT_BIND_IP = "0.0.0.0";
+    public static final String DEFAULT_BIND_IP = "::";
     private static Logger logger = LoggerFactory.getLogger("general");
 
     public static final String PROPERTY_DB_DIR = "database.dir";
