@@ -33,6 +33,7 @@ import java.math.BigInteger;
  */
 public class Constants {
     private static final int MAX_CONTRACT_SIZE = 0x6000;
+    private static final int MAX_ADDRESS_BYTE_LENGTH = 20;
     private int maximumExtraDataSize = 32;
     private int minGasLimit = 3000000;
     private int gasLimitBoundDivisor = 1024;
@@ -57,6 +58,10 @@ public class Constants {
 
     public static int getMaxContractSize() {
         return MAX_CONTRACT_SIZE;
+    }
+
+    public static int getMaxAddressByteLength() {
+        return MAX_ADDRESS_BYTE_LENGTH;
     }
 
     public int getDurationLimit() {

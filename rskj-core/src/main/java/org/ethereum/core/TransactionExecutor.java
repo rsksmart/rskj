@@ -39,6 +39,7 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -58,7 +59,6 @@ public class TransactionExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger("execute");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
-    private static final int MAX_ADDRESS_LENGTH = 32;
 
     private Transaction tx;
     private int txindex;
@@ -183,7 +183,7 @@ public class TransactionExecutor {
 
         // Prevent transactions with excessive address size
         byte[] receiveAddress = tx.getReceiveAddress();
-        if (receiveAddress != null && receiveAddress.length > MAX_ADDRESS_LENGTH) {
+        if (receiveAddress != null && !Arrays.equals(receiveAddress, EMPTY_BYTE_ARRAY) && receiveAddress.length > Constants.getMaxAddressByteLength()) {
             if (logger.isWarnEnabled()) {
                 logger.warn("Receiver address to long: size: {}, tx {}", receiveAddress.length, Hex.toHexString(tx.getHash()));
                 logger.warn("Transaction Data: {}", tx);

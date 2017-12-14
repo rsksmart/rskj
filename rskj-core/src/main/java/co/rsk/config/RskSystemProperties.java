@@ -24,6 +24,7 @@ import co.rsk.net.eth.WriterMessageRecorder;
 import co.rsk.rpc.ModuleDescription;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
+import org.ethereum.config.Constants;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
@@ -78,7 +79,7 @@ public class RskSystemProperties extends SystemProperties {
         }
 
         String coinbaseAddress = configFromFiles.getString(MINER_REWARD_ADDRESS_CONFIG);
-        if (coinbaseAddress.length() != 40) {
+        if (coinbaseAddress.length() != Constants.getMaxAddressByteLength() * 2) {
             throw new RskConfigurationException(MINER_REWARD_ADDRESS_CONFIG + " needs to be Hex encoded and 20 byte length");
         }
 
