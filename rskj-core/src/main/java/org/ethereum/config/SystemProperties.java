@@ -151,29 +151,19 @@ public abstract class SystemProperties {
         Config javaSystemProperties = ConfigFactory.load("no-such-resource-only-system-props");
         Config referenceConfig = ConfigFactory.parseResources("rskj.conf");
         logger.info("Config ( {} ): default properties from resource 'rskj.conf'", referenceConfig.entrySet().isEmpty() ? NO : YES);
-        String res = System.getProperty("rskj.conf.res");
-        Config cmdLineConfigRes = res != null ? ConfigFactory.parseResources(res) : ConfigFactory.empty();
-        logger.info("Config ( {} ): user properties from -Drskj.conf.res resource '{}'", cmdLineConfigRes.entrySet().isEmpty() ? NO : YES, res);
-        Config userConfig = ConfigFactory.parseResources("user.conf");
-        logger.info("Config ( {} ): user properties from resource 'user.conf'", userConfig.entrySet().isEmpty() ? NO : YES);
-        File userDirFile = new File(System.getProperty("user.dir"), "/config/rskj.conf");
-        Config userDirConfig = ConfigFactory.parseFile(userDirFile);
-        logger.info("Config ( {} ): user properties from file '{}'", userDirConfig.entrySet().isEmpty() ? NO : YES, userDirFile);
+        File installerFile = new File("/etc/rsk/node.conf");
+        Config installerConfig = installerFile.exists() ? ConfigFactory.parseFile(installerFile) : ConfigFactory.empty();
+        logger.info("Config ( {} ): default properties from installer '/etc/rsk/node.conf'", installerConfig.entrySet().isEmpty() ? NO : YES);
         Config testConfig = ConfigFactory.parseResources("test-rskj.conf");
         logger.info("Config ( {} ): test properties from resource 'test-rskj.conf'", testConfig.entrySet().isEmpty() ? NO : YES);
-        Config testUserConfig = ConfigFactory.parseResources("test-user.conf");
-        logger.info("Config ( {} ): test properties from resource 'test-user.conf'", testUserConfig.entrySet().isEmpty() ? NO : YES);
         String file = System.getProperty("rsk.conf.file");
         Config cmdLineConfigFile = file != null ? ConfigFactory.parseFile(new File(file)) : ConfigFactory.empty();
         logger.info("Config ( {} ): user properties from -Drsk.conf.file file '{}'", cmdLineConfigFile.entrySet().isEmpty() ? NO : YES, file);
         return javaSystemProperties
                 .withFallback(cmdLineConfigFile)
-                .withFallback(testUserConfig)
                 .withFallback(testConfig)
-                .withFallback(userConfig)
-                .withFallback(userDirConfig)
-                .withFallback(cmdLineConfigRes)
-                .withFallback(referenceConfig);
+                .withFallback(referenceConfig)
+                .withFallback(installerConfig);
     }
 
     public Config getConfig() {
