@@ -268,24 +268,16 @@ public class BridgeSupportTest {
     public void callUpdateCollectionsFundsEnoughForJustTheSmallerTx() throws IOException, BlockStoreException {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
-        BtcTransaction tx1 = new BtcTransaction(btcParams);
-        tx1.addOutput(Coin.valueOf(30,0), new BtcECKey().toAddress(btcParams));
-        BtcTransaction tx2 = new BtcTransaction(btcParams);
-        tx2.addOutput(Coin.valueOf(20,0), new BtcECKey().toAddress(btcParams));
-        BtcTransaction tx3 = new BtcTransaction(btcParams);
-        tx3.addOutput(Coin.valueOf(10,0), new BtcECKey().toAddress(btcParams));
-        Sha3Hash hash1 = PegTestUtils.createHash3();
-        Sha3Hash hash2 = PegTestUtils.createHash3();
-        Sha3Hash hash3 = PegTestUtils.createHash3();
 
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        provider0.getRskTxsWaitingForConfirmations().put(hash1, tx1);
-        provider0.getRskTxsWaitingForConfirmations().put(hash2, tx2);
-        provider0.getRskTxsWaitingForConfirmations().put(hash3, tx3);
+        provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(30,0));
+        provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(20,0));
+        provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(10,0));
+
         provider0.getActiveFederationBtcUTXOs().add(new UTXO(
                 PegTestUtils.createHash(),
                 1,
@@ -302,27 +294,10 @@ public class BridgeSupportTest {
         track = repository.startTracking();
 
         List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
-        TransactionReceipt receipt1 = new TransactionReceipt();
-        org.ethereum.core.Transaction rskTx1 = new SimpleRskTransaction(hash1.getBytes());
-        receipt1.setTransaction(rskTx1);
-        TransactionInfo ti1 = new TransactionInfo(receipt1, blocks.get(1).getHash(), 0);
-        TransactionReceipt receipt2 = new TransactionReceipt();
-        org.ethereum.core.Transaction rskTx2 = new SimpleRskTransaction(hash2.getBytes());
-        receipt2.setTransaction(rskTx2);
-        TransactionInfo ti2 = new TransactionInfo(receipt2, blocks.get(1).getHash(), 1);
-        TransactionReceipt receipt3 = new TransactionReceipt();
-        org.ethereum.core.Transaction rskTx3 = new SimpleRskTransaction(hash3.getBytes());
-        receipt3.setTransaction(rskTx3);
-        TransactionInfo ti3 = new TransactionInfo(receipt3, blocks.get(1).getHash(), 2);
-
-        List<TransactionInfo> tis = Lists.newArrayList(ti1, ti2, ti3);
 
         BlockChainBuilder builder = new BlockChainBuilder();
 
-        Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).setGenesis(BlockGenerator.getInstance().getGenesisBlock()).build();
-
-        for (Block block : blocks)
-            blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);
+        Blockchain blockchain = builder.setTesting(true).setRsk(true).setGenesis(BlockGenerator.getInstance().getGenesisBlock()).build();
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         ReceiptStore rskReceiptStore = blockchain.getReceiptStore();
@@ -339,26 +314,26 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertEquals(2, provider.getRskTxsWaitingForConfirmations().size());
-        Assert.assertEquals(1, provider.getRskTxsWaitingForSignatures().size());
+        Assert.assertEquals(2, provider.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+        Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
         // Check value sent to user is 10 BTC minus fee
-        Assert.assertEquals(Coin.valueOf(999962800l), provider.getRskTxsWaitingForSignatures().values().iterator().next().getOutput(0).getValue());
+        Assert.assertEquals(Coin.valueOf(999962800l), provider.getReleaseTransactionSet().getEntries().iterator().next().getTransaction().getOutput(0).getValue());
+        // Check the wallet has been emptied
+        Assert.assertTrue(provider.getActiveFederationBtcUTXOs().isEmpty());
     }
 
     @Test
     public void callUpdateCollectionsThrowsCouldNotAdjustDownwards() throws IOException, BlockStoreException {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
-        BtcTransaction tx1 = new BtcTransaction(btcParams);
-        tx1.addOutput(Coin.valueOf(37500), new BtcECKey().toAddress(btcParams));
-        Sha3Hash hash1 = PegTestUtils.createHash3();
 
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        provider0.getRskTxsWaitingForConfirmations().put(hash1, tx1);
+        provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(37500));
         provider0.getActiveFederationBtcUTXOs().add(new UTXO(
                 PegTestUtils.createHash(),
                 1,
@@ -375,15 +350,9 @@ public class BridgeSupportTest {
         track = repository.startTracking();
 
         List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
-        TransactionReceipt receipt1 = new TransactionReceipt();
-        org.ethereum.core.Transaction rskTx1 = new SimpleRskTransaction(hash1.getBytes());
-        receipt1.setTransaction(rskTx1);
-        TransactionInfo ti1 = new TransactionInfo(receipt1, blocks.get(1).getHash(), 0);
-
-        List<TransactionInfo> tis = Lists.newArrayList(ti1);
         BlockChainBuilder builder = new BlockChainBuilder();
 
-        Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).build();
+        Blockchain blockchain = builder.setTesting(true).setRsk(true).build();
 
 
         for (Block block : blocks)
@@ -404,24 +373,24 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertEquals(1, provider.getRskTxsWaitingForConfirmations().size());
+        Assert.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
+        // Check the wallet has not been emptied
+        Assert.assertFalse(provider.getActiveFederationBtcUTXOs().isEmpty());
     }
 
     @Test
     public void callUpdateCollectionsThrowsExceededMaxTransactionSize() throws IOException, BlockStoreException {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
-        BtcTransaction tx1 = new BtcTransaction(btcParams);
-        tx1.addOutput(Coin.COIN.multiply(7), new BtcECKey().toAddress(btcParams));
-        Sha3Hash hash1 = PegTestUtils.createHash3();
 
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        provider0.getRskTxsWaitingForConfirmations().put(hash1, tx1);
+        provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN.multiply(7));
         for (int i = 0; i < 2000; i++) {
             provider0.getActiveFederationBtcUTXOs().add(new UTXO(
                     PegTestUtils.createHash(),
@@ -440,15 +409,9 @@ public class BridgeSupportTest {
         track = repository.startTracking();
 
         List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
-        TransactionReceipt receipt1 = new TransactionReceipt();
-        org.ethereum.core.Transaction rskTx1 = new SimpleRskTransaction(hash1.getBytes());
-        receipt1.setTransaction(rskTx1);
-        TransactionInfo ti1 = new TransactionInfo(receipt1, blocks.get(1).getHash(), 0);
-
-        List<TransactionInfo> tis = Lists.newArrayList(ti1);
         BlockChainBuilder builder = new BlockChainBuilder();
 
-        Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).build();
+        Blockchain blockchain = builder.setTesting(true).setRsk(true).build();
 
         for (Block block : blocks)
             blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);
@@ -468,17 +431,17 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertEquals(1, provider.getRskTxsWaitingForConfirmations().size());
+        Assert.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
+        // Check the wallet has not been emptied
+        Assert.assertFalse(provider.getActiveFederationBtcUTXOs().isEmpty());
     }
 
     @Test
     public void callUpdateCollectionsChangeGetsOutOfDust() throws IOException, BlockStoreException {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
-        BtcTransaction tx1 = new BtcTransaction(btcParams);
-        tx1.addOutput(Coin.COIN, new BtcECKey().toAddress(btcParams));
-        Sha3Hash hash1 = PegTestUtils.createHash3();
 
         Map<byte[], BigInteger> preMineMap = new HashMap<byte[], BigInteger>();
         preMineMap.put(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), Denomination.satoshisToWeis(BigInteger.valueOf(21000000)));
@@ -487,15 +450,9 @@ public class BridgeSupportTest {
 
         List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(genesisBlock, 10);
 
-        TransactionReceipt receipt1 = new TransactionReceipt();
-        org.ethereum.core.Transaction rskTx1 = new SimpleRskTransaction(hash1.getBytes());
-        receipt1.setTransaction(rskTx1);
-        TransactionInfo ti1 = new TransactionInfo(receipt1, blocks.get(1).getHash(), 0);
-
-        List<TransactionInfo> tis = Lists.newArrayList(ti1);
         BlockChainBuilder builder = new BlockChainBuilder();
 
-        Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).setGenesis(genesisBlock).build();
+        Blockchain blockchain = builder.setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
 
         for (Block block : blocks)
             blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);
@@ -509,7 +466,7 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        provider0.getRskTxsWaitingForConfirmations().put(hash1, tx1);
+        provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN);
         provider0.getActiveFederationBtcUTXOs().add(new UTXO(PegTestUtils.createHash(), 1, Coin.COIN.add(Coin.valueOf(100)), 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
 
         provider0.save();
@@ -529,15 +486,18 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertEquals(0, provider.getRskTxsWaitingForConfirmations().size());
-        Assert.assertEquals(1, provider.getRskTxsWaitingForSignatures().size());
+        Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+        Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
         Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(21000000-2600)), repository.getBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR)));
         Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(2600)), repository.getBalance(RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress()));
+        // Check the wallet has been emptied
+        Assert.assertTrue(provider.getActiveFederationBtcUTXOs().isEmpty());
     }
 
     @PrepareForTest({ BridgeUtils.class })
     @Test
-    public void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmationsAndFunds() throws IOException, BlockStoreException {
+    public void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmations() throws IOException, BlockStoreException {
         // Bridge constants and btc context
         BridgeConstants bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         Context context = new Context(bridgeConstants.getBtcParams());
@@ -546,21 +506,29 @@ public class BridgeSupportTest {
         PowerMockito.mockStatic(BridgeUtils.class);
         PowerMockito.when(BridgeUtils.getFederationSpendWallet(any(Context.class), any(Federation.class), any(List.class))).thenReturn(new SimpleWallet(context));
 
-        BtcTransaction tx1 = createTransaction();
-        BtcTransaction tx2 = createTransaction();
-        BtcTransaction tx3 = createTransaction();
-        Sha3Hash hash1 = PegTestUtils.createHash3();
-        Sha3Hash hash2 = PegTestUtils.createHash3();
-        Sha3Hash hash3 = PegTestUtils.createHash3();
-
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        provider0.getRskTxsWaitingForConfirmations().put(hash1, tx1);
-        provider0.getRskTxsWaitingForConfirmations().put(hash2, tx2);
-        provider0.getRskTxsWaitingForConfirmations().put(hash3, tx3);
+        BtcTransaction txs = new BtcTransaction(btcParams);
+        txs.addOutput(Coin.FIFTY_COINS, new BtcECKey());
+
+        BtcTransaction tx1 = new BtcTransaction(btcParams);
+        tx1.addInput(txs.getOutput(0));
+        tx1.getInput(0).disconnect();
+        tx1.addOutput(Coin.COIN, new BtcECKey());
+        BtcTransaction tx2 = new BtcTransaction(btcParams);
+        tx2.addInput(txs.getOutput(0));
+        tx2.getInput(0).disconnect();
+        tx2.addOutput(Coin.COIN, new BtcECKey());
+        BtcTransaction tx3 = new BtcTransaction(btcParams);
+        tx3.addInput(txs.getOutput(0));
+        tx3.getInput(0).disconnect();
+        tx3.addOutput(Coin.COIN, new BtcECKey());
+        provider0.getReleaseTransactionSet().add(tx1, 1L);
+        provider0.getReleaseTransactionSet().add(tx2, 1L);
+        provider0.getReleaseTransactionSet().add(tx3, 1L);
 
         provider0.save();
 
@@ -570,15 +538,9 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
         List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
-        TransactionReceipt receipt = new TransactionReceipt();
-        org.ethereum.core.Transaction tx = new SimpleRskTransaction(hash1.getBytes());
-        receipt.setTransaction(tx);
-        TransactionInfo ti = new TransactionInfo(receipt, blocks.get(1).getHash(), 0);
-        List<TransactionInfo> tis = new ArrayList<>();
-        tis.add(ti);
 
         BlockChainBuilder builder = new BlockChainBuilder();
-        Blockchain blockchain = builder.setTesting(true).setRsk(true).setTransactionInfos(tis).build();
+        Blockchain blockchain = builder.setTesting(true).setRsk(true).build();
 
         for (Block block : blocks)
             blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);
@@ -597,9 +559,8 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertFalse(provider2.getRskTxsWaitingForConfirmations().isEmpty());
-        Assert.assertEquals(2, provider2.getRskTxsWaitingForConfirmations().size());
-        Assert.assertFalse(provider2.getRskTxsWaitingForSignatures().isEmpty());
+        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(2, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(1, provider2.getRskTxsWaitingForSignatures().size());
     }
 
@@ -754,8 +715,8 @@ public class BridgeSupportTest {
         BtcTransaction prevTx = new BtcTransaction(btcParams);
         TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, federation.getAddress());
         prevTx.addOutput(prevOut);
-        UTXO utxo = new UTXO(prevTx.getHash(), 0, prevOut.getValue(), 0, false, prevOut.getScriptPubKey());
-        provider.getActiveFederationBtcUTXOs().add(utxo);
+//        UTXO utxo = new UTXO(prevTx.getHash(), 0, prevOut.getValue(), 0, false, prevOut.getScriptPubKey());
+//        provider.getActiveFederationBtcUTXOs().add(utxo);
 
         BtcTransaction t = new BtcTransaction(btcParams);
         TransactionOutput output = new TransactionOutput(btcParams, t, Coin.COIN, new BtcECKey().toAddress(btcParams));
@@ -821,7 +782,6 @@ public class BridgeSupportTest {
             Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
             Assert.assertEquals(true, retrievedScriptSig.getChunks().get(1).data.length > 0);
             Assert.assertEquals(true, retrievedScriptSig.getChunks().get(2).data.length > 0);
-            Assert.assertTrue(provider.getActiveFederationBtcUTXOs().isEmpty());
         } else {
             Script retrievedScriptSig = provider.getRskTxsWaitingForSignatures().get(sha3Hash).getInput(0).getScriptSig();
             Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
@@ -831,7 +791,6 @@ public class BridgeSupportTest {
             }
             Assert.assertEquals(expectSignatureToBePersisted, retrievedScriptSig.getChunks().get(1).data.length > 0);
             Assert.assertEquals(false, retrievedScriptSig.getChunks().get(2).data.length > 0);
-            Assert.assertFalse(provider.getActiveFederationBtcUTXOs().isEmpty());
         }
     }
 
@@ -863,8 +822,8 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertTrue(provider.getRskTxsWaitingForConfirmations().isEmpty());
-        Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
+        Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
     }
 
@@ -887,8 +846,8 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertFalse(provider.getRskTxsWaitingForConfirmations().isEmpty());
-        Assert.assertFalse(provider2.getRskTxsWaitingForConfirmations().isEmpty());
+        Assert.assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(1, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
     }
 
@@ -932,7 +891,8 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
         Assert.assertTrue(provider2.getActiveFederationBtcUTXOs().isEmpty());
-        Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
+        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertFalse(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
     }
@@ -962,7 +922,8 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
         Assert.assertTrue(provider2.getActiveFederationBtcUTXOs().isEmpty());
-        Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
+        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertTrue(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
     }
@@ -992,7 +953,8 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
         Assert.assertTrue(provider2.getActiveFederationBtcUTXOs().isEmpty());
-        Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
+        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertTrue(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
     }
@@ -1026,7 +988,8 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
         Assert.assertTrue(provider2.getActiveFederationBtcUTXOs().isEmpty());
-        Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
+        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertTrue(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
 
@@ -1076,7 +1039,8 @@ public class BridgeSupportTest {
 
         Assert.assertEquals(0, provider2.getActiveFederationBtcUTXOs().size());
 
-        Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
+        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertTrue(provider2.getBtcTxHashesAlreadyProcessed().isEmpty());
     }
@@ -1158,7 +1122,8 @@ public class BridgeSupportTest {
         Assert.assertEquals(1, provider2.getActiveFederationBtcUTXOs().size());
         Assert.assertEquals(Coin.COIN, provider2.getActiveFederationBtcUTXOs().get(0).getValue());
 
-        Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
+        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertEquals(1, provider2.getBtcTxHashesAlreadyProcessed().size());
     }
@@ -1362,7 +1327,8 @@ public class BridgeSupportTest {
         Assert.assertEquals(Coin.COIN.multiply(10), provider2.getRetiringFederationBtcUTXOs().get(0).getValue());
         Assert.assertEquals(Coin.COIN.multiply(3), provider2.getRetiringFederationBtcUTXOs().get(1).getValue());
 
-        Assert.assertTrue(provider2.getRskTxsWaitingForConfirmations().isEmpty());
+        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertEquals(3, provider2.getBtcTxHashesAlreadyProcessed().size());
     }
@@ -1470,19 +1436,19 @@ public class BridgeSupportTest {
         Assert.assertEquals(Coin.COIN.multiply(10), provider2.getRetiringFederationBtcUTXOs().get(0).getValue());
         Assert.assertEquals(Coin.COIN.multiply(4), provider2.getRetiringFederationBtcUTXOs().get(1).getValue());
 
-        Assert.assertEquals(3, provider2.getRskTxsWaitingForConfirmations().size());
-        BtcTransaction tx;
-        TransactionOutput output;
-        Address outputAddress;
+        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
 
-        tx = provider2.getRskTxsWaitingForConfirmations().get(new Sha3Hash(rskTx1.getHash()));
-        assertTxIsOfValueToSpecificAddress(tx, srcKey1, 5);
+        List<ReleaseRequestQueue.Entry> releaseReqQueueEntries = provider2.getReleaseRequestQueue().getEntries();
 
-        tx = provider2.getRskTxsWaitingForConfirmations().get(new Sha3Hash(rskTx2.getHash()));
-        assertTxIsOfValueToSpecificAddress(tx, srcKey2, 10);
-
-        tx = provider2.getRskTxsWaitingForConfirmations().get(new Sha3Hash(rskTx3.getHash()));
-        assertTxIsOfValueToSpecificAddress(tx, srcKey3, 7);
+        Assert.assertTrue(releaseReqQueueEntries.stream().anyMatch(e ->
+                e.getDestination().equals(srcKey1.toAddress(btcParams)) && e.getAmount().equals(Coin.COIN.multiply(5))
+        ));
+        Assert.assertTrue(releaseReqQueueEntries.stream().anyMatch(e ->
+                e.getDestination().equals(srcKey2.toAddress(btcParams)) && e.getAmount().equals(Coin.COIN.multiply(10))
+        ));
+        Assert.assertTrue(releaseReqQueueEntries.stream().anyMatch(e ->
+                e.getDestination().equals(srcKey3.toAddress(btcParams)) && e.getAmount().equals(Coin.COIN.multiply(7))
+        ));
 
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertEquals(3, provider2.getBtcTxHashesAlreadyProcessed().size());
@@ -1497,12 +1463,6 @@ public class BridgeSupportTest {
         Address outputAddress = new Script(output.getScriptBytes()).getToAddress(params);
         Assert.assertEquals(outputAddress, key.toAddress(params));
         Assert.assertEquals(output.getValue(), Coin.COIN.multiply(value));
-    }
-
-    @Test
-    public void testHasEnoughConfirmations() throws Exception {
-        Assert.assertFalse(hasEnoughConfirmations(10));
-        Assert.assertTrue(hasEnoughConfirmations(20));
     }
 
     @Test
@@ -2150,26 +2110,6 @@ public class BridgeSupportTest {
         verify(mocksProvider.getElection(), never()).clear();
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
-//
-//    @Test
-//    public void commitFederation_hashMismatch() throws IOException {
-//        PendingFederation pendingFederation = new PendingFederation(Arrays.asList(new BtcECKey[]{
-//                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")),
-//                BtcECKey.fromPublicOnly(Hex.decode("025eefeeeed5cdc40822880c7db1d0a88b7b986945ed3fc05a0b45fe166fe85e12")),
-//        }));
-//        BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
-//                false,
-//                null,
-//                null,
-//                null,
-//                pendingFederation,
-//                null,
-//                null
-//        );
-//
-//        Sha3Hash hash = new Sha3Hash(HashUtil.sha3(Hex.decode("aabbcc")));
-//        Assert.assertEquals(-3, bridgeSupport.commitFederation(false, hash).intValue());
-//    }
 
     @PrepareForTest({ BridgeUtils.class })
     @Test
@@ -2512,36 +2452,7 @@ public class BridgeSupportTest {
         result.sort(BtcECKey.PUBKEY_COMPARATOR);
         return result;
     }
-
-    public boolean hasEnoughConfirmations(long currentBlockNumber) throws Exception{
-        Repository repository = new RepositoryImpl();
-        Repository track = repository.startTracking();
-
-        byte[] blockHash = new byte[32];
-        new SecureRandom().nextBytes(blockHash);
-        TransactionInfo transactionInfo = mock(TransactionInfo.class);
-        when(transactionInfo.getBlockHash()).thenReturn(blockHash);
-
-        ReceiptStore receiptStore = mock(ReceiptStore.class);
-        when(receiptStore.get(any(), any(), any())).thenReturn(transactionInfo);
-
-        org.ethereum.core.Block includedBlock = mock(org.ethereum.core.Block.class);
-        when(includedBlock.getNumber()).thenReturn(Long.valueOf(10));
-
-        org.ethereum.db.BlockStore blockStore = mock(org.ethereum.db.BlockStore.class);
-        when(blockStore.getBlockByHash(any())).thenReturn(includedBlock);
-
-        org.ethereum.core.Block currentBlock = mock(org.ethereum.core.Block.class);
-        when(currentBlock.getNumber()).thenReturn(Long.valueOf(currentBlockNumber));
-
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, currentBlock, receiptStore, blockStore, BridgeRegTestConstants.getInstance(), Collections.emptyList());
-
-        Sha3Hash txHash = Sha3Hash.ZERO_HASH;
-
-        return bridgeSupport.hasEnoughConfirmations(txHash);
-    }
-
+    
     private BtcTransaction createTransaction() {
         BtcTransaction btcTx = new BtcTransaction(btcParams);
         btcTx.addInput(new TransactionInput(btcParams, btcTx, new byte[0]));

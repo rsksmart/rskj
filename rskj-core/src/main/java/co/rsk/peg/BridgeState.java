@@ -42,27 +42,29 @@ public class BridgeState {
     private final int btcBlockchainBestChainHeight;
     private final Map<Sha256Hash, Long> btcTxHashesAlreadyProcessed;
     private final List<UTXO> activeFederationBtcUTXOs;
-    private final SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForConfirmations;
     private final SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForSignatures;
-
+    private final ReleaseRequestQueue releaseRequestQueue;
+    private final ReleaseTransactionSet releaseTransactionSet;
 
     private static final NetworkParameters params =RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
     private BridgeState(int btcBlockchainBestChainHeight, Map<Sha256Hash, Long> btcTxHashesAlreadyProcessed, List<UTXO> activeFederationBtcUTXOs,
-                       SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForConfirmations, SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForSignatures) {
+                       SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForSignatures, ReleaseRequestQueue releaseRequestQueue, ReleaseTransactionSet releaseTransactionSet) {
         this.btcBlockchainBestChainHeight = btcBlockchainBestChainHeight;
         this.btcTxHashesAlreadyProcessed = btcTxHashesAlreadyProcessed;
         this.activeFederationBtcUTXOs = activeFederationBtcUTXOs;
-        this.rskTxsWaitingForConfirmations = rskTxsWaitingForConfirmations;
         this.rskTxsWaitingForSignatures = rskTxsWaitingForSignatures;
+        this.releaseRequestQueue = releaseRequestQueue;
+        this.releaseTransactionSet = releaseTransactionSet;
     }
 
     public BridgeState(int btcBlockchainBestChainHeight, BridgeStorageProvider provider) throws IOException {
         this.btcBlockchainBestChainHeight = btcBlockchainBestChainHeight;
         this.btcTxHashesAlreadyProcessed = provider.getBtcTxHashesAlreadyProcessed();
         this.activeFederationBtcUTXOs = provider.getActiveFederationBtcUTXOs();
-        this.rskTxsWaitingForConfirmations = provider.getRskTxsWaitingForConfirmations();
         this.rskTxsWaitingForSignatures = provider.getRskTxsWaitingForSignatures();
+        this.releaseRequestQueue = provider.getReleaseRequestQueue();
+        this.releaseTransactionSet = provider.getReleaseTransactionSet();
     }
 
     public int getBtcBlockchainBestChainHeight() {
@@ -77,12 +79,16 @@ public class BridgeState {
         return activeFederationBtcUTXOs;
     }
 
-    public SortedMap<Sha3Hash, BtcTransaction> getRskTxsWaitingForConfirmations() {
-        return rskTxsWaitingForConfirmations;
-    }
-
     public SortedMap<Sha3Hash, BtcTransaction> getRskTxsWaitingForSignatures() {
         return rskTxsWaitingForSignatures;
+    }
+
+    public ReleaseRequestQueue getReleaseRequestQueue() {
+        return releaseRequestQueue;
+    }
+
+    public ReleaseTransactionSet getReleaseTransactionSet() {
+        return releaseTransactionSet;
     }
 
     @Override
@@ -91,8 +97,9 @@ public class BridgeState {
                 "btcBlockchainBestChainHeight=" + btcBlockchainBestChainHeight + "\n" +
                 ", btcTxHashesAlreadyProcessed=" + btcTxHashesAlreadyProcessed + "\n" +
                 ", activeFederationBtcUTXOs=" + activeFederationBtcUTXOs + "\n" +
-                ", rskTxsWaitingForConfirmations=" + rskTxsWaitingForConfirmations + "\n" +
                 ", rskTxsWaitingForSignatures=" + rskTxsWaitingForSignatures + "\n" +
+                ", releaseRequestQueue=" + releaseRequestQueue + "\n" +
+                ", releaseTransactionSet=" + releaseTransactionSet + "\n" +
                 '}';
     }
 
@@ -107,7 +114,6 @@ public class BridgeState {
     public Map<String, Object> stateToMap() {
         Map<String, Object> result = new HashedMap<>();
         result.put("btcTxHashesAlreadyProcessed", this.formatedAlreadyProcessedHashes());
-        result.put("rskTxsWaitingForConfirmations", this.toStringList(rskTxsWaitingForConfirmations.keySet()));
         result.put("rskTxsWaitingForSignatures", this.toStringList(rskTxsWaitingForSignatures.keySet()));
         result.put("btcBlockchainBestChainHeight", this.btcBlockchainBestChainHeight);
         return result;
@@ -117,10 +123,11 @@ public class BridgeState {
         byte[] rlpBtcBlockchainBestChainHeight = RLP.encodeBigInteger(BigInteger.valueOf(this.btcBlockchainBestChainHeight));
         byte[] rlpBtcTxHashesAlreadyProcessed = RLP.encodeElement(BridgeSerializationUtils.serializeMapOfHashesToLong(btcTxHashesAlreadyProcessed));
         byte[] rlpActiveFederationBtcUTXOs = RLP.encodeElement(BridgeSerializationUtils.serializeUTXOList(activeFederationBtcUTXOs));
-        byte[] rlpRskTxsWaitingForConfirmations = RLP.encodeElement(BridgeSerializationUtils.serializeMap(rskTxsWaitingForConfirmations));
         byte[] rlpRskTxsWaitingForSignatures = RLP.encodeElement(BridgeSerializationUtils.serializeMap(rskTxsWaitingForSignatures));
+        byte[] rlpReleaseRequestQueue = RLP.encodeElement(BridgeSerializationUtils.serializeReleaseRequestQueue(releaseRequestQueue));
+        byte[] rlpReleaseTransactionSet = RLP.encodeElement(BridgeSerializationUtils.serializeReleaseTransactionSet(releaseTransactionSet));
 
-        return RLP.encodeList(rlpBtcBlockchainBestChainHeight, rlpBtcTxHashesAlreadyProcessed, rlpActiveFederationBtcUTXOs, rlpRskTxsWaitingForConfirmations, rlpRskTxsWaitingForSignatures);
+        return RLP.encodeList(rlpBtcBlockchainBestChainHeight, rlpBtcTxHashesAlreadyProcessed, rlpActiveFederationBtcUTXOs, rlpRskTxsWaitingForSignatures, rlpReleaseRequestQueue, rlpReleaseTransactionSet);
     }
 
     public static BridgeState create(byte[] data) throws IOException {
@@ -132,12 +139,21 @@ public class BridgeState {
         Map<Sha256Hash, Long> btcTxHashesAlreadyProcessed = BridgeSerializationUtils.deserializeMapOfHashesToLong(btcTxHashesAlreadyProcessedBytes);
         byte[] btcUTXOsBytes = rlpList.get(2).getRLPData();
         List<UTXO> btcUTXOs = BridgeSerializationUtils.deserializeUTXOList(btcUTXOsBytes);
-        byte[] rskTxsWaitingForConfirmationsBytes = rlpList.get(3).getRLPData();
-        SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForConfirmations = BridgeSerializationUtils.deserializeMap(rskTxsWaitingForConfirmationsBytes, params, true);
-        byte[] rskTxsWaitingForSignaturesBytes = rlpList.get(4).getRLPData();
+        byte[] rskTxsWaitingForSignaturesBytes = rlpList.get(3).getRLPData();
         SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(rskTxsWaitingForSignaturesBytes, params, false);
+        byte[] releaseRequestQueueBytes = rlpList.get(4).getRLPData();
+        ReleaseRequestQueue releaseRequestQueue = BridgeSerializationUtils.deserializeReleaseRequestQueue(releaseRequestQueueBytes, params);
+        byte[] releaseTransactionSetBytes = rlpList.get(5).getRLPData();
+        ReleaseTransactionSet releaseTransactionSet = BridgeSerializationUtils.deserializeReleaseTransactionSet(releaseTransactionSetBytes, params);
 
-        return new BridgeState(btcBlockchainBestChainHeight, btcTxHashesAlreadyProcessed, btcUTXOs, rskTxsWaitingForConfirmations, rskTxsWaitingForSignatures);
+        return new BridgeState(
+                btcBlockchainBestChainHeight,
+                btcTxHashesAlreadyProcessed,
+                btcUTXOs,
+                rskTxsWaitingForSignatures,
+                releaseRequestQueue,
+                releaseTransactionSet
+        );
     }
 
     private List<String> toStringList(Set<Sha3Hash> keys) {

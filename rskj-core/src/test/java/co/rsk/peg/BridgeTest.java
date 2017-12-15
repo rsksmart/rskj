@@ -33,6 +33,7 @@ import co.rsk.test.World;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
+import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -91,9 +92,9 @@ public class BridgeTest {
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        provider0.getRskTxsWaitingForConfirmations().put(hash1, tx1);
-        provider0.getRskTxsWaitingForConfirmations().put(hash2, tx2);
-        provider0.getRskTxsWaitingForConfirmations().put(hash3, tx3);
+        provider0.getReleaseTransactionSet().add(tx1, 1L);
+        provider0.getReleaseTransactionSet().add(tx2, 2L);
+        provider0.getReleaseTransactionSet().add(tx3, 3L);
 
         provider0.save();
 
@@ -111,8 +112,8 @@ public class BridgeTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertFalse(provider.getRskTxsWaitingForConfirmations().isEmpty());
-        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assert.assertEquals(3, provider.getReleaseTransactionSet().getEntries().size());
+        Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
     }
 
     @Test
@@ -120,18 +121,15 @@ public class BridgeTest {
         BtcTransaction tx1 = createTransaction();
         BtcTransaction tx2 = createTransaction();
         BtcTransaction tx3 = createTransaction();
-        Sha3Hash hash1 = PegTestUtils.createHash3();
-        Sha3Hash hash2 = PegTestUtils.createHash3();
-        Sha3Hash hash3 = PegTestUtils.createHash3();
 
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        provider0.getRskTxsWaitingForConfirmations().put(hash1, tx1);
-        provider0.getRskTxsWaitingForConfirmations().put(hash2, tx2);
-        provider0.getRskTxsWaitingForConfirmations().put(hash3, tx3);
+        provider0.getReleaseTransactionSet().add(tx1, 1L);
+        provider0.getReleaseTransactionSet().add(tx2, 2L);
+        provider0.getReleaseTransactionSet().add(tx3, 3L);
 
         provider0.save();
 
@@ -141,27 +139,13 @@ public class BridgeTest {
 
         World world = new World();
         List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(world.getBlockChain().getBestBlock(), 10);
-        TransactionReceipt receipt = new TransactionReceipt();
-        org.ethereum.core.Transaction tx = new SimpleRskTransaction(hash1.getBytes());
-        receipt.setTransaction(tx);
-        TransactionInfo ti = new TransactionInfo(receipt, blocks.get(1).getHash(), 0);
-        List<TransactionInfo> tis = new ArrayList<>();
-        tis.add(ti);
 
         Blockchain blockchain = world.getBlockChain();
-
-        for (Block b: blocks)
-            blockchain.tryToConnect(b);
-
-        ReceiptStore receiptStore = world.getBlockChain().getReceiptStore();
-
-        for (TransactionInfo txi: tis)
-            receiptStore.add(txi.getBlockHash(), txi.getIndex(), txi.getReceipt());
 
         world.getBlockChain().getBlockStore().saveBlock(blocks.get(1), BigInteger.ONE, true);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, world.getBlockChain().getBlockStore().getBestBlock(), track, world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null);
+        bridge.init(new SimpleRskTransaction(SHA3Helper.sha3("aabb")), blocks.get(9), track, world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null);
 
         bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
 
@@ -169,8 +153,8 @@ public class BridgeTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertFalse(provider.getRskTxsWaitingForConfirmations().isEmpty());
-        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assert.assertEquals(2, provider.getReleaseTransactionSet().getEntries().size());
+        Assert.assertEquals(1, provider.getRskTxsWaitingForSignatures().size());
     }
 
     @Test
