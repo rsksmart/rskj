@@ -39,12 +39,13 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
-import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.ethereum.util.ByteUtil.toHexString;
@@ -66,7 +67,7 @@ public class TransactionExecutor {
     private BlockStore blockStore;
     private ReceiptStore receiptStore;
     private final long gasUsedInTheBlock;
-    private long paidFees;
+    private BigInteger paidFees;
     private boolean readyToExecute = false;
 
     private ProgramInvokeFactory programInvokeFactory;
@@ -180,6 +181,18 @@ public class TransactionExecutor {
             return false;
         }
 
+        // Prevent transactions with excessive address size
+        byte[] receiveAddress = tx.getReceiveAddress();
+        if (receiveAddress != null && !Arrays.equals(receiveAddress, EMPTY_BYTE_ARRAY) && receiveAddress.length > Constants.getMaxAddressByteLength()) {
+            if (logger.isWarnEnabled()) {
+                logger.warn("Receiver address to long: size: {}, tx {}", receiveAddress.length, Hex.toHexString(tx.getHash()));
+                logger.warn("Transaction Data: {}", tx);
+                logger.warn("Tx Included in the following block: {}", this.executionBlock);
+            }
+
+            return false;
+        }
+
         if (!tx.acceptTransactionSignature()) {
             if (logger.isWarnEnabled()) {
                 logger.warn("Transaction {} signature not accepted: {}", Hex.toHexString(tx.getHash()), tx.getSignature());
@@ -232,6 +245,11 @@ public class TransactionExecutor {
         logger.info("Call transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
 
         byte[] targetAddress = tx.getReceiveAddress();
+
+        // DataWord(targetAddress)) can fail with exception:
+        // java.lang.RuntimeException: Data word can't exceed 32 bytes:
+        // if targetAddress size is greater than 32 bytes.
+        // But init() will detect this earlier
         precompiledContract = PrecompiledContracts.getContractForAddress(new DataWord(targetAddress));
 
         if (precompiledContract != null) {
@@ -437,7 +455,7 @@ public class TransactionExecutor {
             track.addBalance(coinbase, summaryFee);
         }
 
-        this.paidFees = summaryFee.longValue();
+        this.paidFees = summaryFee;
 
         if (result != null) {
             logger.info("Processing result");
@@ -489,5 +507,5 @@ public class TransactionExecutor {
         return toBI(tx.getGasLimit()).subtract(mEndGas).longValue();
     }
 
-    public long getPaidFees() { return paidFees; }
+    public BigInteger getPaidFees() { return paidFees; }
 }

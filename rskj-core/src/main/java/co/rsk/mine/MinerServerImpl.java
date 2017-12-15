@@ -29,6 +29,7 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.BlockValidationRule;
+import co.rsk.validators.ProofOfWorkRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -39,7 +40,6 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
-import co.rsk.validators.ProofOfWorkRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.digests.SHA256Digest;
@@ -51,6 +51,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.GuardedBy;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -90,7 +91,7 @@ public class MinerServerImpl implements MinerServer {
     @GuardedBy("lock")
     private Block latestBlock;
     @GuardedBy("lock")
-    private long latestPaidFeesWithNotify;
+    private BigInteger latestPaidFeesWithNotify;
     @GuardedBy("lock")
     private volatile MinerWork currentWork; // This variable can be read at anytime without the lock.
     private final Object lock = new Object();
@@ -98,8 +99,8 @@ public class MinerServerImpl implements MinerServer {
     private final byte[] coinbaseAddress;
 
     private final BigInteger minerMinGasPriceTarget;
-    private final double minFeesNotifyInDollars;
-    private final double gasUnitInDollars;
+    private final BigDecimal minFeesNotifyInDollars;
+    private final BigDecimal gasUnitInDollars;
 
     private MiningConfig miningConfig;
 
@@ -143,11 +144,11 @@ public class MinerServerImpl implements MinerServer {
             }
         };
 
-        latestPaidFeesWithNotify = 0;
+        latestPaidFeesWithNotify = BigInteger.ZERO;
         latestParentHash = null;
         coinbaseAddress = miningConfig.getCoinbaseAddress();
-        minFeesNotifyInDollars = miningConfig.getMinFeesNotifyInDollars();
-        gasUnitInDollars = miningConfig.getGasUnitInDollars();
+        minFeesNotifyInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
+        gasUnitInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
         minerMinGasPriceTarget = toBI(miningConfig.getMinGasPriceTarget());
     }
 
@@ -398,13 +399,18 @@ public class MinerServerImpl implements MinerServer {
      */
     @GuardedBy("lock")
     private boolean getNotify(Block block, Sha3Hash parentHash) {
-        boolean notify;
-        long feesPaidToMiner = block.getFeesPaidToMiner();
+        if (!parentHash.equals(latestParentHash)) {
+            return true;
+        }
 
-        notify = !parentHash.equals(latestParentHash);
-        notify = notify || (feesPaidToMiner > (latestPaidFeesWithNotify * (100 + RskMiningConstants.NOTIFY_FEES_PERCENTAGE_INCREASE) / 100)) && (feesPaidToMiner * gasUnitInDollars) >= minFeesNotifyInDollars;
+        // note: integer divisions might truncate values
+        BigInteger percentage = BigInteger.valueOf(100L + RskMiningConstants.NOTIFY_FEES_PERCENTAGE_INCREASE);
+        BigInteger minFeesNotify = latestPaidFeesWithNotify.multiply(percentage).divide(BigInteger.valueOf(100L));
+        BigInteger feesPaidToMiner = block.getFeesPaidToMiner();
+        BigDecimal feesPaidToMinerInDollars = new BigDecimal(feesPaidToMiner).multiply(gasUnitInDollars);
+        return feesPaidToMiner.compareTo(minFeesNotify) > 0
+                && feesPaidToMinerInDollars.compareTo(minFeesNotifyInDollars) >= 0;
 
-        return notify;
     }
 
     @Override

@@ -99,7 +99,7 @@ public class DetailsDataStore {
 
         float flushSize = (float) totalSize / 1_048_576;
         float flushTime = (float) (finish - start) / 1_000_000;
-        gLogger.info(format("Flush details in: %02.2f ms, %d keys, %02.2fMB", flushTime, keys, flushSize));
+        gLogger.trace(format("Flush details in: %02.2f ms, %d keys, %02.2fMB", flushTime, keys, flushSize));
     }
 
     private long flushInternal() {

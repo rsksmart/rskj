@@ -26,30 +26,26 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.ethereum.util.RLP;
 
+import java.math.BigInteger;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Created by ajlopez on 01/08/2016.
  */
 public class BlockResult {
-    public static final BlockResult INTERRUPTED_EXECUTION_BLOCK_RESULT = new BlockResult(true);
+    public static final BlockResult INTERRUPTED_EXECUTION_BLOCK_RESULT = new InterruptedExecutionBlockResult();
 
-    private boolean interruptedExecution;
-    private List<Transaction> executedTransactions;
-    private List<TransactionReceipt> transactionReceipts;
-    private byte[] stateRoot;
-    private byte[] receiptsRoot;
-    private long gasUsed;
-    private long paidFees;
-    private byte[] logsBloom;
+    private final List<Transaction> executedTransactions;
+    private final List<TransactionReceipt> transactionReceipts;
+    private final byte[] stateRoot;
+    private final byte[] receiptsRoot;
+    private final long gasUsed;
+    private final BigInteger paidFees;
+    private final byte[] logsBloom;
 
-    private BlockResult(boolean interruptedExecution) {
-        // Just to create INTERRUPTED_EXECUTION_BLOCK_RESULT
-        this.interruptedExecution = interruptedExecution;
-    }
-
-    public BlockResult(List<Transaction> executedTransactions, List<TransactionReceipt> transactionReceipts, byte[] stateRoot, long gasUsed, long paidFees) {
-        interruptedExecution = false;
+    public BlockResult(List<Transaction> executedTransactions, List<TransactionReceipt> transactionReceipts,
+                       byte[] stateRoot, long gasUsed, BigInteger paidFees) {
         this.executedTransactions = executedTransactions;
         this.transactionReceipts = transactionReceipts;
         this.stateRoot = stateRoot;
@@ -80,7 +76,7 @@ public class BlockResult {
         return this.gasUsed;
     }
 
-    public long getPaidFees() {
+    public BigInteger getPaidFees() {
         return this.paidFees;
     }
 
@@ -89,7 +85,7 @@ public class BlockResult {
         //TODO Fix Trie hash for receipts - doesnt match cpp
         Trie receiptsTrie = new TrieImpl();
 
-        if (receipts == null || receipts.isEmpty()) {
+        if (receipts.isEmpty()) {
             return HashUtil.EMPTY_TRIE_HASH;
         }
 
@@ -110,7 +106,9 @@ public class BlockResult {
         return logBloom.getData();
     }
 
-    public boolean getInterruptedExecution() {
-        return interruptedExecution;
+    private static class InterruptedExecutionBlockResult extends BlockResult {
+        public InterruptedExecutionBlockResult() {
+            super(Collections.emptyList(), Collections.emptyList(), null, 0, BigInteger.ZERO);
+        }
     }
 }

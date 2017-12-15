@@ -72,7 +72,7 @@ public class MinerUtilsTest {
         txs.add(tx);
         Map<ByteArrayWrapper, BigInteger> accountNounces = new HashMap();
         Repository repository = Mockito.mock(Repository.class);
-        Mockito.when(repository.getNonce(BigInteger.valueOf(new Random(0).nextLong()).toByteArray())).thenReturn(BigInteger.valueOf(0));
+        Mockito.when(repository.getNonce(tx.getSender())).thenReturn(BigInteger.valueOf(0));
         BigInteger minGasPrice = BigInteger.valueOf(1);
 
         List<Transaction> res = new MinerUtils().filterTransactions(new LinkedList<>(), txs, accountNounces, repository, minGasPrice);
@@ -86,7 +86,7 @@ public class MinerUtilsTest {
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Map<ByteArrayWrapper, BigInteger> accountNounces = new HashMap();
-        accountNounces.put(wrap(BigInteger.valueOf(new Random(0).nextLong()).toByteArray()), BigInteger.valueOf(0));
+        accountNounces.put(wrap(tx.getSender()), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
         BigInteger minGasPrice = BigInteger.valueOf(1);
 
@@ -100,7 +100,7 @@ public class MinerUtilsTest {
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Map<ByteArrayWrapper, BigInteger> accountNounces = new HashMap();
-        accountNounces.put(wrap(BigInteger.valueOf(new Random(0).nextLong()).toByteArray()), BigInteger.valueOf(0));
+        accountNounces.put(wrap(tx.getSender()), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
         BigInteger minGasPrice = BigInteger.valueOf(1);
 

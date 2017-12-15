@@ -39,7 +39,7 @@ public class Sibling {
     // Coinbase address of the sibling block
     private byte[] coinbase;
     // Fees paid by the sibling block
-    private long paidFees;
+    private BigInteger  paidFees;
     // Coinbase address of the block that included the sibling block as uncle
     private byte[] includedBlockCoinbase;
     // Height of the block that included the sibling block as uncle
@@ -57,7 +57,7 @@ public class Sibling {
                 blockHeader.getUncleCount());
     }
 
-    private Sibling(byte[] hash, byte[] coinbase, byte[] includedBlockCoinbase, long paidFees, long includedHeight, int uncleCount) {
+    private Sibling(byte[] hash, byte[] coinbase, byte[] includedBlockCoinbase, BigInteger  paidFees, long includedHeight, int uncleCount) {
         this.hash = hash;
         this.coinbase = coinbase;
         this.paidFees = paidFees;
@@ -74,7 +74,7 @@ public class Sibling {
         return coinbase;
     }
 
-    public long getPaidFees() {
+    public BigInteger  getPaidFees() {
         return paidFees;
     }
 
@@ -93,7 +93,7 @@ public class Sibling {
         byte[] rlpCoinbase = RLP.encodeElement(this.coinbase);
         byte[] rlpIncludedBlockCoinbase = RLP.encodeElement(this.includedBlockCoinbase);
 
-        byte[] rlpPaidFees = RLP.encodeBigInteger(BigInteger.valueOf(this.paidFees));
+        byte[] rlpPaidFees = RLP.encodeBigInteger(this.paidFees);
         byte[] rlpIncludedHeight = RLP.encodeBigInteger(BigInteger.valueOf(this.includedHeight));
         byte[] rlpUncleCount = RLP.encodeBigInteger(BigInteger.valueOf((this.uncleCount)));
 
@@ -114,7 +114,7 @@ public class Sibling {
         RLPElement uncleCountElement = sibling.get(5);
         byte[] bytesUncleCount = uncleCountElement != null? uncleCountElement.getRLPData():null;
 
-        long paidFees = bytesPaidFees == null ? 0 : BigIntegers.fromUnsignedByteArray(bytesPaidFees).longValue();
+        BigInteger paidFees = bytesPaidFees == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(bytesPaidFees);
         long includedHeight = bytesIncludedHeight == null ? 0 : BigIntegers.fromUnsignedByteArray(bytesIncludedHeight).longValue();
         int uncleCount = bytesUncleCount == null ? 0 : BigIntegers.fromUnsignedByteArray(bytesUncleCount).intValue();
 

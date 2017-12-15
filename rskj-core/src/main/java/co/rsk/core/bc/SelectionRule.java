@@ -13,7 +13,7 @@ public class SelectionRule {
     private static final int BYTE_ARRAY_OFFSET = 0;
     private static final int BYTE_ARRAY_LENGTH = 32;
 
-    private static final int PAID_FEES_MULTIPLIER_CRITERIA = 2;
+    private static final BigInteger PAID_FEES_MULTIPLIER_CRITERIA = BigInteger.valueOf(2);
 
     public static boolean shouldWeAddThisBlock(
             BigInteger blockDifficulty,
@@ -27,15 +27,22 @@ public class SelectionRule {
             return true;
         }
 
-        if (compareDifficulties == 0) {
-            if (block.getHeader().getPaidFees() > PAID_FEES_MULTIPLIER_CRITERIA * currentBlock.getHeader().getPaidFees()) {
-                return true;
-            }
-            if (isThisBlockHashSmaller(block.getHash(), currentBlock.getHash())) {
-                return true;
-            }
+        if (compareDifficulties < 0) {
+            return false;
         }
-        return false;
+
+        BigInteger pfm = currentBlock.getHeader().getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
+        // fees over PAID_FEES_MULTIPLIER_CRITERIA times higher
+        if (block.getHeader().getPaidFees().compareTo(pfm) > 0) {
+            return true;
+        }
+
+        BigInteger blockFeesCriteria = block.getHeader().getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
+
+        // As a last resort, choose the block with the lower hash. We ask that
+        // the fees are at least bigger than the half of current block.
+        return currentBlock.getHeader().getPaidFees().compareTo(blockFeesCriteria) < 0 &&
+                isThisBlockHashSmaller(block.getHash(), currentBlock.getHash());
     }
     
     public static boolean isBrokenSelectionRule(
@@ -43,11 +50,13 @@ public class SelectionRule {
         int maxUncleCount = 0;
         for (Sibling sibling : siblings) {
             maxUncleCount = Math.max(maxUncleCount, sibling.getUncleCount());
-            if (sibling.getPaidFees() > PAID_FEES_MULTIPLIER_CRITERIA
-                    * processingBlockHeader.getPaidFees()) {
+            BigInteger pfm = processingBlockHeader.getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
+            if (sibling.getPaidFees().compareTo(pfm) > 0) {
                 return true;
             }
-            if (isThisBlockHashSmaller(sibling.getHash(), processingBlockHeader.getHash())) {
+            BigInteger blockFeesCriteria = sibling.getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
+            if (processingBlockHeader.getPaidFees().compareTo(blockFeesCriteria) < 0 &&
+                    isThisBlockHashSmaller(sibling.getHash(), processingBlockHeader.getHash())) {
                 return true;
             }
         }
