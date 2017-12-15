@@ -223,7 +223,7 @@ public class DefaultConfig {
     @Bean
     public PeerExplorer peerExplorer(RskSystemProperties rskConfig) {
         ECKey key = rskConfig.getMyKey();
-        Node localNode = new Node(key.getNodeId(), rskConfig.externalIp(), rskConfig.listenPort());
+        Node localNode = new Node(key.getNodeId(), rskConfig.getExternalIp(), rskConfig.listenPort());
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, localNode);
         long msgTimeOut = rskConfig.peerDiscoveryMessageTimeOut();
         long refreshPeriod = rskConfig.peerDiscoveryRefreshPeriod();
@@ -240,6 +240,6 @@ public class DefaultConfig {
 
     @Bean
     public UDPServer udpServer(PeerExplorer peerExplorer, RskSystemProperties rskConfig) {
-        return new UDPServer(rskConfig.bindIp(), rskConfig.listenPort(), peerExplorer);
+        return new UDPServer(rskConfig.getPeerDiscoveryBindAddress(), rskConfig.listenPort(), peerExplorer);
     }
 }

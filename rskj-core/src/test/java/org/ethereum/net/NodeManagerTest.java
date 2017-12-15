@@ -63,7 +63,7 @@ public class NodeManagerTest {
         MockitoAnnotations.initMocks(this);
 
         Mockito.when(config.nodeId()).thenReturn(Hex.decode(NODE_ID_1));
-        Mockito.when(config.externalIp()).thenReturn("127.0.0.1");
+        Mockito.when(config.getExternalIp()).thenReturn("127.0.0.1");
         Mockito.when(config.listenPort()).thenReturn(8080);
     }
 
