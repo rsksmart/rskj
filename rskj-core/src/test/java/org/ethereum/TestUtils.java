@@ -96,7 +96,7 @@ public final class TestUtils {
             byte[] newHash = randomHash();
 
             Block block = new Block(lastHash, newHash,  null, null, difficutly, lastIndex, new byte[] {0}, 0, 0, null, null,
-                    null, null, EMPTY_TRIE_HASH, randomHash(), null, null, null, 0L);
+                    null, null, EMPTY_TRIE_HASH, randomHash(), null, null, null, BigInteger.ZERO);
 
             ++lastIndex;
             lastHash = block.getHash();

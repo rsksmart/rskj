@@ -30,12 +30,10 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.RepositoryTrack;
-import org.ethereum.util.BIUtil;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -108,7 +106,7 @@ public class Remasc {
         }
         BlockHeader processingBlockHeader = blockStore.getBlockByHashAndDepth(executionBlock.getParentHash(), remascConstants.getMaturity() - 1).getHeader();
         // Adds current block fees to accumulated rewardBalance
-        BigInteger processingBlockReward = BigInteger.valueOf(processingBlockHeader.getPaidFees());
+        BigInteger processingBlockReward = processingBlockHeader.getPaidFees();
         BigInteger rewardBalance = provider.getRewardBalance();
         rewardBalance = rewardBalance.add(processingBlockReward);
         provider.setRewardBalance(rewardBalance);

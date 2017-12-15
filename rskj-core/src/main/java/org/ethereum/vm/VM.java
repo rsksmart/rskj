@@ -731,16 +731,8 @@ public class VM {
     }
 
     protected void doCALLDATACOPY() {
-        DataWord size;
-        long newMemSize ;
-        long copySize;
-
         if (computeGas) {
-            size = stack.get(stack.size() - 3);
-            copySize = Program.limitToMaxLong(size);
-            checkSizeArgument(copySize);
-            newMemSize = memNeeded(stack.peek(), copySize);
-            gasCost += calcMemGas(oldMemSize, newMemSize, copySize);
+            gasCost += computeDataCopyGas();
             spendOpCodeGas();
         }
         // EXECUTION PHASE
@@ -759,6 +751,14 @@ public class VM {
         program.disposeWord(dataOffsetData);
         program.disposeWord(lengthData);
         program.step();
+    }
+
+    private long computeDataCopyGas() {
+        DataWord size = stack.get(stack.size() - 3);
+        long copySize = Program.limitToMaxLong(size);
+        checkSizeArgument(copySize);
+        long newMemSize = memNeeded(stack.peek(), copySize);
+        return calcMemGas(oldMemSize, newMemSize, copySize);
     }
 
     protected void doCODESIZE() {
@@ -873,6 +873,42 @@ public class VM {
         program.disposeWord(codeOffsetDW);
         program.disposeWord(lengthDataDW);
 
+        program.step();
+    }
+
+    protected void doRETURNDATASIZE() {
+        spendOpCodeGas();
+        DataWord dataSize = program.getReturnDataBufferSize();
+        if (isLogEnabled) {
+            hint = "size: " + dataSize.value();
+        }
+        program.stackPush(dataSize);
+        program.step();
+    }
+
+    protected void doRETURNDATACOPY() {
+        if (computeGas) {
+            gasCost += computeDataCopyGas();
+            spendOpCodeGas();
+        }
+
+        DataWord memOffsetData = program.stackPop();
+        DataWord dataOffsetData = program.stackPop();
+        DataWord lengthData = program.stackPop();
+
+        byte[] msgData = program.getReturnDataBufferData(dataOffsetData, lengthData)
+                .orElseThrow(() -> {
+                    long returnDataSize = program.getReturnDataBufferSize().longValueSafe();
+                    return new RuntimeException(String.format(
+                            "Illegal RETURNDATACOPY arguments: offset (%s) + size (%s) > RETURNDATASIZE (%d)",
+                            dataOffsetData, lengthData, returnDataSize));
+                });
+
+        if (isLogEnabled) {
+            hint = "data: " + Hex.toHexString(msgData);
+        }
+
+        program.memorySave(memOffsetData.intValueSafe(), msgData);
         program.step();
     }
 
@@ -1365,23 +1401,34 @@ public class VM {
         DataWord outDataOffs = program.stackPop();
         DataWord outDataSize = program.stackPop();
 
-        long calleeGas = Program.limitToMaxLong(gas);
-        if (!value.isZero()) {
-            calleeGas += GasCost.STIPEND_CALL;
-        }
-
         if (computeGas) {
             gasCost = computeCallGas(codeAddress, value, inDataOffs, inDataSize, outDataOffs, outDataSize);
         }
 
+        // gasCost doesn't include the calleeGas at this point
+        // because we want to throw gasOverflow instead of notEnoughSpendingGas
         long requiredGas = gasCost;
         long remainingGas = program.getRemainingGas() - requiredGas;
         if (remainingGas < 0) {
             throw Program.ExceptionHelper.gasOverflow(BigInteger.valueOf(program.getRemainingGas()), BigInteger.valueOf(requiredGas));
         }
 
-        // If calleeGas is higher than available gas, then move all gas to callee.
-        calleeGas = Math.min(calleeGas, remainingGas);
+        // We give the callee a basic stipend whenever we transfer value,
+        // basically to avoid problems when invoking a contract's default function.
+        long minimumTransferGas = 0;
+        if (!value.isZero()) {
+            minimumTransferGas += GasCost.STIPEND_CALL;
+
+            if (remainingGas < minimumTransferGas) {
+                throw Program.ExceptionHelper.notEnoughSpendingGas(op.name(), minimumTransferGas, program);
+            }
+        }
+
+        // If specified gas is higher than available gas then move all remaining gas to callee.
+        // This will have one possibly undesired behavior: if the specified gas is higher than the remaining gas,
+        // the callee will receive less gas than the parent expected.
+        long userSpecifiedGas = Program.limitToMaxLong(gas);
+        long calleeGas = Math.min(remainingGas, userSpecifiedGas + minimumTransferGas);
 
         if (computeGas) {
             gasCost += calleeGas;
@@ -1654,6 +1701,10 @@ public class VM {
                 break;
             case OpCodes.OP_CODECOPY:
             case OpCodes.OP_EXTCODECOPY: doCODECOPY();
+            break;
+            case OpCodes.OP_RETURNDATASIZE: doRETURNDATASIZE();
+            break;
+            case OpCodes.OP_RETURNDATACOPY: doRETURNDATACOPY();
             break;
             case OpCodes.OP_GASPRICE: doGASPRICE();
             break;

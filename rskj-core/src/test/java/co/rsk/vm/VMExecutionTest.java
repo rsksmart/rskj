@@ -304,6 +304,46 @@ public class VMExecutionTest {
         System.out.println(String.format("Delta memory %s", finalMemory - initialMemory));
     }
 
+    @Test
+    public void returnDataSizeBasicGasCost() {
+        Program program = executeCode("0x3d", 1);
+
+        Assert.assertNotNull(program);
+        Assert.assertNotNull(program.getResult());
+        Assert.assertNull(program.getResult().getException());
+        Assert.assertEquals(2, program.getResult().getGasUsed());
+    }
+
+    @Test
+    public void returnDataCopyBasicGasCost() {
+        Program program = executeCode(
+                // push some values for RETURNDATACOPY
+                "PUSH1 0x00 PUSH1 0x00 PUSH1 0x01 " +
+                // call RETURNDATACOPY
+                "0x3e",
+        4);
+
+        Assert.assertNotNull(program);
+        Assert.assertNotNull(program.getResult());
+        Assert.assertNull(program.getResult().getException());
+        Assert.assertEquals(12, program.getResult().getGasUsed());
+    }
+
+    @Test
+    public void callDataCopyBasicGasCost() {
+        Program program = executeCode(
+                // push some values for CALLDATACOPY
+                "PUSH1 0x00 PUSH1 0x00 PUSH1 0x01 " +
+                // call CALLDATACOPY
+                "0x37",
+        4);
+
+        Assert.assertNotNull(program);
+        Assert.assertNotNull(program.getResult());
+        Assert.assertNull(program.getResult().getException());
+        Assert.assertEquals(12, program.getResult().getGasUsed());
+    }
+
     private Program executeCode(String code, int nsteps) {
         return executeCode(compiler.compile(code), nsteps);
     }

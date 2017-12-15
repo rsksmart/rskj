@@ -27,6 +27,9 @@ import org.junit.Test;
 import java.math.BigInteger;
 
 public class ProgramTest {
+
+    private static final String LOREM_IPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+
     @Test
     public void helloContract() {
         ProgramResult result = TestContract.hello().executeFunction("hello", BigInteger.ZERO);
@@ -79,10 +82,35 @@ public class ProgramTest {
     }
 
     @Test
+    public void shouldRevertIfLessThanStipendGasAvailable() {
+        ProgramResult result = TestContract.bankTest2().executeFunction("test", BigInteger.TEN);
+        Assert.assertTrue(result.isRevert());
+        Assert.assertNull(result.getException());
+    }
+
+    @Test
     public void cantCreateTooLargeContract() {
         ProgramResult result = TestContract.bigTest().createContract();
         Assert.assertFalse(result.isRevert());
         Assert.assertNotNull(result.getException());
         Assert.assertTrue(result.getException() instanceof RuntimeException);
+    }
+
+    @Test
+    public void returnDataSizeTests() {
+        ProgramResult result = TestContract.returnDataTest().executeFunction("testSize", BigInteger.ZERO);
+        Assert.assertFalse(result.isRevert());
+        Assert.assertNull(result.getException());
+    }
+
+    @Test
+    public void returnDataCopyTest() {
+        TestContract contract = TestContract.returnDataTest();
+        ProgramResult result = contract.executeFunction("testCopy", BigInteger.ZERO);
+        Assert.assertFalse(result.isRevert());
+        Assert.assertNull(result.getException());
+        Assert.assertArrayEquals(
+                new Object[] {LOREM_IPSUM},
+                contract.functions.get("testCopy").decodeResult(result.getHReturn()));
     }
 }

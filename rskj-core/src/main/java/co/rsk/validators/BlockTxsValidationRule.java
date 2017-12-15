@@ -19,7 +19,6 @@
 package co.rsk.validators;
 
 import co.rsk.panic.PanicProcessor;
-import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -47,7 +46,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private Repository repository;
+    private final Repository repository;
 
     public BlockTxsValidationRule(Repository repository) {
         this.repository = repository;
@@ -61,7 +60,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
         }
 
         List<Transaction> txs = block.getTransactionsList();
-        if (CollectionUtils.isEmpty(txs)) {
+        if (txs.isEmpty()) {
             return true;
         }
 
@@ -70,6 +69,13 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
         Map<ByteArrayWrapper, BigInteger> curNonce = new HashMap<>();
 
         for (Transaction tx : txs) {
+            try {
+                tx.verify();
+            } catch (RuntimeException e) {
+                logger.warn("Unable to verify transaction", e);
+                return false;
+            }
+
             byte[] txSender = tx.getSender();
             ByteArrayWrapper key = new ByteArrayWrapper(txSender);
             BigInteger expectedNonce = curNonce.get(key);
