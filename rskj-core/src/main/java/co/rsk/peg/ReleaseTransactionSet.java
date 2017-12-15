@@ -20,11 +20,8 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
 import com.google.common.primitives.UnsignedBytes;
-import org.ethereum.core.Block;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Representation of a queue of BTC release
