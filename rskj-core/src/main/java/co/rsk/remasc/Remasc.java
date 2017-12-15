@@ -140,8 +140,6 @@ public class Remasc {
                 processingRepository,
                 PrecompiledContracts.BRIDGE_ADDR,
                 null,
-                null,
-                null,
                 RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
                 null);
         RemascFederationProvider federationProvider = new RemascFederationProvider(bridgeSupport);

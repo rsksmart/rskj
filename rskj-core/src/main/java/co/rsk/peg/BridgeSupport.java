@@ -37,8 +37,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.LogInfo;
@@ -73,39 +71,32 @@ public class BridgeSupport {
 
     private enum StorageFederationReference { NONE, NEW, OLD, GENESIS }
 
-    final List<String> FEDERATION_CHANGE_FUNCTIONS = Collections.unmodifiableList(Arrays.asList(new String[]{
+    private final List<String> FEDERATION_CHANGE_FUNCTIONS = Collections.unmodifiableList(Arrays.asList(
             "create",
             "add",
             "commit",
-            "rollback"
-    }));
+            "rollback"));
 
     private final String contractAddress;
-    private BridgeConstants bridgeConstants;
-    private Context btcContext;
+    private final BridgeConstants bridgeConstants;
+    private final Context btcContext;
+    private final BtcBlockStore btcBlockStore;
+    private final BtcBlockChain btcBlockChain;
+    private final BridgeStorageProvider provider;
+    private final Repository rskRepository;
 
-    private BtcBlockStore btcBlockStore;
-    private BtcBlockChain btcBlockChain;
-
-    private BridgeStorageProvider provider;
     private List<LogInfo> logs;
-
-    private Repository rskRepository;
-
     private org.ethereum.core.Block rskExecutionBlock;
-    private ReceiptStore rskReceiptStore;
-    private org.ethereum.db.BlockStore rskBlockStore;
-
     private StoredBlock initialBtcStoredBlock;
 
     // Used by bridge
-    public BridgeSupport(Repository repository, String contractAddress, Block rskExecutionBlock, ReceiptStore rskReceiptStore, BlockStore rskBlockStore, BridgeConstants bridgeConstants, List<LogInfo> logs) throws IOException, BlockStoreException {
-        this(repository, contractAddress, new BridgeStorageProvider(repository, contractAddress), rskExecutionBlock, rskReceiptStore, rskBlockStore, bridgeConstants, logs);
+    public BridgeSupport(Repository repository, String contractAddress, Block rskExecutionBlock, BridgeConstants bridgeConstants, List<LogInfo> logs) throws IOException, BlockStoreException {
+        this(repository, contractAddress, new BridgeStorageProvider(repository, contractAddress, bridgeConstants), rskExecutionBlock, bridgeConstants, logs);
     }
 
 
     // Used by unit tests
-    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, Block rskExecutionBlock, ReceiptStore rskReceiptStore, BlockStore rskBlockStore, BridgeConstants bridgeConstants, List<LogInfo> logs) throws IOException, BlockStoreException {
+    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, Block rskExecutionBlock, BridgeConstants bridgeConstants, List<LogInfo> logs) throws IOException, BlockStoreException {
         this.provider = provider;
 
         this.bridgeConstants = bridgeConstants;
@@ -128,8 +119,6 @@ public class BridgeSupport {
         this.initialBtcStoredBlock = this.getLowestBlock();
         this.logs = logs;
         this.rskExecutionBlock = rskExecutionBlock;
-        this.rskReceiptStore = rskReceiptStore;
-        this.rskBlockStore = rskBlockStore;
         this.contractAddress = contractAddress;
     }
 
@@ -144,17 +133,14 @@ public class BridgeSupport {
     }
 
     // Used by unit tests
-    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain) {
+    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain, BridgeConstants bridgeConstants) {
         this.provider = provider;
-
-        bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
-        btcContext = new Context(bridgeConstants.getBtcParams());
-
+        this.bridgeConstants = bridgeConstants;
+        this.btcContext = new Context(bridgeConstants.getBtcParams());
         this.btcBlockStore = btcBlockStore;
         this.btcBlockChain = btcBlockChain;
         this.contractAddress = contractAddress;
-
-        rskRepository = repository;
+        this.rskRepository = repository;
     }
 
     public void save() throws IOException {

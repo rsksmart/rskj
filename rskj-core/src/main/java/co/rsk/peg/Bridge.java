@@ -148,8 +148,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     private org.ethereum.core.Transaction rskTx;
     private org.ethereum.core.Block rskExecutionBlock;
-    private org.ethereum.db.BlockStore rskBlockStore;
-    private ReceiptStore rskReceiptStore;
     private Repository repository;
     private List<LogInfo> logs;
 
@@ -282,8 +280,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public void init(org.ethereum.core.Transaction rskTx, org.ethereum.core.Block rskExecutionBlock, Repository repository, org.ethereum.db.BlockStore rskBlockStore, ReceiptStore rskReceiptStore, List<LogInfo> logs) {
         this.rskTx = rskTx;
         this.rskExecutionBlock = rskExecutionBlock;
-        this.rskBlockStore = rskBlockStore;
-        this.rskReceiptStore = rskReceiptStore;
         this.repository = repository;
         this.logs = logs;
     }
@@ -333,7 +329,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     private BridgeSupport setup() throws Exception {
-        return new BridgeSupport(repository, contractAddress, rskExecutionBlock, rskReceiptStore, rskBlockStore, bridgeConstants, logs);
+        return new BridgeSupport(repository, contractAddress, rskExecutionBlock, bridgeConstants, logs);
     }
 
     private void teardown() throws IOException {
