@@ -79,23 +79,6 @@ public class ReleaseRequestQueueTest {
     }
 
     @Test
-    public void entryComparators() {
-        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        ReleaseRequestQueue.Entry e1 = new ReleaseRequestQueue.Entry(new Address(params, Hex.decode("6891f76b9261d8abb82171f5380d710a2d173aef")), Coin.valueOf(150));
-        ReleaseRequestQueue.Entry e2 = new ReleaseRequestQueue.Entry(new Address(params, Hex.decode("6891f76b9261d8abb82171f5380d710a2d173aef")), Coin.valueOf(150));
-        ReleaseRequestQueue.Entry e3 = new ReleaseRequestQueue.Entry(new Address(params, Hex.decode("6891f76b9261d8abb82171f5380d710a2d173aef")), Coin.valueOf(151));
-        ReleaseRequestQueue.Entry e4 = new ReleaseRequestQueue.Entry(new Address(params, Hex.decode("6891f76b9261d8abb82171f5380d710a2d173aef")), Coin.valueOf(149));
-        ReleaseRequestQueue.Entry e5 = new ReleaseRequestQueue.Entry(new Address(params, Hex.decode("3607136cb67e1ef78794620b39d6f0bdc27b3721")), Coin.valueOf(1));
-        ReleaseRequestQueue.Entry e6 = new ReleaseRequestQueue.Entry(new Address(params, Hex.decode("eaa41ef07e9ba0c8657a5f94a32b7bedce193df5")), Coin.valueOf(1));
-
-        Assert.assertTrue(ReleaseRequestQueue.Entry.DESTINATION_AMOUNT_COMPARATOR.compare(e1, e2) == 0);
-        Assert.assertTrue(ReleaseRequestQueue.Entry.DESTINATION_AMOUNT_COMPARATOR.compare(e1, e3) < 0);
-        Assert.assertTrue(ReleaseRequestQueue.Entry.DESTINATION_AMOUNT_COMPARATOR.compare(e1, e4) > 0);
-        Assert.assertTrue(ReleaseRequestQueue.Entry.DESTINATION_AMOUNT_COMPARATOR.compare(e1, e5) > 0);
-        Assert.assertTrue(ReleaseRequestQueue.Entry.DESTINATION_AMOUNT_COMPARATOR.compare(e1, e6) < 0);
-    }
-
-    @Test
     public void entriesCopy() {
         Assert.assertNotSame(queueEntries, queue.getEntries());
         Assert.assertEquals(queueEntries, queue.getEntries());

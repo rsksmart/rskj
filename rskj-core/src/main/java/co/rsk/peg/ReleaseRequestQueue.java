@@ -32,23 +32,6 @@ import java.util.*;
  */
 public class ReleaseRequestQueue {
     public static class Entry {
-        // Compares entries using destination address and then amount order
-        // (address compared on the lexicographical order of its bytes, amount ascending)
-        public static final Comparator<Entry> DESTINATION_AMOUNT_COMPARATOR = new Comparator<Entry>() {
-            private Comparator<byte[]> comparator = UnsignedBytes.lexicographicalComparator();
-
-            @Override
-            public int compare(Entry e1, Entry e2) {
-                int addressComparison = comparator.compare(e1.getDestination().getHash160(), e2.getDestination().getHash160());
-
-                if (addressComparison != 0) {
-                    return addressComparison;
-                }
-
-                return e1.getAmount().compareTo(e2.getAmount());
-            }
-        };
-
         private Address destination;
         private Coin amount;
 
