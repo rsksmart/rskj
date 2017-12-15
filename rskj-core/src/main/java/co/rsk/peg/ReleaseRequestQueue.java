@@ -20,9 +20,11 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
-import com.google.common.primitives.UnsignedBytes;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Objects;
 
 /**
  * Representation of a queue of btc release
