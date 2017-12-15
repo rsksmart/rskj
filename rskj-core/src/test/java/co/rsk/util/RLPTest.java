@@ -419,7 +419,7 @@ public class RLPTest {
 
     @Test
     public void encodeDecodeBigIntegers() {
-        for (int k = 1; k <= 1024; k++) {
+        for (int k = 0; k <= 1024; k++) {
             BigInteger value = BigInteger.valueOf(k);
             byte[] encoded = RLP.encodeBigInteger(value);
             BigInteger result = RLP.decodeBigInteger(encoded, 0);
