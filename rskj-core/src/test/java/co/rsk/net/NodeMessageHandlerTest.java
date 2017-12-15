@@ -20,7 +20,9 @@ package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.db.RepositoryImpl;
 import co.rsk.net.handler.TxHandler;
+import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleBlockProcessor;
 import co.rsk.net.simples.SimpleMessageChannel;
@@ -39,6 +41,7 @@ import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
@@ -47,17 +50,14 @@ import org.mockito.Mockito;
 import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 5/10/2016.
@@ -592,13 +592,13 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processNewBlockHashesMessageDoesNothingBecauseNodeIsSyncing() {
-        TxHandler txHandler = Mockito.mock(TxHandler.class);
-        BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
+        TxHandler txHandler = mock(TxHandler.class);
+        BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
 
         final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, null, null, txHandler, null, new ProofOfWorkRule(RskSystemProperties.CONFIG));
 
-        Message message = Mockito.mock(Message.class);
+        Message message = mock(Message.class);
         Mockito.when(message.getMessageType()).thenReturn(MessageType.NEW_BLOCK_HASHES);
 
         handler.processMessage(null, message);
@@ -746,10 +746,10 @@ public class NodeMessageHandlerTest {
     public void processTransactionsMessage() throws UnknownHostException {
         PeerScoringManager scoring = createPeerScoringManager();
         final SimpleChannelManager channelManager = new SimpleChannelManager();
-        TxHandler txmock = Mockito.mock(TxHandler.class);
-        PendingState state = Mockito.mock(PendingState.class);
+        TxHandler txmock = mock(TxHandler.class);
+        PendingState state = mock(PendingState.class);
         Mockito.when(state.addWireTransactions(any())).thenAnswer(i -> i.getArguments()[0]);
-        BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
+        BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
         final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, state, txmock, scoring, new ProofOfWorkRule(RskSystemProperties.CONFIG));
@@ -803,9 +803,9 @@ public class NodeMessageHandlerTest {
     public void processRejectedTransactionsMessage() throws UnknownHostException {
         PeerScoringManager scoring = createPeerScoringManager();
         final SimpleChannelManager channelManager = new SimpleChannelManager();
-        TxHandler txmock = Mockito.mock(TxHandler.class);
-        PendingState state = Mockito.mock(PendingState.class);
-        BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
+        TxHandler txmock = mock(TxHandler.class);
+        PendingState state = mock(PendingState.class);
+        BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
         final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, state, txmock, scoring, new ProofOfWorkRule(RskSystemProperties.CONFIG));
@@ -832,15 +832,55 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
+    public void processTooMuchGasTransactionMessage() throws UnknownHostException {
+        PeerScoringManager scoring = createPeerScoringManager();
+        final SimpleChannelManager channelManager = new SimpleChannelManager();
+        final World world = new World();
+        final Blockchain blockchain = world.getBlockChain();
+        PendingState state = mock(PendingState.class);
+        BlockProcessor blockProcessor = mock(BlockProcessor.class);
+        Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
+        TxHandler txHandler = new TxHandlerImpl(mock(WorldManager.class), mock(RepositoryImpl.class), blockchain);
+
+        final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, state, txHandler, scoring, new ProofOfWorkRule(RskSystemProperties.CONFIG));
+
+        final SimpleMessageChannel sender = new SimpleMessageChannel();
+
+        final List<Transaction> txs = new ArrayList<>();
+        BigInteger value = BigInteger.ONE;
+        BigInteger nonce = BigInteger.ZERO;
+        BigInteger gasPrice = BigInteger.ONE;
+        BigInteger gasLimit = BigDecimal.valueOf(Math.pow(2, 60)).add(BigDecimal.ONE).toBigInteger();
+        txs.add(TransactionUtils.createTransaction(TransactionUtils.getPrivateKeyBytes(),
+                TransactionUtils.getAddress(), value, nonce, gasPrice, gasLimit));
+        final TransactionsMessage message = new TransactionsMessage(txs);
+
+        handler.processMessage(sender, message);
+
+        Assert.assertNotNull(channelManager.getTransactions());
+        Assert.assertEquals(0, channelManager.getTransactions().size());
+
+        Assert.assertFalse(scoring.isEmpty());
+
+        PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
+
+        Assert.assertNotNull(pscoring);
+        Assert.assertFalse(pscoring.isEmpty());
+        // besides this
+        Assert.assertEquals(1, pscoring.getTotalEventCounter());
+        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
+    }
+
+    @Test
     public void processTransactionsMessageDoesNothingBecauseNodeIsSyncing() {
-        ChannelManager channelManager = Mockito.mock(ChannelManager.class);
-        TxHandler txHandler = Mockito.mock(TxHandler.class);
-        BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
+        ChannelManager channelManager = mock(ChannelManager.class);
+        TxHandler txHandler = mock(TxHandler.class);
+        BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
 
         final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, null, txHandler, null, new ProofOfWorkRule(RskSystemProperties.CONFIG));
 
-        Message message = Mockito.mock(Message.class);
+        Message message = mock(Message.class);
         Mockito.when(message.getMessageType()).thenReturn(MessageType.TRANSACTIONS);
 
         handler.processMessage(null, message);
@@ -852,8 +892,8 @@ public class NodeMessageHandlerTest {
     public void processTransactionsMessageUsingPendingState() throws UnknownHostException {
         final SimplePendingState pendingState = new SimplePendingState();
         final SimpleChannelManager channelManager = new SimpleChannelManager();
-        TxHandler txmock = Mockito.mock(TxHandler.class);
-        BlockProcessor blockProcessor = Mockito.mock(BlockProcessor.class);
+        TxHandler txmock = mock(TxHandler.class);
+        BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
         final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, pendingState, txmock, RskMockFactory.getPeerScoringManager(), new ProofOfWorkRule(RskSystemProperties.CONFIG));

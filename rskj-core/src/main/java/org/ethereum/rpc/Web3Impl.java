@@ -32,7 +32,6 @@ import co.rsk.scoring.InvalidInetAddressException;
 import co.rsk.scoring.PeerScoringInformation;
 import co.rsk.scoring.PeerScoringManager;
 import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
@@ -603,11 +602,6 @@ public class Web3Impl implements Web3 {
                     || null == tx.getGasPrice()
                     || null == tx.getValue()) {
                 throw new JsonRpcInvalidParamException("Missing parameter, gasPrice, gas or value");
-            }
-
-            BigInteger transactionGasCap = Constants.getTransactionGasCap();
-            if (tx.getGasLimitAsInteger().compareTo(transactionGasCap) > 0){
-                throw new JsonRpcInvalidParamException("Gas limit exceeds Transaction max value tolerated");
             }
 
             eth.submitTransaction(tx);

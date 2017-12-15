@@ -19,7 +19,6 @@
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.Wallet;
-import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Transaction;
@@ -66,11 +65,6 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
             BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;
             BigInteger gasPrice = args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
             BigInteger gasLimit = args.gas != null ? TypeConverter.stringNumberAsBigInt(args.gas) : BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
-
-            BigInteger transactionGasCap = Constants.getTransactionGasCap();
-            if (gasLimit.compareTo(transactionGasCap) > 0){
-                throw new JsonRpcInvalidParamException("Gas limit exceeds Transaction max value tolerated");
-            }
 
             if (args.data != null && args.data.startsWith("0x")) {
                 args.data = args.data.substring(2);

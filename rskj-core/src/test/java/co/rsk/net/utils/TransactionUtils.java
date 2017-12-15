@@ -34,20 +34,29 @@ import java.util.List;
  */
 public class TransactionUtils {
     public static List<Transaction> getTransactions(int n) {
-        byte[] privateKeyBytes = HashUtil.sha3("this is a seed".getBytes());
-        Account targetAcc = new Account(new ECKey(Utils.getRandom()));
-        String targetAddress = Hex.toHexString(targetAcc.getAddress());
-
         List<Transaction> txs = new ArrayList<>();
 
-        for (int k = 0; k < n; k++)
-            txs.add(createTransaction(privateKeyBytes, targetAddress, BigInteger.valueOf((long)(k + 1)), BigInteger.valueOf((long)k)));
+        for (long k = 0; k < n; k++)
+            txs.add(createTransaction(getPrivateKeyBytes(), getAddress(), BigInteger.valueOf(k + 1), BigInteger.valueOf(k)));
 
         return txs;
     }
 
+    public static String getAddress() {
+        Account targetAcc = new Account(new ECKey(Utils.getRandom()));
+        return Hex.toHexString(targetAcc.getAddress());
+    }
+
+    public static byte[] getPrivateKeyBytes() {
+        return HashUtil.sha3("this is a seed".getBytes());
+    }
+
     public static Transaction createTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce) {
-        Transaction tx = Transaction.create(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000));
+        return createTransaction(privateKey, toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000));
+    }
+
+    public static Transaction createTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit) {
+        Transaction tx = Transaction.create(toAddress, value, nonce, gasPrice, gasLimit);
         tx.sign(privateKey);
         return tx;
     }
