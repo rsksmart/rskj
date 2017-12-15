@@ -108,7 +108,10 @@ public class Web3ImplScoringTest {
     public void addAndRemoveBannedAddressUsingIPV4() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
-        InetAddress address = generateIPAddressV4();
+        // generate a random non-local IPv4 address
+        byte[] addressBytes = generateIPv4AddressBytes();
+        addressBytes[0] = (byte) 173;
+        InetAddress address = InetAddress.getByAddress(addressBytes);
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -121,11 +124,28 @@ public class Web3ImplScoringTest {
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
     }
 
+    @Test(expected = JsonRpcInvalidParamException.class)
+    public void banningLocalIPv4AddressThrowsException() throws UnknownHostException {
+        PeerScoringManager peerScoringManager = createPeerScoringManager();
+        Web3Impl web3 = createWeb3(peerScoringManager);
+        // generate a random local IPv4 address
+        byte[] addressBytes = generateIPv4AddressBytes();
+        addressBytes[0] = (byte) 127;
+        InetAddress address = InetAddress.getByAddress(addressBytes);
+
+        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+
+        web3.sco_banAddress(address.getHostAddress());
+    }
+
     @Test
     public void addAndRemoveBannedAddressUsingIPV4AndMask() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
-        InetAddress address = generateIPAddressV4();
+        // generate a random non-local IPv4 address
+        byte[] addressBytes = generateIPv4AddressBytes();
+        addressBytes[0] = (byte) 173;
+        InetAddress address = InetAddress.getByAddress(addressBytes);
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -136,6 +156,20 @@ public class Web3ImplScoringTest {
         web3.sco_unbanAddress(address.getHostAddress() + "/8");
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+    }
+
+    @Test(expected = JsonRpcInvalidParamException.class)
+    public void banningUsingLocalIPV4AndMaskThrowsException() throws UnknownHostException {
+        PeerScoringManager peerScoringManager = createPeerScoringManager();
+        Web3Impl web3 = createWeb3(peerScoringManager);
+        // generate a random local IPv4 address
+        byte[] addressBytes = generateIPv4AddressBytes();
+        addressBytes[0] = (byte) 127;
+        InetAddress address = InetAddress.getByAddress(addressBytes);
+
+        Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
+
+        web3.sco_banAddress(address.getHostAddress() + "/8");
     }
 
     @Test
@@ -295,11 +329,14 @@ public class Web3ImplScoringTest {
     }
 
     private static InetAddress generateIPAddressV4() throws UnknownHostException {
-        byte[] bytes = new byte[4];
-
-        random.nextBytes(bytes);
-
+        byte[] bytes = generateIPv4AddressBytes();
         return InetAddress.getByAddress(bytes);
+    }
+
+    private static byte[] generateIPv4AddressBytes() {
+        byte[] bytes = new byte[4];
+        random.nextBytes(bytes);
+        return bytes;
     }
 
     private static InetAddress generateIPAddressV6() throws UnknownHostException {
