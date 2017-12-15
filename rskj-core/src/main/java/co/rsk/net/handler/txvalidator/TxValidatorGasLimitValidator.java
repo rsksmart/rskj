@@ -18,20 +18,22 @@
 
 package co.rsk.net.handler.txvalidator;
 
+import org.ethereum.config.Constants;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 
 import java.math.BigInteger;
 
 /**
- * Checks that the transaction gas limit is lower than the `block` gas limit,
+ * Checks that the transaction gas limit is lower than the `block` gas limit
  * though there's no check that the actual block gas limit is used
+ * Also Checks that the transaction gas limit is not higher than the max allowed value
  */
 public class TxValidatorGasLimitValidator implements TxValidatorStep {
 
     @Override
     public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber) {
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
-        return  txGasLimit.compareTo(gasLimit) <= 0;
+        return  txGasLimit.compareTo(gasLimit) <= 0 && txGasLimit.compareTo(Constants.getTransactionGasCap()) <= 0;
     }
 }
