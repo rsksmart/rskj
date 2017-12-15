@@ -195,6 +195,43 @@ public class TestContract {
         return new TestContract(bytecode, runtimeBytecode, functions);
     }
 
+    public static TestContract bankTest2() {
+        /*
+        contract Bank {
+            event Gas(uint);
+            function () payable {
+                Gas(msg.gas);
+            }
+        }
+
+        contract BankTest {
+            address bank;
+            function BankTest() {
+                bank = (address)(new Bank());
+            }
+
+            function test() payable{
+                require(this.call.gas(8500).value(1)(bytes4(sha3("test2()"))));
+            }
+
+            function test2() payable {
+                require(bank.call.gas(1619).value(1)());
+            }
+        }
+        */
+
+        String bytecode = "6060604052341561000f57600080fd5b610017610071565b604051809103906000f080151561002d57600080fd5b6000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550610080565b60405160848061024183390190565b6101b28061008f6000396000f30060606040526004361061004c576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806366e41cb714610051578063f8a8fd6d1461005b575b600080fd5b610059610065565b005b6100636100c4565b005b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166106536001604051600060405180830381858888f1935050505015156100c257600080fd5b565b3073ffffffffffffffffffffffffffffffffffffffff16612766600160405180807f7465737432282900000000000000000000000000000000000000000000000000815250600701905060405180910390207c0100000000000000000000000000000000000000000000000000000000900491906040518363ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401600060405180830381858988f1945050505050151561018457600080fd5b5600a165627a7a72305820ab1b9d4a9647790266f2aad542390da736802301d1534c7eb299f42671a8fb78002960606040523415600e57600080fd5b606980601b6000396000f30060606040527ff0fadcd9d25528e430e4862a6cc65c4af97cc5bc42e413e0fcd026d40345a6df5a6040518082815260200191505060405180910390a10000a165627a7a72305820d027fba411d4fa3f30e7c2e1bfbbdb84d287088ee17bd8e8217741cd0b36fc110029";
+        String runtimeBytecode = "";
+        String abi = "[{\"constant\":false,\"inputs\":[],\"name\":\"test2\",\"outputs\":[],\"payable\":true,\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"test\",\"outputs\":[],\"payable\":true,\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"type\":\"constructor\"}]";
+
+        CallTransaction.Contract contract = new CallTransaction.Contract(abi);
+
+        Map<String, CallTransaction.Function> functions = new HashMap<>();
+        functions.put("test", contract.getByName("test"));
+        functions.put("test2", contract.getByName("test2"));
+        return new TestContract(bytecode, runtimeBytecode, functions);
+    }
+
     public static TestContract sendTest() {
         /*
         contract SendTest {
