@@ -549,18 +549,17 @@ public abstract class SystemProperties {
         return configFromFiles.getInt("peer.listen.port");
     }
 
-
-    /**
-     * This can be a blocking call with long timeout (thus no ValidateMe)
-     */
     public String getPeerDiscoveryBindAddress() {
-        if (bindIp == null) {
-            bindIp = DEFAULT_BIND_IP;
+        if (bindIp != null) {
+            return bindIp;
         }
 
-        if (configFromFiles.hasPath("peer.discovery.bind.ip") &&
-                !configFromFiles.getString("peer.discovery.bind.ip").trim().isEmpty()) {
-            bindIp = configFromFiles.getString("peer.discovery.bind.ip").trim();
+        bindIp = DEFAULT_BIND_IP;
+        if (configFromFiles.hasPath("peer.discovery.bind.ip")) {
+            String bindIpFromConfig = configFromFiles.getString("peer.discovery.bind.ip").trim();
+            if (!bindIpFromConfig.isEmpty()) {
+                bindIp = bindIpFromConfig;
+            }
         }
 
         logger.info("Binding peer discovery on {}", bindIp);
@@ -575,16 +574,18 @@ public abstract class SystemProperties {
             return externalIp;
         }
 
-        if (configFromFiles.hasPath("peer.discovery.external.ip") &&
-                !configFromFiles.getString("peer.discovery.external.ip").trim().isEmpty()) {
-            try {
-                InetAddress addr = InetAddress.getByName(configFromFiles.getString("peer.discovery.external.ip").trim());
-                externalIp = addr.getHostAddress();
-                logger.info("External address identified {}", externalIp);
-                return externalIp;
-            } catch (IOException e) {
-                externalIp = null;
-                logger.warn("Can't resolve external address");
+        if (configFromFiles.hasPath("peer.discovery.external.ip")) {
+            String externalIpFromConfig = configFromFiles.getString("peer.discovery.external.ip").trim();
+            if (!externalIpFromConfig.isEmpty()){
+                try {
+                    InetAddress addr = InetAddress.getByName(externalIpFromConfig);
+                    externalIp = addr.getHostAddress();
+                    logger.info("External address identified {}", externalIp);
+                    return externalIp;
+                } catch (IOException e) {
+                    externalIp = null;
+                    logger.warn("Can't resolve external address");
+                }
             }
         }
 
@@ -606,7 +607,8 @@ public abstract class SystemProperties {
             tryParseIpOrThrow();
             logger.info("External address identified: {}", externalIp);
         } catch (IOException e) {
-            logger.warn("Can't get external IP. " + e);
+            logger.error("Can't get external IP. " + e);
+            externalIp = getPeerDiscoveryBindAddress();
         }
         return externalIp;
     }

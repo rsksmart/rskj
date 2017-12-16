@@ -99,7 +99,7 @@ public class EthereumImpl implements Ethereum {
         }
         compositeEthereumListener.addListener(gasPriceTracker);
 
-        gLogger.info("RskJ node started: enode://" + Hex.toHexString(config.nodeId()) + "@" + config.getExternalIp() + ":" + config.listenPort());
+        gLogger.info("RskJ node started: enode://{}@{}:{}" , Hex.toHexString(config.nodeId()), config.getExternalIp(), config.listenPort());
     }
 
     @Override
