@@ -39,13 +39,10 @@ public class RskImpl extends EthereumImpl implements Rsk {
                    ChannelManager channelManager,
                    PeerServer peerServer,
                    ProgramInvokeFactory programInvokeFactory,
-                   PendingState pendingState,
                    SystemProperties config,
                    CompositeEthereumListener compositeEthereumListener,
-                   ReceiptStore receiptStore,
-                   NodeBlockProcessor nodeBlockProcessor,
-                   Repository repository) {
-        super(worldManager, channelManager, peerServer, programInvokeFactory, pendingState, config, compositeEthereumListener, receiptStore, repository);
+                   NodeBlockProcessor nodeBlockProcessor) {
+        super(worldManager, channelManager, peerServer, programInvokeFactory, config, compositeEthereumListener);
         this.nodeBlockProcessor = nodeBlockProcessor;
     }
 
