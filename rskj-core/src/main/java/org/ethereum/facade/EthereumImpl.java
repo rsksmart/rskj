@@ -79,11 +79,13 @@ public class EthereumImpl implements Ethereum {
         this.channelManager = channelManager;
         this.peerServer = peerServer;
         this.programInvokeFactory = programInvokeFactory;
-        this.pendingState = pendingState;
         this.config = config;
         this.compositeEthereumListener = compositeEthereumListener;
-        this.receiptStore = receiptStore;
-        this.repository = repository;
+
+        // WorldManager derived fields
+        this.pendingState = this.worldManager.getBlockchain().getPendingState();
+        this.receiptStore = this.worldManager.getBlockchain().getReceiptStore();
+        this.repository = this.worldManager.getBlockchain().getRepository();
     }
 
     @Override
