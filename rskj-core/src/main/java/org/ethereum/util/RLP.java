@@ -20,11 +20,10 @@
 package org.ethereum.util;
 
 import co.rsk.util.ByteBufferUtil;
+import co.rsk.util.RLPElementType;
 import co.rsk.util.RLPElementView;
 import co.rsk.util.RLPException;
 import org.ethereum.db.ByteArrayWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.spongycastle.util.BigIntegers;
 
 import javax.annotation.CheckForNull;
@@ -175,6 +174,10 @@ public class RLP {
 
     public static BigInteger decodeBigInteger(byte[] data, int index) {
         RLPElementView info = RLPElementView.calculateFirstElementInfo(ByteBuffer.wrap(data, index, data.length - index));
+        if (info.getType() == RLPElementType.NULL_ITEM) {
+            return BigInteger.ZERO;
+        }
+
         return BigIntegers.fromUnsignedByteArray(info.getOrCreateElement().getRLPData());
     }
 
