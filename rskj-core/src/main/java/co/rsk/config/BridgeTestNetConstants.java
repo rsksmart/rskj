@@ -86,7 +86,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
         minimumLockTxValue = Coin.valueOf(1000000);
         minimumReleaseTxValue = Coin.valueOf(500000);
 
-        // Keys generated with GenNodeKey using generators 'auth-a' through 'auth-e'
+        // Passphrases are kept private
         List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
             "04d9052c2022f6f35da53f04f02856ff5e59f9836eec03daad0328d12c5c66140205da540498e46cd05bf63c1201382dd84c100f0d52a10654159965aea452c3f2",
             "04bf889f2035c8c441d7d1054b6a449742edd04d202f44a29348b4140b34e2a81ce66e388f40046636fd012bd7e3cecd9b951ffe28422334722d20a1cf6c7926fb",
@@ -98,7 +98,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
                 AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY
         );
 
-        // Key generated with GenNodeKey using generator 'auth-lock-whitelist'
+        // Passphrases are kept private
         List<ECKey> lockWhitelistAuthorizedKeys = Arrays.stream(new String[]{
             "04bf7e3bca7f7c58326382ed9c2516a8773c21f1b806984bb1c5c33bd18046502d97b28c0ea5b16433fbb2b23f14e95b36209f304841e814017f1ede1ecbdcfce3"
         }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
@@ -112,6 +112,15 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         fundsMigrationAgeSinceActivationBegin = 60L;
         fundsMigrationAgeSinceActivationEnd = 900L;
+
+        List<ECKey> feePerKbAuthorizedKeys = Arrays.stream(new String[]{
+                // TODO(berna) generate testnet keys
+        }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+
+        feePerKbChangeAuthorizer = new AddressBasedAuthorizer(
+                feePerKbAuthorizedKeys,
+                AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY
+        );
     }
 
     public static BridgeTestNetConstants getInstance() {
