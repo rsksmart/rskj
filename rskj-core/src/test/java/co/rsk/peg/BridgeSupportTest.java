@@ -46,7 +46,6 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.TransactionInfo;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -71,13 +70,13 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
@@ -1429,40 +1428,50 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertEquals(2, provider2.getActiveFederationBtcUTXOs().size());
-        Assert.assertEquals(2, provider2.getRetiringFederationBtcUTXOs().size());
-        Assert.assertEquals(Coin.COIN.multiply(5), provider2.getActiveFederationBtcUTXOs().get(0).getValue());
-        Assert.assertEquals(Coin.COIN.multiply(3), provider2.getActiveFederationBtcUTXOs().get(1).getValue());
-        Assert.assertEquals(Coin.COIN.multiply(10), provider2.getRetiringFederationBtcUTXOs().get(0).getValue());
-        Assert.assertEquals(Coin.COIN.multiply(4), provider2.getRetiringFederationBtcUTXOs().get(1).getValue());
+        Assert.assertEquals(0, provider2.getActiveFederationBtcUTXOs().size());
+        Assert.assertEquals(0, provider2.getRetiringFederationBtcUTXOs().size());
 
-        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
+        Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
+        Assert.assertEquals(3, provider2.getReleaseTransactionSet().getEntries().size());
 
-        List<ReleaseRequestQueue.Entry> releaseReqQueueEntries = provider2.getReleaseRequestQueue().getEntries();
+        List<BtcTransaction> releaseTxs = provider2.getReleaseTransactionSet().getEntries()
+                .stream()
+                .map(e -> e.getTransaction())
+                .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
+                .collect(Collectors.toList());
 
-        Assert.assertTrue(releaseReqQueueEntries.stream().anyMatch(e ->
-                e.getDestination().equals(srcKey1.toAddress(btcParams)) && e.getAmount().equals(Coin.COIN.multiply(5))
-        ));
-        Assert.assertTrue(releaseReqQueueEntries.stream().anyMatch(e ->
-                e.getDestination().equals(srcKey2.toAddress(btcParams)) && e.getAmount().equals(Coin.COIN.multiply(10))
-        ));
-        Assert.assertTrue(releaseReqQueueEntries.stream().anyMatch(e ->
-                e.getDestination().equals(srcKey3.toAddress(btcParams)) && e.getAmount().equals(Coin.COIN.multiply(7))
-        ));
+        // First release tx should correspond to the 5 BTC lock tx
+        BtcTransaction releaseTx = releaseTxs.get(0);
+        Assert.assertEquals(1, releaseTx.getOutputs().size());
+        Assert.assertThat(Coin.COIN.multiply(5).subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assert.assertEquals(srcKey1.toAddress(parameters), releaseTx.getOutput(0).getAddressFromP2PKHScript(parameters));
+        Assert.assertEquals(1, releaseTx.getInputs().size());
+        Assert.assertEquals(tx1.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
+        Assert.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
+
+        // Second release tx should correspond to the 7 (3+4) BTC lock tx
+        releaseTx = releaseTxs.get(1);
+        Assert.assertEquals(1, releaseTx.getOutputs().size());
+        Assert.assertThat(Coin.COIN.multiply(7).subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assert.assertEquals(srcKey3.toAddress(parameters), releaseTx.getOutput(0).getAddressFromP2PKHScript(parameters));
+        Assert.assertEquals(2, releaseTx.getInputs().size());
+        List<TransactionOutPoint> releaseOutpoints = releaseTx.getInputs().stream().map(i -> i.getOutpoint()).sorted(Comparator.comparing(TransactionOutPoint::getIndex)).collect(Collectors.toList());
+        Assert.assertEquals(tx3.getHash(), releaseOutpoints.get(0).getHash());
+        Assert.assertEquals(tx3.getHash(), releaseOutpoints.get(1).getHash());
+        Assert.assertEquals(0, releaseOutpoints.get(0).getIndex());
+        Assert.assertEquals(1, releaseOutpoints.get(1).getIndex());
+
+        // Third release tx should correspond to the 10 BTC lock tx
+        releaseTx = releaseTxs.get(2);
+        Assert.assertEquals(1, releaseTx.getOutputs().size());
+        Assert.assertThat(Coin.COIN.multiply(10).subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assert.assertEquals(srcKey2.toAddress(parameters), releaseTx.getOutput(0).getAddressFromP2PKHScript(parameters));
+        Assert.assertEquals(1, releaseTx.getInputs().size());
+        Assert.assertEquals(tx2.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
+        Assert.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
 
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
         Assert.assertEquals(3, provider2.getBtcTxHashesAlreadyProcessed().size());
-    }
-
-    private void assertTxIsOfValueToSpecificAddress(BtcTransaction tx, BtcECKey key, int value) {
-        NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Assert.assertNotNull(tx);
-        Assert.assertEquals(0, tx.getInputs().size());
-        Assert.assertEquals(1, tx.getOutputs().size());
-        TransactionOutput output = tx.getOutputs().get(0);
-        Address outputAddress = new Script(output.getScriptBytes()).getToAddress(params);
-        Assert.assertEquals(outputAddress, key.toAddress(params));
-        Assert.assertEquals(output.getValue(), Coin.COIN.multiply(value));
     }
 
     @Test

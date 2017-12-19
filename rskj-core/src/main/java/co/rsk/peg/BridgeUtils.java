@@ -78,11 +78,17 @@ public class BridgeUtils {
     }
 
     public static Wallet getFederationSpendWallet(Context btcContext, Federation federation, List<UTXO> utxos) {
-        Wallet wallet = new BridgeBtcWallet(btcContext, Arrays.asList(federation));
+        return getFederationsSpendWallet(btcContext, Arrays.asList(federation), utxos);
+    }
+
+    public static Wallet getFederationsSpendWallet(Context btcContext, List<Federation> federations, List<UTXO> utxos) {
+        Wallet wallet = new BridgeBtcWallet(btcContext, federations);
 
         RskUTXOProvider utxoProvider = new RskUTXOProvider(btcContext.getParams(), utxos);
         wallet.setUTXOProvider(utxoProvider);
-        wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli());
+        federations.stream().forEach(federation -> {
+            wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli());
+        });
         wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
         return wallet;
     }

@@ -214,6 +214,28 @@ public class BridgeSupport {
     }
 
     /**
+     * Get the wallet for the currently live federations
+     * but limited to a specific list of UTXOs
+     * @return A BTC wallet for the currently live federation(s)
+     * limited to the given list of UTXOs
+     *
+     * @throws IOException
+     */
+    public Wallet getUTXOBasedWalletForLiveFederations(List<UTXO> utxos) throws IOException {
+        return BridgeUtils.getFederationsSpendWallet(btcContext, getLiveFederations(), utxos);
+    }
+
+    /**
+     * Get a no spend wallet for the currently live federations
+     * @return A no spend BTC wallet for the currently live federation(s)
+     *
+     * @throws IOException
+     */
+    public Wallet getNoSpendWalletForLiveFederations() throws IOException {
+        return BridgeUtils.getFederationsNoSpendWallet(btcContext, getLiveFederations());
+    }
+
+    /**
      * In case of a lock tx: Transfers some SBTCs to the sender of the btc tx and keeps track of the new UTXOs available for spending.
      * In case of a release tx: Keeps track of the change UTXOs, now available for spending.
      * @param btcTx The bitcoin transaction
@@ -271,6 +293,8 @@ public class BridgeSupport {
             return;
         }
 
+        boolean locked = true;
+
         // Specific code for lock/release/none txs
         if (BridgeUtils.isLockTx(btcTx, getLiveFederations(), btcContext, bridgeConstants)) {
             logger.debug("This is a lock tx {}", btcTx);
@@ -300,16 +324,40 @@ public class BridgeSupport {
             Address senderBtcAddress = new Address(btcContext.getParams(), senderBtcKey.getPubKeyHash());
 
             // If the address is not whitelisted, then return the funds
-            // That is, get them in the release cycle
-            // otherwise, transfer SBTC to the sender of the BTC
+            // using the exact same utxos sent to us.
+            // That is, build a release transaction and get it in the release transaction set.
+            // Otherwise, transfer SBTC to the sender of the BTC
             // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
             if (!provider.getLockWhitelist().isWhitelisted(senderBtcAddress)) {
-                boolean addResult = requestRelease(senderBtcAddress, totalAmount);
-
-                if (addResult) {
-                    logger.info("whitelist money return succesful to {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
+                locked = false;
+                // Build the list of UTXOs in the BTC transaction sent to either the active
+                // or retiring federation
+                List<UTXO> utxosToUs = btcTx.getWalletOutputs(getNoSpendWalletForLiveFederations()).stream()
+                        .map(output ->
+                                new UTXO(
+                                        btcTx.getHash(),
+                                        output.getIndex(),
+                                        output.getValue(),
+                                        0,
+                                        btcTx.isCoinBase(),
+                                        output.getScriptPubKey()
+                                )
+                        ).collect(Collectors.toList());
+                // Use the list of UTXOs to build a transaction builder
+                // for the return btc transaction generation
+                ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
+                        btcContext.getParams(),
+                        getUTXOBasedWalletForLiveFederations(utxosToUs),
+                        senderBtcAddress,
+                        getFeePerKb()
+                );
+                Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = txBuilder.buildEmptyWalletTo(senderBtcAddress);
+                if (buildReturnResult.isPresent()) {
+                    provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber());
+                    logger.info("whitelist money return tx build successful to {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
                 } else {
-                    logger.warn("whitelist money return ignored because value is considered dust. To {}. Tx {}. Value {}.", senderBtcAddress, rskTx, totalAmount);
+                    logger.warn("whitelist money return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount);
+                    panicProcessor.panic("whitelist-return-funds", String.format("whitelist money return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), senderBtcAddress, rskTx, totalAmount));
                 }
             } else {
                 org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
@@ -347,8 +395,11 @@ public class BridgeSupport {
         // Mark tx as processed on this block
         provider.getBtcTxHashesAlreadyProcessed().put(btcTxHash, rskExecutionBlock.getNumber());
 
-        // Save UTXOs from the federation(s)
-        saveNewUTXOs(btcTx);
+        // Save UTXOs from the federation(s) only if we actually
+        // locked the funds.
+        if (locked) {
+            saveNewUTXOs(btcTx);
+        }
         logger.info("BTC Tx {} processed in RSK", btcTxHash);
     }
 
@@ -520,13 +571,14 @@ public class BridgeSupport {
         // Releases are attempted using the currently active federation
         // wallet.
         final ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
+                btcContext.getParams(),
                 activeFederationWallet,
                 getFederationAddress(),
                 getFeePerKb()
         );
 
         releaseRequestQueue.process((ReleaseRequestQueue.Entry releaseRequest) -> {
-            Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.build(
+            Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.buildAmountTo(
                     releaseRequest.getDestination(),
                     releaseRequest.getAmount()
             );
