@@ -61,7 +61,7 @@ public class BridgeState {
     public BridgeState(int btcBlockchainBestChainHeight, BridgeStorageProvider provider) throws IOException {
         this.btcBlockchainBestChainHeight = btcBlockchainBestChainHeight;
         this.btcTxHashesAlreadyProcessed = provider.getBtcTxHashesAlreadyProcessed();
-        this.activeFederationBtcUTXOs = provider.getActiveFederationBtcUTXOs();
+        this.activeFederationBtcUTXOs = provider.getNewFederationBtcUTXOs();
         this.rskTxsWaitingForSignatures = provider.getRskTxsWaitingForSignatures();
         this.releaseRequestQueue = provider.getReleaseRequestQueue();
         this.releaseTransactionSet = provider.getReleaseTransactionSet();

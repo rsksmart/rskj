@@ -40,17 +40,17 @@ import java.util.SortedMap;
  * @author Oscar Guindzberg
  */
 public class BridgeStorageProvider {
-    private static final DataWord ACTIVE_FEDERATION_BTC_UTXOS_KEY = new DataWord(TypeConverter.stringToByteArray("activeFederationBtcUTXOs"));
-    private static final DataWord RETIRING_FEDERATION_BTC_UTXOS_KEY = new DataWord(TypeConverter.stringToByteArray("retiringFederationBtcUTXOs"));
+    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY = new DataWord(TypeConverter.stringToByteArray("newFederationBtcUTXOs"));
+    private static final DataWord OLD_FEDERATION_BTC_UTXOS_KEY = new DataWord(TypeConverter.stringToByteArray("oldFederationBtcUTXOs"));
     private static final DataWord BTC_TX_HASHES_ALREADY_PROCESSED_KEY = new DataWord(TypeConverter.stringToByteArray("btcTxHashesAP"));
     private static final DataWord RELEASE_REQUEST_QUEUE = new DataWord(TypeConverter.stringToByteArray("releaseRequestQueue"));
     private static final DataWord RELEASE_TX_SET = new DataWord(TypeConverter.stringToByteArray("releaseTransactionSet"));
     private static final DataWord RSK_TXS_WAITING_FOR_SIGNATURES_KEY = new DataWord(TypeConverter.stringToByteArray("rskTxsWaitingFS"));
-    private static final DataWord BRIDGE_ACTIVE_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("bridgeActiveFederation"));
-    private static final DataWord BRIDGE_RETIRING_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("bridgeRetiringFederation"));
-    private static final DataWord BRIDGE_PENDING_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("bridgePendingFederation"));
-    private static final DataWord BRIDGE_FEDERATION_ELECTION_KEY = new DataWord(TypeConverter.stringToByteArray("bridgeFederationElection"));
-    private static final DataWord LOCK_WHITELIST_KEY = new DataWord(TypeConverter.stringToByteArray("bridgeLockWhitelist"));
+    private static final DataWord NEW_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("newFederation"));
+    private static final DataWord OLD_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("oldFederation"));
+    private static final DataWord PENDING_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("pendingFederation"));
+    private static final DataWord FEDERATION_ELECTION_KEY = new DataWord(TypeConverter.stringToByteArray("federationElection"));
+    private static final DataWord LOCK_WHITELIST_KEY = new DataWord(TypeConverter.stringToByteArray("lockWhitelist"));
 
     private static final NetworkParameters networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
@@ -69,12 +69,12 @@ public class BridgeStorageProvider {
     private ReleaseTransactionSet releaseTransactionSet;
     private SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForSignatures;
 
-    private List<UTXO> activeFederationBtcUTXOs;
-    private List<UTXO> retiringFederationBtcUTXOs;
+    private List<UTXO> newFederationBtcUTXOs;
+    private List<UTXO> oldFederationBtcUTXOs;
 
-    private Federation activeFederation;
-    private Federation retiringFederation;
-    private boolean shouldSaveRetiringFederation = false;
+    private Federation newFederation;
+    private Federation oldFederation;
+    private boolean shouldSaveOldFederation = false;
     private PendingFederation pendingFederation;
     private boolean shouldSavePendingFederation = false;
 
@@ -92,38 +92,38 @@ public class BridgeStorageProvider {
         btcContext = new Context(bridgeConstants.getBtcParams());
     }
 
-    public List<UTXO> getActiveFederationBtcUTXOs() throws IOException {
-        if (activeFederationBtcUTXOs != null) {
-            return activeFederationBtcUTXOs;
+    public List<UTXO> getNewFederationBtcUTXOs() throws IOException {
+        if (newFederationBtcUTXOs != null) {
+            return newFederationBtcUTXOs;
         }
 
-        activeFederationBtcUTXOs = getFromRepository(ACTIVE_FEDERATION_BTC_UTXOS_KEY, BridgeSerializationUtils::deserializeUTXOList);
-        return activeFederationBtcUTXOs;
+        newFederationBtcUTXOs = getFromRepository(NEW_FEDERATION_BTC_UTXOS_KEY, BridgeSerializationUtils::deserializeUTXOList);
+        return newFederationBtcUTXOs;
     }
 
-    public void saveActiveFederationBtcUTXOs() throws IOException {
-        if (activeFederationBtcUTXOs == null) {
+    public void saveNewFederationBtcUTXOs() throws IOException {
+        if (newFederationBtcUTXOs == null) {
             return;
         }
 
-        saveToRepository(ACTIVE_FEDERATION_BTC_UTXOS_KEY, activeFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
+        saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY, newFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
     }
 
-    public List<UTXO> getRetiringFederationBtcUTXOs() throws IOException {
-        if (retiringFederationBtcUTXOs != null) {
-            return retiringFederationBtcUTXOs;
+    public List<UTXO> getOldFederationBtcUTXOs() throws IOException {
+        if (oldFederationBtcUTXOs != null) {
+            return oldFederationBtcUTXOs;
         }
 
-        retiringFederationBtcUTXOs = getFromRepository(RETIRING_FEDERATION_BTC_UTXOS_KEY, BridgeSerializationUtils::deserializeUTXOList);
-        return retiringFederationBtcUTXOs;
+        oldFederationBtcUTXOs = getFromRepository(OLD_FEDERATION_BTC_UTXOS_KEY, BridgeSerializationUtils::deserializeUTXOList);
+        return oldFederationBtcUTXOs;
     }
 
-    public void saveRetiringFederationBtcUTXOs() throws IOException {
-        if (retiringFederationBtcUTXOs == null) {
+    public void saveOldFederationBtcUTXOs() throws IOException {
+        if (oldFederationBtcUTXOs == null) {
             return;
         }
 
-        saveToRepository(RETIRING_FEDERATION_BTC_UTXOS_KEY, retiringFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
+        saveToRepository(OLD_FEDERATION_BTC_UTXOS_KEY, oldFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
     }
 
     public Map<Sha256Hash, Long> getBtcTxHashesAlreadyProcessed() throws IOException {
@@ -205,51 +205,60 @@ public class BridgeStorageProvider {
         safeSaveToRepository(RSK_TXS_WAITING_FOR_SIGNATURES_KEY, rskTxsWaitingForSignatures, BridgeSerializationUtils::serializeMap);
     }
 
-    public Federation getActiveFederation() {
-        if (activeFederation != null) {
-            return activeFederation;
+    public Federation getNewFederation() {
+        if (newFederation != null) {
+            return newFederation;
         }
 
-        activeFederation = safeGetFromRepository(BRIDGE_ACTIVE_FEDERATION_KEY, data -> (data == null)? null :BridgeSerializationUtils.deserializeFederation(data, btcContext));
-        return activeFederation;
+        newFederation = safeGetFromRepository(NEW_FEDERATION_KEY,
+                data ->
+                        data == null
+                                ? null
+                                : BridgeSerializationUtils.deserializeFederation(data, btcContext)
+        );
+        return newFederation;
     }
 
-    public void setActiveFederation(Federation federation) {
-        activeFederation = federation;
+    public void setNewFederation(Federation federation) {
+        newFederation = federation;
     }
 
     /**
-     * Save the active federation
-     * Only saved if a federation was set with BridgeStorageProvider::setActiveFederation
+     * Save the new federation
+     * Only saved if a federation was set with BridgeStorageProvider::setNewFederation
      */
-    public void saveActiveFederation() {
-        if (activeFederation == null) {
+    public void saveNewFederation() {
+        if (newFederation == null) {
             return;
         }
 
-        safeSaveToRepository(BRIDGE_ACTIVE_FEDERATION_KEY, activeFederation, BridgeSerializationUtils::serializeFederation);
+        safeSaveToRepository(NEW_FEDERATION_KEY, newFederation, BridgeSerializationUtils::serializeFederation);
     }
 
-    public Federation getRetiringFederation() {
-        if (retiringFederation != null) {
-            return retiringFederation;
+    public Federation getOldFederation() {
+        if (oldFederation != null) {
+            return oldFederation;
         }
 
-        retiringFederation = safeGetFromRepository(BRIDGE_RETIRING_FEDERATION_KEY, data -> (data == null)? null : BridgeSerializationUtils.deserializeFederation(data, btcContext));
-        return retiringFederation;
+        oldFederation = safeGetFromRepository(OLD_FEDERATION_KEY,
+                data -> data == null
+                        ? null
+                        : BridgeSerializationUtils.deserializeFederation(data, btcContext)
+        );
+        return oldFederation;
     }
 
-    public void setRetiringFederation(Federation federation) {
-        shouldSaveRetiringFederation = true;
-        retiringFederation = federation;
+    public void setOldFederation(Federation federation) {
+        shouldSaveOldFederation = true;
+        oldFederation = federation;
     }
 
     /**
-     * Save the retiring federation
+     * Save the old federation
      */
-    public void saveRetiringFederation() {
-        if (shouldSaveRetiringFederation) {
-            safeSaveToRepository(BRIDGE_RETIRING_FEDERATION_KEY, retiringFederation, BridgeSerializationUtils::serializeFederation);
+    public void saveOldFederation() {
+        if (shouldSaveOldFederation) {
+            safeSaveToRepository(OLD_FEDERATION_KEY, oldFederation, BridgeSerializationUtils::serializeFederation);
         }
     }
 
@@ -258,7 +267,11 @@ public class BridgeStorageProvider {
             return pendingFederation;
         }
 
-        pendingFederation = safeGetFromRepository(BRIDGE_PENDING_FEDERATION_KEY, data -> (data == null)? null : BridgeSerializationUtils.deserializePendingFederation(data));
+        pendingFederation = safeGetFromRepository(PENDING_FEDERATION_KEY,
+                data -> data == null
+                        ? null :
+                        BridgeSerializationUtils.deserializePendingFederation(data)
+        );
         return pendingFederation;
     }
 
@@ -272,7 +285,7 @@ public class BridgeStorageProvider {
      */
     public void savePendingFederation() {
         if (shouldSavePendingFederation) {
-            safeSaveToRepository(BRIDGE_PENDING_FEDERATION_KEY, pendingFederation, BridgeSerializationUtils::serializePendingFederation);
+            safeSaveToRepository(PENDING_FEDERATION_KEY, pendingFederation, BridgeSerializationUtils::serializePendingFederation);
         }
     }
 
@@ -284,7 +297,7 @@ public class BridgeStorageProvider {
             return;
         }
 
-        safeSaveToRepository(BRIDGE_FEDERATION_ELECTION_KEY, federationElection, BridgeSerializationUtils::serializeElection);
+        safeSaveToRepository(FEDERATION_ELECTION_KEY, federationElection, BridgeSerializationUtils::serializeElection);
     }
 
     public ABICallElection getFederationElection(AddressBasedAuthorizer authorizer) {
@@ -292,7 +305,7 @@ public class BridgeStorageProvider {
             return federationElection;
         }
 
-        federationElection = safeGetFromRepository(BRIDGE_FEDERATION_ELECTION_KEY, data -> (data == null)? new ABICallElection(authorizer) : BridgeSerializationUtils.deserializeElection(data, authorizer));
+        federationElection = safeGetFromRepository(FEDERATION_ELECTION_KEY, data -> (data == null)? new ABICallElection(authorizer) : BridgeSerializationUtils.deserializeElection(data, authorizer));
         return federationElection;
     }
 
@@ -328,11 +341,11 @@ public class BridgeStorageProvider {
         saveReleaseTransactionSet();
         saveRskTxsWaitingForSignatures();
 
-        saveActiveFederation();
-        saveActiveFederationBtcUTXOs();
+        saveNewFederation();
+        saveNewFederationBtcUTXOs();
 
-        saveRetiringFederation();
-        saveRetiringFederationBtcUTXOs();
+        saveOldFederation();
+        saveOldFederationBtcUTXOs();
 
         savePendingFederation();
 
