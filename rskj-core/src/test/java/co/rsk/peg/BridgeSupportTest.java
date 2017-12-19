@@ -82,6 +82,7 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
@@ -148,6 +149,22 @@ public class BridgeSupportTest {
         Assert.assertEquals(1229760, bridgeSupport.getBtcBlockStore().getChainHead().getHeight());
 
         RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+    }
+
+    @Test
+    public void feePerKbFromStorageProvider() throws Exception {
+        Repository repository = new RepositoryImpl();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+
+        Coin expected = Coin.MILLICOIN;
+        provider.setFeePerKb(expected);
+        provider.saveFeePerKb();
+
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, BridgeRegTestConstants.getInstance(), Collections.emptyList());
+
+        Assert.assertEquals(expected, bridgeSupport.getFeePerKb());
     }
 
     @Test
@@ -278,6 +295,7 @@ public class BridgeSupportTest {
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(30,0));
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(20,0));
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(10,0));
+        provider0.setFeePerKb(Coin.MILLICOIN);
 
         provider0.getNewFederationBtcUTXOs().add(new UTXO(
                 PegTestUtils.createHash(),
@@ -335,6 +353,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(37500));
+        provider0.setFeePerKb(Coin.MILLICOIN);
         provider0.getNewFederationBtcUTXOs().add(new UTXO(
                 PegTestUtils.createHash(),
                 1,
@@ -874,11 +893,11 @@ public class BridgeSupportTest {
 
         if ("FullySigned".equals(expectedResult)) {
             Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
-            Assert.assertThat(logs, is(not(empty())));
-            Assert.assertThat(logs, hasSize(1));
+            assertThat(logs, is(not(empty())));
+            assertThat(logs, hasSize(1));
             LogInfo releaseTxEvent = logs.get(0);
-            Assert.assertThat(releaseTxEvent.getTopics(), hasSize(1));
-            Assert.assertThat(releaseTxEvent.getTopics(), hasItem(Bridge.RELEASE_BTC_TOPIC));
+            assertThat(releaseTxEvent.getTopics(), hasSize(1));
+            assertThat(releaseTxEvent.getTopics(), hasItem(Bridge.RELEASE_BTC_TOPIC));
             BtcTransaction releaseTx = new BtcTransaction(bridgeConstants.getBtcParams(), RLP.decode2(releaseTxEvent.getData()).get(0).getRLPData());
             Script retrievedScriptSig = releaseTx.getInput(0).getScriptSig();
             Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
@@ -1314,8 +1333,8 @@ public class BridgeSupportTest {
 
         List<UTXO> activeFederationBtcUTXOs = provider.getNewFederationBtcUTXOs();
         List<Coin> activeFederationBtcCoins = activeFederationBtcUTXOs.stream().map(UTXO::getValue).collect(Collectors.toList());
-        Assert.assertThat(activeFederationBtcUTXOs, hasSize(1));
-        Assert.assertThat(activeFederationBtcCoins, hasItem(Coin.COIN));
+        assertThat(activeFederationBtcUTXOs, hasSize(1));
+        assertThat(activeFederationBtcCoins, hasItem(Coin.COIN));
     }
 
     @Test
@@ -2632,6 +2651,105 @@ public class BridgeSupportTest {
 
         Assert.assertEquals(-2, bridgeSupport.removeLockWhitelistAddress(mockedTx, "i-am-invalid").intValue());
         verify(mockedWhitelist, never()).remove(any());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void voteFeePerKbChange_nullFeeThrows() {
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        Transaction tx = mock(Transaction.class);
+        BridgeConstants constants = mock(BridgeConstants.class);
+        AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
+
+        when(provider.getFeePerKbElection(any()))
+                .thenReturn(new ABICallElection(null));
+        when(tx.getSender())
+                .thenReturn(new byte[] {0x43});
+        when(constants.getFeePerKbChangeAuthorizer())
+                .thenReturn(authorizer);
+        when(authorizer.isAuthorized(tx))
+                .thenReturn(true);
+
+        BridgeSupport bridgeSupport = new BridgeSupport(repositoryMock, "aabbccdd", provider, null, null, constants);
+        bridgeSupport.voteFeePerKbChange(tx, null);
+        verify(provider, never()).setFeePerKb(any());
+    }
+
+    @Test
+    public void voteFeePerKbChange_unsuccessfulVote() {
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        Transaction tx = mock(Transaction.class);
+        BridgeConstants constants = mock(BridgeConstants.class);
+        AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
+
+        byte[] senderBytes = {0x43};
+        when(provider.getFeePerKbElection(any()))
+                .thenReturn(new ABICallElection(authorizer));
+        when(tx.getSender())
+                .thenReturn(senderBytes);
+        when(constants.getFeePerKbChangeAuthorizer())
+                .thenReturn(authorizer);
+        when(authorizer.isAuthorized(tx))
+                .thenReturn(false);
+
+        BridgeSupport bridgeSupport = new BridgeSupport(repositoryMock, "aabbccdd", provider, null, null, constants);
+        assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(-10));
+        verify(provider, never()).setFeePerKb(any());
+    }
+
+    @Test
+    public void voteFeePerKbChange_successfulVote() {
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        Transaction tx = mock(Transaction.class);
+        BridgeConstants constants = mock(BridgeConstants.class);
+        AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
+
+        byte[] senderBytes = {0x43};
+        when(provider.getFeePerKbElection(any()))
+                .thenReturn(new ABICallElection(authorizer));
+        when(tx.getSender())
+                .thenReturn(senderBytes);
+        when(constants.getFeePerKbChangeAuthorizer())
+                .thenReturn(authorizer);
+        when(authorizer.isAuthorized(tx))
+                .thenReturn(true);
+        when(authorizer.isAuthorized(TxSender.fromTx(tx)))
+                .thenReturn(true);
+        when(authorizer.getRequiredAuthorizedKeys())
+                .thenReturn(2);
+
+        BridgeSupport bridgeSupport = new BridgeSupport(repositoryMock, "aabbccdd", provider, null, null, constants);
+        assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(1));
+        verify(provider, never()).setFeePerKb(any());
+    }
+
+    @Test
+    public void voteFeePerKbChange_successfulVoteWithFeeChange() {
+        Repository repositoryMock = mock(Repository.class);
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        Transaction tx = mock(Transaction.class);
+        BridgeConstants constants = mock(BridgeConstants.class);
+        AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
+
+        byte[] senderBytes = {0x43};
+        when(provider.getFeePerKbElection(any()))
+                .thenReturn(new ABICallElection(authorizer));
+        when(tx.getSender())
+                .thenReturn(senderBytes);
+        when(constants.getFeePerKbChangeAuthorizer())
+                .thenReturn(authorizer);
+        when(authorizer.isAuthorized(tx))
+                .thenReturn(true);
+        when(authorizer.isAuthorized(TxSender.fromTx(tx)))
+                .thenReturn(true);
+        when(authorizer.getRequiredAuthorizedKeys())
+                .thenReturn(1);
+
+        BridgeSupport bridgeSupport = new BridgeSupport(repositoryMock, "aabbccdd", provider, null, null, constants);
+        assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(1));
+        verify(provider).setFeePerKb(Coin.CENT);
     }
 
     private BridgeStorageProvider getBridgeStorageProviderMockWithProcessedHashes() throws IOException {

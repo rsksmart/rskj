@@ -64,6 +64,7 @@ import static org.ethereum.util.BIUtil.transfer;
 public class BridgeSupport {
     public static final Integer FEDERATION_CHANGE_GENERIC_ERROR_CODE = -10;
     public static final Integer LOCK_WHITELIST_GENERIC_ERROR_CODE = -10;
+    public static final Integer FEE_PER_KB_GENERIC_ERROR_CODE = -10;
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
@@ -467,8 +468,17 @@ public class BridgeSupport {
         return true;
     }
 
-    private Coin getFeePerKb() {
-        return Coin.MILLICOIN;
+    /**
+     * @return Current fee per kb in BTC.
+     */
+    public Coin getFeePerKb() {
+        Coin currentFeePerKb = provider.getFeePerKb();
+
+        if (currentFeePerKb == null) {
+            currentFeePerKb = bridgeConstants.getGenesisFeePerKb();
+        }
+
+        return currentFeePerKb;
     }
 
     /**
@@ -1669,6 +1679,55 @@ public class BridgeSupport {
      */
     public Coin getMinimumLockTxValue() {
         return bridgeConstants.getMinimumLockTxValue();
+    }
+
+    /**
+     * Votes for a fee per kb value.
+     *
+     * @return 1 upon successful vote, -1 when the vote was unsuccessful,
+     * FEE_PER_KB_GENERIC_ERROR_CODE when there was an un expected error.
+     */
+    public Integer voteFeePerKbChange(Transaction tx, Coin feePerKb) {
+        AddressBasedAuthorizer authorizer = bridgeConstants.getFeePerKbChangeAuthorizer();
+        if (!authorizer.isAuthorized(tx)) {
+            return FEE_PER_KB_GENERIC_ERROR_CODE;
+        }
+
+        TxSender voter = TxSender.fromTx(tx);
+        ABICallElection feePerKbElection = provider.getFeePerKbElection(authorizer);
+        ABICallSpec feeVote = new ABICallSpec("setFeePerKb", new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
+        boolean successfulVote = feePerKbElection.vote(feeVote, voter);
+        if (!successfulVote) {
+            return -1;
+        }
+
+        ABICallSpec winner = feePerKbElection.getWinner();
+        if (winner == null) {
+            logger.info("Successful fee per kb vote for {}", feePerKb);
+            return 1;
+        }
+
+        Coin winnerFee;
+        try {
+            winnerFee = BridgeSerializationUtils.deserializeCoin(winner.getArguments()[0]);
+        } catch (Exception e) {
+            logger.warn("Exception deserializing winner feePerKb", e);
+            return FEE_PER_KB_GENERIC_ERROR_CODE;
+        }
+
+        if (winnerFee == null) {
+            logger.warn("Invalid winner feePerKb: feePerKb can't be null");
+            return FEE_PER_KB_GENERIC_ERROR_CODE;
+        }
+
+        if (!winnerFee.equals(feePerKb)) {
+            logger.debug("Winner fee is different than the last vote: maybe you forgot to clear winners");
+        }
+
+        logger.info("Fee per kb changed to {}", winnerFee);
+        provider.setFeePerKb(winnerFee);
+        feePerKbElection.clear();
+        return 1;
     }
 
     /**
