@@ -83,13 +83,12 @@ public class BlockGenerator {
     private int count = 0;
 
     public Genesis getGenesisBlock() {
-        return new Genesis(Hex.decode(genesisRLP));
+        return getNewGenesisBlock(3141592, null, new byte[] { 2, 0, 0});
     }
 
-    private Block getNewGenesisBlock(long initialGasLimit, Map<byte[], BigInteger> preMineMap, byte difficultyByte) {
+    private Genesis getNewGenesisBlock(long initialGasLimit, Map<byte[], BigInteger> preMineMap, byte[] difficulty) {
 
         byte[] nonce       = new byte[]{0};
-        byte[] difficulty  = new byte[]{difficultyByte};
         byte[] mixHash     = new byte[]{0};
 
         /* Unimportant address. Because there is no subsidy
@@ -116,7 +115,8 @@ public class BlockGenerator {
                 difficulty, 0, gasLimit, 0, timestamp, extraData,
                 mixHash, nonce, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, BigInteger.valueOf(100L).toByteArray());
-        if (preMineMap!=null) {
+
+        if (preMineMap != null) {
             Map<ByteArrayWrapper, InitialAddressState> preMineMap2 = generatePreMine(preMineMap);
             genesis.setPremine(preMineMap2);
 
@@ -124,6 +124,7 @@ public class BlockGenerator {
             genesis.setStateRoot(rootHash);
 
         }
+
         return genesis;
     }
 
@@ -138,7 +139,8 @@ public class BlockGenerator {
 
     private Map<ByteArrayWrapper, InitialAddressState> generatePreMine(Map<byte[], BigInteger> alloc){
         Map<ByteArrayWrapper, InitialAddressState> premine = new HashMap<>();
-        for (byte[] key : alloc.keySet()){
+
+        for (byte[] key : alloc.keySet()) {
             AccountState acctState = new AccountState(BigInteger.valueOf(0), alloc.get(key));
             premine.put(wrap(key), new InitialAddressState(acctState, null));
         }
@@ -188,8 +190,9 @@ public class BlockGenerator {
     public Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot, byte[] coinbase) {
         Bloom logBloom = new Bloom();
 
-        if (txs==null)
+        if (txs == null) {
             txs = new ArrayList<>();
+        }
 
         return new Block(
                 parent.getHash(), // parent hash
@@ -221,8 +224,9 @@ public class BlockGenerator {
     public Block createChildBlock(Block parent, int ntxs, long difficulty) {
         List<Transaction> txs = new ArrayList<>();
 
-        for (int ntx = 0; ntx < ntxs; ntx++)
+        for (int ntx = 0; ntx < ntxs; ntx++) {
             txs.add(new SimpleRskTransaction(null));
+        }
 
         List<BlockHeader> uncles = new ArrayList<>();
 
@@ -240,13 +244,14 @@ public class BlockGenerator {
 
     public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
                                   long difficulty, BigInteger minGasPrice, byte[] gasLimit) {
-        if (txs == null)
+        if (txs == null) {
             txs = new ArrayList<>();
-        if (uncles == null)
-            uncles = new ArrayList<>();
+        }
 
-        Bloom logBloom = new Bloom();
-        byte[] bidiff = BigInteger.valueOf(difficulty).toByteArray();
+        if (uncles == null) {
+            uncles = new ArrayList<>();
+        }
+
         byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
 
         BlockHeader newHeader = new BlockHeader(parent.getHash(),
@@ -266,10 +271,12 @@ public class BlockGenerator {
                 CollectionUtils.size(uncles)
         );
 
-        if (difficulty == 0)
+        if (difficulty == 0) {
             newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader()).toByteArray());
-        else
+        }
+        else {
             newHeader.setDifficulty(BigInteger.valueOf(difficulty).toByteArray());
+        }
 
         newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash());
 
@@ -286,13 +293,13 @@ public class BlockGenerator {
 
         List<Transaction> txs = new ArrayList<>();
 
-        for (int ntx = 0; ntx < ntxs; ntx++)
+        for (int ntx = 0; ntx < ntxs; ntx++) {
             txs.add(new SimpleRskTransaction(null));
+        }
 
         byte[] parentMGP = (parent.getMinimumGasPrice() != null) ? parent.getMinimumGasPrice() : BigInteger.valueOf(10L).toByteArray();
         BigInteger minimumGasPrice = new MinimumGasPriceCalculator().calculate(new BigInteger(1, parentMGP)
                 , BigInteger.valueOf(100L));
-
 
         return new Block(
                 parent.getHash(), // parent hash
@@ -322,8 +329,9 @@ public class BlockGenerator {
 
         List<Transaction> txs = new ArrayList<>();
 
-        for (int ntx = 0; ntx < ntxs; ntx++)
+        for (int ntx = 0; ntx < ntxs; ntx++) {
             txs.add(new SimpleRskTransaction(PegTestUtils.createHash3().getBytes()));
+        }
 
         return new SimpleBlock(
                 parent.getHash(), // parent hash
@@ -377,7 +385,6 @@ public class BlockGenerator {
     public List<Block> getBlockChain(Block parent, int size, int ntxs, boolean withUncles, Long difficulty) {
         return getBlockChain(parent, size, ntxs, false, false, difficulty);
     }
-
 
     public List<Block> getBlockChain(Block parent, int size, int ntxs, boolean withUncles, boolean withMining, Long difficulty) {
         List<Block> chain = new ArrayList<Block>();
@@ -438,7 +445,7 @@ public class BlockGenerator {
     }
 
     public Block getNewGenesisBlock(long initialGasLimit, Map<byte[], BigInteger> preMineMap) {
-        return getNewGenesisBlock(initialGasLimit,preMineMap, (byte) 0);
+        return getNewGenesisBlock(initialGasLimit,preMineMap, new byte[] { 0 });
     }
 
     private static byte[] nullReplace(byte[] e) {
