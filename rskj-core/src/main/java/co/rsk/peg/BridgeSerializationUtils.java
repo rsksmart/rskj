@@ -25,6 +25,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.spongycastle.util.BigIntegers;
 
+import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -319,6 +320,19 @@ public class BridgeSerializationUtils {
 
     private static BigInteger safeToBigInteger(byte[] data) {
         return data == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(data);
+    }
+
+    public static byte[] serializeCoin(Coin coin) {
+        return RLP.encodeBigInteger(BigInteger.valueOf(coin.getValue()));
+    }
+
+    @Nullable
+    public static Coin deserializeCoin(byte[] data) {
+        if (data == null || data.length == 0) {
+            return null;
+        }
+
+        return Coin.valueOf(RLP.decodeBigInteger(data, 0).longValueExact());
     }
 
     // A ReleaseRequestQueue is serialized as follows:
