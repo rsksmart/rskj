@@ -138,6 +138,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     // Adds the given address to the lock whitelist
     public static final CallTransaction.Function REMOVE_LOCK_WHITELIST_ADDRESS = CallTransaction.Function.fromSignature("removeLockWhitelistAddress", new String[]{"string"}, new String[]{"int256"});
 
+    // Returns the current fee per kb
+    public static final CallTransaction.Function GET_FEE_PER_KB = CallTransaction.Function.fromSignature("getFeePerKb", new String[]{}, new String[]{"int256"});
+    // Adds the given key to the current pending federation
+    public static final CallTransaction.Function VOTE_FEE_PER_KB = CallTransaction.Function.fromSignature("voteFeePerKbChange", new String[]{"int256"}, new String[]{"int256"});
+
     // Log topics used by the Bridge
     public static final DataWord RELEASE_BTC_TOPIC = new DataWord("release_btc_topic".getBytes(StandardCharsets.UTF_8));
 
@@ -204,7 +209,9 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             GET_LOCK_WHITELIST_SIZE,
             GET_LOCK_WHITELIST_ADDRESS,
             ADD_LOCK_WHITELIST_ADDRESS,
-            REMOVE_LOCK_WHITELIST_ADDRESS
+            REMOVE_LOCK_WHITELIST_ADDRESS,
+            GET_FEE_PER_KB,
+            VOTE_FEE_PER_KB
         }).forEach((CallTransaction.Function func) -> {
             this.functions.put(new ByteArrayWrapper(func.encodeSignature()),  func);
             functionCostMap.put(func, costProvider.nextCost());
@@ -793,5 +800,27 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return bridgeSupport.removeLockWhitelistAddress(rskTx, addressBase58);
+    }
+
+    public Integer voteFeePerKbChange(Object[] args)
+    {
+        logger.trace("voteFeePerKbChange");
+
+        Coin feePerKb;
+        try {
+            feePerKb = Coin.valueOf(((BigInteger) args[0]).longValueExact());
+        } catch (Exception e) {
+            logger.warn("Exception in voteFeePerKbChange: {}", e);
+            return -10;
+        }
+
+        return bridgeSupport.voteFeePerKbChange(rskTx, feePerKb);
+    }
+
+    public long getFeePerKb(Object[] args)
+    {
+        logger.trace("getFeePerKb");
+
+        return bridgeSupport.getFeePerKb().getValue();
     }
 }
