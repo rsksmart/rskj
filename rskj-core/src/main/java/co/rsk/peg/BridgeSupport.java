@@ -493,11 +493,23 @@ public class BridgeSupport {
     public void updateCollections(Transaction rskTx) throws IOException {
         Context.propagate(btcContext);
 
+        createEventLog(rskTx);
+
         processFundsMigration();
 
         processReleaseRequests();
 
         processReleaseTransactions(rskTx);
+    }
+
+    private void createEventLog(Transaction rskTx) {
+        logs.add(
+                new LogInfo(
+                        TypeConverter.stringToByteArray(contractAddress),
+                        Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC),
+                        RLP.encodeElement(rskTx.getSender())
+                )
+        );
     }
 
     private boolean federationIsInMigrationAge(Federation federation) {

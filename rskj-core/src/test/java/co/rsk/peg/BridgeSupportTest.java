@@ -46,6 +46,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -283,6 +284,41 @@ public class BridgeSupportTest {
     }
 
     @Test
+    public void callUpdateCollectionsGenerateEventLog() throws IOException, BlockStoreException {
+        Repository track = new RepositoryImpl().startTracking();
+
+        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
+        org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
+
+        Blockchain blockchain = new BlockChainBuilder().setTesting(true).setRsk(true).setGenesis(BlockGenerator.getInstance().getGenesisBlock()).build();
+        ReceiptStore rskReceiptStore = blockchain.getReceiptStore();
+        org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
+
+        List<LogInfo> eventLogs = new LinkedList<>();
+
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, BridgeRegTestConstants.getInstance(), eventLogs);
+
+        Transaction tx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        ECKey key = new ECKey();
+        tx.sign(key.getPrivKeyBytes());
+
+        bridgeSupport.updateCollections(tx);
+
+        Assert.assertEquals(1, eventLogs.size());
+
+        // Assert address that made the log
+        LogInfo result = eventLogs.get(0);
+        Assert.assertArrayEquals(TypeConverter.stringToByteArray(PrecompiledContracts.BRIDGE_ADDR), result.getAddress());
+
+        // Assert log topics
+        Assert.assertEquals(1, result.getTopics().size());
+        Assert.assertEquals(Bridge.UPDATE_COLLECTIONS_TOPIC, result.getTopics().get(0));
+
+        // Assert log data
+        Assert.assertArrayEquals(key.getAddress(), RLP.decode2(result.getData()).get(0).getRLPData());
+    }
+
+    @Test
     public void callUpdateCollectionsFundsEnoughForJustTheSmallerTx() throws IOException, BlockStoreException {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
@@ -322,8 +358,9 @@ public class BridgeSupportTest {
         ReceiptStore rskReceiptStore = blockchain.getReceiptStore();
         org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
         Transaction tx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        tx.sign(new ECKey().getPrivKeyBytes());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, BridgeRegTestConstants.getInstance(), Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, BridgeRegTestConstants.getInstance(), new LinkedList<>());
 
         bridgeSupport.updateCollections(tx);
 
@@ -382,8 +419,9 @@ public class BridgeSupportTest {
         ReceiptStore rskReceiptStore = blockchain.getReceiptStore();
         org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
         Transaction tx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        tx.sign(new ECKey().getPrivKeyBytes());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, BridgeRegTestConstants.getInstance(), Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, BridgeRegTestConstants.getInstance(), new LinkedList<>());
 
         bridgeSupport.updateCollections(tx);
 
@@ -440,8 +478,9 @@ public class BridgeSupportTest {
         ReceiptStore rskReceiptStore = blockchain.getReceiptStore();
         org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
         Transaction tx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        tx.sign(new ECKey().getPrivKeyBytes());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, BridgeRegTestConstants.getInstance(), Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, BridgeRegTestConstants.getInstance(), new LinkedList<>());
 
         bridgeSupport.updateCollections(tx);
 
@@ -495,8 +534,9 @@ public class BridgeSupportTest {
 
         track = repository.startTracking();
         Transaction tx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        tx.sign(new ECKey().getPrivKeyBytes());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, BridgeRegTestConstants.getInstance(), Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, rskReceiptStore, rskBlockStore, BridgeRegTestConstants.getInstance(), new LinkedList<>());
 
         bridgeSupport.updateCollections(tx);
 
@@ -568,8 +608,9 @@ public class BridgeSupportTest {
         ReceiptStore rskReceiptStore = blockchain.getReceiptStore();
         org.ethereum.db.BlockStore rskBlockStore = blockchain.getBlockStore();
         Transaction rskTx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        rskTx.sign(new ECKey().getPrivKeyBytes());
 
-        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, rskCurrentBlock, BridgeRegTestConstants.getInstance(), Collections.emptyList());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, rskCurrentBlock, rskReceiptStore, rskBlockStore, BridgeRegTestConstants.getInstance(), new LinkedList<>());
 
         bridgeSupport.updateCollections(rskTx);
         bridgeSupport.save();
