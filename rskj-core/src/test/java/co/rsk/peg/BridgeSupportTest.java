@@ -88,6 +88,7 @@ import static org.mockito.Mockito.*;
  * Created by ajlopez on 6/9/2016.
  */
 @RunWith(PowerMockRunner.class)
+@PrepareForTest({ BridgeUtils.class })
 public class BridgeSupportTest {
     private static final String contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
@@ -494,7 +495,6 @@ public class BridgeSupportTest {
         Assert.assertTrue(provider.getActiveFederationBtcUTXOs().isEmpty());
     }
 
-    @PrepareForTest({ BridgeUtils.class })
     @Test
     public void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmations() throws IOException, BlockStoreException {
         // Bridge constants and btc context
@@ -2120,7 +2120,6 @@ public class BridgeSupportTest {
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
-    @PrepareForTest({ BridgeUtils.class })
     @Test
     public void getActiveFederationWallet() throws IOException {
         Federation expectedFederation = new Federation(Arrays.asList(new BtcECKey[]{
@@ -2153,7 +2152,6 @@ public class BridgeSupportTest {
         Assert.assertSame(expectedWallet, bridgeSupport.getActiveFederationWallet());
     }
 
-    @PrepareForTest({ BridgeUtils.class })
     @Test
     public void getRetiringFederationWallet_nonEmpty() throws IOException {
         Federation expectedFederation = new Federation(Arrays.asList(new BtcECKey[]{
