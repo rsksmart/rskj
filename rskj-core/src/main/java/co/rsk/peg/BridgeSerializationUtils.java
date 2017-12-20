@@ -292,16 +292,33 @@ public class BridgeSerializationUtils {
         return new ABICallElection(authorizer, votes);
     }
 
-    // A lock whitelist is just the serialization of
-    // the underlying btc public keys
-    // See BridgeSerializationUtils::serializeBtcAddresses for details
     public static byte[] serializeLockWhitelist(LockWhitelist whitelist) {
-        return serializeBtcAddresses(whitelist.getAddresses());
+        List<Address> whitelistAddresses = whitelist.getAddresses();
+        byte[][] serializedLockWhitelist = new byte[whitelistAddresses.size() * 2][];
+        for (int i = 0; i < whitelistAddresses.size(); i++) {
+            Address address = whitelistAddresses.get(i);
+            serializedLockWhitelist[2 * i] = RLP.encodeElement(address.getHash160());
+            serializedLockWhitelist[2 * i + 1] = RLP.encodeBigInteger(BigInteger.valueOf(whitelist.getMaxTransferValue(address).longValue()));
+        }
+        return RLP.encodeList(serializedLockWhitelist);
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeLockWhitelist
     public static LockWhitelist deserializeLockWhitelist(byte[] data, NetworkParameters parameters) {
-        return new LockWhitelist(deserializeBtcAddresses(data, parameters));
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+        Map<Address, Coin> whitelist = new HashMap<>(rlpList.size() / 2);
+        for (int i = 0; i < rlpList.size(); i = i + 2) {
+            byte[] hash160 = rlpList.get(i).getRLPData();
+            byte[] maxValueData = rlpList.get(i + 1).getRLPData();
+            whitelist.put(
+                new Address(parameters, hash160),
+                Coin.valueOf(safeToBigInteger(maxValueData).longValueExact())
+            );
+        }
+        return new LockWhitelist(whitelist);
+    }
+
+    private static BigInteger safeToBigInteger(byte[] data) {
+        return data == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(data);
     }
 
     // A ReleaseRequestQueue is serialized as follows:
@@ -449,29 +466,6 @@ public class BridgeSerializationUtils {
 
         return rlpList.stream()
                 .map(pubKeyBytes -> BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
-                .collect(Collectors.toList());
-    }
-
-    // A list of btc addresses is serialized as
-    // [addr1, addr2, ..., addrn], sorted
-    // using the lexicographical order of the addresses
-    // interpreting the bytes as unsigned.
-    private static byte[] serializeBtcAddresses(List<Address> addresses) {
-        List<byte[]> encodedAddresses = addresses.stream()
-                .sorted((Address a1, Address a2) ->
-                        UnsignedBytes.lexicographicalComparator().compare(a1.getHash160(), a2.getHash160())
-                )
-                .map(key -> RLP.encodeElement(key.getHash160()))
-                .collect(Collectors.toList());
-        return RLP.encodeList(encodedAddresses.toArray(new byte[0][]));
-    }
-
-    // For the serialization format, see BridgeSerializationUtils::serializeBtcAddresses
-    private static List<Address> deserializeBtcAddresses(byte[] data, NetworkParameters parameters) {
-        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
-
-        return rlpList.stream()
-                .map(addressBytes -> new Address(parameters, addressBytes.getRLPData()))
                 .collect(Collectors.toList());
     }
 

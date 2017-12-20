@@ -1460,10 +1460,10 @@ public class BridgeSupport {
         try {
             Address address = Address.fromBase58(btcContext.getParams(), addressBase58);
 
-            if (!whitelist.add(address)) {
+            if (whitelist.isWhitelisted(address)) {
                 return -1;
             }
-
+            whitelist.put(address, Coin.valueOf(maxTransferValue.longValueExact()));
             return 1;
         } catch (AddressFormatException e) {
             return -2;

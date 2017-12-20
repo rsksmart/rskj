@@ -314,7 +314,7 @@ public class BridgeStorageProvider {
 
         lockWhitelist = safeGetFromRepository(LOCK_WHITELIST_KEY,
             data -> (data == null)?
-                new LockWhitelist(Collections.emptyList()) :
+                new LockWhitelist(Collections.emptyMap()) :
                 BridgeSerializationUtils.deserializeLockWhitelist(data, btcContext.getParams())
         );
 
