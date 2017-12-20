@@ -1426,16 +1426,8 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertEquals(2, provider2.getNewFederationBtcUTXOs().size());
-        Assert.assertEquals(2, provider2.getOldFederationBtcUTXOs().size());
-        Assert.assertEquals(Coin.COIN.multiply(5), provider2.getNewFederationBtcUTXOs().get(0).getValue());
-        Assert.assertEquals(Coin.COIN.multiply(3), provider2.getNewFederationBtcUTXOs().get(1).getValue());
-        Assert.assertEquals(Coin.COIN.multiply(10), provider2.getOldFederationBtcUTXOs().get(0).getValue());
-        Assert.assertEquals(Coin.COIN.multiply(4), provider2.getOldFederationBtcUTXOs().get(1).getValue());
-
-        Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
-
-        List<ReleaseRequestQueue.Entry> releaseReqQueueEntries = provider2.getReleaseRequestQueue().getEntries();
+        Assert.assertEquals(0, provider2.getNewFederationBtcUTXOs().size());
+        Assert.assertEquals(0, provider2.getOldFederationBtcUTXOs().size());
 
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(3, provider2.getReleaseTransactionSet().getEntries().size());
