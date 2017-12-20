@@ -134,7 +134,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     // Returns the lock whitelist address stored at the specified index
     public static final CallTransaction.Function GET_LOCK_WHITELIST_ADDRESS = CallTransaction.Function.fromSignature("getLockWhitelistAddress", new String[]{"int256"}, new String[]{"string"});
     // Adds the given address to the lock whitelist
-    public static final CallTransaction.Function ADD_LOCK_WHITELIST_ADDRESS = CallTransaction.Function.fromSignature("addLockWhitelistAddress", new String[]{"string"}, new String[]{"int256"});
+    public static final CallTransaction.Function ADD_LOCK_WHITELIST_ADDRESS = CallTransaction.Function.fromSignature("addLockWhitelistAddress", new String[]{"string", "int256"}, new String[]{"int256"});
     // Adds the given address to the lock whitelist
     public static final CallTransaction.Function REMOVE_LOCK_WHITELIST_ADDRESS = CallTransaction.Function.fromSignature("removeLockWhitelistAddress", new String[]{"string"}, new String[]{"int256"});
 
@@ -772,14 +772,16 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("addLockWhitelistAddress");
 
         String addressBase58;
+        BigInteger maxTransferValue;
         try {
             addressBase58 = (String) args[0];
+            maxTransferValue = (BigInteger) args[1];
         } catch (Exception e) {
             logger.warn("Exception in addLockWhitelistAddress: {}", e.getMessage());
             return 0;
         }
 
-        return bridgeSupport.addLockWhitelistAddress(rskTx, addressBase58);
+        return bridgeSupport.addLockWhitelistAddress(rskTx, addressBase58, maxTransferValue);
     }
 
     public Integer removeLockWhitelistAddress(Object[] args)

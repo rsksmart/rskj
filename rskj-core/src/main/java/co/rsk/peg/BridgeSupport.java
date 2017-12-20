@@ -328,7 +328,8 @@ public class BridgeSupport {
             // That is, build a release transaction and get it in the release transaction set.
             // Otherwise, transfer SBTC to the sender of the BTC
             // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
-            if (!provider.getLockWhitelist().isWhitelisted(senderBtcAddress)) {
+            LockWhitelist lockWhitelist = provider.getLockWhitelist();
+            if (!lockWhitelist.isWhitelistedFor(senderBtcAddress, totalAmount)) {
                 locked = false;
                 // Build the list of UTXOs in the BTC transaction sent to either the active
                 // or retiring federation
@@ -369,6 +370,7 @@ public class BridgeSupport {
                         sender,
                         Denomination.satoshisToWeis(BigInteger.valueOf(totalAmount.getValue()))
                 );
+                lockWhitelist.remove(senderBtcAddress);
             }
         } else if (BridgeUtils.isReleaseTx(btcTx, federation, bridgeConstants)) {
             logger.debug("This is a release tx {}", btcTx);
@@ -1446,11 +1448,12 @@ public class BridgeSupport {
      * Returns 1 upon success, or -1 if the address was
      * already in the whitelist.
      * @param addressBase58 the base58-encoded address to add to the whitelist
+     * @param maxTransferValue the max amount of satoshis enabled to transfer for this address
      * @return 1 upon success, -1 if the address was already
      * in the whitelist, -2 if address is invalid
      * LOCK_WHITELIST_GENERIC_ERROR_CODE otherwise.
      */
-    public Integer addLockWhitelistAddress(Transaction tx, String addressBase58) {
+    public Integer addLockWhitelistAddress(Transaction tx, String addressBase58, BigInteger maxTransferValue) {
         if (!isLockWhitelistChangeAuthorized(tx)) {
             return LOCK_WHITELIST_GENERIC_ERROR_CODE;
         }
