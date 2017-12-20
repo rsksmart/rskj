@@ -195,7 +195,7 @@ public class Transaction implements SerializableObject {
         long nonZeroes = this.nonZeroDataBytes();
         long zeroVals  = ArrayUtils.getLength(this.getData()) - nonZeroes;
 
-        return GasCost.TRANSACTION + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;
+        return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION) + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;
     }
 
     public void verify() {
