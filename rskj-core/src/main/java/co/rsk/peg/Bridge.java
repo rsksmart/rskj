@@ -590,11 +590,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getFederationCreationBlockNumber();
     }
 
-    public long getRetiringFederationCreationBlockNumber(Object[] args) {
-        logger.trace("getRetiringFederationCreationBlockNumber");
-        return bridgeSupport.getRetiringFederationCreationBlockNumber();
-    }
-
     public String getRetiringFederationAddress(Object[] args)
     {
         logger.trace("getRetiringFederationAddress");
@@ -651,6 +646,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         // Return the creation time in milliseconds from the epoch
         return creationTime.toEpochMilli();
+    }
+
+    public long getRetiringFederationCreationBlockNumber(Object[] args) {
+        logger.trace("getRetiringFederationCreationBlockNumber");
+        return bridgeSupport.getRetiringFederationCreationBlockNumber();
     }
 
     public Integer createFederation(Object[] args)

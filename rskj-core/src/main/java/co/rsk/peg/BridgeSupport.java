@@ -1018,7 +1018,6 @@ public class BridgeSupport {
      * 2) Otherwise, return empty
      * @return the retiring federation.
      */
-    @Nullable
     private StorageFederationReference getRetiringFederationReference() {
         Federation newFederation = provider.getNewFederation();
         Federation oldFederation = provider.getOldFederation();
@@ -1036,6 +1035,18 @@ public class BridgeSupport {
         }
 
         return StorageFederationReference.NONE;
+    }
+
+    private boolean shouldFederationBeActive(Federation federation) {
+        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
+        return federationAge >= bridgeConstants.getFederationActivationAge();
+    }
+
+    private boolean amAwaitingFederationActivation() {
+        Federation newFederation = provider.getNewFederation();
+        Federation oldFederation = provider.getOldFederation();
+
+        return newFederation != null && oldFederation != null && !shouldFederationBeActive(newFederation);
     }
 
     /**
@@ -1090,11 +1101,6 @@ public class BridgeSupport {
             default:
                 return Collections.emptyList();
         }
-    }
-
-    private boolean shouldFederationBeActive(Federation federation) {
-        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
-        return federationAge >= bridgeConstants.getFederationActivationAge();
     }
 
     /**
@@ -1230,7 +1236,7 @@ public class BridgeSupport {
      * @return the retiring federation creation block number, null if no retiring federation exists
      */
     public long getRetiringFederationCreationBlockNumber() {
-        Federation retiringFederation = provider.getOldFederation();
+        Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
             return -1L;
         }
@@ -1257,11 +1263,13 @@ public class BridgeSupport {
      * Creates a new pending federation
      * If there's currently no pending federation and no funds remain
      * to be moved from a previous federation, a new one is created.
-     * Otherwise, -1 is returned if there's already a pending federation
-     * or -2 is returned if funds are left from a previous one.
+     * Otherwise, -1 is returned if there's already a pending federation,
+     * -2 is returned if there is a federation awaiting to be active,
+     * or -3 if funds are left from a previous one.
      * @param dryRun whether to just do a dry run
-     * @return 1 upon success, -1 when a pending federation is present, -2 when funds are still
-     * to be moved between federations.
+     * @return 1 upon success, -1 when a pending federation is present,
+     * -2 when a federation is to be activated,
+     * and if -3 funds are still to be moved between federations.
      */
     private Integer createFederation(boolean dryRun) throws IOException {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
@@ -1270,8 +1278,12 @@ public class BridgeSupport {
             return -1;
         }
 
-        if (getRetiringFederation() != null) {
+        if (amAwaitingFederationActivation()) {
             return -2;
+        }
+
+        if (getRetiringFederation() != null) {
+            return -3;
         }
 
         if (dryRun) {
