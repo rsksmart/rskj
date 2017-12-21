@@ -1,4 +1,4 @@
-/*
+    /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.
  * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
@@ -30,8 +30,8 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.apache.commons.lang3.ArrayUtils.nullToEmpty;
@@ -47,8 +47,8 @@ public class TransactionReceipt {
 
     private Transaction transaction;
 
-    public static final byte[] FAILED_STATUS = EMPTY_BYTE_ARRAY;
-    public static final byte[] SUCCESS_STATUS = new byte[]{0x01};
+    protected static final byte[] FAILED_STATUS = EMPTY_BYTE_ARRAY;
+    protected static final byte[] SUCCESS_STATUS = new byte[]{0x01};
 
     private byte[] postTxState = EMPTY_BYTE_ARRAY;
     private byte[] cumulativeGas = EMPTY_BYTE_ARRAY;
@@ -170,15 +170,15 @@ public class TransactionReceipt {
     }
 
     public void setStatus(byte[] status) {
-        if (status.equals(FAILED_STATUS)){
+        if (Arrays.equals(status, FAILED_STATUS)){
             this.status = FAILED_STATUS;
-        } else if (status.equals(SUCCESS_STATUS)){
+        } else if (Arrays.equals(status, SUCCESS_STATUS)){
             this.status = SUCCESS_STATUS;
         }
     }
 
     public boolean isSuccessful() {
-        return this.status.equals(SUCCESS_STATUS);
+        return Arrays.equals(this.status, SUCCESS_STATUS);
     }
 
     public void setTxStatus(boolean success) {
