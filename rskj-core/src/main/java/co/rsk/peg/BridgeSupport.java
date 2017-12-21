@@ -39,6 +39,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RLP;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
@@ -759,7 +760,17 @@ public class BridgeSupport {
             logger.warn("Expected {} signatures but received {}.", btcTx.getInputs().size(), signatures.size());
             return;
         }
+        createAddSignatureEventLog(federatorPublicKey, btcTx);
         processSigning(executionBlockNumber, federatorPublicKey, signatures, rskTxHash, btcTx);
+    }
+
+    private void createAddSignatureEventLog(BtcECKey federatorPublicKey, BtcTransaction btcTx) {
+        byte[] loggerContractAddress = TypeConverter.stringToByteArray(contractAddress);
+        List<DataWord> topics = Collections.singletonList(Bridge.ADD_SIGNATURE_TOPIC);
+        byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()),
+                                     RLP.encodeElement(federatorPublicKey.getPubKeyHash()));
+
+        logs.add(new LogInfo(loggerContractAddress, topics, data));
     }
 
     private void processSigning(long executionBlockNumber, BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash, BtcTransaction btcTx) throws IOException {

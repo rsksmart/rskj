@@ -48,6 +48,8 @@ import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
@@ -736,6 +738,68 @@ public class BridgeSupportTest {
     }
 
     @Test
+    public void addSignatureCreateEventLog() throws Exception {
+        // Setup
+        Federation federation = bridgeConstants.getGenesisFederation();
+        Repository track = new RepositoryImpl().startTracking();
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
+
+        // Build prev btc tx
+        BtcTransaction prevTx = new BtcTransaction(btcParams);
+        TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, federation.getAddress());
+        prevTx.addOutput(prevOut);
+
+        // Build btc tx to be signed
+        BtcTransaction btcTx = new BtcTransaction(btcParams);
+        btcTx.addInput(prevOut).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
+        TransactionOutput output = new TransactionOutput(btcParams, btcTx, Coin.COIN, new BtcECKey().toAddress(btcParams));
+        btcTx.addOutput(output);
+
+        // Save btc tx to be signed
+        final Sha3Hash rskTxHash = PegTestUtils.createHash3();
+        provider.getRskTxsWaitingForSignatures().put(rskTxHash, btcTx);
+        provider.save();
+        track.commit();
+
+        // Setup BridgeSupport
+        List<LogInfo> eventLogs = new ArrayList<>();
+        BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, null, null, null, BridgeRegTestConstants.getInstance(), eventLogs);
+
+        // Create signed hash of Btc tx
+        Script inputScript = btcTx.getInputs().get(0).getScriptSig();
+        List<ScriptChunk> chunks = inputScript.getChunks();
+        byte[] program = chunks.get(chunks.size() - 1).data;
+        Script redeemScript = new Script(program);
+        Sha256Hash sigHash = btcTx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
+        BtcECKey privateKeyToSignWith = ((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0);
+
+        BtcECKey.ECDSASignature sig = privateKeyToSignWith.sign(sigHash);
+        List derEncodedSigs = Collections.singletonList(sig.encodeToDER());
+
+        BtcECKey federatorPubKey = findPublicKeySignedBy(federation.getPublicKeys(), privateKeyToSignWith);
+        bridgeSupport.addSignature(1, federatorPubKey, derEncodedSigs, rskTxHash.getBytes());
+
+        Assert.assertEquals(1, eventLogs.size());
+
+        // Assert address that made the log
+        LogInfo result = eventLogs.get(0);
+        Assert.assertArrayEquals(TypeConverter.stringToByteArray(PrecompiledContracts.BRIDGE_ADDR), result.getAddress());
+
+        // Assert log topics
+        Assert.assertEquals(1, result.getTopics().size());
+        Assert.assertEquals(Bridge.ADD_SIGNATURE_TOPIC, result.getTopics().get(0));
+
+        // Assert log data
+        Assert.assertNotNull(result.getData());
+        List<RLPElement> rlpData = RLP.decode2(result.getData());
+        Assert.assertEquals(1 , rlpData.size());
+        RLPList dataList = (RLPList)rlpData.get(0);
+        Assert.assertEquals(2, dataList.size());
+        Assert.assertArrayEquals(btcTx.getHashAsString().getBytes(), dataList.get(0).getRLPData());
+        Assert.assertArrayEquals(federatorPubKey.getPubKeyHash(), dataList.get(1).getRLPData());
+    }
+
+    @Test
     public void addSignatureTwice() throws Exception {
         List<BtcECKey> keys = Lists.newArrayList(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0));
         addSignatureFromValidFederator(keys, 1, true, true, "PartiallySigned");
@@ -934,11 +998,11 @@ public class BridgeSupportTest {
 
         if ("FullySigned".equals(expectedResult)) {
             Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
-            assertThat(logs, is(not(empty())));
-            assertThat(logs, hasSize(1));
-            LogInfo releaseTxEvent = logs.get(0);
-            assertThat(releaseTxEvent.getTopics(), hasSize(1));
-            assertThat(releaseTxEvent.getTopics(), hasItem(Bridge.RELEASE_BTC_TOPIC));
+            Assert.assertThat(logs, is(not(empty())));
+            Assert.assertThat(logs, hasSize(3));
+            LogInfo releaseTxEvent = logs.get(2);
+            Assert.assertThat(releaseTxEvent.getTopics(), hasSize(1));
+            Assert.assertThat(releaseTxEvent.getTopics(), hasItem(Bridge.RELEASE_BTC_TOPIC));
             BtcTransaction releaseTx = new BtcTransaction(bridgeConstants.getBtcParams(), RLP.decode2(releaseTxEvent.getData()).get(0).getRLPData());
             Script retrievedScriptSig = releaseTx.getInput(0).getScriptSig();
             Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
