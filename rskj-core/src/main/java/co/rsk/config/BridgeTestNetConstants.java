@@ -123,6 +123,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
                 feePerKbAuthorizedKeys,
                 AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY
         );
+
+        genesisFeePerKb = Coin.MILLICOIN;
     }
 
     public static BridgeTestNetConstants getInstance() {

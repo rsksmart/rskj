@@ -109,6 +109,8 @@ public class BridgeRegTestConstants extends BridgeConstants {
                 feePerKbAuthorizedKeys,
                 AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY
         );
+
+        genesisFeePerKb = Coin.MILLICOIN;
     }
 
     public List<BtcECKey> getFederatorPrivateKeys() {

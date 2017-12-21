@@ -110,6 +110,8 @@ public class BridgeDevNetConstants extends BridgeConstants {
                 feePerKbAuthorizedKeys,
                 AddressBasedAuthorizer.MinimumRequiredCalculation.MAJORITY
         );
+
+        genesisFeePerKb = Coin.MILLICOIN;
     }
 
     public static BridgeDevNetConstants getInstance() {
