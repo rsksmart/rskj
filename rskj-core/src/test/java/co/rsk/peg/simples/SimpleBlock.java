@@ -42,13 +42,8 @@ public class SimpleBlock extends Block {
                        byte[] transactionsRoot, byte[] stateRoot,
                        List<Transaction> transactionsList, List<BlockHeader> uncleList) {
         super(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit, gasUsed,
-<<<<<<< HEAD
-                timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot, stateRoot,
-                    transactionsList, uncleList, BigInteger.TEN.toByteArray(), BigInteger.ZERO);
-=======
                 timestamp, extraData, mixHash, nonce, receiptsRoot, eventsRoot,transactionsRoot, stateRoot,
-                transactionsList, uncleList, BigInteger.TEN.toByteArray(), 0L);
->>>>>>> EventsTrie super-merge
+                    transactionsList, uncleList, BigInteger.TEN.toByteArray(), BigInteger.ZERO);
 
         if (transactionsList != null) {
             this.transactionList = Collections.unmodifiableList(transactionsList);

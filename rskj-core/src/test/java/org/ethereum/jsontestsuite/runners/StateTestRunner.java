@@ -98,11 +98,7 @@ public class StateTestRunner {
         indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
         BlockStore blockStore = indexedBlockStore;
 
-<<<<<<< HEAD
-        blockchain = new BlockChainImpl(repository, blockStore, null, null, null, null, null, RskSystemProperties.CONFIG);
-=======
-        blockchain = new BlockChainImpl(repository, blockStore, null, null, null, null, null, null);
->>>>>>> EventsTrie super-merge
+        blockchain = new BlockChainImpl(repository, blockStore, null, null,  null,null, null, null, RskSystemProperties.CONFIG);
 
         env = EnvBuilder.build(stateTestCase.getEnv());
         invokeFactory = new TestProgramInvokeFactory(env);

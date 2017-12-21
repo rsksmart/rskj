@@ -44,6 +44,7 @@ public class BlockResult {
     private Events events;
     private final byte[] stateRoot;
     private final byte[] receiptsRoot;
+    private final byte[] eventsRoot;
     private final long gasUsed;
     private final BigInteger paidFees;
     private final byte[] logsBloom;
@@ -150,11 +151,18 @@ public class BlockResult {
     }
 
     public static byte[] calculateEventsTrie(List<EventInfoItem> events) {
-        Trie clTrie = new TrieImpl();
 
-        if (events == null)
+
+        // Null events should never happen in the real world:
+        // when there are no events events is empty, but it is always
+        // created. They may only happen in tests.
+        // If (events.size()==0), we do a shortcut/optimization and we return EMPTY_TRIE_HASH which DOES NOT
+        // match the hash of an empty trie.
+
+        if ((events == null) || (events.size()==0))
             return HashUtil.EMPTY_TRIE_HASH;
 
+        Trie clTrie = new TrieImpl();
         Map<ByteArrayWrapper,EventsPerAccount> eventsPerAccountMap = getEventsMapFromList(events);
 
         for (ByteArrayWrapper addr : eventsPerAccountMap.keySet()) {
@@ -178,7 +186,7 @@ public class BlockResult {
 
     private static class InterruptedExecutionBlockResult extends BlockResult {
         public InterruptedExecutionBlockResult() {
-            super(Collections.emptyList(), Collections.emptyList(), null, 0, BigInteger.ZERO);
+            super(Collections.emptyList(), Collections.emptyList(), null,null, 0, BigInteger.ZERO);
         }
     }
 }

@@ -24,7 +24,7 @@ import co.rsk.core.bc.EventInfoItem;
 
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.EventStore;
+import org.ethereum.db.EventsStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 

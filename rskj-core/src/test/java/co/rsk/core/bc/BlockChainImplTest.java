@@ -787,11 +787,7 @@ public class BlockChainImplTest {
 
     @Test
     public void createWithoutArgumentsAndUnusedMethods() {
-<<<<<<< HEAD
-        BlockChainImpl blockChain = new BlockChainImpl(null, null, null, null, null, null, new DummyBlockValidator(), RskSystemProperties.CONFIG);
-=======
-        BlockChainImpl blockChain = new BlockChainImpl(null, null, null, null, null,null, null, new DummyBlockValidator());
->>>>>>> EventsTrie super-merge
+        BlockChainImpl blockChain = new BlockChainImpl(null, null, null, null,null, null, null, new DummyBlockValidator(), RskSystemProperties.CONFIG);
         blockChain.setExitOn(0);
         blockChain.close();
     }
@@ -909,13 +905,8 @@ public class BlockChainImplTest {
 
         EthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
 
-<<<<<<< HEAD
-        BlockChainImpl blockChain = new BlockChainImpl(repository, blockStore, receiptStore, null, listener, adminInfo, blockValidator, RskSystemProperties.CONFIG);
+        BlockChainImpl blockChain = new BlockChainImpl(repository, blockStore, receiptStore, null, null,listener, adminInfo, blockValidator, RskSystemProperties.CONFIG);
         PendingStateImpl pendingState = new PendingStateImpl(blockChain, repository, null, null, listener, RskSystemProperties.CONFIG, 10, 100);
-=======
-        BlockChainImpl blockChain = new BlockChainImpl(repository, blockStore, receiptStore, eventsStore,null, listener, adminInfo, blockValidator);
-        PendingStateImpl pendingState = new PendingStateImpl(blockChain, repository, null, null, listener, 10, 100);
->>>>>>> EventsTrie super-merge
         pendingState.init();
         blockChain.setPendingState(pendingState);
 

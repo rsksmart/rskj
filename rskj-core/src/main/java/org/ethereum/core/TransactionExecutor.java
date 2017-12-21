@@ -26,7 +26,7 @@ import co.rsk.core.bc.Events;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.EventStore;
+import org.ethereum.db.EventsStore;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.EventsStore;
 import org.ethereum.db.ReceiptStore;

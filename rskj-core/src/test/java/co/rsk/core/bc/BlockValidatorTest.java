@@ -413,23 +413,13 @@ public class BlockValidatorTest {
 
         Blockchain blockchain = BlockChainBuilder.ofSize(30, true);
 
-<<<<<<< HEAD
         Block genesis = blockchain.getBlockByNumber(0);
         Block uncle1a = blockchain.getBlockByNumber(1);
-=======
-        //Block uncle1a = BlockGenerator.getInstance().getBlock(1);
-        Block uncle1a = BlockGenerator.getInstance().getBlockBadlyEncoded(1);
->>>>>>> Finish  merge
         List<BlockHeader> uncles1 = new ArrayList<>();
         uncles1.add(uncle1a.getHeader());
         Block block1 = blockGenerator.createChildBlock(genesis, null, uncles1, 1, null);
 
-<<<<<<< HEAD
         store.saveBlock(genesis, BigInteger.ONE, true);
-=======
-        // IT SHOULD CHECK THE RETURN VALUE OF blockChain.tryToConnect(genesis)
-        blockChain.tryToConnect(genesis);
->>>>>>> Finish  merge
         store.saveBlock(uncle1a, BigInteger.ONE, false);
 
         BlockParentDependantValidationRule parentValidationRule = Mockito.mock(BlockParentDependantValidationRule.class);
@@ -500,15 +490,9 @@ public class BlockValidatorTest {
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
-<<<<<<< HEAD
         Block genesis = blockGenerator.getGenesisBlock();
         Block uncle1a = blockGenerator.createChildBlock(new SimpleBlock(null, null, new byte[]{12, 12}, null, BigInteger.ONE.toByteArray(),
-                0, null, 0L, 0L, new byte[]{}, null, null, null, Block.getTxTrie(null).getHash(), null, null, null));
-=======
-        Block uncle1a = BlockGenerator.getInstance().createChildBlock(new SimpleBlock(null, null, new byte[]{12, 12}, null, BigInteger.ONE.toByteArray(),
-                0, null, 0L, 0L, new byte[]{}, null, null, null,
-                null, new byte[]{1, 2}, null, null, null));
->>>>>>> Finish  merge
+                0, null, 0L, 0L, new byte[]{}, null, null, null,null, Block.getTxTrie(null).getHash(), null, null, null));
 
         List<BlockHeader> uncles1 = new ArrayList<>();
         uncles1.add(uncle1a.getHeader());
