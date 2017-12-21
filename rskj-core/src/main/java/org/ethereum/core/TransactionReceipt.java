@@ -47,11 +47,14 @@ public class TransactionReceipt {
 
     private Transaction transaction;
 
+    public static final byte[] FAILED_STATUS = EMPTY_BYTE_ARRAY;
+    public static final byte[] SUCCESS_STATUS = new byte[]{0x01};
+
     private byte[] postTxState = EMPTY_BYTE_ARRAY;
     private byte[] cumulativeGas = EMPTY_BYTE_ARRAY;
     private byte[] gasUsed = EMPTY_BYTE_ARRAY;
     private byte[] executionResult = EMPTY_BYTE_ARRAY;
-    private String error = "";
+    private byte[] status = EMPTY_BYTE_ARRAY;
 
     private Bloom bloomFilter = new Bloom();
     private List<LogInfo> logInfoList = new ArrayList<>();
@@ -85,8 +88,8 @@ public class TransactionReceipt {
 
 
         if (receipt.size() > 6) {
-            byte[] errBytes = receipt.get(6).getRLPData();
-            error = errBytes != null ? new String(errBytes, StandardCharsets.UTF_8) : "";
+            byte[] status = nullToEmpty(receipt.get(6).getRLPData());
+            this.status = status;
         }
 
 
@@ -146,7 +149,6 @@ public class TransactionReceipt {
         byte[] gasUsedRLP = RLP.encodeElement(this.gasUsed);
         byte[] bloomRLP = RLP.encodeElement(this.bloomFilter.data);
         byte[] result = RLP.encodeElement(this.executionResult);
-        byte[] err = RLP.encodeElement(this.error.getBytes(StandardCharsets.UTF_8));
 
         final byte[] logInfoListRLP;
         if (logInfoList != null) {
@@ -162,13 +164,21 @@ public class TransactionReceipt {
             logInfoListRLP = RLP.encodeList();
         }
 
-        rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, result, err);
+        rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, result);
 
         return rlpEncoded;
     }
 
+    public void setStatus(byte[] status) {
+        if (status.equals(FAILED_STATUS)){
+            this.status = FAILED_STATUS;
+        } else if (status.equals(SUCCESS_STATUS)){
+            this.status = SUCCESS_STATUS;
+        }
+    }
+
     public boolean isSuccessful() {
-        return error.isEmpty();
+        return this.status.equals(SUCCESS_STATUS);
     }
 
     public void setTxStatus(boolean success) {
@@ -231,7 +241,7 @@ public class TransactionReceipt {
         // todo: fix that
 
         return "TransactionReceipt[" +
-                "\n  , " + (hasTxStatus() ? ("txStatus=" + (isTxStatusOK() ? "OK" : "FAILED"))
+                "\n  , " + (hasTxStatus() ? ("txStatus=" + (isSuccessful()? "OK" : "FAILED"))
                         : ("postTxState=" + Hex.toHexString(postTxState))) +
                 "\n  , cumulativeGas=" + Hex.toHexString(cumulativeGas) +
                 "\n  , bloom=" + bloomFilter.toString() +
@@ -243,11 +253,8 @@ public class TransactionReceipt {
         this.executionResult = executionResult;
     }
 
-    public void setError(String error) {
-        this.error = error == null?"":error;
-    }
 
-    public String getError() {
-        return this.error;
+    public byte[] getStatus() {
+        return this.status;
     }
 }

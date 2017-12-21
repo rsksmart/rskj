@@ -19,6 +19,14 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.ReversibleTransactionExecutor;
+import co.rsk.util.TestContract;
+import org.ethereum.db.ContractDetails;
+import org.ethereum.rpc.TypeConverter;
+import org.ethereum.rpc.Web3;
+import org.ethereum.util.ContractRunner;
+import org.ethereum.util.RskTestFactory;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Test;
 
 import org.slf4j.Logger;
@@ -36,7 +44,34 @@ public class TransactionReceiptTest {
 
     private static final Logger logger = LoggerFactory.getLogger("test");
 
+    @Test
+    public void testFailedState() {
+        byte[] rlp = Hex.decode("f9016d808255aeb9010000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000000" +
+                "0000000000000000000000000000000000000000000000000000000000000000000" +
+                "00000000000000000c08255aeb86000000000000000000000000000000000000000" +
+                "0000000000000000000000002000000000000000000000000000000000000000000" +
+                "0000000000000000000000a6368696e6368696c6c61000000000000000000000000" +
+                "00000000000000000000");
 
+
+        TransactionReceipt txReceipt = new TransactionReceipt(rlp);
+
+        assertEquals(0, txReceipt.getLogInfoList().size());
+
+        assertEquals(TransactionReceipt.FAILED_STATUS, txReceipt.getStatus());
+        assertEquals("", Hex.toHexString(txReceipt.getPostTxState()));
+        assertEquals("55ae", Hex.toHexString(txReceipt.getCumulativeGas()));
+
+        assertEquals("55ae", Hex.toHexString(txReceipt.getGasUsed()));
+
+        logger.info("{}", txReceipt);
+    }
     @Test // rlp decode
     public void test_1() {
 

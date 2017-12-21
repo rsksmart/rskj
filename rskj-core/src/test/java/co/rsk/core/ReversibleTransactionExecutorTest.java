@@ -63,6 +63,7 @@ public class ReversibleTransactionExecutorTest {
         Assert.assertArrayEquals(
                 new String[] { "chinchilla" },
                 helloFn.decodeResult(executor.getResult().getHReturn()));
+        System.out.println(executor.getReceipt().toString());
     }
 
     @Test

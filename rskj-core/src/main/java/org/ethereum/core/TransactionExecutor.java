@@ -66,7 +66,7 @@ public class TransactionExecutor {
     private Repository cacheTrack;
     private BlockStore blockStore;
     private ReceiptStore receiptStore;
-    private String executionError;
+    private String executionError = "";
     private final long gasUsedInTheBlock;
     private BigInteger paidFees;
     private boolean readyToExecute = false;
@@ -418,8 +418,7 @@ public class TransactionExecutor {
             receipt.setLogInfoList(getVMLogs());
             receipt.setGasUsed(getGasUsed());
             receipt.setExecutionResult(getResult().getHReturn());
-            receipt.setError(executionError);
-//            receipt.setPostTxState(tr`ack.getRoot()); // TODO later when RepositoryTrack.getRoot() is implemented
+            receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS);
         }
         return receipt;
     }
