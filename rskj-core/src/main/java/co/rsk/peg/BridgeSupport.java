@@ -760,15 +760,16 @@ public class BridgeSupport {
             logger.warn("Expected {} signatures but received {}.", btcTx.getInputs().size(), signatures.size());
             return;
         }
-        createAddSignatureEventLog(federatorPublicKey, btcTx);
+        createAddSignatureEventLog(federatorPublicKey, btcTx, rskTxHash);
         processSigning(executionBlockNumber, federatorPublicKey, signatures, rskTxHash, btcTx);
     }
 
-    private void createAddSignatureEventLog(BtcECKey federatorPublicKey, BtcTransaction btcTx) {
+    private void createAddSignatureEventLog(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
         byte[] loggerContractAddress = TypeConverter.stringToByteArray(contractAddress);
         List<DataWord> topics = Collections.singletonList(Bridge.ADD_SIGNATURE_TOPIC);
         byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()),
-                                     RLP.encodeElement(federatorPublicKey.getPubKeyHash()));
+                                     RLP.encodeElement(federatorPublicKey.getPubKeyHash()),
+                                     RLP.encodeElement(rskTxHash));
 
         logs.add(new LogInfo(loggerContractAddress, topics, data));
     }

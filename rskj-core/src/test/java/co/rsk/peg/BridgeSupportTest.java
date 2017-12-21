@@ -794,9 +794,10 @@ public class BridgeSupportTest {
         List<RLPElement> rlpData = RLP.decode2(result.getData());
         Assert.assertEquals(1 , rlpData.size());
         RLPList dataList = (RLPList)rlpData.get(0);
-        Assert.assertEquals(2, dataList.size());
+        Assert.assertEquals(3, dataList.size());
         Assert.assertArrayEquals(btcTx.getHashAsString().getBytes(), dataList.get(0).getRLPData());
         Assert.assertArrayEquals(federatorPubKey.getPubKeyHash(), dataList.get(1).getRLPData());
+        Assert.assertArrayEquals(rskTxHash.getBytes(), dataList.get(2).getRLPData());
     }
 
     @Test
