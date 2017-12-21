@@ -213,8 +213,8 @@ public class BridgeStorageProvider {
         newFederation = safeGetFromRepository(NEW_FEDERATION_KEY,
                 data ->
                         data == null
-                                ? null
-                                : BridgeSerializationUtils.deserializeFederation(data, btcContext)
+                        ? null
+                        : BridgeSerializationUtils.deserializeFederation(data, btcContext)
         );
         return newFederation;
     }

@@ -1233,7 +1233,8 @@ public class BridgeSupport {
 
     /**
      * Returns the retiring federation's creation block number
-     * @return the retiring federation creation block number, null if no retiring federation exists
+     * @return the retiring federation creation block number,
+     * -1 if no retiring federation exists
      */
     public long getRetiringFederationCreationBlockNumber() {
         Federation retiringFederation = getRetiringFederation();
