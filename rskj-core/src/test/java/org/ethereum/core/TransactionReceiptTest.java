@@ -19,14 +19,6 @@
 
 package org.ethereum.core;
 
-import co.rsk.core.ReversibleTransactionExecutor;
-import co.rsk.util.TestContract;
-import org.ethereum.db.ContractDetails;
-import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.Web3;
-import org.ethereum.util.ContractRunner;
-import org.ethereum.util.RskTestFactory;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Test;
 
 import org.slf4j.Logger;
