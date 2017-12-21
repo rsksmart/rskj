@@ -9,6 +9,7 @@ import co.rsk.test.World;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.util.ByteUtil;
@@ -179,7 +180,9 @@ public class LogOpcodeTest {
     }
 
 
-
+    static final int valueToSend1 = 1000;
+    static final int valueToSend2 = 255;
+    static final int valueToSend3 = 254;
 
     // This test will actually check that the EventsPerAccount Trie has been created correctly.
     @Test
@@ -198,11 +201,11 @@ public class LogOpcodeTest {
         System.out.println("address: " + Hex.toHexString(sender.getAddress()));
 
         String asm = String.join(" ",
-                         "PUSH1 0x55 ", // size will be set later
+                         "PUSH1 $InstallCodeLen ", // size will be set later
                         "PUSH1 0x0C ", // offset = 12
                         "PUSH1 0x00 CODECOPY ", // (7b) Extract real code into address 0, skip first 12 bytes, copy 20 bytes
-                        "PUSH1 0x55 PUSH1 0x00 RETURN ", // (5b) offset 0, size 0x55, now return the first code
-
+                        "PUSH1 $InstallCodeLen PUSH1 0x00 RETURN ", // (5b) offset 0, size $CodeLen, now return the first code
+                        ".START", // Restarts jumpdests offset counts
                         "CALLVALUE ",   // Store value in memory position 0
                         "PUSH1 0x20 ", // Offset 32 in memory to store
                         "MSTORE ", // store in memory
@@ -232,17 +235,36 @@ public class LogOpcodeTest {
 
                         "PUSH1 0x28 ", // memSize, 40 bytes, 32 bytes value + 8 bytes blocknumber first 64-bits.
                         "PUSH1 0x18 ", // memStart, offset 24 (last 8 LSBs of LASTEVENT...)
-                        "LOG2 ");
+                        "LOG2 ",
+                        "CALLVALUE ", // REVERT if value = 0x255
+                        "PUSH1 0xff",
+                        "EQ",
+                        "PUSH1 $1", // replace with address of 1st JUMPPI
+                        "JUMPI",
+
+                        "CALLVALUE ",
+                        "PUSH1 0xfe",
+                        "EQ",
+                        "PUSH1 $2",
+                        "JUMPI",
+                        "STOP",
+
+                        "1:",
+                        "JUMPDEST", // Now we'll revert if the amount of funds is equal to 255, for testing purposes
+                        "PUSH1 0x00", //
+                        "DUP1", //
+                        "REVERT",
+                        "2:",
+                        "JUMPDEST", // Now do OOG exception: REVERT without arguments
+                        "REVERT"
+        );
 
         /*
         EVMAssembler assembler = new EVMAssembler();
         byte[] code = assembler.assemble(asm); */
 
         byte[] code = compiler.compile(asm);
-        assertEquals(code[1],0x55);
-        assertEquals(code[8],0x55);
-        code[1] = (byte) (code.length-12); // set code size
-        code[8] = code[1];
+
 
         // Creates a contract
         Transaction tx1 = createTx(world.getRepository(), sender, new byte[0], code);
@@ -278,7 +300,7 @@ public class LogOpcodeTest {
 
 
         // Now send money to the contract
-        Block block3 = sendMoney(world,mh,sender,createdContractAddress);
+        Block block3 = sendMoney(world,mh,sender,createdContractAddress,valueToSend1);
         long moneySentBlockNum = block3.getNumber();
         // Now we'll check that the blocknumberoflastevent has been updated
         long bnum = world.getRepository().getBlockNumberOfLastEvent(createdContractAddress);
@@ -287,7 +309,7 @@ public class LogOpcodeTest {
         // Now we'll check that
 
         // Once more we send money
-        Block block4 = sendMoney(world,mh,sender,createdContractAddress);
+        Block block4 = sendMoney(world,mh,sender,createdContractAddress,valueToSend1);
         long bnum4 = world.getRepository().getBlockNumberOfLastEvent(createdContractAddress);
         assertEquals(4,bnum4);
         // Now we'll check that the EventsLog contains the correct data
@@ -297,7 +319,7 @@ public class LogOpcodeTest {
         topics.add(new DataWord(0x12)); // sample topic
         byte[] data = new byte[0x28];
         new DataWord(3).copyLastNBytes(data,0,8);
-        new DataWord(valueToSend).copyTo(data,8);
+        new DataWord(valueToSend1).copyTo(data,8);
 
         EventInfo eventInfo = new EventInfo(topics,data,0);
         List<EventInfoItem> events= new ArrayList<>();
@@ -305,11 +327,33 @@ public class LogOpcodeTest {
         byte[] eventsTrieRoot = BlockResult.calculateEventsTrie(events);
         assertArrayEquals(eventsTrieRoot,block4.getEventsRoot());
 
+        // Now we'll test a transaction that is reverted. In this case the events should not be logged.
 
+        // We send money, but the transaction is reverted. Nothing should be logged.
+        Block block5 = sendMoney(world,mh,sender,createdContractAddress,valueToSend2);
+
+        // No events
+        long bnum5 = world.getRepository().getBlockNumberOfLastEvent(createdContractAddress);
+        assertEquals(4,bnum5);
+
+        // And empty events trie.
+        assertArrayEquals(HashUtil.EMPTY_TRIE_HASH,block5.getEventsRoot());
+        ////////// Now test the case of OOG Exception ////////////////////////
+
+
+        // We send money, but the transaction is reverted. Nothing should be logged.
+        Block block6 = sendMoney(world,mh,sender,createdContractAddress,valueToSend3);
+
+        // No events
+        long bnum6 = world.getRepository().getBlockNumberOfLastEvent(createdContractAddress);
+        assertEquals(4,bnum6);
+
+        // And empty events trie.
+        assertArrayEquals(HashUtil.EMPTY_TRIE_HASH,block6.getEventsRoot());
     }
-    static final int valueToSend = 1000;
 
-    protected Block sendMoney(World world,MinerHelper mh,ECKey sender,byte[] createdContractAddress) throws IOException, InterruptedException{
+
+    protected Block sendMoney(World world,MinerHelper mh,ECKey sender,byte[] createdContractAddress, int valueToSend ) throws IOException, InterruptedException{
         Transaction tx2 = createTx(world.getRepository(), sender, createdContractAddress, new byte[0],valueToSend );
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx2);

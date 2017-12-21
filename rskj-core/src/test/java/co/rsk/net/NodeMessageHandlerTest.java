@@ -85,6 +85,8 @@ public class NodeMessageHandlerTest {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, scoring, new ProofOfWorkRule());
         Block block = new Block(Hex.decode(rlp));
+        block.getHash();
+        // Block block = BlockGenerator.decodeBlockBadlyEncoded(rlp);
         Message message = new BlockMessage(block);
 
         processor.processMessage(sender, message);
