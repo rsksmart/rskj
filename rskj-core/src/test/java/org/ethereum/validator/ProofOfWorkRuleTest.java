@@ -21,18 +21,24 @@ package org.ethereum.validator;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blockchain.utils.BlockMiner;
+import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.crypto.Sha3Hash;
+import co.rsk.mine.MinerUtils;
+import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Arrays;
 
-import static org.junit.Assert.assertArrayEquals;
+import static co.rsk.mine.MinerServerImpl.getBitcoinMergedMerkleBranch;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -65,7 +71,7 @@ public class ProofOfWorkRuleTest {
 
     // This test must be moved to the appropiate place
     @Test
-    public void test_RLP() {
+    public void test_RLPEncoding() {
         // mined block
         Block b = BlockMiner.mineBlock(new BlockGenerator().getBlock(1));
         byte[] lastField = b.getBitcoinMergedMiningCoinbaseTransaction(); // last field
@@ -97,26 +103,69 @@ public class ProofOfWorkRuleTest {
     }
 
     @Test
-    public void test_malleableSPVAux() {
+    public void test_noRSKTagInCoinbaseTransaction() {
         BlockGenerator blockGenerator = new BlockGenerator();
 
         // mined block
-        Block b = BlockMiner.mineBlock(blockGenerator.getBlock(1));
+        Block b = mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(blockGenerator.getBlock(1), new byte[100]);
 
-        Assert.assertTrue(rule.isValid(b));
-
-        for (int k = 0; k < 200; k++) {
-            b = BlockMiner.mineBlock(blockGenerator.getBlock(1));
-            Assert.assertTrue(rule.isValid(b));
-        }
+        Assert.assertFalse(rule.isValid(b));
     }
 
     @Test
-    public void test_malleableSPV() {
+    public void test_RSKTagInCoinbaseTransactionTooFar() {
         /* This test is about a rsk block, with a compressed coinbase that leaves more than 64 bytes before the start of the RSK tag. */
-        byte[] rlp = Hex.decode("f9034ff9034aa06c33d16f87f1311b969bc714b450a2fa11ca883fd65adee93c2bdb1b9b9b6b9ba01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347949efa02278cc63dc612c174976f11037d382f8b67a0c430cf78b938432f6b9f7f5890336a028b96804ce28a8442fa8ada47036707e7a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421b9010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000830f000001831e8480808457f2c4bc808080b850711101000000000000000000000000000000000000000000000000000000000000000000274b33d60ca54f2f22390dcda58601bf5da215fd9f01607ea2ec991c475f9781bcc4f257ffff7f21727a0000a70100000001274b33d60ca54f2f22390dcda58601bf5da215fd9f01607ea2ec991c475f97810101b8fd0000000000000140428e85a0dea9d2b73769360697368391f5a8fb26dfb66b8bedad0406eafa2c0756021651401c3006885b54ee7eaeb8d6074d1f1bdae814fbbb840aa73664cbd1ba6bf60bf1d9693a7a531dd72daba2f0ba425bbd0e399e38b2d81de87a83967f7f81846211938a68f534de2681f484da31c14cb2644ec113a244a4d442b03d2f6a8734cd73f0959c426a986bf017b47640313bd85bc64e52534b424c4f434b3a7de9842e2f82423be569b5fdd3184fb14ab467ab20b177d68a773ae0b8145b52ffffffff0100f2052a010000002321033ecddae9656e6aced734115b7485f1c971f71828c00a97b8a7fdce46f7e22cc3ac00000000800ac0c0");
-        Block b = new Block(rlp);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        byte[] prefix = new byte[1000];
+        byte[] bytes = org.spongycastle.util.Arrays.concatenate(prefix, RskMiningConstants.RSK_TAG);
+
+        // mined block
+        Block b = mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(blockGenerator.getBlock(1), bytes);
 
         Assert.assertFalse(rule.isValid(b));
+    }
+
+    private static Block mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(Block block, byte[] compressed) {
+        Sha3Hash blockMergedMiningHash = new Sha3Hash(block.getHashForMergedMining());
+
+        co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
+        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, blockMergedMiningHash.getBytes());
+        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
+
+        BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficultyBI());
+
+        BlockMiner.findNonce(bitcoinMergedMiningBlock, targetBI);
+
+        // We need to clone to allow modifications
+        Block newBlock = new Block(block.getEncoded()).cloneBlock();
+
+        newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
+
+        co.rsk.bitcoinj.core.PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(bitcoinMergedMiningBlock);
+
+        newBlock.setBitcoinMergedMiningCoinbaseTransaction(org.spongycastle.util.Arrays.concatenate(compressed, blockMergedMiningHash.getBytes()));
+        newBlock.setBitcoinMergedMiningMerkleProof(bitcoinMergedMiningMerkleBranch.bitcoinSerialize());
+
+        return newBlock;
+    }
+
+    private static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransactionWithoutRSKTag(co.rsk.bitcoinj.core.NetworkParameters params, byte[] blockHashForMergedMining) {
+        co.rsk.bitcoinj.core.BtcTransaction coinbaseTransaction = new co.rsk.bitcoinj.core.BtcTransaction(params);
+        //Add a random number of random bytes before the RSK tag
+        SecureRandom random = new SecureRandom();
+        byte[] bytes = new byte[1000];
+        random.nextBytes(bytes);
+        co.rsk.bitcoinj.core.TransactionInput ti = new co.rsk.bitcoinj.core.TransactionInput(params, coinbaseTransaction, bytes);
+        coinbaseTransaction.addInput(ti);
+        ByteArrayOutputStream scriptPubKeyBytes = new ByteArrayOutputStream();
+        co.rsk.bitcoinj.core.BtcECKey key = new co.rsk.bitcoinj.core.BtcECKey();
+        try {
+            co.rsk.bitcoinj.script.Script.writeBytes(scriptPubKeyBytes, key.getPubKey());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        scriptPubKeyBytes.write(co.rsk.bitcoinj.script.ScriptOpCodes.OP_CHECKSIG);
+        coinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(50, 0), scriptPubKeyBytes.toByteArray()));
+        return coinbaseTransaction;
     }
 }
