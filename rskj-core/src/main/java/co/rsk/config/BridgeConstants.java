@@ -40,8 +40,10 @@ public class BridgeConstants {
     protected Coin minimumLockTxValue;
     protected Coin minimumReleaseTxValue;
 
-    protected long fundsMigrationAgeBegin;
-    protected long fundsMigrationAgeEnd;
+    protected long federationActivationAge;
+
+    protected long fundsMigrationAgeSinceActivationBegin;
+    protected long fundsMigrationAgeSinceActivationEnd;
 
     protected AddressBasedAuthorizer federationChangeAuthorizer;
 
@@ -81,12 +83,14 @@ public class BridgeConstants {
 
     public Coin getMinimumReleaseTxValue() { return minimumReleaseTxValue; }
 
-    public long getFundsMigrationAgeBegin() {
-        return fundsMigrationAgeBegin;
+    public long getFederationActivationAge() { return federationActivationAge; }
+
+    public long getFundsMigrationAgeSinceActivationBegin() {
+        return fundsMigrationAgeSinceActivationBegin;
     }
 
-    public long getFundsMigrationAgeEnd() {
-        return fundsMigrationAgeEnd;
+    public long getFundsMigrationAgeSinceActivationEnd() {
+        return fundsMigrationAgeSinceActivationEnd;
     }
 
     public AddressBasedAuthorizer getFederationChangeAuthorizer() { return federationChangeAuthorizer; }

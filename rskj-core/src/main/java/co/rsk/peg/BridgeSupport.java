@@ -71,6 +71,8 @@ public class BridgeSupport {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final Coin MINIMUM_FUNDS_TO_MIGRATE = Coin.CENT;
 
+    private enum StorageFederationReference { NONE, NEW, OLD, GENESIS }
+
     final List<String> FEDERATION_CHANGE_FUNCTIONS = Collections.unmodifiableList(Arrays.asList(new String[]{
             "create",
             "add",
@@ -190,7 +192,7 @@ public class BridgeSupport {
      */
     public Wallet getActiveFederationWallet() throws IOException {
         Federation federation = getActiveFederation();
-        List<UTXO> utxos = provider.getActiveFederationBtcUTXOs();
+        List<UTXO> utxos = getActiveFederationBtcUTXOs();
 
         return BridgeUtils.getFederationSpendWallet(btcContext, federation, utxos);
     }
@@ -208,7 +210,7 @@ public class BridgeSupport {
             return null;
         }
 
-        List<UTXO> utxos = provider.getRetiringFederationBtcUTXOs();
+        List<UTXO> utxos = getRetiringFederationBtcUTXOs();
 
         return BridgeUtils.getFederationSpendWallet(btcContext, federation, utxos);
     }
@@ -411,7 +413,7 @@ public class BridgeSupport {
         List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(getActiveFederationWallet());
         for (TransactionOutput output : outputsToTheActiveFederation) {
             UTXO utxo = new UTXO(btcTx.getHash(), output.getIndex(), output.getValue(), 0, btcTx.isCoinBase(), output.getScriptPubKey());
-            provider.getActiveFederationBtcUTXOs().add(utxo);
+            getActiveFederationBtcUTXOs().add(utxo);
         }
 
         // Outputs to the retiring federation (if any)
@@ -420,7 +422,7 @@ public class BridgeSupport {
             List<TransactionOutput> outputsToTheRetiringFederation = btcTx.getWalletOutputs(retiringFederationWallet);
             for (TransactionOutput output : outputsToTheRetiringFederation) {
                 UTXO utxo = new UTXO(btcTx.getHash(), output.getIndex(), output.getValue(), 0, btcTx.isCoinBase(), output.getScriptPubKey());
-                provider.getRetiringFederationBtcUTXOs().add(utxo);
+                getRetiringFederationBtcUTXOs().add(utxo);
             }
         }
     }
@@ -500,17 +502,32 @@ public class BridgeSupport {
         processReleaseTransactions(rskTx);
     }
 
-    private void processFundsMigration() throws IOException {
-        long activeFederationAge = rskExecutionBlock.getNumber() - getFederationCreationBlockNumber();
-        Wallet retiringFederationWallet = getRetiringFederationWallet();
-        List<UTXO> availableUTXOs = provider.getRetiringFederationBtcUTXOs();
-        ReleaseTransactionSet releaseTransactionSet = provider.getReleaseTransactionSet();
+    private boolean federationIsInMigrationAge(Federation federation) {
+        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
+        long ageBegin = bridgeConstants.getFederationActivationAge() + bridgeConstants.getFundsMigrationAgeSinceActivationBegin();
+        long ageEnd = bridgeConstants.getFederationActivationAge() + bridgeConstants.getFundsMigrationAgeSinceActivationEnd();
 
-        if (activeFederationAge > bridgeConstants.getFundsMigrationAgeBegin() && activeFederationAge < bridgeConstants.getFundsMigrationAgeEnd()
+        return federationAge > ageBegin && federationAge < ageEnd;
+    }
+
+    private boolean federationIsPastMigrationAge(Federation federation) {
+        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
+        long ageEnd = bridgeConstants.getFederationActivationAge() + bridgeConstants.getFundsMigrationAgeSinceActivationEnd();
+
+        return federationAge >= ageEnd;
+    }
+
+    private void processFundsMigration() throws IOException {
+        Wallet retiringFederationWallet = getRetiringFederationWallet();
+        List<UTXO> availableUTXOs = getRetiringFederationBtcUTXOs();
+        ReleaseTransactionSet releaseTransactionSet = provider.getReleaseTransactionSet();
+        Federation activeFederation = getActiveFederation();
+
+        if (federationIsInMigrationAge(activeFederation)
                 && retiringFederationWallet != null
                 && retiringFederationWallet.getBalance().isGreaterThan(MINIMUM_FUNDS_TO_MIGRATE)) {
 
-            Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, getActiveFederation().getAddress());
+            Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederation.getAddress());
             BtcTransaction btcTx = createResult.getLeft();
             List<UTXO> selectedUTXOs = createResult.getRight();
 
@@ -524,10 +541,10 @@ public class BridgeSupport {
             ));
         }
 
-        if (retiringFederationWallet != null && activeFederationAge >= bridgeConstants.getFundsMigrationAgeEnd()) {
+        if (retiringFederationWallet != null && federationIsPastMigrationAge(activeFederation)) {
             if (retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO)) {
                 try {
-                    Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, getActiveFederation().getAddress());
+                    Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederation.getAddress());
                     BtcTransaction btcTx = createResult.getLeft();
                     List<UTXO> selectedUTXOs = createResult.getRight();
 
@@ -544,7 +561,7 @@ public class BridgeSupport {
                     panicProcessor.panic("updateCollection", "Unable to complete retiring federation migration.");
                 }
             }
-            provider.setRetiringFederation(null);
+            provider.setOldFederation(null);
         }
     }
 
@@ -608,7 +625,7 @@ public class BridgeSupport {
             // (any of these could fail and would invalidate both
             // the tx build and utxo selection, so treat as atomic)
             try {
-                availableUTXOs = provider.getActiveFederationBtcUTXOs();
+                availableUTXOs = getActiveFederationBtcUTXOs();
                 releaseTransactionSet = provider.getReleaseTransactionSet();
             } catch (IOException exception) {
                 // Unexpected error accessing storage, log and fail
@@ -983,17 +1000,137 @@ public class BridgeSupport {
     }
 
     /**
-     * Returns the active federation.
-     * @return the active federation.
+     * Returns the currently active federation reference.
+     * Logic is as follows:
+     * When no "new" federation is recorded in the blockchain, then return GENESIS
+     * When a "new" federation is present and no "old" federation is present, then return NEW
+     * When both "new" and "old" federations are present, then
+     * 1) If the "new" federation is at least bridgeConstants::getFederationActivationAge() blocks old,
+     * return the NEW
+     * 2) Otherwise, return OLD
+     * @return a reference to where the currently active federation is stored.
      */
-    public Federation getActiveFederation() {
-        Federation currentFederation = provider.getActiveFederation();
+    private StorageFederationReference getActiveFederationReference() {
+        Federation newFederation = provider.getNewFederation();
 
-        if (currentFederation == null) {
-            currentFederation = bridgeConstants.getGenesisFederation();
+        // No new federation in place, then the active federation
+        // is the genesis federation
+        if (newFederation == null) {
+            return StorageFederationReference.GENESIS;
         }
 
-        return currentFederation;
+        Federation oldFederation = provider.getOldFederation();
+
+        // No old federation in place, then the active federation
+        // is the new federation
+        if (oldFederation == null) {
+            return StorageFederationReference.NEW;
+        }
+
+        // Both new and old federations in place
+        // If the minimum age has gone by for the new federation's
+        // activation, then that federation is the currently active.
+        // Otherwise, the old federation is still the currently active.
+        if (shouldFederationBeActive(newFederation)) {
+            return StorageFederationReference.NEW;
+        }
+
+        return StorageFederationReference.OLD;
+    }
+
+    /**
+     * Returns the currently retiring federation reference.
+     * Logic is as follows:
+     * When no "new" or "old" federation is recorded in the blockchain, then return empty.
+     * When both "new" and "old" federations are present, then
+     * 1) If the "new" federation is at least bridgeConstants::getFederationActivationAge() blocks old,
+     * return OLD
+     * 2) Otherwise, return empty
+     * @return the retiring federation.
+     */
+    private StorageFederationReference getRetiringFederationReference() {
+        Federation newFederation = provider.getNewFederation();
+        Federation oldFederation = provider.getOldFederation();
+
+        if (oldFederation == null || newFederation == null) {
+            return StorageFederationReference.NONE;
+        }
+
+        // Both new and old federations in place
+        // If the minimum age has gone by for the new federation's
+        // activation, then the old federation is the currently retiring.
+        // Otherwise, there is no retiring federation.
+        if (shouldFederationBeActive(newFederation)) {
+            return StorageFederationReference.OLD;
+        }
+
+        return StorageFederationReference.NONE;
+    }
+
+    private boolean shouldFederationBeActive(Federation federation) {
+        long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
+        return federationAge >= bridgeConstants.getFederationActivationAge();
+    }
+
+    private boolean amAwaitingFederationActivation() {
+        Federation newFederation = provider.getNewFederation();
+        Federation oldFederation = provider.getOldFederation();
+
+        return newFederation != null && oldFederation != null && !shouldFederationBeActive(newFederation);
+    }
+
+    /**
+     * Returns the currently active federation.
+     * See getActiveFederationReference() for details.
+     * @return the currently active federation.
+     */
+    public Federation getActiveFederation() {
+        switch (getActiveFederationReference()) {
+            case NEW:
+                return provider.getNewFederation();
+            case OLD:
+                return provider.getOldFederation();
+            case GENESIS:
+            default:
+                return bridgeConstants.getGenesisFederation();
+        }
+    }
+
+    /**
+     * Returns the currently retiring federation.
+     * See getRetiringFederationReference() for details.
+     * @return the retiring federation.
+     */
+    @Nullable
+    private Federation getRetiringFederation() {
+        switch (getRetiringFederationReference()) {
+            case OLD:
+                return provider.getOldFederation();
+            case NONE:
+            default:
+                return null;
+        }
+    }
+
+    private List<UTXO> getActiveFederationBtcUTXOs() throws IOException {
+        switch (getActiveFederationReference()) {
+            case OLD:
+                return provider.getOldFederationBtcUTXOs();
+            case NEW:
+            case GENESIS:
+            default:
+                return provider.getNewFederationBtcUTXOs();
+        }
+    }
+
+    private List<UTXO> getRetiringFederationBtcUTXOs() throws IOException {
+        switch (getRetiringFederationReference()) {
+            case OLD:
+                return provider.getOldFederationBtcUTXOs();
+            case NONE:
+            default:
+                return Collections.emptyList();
+        }
     }
 
     /**
@@ -1044,16 +1181,12 @@ public class BridgeSupport {
     }
 
 
+    /**
+     * Returns the federation's creation block number
+     * @return the federation creation block number
+     */
     public long getFederationCreationBlockNumber() {
         return getActiveFederation().getCreationBlockNumber();
-    }
-
-    public long getRetiringFederationCreationBlockNumber() {
-        Federation retiringFederation = provider.getRetiringFederation();
-        if (retiringFederation == null) {
-            return -1L;
-        }
-        return retiringFederation.getCreationBlockNumber();
     }
 
     /**
@@ -1061,7 +1194,7 @@ public class BridgeSupport {
      * @return the retiring federation bitcoin address, null if no retiring federation exists
      */
     public Address getRetiringFederationAddress() {
-        Federation retiringFederation = provider.getRetiringFederation();
+        Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
             return null;
         }
@@ -1074,7 +1207,7 @@ public class BridgeSupport {
      * @return the retiring federation size, -1 if no retiring federation exists
      */
     public Integer getRetiringFederationSize() {
-        Federation retiringFederation = provider.getRetiringFederation();
+        Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
             return -1;
         }
@@ -1087,7 +1220,7 @@ public class BridgeSupport {
      * @return the retiring federation minimum required signatures, -1 if no retiring federation exists
      */
     public Integer getRetiringFederationThreshold() {
-        Federation retiringFederation = provider.getRetiringFederation();
+        Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
             return -1;
         }
@@ -1101,7 +1234,7 @@ public class BridgeSupport {
      * @return the retiring federator's public key, null if no retiring federation exists
      */
     public byte[] getRetiringFederatorPublicKey(int index) {
-        Federation retiringFederation = provider.getRetiringFederation();
+        Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
             return null;
         }
@@ -1120,7 +1253,7 @@ public class BridgeSupport {
      * @return the retiring federation creation time, null if no retiring federation exists
      */
     public Instant getRetiringFederationCreationTime() {
-        Federation retiringFederation = provider.getRetiringFederation();
+        Federation retiringFederation = getRetiringFederation();
         if (retiringFederation == null) {
             return null;
         }
@@ -1129,24 +1262,16 @@ public class BridgeSupport {
     }
 
     /**
-     * Builds and returns the retiring federation (if one exists)
-     * @return the retiring federation, null if none exists
+     * Returns the retiring federation's creation block number
+     * @return the retiring federation creation block number,
+     * -1 if no retiring federation exists
      */
-    @Nullable
-    private Federation getRetiringFederation() {
-        Integer size = getRetiringFederationSize();
-        if (size == -1) {
-            return null;
+    public long getRetiringFederationCreationBlockNumber() {
+        Federation retiringFederation = getRetiringFederation();
+        if (retiringFederation == null) {
+            return -1L;
         }
-
-        List<BtcECKey> publicKeys = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            publicKeys.add(BtcECKey.fromPublicOnly(getRetiringFederatorPublicKey(i)));
-        }
-        Instant creationTime = getRetiringFederationCreationTime();
-        long creationBlockNumber = getRetiringFederationCreationBlockNumber();
-
-        return new Federation(publicKeys, creationTime, creationBlockNumber, bridgeConstants.getBtcParams());
+        return retiringFederation.getCreationBlockNumber();
     }
 
     /**
@@ -1169,11 +1294,13 @@ public class BridgeSupport {
      * Creates a new pending federation
      * If there's currently no pending federation and no funds remain
      * to be moved from a previous federation, a new one is created.
-     * Otherwise, -1 is returned if there's already a pending federation
-     * or -2 is returned if funds are left from a previous one.
+     * Otherwise, -1 is returned if there's already a pending federation,
+     * -2 is returned if there is a federation awaiting to be active,
+     * or -3 if funds are left from a previous one.
      * @param dryRun whether to just do a dry run
-     * @return 1 upon success, -1 when a pending federation is present, -2 when funds are still
-     * to be moved between federations.
+     * @return 1 upon success, -1 when a pending federation is present,
+     * -2 when a federation is to be activated,
+     * and if -3 funds are still to be moved between federations.
      */
     private Integer createFederation(boolean dryRun) throws IOException {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
@@ -1182,8 +1309,12 @@ public class BridgeSupport {
             return -1;
         }
 
-        if (provider.getRetiringFederation() != null) {
+        if (amAwaitingFederationActivation()) {
             return -2;
+        }
+
+        if (getRetiringFederation() != null) {
+            return -3;
         }
 
         if (dryRun) {
@@ -1259,19 +1390,19 @@ public class BridgeSupport {
             return 1;
         }
 
-        // Move UTXOs from the active federation into the retiring federation
-        // and clear the active federation's UTXOs
-        List<UTXO> utxosToMove = new ArrayList<>(provider.getActiveFederationBtcUTXOs());
-        provider.getActiveFederationBtcUTXOs().clear();
-        List<UTXO> retiringFederationUTXOs = provider.getRetiringFederationBtcUTXOs();
-        retiringFederationUTXOs.clear();
-        utxosToMove.forEach(utxo -> retiringFederationUTXOs.add(utxo));
+        // Move UTXOs from the new federation into the old federation
+        // and clear the new federation's UTXOs
+        List<UTXO> utxosToMove = new ArrayList<>(provider.getNewFederationBtcUTXOs());
+        provider.getNewFederationBtcUTXOs().clear();
+        List<UTXO> oldFederationUTXOs = provider.getOldFederationBtcUTXOs();
+        oldFederationUTXOs.clear();
+        utxosToMove.forEach(utxo -> oldFederationUTXOs.add(utxo));
 
         // Network parameters for the new federation are taken from the bridge constants.
         // Creation time is the block's timestamp.
         Instant creationTime = Instant.ofEpochMilli(rskExecutionBlock.getTimestamp());
-        provider.setRetiringFederation(getActiveFederation());
-        provider.setActiveFederation(currentPendingFederation.buildFederation(creationTime, rskExecutionBlock.getNumber(), bridgeConstants.getBtcParams()));
+        provider.setOldFederation(getActiveFederation());
+        provider.setNewFederation(currentPendingFederation.buildFederation(creationTime, rskExecutionBlock.getNumber(), bridgeConstants.getBtcParams()));
         provider.setPendingFederation(null);
 
         // Clear votes on election
