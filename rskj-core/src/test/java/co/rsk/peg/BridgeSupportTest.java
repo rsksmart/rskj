@@ -693,6 +693,110 @@ public class BridgeSupportTest {
         addSignatureFromValidFederator(keys, 1, true, false, "FullySigned");
     }
 
+    @Test
+    public void addSignatureMultipleInputsPartiallyValid() throws Exception {
+        // Federation is the genesis federation ATM
+        Federation federation = bridgeConstants.getGenesisFederation();
+        Repository repository = new RepositoryImpl();
+
+        final Sha3Hash sha3Hash = PegTestUtils.createHash3();
+
+        Repository track = repository.startTracking();
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
+
+        BtcTransaction prevTx1 = new BtcTransaction(btcParams);
+        TransactionOutput prevOut1 = new TransactionOutput(btcParams, prevTx1, Coin.FIFTY_COINS, federation.getAddress());
+        prevTx1.addOutput(prevOut1);
+        BtcTransaction prevTx2 = new BtcTransaction(btcParams);
+        TransactionOutput prevOut2 = new TransactionOutput(btcParams, prevTx1, Coin.FIFTY_COINS, federation.getAddress());
+        prevTx2.addOutput(prevOut2);
+        BtcTransaction prevTx3 = new BtcTransaction(btcParams);
+        TransactionOutput prevOut3 = new TransactionOutput(btcParams, prevTx1, Coin.FIFTY_COINS, federation.getAddress());
+        prevTx3.addOutput(prevOut3);
+
+        BtcTransaction t = new BtcTransaction(btcParams);
+        TransactionOutput output = new TransactionOutput(btcParams, t, Coin.COIN, new BtcECKey().toAddress(btcParams));
+        t.addOutput(output);
+        t.addInput(prevOut1).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
+        t.addInput(prevOut2).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
+        t.addInput(prevOut3).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
+        provider.getRskTxsWaitingForSignatures().put(sha3Hash, t);
+        provider.save();
+        track.commit();
+
+        track = repository.startTracking();
+        List<LogInfo> logs = new ArrayList<>();
+        BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, (Block) null, null, null, BridgeRegTestConstants.getInstance(), logs);
+
+        // Generate valid signatures for inputs
+        List<byte[]> derEncodedSigsFirstFed = new ArrayList<>();
+        List<byte[]> derEncodedSigsSecondFed = new ArrayList<>();
+        BtcECKey privateKeyOfFirstFed = ((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0);
+        BtcECKey privateKeyOfSecondFed = ((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(1);
+
+        BtcECKey.ECDSASignature lastSig = null;
+        for (int i = 0; i < 3; i++) {
+            Script inputScript = t.getInput(i).getScriptSig();
+            List<ScriptChunk> chunks = inputScript.getChunks();
+            byte[] program = chunks.get(chunks.size() - 1).data;
+            Script redeemScript = new Script(program);
+            Sha256Hash sighash = t.hashForSignature(i, redeemScript, BtcTransaction.SigHash.ALL, false);
+
+            // Sign the last input with a random key
+            // but keep the good signature for a subsequent call
+            BtcECKey.ECDSASignature sig = privateKeyOfFirstFed.sign(sighash);
+            if (i == 2) {
+                lastSig = sig;
+                sig = new BtcECKey().sign(sighash);
+            }
+            derEncodedSigsFirstFed.add(sig.encodeToDER());
+            derEncodedSigsSecondFed.add(privateKeyOfSecondFed.sign(sighash).encodeToDER());
+        }
+
+        // Sign with two valid signatuers and one invalid signature
+        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, sha3Hash.getBytes());
+        bridgeSupport.save();
+        track.commit();
+
+        // Sign with two valid signatuers and one malformed signature
+        byte[] malformedSignature = new byte[lastSig.encodeToDER().length];
+        for (int i = 0; i < malformedSignature.length; i++) {
+            malformedSignature[i] = (byte) i;
+        }
+        derEncodedSigsFirstFed.set(2, malformedSignature);
+        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, sha3Hash.getBytes());
+        bridgeSupport.save();
+        track.commit();
+
+        // Sign with fully valid signatures for same federator
+        derEncodedSigsFirstFed.set(2, lastSig.encodeToDER());
+        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, sha3Hash.getBytes());
+        bridgeSupport.save();
+        track.commit();
+
+        // Sign with second federation
+        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfSecondFed), derEncodedSigsSecondFed, sha3Hash.getBytes());
+        bridgeSupport.save();
+        track.commit();
+
+        provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
+
+        Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
+        Assert.assertThat(logs, is(not(empty())));
+        Assert.assertThat(logs, hasSize(1));
+        LogInfo releaseTxEvent = logs.get(0);
+        Assert.assertThat(releaseTxEvent.getTopics(), hasSize(1));
+        Assert.assertThat(releaseTxEvent.getTopics(), hasItem(Bridge.RELEASE_BTC_TOPIC));
+        BtcTransaction releaseTx = new BtcTransaction(bridgeConstants.getBtcParams(), RLP.decode2(releaseTxEvent.getData()).get(0).getRLPData());
+        // Verify all inputs fully signed
+        for (int i = 0; i < releaseTx.getInputs().size(); i++) {
+            Script retrievedScriptSig = releaseTx.getInput(i).getScriptSig();
+            Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
+            Assert.assertEquals(true, retrievedScriptSig.getChunks().get(1).data.length > 0);
+            Assert.assertEquals(true, retrievedScriptSig.getChunks().get(2).data.length > 0);
+        }
+    }
+
     /**
      * Helper method to test addSignature() with a valid federatorPublicKey parameter and both valid/invalid signatures
      * @param privateKeysToSignWith keys used to sign the tx. Federator key when we want to produce a valid signature, a random key when we want to produce an invalid signature
@@ -714,8 +818,6 @@ public class BridgeSupportTest {
         BtcTransaction prevTx = new BtcTransaction(btcParams);
         TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, federation.getAddress());
         prevTx.addOutput(prevOut);
-//        UTXO utxo = new UTXO(prevTx.getHash(), 0, prevOut.getValue(), 0, false, prevOut.getScriptPubKey());
-//        provider.getActiveFederationBtcUTXOs().add(utxo);
 
         BtcTransaction t = new BtcTransaction(btcParams);
         TransactionOutput output = new TransactionOutput(btcParams, t, Coin.COIN, new BtcECKey().toAddress(btcParams));
