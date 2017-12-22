@@ -62,6 +62,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @since 01.06.2014
  */
 public class Program {
+    // These logs should never be enabled in Info
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger gasLogger = LoggerFactory.getLogger("gas");
 
@@ -183,6 +184,13 @@ public class Program {
         isLogEnabled = logger.isInfoEnabled();
         isGasLogEnabled =gasLogger.isInfoEnabled();
 
+        if (isLogEnabled ) {
+            gasLogger.info("WARNING! VM logging is enabled. This will the VM 200 times slower. Do not use in production.");
+        }
+
+        if (isGasLogEnabled) {
+            gasLogger.info("WARNING! Gas logging is enabled. This will the VM 200 times slower. Do not use in production.");
+        }
         this.invoke = programInvoke;
 
         this.ops = nullToEmpty(ops);
