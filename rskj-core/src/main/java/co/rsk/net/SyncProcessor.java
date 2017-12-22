@@ -36,7 +36,6 @@ public class SyncProcessor implements SyncEventsHandler {
     private final PeerScoringManager peerScoringManager;
     private final SyncConfiguration syncConfiguration;
     private final PeersInformation peerStatuses;
-    private final DifficultyCalculator difficultyCalculator;
 
     private final PendingMessages pendingMessages;
     private final SyncInformationImpl syncInformation;
@@ -55,7 +54,6 @@ public class SyncProcessor implements SyncEventsHandler {
         this.syncConfiguration = syncConfiguration;
         this.syncInformation = new SyncInformationImpl(blockHeaderValidationRule, difficultyCalculator);
         this.peerStatuses = new PeersInformation(syncConfiguration, syncInformation);
-        this.difficultyCalculator = difficultyCalculator;
         this.pendingMessages = new PendingMessages();
         setSyncState(new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses));
     }
@@ -365,6 +363,11 @@ public class SyncProcessor implements SyncEventsHandler {
         @Override
         public int getScore(NodeID peerId) {
             return peerScoringManager.getPeerScoring(peerId).getScore();
+        }
+
+        @Override
+        public boolean isFarEnough(NodeID nodeID) {
+            return blockSyncService.hasBetterBlockToSync(getPeerStatus(nodeID).getStatus().getBestBlockNumber());
         }
 
         public MessageChannel getSelectedPeerChannel() {

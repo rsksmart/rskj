@@ -30,6 +30,8 @@ public class DecidingSyncState extends BaseSyncState {
     }
 
     private void tryStartSyncing() {
-        knownPeers.getBestPeer().ifPresent(syncEventsHandler::startSyncing);
+        knownPeers.getBestPeer()
+                .filter(p -> syncInformation.isFarEnough(p.getPeerNodeID()))
+        .ifPresent(syncEventsHandler::startSyncing);
     }
 }
