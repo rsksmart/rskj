@@ -31,9 +31,10 @@ public class BlockGeneratorTest {
     @Test
     public void getBlocks() {
         Block block;
+        BlockGenerator blockGenerator = new BlockGenerator();
 
         for (int k = 0; k <= 4; k++) {
-            block = BlockGenerator.getInstance().getBlock(k);
+            block = blockGenerator.getBlock(k);
 
             Assert.assertNotNull(block);
             Assert.assertEquals(k, block.getNumber());

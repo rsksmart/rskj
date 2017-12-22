@@ -23,6 +23,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
+import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockParentDependantValidationRule;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.core.*;
@@ -408,8 +409,10 @@ public class BlockValidatorTest {
 
         BlockGenerator blockGenerator = new BlockGenerator();
 
-        Block genesis = blockGenerator.getGenesisBlock();
-        Block uncle1a = blockGenerator.getBlock(1);
+        Blockchain blockchain = BlockChainBuilder.ofSize(30, true);
+
+        Block genesis = blockchain.getBlockByNumber(0);
+        Block uncle1a = blockchain.getBlockByNumber(1);
         List<BlockHeader> uncles1 = new ArrayList<>();
         uncles1.add(uncle1a.getHeader());
         Block block1 = blockGenerator.createChildBlock(genesis, null, uncles1, 1, null);

@@ -16,9 +16,12 @@ public class BlockHeadersByHashMessageTest {
     @Test
     public void createMessage() {
         List<BlockHeader> blocks = new ArrayList<>();
+        BlockGenerator blockGenerator = new BlockGenerator();
+
+        Block block = blockGenerator.getGenesisBlock();
 
         for (int k = 1; k <= 4; k++) {
-            Block b = BlockGenerator.getInstance().getBlock(k);
+            Block b = blockGenerator.createChildBlock(block);
             blocks.add(b.getHeader());
         }
 
