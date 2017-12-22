@@ -26,6 +26,7 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
@@ -301,7 +302,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private void tryRelayBlock(@Nonnull MessageChannel sender, Block block, boolean wasOrphan, BlockProcessResult result) {
         // is new block and it is not orphan, it is in some blockchain
-        if (!wasOrphan && result.wasBlockAdded(block) && !this.blockProcessor.hasBetterBlockToSync()) {
+        if (wasOrphan && result.wasBlockAdded(block) && !this.blockProcessor.hasBetterBlockToSync()) {
             relayBlock(sender, block);
         }
     }
@@ -313,7 +314,10 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                 .filter(p -> !nodesWithBlock.contains(p))
                 .collect(Collectors.toSet());
 
-        channelManager.broadcastBlockHash(block.getHash(), newNodes);
+
+        List<BlockIdentifier> identifiers = new ArrayList<>();
+        identifiers.add(new BlockIdentifier(block.getHash(), block.getNumber()));
+        channelManager.broadcastBlockHash(identifiers, newNodes);
 
         Metrics.processBlockMessage("blockRelayed", block, sender.getPeerNodeID());
     }
