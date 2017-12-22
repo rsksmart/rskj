@@ -303,7 +303,7 @@ public class TransactionTest {
         System.out.println("plainTx1: " + plainTx1);
         System.out.println("plainTx2: " + plainTx2);
 
-        System.out.println(Hex.toHexString(tx2.getSender()));
+        System.out.println(tx2.getSender().toString());
     }
 
 

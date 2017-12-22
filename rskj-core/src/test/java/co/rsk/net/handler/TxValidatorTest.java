@@ -165,7 +165,7 @@ public class TxValidatorTest {
         AccountState as = Mockito.mock(AccountState.class);
         Mockito.when(as.getBalance()).thenReturn(BigInteger.valueOf(balance));
         Mockito.when(as.getNonce()).thenReturn(BigInteger.valueOf(nonce));
-        Mockito.when(repository.getAccountState(tx.getSender())).thenReturn(as);
+        Mockito.when(repository.getAccountState(tx.getSender().getBytes())).thenReturn(as);
     }
 
     public static Transaction createBridgeTx(long value, long gaslimit, long gasprice, long nonce, long data, long sender, Random hashes) {

@@ -76,7 +76,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
                 return false;
             }
 
-            byte[] txSender = tx.getSender();
+            byte[] txSender = tx.getSender().getBytes();
             ByteArrayWrapper key = new ByteArrayWrapper(txSender);
             BigInteger expectedNonce = curNonce.get(key);
             if (expectedNonce == null) {

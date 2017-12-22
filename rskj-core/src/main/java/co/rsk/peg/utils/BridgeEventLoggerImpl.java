@@ -57,7 +57,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(
                 new LogInfo(BRIDGE_CONTRACT_ADDRESS,
                             Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC),
-                            RLP.encodeElement(rskTx.getSender())
+                            RLP.encodeElement(rskTx.getSender().getBytes())
                 )
         );
     }

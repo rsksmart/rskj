@@ -18,15 +18,9 @@
 
 package co.rsk.peg;
 
-import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
-
-import java.util.Collections;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class TxSenderTest {
     @Test
@@ -41,14 +35,6 @@ public class TxSenderTest {
         Assert.assertNotEquals(senderA, senderC);
         Assert.assertNotEquals(senderA, senderD);
         Assert.assertNotEquals(senderA, senderE);
-    }
-
-    @Test
-    public void fromTx() {
-        Transaction mockedTx = mock(Transaction.class);
-        when(mockedTx.getSender()).thenReturn(Hex.decode("aabb"));
-
-        Assert.assertEquals(new TxSender(Hex.decode("aabb")), TxSender.fromTx(mockedTx));
     }
 
 }

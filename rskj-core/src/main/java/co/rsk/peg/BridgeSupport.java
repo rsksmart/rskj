@@ -420,11 +420,11 @@ public class BridgeSupport {
      * @throws IOException
      */
     public void releaseBtc(Transaction rskTx) throws IOException {
-        byte[] senderCode = rskRepository.getCode(rskTx.getSender());
+        byte[] senderCode = rskRepository.getCode(rskTx.getSender().getBytes());
 
         //as we can't send btc from contracts we want to send them back to the sender
         if (senderCode != null && senderCode.length > 0) {
-            logger.trace("Contract {} tried to release funds. Release is just allowed from standard accounts.", Hex.toHexString(rskTx.getSender()));
+            logger.trace("Contract {} tried to release funds. Release is just allowed from standard accounts.", rskTx.toString());
             throw new Program.OutOfGasException("Contract calling releaseBTC");
         }
 
@@ -1476,7 +1476,7 @@ public class BridgeSupport {
 
         ABICallElection election = provider.getFederationElection(authorizer);
         // Register the vote. It is expected to succeed, since all previous checks succeeded
-        if (!election.vote(callSpec, TxSender.fromTx(tx))) {
+        if (!election.vote(callSpec, tx.getSender())) {
             logger.warn("Unexpected federation change vote failure");
             return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
         }
@@ -1704,10 +1704,9 @@ public class BridgeSupport {
             return FEE_PER_KB_GENERIC_ERROR_CODE;
         }
 
-        TxSender voter = TxSender.fromTx(tx);
         ABICallElection feePerKbElection = provider.getFeePerKbElection(authorizer);
         ABICallSpec feeVote = new ABICallSpec("setFeePerKb", new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
-        boolean successfulVote = feePerKbElection.vote(feeVote, voter);
+        boolean successfulVote = feePerKbElection.vote(feeVote, tx.getSender());
         if (!successfulVote) {
             return -1;
         }

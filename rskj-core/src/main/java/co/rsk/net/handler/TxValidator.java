@@ -78,7 +78,7 @@ class TxValidator {
             }
             knownTxs.put(hash, new TxTimestamp(tx, System.currentTimeMillis()));
 
-            AccountState state = repository.getAccountState(tx.getSender());
+            AccountState state = repository.getAccountState(tx.getSender().getBytes());
 
             if (state == null) {
                 state = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
@@ -102,7 +102,7 @@ class TxValidator {
                 continue;
             }
 
-            String addr = TypeConverter.toJsonHex(tx.getSender());
+            String addr = TypeConverter.toJsonHex(tx.getSender().getBytes());
 
             txsPerAccounts.computeIfAbsent(addr, key -> new TxsPerAccount());
 

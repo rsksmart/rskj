@@ -19,6 +19,7 @@
 
 package co.rsk.core;
 
+import co.rsk.peg.TxSender;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -86,12 +87,7 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
 
         private UnsignedTransaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] fromAddress) {
             super(nonce, gasPrice, gasLimit, receiveAddress, value, data);
-            this.sendAddress = fromAddress;
-        }
-
-        @Override
-        public byte[] getSender() {
-            return sendAddress;
+            this.sender = new TxSender(fromAddress);
         }
 
         @Override

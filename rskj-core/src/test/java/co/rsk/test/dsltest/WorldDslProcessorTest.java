@@ -340,7 +340,7 @@ public class WorldDslProcessorTest {
 
         Assert.assertNotNull(tx01);
 
-        Assert.assertArrayEquals(acc1.getAddress(), tx01.getSender());
+        Assert.assertArrayEquals(acc1.getAddress(), tx01.getSender().getBytes());
         Assert.assertArrayEquals(acc2.getAddress(), tx01.getReceiveAddress());
         Assert.assertEquals(new BigInteger("1000"), new BigInteger(1, tx01.getValue()));
         Assert.assertNotNull(tx01.getData());
@@ -367,7 +367,7 @@ public class WorldDslProcessorTest {
 
         Assert.assertNotNull(tx01);
 
-        Assert.assertArrayEquals(acc1.getAddress(), tx01.getSender());
+        Assert.assertArrayEquals(acc1.getAddress(), tx01.getSender().getBytes());
         Assert.assertArrayEquals(acc2.getAddress(), tx01.getReceiveAddress());
         Assert.assertEquals(new BigInteger("1000"), new BigInteger(1, tx01.getValue()));
         Assert.assertNotNull(tx01.getData());
@@ -394,7 +394,7 @@ public class WorldDslProcessorTest {
 
         Assert.assertNotNull(tx01);
 
-        Assert.assertArrayEquals(acc1.getAddress(), tx01.getSender());
+        Assert.assertArrayEquals(acc1.getAddress(), tx01.getSender().getBytes());
         Assert.assertArrayEquals(acc2.getAddress(), tx01.getReceiveAddress());
         Assert.assertEquals(new BigInteger("1000"), new BigInteger(1, tx01.getValue()));
         Assert.assertNotNull(tx01.getData());
@@ -423,7 +423,7 @@ public class WorldDslProcessorTest {
 
         Assert.assertNotNull(tx01);
 
-        Assert.assertArrayEquals(acc1.getAddress(), tx01.getSender());
+        Assert.assertArrayEquals(acc1.getAddress(), tx01.getSender().getBytes());
         Assert.assertArrayEquals(acc2.getAddress(), tx01.getReceiveAddress());
         Assert.assertEquals(new BigInteger("1000"), new BigInteger(1, tx01.getValue()));
         Assert.assertNotNull(tx01.getData());

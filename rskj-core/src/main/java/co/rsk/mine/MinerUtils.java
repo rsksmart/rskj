@@ -156,7 +156,7 @@ public class MinerUtils {
         for (org.ethereum.core.Transaction tx : txs) {
             try {
                 logger.info("Pending transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
-                byte[] txSender = tx.getSender();
+                byte[] txSender = tx.getSender().getBytes();
 
                 logger.info("Examining transaction {} sender: {} value: {} nonce: {}", Hex.toHexString(tx.getHash()), Hex.toHexString(txSender), Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
 

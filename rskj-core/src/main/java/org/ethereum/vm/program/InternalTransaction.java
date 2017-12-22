@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program;
 
+import co.rsk.peg.TxSender;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -45,7 +46,7 @@ public class InternalTransaction extends Transaction {
         this.parentHash = parentHash;
         this.deep = deep;
         this.index = index;
-        this.sendAddress = nullToEmpty(sendAddress);
+        this.sender = new TxSender(nullToEmpty(sendAddress));
         this.note = note;
     }
 
@@ -74,11 +75,6 @@ public class InternalTransaction extends Transaction {
         return note;
     }
 
-    @Override
-    public byte[] getSender() {
-        return sendAddress;
-    }
-
     public byte[] getParentHash() {
         return parentHash;
     }
@@ -95,7 +91,7 @@ public class InternalTransaction extends Transaction {
         } else {
             nonce = RLP.encodeElement(nonce);
         }
-        byte[] senderAddress = RLP.encodeElement(getSender());
+        byte[] senderAddress = RLP.encodeElement(getSender().getBytes());
         byte[] receiveAddress = RLP.encodeElement(getReceiveAddress());
         byte[] value = RLP.encodeElement(getValue());
         byte[] gasPrice = RLP.encodeElement(getGasPrice());

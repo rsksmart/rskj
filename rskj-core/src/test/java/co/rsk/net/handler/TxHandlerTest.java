@@ -49,7 +49,7 @@ public class TxHandlerTest {
         TxsPerAccount tpa = new TxsPerAccount();
         tpa.getTransactions().add(tx1);
         tpa.getTransactions().add(tx2);
-        txsPerAccounts.put(TypeConverter.toJsonHex(tx1.getSender()), tpa);
+        txsPerAccounts.put(TypeConverter.toJsonHex(tx1.getSender().getBytes()), tpa);
 
         TxHandlerImpl txHandler = new TxHandlerImpl();
         txHandler.setKnownTxs(knownTxs);
@@ -76,7 +76,7 @@ public class TxHandlerTest {
 
         TxsPerAccount tpa = new TxsPerAccount();
         tpa.getTransactions().add(tx1);
-        txsPerAccounts.put(TypeConverter.toJsonHex(tx1.getSender()), tpa);
+        txsPerAccounts.put(TypeConverter.toJsonHex(tx1.getSender().getBytes()), tpa);
 
         TxHandlerImpl txHandler = new TxHandlerImpl();
         txHandler.setKnownTxs(knownTxs);
@@ -109,7 +109,7 @@ public class TxHandlerTest {
         TxsPerAccount tpa = new TxsPerAccount();
         tpa.getTransactions().add(tx1);
         tpa.getTransactions().add(tx2);
-        txsPerAccounts.put(TypeConverter.toJsonHex(tx1.getSender()), tpa);
+        txsPerAccounts.put(TypeConverter.toJsonHex(tx1.getSender().getBytes()), tpa);
 
         TransactionReceipt receipt = Mockito.mock(TransactionReceipt.class);
         Mockito.when(receipt.getTransaction()).thenReturn(tx1);

@@ -24,7 +24,6 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 
 import static org.mockito.Matchers.any;
@@ -49,7 +48,7 @@ public class Tx {
         byte[] returnReceiveAddress = new byte[20];
         r.nextBytes(returnReceiveAddress);
 
-        Mockito.when(transaction.getSender()).thenReturn(returnSender);
+        Mockito.when(transaction.getSender().getBytes()).thenReturn(returnSender);
         Mockito.when(transaction.getHash()).thenReturn(BigInteger.valueOf(hashes.nextLong()).toByteArray());
         Mockito.when(transaction.acceptTransactionSignature()).thenReturn(Boolean.TRUE);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(returnReceiveAddress);
