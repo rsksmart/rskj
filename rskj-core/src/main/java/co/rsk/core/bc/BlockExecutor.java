@@ -249,7 +249,7 @@ public class BlockExecutor {
             receipt.setGasUsed(gasUsed);
             receipt.setCumulativeGas(totalGasUsed);
             lastStateRootHash = initialRepository.getRoot();
-            receipt.setPostTxState(lastStateRootHash);
+            receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
             receipt.setTransaction(tx);
             receipt.setLogInfoList(txExecutor.getVMLogs());
 
