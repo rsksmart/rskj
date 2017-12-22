@@ -658,6 +658,7 @@ public class RemascProcessMinerFeesTest {
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
+            b.seal();
             blockchain.tryToConnect(b);
         }
 
@@ -684,7 +685,7 @@ public class RemascProcessMinerFeesTest {
 //                remasc.call();
 //            }
 //        }
-        long txCreateContractGasLimit = 53755;
+        long txCreateContractGasLimit = 53755 + 32000;
         Transaction txCreateContract = new Transaction(
                 BigInteger.valueOf(1).toByteArray(),
                 BigInteger.ONE.toByteArray(),
@@ -709,6 +710,7 @@ public class RemascProcessMinerFeesTest {
                 PegTestUtils.createHash3(), PegTestUtils.createHash3(), null, null,
                 txCreateContract, txCallRemasc);
         blockExecutor.executeAndFillAll(newblock, blockchain.getBestBlock());
+        newblock.seal();
         blockchain.tryToConnect(newblock);
 
         repository = blockchain.getRepository();

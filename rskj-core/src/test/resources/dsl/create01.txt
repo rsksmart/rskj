@@ -1,0 +1,23 @@
+account_new acc1 10000000
+
+# Create empty.sol contract
+
+transaction_build tx01
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 60606040523415600e57600080fd5b603580601b6000396000f3006060604052600080fd00a165627a7a72305820b25edb28bec763685838b8044760e105b5385638276b4768c8045237b8fc6bf10029
+    gas 1200000
+    build
+
+block_build b01
+    parent g00
+    transactions tx01
+    build
+
+block_connect b01
+
+# Assert best block
+assert_best b01
+
+# The code test checks the gas used
