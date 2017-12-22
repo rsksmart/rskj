@@ -19,6 +19,7 @@
 package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
+import co.rsk.peg.TxSender;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.rpc.TypeConverter;
@@ -41,7 +42,7 @@ public class TxHandlerTest {
         Transaction tx2 = Tx.create(0, 0, 0, 1, 0, 0, random);
 
         Map<String, TxTimestamp> knownTxs = new HashMap<>();
-        Map<String, TxsPerAccount> txsPerAccounts = new HashMap<>();
+        Map<TxSender, TxsPerAccount> txsPerAccounts = new HashMap<>();
 
         knownTxs.put("1", new TxTimestamp(tx1, time));
         knownTxs.put("2", new TxTimestamp(tx1, time - threshold));
@@ -49,7 +50,7 @@ public class TxHandlerTest {
         TxsPerAccount tpa = new TxsPerAccount();
         tpa.getTransactions().add(tx1);
         tpa.getTransactions().add(tx2);
-        txsPerAccounts.put(TypeConverter.toJsonHex(tx1.getSender().getBytes()), tpa);
+        txsPerAccounts.put(tx1.getSender(), tpa);
 
         TxHandlerImpl txHandler = new TxHandlerImpl();
         txHandler.setKnownTxs(knownTxs);
@@ -70,13 +71,13 @@ public class TxHandlerTest {
         Transaction tx1 = Tx.create(0, 0, 0, 0, 0, 0, random);
 
         Map<String, TxTimestamp> knownTxs = new HashMap<>();
-        Map<String, TxsPerAccount> txsPerAccounts = new HashMap<>();
+        Map<TxSender, TxsPerAccount> txsPerAccounts = new HashMap<>();
 
         knownTxs.put("2", new TxTimestamp(tx1, time - threshold));
 
         TxsPerAccount tpa = new TxsPerAccount();
         tpa.getTransactions().add(tx1);
-        txsPerAccounts.put(TypeConverter.toJsonHex(tx1.getSender().getBytes()), tpa);
+        txsPerAccounts.put(tx1.getSender(), tpa);
 
         TxHandlerImpl txHandler = new TxHandlerImpl();
         txHandler.setKnownTxs(knownTxs);
@@ -97,7 +98,7 @@ public class TxHandlerTest {
         Transaction tx2 = Tx.create(0, 0, 0, 1, 0, 0, random);
 
         Map<String, TxTimestamp> knownTxs = new HashMap<>();
-        Map<String, TxsPerAccount> txsPerAccounts = new HashMap<>();
+        Map<TxSender, TxsPerAccount> txsPerAccounts = new HashMap<>();
 
         random = new Random(0);
         String hash1 = TypeConverter.toJsonHex(BigInteger.valueOf(random.nextLong()).toByteArray());
@@ -109,7 +110,7 @@ public class TxHandlerTest {
         TxsPerAccount tpa = new TxsPerAccount();
         tpa.getTransactions().add(tx1);
         tpa.getTransactions().add(tx2);
-        txsPerAccounts.put(TypeConverter.toJsonHex(tx1.getSender().getBytes()), tpa);
+        txsPerAccounts.put(tx1.getSender(), tpa);
 
         TransactionReceipt receipt = Mockito.mock(TransactionReceipt.class);
         Mockito.when(receipt.getTransaction()).thenReturn(tx1);
