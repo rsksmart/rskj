@@ -494,7 +494,7 @@ public class BridgeSupport {
     public void updateCollections(Transaction rskTx) throws IOException {
         Context.propagate(btcContext);
 
-        createEventLog(rskTx);
+        createUpdateSignatureEventLog(rskTx);
 
         processFundsMigration();
 
@@ -503,7 +503,7 @@ public class BridgeSupport {
         processReleaseTransactions(rskTx);
     }
 
-    private void createEventLog(Transaction rskTx) {
+    private void createUpdateSignatureEventLog(Transaction rskTx) {
         logs.add(
                 new LogInfo(
                         TypeConverter.stringToByteArray(contractAddress),
