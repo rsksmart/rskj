@@ -31,7 +31,7 @@ public class SystemPropertiesTest {
     public void punchBindIpTest() {
         RskSystemProperties.CONFIG.overrideParams("peer.bind.ip", "");
         long st = System.currentTimeMillis();
-        String ip = RskSystemProperties.CONFIG.bindIp();
+        String ip = RskSystemProperties.CONFIG.getPeerDiscoveryBindAddress();
         long t = System.currentTimeMillis() - st;
         System.out.println(ip + " in " + t + " msec");
         Assert.assertTrue(t < 10 * 1000);
@@ -42,7 +42,7 @@ public class SystemPropertiesTest {
     public void externalIpTest() {
         RskSystemProperties.CONFIG.overrideParams("peer.discovery.external.ip", "");
         long st = System.currentTimeMillis();
-        String ip = RskSystemProperties.CONFIG.externalIp();
+        String ip = RskSystemProperties.CONFIG.getExternalIp();
         long t = System.currentTimeMillis() - st;
         System.out.println(ip + " in " + t + " msec");
         Assert.assertTrue(t < 10 * 1000);

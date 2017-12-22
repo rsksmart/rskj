@@ -70,7 +70,7 @@ public class NodeManager {
     void init() {
         discoveryEnabled = config.peerDiscovery();
 
-        homeNode = new Node(config.nodeId(), config.externalIp(), config.listenPort());
+        homeNode = new Node(config.nodeId(), config.getExternalIp(), config.listenPort());
 
         for (Node node : config.peerActive()) {
             NodeHandler handler = new NodeHandler(node, this);

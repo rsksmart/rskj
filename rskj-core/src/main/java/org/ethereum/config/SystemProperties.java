@@ -43,7 +43,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
-import java.net.Socket;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -550,41 +549,52 @@ public abstract class SystemProperties {
         return configFromFiles.getInt("peer.listen.port");
     }
 
-
-    /**
-     * This can be a blocking call with long timeout (thus no ValidateMe)
-     */
-    public String bindIp() {
-        if (!configFromFiles.hasPath("peer.discovery.bind.ip") || configFromFiles.getString("peer.discovery.bind.ip").trim().isEmpty()) {
-            if (bindIp == null) {
-                logger.info("Bind address wasn't set, Punching to identify it...");
-                try(Socket s = new Socket("www.google.com", 80)) {
-                    bindIp = s.getLocalAddress().getHostAddress();
-                    logger.info("UDP local bound to: {}", bindIp);
-                } catch (IOException e) {
-                    logger.warn("Can't get bind IP. Fall back to 0.0.0.0: ", e);
-                    bindIp = DEFAULT_BIND_IP;
-                }
-            }
+    public String getPeerDiscoveryBindAddress() {
+        if (bindIp != null) {
             return bindIp;
-        } else {
-            return configFromFiles.getString("peer.discovery.bind.ip").trim();
         }
+
+        bindIp = DEFAULT_BIND_IP;
+        if (configFromFiles.hasPath("peer.discovery.bind.ip")) {
+            String bindIpFromConfig = configFromFiles.getString("peer.discovery.bind.ip").trim();
+            if (!bindIpFromConfig.isEmpty()) {
+                bindIp = bindIpFromConfig;
+            }
+        }
+
+        logger.info("Binding peer discovery on {}", bindIp);
+        return bindIp;
     }
 
     /**
      * This can be a blocking call with long timeout (thus no ValidateMe)
      */
-    public String externalIp() {
-        if (configFromFiles.hasPath("peer.discovery.external.ip") && !configFromFiles.getString("peer.discovery.external.ip").trim().isEmpty()) {
-            return configFromFiles.getString("peer.discovery.external.ip").trim();
-        }
-
+    public synchronized String getExternalIp() {
         if (externalIp != null) {
             return externalIp;
         }
 
-        logger.info("External IP wasn't set, using checkip.amazonaws.com to identify it...");
+        if (configFromFiles.hasPath("peer.discovery.external.ip")) {
+            String externalIpFromConfig = configFromFiles.getString("peer.discovery.external.ip").trim();
+            if (!externalIpFromConfig.isEmpty()){
+                try {
+                    InetAddress addr = InetAddress.getByName(externalIpFromConfig);
+                    externalIp = addr.getHostAddress();
+                    logger.info("External address identified {}", externalIp);
+                    return externalIp;
+                } catch (IOException e) {
+                    externalIp = null;
+                    logger.warn("Can't resolve external address");
+                }
+            }
+        }
+
+        externalIp = getMyPublicIpFromRemoteService();
+        return externalIp;
+    }
+
+    public String getMyPublicIpFromRemoteService(){
+        logger.info("External IP wasn't set or resolved, using checkip.amazonaws.com to identify it...");
         try {
             try (BufferedReader in = new BufferedReader(new InputStreamReader(new URL("http://checkip.amazonaws.com").openStream()))) {
                 externalIp = in.readLine();
@@ -597,11 +607,10 @@ public abstract class SystemProperties {
             tryParseIpOrThrow();
             logger.info("External address identified: {}", externalIp);
         } catch (IOException e) {
-            externalIp = bindIp();
-            logger.warn("Can't get external IP. Fall back to peer.bind.ip: " + externalIp + " :" + e);
+            logger.error("Can't get external IP. " + e);
+            externalIp = getPeerDiscoveryBindAddress();
         }
         return externalIp;
-
     }
 
     @ValidateMe
