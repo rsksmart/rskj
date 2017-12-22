@@ -18,6 +18,7 @@
 
 package co.rsk.net.handler;
 
+import co.rsk.peg.TxSender;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.listener.EthereumListenerAdapter;
@@ -41,7 +42,7 @@ public class TxHandlerImpl implements TxHandler {
     private Blockchain blockchain;
     private Map<String, TxTimestamp> knownTxs = new HashMap<>();
     private Lock knownTxsLock = new ReentrantLock();
-    private Map<String, TxsPerAccount> txsPerAccounts = new HashMap<>();
+    private Map<TxSender, TxsPerAccount> txsPerAccounts = new HashMap<>();
 
     /**
      * This method will fork two `threads` and should not be instanced more than
@@ -99,13 +100,13 @@ public class TxHandlerImpl implements TxHandler {
             TxTimestamp txt = entry.getValue();
 
             if (time - txt.timestamp > oldTxThresholdInMS) {
-                String accountId = TypeConverter.toJsonHex(txt.tx.getSender().getBytes());
-                TxsPerAccount txsPerAccount = txsPerAccounts.get(accountId);
+                TxSender addr = txt.tx.getSender();
+                TxsPerAccount txsPerAccount = txsPerAccounts.get(addr);
 
                 if (txsPerAccount != null) {
                     txsPerAccount.removeNonce(new BigInteger(1, txt.tx.getNonce()));
                     if (txsPerAccount.getTransactions().isEmpty()) {
-                        txsPerAccounts.remove(accountId);
+                        txsPerAccounts.remove(addr);
                     }
                 }
 
@@ -132,9 +133,8 @@ public class TxHandlerImpl implements TxHandler {
                         continue;
                     }
 
-                    String accountId = TypeConverter.toJsonHex(tx.getSender().getBytes());
-
-                    TxsPerAccount txsPerAccount = txsPerAccounts.get(accountId);
+                    TxSender addr = tx.getSender();
+                    TxsPerAccount txsPerAccount = txsPerAccounts.get(addr);
 
                     if (txsPerAccount == null)
                     {
@@ -144,7 +144,7 @@ public class TxHandlerImpl implements TxHandler {
 
                     txsPerAccount.removeNonce(new BigInteger(1, tx.getNonce()));
                     if (txsPerAccount.getTransactions().isEmpty()) {
-                        txsPerAccounts.remove(accountId);
+                        txsPerAccounts.remove(addr);
                     }
 
                     knownTxs.remove(txHash);
@@ -157,9 +157,9 @@ public class TxHandlerImpl implements TxHandler {
     }
 
     @VisibleForTesting void setKnownTxs(Map<String, TxTimestamp> knownTxs) { this.knownTxs = knownTxs; }
-    @VisibleForTesting void setTxsPerAccounts(Map<String, TxsPerAccount> txsPerAccounts) { this.txsPerAccounts = txsPerAccounts; }
+    @VisibleForTesting void setTxsPerAccounts(Map<TxSender, TxsPerAccount> txsPerAccounts) { this.txsPerAccounts = txsPerAccounts; }
     @VisibleForTesting Map<String, TxTimestamp> getKnownTxs() { return knownTxs; }
-    @VisibleForTesting Map<String, TxsPerAccount> getTxsPerAccounts() { return txsPerAccounts; }
+    @VisibleForTesting Map<TxSender, TxsPerAccount> getTxsPerAccounts() { return txsPerAccounts; }
     @VisibleForTesting public void onBlock(Block block, List<TransactionReceipt> receiptList) { new Listener().onBlock(block, receiptList); }
 
 }

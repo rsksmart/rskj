@@ -18,6 +18,7 @@
 
 package co.rsk.TestHelpers;
 
+import co.rsk.peg.TxSender;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.mockito.Mockito;
@@ -42,13 +43,14 @@ public class Tx {
         Mockito.when(transaction.getNonce()).thenReturn(BigInteger.valueOf(nonce).toByteArray());
         Mockito.when(transaction.getNonceAsInteger()).thenReturn(BigInteger.valueOf(nonce));
 
-        byte[] returnSender = new byte[20];
-        r.nextBytes(returnSender);
+        byte[] returnSenderBytes = new byte[20];
+        r.nextBytes(returnSenderBytes);
+        TxSender returnSender = new TxSender(returnSenderBytes);
 
         byte[] returnReceiveAddress = new byte[20];
         r.nextBytes(returnReceiveAddress);
 
-        Mockito.when(transaction.getSender().getBytes()).thenReturn(returnSender);
+        Mockito.when(transaction.getSender()).thenReturn(returnSender);
         Mockito.when(transaction.getHash()).thenReturn(BigInteger.valueOf(hashes.nextLong()).toByteArray());
         Mockito.when(transaction.acceptTransactionSignature()).thenReturn(Boolean.TRUE);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(returnReceiveAddress);
