@@ -20,30 +20,38 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 public class LockWhitelistTest {
-    private List<Address> addresses;
+    private Map<Address, Coin> addresses;
     private LockWhitelist whitelist;
+    private Address existingAddress;
 
     @Before
     public void createWhitelist() {
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        addresses = Arrays.stream(new Integer[]{ 100, 200, 300, 400 })
-            .map(i -> BtcECKey.fromPrivate(BigInteger.valueOf(i)).toAddress(params))
-            .collect(Collectors.toList());
+        int existingPrivate = 300;
+        addresses = Arrays.stream(new Integer[]{ 100, 200, existingPrivate, 400 })
+            .map(i -> {
+                Address address = BtcECKey.fromPrivate(BigInteger.valueOf(i)).toAddress(params);
+                if (i == existingPrivate) {
+                    existingAddress = address;
+                }
+                return address;
+            })
+            .collect(Collectors.toMap(Function.identity(), i -> Coin.CENT));
         whitelist = new LockWhitelist(addresses);
     }
 
@@ -55,12 +63,12 @@ public class LockWhitelistTest {
     @Test
     public void getAddresses() {
         Assert.assertNotSame(whitelist.getAddresses(), addresses);
-        Assert.assertEquals(whitelist.getAddresses(), addresses);
+        Assert.assertThat(whitelist.getAddresses(), containsInAnyOrder(addresses.keySet().toArray()));
     }
 
     @Test
     public void isWhitelisted() {
-        for (Address addr : addresses) {
+        for (Address addr : addresses.keySet()) {
             Assert.assertTrue(whitelist.isWhitelisted(addr));
             Assert.assertTrue(whitelist.isWhitelisted(addr.getHash160()));
         }
@@ -84,18 +92,16 @@ public class LockWhitelistTest {
         Assert.assertFalse(whitelist.isWhitelisted(randomAddress));
         Assert.assertFalse(whitelist.isWhitelisted(randomAddress.getHash160()));
 
-        Assert.assertTrue(whitelist.add(randomAddress));
+        Assert.assertTrue(whitelist.put(randomAddress, Coin.CENT));
 
         Assert.assertTrue(whitelist.isWhitelisted(randomAddress));
         Assert.assertTrue(whitelist.isWhitelisted(randomAddress.getHash160()));
 
-        Assert.assertFalse(whitelist.add(randomAddress));
+        Assert.assertFalse(whitelist.put(randomAddress, Coin.CENT));
     }
 
     @Test
     public void remove() {
-        Address existingAddress = addresses.get(2);
-
         Assert.assertTrue(whitelist.isWhitelisted(existingAddress));
         Assert.assertTrue(whitelist.isWhitelisted(existingAddress.getHash160()));
 

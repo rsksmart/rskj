@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.builders.BlockBuilder;
@@ -237,7 +238,7 @@ public class RskForksBridgeTest {
         BigInteger gasLimit = BigInteger.valueOf(1000000);
         Transaction rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
                 gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
-                Bridge.ADD_LOCK_WHITELIST_ADDRESS, new Object[]{ "mhxk5q8QdGFoaP4SJ3DPtXjrbxAgxjNm3C" });
+                Bridge.ADD_LOCK_WHITELIST_ADDRESS, new Object[]{ "mhxk5q8QdGFoaP4SJ3DPtXjrbxAgxjNm3C", BigInteger.valueOf(Coin.COIN.multiply(4).value) });
         rskTx.sign(whitelistManipulationKey.getPrivKeyBytes());
         return rskTx;
     }

@@ -55,6 +55,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.invocation.InvocationOnMock;
@@ -88,6 +89,7 @@ import static org.mockito.Mockito.*;
  * Created by ajlopez on 6/9/2016.
  */
 @RunWith(PowerMockRunner.class)
+@PrepareForTest({ BridgeUtils.class })
 public class BridgeSupportTest {
     private static final String contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
@@ -494,7 +496,6 @@ public class BridgeSupportTest {
         Assert.assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
     }
 
-    @PrepareForTest({ BridgeUtils.class })
     @Test
     public void callUpdateCollectionsWithTransactionsWaitingForConfirmationWithEnoughConfirmations() throws IOException, BlockStoreException {
         // Bridge constants and btc context
@@ -1374,9 +1375,12 @@ public class BridgeSupportTest {
 
         // Whitelist the addresses
         LockWhitelist whitelist = provider.getLockWhitelist();
-        whitelist.add(srcKey1.toAddress(parameters));
-        whitelist.add(srcKey2.toAddress(parameters));
-        whitelist.add(srcKey3.toAddress(parameters));
+        Address address1 = srcKey1.toAddress(parameters);
+        Address address2 = srcKey2.toAddress(parameters);
+        Address address3 = srcKey3.toAddress(parameters);
+        whitelist.put(address1, Coin.COIN.multiply(5));
+        whitelist.put(address2, Coin.COIN.multiply(10));
+        whitelist.put(address3, Coin.COIN.multiply(2).add(Coin.COIN.multiply(3)));
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, provider, btcBlockStore, btcBlockChain);
         Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
@@ -1403,6 +1407,9 @@ public class BridgeSupportTest {
         ((SimpleBlockChain)btcBlockChain).useBlock();
 
         track.commit();
+        Assert.assertThat(whitelist.isWhitelisted(address1), is(false));
+        Assert.assertThat(whitelist.isWhitelisted(address2), is(false));
+        Assert.assertThat(whitelist.isWhitelisted(address3), is(false));
 
         BigInteger amountToHaveBeenCreditedToSrc1 = Denomination.SBTC.value().multiply(BigInteger.valueOf(5));
         BigInteger amountToHaveBeenCreditedToSrc2 = Denomination.SBTC.value().multiply(BigInteger.valueOf(10));
@@ -2409,7 +2416,6 @@ public class BridgeSupportTest {
         verify(mocksProvider.getElection(), never()).vote(mocksProvider.getSpec(), mocksProvider.getVoter());
     }
 
-    @PrepareForTest({ BridgeUtils.class })
     @Test
     public void getActiveFederationWallet() throws IOException {
         Federation expectedFederation = new Federation(Arrays.asList(new BtcECKey[]{
@@ -2442,7 +2448,6 @@ public class BridgeSupportTest {
         Assert.assertSame(expectedWallet, bridgeSupport.getActiveFederationWallet());
     }
 
-    @PrepareForTest({ BridgeUtils.class })
     @Test
     public void getRetiringFederationWallet_nonEmpty() throws IOException {
         Federation mockedNewFederation = new Federation(
@@ -2517,13 +2522,13 @@ public class BridgeSupportTest {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
-        when(mockedWhitelist.add(any(Address.class))).then((InvocationOnMock m) -> {
+        when(mockedWhitelist.put(any(Address.class), any(Coin.class))).then((InvocationOnMock m) -> {
             Address address = m.getArgumentAt(0, Address.class);
             Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
             return true;
         });
 
-        Assert.assertEquals(1, bridgeSupport.addLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
+        Assert.assertEquals(1, bridgeSupport.addLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", BigInteger.valueOf(Coin.COIN.getValue())).intValue());
     }
 
     @Test
@@ -2537,13 +2542,12 @@ public class BridgeSupportTest {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
-        when(mockedWhitelist.add(any(Address.class))).then((InvocationOnMock m) -> {
-            Address address = m.getArgumentAt(0, Address.class);
-            Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
-            return false;
-        });
+        ArgumentCaptor<Address> argument = ArgumentCaptor.forClass(Address.class);
+        when(mockedWhitelist.isWhitelisted(any(Address.class))).thenReturn(true);
 
-        Assert.assertEquals(-1, bridgeSupport.addLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
+        Assert.assertEquals(-1, bridgeSupport.addLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", BigInteger.valueOf(Coin.COIN.getValue())).intValue());
+        verify(mockedWhitelist).isWhitelisted(argument.capture());
+        Assert.assertThat(argument.getValue().toBase58(), is("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN"));
     }
 
     @Test
@@ -2554,8 +2558,8 @@ public class BridgeSupportTest {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
-        Assert.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE.intValue(), bridgeSupport.addLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN").intValue());
-        verify(mockedWhitelist, never()).add(any());
+        Assert.assertEquals(BridgeSupport.LOCK_WHITELIST_GENERIC_ERROR_CODE.intValue(), bridgeSupport.addLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", BigInteger.valueOf(Coin.COIN.getValue())).intValue());
+        verify(mockedWhitelist, never()).put(any(), any());
     }
 
     @Test
@@ -2569,8 +2573,8 @@ public class BridgeSupportTest {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
 
-        Assert.assertEquals(-2, bridgeSupport.addLockWhitelistAddress(mockedTx, "i-am-invalid").intValue());
-        verify(mockedWhitelist, never()).add(any());
+        Assert.assertEquals(-2, bridgeSupport.addLockWhitelistAddress(mockedTx, "i-am-invalid", BigInteger.valueOf(Coin.COIN.getValue())).intValue());
+        verify(mockedWhitelist, never()).put(any(), any());
     }
 
     @Test
