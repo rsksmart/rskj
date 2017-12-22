@@ -24,6 +24,8 @@ import org.junit.Test;
 
 import java.io.IOException;
 
+import static org.ethereum.crypto.SHA3Helper.sha3;
+
 /**
  * Created by ajlopez on 03/04/2017.
  */
@@ -45,6 +47,32 @@ public class SecureTrieImplStoreTest {
     }
 
     @Test
+    public void saveAndRetrieveTrieNodeWith33BytesValue() {
+        HashMapDB map = new HashMapDB();
+        TrieStoreImpl store = new TrieStoreImpl(map);
+
+        byte[] key = "foo".getBytes();
+        byte[] value = new byte[33];
+
+        Trie trie = new TrieImpl(store, true).put(key, value);
+
+        store.save(trie);
+
+        Assert.assertEquals(2, map.keys().size());
+        Assert.assertNotNull(map.get(trie.getHash()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+
+        Assert.assertEquals(2, store.getSaveCount());
+
+        Trie newTrie = store.retrieve(trie.getHash());
+
+        Assert.assertNotNull(newTrie);
+        Assert.assertEquals(1, newTrie.trieSize());
+        Assert.assertNotNull(newTrie.get(key));
+        Assert.assertArrayEquals(value, newTrie.get(key));
+    }
+
+    @Test
     public void saveFullTrie() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
@@ -61,11 +89,47 @@ public class SecureTrieImplStoreTest {
     }
 
     @Test
+    public void saveFullTrieWithLongValue() {
+        HashMapDB map = new HashMapDB();
+        TrieStoreImpl store = new TrieStoreImpl(map);
+
+        Trie trie = new TrieImpl(store, true)
+                .put("foo", TrieImplValueTest.makeValue(100));
+
+        trie.save();
+
+        Assert.assertEquals(trie.trieSize() + 1, map.keys().size());
+        Assert.assertNotNull(map.get(trie.getHash()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+
+        Assert.assertEquals(trie.trieSize() + 1, store.getSaveCount());
+    }
+
+    @Test
+    public void saveFullTrieWithTwoLongValues() {
+        HashMapDB map = new HashMapDB();
+        TrieStoreImpl store = new TrieStoreImpl(map);
+
+        Trie trie = new TrieImpl(store, true)
+                .put("foo", TrieImplValueTest.makeValue(100))
+                .put("bar", TrieImplValueTest.makeValue(200));
+
+        trie.save();
+
+        Assert.assertEquals(trie.trieSize() + 2, map.keys().size());
+        Assert.assertNotNull(map.get(trie.getHash()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+
+        Assert.assertEquals(trie.trieSize() + 2, store.getSaveCount());
+    }
+
+    @Test
     public void saveFullTrieTwice() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(store, true).put("foo", "bar".getBytes());
+        Trie trie = new TrieImpl(store, true)
+                .put("foo", "bar".getBytes());
 
         trie.save();
 
@@ -74,6 +138,23 @@ public class SecureTrieImplStoreTest {
         trie.save();
 
         Assert.assertEquals(trie.trieSize(), store.getSaveCount());
+    }
+
+    @Test
+    public void saveFullTrieWithLongValueTwice() {
+        HashMapDB map = new HashMapDB();
+        TrieStoreImpl store = new TrieStoreImpl(map);
+
+        Trie trie = new TrieImpl(store, true)
+                .put("foo", TrieImplValueTest.makeValue(100));
+
+        trie.save();
+
+        Assert.assertEquals(2, store.getSaveCount());
+
+        trie.save();
+
+        Assert.assertEquals(2, store.getSaveCount());
     }
 
     @Test
@@ -81,7 +162,8 @@ public class SecureTrieImplStoreTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(store, true).put("foo", "bar".getBytes());
+        Trie trie = new TrieImpl(store, true)
+                .put("foo", "bar".getBytes());
 
         trie.save();
 
@@ -95,11 +177,31 @@ public class SecureTrieImplStoreTest {
     }
 
     @Test
+    public void saveFullTrieWithLongValueUpdateAndSaveAgainUsingBinaryTrie() {
+        HashMapDB map = new HashMapDB();
+        TrieStoreImpl store = new TrieStoreImpl(map);
+
+        Trie trie = new TrieImpl(store, true)
+                .put("foo", TrieImplValueTest.makeValue(100));
+
+        trie.save();
+
+        Assert.assertEquals(2, store.getSaveCount());
+
+        trie = trie.put("foo", TrieImplValueTest.makeValue(200));
+
+        trie.save();
+
+        Assert.assertEquals(4, store.getSaveCount());
+    }
+
+    @Test
     public void saveFullTrieUpdateAndSaveAgainUsingArity16() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(16, store, true).put("foo", "bar".getBytes());
+        Trie trie = new TrieImpl(16, store, true)
+                .put("foo", "bar".getBytes());
 
         trie.save();
 
@@ -110,6 +212,25 @@ public class SecureTrieImplStoreTest {
         trie.save();
 
         Assert.assertEquals(trie.trieSize() + 1, store.getSaveCount());
+    }
+
+    @Test
+    public void saveFullTrieWithLongValueUpdateAndSaveAgainUsingArity16() {
+        HashMapDB map = new HashMapDB();
+        TrieStoreImpl store = new TrieStoreImpl(map);
+
+        Trie trie = new TrieImpl(16, store, true)
+                .put("foo", TrieImplValueTest.makeValue(100));
+
+        trie.save();
+
+        Assert.assertEquals(2, store.getSaveCount());
+
+        trie = trie.put("foo", TrieImplValueTest.makeValue(200));
+
+        trie.save();
+
+        Assert.assertEquals(4, store.getSaveCount());
     }
 
     @Test
@@ -125,9 +246,31 @@ public class SecureTrieImplStoreTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(store, true).put("bar", "foo".getBytes())
+        Trie trie = new TrieImpl(store, true)
+                .put("bar", "foo".getBytes())
                 .put("foo", "bar".getBytes());
 
+
+        trie.save();
+        int size = trie.trieSize();
+
+        Trie trie2 = store.retrieve(trie.getHash());
+
+        Assert.assertEquals(1, store.getRetrieveCount());
+
+        Assert.assertEquals(size, trie2.trieSize());
+
+        Assert.assertEquals(size, store.getRetrieveCount());
+    }
+
+    @Test
+    public void retrieveTrieWithLongValuesByHash() {
+        HashMapDB map = new HashMapDB();
+        TrieStoreImpl store = new TrieStoreImpl(map);
+
+        Trie trie = new TrieImpl(store, true)
+                .put("bar", TrieImplValueTest.makeValue(100))
+                .put("foo", TrieImplValueTest.makeValue(200));
 
         trie.save();
         int size = trie.trieSize();

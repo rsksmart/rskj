@@ -74,6 +74,34 @@ public class SecureTrieImplMessageTest {
     }
 
     @Test
+    public void trieWithLongValueToMessage() {
+        byte[] key = new byte[0];
+        byte[] newKey = sha3(key);
+
+        Trie trie = new TrieImpl(true).put(key, TrieImplValueTest.makeValue(33));
+
+        byte[] message = trie.toMessage();
+
+        Assert.assertNotNull(message);
+        Assert.assertEquals(70, message.length);
+        Assert.assertEquals(2, message[0]);
+        Assert.assertEquals(3, message[1]);
+        Assert.assertEquals(0, message[2]);
+        Assert.assertEquals(0, message[3]);
+        Assert.assertEquals(1, message[4]);
+        Assert.assertEquals(0, message[5]);
+
+        for (int k = 0; k < newKey.length; k++)
+            Assert.assertEquals(newKey[k], message[6 + k]);
+
+        byte[] valueHash = trie.getValueHash();
+
+        for (int k = 0; k < valueHash.length; k++) {
+            Assert.assertEquals(valueHash[k], message[k + 38]);
+        }
+    }
+
+    @Test
     public void trieWithSubtrieAndNoValueToMessage() {
         byte[] key = new byte[] { 0x02 };
         byte[] newKey = sha3(key);

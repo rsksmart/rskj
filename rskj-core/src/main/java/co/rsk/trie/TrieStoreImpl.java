@@ -66,6 +66,11 @@ public class TrieStoreImpl implements TrieStore {
     public void save(Trie trie) {
         this.saveCount++;
         this.store.put(trie.getHash(), trie.toMessage());
+
+        if (trie.hasLongValue()) {
+            this.saveCount++;
+            this.store.put(trie.getValueHash(), trie.getValue());
+        }
     }
 
     @Override
@@ -85,6 +90,10 @@ public class TrieStoreImpl implements TrieStore {
         byte[] message = this.store.get(hash);
 
         return TrieImpl.fromMessage(message, this);
+    }
+
+    public byte[] retrieveValue(byte[] hash) {
+        return this.store.get(hash);
     }
 
     @Override

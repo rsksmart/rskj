@@ -31,4 +31,6 @@ public interface TrieStore {
     int getRetrieveCount();
 
     byte[] serialize();
+
+    byte[] retrieveValue(byte[] hash);
 }

@@ -61,4 +61,10 @@ public interface Trie {
     byte[] serialize();
 
     boolean hasStore();
+
+    boolean hasLongValue();
+
+    byte[] getValueHash();
+
+    byte[] getValue();
 }

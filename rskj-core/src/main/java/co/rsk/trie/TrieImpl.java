@@ -1,3 +1,21 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2017 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.trie;
 
 import co.rsk.panic.PanicProcessor;
@@ -26,7 +44,7 @@ import static org.ethereum.crypto.SHA3Helper.sha3;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
- * NewTrie is the trie node.
+ * TrieImpl is the trie node.
  *
  * Each node have 2, 4 or 16 subnodes (depending on arity variable value)
  * and an optional associated value (a byte array)
@@ -195,7 +213,9 @@ public class TrieImpl implements Trie {
 
         try {
             int arity = istream.readByte();
-            boolean isSecure = istream.readByte() == 1;
+            int flags = istream.readByte();
+            boolean isSecure = (flags & 0x01) == 1;
+            boolean hasLongVal = (flags & 0x02) == 2;
             int bhashes = istream.readShort();
             int lshared = istream.readShort();
 
@@ -228,13 +248,25 @@ public class TrieImpl implements Trie {
             }
 
             int offset = MESSAGE_HEADER_LENGTH + lencoded + nhashes * SHA3Helper.DEFAULT_SIZE_BYTES;
-            int lvalue = msglength - offset;
             byte[] value = null;
 
-            if (lvalue > 0) {
-                value = new byte[lvalue];
-                if (istream.read(value) != lvalue) {
+            if (hasLongVal) {
+                byte[] valueHash = new byte[SHA3Helper.DEFAULT_SIZE_BYTES];
+
+                if (istream.read(valueHash) != SHA3Helper.DEFAULT_SIZE_BYTES) {
                     throw new EOFException();
+                }
+
+                value = store.retrieveValue(valueHash);
+            }
+            else {
+                int lvalue = msglength - offset;
+
+                if (lvalue > 0) {
+                    value = new byte[lvalue];
+                    if (istream.read(value) != lvalue) {
+                        throw new EOFException();
+                    }
                 }
             }
 
@@ -439,6 +471,7 @@ public class TrieImpl implements Trie {
         int nnodes = this.getNodeCount();
         int lshared = this.sharedPathLength;
         int lencoded = getEncodedPathLength(lshared, this.arity);
+        boolean hasLongVal = this.hasLongValue();
 
         int bits = 0;
 
@@ -452,10 +485,19 @@ public class TrieImpl implements Trie {
             bits |= 1 << k;
         }
 
-        ByteBuffer buffer = ByteBuffer.allocate(MESSAGE_HEADER_LENGTH + lencoded + nnodes * SHA3Helper.DEFAULT_SIZE_BYTES + lvalue);
+        ByteBuffer buffer = ByteBuffer.allocate(MESSAGE_HEADER_LENGTH + lencoded + nnodes * SHA3Helper.DEFAULT_SIZE_BYTES + (hasLongVal ? SHA3Helper.DEFAULT_SIZE_BYTES : lvalue));
 
         buffer.put((byte) this.arity);
-        buffer.put((byte) (this.isSecure ? 1 : 0));
+
+        byte flags = 0;
+
+        if (this.isSecure)
+            flags |= 1;
+
+        if (hasLongVal)
+            flags |= 2;
+
+        buffer.put(flags);
         buffer.putShort((short) bits);
         buffer.putShort((short) lshared);
 
@@ -474,7 +516,12 @@ public class TrieImpl implements Trie {
         }
 
         if (lvalue > 0) {
-            buffer.put(this.value);
+            if (hasLongVal) {
+                buffer.put(this.getValueHash());
+            }
+            else {
+                buffer.put(this.value);
+            }
         }
 
         return buffer.array();
@@ -910,7 +957,8 @@ public class TrieImpl implements Trie {
 
         if (trie.sharedPathLength == 0) {
             trieSharedPath = positionPath;
-        } else {
+        }
+        else {
             trieSharedPath = ByteUtils.concatenate(decodePath(trie.encodedSharedPath, trie.arity, trie.sharedPathLength), positionPath);
         }
 
@@ -918,7 +966,8 @@ public class TrieImpl implements Trie {
 
         if (firstChild.sharedPathLength == 0) {
             newSharedPath = trieSharedPath;
-        } else {
+        }
+        else {
             byte[] childSharedPath = decodePath(firstChild.encodedSharedPath, firstChild.arity, firstChild.sharedPathLength);
             newSharedPath = ByteUtils.concatenate(trieSharedPath, childSharedPath);
         }
@@ -940,7 +989,8 @@ public class TrieImpl implements Trie {
 
             if (k >= sharedPath.length) {
                 position += sharedPath.length;
-            } else {
+            }
+            else {
                 return this.split(k).put(key, length, position, value);
             }
         }
@@ -1165,7 +1215,6 @@ public class TrieImpl implements Trie {
             return new TrieImpl(this.store, this.isSecure);
         }
 
-
         Trie newTrie = this.store.retrieve(hash);
 
         if (newTrie == null) {
@@ -1181,6 +1230,20 @@ public class TrieImpl implements Trie {
     public TrieStore getStore() {
         return this.store;
     }
+
+    public boolean hasLongValue() {
+        return this.value != null && this.value.length > 32;
+    }
+
+    public byte[] getValueHash() {
+        if (this.hasLongValue()) {
+            return sha3(this.value);
+        }
+
+        return null;
+    }
+
+    public byte[] getValue() { return this.value; }
 
     private static int getEncodedPathLength(int length, int arity) {
         if (arity == 2) {
@@ -1240,6 +1303,7 @@ public class TrieImpl implements Trie {
 
         for (int k = 0; k < lpath; k++) {
             int offset = k % 8;
+
             if (k > 0 && offset == 0) {
                 nbyte++;
             }
