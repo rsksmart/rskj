@@ -99,7 +99,7 @@ public class TxHandlerImpl implements TxHandler {
             TxTimestamp txt = entry.getValue();
 
             if (time - txt.timestamp > oldTxThresholdInMS) {
-                String accountId = TypeConverter.toJsonHex(txt.tx.getSender());
+                String accountId = TypeConverter.toJsonHex(txt.tx.getSender().getBytes());
                 TxsPerAccount txsPerAccount = txsPerAccounts.get(accountId);
 
                 if (txsPerAccount != null) {
@@ -132,7 +132,7 @@ public class TxHandlerImpl implements TxHandler {
                         continue;
                     }
 
-                    String accountId = TypeConverter.toJsonHex(tx.getSender());
+                    String accountId = TypeConverter.toJsonHex(tx.getSender().getBytes());
 
                     TxsPerAccount txsPerAccount = txsPerAccounts.get(accountId);
 

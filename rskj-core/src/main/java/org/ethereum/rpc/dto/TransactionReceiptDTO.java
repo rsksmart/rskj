@@ -55,7 +55,7 @@ public class TransactionReceiptDTO {
         }
 
         cumulativeGasUsed = toJsonHex(receipt.getCumulativeGas());
-        from = toJsonHex(receipt.getTransaction().getSender());
+        from = toJsonHex(receipt.getTransaction().getSender().getBytes());
         gasUsed = toJsonHex(receipt.getGasUsed());
 
         logs = new LogFilterElement[receipt.getLogInfoList().size()];

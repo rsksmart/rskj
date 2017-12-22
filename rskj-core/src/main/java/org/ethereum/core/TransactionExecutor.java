@@ -155,26 +155,26 @@ public class TransactionExecutor {
             return false;
         }
 
-        BigInteger reqNonce = track.getNonce(tx.getSender());
+        BigInteger reqNonce = track.getNonce(tx.getSender().getBytes());
         BigInteger txNonce = toBI(tx.getNonce());
         if (isNotEqual(reqNonce, txNonce)) {
 
             if (logger.isWarnEnabled()) {
-                logger.warn("Invalid nonce: sender {}, required: {} , tx.nonce: {}, tx {}", Hex.toHexString(tx.getSender()), reqNonce, txNonce, Hex.toHexString(tx.getHash()));
+                logger.warn("Invalid nonce: sender {}, required: {} , tx.nonce: {}, tx {}", tx.getSender(), reqNonce, txNonce, Hex.toHexString(tx.getHash()));
                 logger.warn("Transaction Data: {}", tx);
                 logger.warn("Tx Included in the following block: {}", this.executionBlock.getShortDescr());
             }
 
             execError(String.format("Invalid nonce: required: %s , tx.nonce: %s", reqNonce, txNonce));
 
-            panicProcessor.panic("invalidnonce", String.format("Invalid nonce: sender %s, required: %d , tx.nonce: %d, tx %s", Hex.toHexString(tx.getSender()), reqNonce.longValue(), txNonce.longValue(), Hex.toHexString(tx.getHash())));
+            panicProcessor.panic("invalidnonce", String.format("Invalid nonce: sender %s, required: %d , tx.nonce: %d, tx %s", tx.getSender(), reqNonce.longValue(), txNonce.longValue(), Hex.toHexString(tx.getHash())));
 
             return false;
         }
 
         BigInteger txGasCost = toBI(tx.getGasPrice()).multiply(txGasLimit);
         BigInteger totalCost = toBI(tx.getValue()).add(txGasCost);
-        BigInteger senderBalance = track.getBalance(tx.getSender());
+        BigInteger senderBalance = track.getBalance(tx.getSender().getBytes());
 
         if (!isCovers(senderBalance, totalCost)) {
 
@@ -228,11 +228,11 @@ public class TransactionExecutor {
 
         if (!localCall) {
 
-            track.increaseNonce(tx.getSender());
+            track.increaseNonce(tx.getSender().getBytes());
 
             BigInteger txGasLimit = toBI(tx.getGasLimit());
             BigInteger txGasCost = toBI(tx.getGasPrice()).multiply(txGasLimit);
-            track.addBalance(tx.getSender(), txGasCost.negate());
+            track.addBalance(tx.getSender().getBytes(), txGasCost.negate());
 
             if (logger.isInfoEnabled()) {
                 logger.info("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, toBI(tx.getGasPrice()), txGasLimit);
@@ -303,7 +303,7 @@ public class TransactionExecutor {
 
         if (result.getException() == null) {
             BigInteger endowment = toBI(tx.getValue());
-            transfer(cacheTrack, tx.getSender(), targetAddress, endowment);
+            transfer(cacheTrack, tx.getSender().getBytes(), targetAddress, endowment);
         }
     }
 
@@ -327,7 +327,7 @@ public class TransactionExecutor {
         }
 
         BigInteger endowment = toBI(tx.getValue());
-        transfer(cacheTrack, tx.getSender(), newContractAddress, endowment);
+        transfer(cacheTrack, tx.getSender().getBytes(), newContractAddress, endowment);
     }
 
     private void execError(String err) {
@@ -477,8 +477,8 @@ public class TransactionExecutor {
         TransactionExecutionSummary summary = summaryBuilder.build();
 
         // Refund for gas leftover
-        track.addBalance(tx.getSender(), summary.getLeftover().add(summary.getRefund()));
-        logger.info("Pay total refund to sender: [{}], refund val: [{}]", Hex.toHexString(tx.getSender()), summary.getRefund());
+        track.addBalance(tx.getSender().getBytes(), summary.getLeftover().add(summary.getRefund()));
+        logger.info("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
 
         // Transfer fees to miner
         BigInteger summaryFee = summary.getFee();

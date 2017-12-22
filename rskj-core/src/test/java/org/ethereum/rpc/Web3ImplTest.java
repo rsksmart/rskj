@@ -290,7 +290,7 @@ public class Web3ImplTest {
 
         org.junit.Assert.assertNotNull(trxHash);
         org.junit.Assert.assertNotNull(eth.tx);
-        org.junit.Assert.assertArrayEquals(acc1.getAddress(), eth.tx.getSender());
+        org.junit.Assert.assertArrayEquals(acc1.getAddress(), eth.tx.getSender().getBytes());
         org.junit.Assert.assertArrayEquals(acc2.getAddress(), eth.tx.getReceiveAddress());
         org.junit.Assert.assertEquals(BigInteger.valueOf(1000000), new BigInteger(1, eth.tx.getValue()));
     }
@@ -335,7 +335,7 @@ public class Web3ImplTest {
 
         org.junit.Assert.assertNotNull(tr);
         org.junit.Assert.assertEquals("0x" + hashString, tr.transactionHash);
-        String trxFrom = TypeConverter.toJsonHex(tx.getSender());
+        String trxFrom = TypeConverter.toJsonHex(tx.getSender().getBytes());
         org.junit.Assert.assertEquals(trxFrom, tr.from);
         String trxTo = TypeConverter.toJsonHex(tx.getReceiveAddress());
         org.junit.Assert.assertEquals(trxTo, tr.to);

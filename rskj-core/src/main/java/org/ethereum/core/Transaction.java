@@ -22,6 +22,7 @@ package org.ethereum.core;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
+import co.rsk.peg.TxSender;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.crypto.ECKey;
@@ -106,7 +107,7 @@ public class Transaction implements SerializableObject {
      * (including public key recovery bits) */
     private ECDSASignature signature;
 
-    protected byte[] sendAddress;
+    protected TxSender sender;
 
     /* Tx in encoded form */
     protected byte[] rlpEncoded;
@@ -226,7 +227,7 @@ public class Transaction implements SerializableObject {
             if (BigIntegers.asUnsignedByteArray(signature.s).length > DATAWORD_LENGTH) {
                 throw new RuntimeException("Signature S is not valid");
             }
-            if (getSender() != null && getSender().length != Constants.getMaxAddressByteLength()) {
+            if (getSender().getBytes() != null && getSender().getBytes().length != Constants.getMaxAddressByteLength()) {
                 throw new RuntimeException("Sender is not valid");
             }
         }
@@ -394,7 +395,7 @@ public class Transaction implements SerializableObject {
             return null;
         }
 
-        return HashUtil.calcNewAddr(this.getSender(), this.getNonce());
+        return HashUtil.calcNewAddr(this.getSender().getBytes(), this.getNonce());
     }
 
     public boolean isContractCreation() {
@@ -425,18 +426,21 @@ public class Transaction implements SerializableObject {
         return ECKey.recoverFromSignature((signature.v - 27) & ~4, signature, rawHash, true);
     }
 
-    public synchronized byte[] getSender() {
+    public synchronized TxSender getSender() {
+        if (sender != null) {
+            return sender;
+        }
+
         try {
-            if (sendAddress == null) {
-                ECKey key = ECKey.signatureToKey(getRawHash(), getSignature().toBase64());
-                sendAddress = key.getAddress();
-            }
-            return sendAddress;
+            ECKey key = ECKey.signatureToKey(getRawHash(), getSignature().toBase64());
+            sender = new TxSender(key.getAddress());
         } catch (SignatureException e) {
             logger.error(e.getMessage(), e);
             panicProcessor.panic("transaction", e.getMessage());
+            sender = new TxSender(null);
         }
-        return null;
+
+        return sender;
     }
 
     public byte getChainId() {
