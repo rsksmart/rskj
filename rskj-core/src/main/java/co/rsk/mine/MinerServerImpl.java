@@ -26,6 +26,7 @@ import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.net.BlockProcessor;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.TxSender;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.BlockValidationRule;
@@ -36,7 +37,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
@@ -451,7 +451,7 @@ public class MinerServerImpl implements MinerServer {
         Transaction remascTx = new RemascTransaction(parent.getNumber() + 1);
         txs.add(remascTx);
 
-        Map<ByteArrayWrapper, BigInteger> accountNonces = new HashMap<>();
+        Map<TxSender, BigInteger> accountNonces = new HashMap<>();
 
         Repository originalRepo = blockchain.getRepository().getSnapshotTo(parent.getStateRoot());
 
