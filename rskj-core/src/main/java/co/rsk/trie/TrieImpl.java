@@ -488,7 +488,16 @@ public class TrieImpl implements Trie {
         ByteBuffer buffer = ByteBuffer.allocate(MESSAGE_HEADER_LENGTH + lencoded + nnodes * SHA3Helper.DEFAULT_SIZE_BYTES + (hasLongVal ? SHA3Helper.DEFAULT_SIZE_BYTES : lvalue));
 
         buffer.put((byte) this.arity);
-        buffer.put((byte) ((this.isSecure ? 1 : 0) + (hasLongVal ? 2 : 0)));
+
+        byte flags = 0;
+
+        if (this.isSecure)
+            flags |= 1;
+
+        if (hasLongVal)
+            flags |= 2;
+
+        buffer.put(flags);
         buffer.putShort((short) bits);
         buffer.putShort((short) lshared);
 
