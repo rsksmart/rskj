@@ -854,16 +854,19 @@ public class BridgeSupport {
         if (hasEnoughSignatures(btcTx)) {
             logger.info("Tx fully signed {}. Hex: {}", btcTx, Hex.toHexString(btcTx.bitcoinSerialize()));
             provider.getRskTxsWaitingForSignatures().remove(new Sha3Hash(rskTxHash));
-            logs.add(
-                new LogInfo(
-                    TypeConverter.stringToByteArray(contractAddress),
-                    Collections.singletonList(Bridge.RELEASE_BTC_TOPIC),
-                    RLP.encodeElement(btcTx.bitcoinSerialize())
-                )
-            );
+            createReleaseBtcEventLog(btcTx);
         } else {
             logger.debug("Tx not yet fully signed {}.", new Sha3Hash(rskTxHash));
         }
+    }
+
+    private void createReleaseBtcEventLog(BtcTransaction btcTx) {
+        byte[] loggerContractAddress = TypeConverter.stringToByteArray(contractAddress);
+        List<DataWord> topics = Collections.singletonList(Bridge.RELEASE_BTC_TOPIC);
+        byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()),
+                                     RLP.encodeElement(btcTx.bitcoinSerialize()));
+
+        logs.add(new LogInfo(loggerContractAddress, topics, data));
     }
 
     /**
