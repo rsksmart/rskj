@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.db.RepositoryImpl;
+import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.test.World;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
@@ -50,9 +51,12 @@ public class BridgePerformanceTest {
     private ThreadMXBean thread;
 
     private class ExecutionTracker {
+        private static final long MILLION = 1_000_000;
+
         private final ThreadMXBean thread;
         private long startTime, endTime;
         private long startRealTime, endRealTime;
+        private RepositoryTrackWithBenchmarking.Statistics repositoryStatistics;
 
         public ExecutionTracker(ThreadMXBean thread) {
             this.thread = thread;
@@ -60,12 +64,20 @@ public class BridgePerformanceTest {
 
         public void startTimer() {
             startTime = thread.getCurrentThreadCpuTime();
-            startRealTime = System.currentTimeMillis();
+            startRealTime = System.currentTimeMillis() * MILLION;
         }
 
         public void endTimer() {
             endTime = thread.getCurrentThreadCpuTime();
-            endRealTime = System.currentTimeMillis();
+            endRealTime = System.currentTimeMillis() * MILLION;
+        }
+
+        public void setRepositoryStatistics(RepositoryTrackWithBenchmarking.Statistics statistics) {
+            this.repositoryStatistics = statistics;
+        }
+
+        public RepositoryTrackWithBenchmarking.Statistics getRepositoryStatistics() {
+            return this.repositoryStatistics;
         }
 
         public long getExecutionTime() {
@@ -74,6 +86,48 @@ public class BridgePerformanceTest {
 
         public long getRealExecutionTime() {
             return endRealTime - startRealTime;
+        }
+    }
+
+    class Mean {
+        private long total = 0;
+        private int samples = 0;
+
+        public void add(long value) {
+            total += value;
+            samples++;
+        }
+
+        public long getMean() {
+            return total / samples;
+        }
+    }
+
+    class ExecutionStats {
+        public String name;
+        public Mean executionTimes;
+        public Mean realExecutionTimes;
+        public Mean slotsWritten;
+        public Mean slotsCleared;
+
+        public ExecutionStats(String name) {
+            this.name = name;
+            this.executionTimes = new Mean();
+            this.realExecutionTimes = new Mean();
+            this.slotsWritten = new Mean();
+            this.slotsCleared = new Mean();
+        }
+
+        @Override
+        public String toString() {
+            return String.format(
+                    "%s\t\tcpu(us): %d\t\treal(us): %d\t\twrt(slots): %d\t\tclr(slots): %d",
+                    name,
+                    executionTimes.getMean() / 1000,
+                    realExecutionTimes.getMean() / 1000,
+                    slotsWritten.getMean(),
+                    slotsCleared.getMean()
+            );
         }
     }
 
@@ -107,52 +161,135 @@ public class BridgePerformanceTest {
     }
 
     private interface BridgeStorageProviderInitializer {
-        void initialize(BridgeStorageProvider provider);
+        void initialize(BridgeStorageProvider provider, int executionIndex);
     }
 
     private interface TxBuilder {
-        Transaction build();
+        Transaction build(int executionIndex);
+    }
+
+    private interface ABIEncoder {
+        byte[] encode(int executionIndex);
     }
 
     private ExecutionTracker execute(
-            byte[] encodedABI,
+            ABIEncoder abiEncoder,
             BridgeStorageProviderInitializer storageInitializer,
-            TxBuilder txBuilder) throws IOException {
+            TxBuilder txBuilder, int executionIndex) {
 
         ExecutionTracker executionInfo = new ExecutionTracker(thread);
 
-        Repository repository = new RepositoryImpl();
+        RepositoryImpl repository = new RepositoryImpl();
         Repository track = repository.startTracking();
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
-        storageInitializer.initialize(storageProvider);
+        storageInitializer.initialize(storageProvider, executionIndex);
 
-        storageProvider.save();
+        try {
+            storageProvider.save();
+        } catch (Exception e) {
+            throw new RuntimeException("Error trying to save the storage after initialization", e);
+        }
         track.commit();
 
-        Transaction tx = txBuilder.build();
+        Transaction tx = txBuilder.build(executionIndex);
 
         List<LogInfo> logs = new ArrayList<>();
 
-        track = repository.startTracking();
+        RepositoryTrackWithBenchmarking benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
+
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         World world = new World();
         bridge.init(
                 tx,
                 world.getBlockChain().getBestBlock(),
-                track,
+                benchmarkerTrack,
                 world.getBlockChain().getBlockStore(),
                 world.getBlockChain().getReceiptStore(),
                 logs
         );
 
+        // Execute a random method so that bridge support initialization
+        // does its initial writes to the repo for e.g. genesis block,
+        // federation, etc, etc. and we don't get
+        // those recorded in the actual execution.
+        bridge.execute(Bridge.GET_FEDERATION_SIZE.encode());
+        benchmarkerTrack.getStatistics().clear();
+
         executionInfo.startTimer();
-        bridge.execute(encodedABI);
+        bridge.execute(abiEncoder.encode(executionIndex));
         executionInfo.endTimer();
 
-        track.commit();
+        benchmarkerTrack.commit();
+
+        executionInfo.setRepositoryStatistics(benchmarkerTrack.getStatistics());
 
         return executionInfo;
+    }
+
+    private ExecutionStats executeAndAverage(String name,
+                                             int times,
+                                             ABIEncoder abiEncoder,
+                                             BridgeStorageProviderInitializer storageInitializer,
+                                             TxBuilder txBuilder) {
+
+        ExecutionStats stats = new ExecutionStats(name);
+
+        for (int i = 0; i < times; i++) {
+            System.out.println(String.format("%s %d/%d", name, i, times));
+
+            ExecutionTracker tracker = execute(abiEncoder, storageInitializer, txBuilder, i);
+
+            stats.executionTimes.add(tracker.getExecutionTime());
+            stats.realExecutionTimes.add(tracker.getRealExecutionTime());
+            stats.slotsWritten.add(tracker.getRepositoryStatistics().getSlotsWritten());
+            stats.slotsCleared.add(tracker.getRepositoryStatistics().getSlotsCleared());
+        }
+
+        return stats;
+    }
+
+    @Test
+    public void releaseBtc() throws IOException {
+        Mean executionTime = new Mean();
+        Mean realExecutionTime = new Mean();
+
+        int minCentsBtc = 5;
+        int maxCentsBtc = 100;
+
+        final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, int executionIndex) -> {
+            Random rnd = new Random();
+            ReleaseRequestQueue queue;
+
+            try {
+                queue = provider.getReleaseRequestQueue();
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to gather release request queue");
+            }
+
+            Coin value = Coin.CENT.multiply(rnd.nextInt(maxCentsBtc - minCentsBtc + 1) + minCentsBtc);
+
+            for (int i = 0; i < rnd.nextInt(100 - 10 + 1) + 50; i++) {
+                queue.add(new BtcECKey().toAddress(parameters), value);
+            }
+        };
+
+        final byte[] releaseBtcEncoded = Bridge.RELEASE_BTC.encode();
+        ABIEncoder abiEncoder = (int executionIndex) -> releaseBtcEncoded;
+
+        final Random rnd = new Random();
+        TxBuilder txBuilder = (int executionIndex) -> {
+            long satoshis = Coin.CENT.multiply(rnd.nextInt(maxCentsBtc - minCentsBtc + 1) + minCentsBtc).getValue();
+            BigInteger weis = Denomination.satoshisToWeis(BigInteger.valueOf(satoshis));
+            ECKey sender = new ECKey();
+
+            return buildSendValueTx(sender, weis);
+        };
+
+        ExecutionStats stats = executeAndAverage("releaseBtc", 1000, abiEncoder, storageInitializer, txBuilder);
+
+        System.out.println(stats);
     }
 
     private Transaction buildSendValueTx(ECKey sender, BigInteger value) {
@@ -169,20 +306,5 @@ public class BridgePerformanceTest {
         tx.sign(sender.getPrivKeyBytes());
 
         return tx;
-    }
-
-    @Test
-    public void releaseBtc() throws IOException {
-        ExecutionTracker tracker = execute(
-                Bridge.RELEASE_BTC.encode(),
-                (BridgeStorageProvider provider) -> {},
-                () -> buildSendValueTx(
-                        new ECKey(),
-                        Denomination.satoshisToWeis(BigInteger.valueOf(Coin.COIN.multiply(2).getValue()))
-                )
-        );
-
-        System.out.println(tracker.getExecutionTime());
-        System.out.println(tracker.getRealExecutionTime());
     }
 }
