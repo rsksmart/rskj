@@ -41,8 +41,6 @@ public class RemascFederationProviderTest {
         BridgeSupport bridgeSupport = new BridgeSupport(blockchain.getRepository(),
                 PrecompiledContracts.BRIDGE_ADDR,
                 null,
-                null,
-                null,
                 BridgeRegTestConstants.getInstance(),
                 null);
         RemascFederationProvider provider = null;

@@ -20,7 +20,6 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.Repository;
 import org.ethereum.rpc.TypeConverter;
@@ -28,10 +27,7 @@ import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedMap;
+import java.util.*;
 
 /**
  * Provides an object oriented facade of the bridge contract memory.
@@ -51,11 +47,13 @@ public class BridgeStorageProvider {
     private static final DataWord PENDING_FEDERATION_KEY = new DataWord(TypeConverter.stringToByteArray("pendingFederation"));
     private static final DataWord FEDERATION_ELECTION_KEY = new DataWord(TypeConverter.stringToByteArray("federationElection"));
     private static final DataWord LOCK_WHITELIST_KEY = new DataWord(TypeConverter.stringToByteArray("lockWhitelist"));
+    private static final DataWord FEE_PER_KB_KEY = new DataWord(TypeConverter.stringToByteArray("feePerKb"));
+    private static final DataWord FEE_PER_KB_ELECTION_KEY = new DataWord(TypeConverter.stringToByteArray("feePerKbElection"));
 
-    private static final NetworkParameters networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
-
-    private Repository repository;
-    private byte[] contractAddress;
+    private final Repository repository;
+    private final byte[] contractAddress;
+    private final NetworkParameters networkParameters;
+    private final Context btcContext;
 
     private Map<Sha256Hash, Long> btcTxHashesAlreadyProcessed;
 
@@ -82,14 +80,14 @@ public class BridgeStorageProvider {
 
     private LockWhitelist lockWhitelist;
 
-    private BridgeConstants bridgeConstants;
-    private Context btcContext;
+    private Coin feePerKb;
+    private ABICallElection feePerKbElection;
 
-    public BridgeStorageProvider(Repository repository, String contractAddress) {
+    public BridgeStorageProvider(Repository repository, String contractAddress, BridgeConstants bridgeConstants) {
         this.repository = repository;
         this.contractAddress = Hex.decode(contractAddress);
-        bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
-        btcContext = new Context(bridgeConstants.getBtcParams());
+        this.networkParameters = bridgeConstants.getBtcParams();
+        this.btcContext = new Context(networkParameters);
     }
 
     public List<UTXO> getNewFederationBtcUTXOs() throws IOException {
@@ -334,6 +332,48 @@ public class BridgeStorageProvider {
         return lockWhitelist;
     }
 
+    public Coin getFeePerKb() {
+        if (feePerKb != null) {
+            return feePerKb;
+        }
+
+        feePerKb = safeGetFromRepository(FEE_PER_KB_KEY, BridgeSerializationUtils::deserializeCoin);
+        return feePerKb;
+    }
+
+    public void setFeePerKb(Coin feePerKb) {
+        this.feePerKb = feePerKb;
+    }
+
+    public void saveFeePerKb() {
+        if (feePerKb == null) {
+            return;
+        }
+
+        safeSaveToRepository(FEE_PER_KB_KEY, feePerKb, BridgeSerializationUtils::serializeCoin);
+    }
+
+    /**
+     * Save the fee per kb election
+     */
+    public void saveFeePerKbElection() {
+        if (feePerKbElection == null) {
+            return;
+        }
+
+        safeSaveToRepository(FEE_PER_KB_ELECTION_KEY, feePerKbElection, BridgeSerializationUtils::serializeElection);
+    }
+
+
+    public ABICallElection getFeePerKbElection(AddressBasedAuthorizer authorizer) {
+        if (feePerKbElection != null) {
+            return feePerKbElection;
+        }
+
+        feePerKbElection = safeGetFromRepository(FEE_PER_KB_ELECTION_KEY, data -> BridgeSerializationUtils.deserializeElection(data, authorizer));
+        return feePerKbElection;
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -352,6 +392,9 @@ public class BridgeStorageProvider {
         saveFederationElection();
 
         saveLockWhitelist();
+
+        saveFeePerKb();
+        saveFeePerKbElection();
     }
 
     private <T> T safeGetFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) {

@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyVararg;
@@ -49,7 +50,6 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ RLP.class })
 public class BridgeSerializationUtilsTest {
-
     @Test
     public void serializeMapOfHashesToLong() throws Exception {
         PowerMockito.mockStatic(RLP.class);
@@ -769,6 +769,23 @@ public class BridgeSerializationUtilsTest {
             return;
         }
         Assert.fail();
+    }
+
+    @Test
+    public void serializeDeserializeCoin() {
+        byte[] serialized1 = BridgeSerializationUtils.serializeCoin(Coin.COIN);
+        Assert.assertThat(BridgeSerializationUtils.deserializeCoin(serialized1),
+                is(Coin.COIN));
+        byte[] serialized2 = BridgeSerializationUtils.serializeCoin(Coin.valueOf(Long.MAX_VALUE));
+        Assert.assertThat(BridgeSerializationUtils.deserializeCoin(serialized2),
+                is(Coin.valueOf(Long.MAX_VALUE)));
+        byte[] serialized3 = BridgeSerializationUtils.serializeCoin(Coin.ZERO);
+        Assert.assertThat(BridgeSerializationUtils.deserializeCoin(serialized3),
+                is(Coin.ZERO));
+        Assert.assertThat(BridgeSerializationUtils.deserializeCoin(null),
+                nullValue());
+        Assert.assertThat(BridgeSerializationUtils.deserializeCoin(new byte[0]),
+                nullValue());
     }
 
     private Address mockAddressHash160(String hash160) {

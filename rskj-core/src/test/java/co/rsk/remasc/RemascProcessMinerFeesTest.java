@@ -923,8 +923,6 @@ public class RemascProcessMinerFeesTest {
             repository,
             PrecompiledContracts.BRIDGE_ADDR,
             null,
-            null,
-            null,
             BridgeRegTestConstants.getInstance(),
             null);
         RemascFederationProvider provider = new RemascFederationProvider(bridgeSupport);
