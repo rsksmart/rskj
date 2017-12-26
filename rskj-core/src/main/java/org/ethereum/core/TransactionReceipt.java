@@ -48,12 +48,11 @@ public class TransactionReceipt {
     private Transaction transaction;
 
     protected static final byte[] FAILED_STATUS = EMPTY_BYTE_ARRAY;
-    protected static final byte[] SUCCESS_STATUS = new byte[]{0x01};
+    public static final byte[] SUCCESS_STATUS = new byte[]{0x01};
 
     private byte[] postTxState = EMPTY_BYTE_ARRAY;
     private byte[] cumulativeGas = EMPTY_BYTE_ARRAY;
     private byte[] gasUsed = EMPTY_BYTE_ARRAY;
-    private byte[] executionResult = EMPTY_BYTE_ARRAY;
     private byte[] status = EMPTY_BYTE_ARRAY;
 
     private Bloom bloomFilter = new Bloom();
@@ -82,16 +81,9 @@ public class TransactionReceipt {
         gasUsed = gasUsedRLP.getRLPData() == null ? EMPTY_BYTE_ARRAY : gasUsedRLP.getRLPData();
 
         if (receipt.size() > 5 ) {
-            RLPItem result = (RLPItem) receipt.get(5);
-            executionResult = (executionResult = result.getRLPData()) == null ? EMPTY_BYTE_ARRAY : executionResult;
+            byte[] transactionStatus = nullToEmpty(receipt.get(5).getRLPData());
+            this.status = transactionStatus;
         }
-
-
-        if (receipt.size() > 6) {
-            byte[] status = nullToEmpty(receipt.get(6).getRLPData());
-            this.status = status;
-        }
-
 
         for (RLPElement log : logs) {
             LogInfo logInfo = new LogInfo(log.getRLPData());
@@ -103,12 +95,15 @@ public class TransactionReceipt {
 
 
     public TransactionReceipt(byte[] postTxState, byte[] cumulativeGas, byte[] gasUsed,
-                              Bloom bloomFilter, List<LogInfo> logInfoList) {
+                              Bloom bloomFilter, List<LogInfo> logInfoList, byte[] status) {
         this.postTxState = postTxState;
         this.cumulativeGas = cumulativeGas;
         this.gasUsed = gasUsed;
         this.bloomFilter = bloomFilter;
         this.logInfoList = logInfoList;
+        if (Arrays.equals(status, FAILED_STATUS) || Arrays.equals(status, SUCCESS_STATUS)) {
+            this.status = status;
+        }
     }
 
     public byte[] getPostTxState() {
@@ -148,7 +143,7 @@ public class TransactionReceipt {
         byte[] cumulativeGasRLP = RLP.encodeElement(this.cumulativeGas);
         byte[] gasUsedRLP = RLP.encodeElement(this.gasUsed);
         byte[] bloomRLP = RLP.encodeElement(this.bloomFilter.data);
-        byte[] result = RLP.encodeElement(this.executionResult);
+        byte[] status = RLP.encodeElement(this.status);
 
         final byte[] logInfoListRLP;
         if (logInfoList != null) {
@@ -164,7 +159,7 @@ public class TransactionReceipt {
             logInfoListRLP = RLP.encodeList();
         }
 
-        rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, result);
+        rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, status);
 
         return rlpEncoded;
     }
@@ -248,11 +243,6 @@ public class TransactionReceipt {
                 "\n  , logs=" + logInfoList +
                 ']';
     }
-
-    public void setExecutionResult(byte[] executionResult) {
-        this.executionResult = executionResult;
-    }
-
 
     public byte[] getStatus() {
         return this.status;

@@ -36,34 +36,6 @@ public class TransactionReceiptTest {
 
     private static final Logger logger = LoggerFactory.getLogger("test");
 
-    @Test
-    public void testFailedState() {
-        byte[] rlp = Hex.decode("f9016d808255aeb9010000000000000000000000000000" +
-                "0000000000000000000000000000000000000000000000000000000000000000000" +
-                "0000000000000000000000000000000000000000000000000000000000000000000" +
-                "0000000000000000000000000000000000000000000000000000000000000000000" +
-                "0000000000000000000000000000000000000000000000000000000000000000000" +
-                "0000000000000000000000000000000000000000000000000000000000000000000" +
-                "0000000000000000000000000000000000000000000000000000000000000000000" +
-                "0000000000000000000000000000000000000000000000000000000000000000000" +
-                "00000000000000000c08255aeb86000000000000000000000000000000000000000" +
-                "0000000000000000000000002000000000000000000000000000000000000000000" +
-                "0000000000000000000000a6368696e6368696c6c61000000000000000000000000" +
-                "00000000000000000000");
-
-
-        TransactionReceipt txReceipt = new TransactionReceipt(rlp);
-
-        assertEquals(0, txReceipt.getLogInfoList().size());
-
-        assertEquals(TransactionReceipt.FAILED_STATUS, txReceipt.getStatus());
-        assertEquals("", Hex.toHexString(txReceipt.getPostTxState()));
-        assertEquals("55ae", Hex.toHexString(txReceipt.getCumulativeGas()));
-
-        assertEquals("55ae", Hex.toHexString(txReceipt.getGasUsed()));
-
-        logger.info("{}", txReceipt);
-    }
     @Test // rlp decode
     public void test_1() {
 
