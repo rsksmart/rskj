@@ -20,7 +20,6 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.crypto.Sha3Hash;
-import com.google.common.primitives.UnsignedBytes;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.spongycastle.util.BigIntegers;
@@ -498,9 +497,7 @@ public class BridgeSerializationUtils {
     // using the lexicographical order of the voters' unsigned bytes
     private static byte[] serializeVoters(List<TxSender> voters) {
         List<byte[]> encodedKeys = voters.stream()
-                .sorted((TxSender v1, TxSender v2) ->
-                        UnsignedBytes.lexicographicalComparator().compare(v1.getBytes(), v2.getBytes())
-                )
+                .sorted(TxSender.COMPARATOR)
                 .map(key -> RLP.encodeElement(key.getBytes()))
                 .collect(Collectors.toList());
         return RLP.encodeList(encodedKeys.toArray(new byte[0][]));
