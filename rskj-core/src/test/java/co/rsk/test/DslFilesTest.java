@@ -169,7 +169,7 @@ public class DslFilesTest {
         Assert.assertNotEquals(topic2, topic3);
 
         // only the third log was directly produced by the created contract
-        byte[] contractAddress = txinfo.getReceipt().getTransaction().getContractAddress();
+        byte[] contractAddress = txinfo.getReceipt().getTransaction().getContractAddress().getBytes();
 
         Assert.assertFalse(Arrays.equals(contractAddress, txinfo.getReceipt().getLogInfoList().get(0).getAddress()));
         Assert.assertFalse(Arrays.equals(contractAddress, txinfo.getReceipt().getLogInfoList().get(1).getAddress()));

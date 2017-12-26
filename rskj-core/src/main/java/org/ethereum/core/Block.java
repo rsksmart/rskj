@@ -507,7 +507,7 @@ public class Block {
     }
 
     private static boolean checkRemascAddress(Transaction tx) {
-        return Arrays.areEqual(Hex.decode(PrecompiledContracts.REMASC_ADDR), tx.getReceiveAddress());
+        return Arrays.areEqual(Hex.decode(PrecompiledContracts.REMASC_ADDR), tx.getReceiveAddress().getBytes());
     }
 
     private static boolean checkRemascTxZeroValues(Transaction tx) {

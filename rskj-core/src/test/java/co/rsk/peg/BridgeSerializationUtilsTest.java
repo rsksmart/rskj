@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.core.RskAddress;
 import com.google.common.primitives.UnsignedBytes;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -285,20 +286,20 @@ public class BridgeSerializationUtilsTest {
         mock_RLP_encodeList();
 
         AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
-        when(mockedAuthorizer.isAuthorized(any(TxSender.class))).thenReturn(true);
+        when(mockedAuthorizer.isAuthorized(any(RskAddress.class))).thenReturn(true);
 
-        Map<ABICallSpec, List<TxSender>> sampleVotes = new HashMap<>();
+        Map<ABICallSpec, List<RskAddress>> sampleVotes = new HashMap<>();
         sampleVotes.put(
                 new ABICallSpec("one-function", new byte[][]{}),
-                Arrays.asList(new TxSender(Hex.decode("8899")), new TxSender(Hex.decode("aabb")))
+                Arrays.asList(new RskAddress(Hex.decode("8899")), new RskAddress(Hex.decode("aabb")))
         );
         sampleVotes.put(
                 new ABICallSpec("another-function", new byte[][]{ Hex.decode("01"), Hex.decode("0203") }),
-                Arrays.asList(new TxSender(Hex.decode("ccdd")), new TxSender(Hex.decode("eeff")), new TxSender(Hex.decode("0011")))
+                Arrays.asList(new RskAddress(Hex.decode("ccdd")), new RskAddress(Hex.decode("eeff")), new RskAddress(Hex.decode("0011")))
         );
         sampleVotes.put(
                 new ABICallSpec("yet-another-function", new byte[][]{ Hex.decode("0405") }),
-                Arrays.asList(new TxSender(Hex.decode("fa")), new TxSender(Hex.decode("ca")))
+                Arrays.asList(new RskAddress(Hex.decode("fa")), new RskAddress(Hex.decode("ca")))
         );
 
         ABICallElection sample = new ABICallElection(mockedAuthorizer, sampleVotes);
@@ -341,7 +342,7 @@ public class BridgeSerializationUtilsTest {
         mock_RLP_decode2(InnerListMode.STARTING_WITH_FF_RECURSIVE);
 
         AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
-        when(mockedAuthorizer.isAuthorized(any(TxSender.class))).thenReturn(true);
+        when(mockedAuthorizer.isAuthorized(any(RskAddress.class))).thenReturn(true);
 
         StringBuilder sampleBuilder = new StringBuilder();
         sampleBuilder.append("06"); // Total of three specs, two entries for each
@@ -384,14 +385,14 @@ public class BridgeSerializationUtilsTest {
         ABICallElection election = BridgeSerializationUtils.deserializeElection(sample, mockedAuthorizer);
 
         Assert.assertEquals(3, election.getVotes().size());
-        List<TxSender> voters;
+        List<RskAddress> voters;
         ABICallSpec spec;
 
         spec = new ABICallSpec("funct", new byte[][]{});
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                new TxSender(Hex.decode("aa")),
-                new TxSender(Hex.decode("bbccdd"))
+                new RskAddress(Hex.decode("aa")),
+                new RskAddress(Hex.decode("bbccdd"))
         );
         Assert.assertEquals(voters, election.getVotes().get(spec));
 
@@ -401,9 +402,9 @@ public class BridgeSerializationUtilsTest {
         });
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                new TxSender(Hex.decode("55")),
-                new TxSender(Hex.decode("66")),
-                new TxSender(Hex.decode("77"))
+                new RskAddress(Hex.decode("55")),
+                new RskAddress(Hex.decode("66")),
+                new RskAddress(Hex.decode("77"))
         );
         Assert.assertEquals(voters, election.getVotes().get(spec));
 
@@ -412,10 +413,10 @@ public class BridgeSerializationUtilsTest {
         });
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                new TxSender(Hex.decode("1111")),
-                new TxSender(Hex.decode("3333")),
-                new TxSender(Hex.decode("5555")),
-                new TxSender(Hex.decode("77"))
+                new RskAddress(Hex.decode("1111")),
+                new RskAddress(Hex.decode("3333")),
+                new RskAddress(Hex.decode("5555")),
+                new RskAddress(Hex.decode("77"))
         );
         Assert.assertEquals(voters, election.getVotes().get(spec));
     }
@@ -426,7 +427,7 @@ public class BridgeSerializationUtilsTest {
         mock_RLP_decode2(InnerListMode.STARTING_WITH_FF_RECURSIVE);
 
         AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
-        when(mockedAuthorizer.isAuthorized(any(TxSender.class))).thenReturn(true);
+        when(mockedAuthorizer.isAuthorized(any(RskAddress.class))).thenReturn(true);
 
         StringBuilder sampleBuilder = new StringBuilder();
         sampleBuilder.append("05"); // Five elements, uneven
@@ -451,7 +452,7 @@ public class BridgeSerializationUtilsTest {
         mock_RLP_decode2(InnerListMode.STARTING_WITH_FF_RECURSIVE);
 
         AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
-        when(mockedAuthorizer.isAuthorized(any(TxSender.class))).thenReturn(true);
+        when(mockedAuthorizer.isAuthorized(any(RskAddress.class))).thenReturn(true);
 
         StringBuilder sampleBuilder = new StringBuilder();
         sampleBuilder.append("02");

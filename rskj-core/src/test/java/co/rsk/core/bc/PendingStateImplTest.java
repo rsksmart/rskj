@@ -454,9 +454,9 @@ public class PendingStateImplTest {
 
         pendingState.addPendingTransaction(tx);
 
-        Assert.assertNotNull(tx.getContractAddress());
+        Assert.assertNotNull(tx.getContractAddress().getBytes());
         // Stored value at 0 position should be 1, one more than the blockchain best block
-        Assert.assertEquals(DataWord.ONE, pendingState.getRepository().getStorageValue(tx.getContractAddress(), DataWord.ZERO));
+        Assert.assertEquals(DataWord.ONE, pendingState.getRepository().getStorageValue(tx.getContractAddress().getBytes(), DataWord.ZERO));
     }
 
     private static PendingStateImpl createSampleNewPendingState() {

@@ -22,7 +22,7 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.core.bc.PendingStateImpl;
-import co.rsk.peg.TxSender;
+import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import com.google.common.collect.Lists;
 import org.ethereum.core.PendingState;
@@ -150,12 +150,12 @@ public class MinerUtils {
         return new LinkedList<>(ret);
     }
 
-    public List<org.ethereum.core.Transaction> filterTransactions(List<org.ethereum.core.Transaction> txsToRemove, List<org.ethereum.core.Transaction> txs, Map<TxSender, BigInteger> accountNonces, Repository originalRepo, BigInteger minGasPrice) {
+    public List<org.ethereum.core.Transaction> filterTransactions(List<org.ethereum.core.Transaction> txsToRemove, List<org.ethereum.core.Transaction> txs, Map<RskAddress, BigInteger> accountNonces, Repository originalRepo, BigInteger minGasPrice) {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
                 logger.info("Pending transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
-                TxSender txSender = tx.getSender();
+                RskAddress txSender = tx.getSender();
 
                 logger.info("Examining transaction {} sender: {} value: {} nonce: {}", Hex.toHexString(tx.getHash()), txSender, Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
 

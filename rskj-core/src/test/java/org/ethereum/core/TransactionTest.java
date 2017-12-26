@@ -181,7 +181,7 @@ public class TransactionTest {
         assertEquals(BigInteger.ZERO, new BigInteger(1, txSigned.getNonce()));
         assertEquals(new BigInteger(1, testGasPrice), new BigInteger(1, txSigned.getGasPrice()));
         assertEquals(new BigInteger(1, testGasLimit), new BigInteger(1, txSigned.getGasLimit()));
-        assertEquals(Hex.toHexString(testReceiveAddress), Hex.toHexString(txSigned.getReceiveAddress()));
+        assertEquals(Hex.toHexString(testReceiveAddress), Hex.toHexString(txSigned.getReceiveAddress().getBytes()));
         assertEquals(new BigInteger(1, testValue), new BigInteger(1, txSigned.getValue()));
         assertNull(txSigned.getData());
         assertEquals(27, txSigned.getSignature().v);
@@ -202,7 +202,7 @@ public class TransactionTest {
         assertEquals(BigInteger.ZERO, new BigInteger(1, txUnsigned.getNonce()));
         assertEquals(new BigInteger(1, testGasPrice), new BigInteger(1, txUnsigned.getGasPrice()));
         assertEquals(new BigInteger(1, testGasLimit), new BigInteger(1, txUnsigned.getGasLimit()));
-        assertEquals(Hex.toHexString(testReceiveAddress), Hex.toHexString(txUnsigned.getReceiveAddress()));
+        assertEquals(Hex.toHexString(testReceiveAddress), Hex.toHexString(txUnsigned.getReceiveAddress().getBytes()));
         assertEquals(new BigInteger(1, testValue), new BigInteger(1, txUnsigned.getValue()));
         assertNull(txUnsigned.getData());
         assertEquals(27, txUnsigned.getSignature().v);
@@ -218,7 +218,7 @@ public class TransactionTest {
         assertEquals("", Hex.toHexString(txNew.getNonce()));
         assertEquals(new BigInteger(1, testGasPrice), new BigInteger(1, txNew.getGasPrice()));
         assertEquals(new BigInteger(1, testGasLimit), new BigInteger(1, txNew.getGasLimit()));
-        assertEquals(Hex.toHexString(testReceiveAddress), Hex.toHexString(txNew.getReceiveAddress()));
+        assertEquals(Hex.toHexString(testReceiveAddress), Hex.toHexString(txNew.getReceiveAddress().getBytes()));
         assertEquals(new BigInteger(1, testValue), new BigInteger(1, txNew.getValue()));
         assertEquals("", Hex.toHexString(txNew.getData()));
         assertNull(txNew.getSignature());
@@ -584,7 +584,7 @@ public class TransactionTest {
         Transaction tx = createTx(blockchain, sender, new byte[0], Hex.decode(code));
         executeTransaction(blockchain, tx);
 
-        byte[] contractAddress = tx.getContractAddress();
+        byte[] contractAddress = tx.getContractAddress().getBytes();
 
         CallTransaction.Contract contract1 = new CallTransaction.Contract(abi);
         byte[] callData = contract1.getByName("multipleHomicide").encode();
@@ -662,9 +662,9 @@ public class TransactionTest {
         executeTransaction(blockchain, tx2);
 
         CallTransaction.Contract contract2 = new CallTransaction.Contract(abi2);
-        byte[] data = contract2.getByName("doIt").encode(Hex.toHexString(tx1.getContractAddress()));
+        byte[] data = contract2.getByName("doIt").encode(Hex.toHexString(tx1.getContractAddress().getBytes()));
 
-        Transaction tx3 = createTx(blockchain, sender, tx2.getContractAddress(), data);
+        Transaction tx3 = createTx(blockchain, sender, tx2.getContractAddress().getBytes(), data);
         TransactionExecutor executor = executeTransaction(blockchain, tx3);
         Assert.assertEquals(1, executor.getResult().getLogInfoList().size());
         Assert.assertEquals(false, executor.getResult().getLogInfoList().get(0).isRejected());

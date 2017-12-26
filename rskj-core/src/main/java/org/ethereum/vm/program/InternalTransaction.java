@@ -19,7 +19,7 @@
 
 package org.ethereum.vm.program;
 
-import co.rsk.peg.TxSender;
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -46,7 +46,7 @@ public class InternalTransaction extends Transaction {
         this.parentHash = parentHash;
         this.deep = deep;
         this.index = index;
-        this.sender = new TxSender(nullToEmpty(sendAddress));
+        this.sender = new RskAddress(nullToEmpty(sendAddress));
         this.note = note;
     }
 
@@ -92,7 +92,7 @@ public class InternalTransaction extends Transaction {
             nonce = RLP.encodeElement(nonce);
         }
         byte[] senderAddress = RLP.encodeElement(getSender().getBytes());
-        byte[] receiveAddress = RLP.encodeElement(getReceiveAddress());
+        byte[] receiveAddress = RLP.encodeElement(getReceiveAddress().getBytes());
         byte[] value = RLP.encodeElement(getValue());
         byte[] gasPrice = RLP.encodeElement(getGasPrice());
         byte[] gasLimit = RLP.encodeElement(getGasLimit());

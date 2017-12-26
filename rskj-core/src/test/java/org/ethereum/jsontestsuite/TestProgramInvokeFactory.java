@@ -62,7 +62,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
 
         /***         ADDRESS op       ***/
         // YP: Get address of currently executing account.
-        byte[] address = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
+        byte[] address = tx.isContractCreation() ? tx.getContractAddress().getBytes() : tx.getReceiveAddress().getBytes();
 
         /***         ORIGIN op       ***/
         // YP: This is the sender of original transaction; it is never a contract.

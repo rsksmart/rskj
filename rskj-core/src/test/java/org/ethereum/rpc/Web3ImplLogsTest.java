@@ -146,7 +146,7 @@ public class Web3ImplLogsTest {
         // TODO Fix
         Assert.assertEquals(1, logs.length);
 
-        Assert.assertEquals("0x" + Hex.toHexString(tx.getContractAddress()),((LogFilterElement)logs[0]).address);
+        Assert.assertEquals("0x" + tx.getContractAddress().toString(),((LogFilterElement)logs[0]).address);
     }
 
     @Test
@@ -237,7 +237,7 @@ public class Web3ImplLogsTest {
         Block block1 = web3.getBlockchain().getBlockByNumber(1l);
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
-        fr.address = Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress());
+        fr.address = Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
@@ -289,7 +289,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress());
+        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
         Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
     }
@@ -307,7 +307,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress());
+        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
         Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
     }
@@ -387,11 +387,11 @@ public class Web3ImplLogsTest {
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         world.getBlockChain().tryToConnect(block1);
 
-        String mainAddress = Hex.toHexString(tx.getContractAddress());
+        String mainAddress = tx.getContractAddress().toString();
 
         Transaction tx2;
         tx2 = getCallerContractTransaction(acc1, mainAddress);
-        String callerAddress = Hex.toHexString(tx2.getContractAddress());
+        String callerAddress = Hex.toHexString(tx2.getContractAddress().getBytes());
 
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
@@ -442,11 +442,11 @@ public class Web3ImplLogsTest {
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         world.getBlockChain().tryToConnect(block1);
 
-        String mainAddress = Hex.toHexString(tx.getContractAddress());
+        String mainAddress = tx.getContractAddress().toString();
 
         Transaction tx2;
         tx2 = getCallerContractTransaction(acc1, mainAddress);
-        String callerAddress = Hex.toHexString(tx2.getContractAddress());
+        String callerAddress = Hex.toHexString(tx2.getContractAddress().getBytes());
 
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
@@ -454,7 +454,7 @@ public class Web3ImplLogsTest {
         world.getBlockChain().tryToConnect(block2);
 
         Transaction tx3;
-        tx3 = getCallerContractTransactionWithInvoke(acc1, tx2.getContractAddress(), mainAddress);
+        tx3 = getCallerContractTransactionWithInvoke(acc1, tx2.getContractAddress().getBytes(), mainAddress);
 
         List<Transaction> txs3 = new ArrayList<>();
         txs3.add(tx3);
@@ -590,7 +590,7 @@ public class Web3ImplLogsTest {
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        byte[] contractAddress = tx.getContractAddress();
+        byte[] contractAddress = tx.getContractAddress().getBytes();
 
         Transaction tx2 = getContractTransactionWithInvoke(acc1, contractAddress);
         List<Transaction> tx2s = new ArrayList<>();
@@ -624,7 +624,7 @@ public class Web3ImplLogsTest {
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        byte[] contractAddress = tx.getContractAddress();
+        byte[] contractAddress = tx.getContractAddress().getBytes();
 
         // Now create a transaction that invokes Increment()
         Transaction tx2 = getContractTransactionWithInvoke(acc1, contractAddress);

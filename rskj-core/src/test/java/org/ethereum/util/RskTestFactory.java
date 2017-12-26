@@ -70,7 +70,7 @@ public class RskTestFactory {
                 // a large gas limit will allow running any contract
                 .gasLimit(BigInteger.valueOf(3000000))
                 .sender(sender)
-                .receiverAddress(creationTx.getContractAddress())
+                .receiverAddress(creationTx.getContractAddress().getBytes())
                 .data(encodedCall)
                 .nonce(nonceExecute.longValue())
                 .value(value)

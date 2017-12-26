@@ -18,7 +18,7 @@
 
 package co.rsk.remasc;
 
-import co.rsk.peg.TxSender;
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
@@ -53,9 +53,10 @@ public class RemascTransaction extends Transaction {
     }
 
     @Override
-    public TxSender getSender() {
+    public RskAddress getSender() {
         // RemascTransaction is not signed so has no sender
-        return new TxSender(new byte[]{0});
+        // TODO(mc): we should use RskAddress.nullAddress(), but that changes Repository.getNonce semantics
+        return new RskAddress(new byte[]{0});
     }
 
     @Override

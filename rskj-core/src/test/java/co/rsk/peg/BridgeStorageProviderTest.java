@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.db.RepositoryImpl;
 import org.ethereum.core.Repository;
@@ -629,7 +630,7 @@ public class BridgeStorageProviderTest {
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd", RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        HashMap<ABICallSpec, List<TxSender>> electionVotes = new HashMap<>();
+        HashMap<ABICallSpec, List<RskAddress>> electionVotes = new HashMap<>();
         byte[] serializedElection = BridgeSerializationUtils.serializeElection(
                 new ABICallElection(authorizerMock, electionVotes));
         when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class)))
@@ -648,16 +649,16 @@ public class BridgeStorageProviderTest {
         Repository repositoryMock = mock(Repository.class);
         when(authorizerMock.getRequiredAuthorizedKeys())
                 .thenReturn(1);
-        when(authorizerMock.isAuthorized(any(TxSender.class)))
+        when(authorizerMock.isAuthorized(any(RskAddress.class)))
                 .thenReturn(true);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd", RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         byte[] electionFee = new byte[] {0x43, 0x19};
         ABICallSpec expectedWinner = new ABICallSpec("setFeePerKb", new byte[][]{electionFee});
-        List<TxSender> voters = new ArrayList<>();
-        voters.add(new TxSender(new byte[] {0x13, 0x21}));
-        voters.add(new TxSender(new byte[] {0x40, 0x49}));
-        HashMap<ABICallSpec, List<TxSender>> electionVotes = new HashMap<>();
+        List<RskAddress> voters = new ArrayList<>();
+        voters.add(new RskAddress(new byte[] {0x13, 0x21}));
+        voters.add(new RskAddress(new byte[] {0x40, 0x49}));
+        HashMap<ABICallSpec, List<RskAddress>> electionVotes = new HashMap<>();
         electionVotes.put(expectedWinner, voters);
         byte[] serializedElection = BridgeSerializationUtils.serializeElection(
                 new ABICallElection(authorizerMock, electionVotes));

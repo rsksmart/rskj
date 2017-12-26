@@ -74,7 +74,7 @@ public class ContractRunner {
         createContract(bytecode);
         Transaction creationTx = contractCreateTx(bytecode);
         executeTransaction(creationTx);
-        return runContract(creationTx.getContractAddress(), encodedCall, value);
+        return runContract(creationTx.getContractAddress().getBytes(), encodedCall, value);
     }
 
     private Transaction contractCreateTx(byte[] bytecode) {

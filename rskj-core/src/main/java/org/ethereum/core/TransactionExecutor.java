@@ -196,7 +196,7 @@ public class TransactionExecutor {
         }
 
         // Prevent transactions with excessive address size
-        byte[] receiveAddress = tx.getReceiveAddress();
+        byte[] receiveAddress = tx.getReceiveAddress().getBytes();
         if (receiveAddress != null && !Arrays.equals(receiveAddress, EMPTY_BYTE_ARRAY) && receiveAddress.length > Constants.getMaxAddressByteLength()) {
             if (logger.isWarnEnabled()) {
                 logger.warn("Receiver address to long: size: {}, tx {}", receiveAddress.length, Hex.toHexString(tx.getHash()));
@@ -259,7 +259,7 @@ public class TransactionExecutor {
 
         logger.info("Call transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
 
-        byte[] targetAddress = tx.getReceiveAddress();
+        byte[] targetAddress = tx.getReceiveAddress().getBytes();
 
         // DataWord(targetAddress)) can fail with exception:
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
@@ -314,10 +314,10 @@ public class TransactionExecutor {
     }
 
     private void create() {
-        byte[] newContractAddress = tx.getContractAddress();
+        byte[] newContractAddress = tx.getContractAddress().getBytes();
         if (isEmpty(tx.getData())) {
             mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
-            cacheTrack.createAccount(tx.getContractAddress());
+            cacheTrack.createAccount(newContractAddress);
         } else {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
@@ -387,7 +387,7 @@ public class TransactionExecutor {
                 } else {
                     mEndGas = mEndGas.subtract(BigInteger.valueOf(returnDataGasValue));
                     program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
-                    cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
+                    cacheTrack.saveCode(tx.getContractAddress().getBytes(), result.getHReturn());
                 }
             }
 
@@ -457,7 +457,7 @@ public class TransactionExecutor {
             // Accumulate refunds for suicides
             result.addFutureRefund((long)result.getDeleteAccounts().size() * GasCost.SUICIDE_REFUND);
             long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
-            byte[] addr = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
+            byte[] addr = tx.isContractCreation() ? tx.getContractAddress().getBytes() : tx.getReceiveAddress().getBytes();
             mEndGas = mEndGas.add(BigInteger.valueOf(gasRefund));
 
             summaryBuilder

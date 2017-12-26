@@ -18,7 +18,7 @@
 
 package co.rsk.net.handler;
 
-import co.rsk.peg.TxSender;
+import co.rsk.core.RskAddress;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.listener.EthereumListenerAdapter;
@@ -42,7 +42,7 @@ public class TxHandlerImpl implements TxHandler {
     private Blockchain blockchain;
     private Map<String, TxTimestamp> knownTxs = new HashMap<>();
     private Lock knownTxsLock = new ReentrantLock();
-    private Map<TxSender, TxsPerAccount> txsPerAccounts = new HashMap<>();
+    private Map<RskAddress, TxsPerAccount> txsPerAccounts = new HashMap<>();
 
     /**
      * This method will fork two `threads` and should not be instanced more than
@@ -100,7 +100,7 @@ public class TxHandlerImpl implements TxHandler {
             TxTimestamp txt = entry.getValue();
 
             if (time - txt.timestamp > oldTxThresholdInMS) {
-                TxSender addr = txt.tx.getSender();
+                RskAddress addr = txt.tx.getSender();
                 TxsPerAccount txsPerAccount = txsPerAccounts.get(addr);
 
                 if (txsPerAccount != null) {
@@ -133,7 +133,7 @@ public class TxHandlerImpl implements TxHandler {
                         continue;
                     }
 
-                    TxSender addr = tx.getSender();
+                    RskAddress addr = tx.getSender();
                     TxsPerAccount txsPerAccount = txsPerAccounts.get(addr);
 
                     if (txsPerAccount == null)
@@ -157,9 +157,9 @@ public class TxHandlerImpl implements TxHandler {
     }
 
     @VisibleForTesting void setKnownTxs(Map<String, TxTimestamp> knownTxs) { this.knownTxs = knownTxs; }
-    @VisibleForTesting void setTxsPerAccounts(Map<TxSender, TxsPerAccount> txsPerAccounts) { this.txsPerAccounts = txsPerAccounts; }
+    @VisibleForTesting void setTxsPerAccounts(Map<RskAddress, TxsPerAccount> txsPerAccounts) { this.txsPerAccounts = txsPerAccounts; }
     @VisibleForTesting Map<String, TxTimestamp> getKnownTxs() { return knownTxs; }
-    @VisibleForTesting Map<TxSender, TxsPerAccount> getTxsPerAccounts() { return txsPerAccounts; }
+    @VisibleForTesting Map<RskAddress, TxsPerAccount> getTxsPerAccounts() { return txsPerAccounts; }
     @VisibleForTesting public void onBlock(Block block, List<TransactionReceipt> receiptList) { new Listener().onBlock(block, receiptList); }
 
 }

@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc.dto;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.TransactionInfo;
@@ -55,8 +56,9 @@ public class TransactionReceiptDTO {
         blockHash = toJsonHex(txInfo.getBlockHash());
         blockNumber = toJsonHex(block.getNumber());
 
-        if (receipt.getTransaction().getContractAddress() != null) {
-            contractAddress = toJsonHex(receipt.getTransaction().getContractAddress());
+        RskAddress contractAddress = receipt.getTransaction().getContractAddress();
+        if (contractAddress != null) {
+            this.contractAddress = toJsonHex(contractAddress.getBytes());
         }
 
         cumulativeGasUsed = toJsonHex(receipt.getCumulativeGas());
@@ -71,7 +73,7 @@ public class TransactionReceiptDTO {
         }
 
         root = toJsonHex(receipt.getPostTxState());
-        to = toJsonHex(receipt.getTransaction().getReceiveAddress());
+        to = toJsonHex(receipt.getTransaction().getReceiveAddress().getBytes());
         transactionHash = toJsonHex(receipt.getTransaction().getHash());
         transactionIndex = toJsonHex(txInfo.getIndex());
     }

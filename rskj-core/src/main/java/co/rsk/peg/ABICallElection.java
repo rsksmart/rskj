@@ -18,6 +18,8 @@
 
 package co.rsk.peg;
 
+import co.rsk.core.RskAddress;
+
 import java.util.*;
 
 /**
@@ -29,9 +31,9 @@ import java.util.*;
  */
 public class ABICallElection {
     private AddressBasedAuthorizer authorizer;
-    private Map<ABICallSpec, List<TxSender>> votes;
+    private Map<ABICallSpec, List<RskAddress>> votes;
 
-    public ABICallElection(AddressBasedAuthorizer authorizer, Map<ABICallSpec, List<TxSender>> votes) {
+    public ABICallElection(AddressBasedAuthorizer authorizer, Map<ABICallSpec, List<RskAddress>> votes) {
         this.authorizer = authorizer;
         this.votes = votes;
         validate();
@@ -42,7 +44,7 @@ public class ABICallElection {
         this.votes = new HashMap<>();
     }
 
-    public Map<ABICallSpec, List<TxSender>> getVotes() {
+    public Map<ABICallSpec, List<RskAddress>> getVotes() {
         return votes;
     }
 
@@ -56,7 +58,7 @@ public class ABICallElection {
      * @param voter the voter's key
      * @return whether the voting succeeded
      */
-    public boolean vote(ABICallSpec callSpec, TxSender voter) {
+    public boolean vote(ABICallSpec callSpec, RskAddress voter) {
         if (!authorizer.isAuthorized(voter)) {
             return false;
         }
@@ -65,7 +67,7 @@ public class ABICallElection {
             votes.put(callSpec, new ArrayList<>());
         }
 
-        List<TxSender> callVoters = votes.get(callSpec);
+        List<RskAddress> callVoters = votes.get(callSpec);
 
         if (callVoters.contains(voter)) {
             return false;
@@ -83,7 +85,7 @@ public class ABICallElection {
      * @return the winner abi call spec
      */
     public ABICallSpec getWinner() {
-        for (Map.Entry<ABICallSpec, List<TxSender>> specVotes : votes.entrySet()) {
+        for (Map.Entry<ABICallSpec, List<RskAddress>> specVotes : votes.entrySet()) {
             if (specVotes.getValue().size() >= authorizer.getRequiredAuthorizedKeys()) {
                 return specVotes.getKey();
             }
@@ -104,8 +106,8 @@ public class ABICallElection {
 
     private void validate() {
         // Make sure all the votes are authorized
-        for (Map.Entry<ABICallSpec, List<TxSender>> specVotes : votes.entrySet()) {
-            for (TxSender vote : specVotes.getValue()) {
+        for (Map.Entry<ABICallSpec, List<RskAddress>> specVotes : votes.entrySet()) {
+            for (RskAddress vote : specVotes.getValue()) {
                 if (!authorizer.isAuthorized(vote)) {
                     throw new RuntimeException("Unauthorized voter");
                 }

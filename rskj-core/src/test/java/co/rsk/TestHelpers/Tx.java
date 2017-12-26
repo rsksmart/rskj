@@ -18,7 +18,7 @@
 
 package co.rsk.TestHelpers;
 
-import co.rsk.peg.TxSender;
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.mockito.Mockito;
@@ -45,10 +45,11 @@ public class Tx {
 
         byte[] returnSenderBytes = new byte[20];
         r.nextBytes(returnSenderBytes);
-        TxSender returnSender = new TxSender(returnSenderBytes);
+        RskAddress returnSender = new RskAddress(returnSenderBytes);
 
-        byte[] returnReceiveAddress = new byte[20];
-        r.nextBytes(returnReceiveAddress);
+        byte[] returnReceiveAddressBytes = new byte[20];
+        r.nextBytes(returnReceiveAddressBytes);
+        RskAddress returnReceiveAddress = new RskAddress(returnReceiveAddressBytes);
 
         Mockito.when(transaction.getSender()).thenReturn(returnSender);
         Mockito.when(transaction.getHash()).thenReturn(BigInteger.valueOf(hashes.nextLong()).toByteArray());

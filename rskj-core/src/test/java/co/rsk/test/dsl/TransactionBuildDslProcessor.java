@@ -54,7 +54,7 @@ public class TransactionBuildDslProcessor {
         else if (cmd.isCommand("nonce"))
             this.builder.nonce(Long.parseLong(cmd.getArgument(0)));
         else if (cmd.isCommand("contract"))
-            this.builder.receiverAddress(this.world.getTransactionByName(cmd.getArgument(0)).getContractAddress());
+            this.builder.receiverAddress(this.world.getTransactionByName(cmd.getArgument(0)).getContractAddress().getBytes());
         else if (cmd.isCommand("receiverAddress"))
             if (cmd.getArgument(0).equals("0") || cmd.getArgument(0).equals("00"))
                 this.builder.receiverAddress(ByteUtil.EMPTY_BYTE_ARRAY);

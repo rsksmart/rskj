@@ -160,7 +160,7 @@ public class BridgeUtils {
 
     public static boolean isFreeBridgeTx(org.ethereum.core.Transaction rskTx, long blockNumber) {
         BlockchainNetConfig blockchainConfig = RskSystemProperties.CONFIG.getBlockchainConfig();
-        byte[] receiveAddress = rskTx.getReceiveAddress();
+        byte[] receiveAddress = rskTx.getReceiveAddress().getBytes();
 
         if (receiveAddress == null) {
             return false;

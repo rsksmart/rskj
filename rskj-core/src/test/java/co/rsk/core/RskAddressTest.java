@@ -16,20 +16,20 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.core;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
-public class TxSenderTest {
+public class RskAddressTest {
     @Test
     public void testEquals() {
-        TxSender senderA = new TxSender(Hex.decode("aabbccdd"));
-        TxSender senderB = new TxSender(Hex.decode("aabbccdd"));
-        TxSender senderC = new TxSender(Hex.decode("aabbccddee"));
-        TxSender senderD = new TxSender(Hex.decode(""));
-        TxSender senderE = new TxSender(Hex.decode("112233"));
+        RskAddress senderA = new RskAddress(Hex.decode("aabbccdd"));
+        RskAddress senderB = new RskAddress(Hex.decode("aabbccdd"));
+        RskAddress senderC = new RskAddress(Hex.decode("aabbccddee"));
+        RskAddress senderD = new RskAddress(Hex.decode(""));
+        RskAddress senderE = new RskAddress(Hex.decode("112233"));
 
         Assert.assertEquals(senderA, senderB);
         Assert.assertNotEquals(senderA, senderC);

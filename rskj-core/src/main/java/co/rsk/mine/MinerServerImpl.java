@@ -27,7 +27,7 @@ import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.net.BlockProcessor;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.peg.TxSender;
+import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.BlockValidationRule;
@@ -737,7 +737,7 @@ public class MinerServerImpl implements MinerServer {
         Transaction remascTx = new RemascTransaction(parent.getNumber() + 1);
         txs.add(remascTx);
 
-        Map<TxSender, BigInteger> accountNonces = new HashMap<>();
+        Map<RskAddress, BigInteger> accountNonces = new HashMap<>();
 
         Repository originalRepo = blockchain.getRepository().getSnapshotTo(parent.getStateRoot());
 

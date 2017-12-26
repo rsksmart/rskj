@@ -21,9 +21,8 @@ package org.ethereum.util;
 
 import org.ethereum.db.ByteArrayWrapper;
 import org.spongycastle.util.encoders.Hex;
+
 import javax.annotation.Nonnull;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -471,6 +470,15 @@ public class ByteUtil {
         return (array.length == 1 && array[0] == 0);
     }
 
+    public static boolean isAllZeroes(byte[] array) {
+        for (byte b : array) {
+            if (b != 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     public static Set<ByteArrayWrapper> difference(Set<ByteArrayWrapper> setA, Set<ByteArrayWrapper> setB){
 

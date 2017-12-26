@@ -294,7 +294,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertNotNull(trxHash);
         org.junit.Assert.assertNotNull(eth.tx);
         org.junit.Assert.assertArrayEquals(acc1.getAddress(), eth.tx.getSender().getBytes());
-        org.junit.Assert.assertArrayEquals(acc2.getAddress(), eth.tx.getReceiveAddress());
+        org.junit.Assert.assertArrayEquals(acc2.getAddress(), eth.tx.getReceiveAddress().getBytes());
         org.junit.Assert.assertEquals(BigInteger.valueOf(1000000), new BigInteger(1, eth.tx.getValue()));
     }
 
@@ -340,7 +340,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals("0x" + hashString, tr.transactionHash);
         String trxFrom = TypeConverter.toJsonHex(tx.getSender().getBytes());
         org.junit.Assert.assertEquals(trxFrom, tr.from);
-        String trxTo = TypeConverter.toJsonHex(tx.getReceiveAddress());
+        String trxTo = TypeConverter.toJsonHex(tx.getReceiveAddress().getBytes());
         org.junit.Assert.assertEquals(trxTo, tr.to);
 
         String blockHashString = "0x" + Hex.toHexString(block1.getHash());
@@ -408,7 +408,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals(blockHashString, tr.blockHash);
 
         org.junit.Assert.assertEquals("0x00", tr.input);
-        org.junit.Assert.assertEquals("0x" + Hex.toHexString(tx.getReceiveAddress()), tr.to);
+        org.junit.Assert.assertEquals("0x" + Hex.toHexString(tx.getReceiveAddress().getBytes()), tr.to);
     }
 
     @Test
@@ -436,7 +436,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals(null, tr.blockHash);
         org.junit.Assert.assertEquals(null, tr.transactionIndex);
         org.junit.Assert.assertEquals("0x00", tr.input);
-        org.junit.Assert.assertEquals("0x" + Hex.toHexString(tx.getReceiveAddress()), tr.to);
+        org.junit.Assert.assertEquals("0x" + Hex.toHexString(tx.getReceiveAddress().getBytes()), tr.to);
     }
 
     @Test
@@ -869,7 +869,7 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3Mocked(world, block1);
 
         Web3.CallArguments argsForCall = new Web3.CallArguments();
-        argsForCall.to = TypeConverter.toJsonHex(tx.getContractAddress());
+        argsForCall.to = TypeConverter.toJsonHex(tx.getContractAddress().getBytes());
         argsForCall.data = greeter.functions.get("greet").formatSignature();
 
         String result = web3.eth_call(argsForCall, "latest");
@@ -915,7 +915,7 @@ public class Web3ImplTest {
 
         Web3.CallArguments argsForCall = new Web3.CallArguments();
         argsForCall.from = TypeConverter.toJsonHex(acc1.getAddress());
-        argsForCall.to = TypeConverter.toJsonHex(tx.getContractAddress());
+        argsForCall.to = TypeConverter.toJsonHex(tx.getContractAddress().getBytes());
         argsForCall.data = "0xead710c40000000000000000000000000000000000000000000000000000000064617665";
 
         String result = web3.eth_call(argsForCall, "latest");

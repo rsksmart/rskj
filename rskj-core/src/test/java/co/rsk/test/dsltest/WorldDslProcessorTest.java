@@ -341,7 +341,7 @@ public class WorldDslProcessorTest {
         Assert.assertNotNull(tx01);
 
         Assert.assertArrayEquals(acc1.getAddress(), tx01.getSender().getBytes());
-        Assert.assertArrayEquals(acc2.getAddress(), tx01.getReceiveAddress());
+        Assert.assertArrayEquals(acc2.getAddress(), tx01.getReceiveAddress().getBytes());
         Assert.assertEquals(new BigInteger("1000"), new BigInteger(1, tx01.getValue()));
         Assert.assertNotNull(tx01.getData());
         Assert.assertEquals(0, tx01.getData().length);
@@ -368,7 +368,7 @@ public class WorldDslProcessorTest {
         Assert.assertNotNull(tx01);
 
         Assert.assertArrayEquals(acc1.getAddress(), tx01.getSender().getBytes());
-        Assert.assertArrayEquals(acc2.getAddress(), tx01.getReceiveAddress());
+        Assert.assertArrayEquals(acc2.getAddress(), tx01.getReceiveAddress().getBytes());
         Assert.assertEquals(new BigInteger("1000"), new BigInteger(1, tx01.getValue()));
         Assert.assertNotNull(tx01.getData());
         Assert.assertArrayEquals(new byte[] { 0x01, 0x02, 0x03, 0x04 }, tx01.getData());
@@ -395,7 +395,7 @@ public class WorldDslProcessorTest {
         Assert.assertNotNull(tx01);
 
         Assert.assertArrayEquals(acc1.getAddress(), tx01.getSender().getBytes());
-        Assert.assertArrayEquals(acc2.getAddress(), tx01.getReceiveAddress());
+        Assert.assertArrayEquals(acc2.getAddress(), tx01.getReceiveAddress().getBytes());
         Assert.assertEquals(new BigInteger("1000"), new BigInteger(1, tx01.getValue()));
         Assert.assertNotNull(tx01.getData());
         Assert.assertEquals(0, tx01.getData().length);
@@ -424,7 +424,7 @@ public class WorldDslProcessorTest {
         Assert.assertNotNull(tx01);
 
         Assert.assertArrayEquals(acc1.getAddress(), tx01.getSender().getBytes());
-        Assert.assertArrayEquals(acc2.getAddress(), tx01.getReceiveAddress());
+        Assert.assertArrayEquals(acc2.getAddress(), tx01.getReceiveAddress().getBytes());
         Assert.assertEquals(new BigInteger("1000"), new BigInteger(1, tx01.getValue()));
         Assert.assertNotNull(tx01.getData());
         Assert.assertEquals(0, tx01.getData().length);

@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.peg;
+package co.rsk.core;
 
 import com.google.common.primitives.UnsignedBytes;
 import org.spongycastle.util.encoders.Hex;
@@ -25,25 +25,32 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 /**
- * Immutable representation of a tx
- * sender. It is
- * simple a byte[] wrapper.
- * The byte[] is an RSK address.
+ * Immutable representation of an RSK address.
+ * It is a simple wrapper on the raw byte[].
  *
  * @author Ariel Mendelzon
  */
-public final class TxSender {
+public final class RskAddress {
+
+    private static final RskAddress NULL_ADDRESS = new RskAddress(new byte[0]);
 
     /**
      * This compares using the lexicographical order of the sender unsigned bytes.
      */
-    public static final Comparator<TxSender> COMPARATOR = Comparator.comparing(
-            TxSender::getBytes,
+    public static final Comparator<RskAddress> COMPARATOR = Comparator.comparing(
+            RskAddress::getBytes,
             UnsignedBytes.lexicographicalComparator());
+
+    /**
+     * @return the null address, which is the receiver of contract creation transactions.
+     */
+    public static RskAddress nullAddress() {
+        return NULL_ADDRESS;
+    }
 
     private final byte[] bytes;
 
-    public TxSender(byte[] bytes) {
+    public RskAddress(byte[] bytes) {
         this.bytes = bytes;
     }
 
@@ -61,7 +68,7 @@ public final class TxSender {
             return false;
         }
 
-        TxSender otherSender = (TxSender) other;
+        RskAddress otherSender = (RskAddress) other;
         return Arrays.equals(bytes, otherSender.bytes);
     }
 

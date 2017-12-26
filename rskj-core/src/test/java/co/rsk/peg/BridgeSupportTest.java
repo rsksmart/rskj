@@ -31,6 +31,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.simples.SimpleBlockChain;
@@ -2055,12 +2056,12 @@ public class BridgeSupportTest {
         );
         ABICallSpec spec = new ABICallSpec("create", new byte[][]{});
         Transaction mockedTx = mock(Transaction.class);
-        when(mockedTx.getSender()).thenReturn(new TxSender(ECKey.fromPrivate(BigInteger.valueOf(12L)).getAddress()));
+        when(mockedTx.getSender()).thenReturn(new RskAddress(ECKey.fromPrivate(BigInteger.valueOf(12L)).getAddress()));
         Assert.assertEquals(BridgeSupport.FEDERATION_CHANGE_GENERIC_ERROR_CODE, bridgeSupport.voteFederationChange(mockedTx, spec));
     }
 
     private class VotingMocksProvider {
-        private TxSender voter;
+        private RskAddress voter;
         private ABICallElection election;
         private ABICallSpec winner;
         private ABICallSpec spec;
@@ -2071,7 +2072,7 @@ public class BridgeSupportTest {
                     // Public key hex of an authorized voter in regtest, taken from BridgeRegTestConstants
                     "04dde17c5fab31ffc53c91c2390136c325bb8690dc135b0840075dd7b86910d8ab9e88baad0c32f3eea8833446a6bc5ff1cd2efa99ecb17801bcb65fc16fc7d991"
             )).getAddress();
-            voter = new TxSender(voterBytes);
+            voter = new RskAddress(voterBytes);
 
             tx = mock(Transaction.class);
             when(tx.getSender()).thenReturn(voter);
@@ -2085,7 +2086,7 @@ public class BridgeSupportTest {
             when(election.getWinner()).then((InvocationOnMock m) -> this.getWinner());
         }
 
-        public TxSender getVoter() { return voter; }
+        public RskAddress getVoter() { return voter; }
 
         public ABICallElection getElection() { return election; }
 
@@ -2712,7 +2713,7 @@ public class BridgeSupportTest {
             // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
             "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
-        TxSender sender = new TxSender(senderBytes);
+        RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
@@ -2733,7 +2734,7 @@ public class BridgeSupportTest {
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
                 "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
-        TxSender sender = new TxSender(senderBytes);
+        RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
@@ -2750,7 +2751,7 @@ public class BridgeSupportTest {
     public void addLockWhitelistAddress_notAuthorized() throws IOException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = Hex.decode("aabbcc");
-        TxSender sender = new TxSender(senderBytes);
+        RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
@@ -2766,7 +2767,7 @@ public class BridgeSupportTest {
             // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
             "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
-        TxSender sender = new TxSender(senderBytes);
+        RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
@@ -2782,7 +2783,7 @@ public class BridgeSupportTest {
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
                 "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
-        TxSender sender = new TxSender(senderBytes);
+        RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
@@ -2803,7 +2804,7 @@ public class BridgeSupportTest {
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
                 "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
-        TxSender sender = new TxSender(senderBytes);
+        RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
@@ -2821,7 +2822,7 @@ public class BridgeSupportTest {
     public void removeLockWhitelistAddress_notAuthorized() throws IOException {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = Hex.decode("aabbcc");
-        TxSender sender = new TxSender(senderBytes);
+        RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
@@ -2837,7 +2838,7 @@ public class BridgeSupportTest {
             // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
             "04641fb250d7ca7a1cb4f530588e978013038ec4294d084d248869dd54d98873e45c61d00ceeaeeb9e35eab19fa5fbd8f07cb8a5f0ddba26b4d4b18349c09199ad"
         )).getAddress();
-        TxSender sender = new TxSender(senderBytes);
+        RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForWhitelistTests(mockedWhitelist);
@@ -2857,7 +2858,7 @@ public class BridgeSupportTest {
         when(provider.getFeePerKbElection(any()))
                 .thenReturn(new ABICallElection(null));
         when(tx.getSender())
-                .thenReturn(new TxSender(new byte[] {0x43}));
+                .thenReturn(new RskAddress(new byte[] {0x43}));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
         when(authorizer.isAuthorized(tx))
@@ -2880,7 +2881,7 @@ public class BridgeSupportTest {
         when(provider.getFeePerKbElection(any()))
                 .thenReturn(new ABICallElection(authorizer));
         when(tx.getSender())
-                .thenReturn(new TxSender(senderBytes));
+                .thenReturn(new RskAddress(senderBytes));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
         when(authorizer.isAuthorized(tx))
@@ -2903,7 +2904,7 @@ public class BridgeSupportTest {
         when(provider.getFeePerKbElection(any()))
                 .thenReturn(new ABICallElection(authorizer));
         when(tx.getSender())
-                .thenReturn(new TxSender(senderBytes));
+                .thenReturn(new RskAddress(senderBytes));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
         when(authorizer.isAuthorized(tx))
@@ -2930,7 +2931,7 @@ public class BridgeSupportTest {
         when(provider.getFeePerKbElection(any()))
                 .thenReturn(new ABICallElection(authorizer));
         when(tx.getSender())
-                .thenReturn(new TxSender(senderBytes));
+                .thenReturn(new RskAddress(senderBytes));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
         when(authorizer.isAuthorized(tx))
