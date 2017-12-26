@@ -21,6 +21,9 @@ package co.rsk.net.handler.txvalidator;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -30,10 +33,17 @@ import java.math.BigInteger;
  * Transaction must not be null
  */
 public class TxValidatorNotRemascTxValidator implements TxValidatorStep {
+    private static final Logger logger = LoggerFactory.getLogger("txvalidator");
 
     @Override
     public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber) {
-        return !(tx instanceof RemascTransaction);
+        if (!(tx instanceof RemascTransaction)) {
+            return true;
+        }
+
+        logger.warn("Invalid transaction {}: it is a Remasc transaction", Hex.toHexString(tx.getHash()));
+
+        return false;
     }
 
 }
