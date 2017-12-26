@@ -104,7 +104,7 @@ public class MinerClientImpl implements MinerClient {
     public void doWork() {
         try {
             if (mineBlock() && !(RskSystemProperties.CONFIG.getBlockchainConfig() instanceof TestNetConfig))
-                Thread.sleep(20000);
+                Thread.sleep(500);
         } catch (Exception e) {
             logger.error("Error on mining", e);
             panicProcessor.panic("mine", e.getMessage());
