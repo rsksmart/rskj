@@ -50,7 +50,7 @@ public class RemascContractExecuteTest {
 
     @Test(expected = Program.OutOfGasException.class)
     public void executeWithFunctionSignatureLengthTooShort() throws Exception{
-        RemascContract remasc = new RemascContract(PrecompiledContracts.REMASC_ADDR_STR, remascConfig);
+        RemascContract remasc = new RemascContract(PrecompiledContracts.REMASC_ADDR, remascConfig);
 
         remasc.execute(new byte[3]);
         fail("Expected OutOfGasException");
@@ -58,7 +58,7 @@ public class RemascContractExecuteTest {
 
     @Test(expected = Program.OutOfGasException.class)
     public void executeWithInexistentFunction() throws Exception{
-        RemascContract remasc = new RemascContract(PrecompiledContracts.REMASC_ADDR_STR, remascConfig);
+        RemascContract remasc = new RemascContract(PrecompiledContracts.REMASC_ADDR, remascConfig);
 
         remasc.execute(new byte[4]);
         fail("Expected OutOfGasException");
@@ -66,7 +66,7 @@ public class RemascContractExecuteTest {
 
     @Test(expected = Program.OutOfGasException.class)
     public void executeWithDataLengthTooLong() throws Exception{
-        RemascContract remasc = new RemascContract(PrecompiledContracts.REMASC_ADDR_STR, remascConfig);
+        RemascContract remasc = new RemascContract(PrecompiledContracts.REMASC_ADDR, remascConfig);
 
         remasc.execute(new byte[6]);
         fail("Expected OutOfGasException");

@@ -46,7 +46,7 @@ public class RemascFeesPayerTest {
 
         // Setup objects
         Repository repositoryMock = Mockito.mock(Repository.class);
-        RemascFeesPayer feesPayer = new RemascFeesPayer(repositoryMock, PrecompiledContracts.REMASC_ADDR_STR);
+        RemascFeesPayer feesPayer = new RemascFeesPayer(repositoryMock, PrecompiledContracts.REMASC_ADDR);
 
         byte[] blockHash = { 0x1, 0x2 };
         BigInteger value = BigInteger.valueOf(7L);

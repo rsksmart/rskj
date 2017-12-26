@@ -54,12 +54,13 @@ public class PrecompiledContracts {
     public static final String RIPEMPD160_ADDR = "0000000000000000000000000000000000000000000000000000000000000003";
     public static final String IDENTITY_ADDR = "0000000000000000000000000000000000000000000000000000000000000004";
     public static final String BIG_INT_MODEXP_ADDR = "0000000000000000000000000000000000000000000000000000000000000005";
-    public static final String SAMPLE_ADDR = "0000000000000000000000000000000000000000000000000000000001000005";
+    public static final String SAMPLE_ADDR_STR = "0000000000000000000000000000000000000000000000000000000001000005";
     public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
 
     public static final RskAddress BRIDGE_ADDR = new RskAddress(Hex.decode(BRIDGE_ADDR_STR));
     public static final RskAddress REMASC_ADDR = new RskAddress(Hex.decode(REMASC_ADDR_STR));
+    public static final RskAddress SAMPLE_ADDR = new RskAddress(Hex.decode(SAMPLE_ADDR_STR));
 
     private static final String RSK_NATIVECONTRACT_REQUIREDPREFIX = "000000000000000000000000";
     private static ECRecover ecRecover = new ECRecover();
@@ -86,24 +87,24 @@ public class PrecompiledContracts {
         if (address.isHex(IDENTITY_ADDR)) {
             return identity;
         }
-        if (address.isHex(SAMPLE_ADDR)) {
+        if (address.isHex(SAMPLE_ADDR_STR)) {
             return sample;
         }
         if (address.isHex(BRIDGE_ADDR_STR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + BRIDGE_ADDR_STR)) {
-            return new Bridge(BRIDGE_ADDR_STR);
+            return new Bridge(BRIDGE_ADDR);
         }
         if (address.isHex(BIG_INT_MODEXP_ADDR)) {
             return bigIntegerModexp;
         }
         if (address.isHex(REMASC_ADDR_STR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + REMASC_ADDR_STR)) {
-            return new RemascContract(REMASC_ADDR_STR, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(RskSystemProperties.CONFIG.netName()));
+            return new RemascContract(REMASC_ADDR, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(RskSystemProperties.CONFIG.netName()));
         }
 
         return null;
     }
 
     public abstract static class PrecompiledContract {
-        public String contractAddress;
+        public RskAddress contractAddress;
 
         public abstract long getGasForData(byte[] data);
 

@@ -40,7 +40,7 @@ public class SamplePrecompiledContractTest {
     @Test
     public void samplePrecompiledContractMethod1Ok()
     {
-        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR);
+        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
         SamplePrecompiledContract contract = (SamplePrecompiledContract)PrecompiledContracts.getContractForAddress(addr);
 
 
@@ -70,7 +70,7 @@ public class SamplePrecompiledContractTest {
     @Test
     public void samplePrecompiledContractMethod1WrongData()
     {
-        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR);
+        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
         SamplePrecompiledContract contract = (SamplePrecompiledContract)PrecompiledContracts.getContractForAddress(addr);
 
 
@@ -98,7 +98,7 @@ public class SamplePrecompiledContractTest {
     @Test
     public void samplePrecompiledContractMethodDoesNotExist()
     {
-        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR);
+        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
         SamplePrecompiledContract contract = (SamplePrecompiledContract)PrecompiledContracts.getContractForAddress(addr);
 
 
@@ -127,7 +127,7 @@ public class SamplePrecompiledContractTest {
     @Test
     public void samplePrecompiledContractMethod1LargeData()
     {
-        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR);
+        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
         SamplePrecompiledContract contract = (SamplePrecompiledContract)PrecompiledContracts.getContractForAddress(addr);
 
 
@@ -155,7 +155,7 @@ public class SamplePrecompiledContractTest {
     @Test
     public void samplePrecompiledContractAddBalanceOk()
     {
-        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR);
+        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
         SamplePrecompiledContract contract = (SamplePrecompiledContract)PrecompiledContracts.getContractForAddress(addr);
 
 
@@ -190,7 +190,7 @@ public class SamplePrecompiledContractTest {
     @Test
     public void samplePrecompiledContractIncrementResultOk()
     {
-        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR);
+        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
         SamplePrecompiledContract contract = (SamplePrecompiledContract)PrecompiledContracts.getContractForAddress(addr);
 
 
@@ -226,7 +226,7 @@ public class SamplePrecompiledContractTest {
 
     private int GetBalance(Repository repository)
     {
-        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR);
+        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
         SamplePrecompiledContract contract = (SamplePrecompiledContract)PrecompiledContracts.getContractForAddress(addr);
 
 
@@ -253,7 +253,7 @@ public class SamplePrecompiledContractTest {
 
     private int GetResult(Repository repository)
     {
-        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR);
+        DataWord addr = new DataWord(PrecompiledContracts.SAMPLE_ADDR.getBytes());
         SamplePrecompiledContract contract = (SamplePrecompiledContract)PrecompiledContracts.getContractForAddress(addr);
 
 

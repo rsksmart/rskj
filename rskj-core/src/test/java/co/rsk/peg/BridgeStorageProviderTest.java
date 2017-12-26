@@ -65,7 +65,7 @@ public class BridgeStorageProviderTest {
     @Test
     public void createInstance() throws IOException {
         Repository repository = new RepositoryImpl();
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR_STR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Map<Sha256Hash, Long> processed = provider.getBtcTxHashesAlreadyProcessed();
 
@@ -98,7 +98,7 @@ public class BridgeStorageProviderTest {
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR_STR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         provider0.getBtcTxHashesAlreadyProcessed();
         provider0.getReleaseRequestQueue();
         provider0.getReleaseTransactionSet();
@@ -120,7 +120,7 @@ public class BridgeStorageProviderTest {
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("newFederationBtcUTXOs".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("oldFederationBtcUTXOs".getBytes())));
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR_STR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Map<Sha256Hash, Long> processed = provider.getBtcTxHashesAlreadyProcessed();
 
@@ -161,7 +161,7 @@ public class BridgeStorageProviderTest {
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR_STR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         provider0.getBtcTxHashesAlreadyProcessed().put(hash1, 1L);
         provider0.getBtcTxHashesAlreadyProcessed().put(hash2, 1L);
         provider0.save();
@@ -169,7 +169,7 @@ public class BridgeStorageProviderTest {
 
         track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR_STR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Map<Sha256Hash, Long> processed = provider.getBtcTxHashesAlreadyProcessed();
         Set<Sha256Hash> processedHashes = processed.keySet();
@@ -190,7 +190,7 @@ public class BridgeStorageProviderTest {
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR_STR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         provider0.getRskTxsWaitingForSignatures().put(hash1, tx1);
         provider0.getRskTxsWaitingForSignatures().put(hash2, tx2);
         provider0.getRskTxsWaitingForSignatures().put(hash3, tx3);
@@ -200,7 +200,7 @@ public class BridgeStorageProviderTest {
 
         track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR_STR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         SortedMap<Sha3Hash, BtcTransaction> signatures = provider.getRskTxsWaitingForSignatures();
 
@@ -227,7 +227,7 @@ public class BridgeStorageProviderTest {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR_STR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         provider0.getNewFederationBtcUTXOs().add(new UTXO(hash1, 1, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
         provider0.getNewFederationBtcUTXOs().add(new UTXO(hash2, 2, Coin.FIFTY_COINS, 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
         provider0.save();
@@ -235,7 +235,7 @@ public class BridgeStorageProviderTest {
 
         track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR_STR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         List<UTXO> utxos = provider.getNewFederationBtcUTXOs();
 
@@ -250,7 +250,7 @@ public class BridgeStorageProviderTest {
         Federation newFederation = new Federation(Arrays.asList(new BtcECKey[]{BtcECKey.fromPrivate(BigInteger.valueOf(100))}), Instant.ofEpochMilli(1000), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd", RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, addressOf("aabbccdd"), RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         Whitebox.setInternalState(storageProvider, "btcContext", contextMock);
 
         when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
@@ -284,7 +284,7 @@ public class BridgeStorageProviderTest {
         Context contextMock = mock(Context.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd", RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, addressOf("aabbccdd"), RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         Whitebox.setInternalState(storageProvider, "btcContext", contextMock);
 
         when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
@@ -314,7 +314,7 @@ public class BridgeStorageProviderTest {
         List<Integer> serializeCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd", RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, addressOf("aabbccdd"), RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         PowerMockito.when(BridgeSerializationUtils.serializeFederation(any(Federation.class))).then((InvocationOnMock invocation) -> {
             Federation federation = invocation.getArgumentAt(0, Federation.class);
@@ -351,7 +351,7 @@ public class BridgeStorageProviderTest {
         ABICallElection electionMock = mock(ABICallElection.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd", RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, addressOf("aabbccdd"), RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
@@ -383,7 +383,7 @@ public class BridgeStorageProviderTest {
         ABICallElection electionMock = mock(ABICallElection.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd", RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, addressOf("aabbccdd"), RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
@@ -412,7 +412,7 @@ public class BridgeStorageProviderTest {
         List<Integer> serializeCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd", RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, addressOf("aabbccdd"), RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         PowerMockito.when(BridgeSerializationUtils.serializeElection(any(ABICallElection.class))).then((InvocationOnMock invocation) -> {
             ABICallElection election = invocation.getArgumentAt(0, ABICallElection.class);
@@ -448,7 +448,7 @@ public class BridgeStorageProviderTest {
         LockWhitelist whitelistMock = mock(LockWhitelist.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd", RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, addressOf("aabbccdd"), RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         Context contextMock = mock(Context.class);
         when(contextMock.getParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         Whitebox.setInternalState(storageProvider, "btcContext", contextMock);
@@ -481,7 +481,7 @@ public class BridgeStorageProviderTest {
         List<Integer> calls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd", RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, addressOf("aabbccdd"), RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         Context contextMock = mock(Context.class);
         when(contextMock.getParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         Whitebox.setInternalState(storageProvider, "btcContext", contextMock);
@@ -513,7 +513,7 @@ public class BridgeStorageProviderTest {
         List<Integer> serializeCalls = new ArrayList<>();
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd", RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, addressOf("aabbccdd"), RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         PowerMockito.when(BridgeSerializationUtils.serializeLockWhitelist(any(LockWhitelist.class))).then((InvocationOnMock invocation) -> {
             LockWhitelist whitelist = invocation.getArgumentAt(0, LockWhitelist.class);
@@ -549,7 +549,7 @@ public class BridgeStorageProviderTest {
         ReleaseRequestQueue requestQueueMock = mock(ReleaseRequestQueue.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd", RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, addressOf("aabbccdd"), RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
@@ -580,7 +580,7 @@ public class BridgeStorageProviderTest {
         ReleaseTransactionSet transactionSetMock = mock(ReleaseTransactionSet.class);
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd", RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, addressOf("aabbccdd"), RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
@@ -610,7 +610,7 @@ public class BridgeStorageProviderTest {
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR_STR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         Coin expectedCoin = Coin.valueOf(5325);
         provider0.setFeePerKb(expectedCoin);
@@ -619,7 +619,7 @@ public class BridgeStorageProviderTest {
 
         track = repository.startTracking();
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR_STR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         assertThat(provider.getFeePerKb(), is(expectedCoin));
     }
@@ -628,7 +628,7 @@ public class BridgeStorageProviderTest {
     public void getFeePerKbElection_emptyVotes() {
         AddressBasedAuthorizer authorizerMock = mock(AddressBasedAuthorizer.class);
         Repository repositoryMock = mock(Repository.class);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd", RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, addressOf("aabbccdd"), RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         HashMap<ABICallSpec, List<RskAddress>> electionVotes = new HashMap<>();
         byte[] serializedElection = BridgeSerializationUtils.serializeElection(
@@ -651,7 +651,7 @@ public class BridgeStorageProviderTest {
                 .thenReturn(1);
         when(authorizerMock.isAuthorized(any(RskAddress.class)))
                 .thenReturn(true);
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, "aabbccdd", RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, addressOf("aabbccdd"), RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
         byte[] electionFee = new byte[] {0x43, 0x19};
         ABICallSpec expectedWinner = new ABICallSpec("setFeePerKb", new byte[][]{electionFee});
@@ -675,5 +675,9 @@ public class BridgeStorageProviderTest {
         tx.addInput(PegTestUtils.createHash(), transactionOffset++, ScriptBuilder.createInputScript(new TransactionSignature(BigInteger.ONE, BigInteger.TEN)));
 
         return tx;
+    }
+
+    private RskAddress addressOf(String address) {
+        return new RskAddress(Hex.decode(address));
     }
 }

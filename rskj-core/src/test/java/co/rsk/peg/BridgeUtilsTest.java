@@ -399,7 +399,7 @@ public class BridgeUtilsTest {
         BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
         RskSystemProperties.CONFIG.setBlockchainConfig(config);
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR_STR);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
 
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
                 0,

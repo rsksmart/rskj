@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
@@ -166,7 +167,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     private BridgeSupport bridgeSupport;
 
-    public Bridge(String contractAddress) {
+    public Bridge(RskAddress contractAddress) {
         this.contractAddress = contractAddress;
 
         Arrays.stream(new Object[]{

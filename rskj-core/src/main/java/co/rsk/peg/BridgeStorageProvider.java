@@ -20,14 +20,17 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.Repository;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;
-import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
 
 /**
  * Provides an object oriented facade of the bridge contract memory.
@@ -51,7 +54,7 @@ public class BridgeStorageProvider {
     private static final DataWord FEE_PER_KB_ELECTION_KEY = new DataWord(TypeConverter.stringToByteArray("feePerKbElection"));
 
     private final Repository repository;
-    private final byte[] contractAddress;
+    private final RskAddress contractAddress;
     private final NetworkParameters networkParameters;
     private final Context btcContext;
 
@@ -83,9 +86,9 @@ public class BridgeStorageProvider {
     private Coin feePerKb;
     private ABICallElection feePerKbElection;
 
-    public BridgeStorageProvider(Repository repository, String contractAddress, BridgeConstants bridgeConstants) {
+    public BridgeStorageProvider(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants) {
         this.repository = repository;
-        this.contractAddress = Hex.decode(contractAddress);
+        this.contractAddress = contractAddress;
         this.networkParameters = bridgeConstants.getBtcParams();
         this.btcContext = new Context(networkParameters);
     }
@@ -406,7 +409,7 @@ public class BridgeStorageProvider {
     }
 
     private <T> T getFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) throws IOException {
-        byte[] data = repository.getStorageBytes(contractAddress, keyAddress);
+        byte[] data = repository.getStorageBytes(contractAddress.getBytes(), keyAddress);
         return deserializer.deserialize(data);
     }
 
@@ -423,7 +426,7 @@ public class BridgeStorageProvider {
         if (object != null) {
             data = serializer.serialize(object);
         }
-        repository.addStorageBytes(contractAddress, addressKey, data);
+        repository.addStorageBytes(contractAddress.getBytes(), addressKey, data);
     }
 
     private interface RepositoryDeserializer<T> {

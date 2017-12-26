@@ -18,11 +18,11 @@
 
 package co.rsk.remasc;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Repository;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -37,9 +37,9 @@ class RemascFeesPayer {
 
     private final Repository repository;
 
-    private final String contractAddress;
+    private final RskAddress contractAddress;
 
-    RemascFeesPayer(Repository repository, String contractAddress) {
+    RemascFeesPayer(Repository repository, RskAddress contractAddress) {
         this.repository = repository;
         this.contractAddress = contractAddress;
     }
@@ -50,16 +50,13 @@ class RemascFeesPayer {
     }
 
     private void transferPayment(BigInteger value, byte[] toAddress) {
-
-        byte[] fromAddress = Hex.decode(this.contractAddress);
-
-        this.repository.addBalance(fromAddress, value.negate());
+        this.repository.addBalance(contractAddress.getBytes(), value.negate());
         this.repository.addBalance(toAddress, value);
     }
 
     private void logPayment(byte[] blockHash, BigInteger value, byte[] toAddress, List<LogInfo> logs) {
 
-        byte[] loggerContractAddress = Hex.decode(this.contractAddress);
+        byte[] loggerContractAddress = this.contractAddress.getBytes();
         List<DataWord> topics = Arrays.asList(RemascContract.MINING_FEE_TOPIC, new DataWord(toAddress));
         byte[] data = RLP.encodeList(RLP.encodeElement(blockHash), RLP.encodeBigInteger(value));
 

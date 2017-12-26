@@ -70,7 +70,7 @@ public class EthModule
 
         BridgeSupport bridgeSupport = new BridgeSupport(
                 repository,
-                PrecompiledContracts.BRIDGE_ADDR_STR,
+                PrecompiledContracts.BRIDGE_ADDR,
                 block,
                 RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
                 null);

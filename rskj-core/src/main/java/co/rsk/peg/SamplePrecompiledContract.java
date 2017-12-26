@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -47,7 +48,7 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
     private static final String INCREMENTRESULT_SIG = "541d9c93";
     private static final String GETRESULT_SIG = "9a7d9af1";
 
-    public SamplePrecompiledContract(String contractAddress) {
+    public SamplePrecompiledContract(RskAddress contractAddress) {
         this.contractAddress = contractAddress;
     }
 
@@ -100,7 +101,7 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
     public int Method1(Object... args)
     {
         byte[] addr = Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
-        byte[] contractAddr = Hex.decode(contractAddress);
+        byte[] contractAddr = contractAddress.getBytes();
 
         BigInteger balance = new BigInteger("50000");
         repository.addBalance(addr, balance);
@@ -133,7 +134,7 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
 
     public void IncrementResult(Object... args)
     {
-        byte[] contractAddr = Hex.decode(contractAddress);
+        byte[] contractAddr = contractAddress.getBytes();
 
         DataWord keyWord = new DataWord("result".getBytes(StandardCharsets.UTF_8));
         DataWord storedValue = repository.getStorageValue(contractAddr, keyWord);
@@ -144,7 +145,7 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
 
     public int GetResult(Object... args)
     {
-        byte[] contractAddr = Hex.decode(contractAddress);
+        byte[] contractAddr = contractAddress.getBytes();
 
         DataWord keyWord = new DataWord("result".getBytes(StandardCharsets.UTF_8));
         DataWord storedValue = repository.getStorageValue(contractAddr, keyWord);

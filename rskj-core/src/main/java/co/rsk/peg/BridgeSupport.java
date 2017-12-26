@@ -29,6 +29,7 @@ import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.utils.BridgeEventLogger;
@@ -89,12 +90,12 @@ public class BridgeSupport {
     private StoredBlock initialBtcStoredBlock;
 
     // Used by bridge
-    public BridgeSupport(Repository repository, String contractAddress, Block rskExecutionBlock, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) throws IOException, BlockStoreException {
-        this(repository, contractAddress, new BridgeStorageProvider(repository, contractAddress, bridgeConstants), rskExecutionBlock, bridgeConstants, eventLogger);
+    public BridgeSupport(Repository repository, RskAddress contractAddress, Block rskExecutionBlock, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) throws IOException, BlockStoreException {
+        this(repository, new BridgeStorageProvider(repository, contractAddress, bridgeConstants), rskExecutionBlock, bridgeConstants, eventLogger);
     }
 
     // Used by unit tests
-    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, Block rskExecutionBlock, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) throws IOException, BlockStoreException {
+    public BridgeSupport(Repository repository, BridgeStorageProvider provider, Block rskExecutionBlock, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) throws IOException, BlockStoreException {
         this.rskRepository = repository;
         this.provider = provider;
         this.rskExecutionBlock = rskExecutionBlock;
@@ -119,7 +120,7 @@ public class BridgeSupport {
 
 
     // Used by unit tests
-    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) {
+    public BridgeSupport(Repository repository, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) {
         this.provider = provider;
         this.bridgeConstants = bridgeConstants;
         this.btcContext = new Context(bridgeConstants.getBtcParams());

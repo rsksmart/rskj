@@ -921,7 +921,7 @@ public class RemascProcessMinerFeesTest {
     private void validateFederatorsBalanceIsCorrect(Repository repository, long federationReward) throws IOException, BlockStoreException {
         BridgeSupport bridgeSupport = new BridgeSupport(
             repository,
-            PrecompiledContracts.BRIDGE_ADDR_STR,
+            PrecompiledContracts.BRIDGE_ADDR,
             null,
             BridgeRegTestConstants.getInstance(),
             null);
@@ -961,6 +961,6 @@ public class RemascProcessMinerFeesTest {
     }
 
     private RemascStorageProvider getRemascStorageProvider(Blockchain blockchain) throws IOException {
-        return new RemascStorageProvider(blockchain.getRepository(), PrecompiledContracts.REMASC_ADDR_STR);
+        return new RemascStorageProvider(blockchain.getRepository(), PrecompiledContracts.REMASC_ADDR);
     }
 }
