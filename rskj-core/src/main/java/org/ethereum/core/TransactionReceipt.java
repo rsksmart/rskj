@@ -48,7 +48,7 @@ public class TransactionReceipt {
     private Transaction transaction;
 
     protected static final byte[] FAILED_STATUS = EMPTY_BYTE_ARRAY;
-    public static final byte[] SUCCESS_STATUS = new byte[]{0x01};
+    protected static final byte[] SUCCESS_STATUS = new byte[]{0x01};
 
     private byte[] postTxState = EMPTY_BYTE_ARRAY;
     private byte[] cumulativeGas = EMPTY_BYTE_ARRAY;
@@ -143,7 +143,7 @@ public class TransactionReceipt {
         byte[] cumulativeGasRLP = RLP.encodeElement(this.cumulativeGas);
         byte[] gasUsedRLP = RLP.encodeElement(this.gasUsed);
         byte[] bloomRLP = RLP.encodeElement(this.bloomFilter.data);
-        byte[] status = RLP.encodeElement(this.status);
+        byte[] statusRLP = RLP.encodeElement(this.status);
 
         final byte[] logInfoListRLP;
         if (logInfoList != null) {
@@ -159,7 +159,7 @@ public class TransactionReceipt {
             logInfoListRLP = RLP.encodeList();
         }
 
-        rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, status);
+        rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, statusRLP);
 
         return rlpEncoded;
     }
