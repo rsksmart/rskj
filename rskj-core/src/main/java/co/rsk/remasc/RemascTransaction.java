@@ -23,7 +23,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
-import org.spongycastle.util.encoders.Hex;
 
 /**
  * Tx that invokes Remasc's processMinersFees method.
@@ -40,7 +39,7 @@ public class RemascTransaction extends Transaction {
         super(ByteUtil.longToBytesNoLeadZeroes(blockNumber - 1),
                 ZERO_BYTE_ARRAY,
                 ZERO_BYTE_ARRAY,
-                Hex.decode(PrecompiledContracts.REMASC_ADDR),
+                PrecompiledContracts.REMASC_ADDR.getBytes(),
                 ZERO_BYTE_ARRAY,
                 null,
                 (byte) 0);

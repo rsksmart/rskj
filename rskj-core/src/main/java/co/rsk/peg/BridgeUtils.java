@@ -25,13 +25,12 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
-import org.apache.commons.lang3.StringUtils;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 import java.util.List;
@@ -160,9 +159,8 @@ public class BridgeUtils {
 
     public static boolean isFreeBridgeTx(org.ethereum.core.Transaction rskTx, long blockNumber) {
         BlockchainNetConfig blockchainConfig = RskSystemProperties.CONFIG.getBlockchainConfig();
-        byte[] receiveAddress = rskTx.getReceiveAddress().getBytes();
-
-        if (receiveAddress == null) {
+        RskAddress receiveAddress = rskTx.getReceiveAddress();
+        if (receiveAddress == RskAddress.nullAddress()) {
             return false;
         }
 
@@ -171,7 +169,7 @@ public class BridgeUtils {
         // Temporary assumption: if areBridgeTxsFree() is true then the current federation
         // must be the genesis federation.
         // Once the original federation changes, txs are always paid.
-        return StringUtils.equals(Hex.toHexString(receiveAddress), PrecompiledContracts.BRIDGE_ADDR) &&
+        return PrecompiledContracts.BRIDGE_ADDR.equals(receiveAddress) &&
                blockchainConfig.getConfigForBlock(blockNumber).areBridgeTxsFree() &&
                rskTx.acceptTransactionSignature() &&
                (

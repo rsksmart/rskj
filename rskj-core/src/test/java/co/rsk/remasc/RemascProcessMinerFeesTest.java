@@ -123,7 +123,7 @@ public class RemascProcessMinerFeesTest {
 
         Repository repository = blockchain.getRepository();
 
-        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(Hex.decode(PrecompiledContracts.REMASC_ADDR)).getBalance());
+        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR.getBytes()).getBalance());
         assertNull(repository.getAccountState(coinbaseA.getBytes()));
         assertNull(repository.getAccountState(remascConfig.getRskLabsAddress()));
 
@@ -135,7 +135,7 @@ public class RemascProcessMinerFeesTest {
         repository = blockchain.getRepository();
 
         assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue)), repository.getAccountState(cowAddress).getBalance());
-        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(Hex.decode(PrecompiledContracts.REMASC_ADDR)).getBalance());
+        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR.getBytes()).getBalance());
         assertNull(repository.getAccountState(coinbaseA.getBytes()));
         assertNull(repository.getAccountState(remascConfig.getRskLabsAddress()));
 
@@ -165,7 +165,7 @@ public class RemascProcessMinerFeesTest {
         Repository repository = blockchain.getRepository();
 
         assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue)), repository.getAccountState(cowAddress).getBalance());
-        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(Hex.decode(PrecompiledContracts.REMASC_ADDR)).getBalance());
+        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR.getBytes()).getBalance());
         assertNull(repository.getAccountState(coinbaseA.getBytes()));
         assertNull(repository.getAccountState(remascConfig.getRskLabsAddress()));
 
@@ -184,7 +184,7 @@ public class RemascProcessMinerFeesTest {
 
         assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue)), repository.getAccountState(cowAddress).getBalance());
         long blockReward = minerFee/remascConfig.getSyntheticSpan();
-        assertEquals(BigInteger.valueOf(minerFee - blockReward), repository.getAccountState(Hex.decode(PrecompiledContracts.REMASC_ADDR)).getBalance());
+        assertEquals(BigInteger.valueOf(minerFee - blockReward), repository.getAccountState(PrecompiledContracts.REMASC_ADDR.getBytes()).getBalance());
         long rskReward = blockReward/remascConfig.getRskLabsDivisor();
         assertEquals(BigInteger.valueOf(rskReward), repository.getAccountState(remascConfig.getRskLabsAddress()).getBalance());
         long federationReward = (blockReward - rskReward)/remascConfig.getFederationDivisor();
@@ -223,7 +223,7 @@ public class RemascProcessMinerFeesTest {
         Repository repository = blockchain.getRepository();
 
         assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue)), repository.getAccountState(cowAddress).getBalance());
-        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(Hex.decode(PrecompiledContracts.REMASC_ADDR)).getBalance());
+        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR.getBytes()).getBalance());
         assertNull(repository.getAccountState(coinbaseA.getBytes()));
         assertNull(repository.getAccountState(coinbaseB.getBytes()));
         assertNull(repository.getAccountState(coinbaseC.getBytes()));
@@ -248,7 +248,7 @@ public class RemascProcessMinerFeesTest {
 
         long blockReward = minerFee/remascConfig.getSyntheticSpan();
         // There is one unit burned
-        assertEquals(BigInteger.valueOf(minerFee - blockReward + 1), repository.getAccountState(Hex.decode(PrecompiledContracts.REMASC_ADDR)).getBalance());
+        assertEquals(BigInteger.valueOf(minerFee - blockReward + 1), repository.getAccountState(PrecompiledContracts.REMASC_ADDR.getBytes()).getBalance());
         long rskReward = blockReward/remascConfig.getRskLabsDivisor();
         assertEquals(BigInteger.valueOf(rskReward), repository.getAccountState(remascConfig.getRskLabsAddress()).getBalance());
         long federationReward = (blockReward - rskReward)/remascConfig.getFederationDivisor();
@@ -600,7 +600,7 @@ public class RemascProcessMinerFeesTest {
         Repository repository = blockchain.getRepository();
 
         assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue)), repository.getAccountState(cowAddress).getBalance());
-        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(Hex.decode(PrecompiledContracts.REMASC_ADDR)).getBalance());
+        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR.getBytes()).getBalance());
         assertNull(repository.getAccountState(coinbaseA.getBytes()));
         assertNull(repository.getAccountState(remascConfig.getRskLabsAddress()));
 
@@ -614,7 +614,7 @@ public class RemascProcessMinerFeesTest {
                 BigInteger.valueOf(1).toByteArray(),
                 BigInteger.ONE.toByteArray(),
                 BigInteger.valueOf(minerFee).toByteArray(),
-                Hex.decode(PrecompiledContracts.REMASC_ADDR) ,
+                PrecompiledContracts.REMASC_ADDR.getBytes() ,
                 BigInteger.valueOf(txValue*2).toByteArray(),
                 null,
                 Transaction.getConfigChainId());
@@ -630,7 +630,7 @@ public class RemascProcessMinerFeesTest {
         assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue+minerFee)), repository.getAccountState(cowAddress).getBalance());
         long blockReward = minerFee/remascConfig.getSyntheticSpan();
         long originalBlockReward = blockReward;
-        assertEquals(BigInteger.valueOf(minerFee+minerFee-blockReward), repository.getAccountState(Hex.decode(PrecompiledContracts.REMASC_ADDR)).getBalance());
+        assertEquals(BigInteger.valueOf(minerFee+minerFee-blockReward), repository.getAccountState(PrecompiledContracts.REMASC_ADDR.getBytes()).getBalance());
         long rskReward = blockReward/remascConfig.getRskLabsDivisor();
         assertEquals(BigInteger.valueOf(rskReward),repository.getAccountState(remascConfig.getRskLabsAddress()).getBalance());
         blockReward -= rskReward;
@@ -665,7 +665,7 @@ public class RemascProcessMinerFeesTest {
         Repository repository = blockchain.getRepository();
 
         assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue)), repository.getAccountState(cowAddress).getBalance());
-        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(Hex.decode(PrecompiledContracts.REMASC_ADDR)).getBalance());
+        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR.getBytes()).getBalance());
         assertNull(repository.getAccountState(coinbaseA.getBytes()));
         assertNull(repository.getAccountState(remascConfig.getRskLabsAddress()));
 
@@ -810,7 +810,7 @@ public class RemascProcessMinerFeesTest {
         Block blockAtHeightFiveSibling = testRunner.getAddedSiblings().get(0);
         assertEquals(BigInteger.valueOf(5292L - 53), testRunner.getAccountBalance(blockAtHeightFiveSibling.getCoinbase()));
 
-        BigInteger remascCurrentBalance = testRunner.getAccountBalance(Hex.decode(PrecompiledContracts.REMASC_ADDR));
+        BigInteger remascCurrentBalance = testRunner.getAccountBalance(PrecompiledContracts.REMASC_ADDR.getBytes());
         // TODO review value -22
         assertEquals(BigInteger.valueOf(296268L - 22), remascCurrentBalance);
 
@@ -921,7 +921,7 @@ public class RemascProcessMinerFeesTest {
     private void validateFederatorsBalanceIsCorrect(Repository repository, long federationReward) throws IOException, BlockStoreException {
         BridgeSupport bridgeSupport = new BridgeSupport(
             repository,
-            PrecompiledContracts.BRIDGE_ADDR,
+            PrecompiledContracts.BRIDGE_ADDR_STR,
             null,
             BridgeRegTestConstants.getInstance(),
             null);
@@ -942,7 +942,7 @@ public class RemascProcessMinerFeesTest {
         assertEquals(cowBalance, RemascTestRunner.getAccountBalance(repository, cowAddress));
 
         BigInteger remascExpectedBalance = BigInteger.valueOf(remascBalance);
-        BigInteger remascActualBalance = RemascTestRunner.getAccountBalance(repository, Hex.decode(PrecompiledContracts.REMASC_ADDR));
+        BigInteger remascActualBalance = RemascTestRunner.getAccountBalance(repository, PrecompiledContracts.REMASC_ADDR.getBytes());
         assertEquals(remascExpectedBalance, remascActualBalance);
 
         BigInteger rskExpectedBalance = rskBalance == null ? null : BigInteger.valueOf(rskBalance);
@@ -961,6 +961,6 @@ public class RemascProcessMinerFeesTest {
     }
 
     private RemascStorageProvider getRemascStorageProvider(Blockchain blockchain) throws IOException {
-        return new RemascStorageProvider(blockchain.getRepository(), PrecompiledContracts.REMASC_ADDR);
+        return new RemascStorageProvider(blockchain.getRepository(), PrecompiledContracts.REMASC_ADDR_STR);
     }
 }

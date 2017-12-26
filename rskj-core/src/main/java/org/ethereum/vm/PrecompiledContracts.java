@@ -21,6 +21,7 @@ package org.ethereum.vm;
 
 import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.SamplePrecompiledContract;
 import co.rsk.remasc.RemascContract;
@@ -33,6 +34,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -53,8 +55,11 @@ public class PrecompiledContracts {
     public static final String IDENTITY_ADDR = "0000000000000000000000000000000000000000000000000000000000000004";
     public static final String BIG_INT_MODEXP_ADDR = "0000000000000000000000000000000000000000000000000000000000000005";
     public static final String SAMPLE_ADDR = "0000000000000000000000000000000000000000000000000000000001000005";
-    public static final String BRIDGE_ADDR = "0000000000000000000000000000000001000006";
-    public static final String REMASC_ADDR = "0000000000000000000000000000000001000008";
+    public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
+    public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
+
+    public static final RskAddress BRIDGE_ADDR = new RskAddress(Hex.decode(BRIDGE_ADDR_STR));
+    public static final RskAddress REMASC_ADDR = new RskAddress(Hex.decode(REMASC_ADDR_STR));
 
     private static final String RSK_NATIVECONTRACT_REQUIREDPREFIX = "000000000000000000000000";
     private static ECRecover ecRecover = new ECRecover();
@@ -84,14 +89,14 @@ public class PrecompiledContracts {
         if (address.isHex(SAMPLE_ADDR)) {
             return sample;
         }
-        if (address.isHex(BRIDGE_ADDR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + BRIDGE_ADDR)) {
-            return new Bridge(BRIDGE_ADDR);
+        if (address.isHex(BRIDGE_ADDR_STR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + BRIDGE_ADDR_STR)) {
+            return new Bridge(BRIDGE_ADDR_STR);
         }
         if (address.isHex(BIG_INT_MODEXP_ADDR)) {
             return bigIntegerModexp;
         }
-        if (address.isHex(REMASC_ADDR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + REMASC_ADDR)) {
-            return new RemascContract(REMASC_ADDR, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(RskSystemProperties.CONFIG.netName()));
+        if (address.isHex(REMASC_ADDR_STR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + REMASC_ADDR_STR)) {
+            return new RemascContract(REMASC_ADDR_STR, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(RskSystemProperties.CONFIG.netName()));
         }
 
         return null;

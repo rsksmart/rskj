@@ -141,7 +141,7 @@ public class Remasc {
         processingRepository = processingRepository.startTracking();
         BridgeSupport bridgeSupport = new BridgeSupport(
                 processingRepository,
-                PrecompiledContracts.BRIDGE_ADDR,
+                PrecompiledContracts.BRIDGE_ADDR_STR,
                 processingBlock,
                 RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
                 null);

@@ -350,7 +350,7 @@ public class BridgeSupport {
 
                 transfer(
                         rskRepository,
-                        Hex.decode(PrecompiledContracts.BRIDGE_ADDR),
+                        PrecompiledContracts.BRIDGE_ADDR.getBytes(),
                         sender,
                         Denomination.satoshisToWeis(BigInteger.valueOf(totalAmount.getValue()))
                 );
@@ -731,7 +731,7 @@ public class BridgeSupport {
         if (spentByFederation.isLessThan(sentByUser)) {
             Coin coinsToBurn = sentByUser.subtract(spentByFederation);
             byte[] burnAddress = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress();
-            transfer(rskRepository, Hex.decode(PrecompiledContracts.BRIDGE_ADDR), burnAddress, Denomination.satoshisToWeis(BigInteger.valueOf(coinsToBurn.getValue())));
+            transfer(rskRepository, PrecompiledContracts.BRIDGE_ADDR.getBytes(), burnAddress, Denomination.satoshisToWeis(BigInteger.valueOf(coinsToBurn.getValue())));
         }
     }
 

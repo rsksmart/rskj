@@ -18,12 +18,11 @@
 
 package co.rsk.core;
 
+import co.rsk.panic.PanicProcessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import co.rsk.panic.PanicProcessor;
-import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ByteArrayWrapper;
@@ -99,8 +98,8 @@ public class NetworkStateExporter {
         BigInteger nonce = accountState.getNonce();
         accountNode.put("nonce", nonce.toString());
         ContractDetails contractDetails = frozenRepository.getContractDetails(address);
-        String addWrapper = Hex.toHexString(address);
-        if (!contractDetails.isNullObject() && !StringUtils.equals(PrecompiledContracts.REMASC_ADDR, addWrapper)) {
+        RskAddress addWrapper = new RskAddress(address);
+        if (!contractDetails.isNullObject() && !PrecompiledContracts.REMASC_ADDR.equals(addWrapper)) {
             accountNode.set("contract", createContractNode(contractDetails, accountNode));
         }
         return accountNode;

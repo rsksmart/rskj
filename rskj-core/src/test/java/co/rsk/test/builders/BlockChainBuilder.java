@@ -149,7 +149,7 @@ public class BlockChainBuilder {
             }
 
             Repository track = this.repository.startTracking();
-            new RepositoryBlockStore(track, PrecompiledContracts.BRIDGE_ADDR);
+            new RepositoryBlockStore(track, PrecompiledContracts.BRIDGE_ADDR_STR);
             track.commit();
 
             this.genesis.setStateRoot(this.repository.getRoot());

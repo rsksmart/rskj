@@ -255,7 +255,7 @@ public abstract class BridgePerformanceTestCase {
 
         RepositoryImpl repository = new RepositoryImpl();
         Repository track = repository.startTracking();
-        BridgeStorageProvider storageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR_STR, bridgeConstants);
 
         storageInitializer.initialize(storageProvider, track, executionIndex);
 
@@ -272,7 +272,7 @@ public abstract class BridgePerformanceTestCase {
 
         RepositoryTrackWithBenchmarking benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR_STR);
         Blockchain blockchain = BlockChainBuilder.ofSizeWithNoPendingStateCleaner(heightProvider.getHeight(executionIndex));
         bridge.init(
                 tx,

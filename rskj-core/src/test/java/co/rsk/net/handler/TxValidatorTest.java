@@ -20,8 +20,8 @@ package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.peg.Federation;
 import co.rsk.core.RskAddress;
+import co.rsk.peg.Federation;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
@@ -31,7 +31,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -171,7 +170,7 @@ public class TxValidatorTest {
 
     public static Transaction createBridgeTx(long value, long gaslimit, long gasprice, long nonce, long data, long sender, Random hashes) {
         Transaction transaction = Tx.create(value, gaslimit, gasprice, nonce, data, sender, hashes);
-        Mockito.when(transaction.getReceiveAddress()).thenReturn(new RskAddress(Hex.decode(PrecompiledContracts.BRIDGE_ADDR)));
+        Mockito.when(transaction.getReceiveAddress()).thenReturn(PrecompiledContracts.BRIDGE_ADDR);
         Mockito.when(transaction.getSignature()).thenReturn(new ECKey.ECDSASignature(BigInteger.ONE, BigInteger.ONE));
         Mockito.when(transaction.transactionCost(Mockito.any())).thenReturn(new Long(0));
         Mockito.when(transaction.getGasLimitAsInteger()).thenReturn(BigInteger.ZERO);

@@ -19,6 +19,7 @@
 package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.core.RskAddress;
 import co.rsk.peg.*;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -209,7 +210,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
             if (specToVoteGenerator != null) {
                 ABICallSpec specToVote = specToVoteGenerator.generate();
                 for (int i = 0; i < votes; i++) {
-                    election.vote(specToVote, new TxSender(shuffledKeys.get(i).getAddress()));
+                    election.vote(specToVote, new RskAddress(shuffledKeys.get(i).getAddress()));
                 }
             }
 

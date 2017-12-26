@@ -491,7 +491,7 @@ public class TransactionExecutor {
         //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
         if(RskSystemProperties.CONFIG.isRemascEnabled()) {
             logger.info("Adding fee to remasc contract account");
-            track.addBalance(Hex.decode(PrecompiledContracts.REMASC_ADDR), summaryFee);
+            track.addBalance(PrecompiledContracts.REMASC_ADDR.getBytes(), summaryFee);
         } else {
             track.addBalance(coinbase, summaryFee);
         }

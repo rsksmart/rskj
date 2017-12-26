@@ -39,7 +39,7 @@ public class RemascFederationProviderTest {
         Blockchain blockchain = builder.build();
 
         BridgeSupport bridgeSupport = new BridgeSupport(blockchain.getRepository(),
-                PrecompiledContracts.BRIDGE_ADDR,
+                PrecompiledContracts.BRIDGE_ADDR_STR,
                 null,
                 BridgeRegTestConstants.getInstance(),
                 null);

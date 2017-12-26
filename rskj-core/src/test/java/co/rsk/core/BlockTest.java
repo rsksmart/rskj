@@ -58,7 +58,7 @@ public class BlockTest {
                 BigInteger.ZERO.toByteArray(),
                 BigInteger.ONE.toByteArray(),
                 BigInteger.valueOf(21000).toByteArray(),
-                Hex.decode(PrecompiledContracts.REMASC_ADDR),
+                PrecompiledContracts.REMASC_ADDR.getBytes(),
                 BigInteger.valueOf(1000).toByteArray(),
                 null);
         txToRemascThatIsNotTheLatestTx.sign(new ECKey().getPrivKeyBytes());

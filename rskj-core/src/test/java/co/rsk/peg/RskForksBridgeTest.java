@@ -237,7 +237,7 @@ public class RskForksBridgeTest {
         BigInteger gasPrice = BigInteger.valueOf(0);
         BigInteger gasLimit = BigInteger.valueOf(1000000);
         Transaction rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
-                gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
+                gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR_STR, value,
                 Bridge.ADD_LOCK_WHITELIST_ADDRESS, new Object[]{ "mhxk5q8QdGFoaP4SJ3DPtXjrbxAgxjNm3C", BigInteger.valueOf(Coin.COIN.multiply(4).value) });
         rskTx.sign(whitelistManipulationKey.getPrivKeyBytes());
         return rskTx;
@@ -256,7 +256,7 @@ public class RskForksBridgeTest {
         BigInteger gasPrice = BigInteger.valueOf(0);
         BigInteger gasLimit = BigInteger.valueOf(1000000);
         Transaction rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
-                gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
+                gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR_STR, value,
                 Bridge.RECEIVE_HEADERS, new Object[]{headerArray});
         rskTx.sign(keyHoldingRSKs.getPrivKeyBytes());
         return rskTx;
@@ -274,7 +274,7 @@ public class RskForksBridgeTest {
         BigInteger gasPrice = BigInteger.valueOf(0);
         BigInteger gasLimit = BigInteger.valueOf(100000);
         Transaction rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
-                gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
+                gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR_STR, value,
                 Bridge.REGISTER_BTC_TRANSACTION, txSerialized, blockHeight, pmtSerialized);
         rskTx.sign(keyHoldingRSKs.getPrivKeyBytes());
         return rskTx;
@@ -290,7 +290,7 @@ public class RskForksBridgeTest {
         BigInteger gasPrice = BigInteger.valueOf(0);
         BigInteger gasLimit = BigInteger.valueOf(100000);
         Transaction rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
-                gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
+                gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR_STR, value,
                 Bridge.RELEASE_BTC);
         rskTx.sign(keyHoldingRSKs.getPrivKeyBytes());
         return rskTx;
@@ -302,7 +302,7 @@ public class RskForksBridgeTest {
         BigInteger gasPrice = BigInteger.valueOf(0);
         BigInteger gasLimit = BigInteger.valueOf(100000);
         Transaction rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
-                gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
+                gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR_STR, value,
                 Bridge.UPDATE_COLLECTIONS);
         rskTx.sign(new ECKey().getPrivKeyBytes());
         return rskTx;
@@ -338,7 +338,7 @@ public class RskForksBridgeTest {
         Transaction rskTx = CallTransaction.createRawTransaction(0,
                 Long.MAX_VALUE,
                 Long.MAX_VALUE,
-                PrecompiledContracts.BRIDGE_ADDR,
+                PrecompiledContracts.BRIDGE_ADDR_STR,
                 0,
                 Bridge.GET_STATE_FOR_DEBUGGING.encode(new Object[]{}));
         rskTx.sign(new byte[32]);
