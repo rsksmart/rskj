@@ -18,9 +18,11 @@
 
 package co.rsk.peg;
 
+import com.google.common.primitives.UnsignedBytes;
 import org.spongycastle.util.encoders.Hex;
 
 import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * Immutable representation of a tx
@@ -31,6 +33,13 @@ import java.util.Arrays;
  * @author Ariel Mendelzon
  */
 public final class TxSender {
+
+    /**
+     * This compares using the lexicographical order of the sender unsigned bytes.
+     */
+    public static final Comparator<TxSender> COMPARATOR = Comparator.comparing(
+            TxSender::getBytes,
+            UnsignedBytes.lexicographicalComparator());
 
     private final byte[] bytes;
 
