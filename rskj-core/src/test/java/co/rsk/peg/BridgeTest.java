@@ -463,7 +463,7 @@ public class BridgeTest {
                 0,
                 1,
                 1,
-                PrecompiledContracts.BRIDGE_ADDR_STR,
+                PrecompiledContracts.BRIDGE_ADDR,
                 0,
                 Bridge.UPDATE_COLLECTIONS);
         rskTx.sign(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0).getPrivKeyBytes());
@@ -545,7 +545,7 @@ public class BridgeTest {
                     0,
                     1,
                     1,
-                    PrecompiledContracts.BRIDGE_ADDR_STR,
+                    PrecompiledContracts.BRIDGE_ADDR,
                     0,
                     new byte[]{1,2,3});
         } else {
@@ -553,7 +553,7 @@ public class BridgeTest {
                     0,
                     1,
                     1,
-                    PrecompiledContracts.BRIDGE_ADDR_STR,
+                    PrecompiledContracts.BRIDGE_ADDR,
                     0,
                     function,
                     funcArgs);

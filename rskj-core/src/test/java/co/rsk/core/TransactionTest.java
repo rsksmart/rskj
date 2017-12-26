@@ -181,7 +181,7 @@ public class TransactionTest {
                     Repository track = repository.startTracking();
 
                     Transaction txConst = CallTransaction.createCallTransaction(0, 0, 100000000000000L,
-                            "095e7baea6a6c7c4c2dfeb977efac326af552d87", 0,
+                            addressOf("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
                             CallTransaction.Function.fromSignature("get"));
                     txConst.sign(new byte[32]);
 
@@ -265,5 +265,9 @@ public class TransactionTest {
     public void isNotContractCreationWhenReceiveAddressIsBridgeAddress() {
         Transaction tx = Transaction.create(PrecompiledContracts.BRIDGE_ADDR_STR, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
         Assert.assertFalse(tx.isContractCreation());
+    }
+
+    private RskAddress addressOf(String address) {
+        return new RskAddress(Hex.decode(address));
     }
 }

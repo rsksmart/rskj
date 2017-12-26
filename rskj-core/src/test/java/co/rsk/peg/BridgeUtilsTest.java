@@ -28,6 +28,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.CoinSelector;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
@@ -323,7 +324,7 @@ public class BridgeUtilsTest {
 
     @Test
     public void isFreeBridgeTxTrue() {
-        isFreeBridgeTx(true, PrecompiledContracts.BRIDGE_ADDR_STR, new UnitTestBlockchainNetConfig(), BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKeyBytes());
+        isFreeBridgeTx(true, PrecompiledContracts.BRIDGE_ADDR, new UnitTestBlockchainNetConfig(), BridgeRegTestConstants.getInstance().getFederatorPrivateKeys().get(0).getPrivKeyBytes());
     }
 
     @Test
@@ -333,7 +334,7 @@ public class BridgeUtilsTest {
 
     @Test
     public void isFreeBridgeTxFreeTxDisabled() {
-        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR_STR, new RegTestConfig() {
+        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, new RegTestConfig() {
             @Override
             public boolean areBridgeTxsFree() {
                 return false;
@@ -343,7 +344,7 @@ public class BridgeUtilsTest {
 
     @Test
     public void isFreeBridgeTxNonFederatorKey() {
-        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR_STR, new UnitTestBlockchainNetConfig(), new BtcECKey().getPrivKeyBytes());
+        isFreeBridgeTx(false, PrecompiledContracts.BRIDGE_ADDR, new UnitTestBlockchainNetConfig(), new BtcECKey().getPrivKeyBytes());
     }
 
     @Test
@@ -395,7 +396,7 @@ public class BridgeUtilsTest {
     }
 
 
-    private void isFreeBridgeTx(boolean expected, String destinationAddress, BlockchainNetConfig config, byte[] privKeyBytes) {
+    private void isFreeBridgeTx(boolean expected, RskAddress destinationAddress, BlockchainNetConfig config, byte[] privKeyBytes) {
         BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
         RskSystemProperties.CONFIG.setBlockchainConfig(config);
 

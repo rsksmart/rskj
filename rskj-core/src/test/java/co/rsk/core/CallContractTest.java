@@ -25,7 +25,6 @@ import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -39,7 +38,7 @@ public class CallContractTest {
         byte[] code = new byte[] { 0x60, 0x01, 0x60, 0x00, 0x52, 0x60, 0x20, 0x60, 0x00, (byte)0xf3 };
         Account account = new AccountBuilder(world).name("acc1").code(code).build();
 
-        ProgramResult result = callContract(world, account.getAddress(), new byte[0]);
+        ProgramResult result = callContract(world, new RskAddress(account.getAddress()), new byte[0]);
 
         Assert.assertNotNull(result);
 
@@ -50,9 +49,9 @@ public class CallContractTest {
         Assert.assertEquals(BigInteger.ONE, new BigInteger(1, value));
     }
 
-    private static ProgramResult callContract(World world, byte[] receiveAddress, byte[] data) {
+    private static ProgramResult callContract(World world, RskAddress receiveAddress, byte[] data) {
         Transaction tx = CallTransaction.createRawTransaction(0, 0, 100000000000000L,
-                Hex.toHexString(receiveAddress), 0, data);
+                receiveAddress, 0, data);
         tx.sign(new byte[32]);
 
         Block bestBlock = world.getBlockChain().getBestBlock();

@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -429,7 +430,7 @@ public class TransactionTest {
                     Repository track = repository.startTracking();
 
                     Transaction txConst = CallTransaction.createCallTransaction(0, 0, 100000000000000L,
-                            "095e7baea6a6c7c4c2dfeb977efac326af552d87", 0, CallTransaction.Function.fromSignature("get"));
+                            addressOf("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0, CallTransaction.Function.fromSignature("get"));
                     txConst.sign(new byte[32]);
 
                     Block bestBlock = block;
@@ -701,5 +702,9 @@ public class TransactionTest {
 
         track.commit();
         return executor;
+    }
+
+    private RskAddress addressOf(String address) {
+        return new RskAddress(Hex.decode(address));
     }
 }
