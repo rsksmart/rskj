@@ -24,12 +24,16 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.math.BigInteger;
+
 public class TxValidatorNotRemascTxValidatorTest {
 
     @Test
     public void remascTx() {
         TxValidatorNotRemascTxValidator validator = new TxValidatorNotRemascTxValidator();
-        Assert.assertFalse(validator.validate(Mockito.mock(RemascTransaction.class), null, null, null, 0));
+        Transaction tx1 = Mockito.mock(RemascTransaction.class);
+        Mockito.when(tx1.getHash()).thenReturn(new byte[32]);
+        Assert.assertFalse(validator.validate(tx1, null, null, null, 0));
     }
 
     @Test
