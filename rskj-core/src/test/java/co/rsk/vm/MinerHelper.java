@@ -121,6 +121,7 @@ public class MinerHelper {
             latestStateRootHash = originalRepo.getRoot();
             receipt.setPostTxState(latestStateRootHash);
             receipt.setTxStatus(executor.getReceipt().isSuccessful());
+            receipt.setStatus(executor.getReceipt().getStatus());
             receipt.setTransaction(tx);
             receipt.setLogInfoList(executor.getVMLogs());
 
