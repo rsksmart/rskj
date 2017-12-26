@@ -45,7 +45,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
         final int maxBtcBlocks = 2000;
 
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
-            BtcBlockStore btcBlockStore = new RepositoryBlockStore(repository, PrecompiledContracts.BRIDGE_ADDR_STR);
+            BtcBlockStore btcBlockStore = new RepositoryBlockStore(repository, PrecompiledContracts.BRIDGE_ADDR);
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {

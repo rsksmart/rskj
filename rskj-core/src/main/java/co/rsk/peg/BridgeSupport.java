@@ -104,7 +104,7 @@ public class BridgeSupport {
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         this.btcContext = new Context(btcParams);
 
-        this.btcBlockStore = new RepositoryBlockStore(repository, contractAddress);
+        this.btcBlockStore = new RepositoryBlockStore(repository, PrecompiledContracts.BRIDGE_ADDR);
         if (btcBlockStore.getChainHead().getHeader().getHash().equals(btcParams.getGenesisBlock().getHash())) {
             // We are building the blockstore for the first time, so we have not set the checkpoints yet.
             long time = getActiveFederation().getCreationTime().toEpochMilli();

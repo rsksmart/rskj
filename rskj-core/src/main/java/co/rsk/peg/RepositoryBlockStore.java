@@ -19,12 +19,12 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
-import org.spongycastle.util.encoders.Hex;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -37,14 +37,12 @@ public class RepositoryBlockStore implements BtcBlockStore{
 
     public static final String BLOCK_STORE_CHAIN_HEAD_KEY = "blockStoreChainHead";
 
+    private final Repository repository;
+    private final RskAddress contractAddress;
 
-    private NetworkParameters params;
+    private final NetworkParameters params;
 
-
-    private Repository repository;
-    private String contractAddress;
-
-    public RepositoryBlockStore(Repository repository, String contractAddress) {
+    public RepositoryBlockStore(Repository repository, RskAddress contractAddress) {
         this.repository = repository;
         this.contractAddress = contractAddress;
 
@@ -68,12 +66,12 @@ public class RepositoryBlockStore implements BtcBlockStore{
     public synchronized void put(StoredBlock block) throws BlockStoreException {
         Sha256Hash hash = block.getHeader().getHash();
         byte[] ba = storedBlockToByteArray(block);
-        repository.addStorageBytes(Hex.decode(contractAddress), new DataWord(hash.toString()), ba);
+        repository.addStorageBytes(contractAddress.getBytes(), new DataWord(hash.toString()), ba);
     }
 
     @Override
     public synchronized StoredBlock get(Sha256Hash hash) throws BlockStoreException {
-        byte[] ba = repository.getStorageBytes(Hex.decode(contractAddress), new DataWord(hash.toString()));
+        byte[] ba = repository.getStorageBytes(contractAddress.getBytes(), new DataWord(hash.toString()));
         if (ba==null) {
             return null;
         }
@@ -84,7 +82,7 @@ public class RepositoryBlockStore implements BtcBlockStore{
 
     @Override
     public StoredBlock getChainHead() throws BlockStoreException {
-        byte[] ba = repository.getStorageBytes(Hex.decode(contractAddress), new DataWord(BLOCK_STORE_CHAIN_HEAD_KEY.getBytes(StandardCharsets.UTF_8)));
+        byte[] ba = repository.getStorageBytes(contractAddress.getBytes(), new DataWord(BLOCK_STORE_CHAIN_HEAD_KEY.getBytes(StandardCharsets.UTF_8)));
         if (ba==null) {
             return null;
         }
@@ -95,7 +93,7 @@ public class RepositoryBlockStore implements BtcBlockStore{
     @Override
     public void setChainHead(StoredBlock chainHead) throws BlockStoreException {
         byte[] ba = storedBlockToByteArray(chainHead);
-        repository.addStorageBytes(Hex.decode(contractAddress), new DataWord(BLOCK_STORE_CHAIN_HEAD_KEY.getBytes(StandardCharsets.UTF_8)), ba);
+        repository.addStorageBytes(contractAddress.getBytes(), new DataWord(BLOCK_STORE_CHAIN_HEAD_KEY.getBytes(StandardCharsets.UTF_8)), ba);
     }
 
     @Override
