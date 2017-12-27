@@ -75,7 +75,7 @@ public class RskSystemProperties extends SystemProperties {
         // validity checks are performed by localCoinbaseAccount
         Account account = localCoinbaseAccount();
         if (account != null) {
-            return account.getAddress();
+            return account.getAddress().getBytes();
         }
 
         String coinbaseAddress = configFromFiles.getString(MINER_REWARD_ADDRESS_CONFIG);

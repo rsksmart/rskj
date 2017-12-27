@@ -119,7 +119,7 @@ public class WorldDslProcessor {
         Account account = world.getAccountByName(accountName);
 
         if (account != null)
-            accountAddress = account.getAddress();
+            accountAddress = account.getAddress().getBytes();
         else {
             Transaction tx = world.getTransactionByName(accountName);
 

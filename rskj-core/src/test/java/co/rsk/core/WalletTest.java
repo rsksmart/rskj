@@ -68,7 +68,7 @@ public class WalletTest {
     public void addAccountWithPassphrase() {
         Wallet wallet = WalletFactory.createWallet();
 
-        byte[] address = wallet.addAccount("passphrase");
+        byte[] address = wallet.addAccount("passphrase").getBytes();
 
         Assert.assertNotNull(address);
 
@@ -83,17 +83,17 @@ public class WalletTest {
         Assert.assertNotNull(addr);
         Assert.assertArrayEquals(address, addr);
 
-        Account account = wallet.getAccount(address, "passphrase");
+        Account account = wallet.getAccount(new RskAddress(address), "passphrase");
 
         Assert.assertNotNull(account);
-        Assert.assertArrayEquals(address, account.getAddress());
+        Assert.assertArrayEquals(address, account.getAddress().getBytes());
     }
 
     @Test
     public void unlockAccountWithPassphrase() {
         Wallet wallet = WalletFactory.createWallet();
 
-        byte[] address = wallet.addAccount("passphrase");
+        byte[] address = wallet.addAccount("passphrase").getBytes();
 
         Assert.assertNotNull(address);
 
@@ -108,43 +108,44 @@ public class WalletTest {
         Assert.assertNotNull(addr);
         Assert.assertArrayEquals(address, addr);
 
-        Account account0 = wallet.getAccount(address);
+        Account account0 = wallet.getAccount(new RskAddress(address));
 
         Assert.assertNull(account0);
 
-        Assert.assertTrue(wallet.unlockAccount(address, "passphrase"));
+        Assert.assertTrue(wallet.unlockAccount(new RskAddress(address), "passphrase"));
 
-        Account account = wallet.getAccount(address);
+        Account account = wallet.getAccount(new RskAddress(address));
 
         Assert.assertNotNull(account);
-        Assert.assertArrayEquals(address, account.getAddress());
+        Assert.assertArrayEquals(address, account.getAddress().getBytes());
     }
 
     @Test
     public void unlockNonexistentAccount() {
         Wallet wallet = WalletFactory.createWallet();
 
-        Assert.assertFalse(wallet.unlockAccount(new byte[] { 0x01, 0x02, 0x03 }, "passphrase"));
+        final byte[] bytes = new byte[]{0x01, 0x02, 0x03};
+        Assert.assertFalse(wallet.unlockAccount(new RskAddress(bytes), "passphrase"));
     }
 
     @Test
     public void lockAccount() {
         Wallet wallet = WalletFactory.createWallet();
 
-        byte[] address = wallet.addAccount("passphrase");
+        byte[] address = wallet.addAccount("passphrase").getBytes();
 
         Assert.assertNotNull(address);
 
-        Assert.assertTrue(wallet.unlockAccount(address, "passphrase"));
+        Assert.assertTrue(wallet.unlockAccount(new RskAddress(address), "passphrase"));
 
-        Account account = wallet.getAccount(address);
+        Account account = wallet.getAccount(new RskAddress(address));
 
         Assert.assertNotNull(account);
-        Assert.assertArrayEquals(address, account.getAddress());
+        Assert.assertArrayEquals(address, account.getAddress().getBytes());
 
-        Assert.assertTrue(wallet.lockAccount(address));
+        Assert.assertTrue(wallet.lockAccount(new RskAddress(address)));
 
-        Account account2 = wallet.getAccount(address);
+        Account account2 = wallet.getAccount(new RskAddress(address));
 
         Assert.assertNull(account2);
     }
@@ -153,29 +154,31 @@ public class WalletTest {
     public void lockNonexistentAccount() {
         Wallet wallet = WalletFactory.createWallet();
 
-        Assert.assertFalse(wallet.lockAccount(new byte[] { 0x01, 0x02, 0x03 }));
+        final byte[] address = new byte[]{0x01, 0x02, 0x03};
+        Assert.assertFalse(wallet.lockAccount(new RskAddress(address)));
     }
 
     @Test
     public void addAccountWithRandomPrivateKey() {
         Wallet wallet = WalletFactory.createWallet();
 
-        byte[] address = wallet.addAccount();
+        byte[] address = wallet.addAccount().getBytes();
 
         Assert.assertNotNull(address);
 
-        Account account = wallet.getAccount(address);
+        Account account = wallet.getAccount(new RskAddress(address));
 
         Assert.assertNotNull(account);
 
-        Assert.assertArrayEquals(address, account.getAddress());
+        Assert.assertArrayEquals(address, account.getAddress().getBytes());
     }
 
     @Test
     public void getUnknownAccount() {
         Wallet wallet = WalletFactory.createWallet();
 
-        Account account = wallet.getAccount(new byte[] { 0x01, 0x02, 0x03 });
+        final byte[] address = new byte[]{0x01, 0x02, 0x03};
+        Account account = wallet.getAccount(new RskAddress(address));
 
         Assert.assertNull(account);
     }

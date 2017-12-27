@@ -79,7 +79,7 @@ public class BlockExecutorTest {
         Assert.assertTrue(result.getTransactionReceipts().isEmpty());
         Assert.assertArrayEquals(repository.getRoot(), result.getStateRoot());
 
-        AccountState accountState = repository.getAccountState(account.getAddress());
+        AccountState accountState = repository.getAccountState(account.getAddress().getBytes());
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.TEN, accountState.getBalance());
@@ -125,14 +125,14 @@ public class BlockExecutorTest {
             Assert.assertEquals(0, result.getLogsBloom()[k]);
         }
 
-        AccountState accountState = repository.getAccountState(account.getAddress());
+        AccountState accountState = repository.getAccountState(account.getAddress().getBytes());
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance());
 
         Repository finalRepository = repository.getSnapshotTo(result.getStateRoot());
 
-        accountState = finalRepository.getAccountState(account.getAddress());
+        accountState = finalRepository.getAccountState(account.getAddress().getBytes());
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance());
@@ -153,8 +153,8 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = new BlockExecutor(repository, new BlockchainDummy(), null, null);
 
-        Transaction tx1 = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
-        Transaction tx2 = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()).add(BigInteger.ONE));
+        Transaction tx1 = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress().getBytes()));
+        Transaction tx2 = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress().getBytes()).add(BigInteger.ONE));
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx1);
         txs.add(tx2);
@@ -195,14 +195,14 @@ public class BlockExecutorTest {
         for (int k = 0; k < result.getLogsBloom().length; k++)
             Assert.assertEquals(0, result.getLogsBloom()[k]);
 
-        AccountState accountState = repository.getAccountState(account.getAddress());
+        AccountState accountState = repository.getAccountState(account.getAddress().getBytes());
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(60000), accountState.getBalance());
 
         Repository finalRepository = repository.getSnapshotTo(result.getStateRoot());
 
-        accountState = finalRepository.getAccountState(account.getAddress());
+        accountState = finalRepository.getAccountState(account.getAddress().getBytes());
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(60000 - 42000 - 20), accountState.getBalance());
@@ -243,8 +243,8 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = new BlockExecutor(repository, new BlockchainDummy(), null, null);
 
-        Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
-        Transaction tx2 = createTransaction(account3, account2, BigInteger.TEN, repository.getNonce(account3.getAddress()));
+        Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress().getBytes()));
+        Transaction tx2 = createTransaction(account3, account2, BigInteger.TEN, repository.getNonce(account3.getAddress().getBytes()));
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         txs.add(tx2);
@@ -281,8 +281,8 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = new BlockExecutor(repository, new BlockchainDummy(), null, null);
 
-        Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
-        Transaction tx2 = createTransaction(account3, account2, BigInteger.TEN, repository.getNonce(account3.getAddress()));
+        Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress().getBytes()));
+        Transaction tx2 = createTransaction(account3, account2, BigInteger.TEN, repository.getNonce(account3.getAddress().getBytes()));
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         txs.add(tx2);
@@ -386,7 +386,7 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = new BlockExecutor(repository, new BlockchainDummy(), null, null);
 
-        Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
+        Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress().getBytes()));
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
 
@@ -402,7 +402,7 @@ public class BlockExecutorTest {
     }
 
     private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
-        String toAddress = Hex.toHexString(receiver.getAddress());
+        String toAddress = Hex.toHexString(receiver.getAddress().getBytes());
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
         Transaction tx = Transaction.create(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000));
         tx.sign(privateKeyBytes);
@@ -411,8 +411,8 @@ public class BlockExecutorTest {
 
     public static Account createAccount(String seed, Repository repository, BigInteger balance) {
         Account account = createAccount(seed);
-        repository.createAccount(account.getAddress());
-        repository.addBalance(account.getAddress(), balance);
+        repository.createAccount(account.getAddress().getBytes());
+        repository.addBalance(account.getAddress().getBytes(), balance);
         return account;
     }
 
@@ -493,14 +493,14 @@ public class BlockExecutorTest {
         for (int k = 0; k < result.getLogsBloom().length; k++)
             Assert.assertEquals(0, result.getLogsBloom()[k]);
 
-        AccountState accountState = repository.getAccountState(account.getAddress());
+        AccountState accountState = repository.getAccountState(account.getAddress().getBytes());
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance());
 
         Repository finalRepository = repository.getSnapshotTo(result.getStateRoot());
 
-        accountState = finalRepository.getAccountState(account.getAddress());
+        accountState = finalRepository.getAccountState(account.getAddress().getBytes());
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance());
@@ -522,7 +522,7 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = new BlockExecutor(repository, new BlockchainDummy(), null, null);
 
-        Transaction tx = createStrangeTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()), strangeTransactionType);
+        Transaction tx = createStrangeTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress().getBytes()), strangeTransactionType);
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
 
@@ -540,7 +540,7 @@ public class BlockExecutorTest {
     private static Transaction createStrangeTransaction(Account sender, Account receiver,
                                                         BigInteger value, BigInteger nonce, int strangeTransactionType) {
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
-        byte[] to = receiver.getAddress();
+        byte[] to = receiver.getAddress().getBytes();
         byte[] gasLimitData = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(21000));
         byte[] valueData = BigIntegers.asUnsignedByteArray(value);
 

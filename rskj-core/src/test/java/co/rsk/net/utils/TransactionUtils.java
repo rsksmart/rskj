@@ -44,7 +44,7 @@ public class TransactionUtils {
 
     public static String getAddress() {
         Account targetAcc = new Account(new ECKey(Utils.getRandom()));
-        return Hex.toHexString(targetAcc.getAddress());
+        return Hex.toHexString(targetAcc.getAddress().getBytes());
     }
 
     public static byte[] getPrivateKeyBytes() {

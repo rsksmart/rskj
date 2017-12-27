@@ -20,6 +20,7 @@ package co.rsk.rpc.modules.personal;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.WalletAccount;
+import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.Account;
@@ -63,7 +64,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         // wallets in production for security reasons.
         Account coinbaseAccount = properties.localCoinbaseAccount();
         if (coinbaseAccount != null) {
-            this.wallet.addAccount(coinbaseAccount);
+            this.wallet.addAccount(coinbaseAccount).getBytes();
         }
 
         // initializes wallet accounts based on configuration
@@ -87,7 +88,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     public String newAccount(String passphrase) {
         String s = null;
         try {
-            byte[] address = this.wallet.addAccount(passphrase);
+            byte[] address = this.wallet.addAccount(passphrase).getBytes();
             return s = TypeConverter.toJsonHex(address);
         } finally {
             LOGGER.debug("personal_newAccount(*****): {}", s);
@@ -136,19 +137,19 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
             }
         }
 
-        return this.wallet.unlockAccount(TypeConverter.stringHexToByteArray(address), passphrase, dur);
+        return this.wallet.unlockAccount(new RskAddress(TypeConverter.stringHexToByteArray(address)), passphrase, dur);
     }
 
     @Override
     public boolean lockAccount(String address) {
-        return this.wallet.lockAccount(TypeConverter.stringHexToByteArray(address));
+        return this.wallet.lockAccount(new RskAddress(TypeConverter.stringHexToByteArray(address)));
     }
 
     @Override
     public String dumpRawKey(String address) throws Exception {
         String s = null;
         try {
-            Account account = wallet.getAccount(TypeConverter.stringHexToByteArray(convertFromJsonHexToHex(address)));
+            Account account = wallet.getAccount(new RskAddress(TypeConverter.stringHexToByteArray(convertFromJsonHexToHex(address))));
             if (account == null) {
                 throw new Exception("Address private key is locked or could not be found in this node");
             }
@@ -160,7 +161,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     }
 
     private Account getAccount(String from, String passphrase) {
-        return wallet.getAccount(TypeConverter.stringHexToByteArray(from), passphrase);
+        return wallet.getAccount(new RskAddress(TypeConverter.stringHexToByteArray(from)), passphrase);
     }
 
     private String sendTransaction(Web3.CallArguments args, Account account) throws Exception {
@@ -170,7 +171,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
 
         String toAddress = args.to != null ? Hex.toHexString(TypeConverter.stringHexToByteArray(args.to)) : null;
 
-        BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : (pendingState.getRepository().getNonce(account.getAddress()));
+        BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : (pendingState.getRepository().getNonce(account.getAddress().getBytes()));
         BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;
         BigInteger gasPrice = args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
         BigInteger gasLimit = args.gas != null ? TypeConverter.stringNumberAsBigInt(args.gas) : BigInteger.valueOf(GasCost.TRANSACTION);

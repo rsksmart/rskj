@@ -75,13 +75,13 @@ public class AccountBuilder {
 
             Repository track = repository.startTracking();
 
-            track.createAccount(account.getAddress());
+            track.createAccount(account.getAddress().getBytes());
 
             if (this.balance != null)
-                track.addBalance(account.getAddress(), this.balance);
+                track.addBalance(account.getAddress().getBytes(), this.balance);
 
             if (this.code != null)
-                track.saveCode(account.getAddress(), this.code);
+                track.saveCode(account.getAddress().getBytes(), this.code);
 
             track.commit();
 

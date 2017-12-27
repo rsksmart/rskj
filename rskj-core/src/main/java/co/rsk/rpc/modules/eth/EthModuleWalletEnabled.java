@@ -18,6 +18,7 @@
 
 package co.rsk.rpc.modules.eth;
 
+import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import org.ethereum.core.Account;
 import org.ethereum.core.PendingState;
@@ -71,7 +72,7 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
             }
 
             synchronized (pendingState) {
-                BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : (pendingState.getRepository().getNonce(account.getAddress()));
+                BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : (pendingState.getRepository().getNonce(account.getAddress().getBytes()));
                 Transaction tx = Transaction.create(toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
                 tx.sign(account.getEcKey().getPrivKeyBytes());
                 eth.submitTransaction(tx.toImmutableTransaction());
@@ -87,7 +88,7 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
     public String sign(String addr, String data) {
         String s = null;
         try {
-            Account account = this.wallet.getAccount(stringHexToByteArray(addr));
+            Account account = this.wallet.getAccount(new RskAddress(stringHexToByteArray(addr)));
             if (account == null) {
                 throw new JsonRpcInvalidParamException("Account not found");
             }
@@ -109,7 +110,7 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
     }
 
     private Account getAccount(String address) {
-        return this.wallet.getAccount(stringHexToByteArray(address));
+        return this.wallet.getAccount(new RskAddress(stringHexToByteArray(address)));
     }
 
     private String sign(String data, ECKey ecKey) {

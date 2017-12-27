@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.crypto.ECKey;
 
 /**
@@ -27,18 +28,18 @@ import org.ethereum.crypto.ECKey;
 public class Account {
 
     private final ECKey ecKey;
-    private final byte[] address;
+    private final RskAddress address;
 
     public Account(ECKey ecKey) {
         this.ecKey = ecKey;
-        this.address = this.ecKey.getAddress();
+        this.address = new RskAddress(this.ecKey.getAddress());
     }
 
     public ECKey getEcKey() {
         return ecKey;
     }
 
-    public byte[] getAddress() {
+    public RskAddress getAddress() {
         return address;
     }
 }

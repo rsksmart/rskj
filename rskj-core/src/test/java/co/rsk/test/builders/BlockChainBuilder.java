@@ -201,8 +201,8 @@ public class BlockChainBuilder {
             for (int k = 0; k < accounts.size(); k++) {
                 Account account = accounts.get(k);
                 BigInteger balance = balances.get(k);
-                blockChain.getRepository().createAccount(account.getAddress());
-                blockChain.getRepository().addBalance(account.getAddress(), balance);
+                blockChain.getRepository().createAccount(account.getAddress().getBytes());
+                blockChain.getRepository().addBalance(account.getAddress().getBytes(), balance);
             }
 
         genesis.setStateRoot(blockChain.getRepository().getRoot());

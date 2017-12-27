@@ -25,7 +25,6 @@ import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.rpc.TypeConverter;
 import org.spongycastle.crypto.params.KeyParameter;
 
@@ -39,10 +38,10 @@ public class Wallet {
     private final KeyValueDataSource keyDS;
 
     @GuardedBy("accessLock")
-    private final Map<ByteArrayWrapper, byte[]> accounts = new HashMap<>();
+    private final Map<RskAddress, byte[]> accounts = new HashMap<>();
 
     private final Object accessLock = new Object();
-    private final Map<ByteArrayWrapper, Long> unlocksTimeouts = new HashMap<>();
+    private final Map<RskAddress, Long> unlocksTimeouts = new HashMap<>();
 
     public Wallet(KeyValueDataSource keyDS) {
         this.keyDS = keyDS;
@@ -50,17 +49,17 @@ public class Wallet {
 
     public List<byte[]> getAccountAddresses() {
         List<byte[]> addresses = new ArrayList<>();
-        Set<ByteArrayWrapper> keys = new HashSet<>();
+        Set<RskAddress> keys = new HashSet<>();
 
         synchronized(accessLock) {
             for (byte[] address: keyDS.keys()) {
-                keys.add(new ByteArrayWrapper(address));
+                keys.add(new RskAddress(address));
             }
 
             keys.addAll(accounts.keySet());
 
-            for (ByteArrayWrapper address: keys) {
-                addresses.add(address.getData());
+            for (RskAddress address: keys) {
+                addresses.add(address.getBytes());
             }
         }
 
@@ -73,47 +72,45 @@ public class Wallet {
                 .toArray(String[]::new);
     }
 
-    public byte[] addAccount() {
+    public RskAddress addAccount() {
         Account account = new Account(new ECKey());
         saveAccount(account);
         return account.getAddress();
     }
 
-    public byte[] addAccount(String passphrase) {
+    public RskAddress addAccount(String passphrase) {
         Account account = new Account(new ECKey());
         saveAccount(account, passphrase);
         return account.getAddress();
     }
 
-    public byte[] addAccount(Account account) {
+    public RskAddress addAccount(Account account) {
         saveAccount(account);
         return account.getAddress();
     }
 
-    public Account getAccount(byte[] address) {
-        ByteArrayWrapper key = new ByteArrayWrapper(address);
-
+    public Account getAccount(RskAddress address) {
         synchronized (accessLock) {
-            if (!accounts.containsKey(key)) {
+            if (!accounts.containsKey(address)) {
                 return null;
             }
 
-            if (unlocksTimeouts.containsKey(key)) {
-                long ending = unlocksTimeouts.get(key);
+            if (unlocksTimeouts.containsKey(address)) {
+                long ending = unlocksTimeouts.get(address);
                 long time = System.currentTimeMillis();
                 if (ending < time) {
-                    unlocksTimeouts.remove(key);
-                    accounts.remove(key);
+                    unlocksTimeouts.remove(address);
+                    accounts.remove(address);
                     return null;
                 }
             }
-            return new Account(ECKey.fromPrivate(accounts.get(key)));
+            return new Account(ECKey.fromPrivate(accounts.get(address)));
         }
     }
 
-    public Account getAccount(byte[] address, String passphrase) {
+    public Account getAccount(RskAddress address, String passphrase) {
         synchronized (accessLock) {
-            byte[] encrypted = keyDS.get(address);
+            byte[] encrypted = keyDS.get(address.getBytes());
 
             if (encrypted == null) {
                 return null;
@@ -123,24 +120,24 @@ public class Wallet {
         }
     }
 
-    public boolean unlockAccount(byte[] address, String passphrase, long duration) {
+    public boolean unlockAccount(RskAddress address, String passphrase, long duration) {
         long ending = System.currentTimeMillis() + duration;
         boolean unlocked = unlockAccount(address, passphrase);
 
         if (unlocked) {
             synchronized (accessLock) {
-                unlocksTimeouts.put(new ByteArrayWrapper(address), ending);
+                unlocksTimeouts.put(address, ending);
             }
         }
 
         return unlocked;
     }
 
-    public boolean unlockAccount(byte[] address, String passphrase) {
+    public boolean unlockAccount(RskAddress address, String passphrase) {
         Account account;
 
         synchronized (accessLock) {
-            byte[] encrypted = keyDS.get(address);
+            byte[] encrypted = keyDS.get(address.getBytes());
 
             if (encrypted == null) {
                 return false;
@@ -154,16 +151,13 @@ public class Wallet {
         return true;
     }
 
-    public boolean lockAccount(byte[] address) {
+    public boolean lockAccount(RskAddress address) {
         synchronized (accessLock) {
-            ByteArrayWrapper key = new ByteArrayWrapper(address);
-
-            if (!accounts.containsKey(key)) {
+            if (!accounts.containsKey(address)) {
                 return false;
             }
 
-            accounts.remove(key);
-
+            accounts.remove(address);
             return true;
         }
     }
@@ -174,7 +168,7 @@ public class Wallet {
 
     public byte[] addAccountWithPrivateKey(byte[] privateKeyBytes) {
         Account account = new Account(ECKey.fromPrivate(privateKeyBytes));
-        return addAccount(account);
+        return addAccount(account).getBytes();
     }
 
     public byte[] addAccountWithPrivateKey(byte[] privateKeyBytes, String passphrase) {
@@ -182,17 +176,17 @@ public class Wallet {
 
         saveAccount(account, passphrase);
 
-        return account.getAddress();
+        return account.getAddress().getBytes();
     }
 
     private void saveAccount(Account account) {
         synchronized (accessLock) {
-            accounts.put(new ByteArrayWrapper(account.getAddress()), account.getEcKey().getPrivKeyBytes());
+            accounts.put(account.getAddress(), account.getEcKey().getPrivKeyBytes());
         }
     }
 
     private void saveAccount(Account account, String passphrase) {
-        byte[] address = account.getAddress();
+        byte[] address = account.getAddress().getBytes();
         byte[] privateKeyBytes = account.getEcKey().getPrivKeyBytes();
         byte[] encrypted = encryptAES(privateKeyBytes, passphrase.getBytes(StandardCharsets.UTF_8));
 
