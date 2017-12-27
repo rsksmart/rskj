@@ -45,9 +45,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
         List<BtcECKey> genesisFederationPublicKeys = Lists.newArrayList(
                 federator0PublicKey, federator1PublicKey, federator2PublicKey
         );
-
-        // To recreate the value use
-        // genesisFederationAddressCreatedAt = Instant.ofEpochMilli(new GregorianCalendar(2009,0,1).getTimeInMillis());
+        
         // Currently set to:
         // Monday, November 13, 2017 9:00:00 PM GMT-03:00
         Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1510617600l);
