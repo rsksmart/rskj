@@ -42,6 +42,12 @@ public final class RskAddress {
             RskAddress::getBytes,
             UnsignedBytes.lexicographicalComparator());
 
+    private final byte[] bytes;
+
+    public RskAddress(byte[] bytes) {
+        this.bytes = bytes;
+    }
+
     /**
      * @return the null address, which is the receiver of contract creation transactions.
      */
@@ -54,12 +60,6 @@ public final class RskAddress {
      */
     public static RskAddress fromHex(String address) {
         return new RskAddress(TypeConverter.stringHexToByteArray(address));
-    }
-
-    private final byte[] bytes;
-
-    public RskAddress(byte[] bytes) {
-        this.bytes = bytes;
     }
 
     public byte[] getBytes() {
