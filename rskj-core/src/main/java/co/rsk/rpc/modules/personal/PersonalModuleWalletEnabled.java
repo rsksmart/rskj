@@ -137,19 +137,19 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
             }
         }
 
-        return this.wallet.unlockAccount(new RskAddress(TypeConverter.stringHexToByteArray(address)), passphrase, dur);
+        return this.wallet.unlockAccount(RskAddress.fromHex(address), passphrase, dur);
     }
 
     @Override
     public boolean lockAccount(String address) {
-        return this.wallet.lockAccount(new RskAddress(TypeConverter.stringHexToByteArray(address)));
+        return this.wallet.lockAccount(RskAddress.fromHex(address));
     }
 
     @Override
     public String dumpRawKey(String address) throws Exception {
         String s = null;
         try {
-            Account account = wallet.getAccount(new RskAddress(TypeConverter.stringHexToByteArray(convertFromJsonHexToHex(address))));
+            Account account = wallet.getAccount(RskAddress.fromHex(convertFromJsonHexToHex(address)));
             if (account == null) {
                 throw new Exception("Address private key is locked or could not be found in this node");
             }
@@ -161,7 +161,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     }
 
     private Account getAccount(String from, String passphrase) {
-        return wallet.getAccount(new RskAddress(TypeConverter.stringHexToByteArray(from)), passphrase);
+        return wallet.getAccount(RskAddress.fromHex(from), passphrase);
     }
 
     private String sendTransaction(Web3.CallArguments args, Account account) throws Exception {

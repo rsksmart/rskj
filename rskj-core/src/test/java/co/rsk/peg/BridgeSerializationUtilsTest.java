@@ -291,15 +291,15 @@ public class BridgeSerializationUtilsTest {
         Map<ABICallSpec, List<RskAddress>> sampleVotes = new HashMap<>();
         sampleVotes.put(
                 new ABICallSpec("one-function", new byte[][]{}),
-                Arrays.asList(new RskAddress(Hex.decode("8899")), new RskAddress(Hex.decode("aabb")))
+                Arrays.asList(RskAddress.fromHex("8899"), RskAddress.fromHex("aabb"))
         );
         sampleVotes.put(
                 new ABICallSpec("another-function", new byte[][]{ Hex.decode("01"), Hex.decode("0203") }),
-                Arrays.asList(new RskAddress(Hex.decode("ccdd")), new RskAddress(Hex.decode("eeff")), new RskAddress(Hex.decode("0011")))
+                Arrays.asList(RskAddress.fromHex("ccdd"), RskAddress.fromHex("eeff"), RskAddress.fromHex("0011"))
         );
         sampleVotes.put(
                 new ABICallSpec("yet-another-function", new byte[][]{ Hex.decode("0405") }),
-                Arrays.asList(new RskAddress(Hex.decode("fa")), new RskAddress(Hex.decode("ca")))
+                Arrays.asList(RskAddress.fromHex("fa"), RskAddress.fromHex("ca"))
         );
 
         ABICallElection sample = new ABICallElection(mockedAuthorizer, sampleVotes);
@@ -391,8 +391,8 @@ public class BridgeSerializationUtilsTest {
         spec = new ABICallSpec("funct", new byte[][]{});
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                new RskAddress(Hex.decode("aa")),
-                new RskAddress(Hex.decode("bbccdd"))
+                RskAddress.fromHex("aa"),
+                RskAddress.fromHex("bbccdd")
         );
         Assert.assertEquals(voters, election.getVotes().get(spec));
 
@@ -402,9 +402,9 @@ public class BridgeSerializationUtilsTest {
         });
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                new RskAddress(Hex.decode("55")),
-                new RskAddress(Hex.decode("66")),
-                new RskAddress(Hex.decode("77"))
+                RskAddress.fromHex("55"),
+                RskAddress.fromHex("66"),
+                RskAddress.fromHex("77")
         );
         Assert.assertEquals(voters, election.getVotes().get(spec));
 
@@ -413,10 +413,10 @@ public class BridgeSerializationUtilsTest {
         });
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                new RskAddress(Hex.decode("1111")),
-                new RskAddress(Hex.decode("3333")),
-                new RskAddress(Hex.decode("5555")),
-                new RskAddress(Hex.decode("77"))
+                RskAddress.fromHex("1111"),
+                RskAddress.fromHex("3333"),
+                RskAddress.fromHex("5555"),
+                RskAddress.fromHex("77")
         );
         Assert.assertEquals(voters, election.getVotes().get(spec));
     }

@@ -19,6 +19,7 @@
 package co.rsk.core;
 
 import com.google.common.primitives.UnsignedBytes;
+import org.ethereum.rpc.TypeConverter;
 import org.spongycastle.util.encoders.Hex;
 
 import java.util.Arrays;
@@ -46,6 +47,13 @@ public final class RskAddress {
      */
     public static RskAddress nullAddress() {
         return NULL_ADDRESS;
+    }
+
+    /**
+     * @return the address corresponding to the hex string.
+     */
+    public static RskAddress fromHex(String address) {
+        return new RskAddress(TypeConverter.stringHexToByteArray(address));
     }
 
     private final byte[] bytes;

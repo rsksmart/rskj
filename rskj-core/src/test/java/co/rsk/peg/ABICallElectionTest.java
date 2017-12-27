@@ -156,7 +156,7 @@ public class ABICallElectionTest {
     }
 
     private RskAddress createVoter(String hex) {
-        return new RskAddress(Hex.decode(hex));
+        return RskAddress.fromHex(hex);
     }
 
     private ECKey createMockKeyForAddress(String hex) {

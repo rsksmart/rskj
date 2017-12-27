@@ -34,7 +34,6 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -58,10 +57,10 @@ public class PrecompiledContracts {
     public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
 
-    public static final RskAddress BRIDGE_ADDR = new RskAddress(Hex.decode(BRIDGE_ADDR_STR));
-    public static final RskAddress IDENTITY_ADDR = new RskAddress(Hex.decode(IDENTITY_ADDR_STR));
-    public static final RskAddress REMASC_ADDR = new RskAddress(Hex.decode(REMASC_ADDR_STR));
-    public static final RskAddress SAMPLE_ADDR = new RskAddress(Hex.decode(SAMPLE_ADDR_STR));
+    public static final RskAddress BRIDGE_ADDR = RskAddress.fromHex(BRIDGE_ADDR_STR);
+    public static final RskAddress IDENTITY_ADDR = RskAddress.fromHex(IDENTITY_ADDR_STR);
+    public static final RskAddress REMASC_ADDR = RskAddress.fromHex(REMASC_ADDR_STR);
+    public static final RskAddress SAMPLE_ADDR = RskAddress.fromHex(SAMPLE_ADDR_STR);
 
     private static final String RSK_NATIVECONTRACT_REQUIREDPREFIX = "000000000000000000000000";
     private static ECRecover ecRecover = new ECRecover();

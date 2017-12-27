@@ -20,16 +20,15 @@ package co.rsk.core;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
 
 public class RskAddressTest {
     @Test
     public void testEquals() {
-        RskAddress senderA = new RskAddress(Hex.decode("aabbccdd"));
-        RskAddress senderB = new RskAddress(Hex.decode("aabbccdd"));
-        RskAddress senderC = new RskAddress(Hex.decode("aabbccddee"));
-        RskAddress senderD = new RskAddress(Hex.decode(""));
-        RskAddress senderE = new RskAddress(Hex.decode("112233"));
+        RskAddress senderA = RskAddress.fromHex("aabbccdd");
+        RskAddress senderB = RskAddress.fromHex("aabbccdd");
+        RskAddress senderC = RskAddress.fromHex("aabbccddee");
+        RskAddress senderD = RskAddress.fromHex("");
+        RskAddress senderE = RskAddress.fromHex("112233");
 
         Assert.assertEquals(senderA, senderB);
         Assert.assertNotEquals(senderA, senderC);
