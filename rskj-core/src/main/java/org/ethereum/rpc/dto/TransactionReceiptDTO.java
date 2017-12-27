@@ -46,13 +46,13 @@ public class TransactionReceiptDTO {
     public String from;
     public String to;
     public String root;
-    public int status;
+    public String status;
 
     public  TransactionReceiptDTO(Block block, TransactionInfo txInfo) {
 
         TransactionReceipt receipt = txInfo.getReceipt();
 
-        status = Arrays.equals(txInfo.getReceipt().getStatus(), EMPTY_BYTE_ARRAY)?0:1;
+        status = toJsonHex(txInfo.getReceipt().getStatus());
         blockHash = toJsonHex(txInfo.getBlockHash());
         blockNumber = toJsonHex(block.getNumber());
 
