@@ -90,16 +90,23 @@ public class ReleaseRequestQueue {
      * This methods iterates the requests in the queue
      * and calls the processor for each. If the
      * processor returns true, then the item is removed
-     * (i.e., processing was successful). Otherwise
-     * it is kept for future processing.
+     * (i.e., processing was successful). Otherwise it is
+     * sent to the back of the queue for future processing.
      */
-    public void process(Processor processor) {
+    public void process(int maxIterations, Processor processor) {
         ListIterator<Entry> iterator = entries.listIterator();
-        while (iterator.hasNext()) {
-            boolean result = processor.process(iterator.next());
-            if (result) {
-                iterator.remove();
+        List<Entry> toRetry = new ArrayList<>();
+        int i = 0;
+        while (iterator.hasNext() && i < maxIterations) {
+            Entry entry = iterator.next();
+            iterator.remove();
+            ++i;
+
+            if (!processor.process(entry)) {
+                toRetry.add(entry);
             }
         }
+
+        entries.addAll(toRetry);
     }
 }
