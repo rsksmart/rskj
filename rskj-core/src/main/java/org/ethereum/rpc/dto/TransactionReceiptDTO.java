@@ -27,7 +27,6 @@ import org.ethereum.vm.LogInfo;
 import java.util.Arrays;
 
 import static org.ethereum.rpc.TypeConverter.toJsonHex;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 
 /**
