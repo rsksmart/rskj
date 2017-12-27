@@ -11,7 +11,7 @@ public class MainNetAfterBridgeSyncConfig extends GenesisConfig {
 
     public static class MainNetConstants extends GenesisConstants {
         private static final BigInteger DIFFICULTY_BOUND_DIVISOR = BigInteger.valueOf(50);
-        private static final byte CHAIN_ID = 31;
+        private static final byte CHAIN_ID = 30;
 
         @Override
         public BridgeConstants getBridgeConstants() {
