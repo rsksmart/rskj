@@ -94,8 +94,7 @@ public class BridgeSupport {
     public BridgeSupport(Repository repository, String contractAddress, Block rskExecutionBlock, BridgeConstants bridgeConstants, List<LogInfo> logs) throws IOException, BlockStoreException {
         this(repository, contractAddress, new BridgeStorageProvider(repository, contractAddress, bridgeConstants), rskExecutionBlock, bridgeConstants, logs);
     }
-
-
+    
     // Used by unit tests
     public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, Block rskExecutionBlock, BridgeConstants bridgeConstants, List<LogInfo> logs) throws IOException, BlockStoreException {
         this.rskRepository = repository;
@@ -121,16 +120,6 @@ public class BridgeSupport {
         this.initialBtcStoredBlock = this.getLowestBlock();
     }
 
-    @VisibleForTesting
-    InputStream getCheckPoints() {
-        InputStream checkpoints = BridgeSupport.class.getResourceAsStream("/rskbitcoincheckpoints/" + bridgeConstants.getBtcParams().getId() + ".checkpoints");
-        if (checkpoints == null) {
-            // If we don't have a custom checkpoints file, try to use bitcoinj's default checkpoints for that network
-            checkpoints = BridgeSupport.class.getResourceAsStream("/" + bridgeConstants.getBtcParams().getId() + ".checkpoints");
-        }
-        return checkpoints;
-    }
-
     // Used by unit tests
     public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain, BridgeConstants bridgeConstants) {
         this.provider = provider;
@@ -140,6 +129,16 @@ public class BridgeSupport {
         this.btcBlockChain = btcBlockChain;
         this.contractAddress = contractAddress;
         this.rskRepository = repository;
+    }
+
+    @VisibleForTesting
+    InputStream getCheckPoints() {
+        InputStream checkpoints = BridgeSupport.class.getResourceAsStream("/rskbitcoincheckpoints/" + bridgeConstants.getBtcParams().getId() + ".checkpoints");
+        if (checkpoints == null) {
+            // If we don't have a custom checkpoints file, try to use bitcoinj's default checkpoints for that network
+            checkpoints = BridgeSupport.class.getResourceAsStream("/" + bridgeConstants.getBtcParams().getId() + ".checkpoints");
+        }
+        return checkpoints;
     }
 
     public void save() throws IOException {
