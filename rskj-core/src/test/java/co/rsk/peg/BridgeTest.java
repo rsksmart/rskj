@@ -33,6 +33,7 @@ import co.rsk.test.World;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.AfterClass;
@@ -63,6 +64,12 @@ public class BridgeTest {
     private static BlockchainNetConfig blockchainNetConfigOriginal;
     private static BridgeConstants bridgeConstants;
 
+    private static final BigInteger AMOUNT = new BigInteger("1000000000000000000");
+    private static final BigInteger NONCE = new BigInteger("0");
+    private static final BigInteger GAS_PRICE = new BigInteger("100");
+    private static final BigInteger GAS_LIMIT = new BigInteger("1000");
+    private static final String DATA = "80af2871";
+
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
@@ -81,9 +88,6 @@ public class BridgeTest {
         BtcTransaction tx1 = createTransaction();
         BtcTransaction tx2 = createTransaction();
         BtcTransaction tx3 = createTransaction();
-        Sha3Hash hash1 = PegTestUtils.createHash3();
-        Sha3Hash hash2 = PegTestUtils.createHash3();
-        Sha3Hash hash3 = PegTestUtils.createHash3();
 
         Repository repository = new RepositoryImpl();
         Repository track = repository.startTracking();
@@ -100,9 +104,11 @@ public class BridgeTest {
 
         track = repository.startTracking();
 
+        Transaction rskTx = Transaction.create(PrecompiledContracts.BRIDGE_ADDR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        rskTx.sign(new ECKey().getPrivKeyBytes());
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         World world = new World();
-        bridge.init(null, world.getBlockChain().getBestBlock(), track, world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null);
+        bridge.init(rskTx, world.getBlockChain().getBestBlock(), track, world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), new LinkedList<>());
 
         bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
 
@@ -138,12 +144,13 @@ public class BridgeTest {
         World world = new World();
         List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(world.getBlockChain().getBestBlock(), 10);
 
-        Blockchain blockchain = world.getBlockChain();
+        Transaction rskTx = Transaction.create(PrecompiledContracts.BRIDGE_ADDR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        rskTx.sign(new ECKey().getPrivKeyBytes());
 
         world.getBlockChain().getBlockStore().saveBlock(blocks.get(1), BigInteger.ONE, true);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(new SimpleRskTransaction(SHA3Helper.sha3("aabb")), blocks.get(9), track, world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null);
+        bridge.init(rskTx, blocks.get(9), track, world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), new LinkedList<>());
 
         bridge.execute(Bridge.UPDATE_COLLECTIONS.encode());
 
