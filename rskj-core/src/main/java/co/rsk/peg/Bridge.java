@@ -22,6 +22,8 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.utils.BridgeEventLogger;
+import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
@@ -340,7 +342,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     private BridgeSupport setup() throws Exception {
-        return new BridgeSupport(repository, contractAddress, rskExecutionBlock, bridgeConstants, logs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(this.logs);
+        return new BridgeSupport(repository, contractAddress, rskExecutionBlock, bridgeConstants, eventLogger);
     }
 
     private void teardown() throws IOException {

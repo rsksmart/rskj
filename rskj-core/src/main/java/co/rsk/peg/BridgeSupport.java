@@ -31,6 +31,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.utils.BridgeEventLogger;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
@@ -86,23 +87,23 @@ public class BridgeSupport {
     private final BridgeStorageProvider provider;
     private final Repository rskRepository;
 
-    private List<LogInfo> logs;
+    private BridgeEventLogger eventLogger;
     private org.ethereum.core.Block rskExecutionBlock;
     private StoredBlock initialBtcStoredBlock;
 
     // Used by bridge
-    public BridgeSupport(Repository repository, String contractAddress, Block rskExecutionBlock, BridgeConstants bridgeConstants, List<LogInfo> logs) throws IOException, BlockStoreException {
-        this(repository, contractAddress, new BridgeStorageProvider(repository, contractAddress, bridgeConstants), rskExecutionBlock, bridgeConstants, logs);
+    public BridgeSupport(Repository repository, String contractAddress, Block rskExecutionBlock, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) throws IOException, BlockStoreException {
+        this(repository, contractAddress, new BridgeStorageProvider(repository, contractAddress, bridgeConstants), rskExecutionBlock, bridgeConstants, eventLogger);
     }
-    
+
     // Used by unit tests
-    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, Block rskExecutionBlock, BridgeConstants bridgeConstants, List<LogInfo> logs) throws IOException, BlockStoreException {
-        this.rskRepository = repository;
+    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, Block rskExecutionBlock, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) throws IOException, BlockStoreException {
+    this.rskRepository = repository;
         this.contractAddress = contractAddress;
         this.provider = provider;
         this.rskExecutionBlock = rskExecutionBlock;
         this.bridgeConstants = bridgeConstants;
-        this.logs = logs;
+        this.eventLogger = eventLogger;
 
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         this.btcContext = new Context(btcParams);
@@ -119,6 +120,7 @@ public class BridgeSupport {
         this.btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
         this.initialBtcStoredBlock = this.getLowestBlock();
     }
+
 
     // Used by unit tests
     public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain, BridgeConstants bridgeConstants) {
@@ -500,7 +502,7 @@ public class BridgeSupport {
     }
 
     private void createUpdateSignatureEventLog(Transaction rskTx) {
-        logs.add(
+        eventLogger.getLogs().add(
                 new LogInfo(
                         TypeConverter.stringToByteArray(contractAddress),
                         Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC),
@@ -773,7 +775,7 @@ public class BridgeSupport {
                                      RLP.encodeElement(federatorPublicKey.getPubKeyHash()),
                                      RLP.encodeElement(rskTxHash));
 
-        logs.add(new LogInfo(loggerContractAddress, topics, data));
+        eventLogger.getLogs().add(new LogInfo(loggerContractAddress, topics, data));
     }
 
     private void processSigning(long executionBlockNumber, BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash, BtcTransaction btcTx) throws IOException {
@@ -868,7 +870,7 @@ public class BridgeSupport {
         byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()),
                                      RLP.encodeElement(btcTx.bitcoinSerialize()));
 
-        logs.add(new LogInfo(loggerContractAddress, topics, data));
+        eventLogger.getLogs().add(new LogInfo(loggerContractAddress, topics, data));
     }
 
     /**
