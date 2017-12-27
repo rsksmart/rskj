@@ -186,7 +186,7 @@ public class BlockResult {
 
     private static class InterruptedExecutionBlockResult extends BlockResult {
         public InterruptedExecutionBlockResult() {
-            super(Collections.emptyList(), Collections.emptyList(), null,null, 0, BigInteger.ZERO);
+            super(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),null, 0, BigInteger.ZERO);
         }
     }
 }

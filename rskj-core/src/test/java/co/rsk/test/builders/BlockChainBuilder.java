@@ -127,7 +127,7 @@ public class BlockChainBuilder {
         if (this.adminInfo == null)
             this.adminInfo = new AdminInfo();
 
-        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, null, null,listener, this.adminInfo, blockValidator, RskSystemProperties.CONFIG);
+        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, eventsStore, null,listener, this.adminInfo, blockValidator, RskSystemProperties.CONFIG);
 
         if (this.testing && this.rsk) {
             blockChain.setBlockValidator(new DummyBlockValidator());
