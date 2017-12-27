@@ -71,6 +71,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -456,6 +457,79 @@ public class BridgeSupportTest {
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
         // Check the wallet has not been emptied
         Assert.assertFalse(provider.getNewFederationBtcUTXOs().isEmpty());
+    }
+
+    @Test
+    public void minimumProcessFundsMigrationValue() throws IOException, BlockStoreException {
+        BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        Federation oldFederation = bridgeConstants.getGenesisFederation();
+        Federation newFederation = new Federation(
+                Collections.singletonList(new BtcECKey(new SecureRandom())),
+                Instant.EPOCH,
+                5L,
+                bridgeConstants.getBtcParams()
+        );
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getFeePerKb())
+                .thenReturn(Coin.MILLICOIN);
+        when(provider.getReleaseRequestQueue())
+                .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
+        when(provider.getReleaseTransactionSet())
+                .thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getOldFederation())
+                .thenReturn(oldFederation);
+        when(provider.getNewFederation())
+                .thenReturn(newFederation);
+
+        BlockGenerator blockGenerator = new BlockGenerator();
+        // Old federation will be in migration age at block 35
+        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(35, 1);
+        Transaction tx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+
+        Repository repository = new RepositoryImpl();
+        Repository track = repository.startTracking();
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, rskCurrentBlock, bridgeConstants, Collections.emptyList());
+
+        // One MICROCOIN is less than half the fee per kb, which is the minimum funds to migrate,
+        // and so it won't be removed from the old federation UTXOs list for migration.
+        List<UTXO> unsufficientUTXOsForMigration1 = new ArrayList<>();
+        unsufficientUTXOsForMigration1.add(createUTXO(Coin.MICROCOIN, oldFederation.getAddress()));
+        when(provider.getOldFederationBtcUTXOs())
+                .thenReturn(unsufficientUTXOsForMigration1);
+        bridgeSupport.updateCollections(tx);
+        assertThat(unsufficientUTXOsForMigration1.size(), is(1));
+
+        // MILLICOIN is greater than half the fee per kb,
+        // and it will be removed from the old federation UTXOs list for migration.
+        List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
+        sufficientUTXOsForMigration1.add(createUTXO(Coin.MILLICOIN, oldFederation.getAddress()));
+        when(provider.getOldFederationBtcUTXOs())
+                .thenReturn(sufficientUTXOsForMigration1);
+
+        bridgeSupport.updateCollections(tx);
+        assertThat(sufficientUTXOsForMigration1.size(), is(0));
+
+        // 2 smaller coins should work exactly like 1 MILLICOIN
+        List<UTXO> sufficientUTXOsForMigration2 = new ArrayList<>();
+        sufficientUTXOsForMigration2.add(createUTXO(Coin.MILLICOIN.divide(2), oldFederation.getAddress()));
+        sufficientUTXOsForMigration2.add(createUTXO(Coin.MILLICOIN.divide(2), oldFederation.getAddress()));
+        when(provider.getOldFederationBtcUTXOs())
+                .thenReturn(sufficientUTXOsForMigration2);
+
+        bridgeSupport.updateCollections(tx);
+        assertThat(sufficientUTXOsForMigration2.size(), is(0));
+
+        // higher fee per kb prevents funds migration
+        List<UTXO> unsufficientUTXOsForMigration2 = new ArrayList<>();
+        unsufficientUTXOsForMigration2.add(createUTXO(Coin.MILLICOIN, oldFederation.getAddress()));
+        when(provider.getOldFederationBtcUTXOs())
+                .thenReturn(unsufficientUTXOsForMigration2);
+        when(provider.getFeePerKb())
+                .thenReturn(Coin.COIN);
+
+        bridgeSupport.updateCollections(tx);
+        assertThat(unsufficientUTXOsForMigration2.size(), is(1));
     }
 
     @Test
@@ -2882,5 +2956,15 @@ public class BridgeSupportTest {
     private Transaction getMockedRskTxWithHash(String s) {
         byte[] hash = SHA3Helper.sha3(s);
         return new SimpleRskTransaction(hash);
+    }
+
+    private UTXO createUTXO(Coin value, Address address) {
+        return new UTXO(
+                PegTestUtils.createHash(),
+                1,
+                value,
+                0,
+                false,
+                ScriptBuilder.createOutputScript(address));
     }
 }

@@ -68,7 +68,6 @@ public class BridgeSupport {
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
-    private static final Coin MINIMUM_FUNDS_TO_MIGRATE = Coin.CENT;
 
     private enum StorageFederationReference { NONE, NEW, OLD, GENESIS }
 
@@ -98,13 +97,17 @@ public class BridgeSupport {
 
     // Used by unit tests
     public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, Block rskExecutionBlock, BridgeConstants bridgeConstants, List<LogInfo> logs) throws IOException, BlockStoreException {
+        this.rskRepository = repository;
+        this.contractAddress = contractAddress;
         this.provider = provider;
-
+        this.rskExecutionBlock = rskExecutionBlock;
         this.bridgeConstants = bridgeConstants;
-        NetworkParameters btcParams = bridgeConstants.getBtcParams();
-        btcContext = new Context(btcParams);
+        this.logs = logs;
 
-        btcBlockStore = new RepositoryBlockStore(repository, contractAddress);
+        NetworkParameters btcParams = bridgeConstants.getBtcParams();
+        this.btcContext = new Context(btcParams);
+
+        this.btcBlockStore = new RepositoryBlockStore(repository, contractAddress);
         if (btcBlockStore.getChainHead().getHeader().getHash().equals(btcParams.getGenesisBlock().getHash())) {
             // We are building the blockstore for the first time, so we have not set the checkpoints yet.
             long time = getActiveFederation().getCreationTime().toEpochMilli();
@@ -113,14 +116,8 @@ public class BridgeSupport {
                 CheckpointManager.checkpoint(btcParams, checkpoints, btcBlockStore, time);
             }
         }
-        btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
-
-        rskRepository = repository;
-
+        this.btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
         this.initialBtcStoredBlock = this.getLowestBlock();
-        this.logs = logs;
-        this.rskExecutionBlock = rskExecutionBlock;
-        this.contractAddress = contractAddress;
     }
 
     @VisibleForTesting
@@ -515,6 +512,13 @@ public class BridgeSupport {
         return federationAge >= ageEnd;
     }
 
+    private boolean hasMinimumFundsToMigrate(@Nullable Wallet retiringFederationWallet) {
+        // This value is set according to the average 500 bytes transaction size
+        Coin minimumFundsToMigrate = getFeePerKb().divide(2);
+        return retiringFederationWallet != null
+                && retiringFederationWallet.getBalance().isGreaterThan(minimumFundsToMigrate);
+    }
+
     private void processFundsMigration() throws IOException {
         Wallet retiringFederationWallet = getRetiringFederationWallet();
         List<UTXO> availableUTXOs = getRetiringFederationBtcUTXOs();
@@ -522,8 +526,7 @@ public class BridgeSupport {
         Federation activeFederation = getActiveFederation();
 
         if (federationIsInMigrationAge(activeFederation)
-                && retiringFederationWallet != null
-                && retiringFederationWallet.getBalance().isGreaterThan(MINIMUM_FUNDS_TO_MIGRATE)) {
+                && hasMinimumFundsToMigrate(retiringFederationWallet)) {
 
             Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederation.getAddress());
             BtcTransaction btcTx = createResult.getLeft();
