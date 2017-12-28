@@ -20,6 +20,8 @@ package co.rsk.peg.utils;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.peg.Federation;
+import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.LogInfo;
 
@@ -39,4 +41,6 @@ public interface BridgeEventLogger {
     void losAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash);
 
     void logReleaseBtc(BtcTransaction btcTx);
+
+    void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation);
 }

@@ -296,7 +296,7 @@ public class BridgeSupportTest {
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
 
         List<LogInfo> eventLogs = new LinkedList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(eventLogs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, eventLogs);
         BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, rskCurrentBlock, BridgeRegTestConstants.getInstance(), eventLogger);
 
         Transaction tx = Transaction.create(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
@@ -823,7 +823,7 @@ public class BridgeSupportTest {
 
         // Setup BridgeSupport
         List<LogInfo> eventLogs = new ArrayList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(eventLogs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, eventLogs);
         BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, null, BridgeRegTestConstants.getInstance(), eventLogger);
 
         // Create signed hash of Btc tx
@@ -913,7 +913,7 @@ public class BridgeSupportTest {
 
         track = repository.startTracking();
         List<LogInfo> logs = new ArrayList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(logs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
         BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, (Block) null, BridgeRegTestConstants.getInstance(), eventLogger);
 
         // Generate valid signatures for inputs
@@ -1017,7 +1017,7 @@ public class BridgeSupportTest {
 
         track = repository.startTracking();
         List<LogInfo> logs = new ArrayList<>();
-        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(logs);
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
         BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, (Block) null, BridgeRegTestConstants.getInstance(), eventLogger);
 
         Script inputScript = t.getInputs().get(0).getScriptSig();
