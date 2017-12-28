@@ -30,7 +30,8 @@ import java.util.List;
 @Suite.SuiteClasses({
         ReleaseBtc.class,
         UpdateCollections.class,
-        ReceiveHeaders.class
+        ReceiveHeaders.class,
+        RegisterBtcTransaction.class
 })
 public class BridgePerformanceTest {
     private static List<ExecutionStats> statsList;
