@@ -19,4 +19,6 @@ public interface BridgeEventLogger {
     void logUpdateCollections(Transaction rskTx);
 
     void losAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash);
+
+    void logReleaseBtc(BtcTransaction btcTx);
 }
