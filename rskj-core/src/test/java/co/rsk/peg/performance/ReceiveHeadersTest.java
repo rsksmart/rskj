@@ -36,7 +36,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ReceiveHeaders extends BridgePerformanceTestCase {
+public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     private BtcBlock blockToTry;
 
     @Test

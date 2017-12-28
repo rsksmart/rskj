@@ -38,7 +38,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public class AddSignature extends BridgePerformanceTestCase {
+public class AddSignatureTest extends BridgePerformanceTestCase {
     private BtcTransaction releaseTx;
     private Sha3Hash rskTxHash;
     private BtcECKey federatorThatSignsKey;

@@ -32,7 +32,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.math.BigInteger;
 
-public class ReleaseBtc extends BridgePerformanceTestCase {
+public class ReleaseBtcTest extends BridgePerformanceTestCase {
     @Test
     public void releaseBtc() throws IOException {
         int minCentsBtc = 5;

@@ -19,7 +19,6 @@
 package co.rsk.peg.performance;
 
 import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -28,11 +27,11 @@ import java.util.List;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        ReleaseBtc.class,
-        UpdateCollections.class,
-        ReceiveHeaders.class,
-        RegisterBtcTransaction.class,
-        AddSignature.class
+        ReleaseBtcTest.class,
+        UpdateCollectionsTest.class,
+        ReceiveHeadersTest.class,
+        RegisterBtcTransactionTest.class,
+        AddSignatureTest.class
 })
 public class BridgePerformanceTest {
     private static List<ExecutionStats> statsList;

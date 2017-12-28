@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class RegisterBtcTransaction extends BridgePerformanceTestCase {
+public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
     private BtcBlock blockWithTx;
     private int blockWithTxHeight;
     private BtcTransaction txToLock;

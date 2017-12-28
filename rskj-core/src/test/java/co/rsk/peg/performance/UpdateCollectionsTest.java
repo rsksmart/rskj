@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.SortedMap;
 
-public class UpdateCollections extends BridgePerformanceTestCase {
+public class UpdateCollectionsTest extends BridgePerformanceTestCase {
     @Test
     public void updateCollections() throws IOException {
         ExecutionStats stats = new ExecutionStats("updateCollections");
