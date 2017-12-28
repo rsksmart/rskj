@@ -754,18 +754,8 @@ public class BridgeSupport {
             logger.warn("Expected {} signatures but received {}.", btcTx.getInputs().size(), signatures.size());
             return;
         }
-        createAddSignatureEventLog(federatorPublicKey, btcTx, rskTxHash);
+        eventLogger.losAddSignature(federatorPublicKey, btcTx, rskTxHash);
         processSigning(executionBlockNumber, federatorPublicKey, signatures, rskTxHash, btcTx);
-    }
-
-    private void createAddSignatureEventLog(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
-        byte[] loggerContractAddress = TypeConverter.stringToByteArray(contractAddress);
-        List<DataWord> topics = Collections.singletonList(Bridge.ADD_SIGNATURE_TOPIC);
-        byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()),
-                                     RLP.encodeElement(federatorPublicKey.getPubKeyHash()),
-                                     RLP.encodeElement(rskTxHash));
-
-        eventLogger.getLogs().add(new LogInfo(loggerContractAddress, topics, data));
     }
 
     private void processSigning(long executionBlockNumber, BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash, BtcTransaction btcTx) throws IOException {
