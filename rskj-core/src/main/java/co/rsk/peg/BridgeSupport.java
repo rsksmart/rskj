@@ -117,13 +117,14 @@ public class BridgeSupport {
 
 
     // Used by unit tests
-    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain, BridgeConstants bridgeConstants) {
+    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) {
         this.provider = provider;
         this.bridgeConstants = bridgeConstants;
         this.btcContext = new Context(bridgeConstants.getBtcParams());
         this.btcBlockStore = btcBlockStore;
         this.btcBlockChain = btcBlockChain;
         this.rskRepository = repository;
+        this.eventLogger = eventLogger;
     }
 
     @VisibleForTesting
@@ -1400,6 +1401,8 @@ public class BridgeSupport {
 
         // Clear votes on election
         provider.getFederationElection(bridgeConstants.getFederationChangeAuthorizer()).clear();
+
+        eventLogger.logCommitFederation(rskExecutionBlock, provider.getOldFederation(), provider.getNewFederation());
 
         return 1;
     }
