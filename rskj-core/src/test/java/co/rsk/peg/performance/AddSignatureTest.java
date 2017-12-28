@@ -53,13 +53,15 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
 
     @Test
     public void addSignature() {
-        addSignature_nonFullySigned(100);
-        addSignature_fullySigned(100);
-    }
-
-    private void addSignature_nonFullySigned(int times) {
         ExecutionStats stats = new ExecutionStats("addSignature");
 
+        addSignature_nonFullySigned(100, stats);
+        addSignature_fullySigned(100, stats);
+
+        BridgePerformanceTest.addStats(stats);
+    }
+
+    private void addSignature_nonFullySigned(int times, ExecutionStats stats) {
         executeAndAverage(
                 "addSignature-nonFullySigned",
                 times,
@@ -69,13 +71,9 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
                 Helper.getRandomHeightProvider(10),
                 stats
         );
-
-        BridgePerformanceTest.addStats(stats);
     }
 
-    private void addSignature_fullySigned(int times) {
-        ExecutionStats stats = new ExecutionStats("addSignature");
-
+    private void addSignature_fullySigned(int times, ExecutionStats stats) {
         executeAndAverage(
                 "addSignature-fullySigned",
                 times,
@@ -85,8 +83,6 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
                 Helper.getRandomHeightProvider(10),
                 stats
         );
-
-        BridgePerformanceTest.addStats(stats);
     }
 
     private ABIEncoder getABIEncoder() {
