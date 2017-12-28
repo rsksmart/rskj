@@ -31,16 +31,13 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.peg.utils.BridgeEventLogger;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
-import org.ethereum.rpc.TypeConverter;
-import org.ethereum.util.RLP;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
@@ -78,7 +75,6 @@ public class BridgeSupport {
             "commit",
             "rollback"));
 
-    private final String contractAddress;
     private final BridgeConstants bridgeConstants;
     private final Context btcContext;
     private final BtcBlockStore btcBlockStore;
@@ -86,24 +82,22 @@ public class BridgeSupport {
     private final BridgeStorageProvider provider;
     private final Repository rskRepository;
 
-    private List<LogInfo> logs;
+    private BridgeEventLogger eventLogger;
     private org.ethereum.core.Block rskExecutionBlock;
     private StoredBlock initialBtcStoredBlock;
 
     // Used by bridge
-    public BridgeSupport(Repository repository, String contractAddress, Block rskExecutionBlock, BridgeConstants bridgeConstants, List<LogInfo> logs) throws IOException, BlockStoreException {
-        this(repository, contractAddress, new BridgeStorageProvider(repository, contractAddress, bridgeConstants), rskExecutionBlock, bridgeConstants, logs);
+    public BridgeSupport(Repository repository, String contractAddress, Block rskExecutionBlock, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) throws IOException, BlockStoreException {
+        this(repository, contractAddress, new BridgeStorageProvider(repository, contractAddress, bridgeConstants), rskExecutionBlock, bridgeConstants, eventLogger);
     }
 
-
     // Used by unit tests
-    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, Block rskExecutionBlock, BridgeConstants bridgeConstants, List<LogInfo> logs) throws IOException, BlockStoreException {
+    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, Block rskExecutionBlock, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) throws IOException, BlockStoreException {
         this.rskRepository = repository;
-        this.contractAddress = contractAddress;
         this.provider = provider;
         this.rskExecutionBlock = rskExecutionBlock;
         this.bridgeConstants = bridgeConstants;
-        this.logs = logs;
+        this.eventLogger = eventLogger;
 
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         this.btcContext = new Context(btcParams);
@@ -121,6 +115,18 @@ public class BridgeSupport {
         this.initialBtcStoredBlock = this.getLowestBlock();
     }
 
+
+    // Used by unit tests
+    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) {
+        this.provider = provider;
+        this.bridgeConstants = bridgeConstants;
+        this.btcContext = new Context(bridgeConstants.getBtcParams());
+        this.btcBlockStore = btcBlockStore;
+        this.btcBlockChain = btcBlockChain;
+        this.rskRepository = repository;
+        this.eventLogger = eventLogger;
+    }
+
     @VisibleForTesting
     InputStream getCheckPoints() {
         InputStream checkpoints = BridgeSupport.class.getResourceAsStream("/rskbitcoincheckpoints/" + bridgeConstants.getBtcParams().getId() + ".checkpoints");
@@ -129,17 +135,6 @@ public class BridgeSupport {
             checkpoints = BridgeSupport.class.getResourceAsStream("/" + bridgeConstants.getBtcParams().getId() + ".checkpoints");
         }
         return checkpoints;
-    }
-
-    // Used by unit tests
-    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain, BridgeConstants bridgeConstants) {
-        this.provider = provider;
-        this.bridgeConstants = bridgeConstants;
-        this.btcContext = new Context(bridgeConstants.getBtcParams());
-        this.btcBlockStore = btcBlockStore;
-        this.btcBlockChain = btcBlockChain;
-        this.contractAddress = contractAddress;
-        this.rskRepository = repository;
     }
 
     public void save() throws IOException {
@@ -491,23 +486,13 @@ public class BridgeSupport {
     public void updateCollections(Transaction rskTx) throws IOException {
         Context.propagate(btcContext);
 
-        createUpdateSignatureEventLog(rskTx);
+        eventLogger.logUpdateCollections(rskTx);
 
         processFundsMigration();
 
         processReleaseRequests();
 
         processReleaseTransactions(rskTx);
-    }
-
-    private void createUpdateSignatureEventLog(Transaction rskTx) {
-        logs.add(
-                new LogInfo(
-                        TypeConverter.stringToByteArray(contractAddress),
-                        Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC),
-                        RLP.encodeElement(rskTx.getSender())
-                )
-        );
     }
 
     private boolean federationIsInMigrationAge(Federation federation) {
@@ -763,18 +748,8 @@ public class BridgeSupport {
             logger.warn("Expected {} signatures but received {}.", btcTx.getInputs().size(), signatures.size());
             return;
         }
-        createAddSignatureEventLog(federatorPublicKey, btcTx, rskTxHash);
+        eventLogger.logAddSignature(federatorPublicKey, btcTx, rskTxHash);
         processSigning(executionBlockNumber, federatorPublicKey, signatures, rskTxHash, btcTx);
-    }
-
-    private void createAddSignatureEventLog(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
-        byte[] loggerContractAddress = TypeConverter.stringToByteArray(contractAddress);
-        List<DataWord> topics = Collections.singletonList(Bridge.ADD_SIGNATURE_TOPIC);
-        byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()),
-                                     RLP.encodeElement(federatorPublicKey.getPubKeyHash()),
-                                     RLP.encodeElement(rskTxHash));
-
-        logs.add(new LogInfo(loggerContractAddress, topics, data));
     }
 
     private void processSigning(long executionBlockNumber, BtcECKey federatorPublicKey, List<byte[]> signatures, byte[] rskTxHash, BtcTransaction btcTx) throws IOException {
@@ -857,19 +832,10 @@ public class BridgeSupport {
         if (hasEnoughSignatures(btcTx)) {
             logger.info("Tx fully signed {}. Hex: {}", btcTx, Hex.toHexString(btcTx.bitcoinSerialize()));
             provider.getRskTxsWaitingForSignatures().remove(new Sha3Hash(rskTxHash));
-            createReleaseBtcEventLog(btcTx);
+            eventLogger.logReleaseBtc(btcTx);
         } else {
             logger.debug("Tx not yet fully signed {}.", new Sha3Hash(rskTxHash));
         }
-    }
-
-    private void createReleaseBtcEventLog(BtcTransaction btcTx) {
-        byte[] loggerContractAddress = TypeConverter.stringToByteArray(contractAddress);
-        List<DataWord> topics = Collections.singletonList(Bridge.RELEASE_BTC_TOPIC);
-        byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()),
-                                     RLP.encodeElement(btcTx.bitcoinSerialize()));
-
-        logs.add(new LogInfo(loggerContractAddress, topics, data));
     }
 
     /**
@@ -1435,6 +1401,8 @@ public class BridgeSupport {
 
         // Clear votes on election
         provider.getFederationElection(bridgeConstants.getFederationChangeAuthorizer()).clear();
+
+        eventLogger.logCommitFederation(rskExecutionBlock, provider.getOldFederation(), provider.getNewFederation());
 
         return 1;
     }
