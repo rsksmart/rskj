@@ -748,7 +748,7 @@ public class BridgeSupport {
             logger.warn("Expected {} signatures but received {}.", btcTx.getInputs().size(), signatures.size());
             return;
         }
-        eventLogger.losAddSignature(federatorPublicKey, btcTx, rskTxHash);
+        eventLogger.logAddSignature(federatorPublicKey, btcTx, rskTxHash);
         processSigning(executionBlockNumber, federatorPublicKey, signatures, rskTxHash, btcTx);
     }
 

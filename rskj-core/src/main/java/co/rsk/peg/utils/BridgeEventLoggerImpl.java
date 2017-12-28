@@ -66,7 +66,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         );
     }
 
-    public void losAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
+    public void logAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
         List<DataWord> topics = Collections.singletonList(Bridge.ADD_SIGNATURE_TOPIC);
         byte[] data = RLP.encodeList(RLP.encodeString(btcTx.getHashAsString()),
                                     RLP.encodeElement(federatorPublicKey.getPubKeyHash()),
