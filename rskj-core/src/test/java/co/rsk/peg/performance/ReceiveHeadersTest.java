@@ -41,8 +41,8 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
 
     @Test
     public void receiveHeaders() throws IOException {
-        int minBtcBlocks = 1000;
-        int maxBtcBlocks = 2000;
+        final int minBtcBlocks = 1000;
+        final int maxBtcBlocks = 2000;
 
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
             BtcBlockStore btcBlockStore = new RepositoryBlockStore(repository, PrecompiledContracts.BRIDGE_ADDR);
@@ -69,10 +69,9 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
 
             return Bridge.RECEIVE_HEADERS.encode(new Object[]{headersEncoded});
         };
-        TxBuilder txBuilder = (int executionIndex) -> Helper.buildSendValueTx(new ECKey(), BigInteger.ZERO);
 
         ExecutionStats stats = new ExecutionStats("receiveHeaders");
-        executeAndAverage("receiveHeaders", 200, abiEncoder, storageInitializer, txBuilder, Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage("receiveHeaders", 200, abiEncoder, storageInitializer, Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
 
         BridgePerformanceTest.addStats(stats);
     }

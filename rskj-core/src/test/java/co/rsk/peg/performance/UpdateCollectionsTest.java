@@ -54,14 +54,13 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {};
         final byte[] updateCollectionsEncoded = Bridge.UPDATE_COLLECTIONS.encode();
         ABIEncoder abiEncoder = (int executionIndex) -> updateCollectionsEncoded;
-        TxBuilder txBuilder = (int executionIndex) -> Helper.buildSendValueTx(new ECKey(), BigInteger.ZERO);
 
         executeAndAverage(
                 "updateCollections-nothing",
                 numCases,
                 abiEncoder,
                 storageInitializer,
-                txBuilder,
+                Helper.getZeroValueRandomSenderTxBuilder(),
                 Helper.getRandomHeightProvider(10), stats
         );
     }
@@ -114,14 +113,13 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
 
         final byte[] updateCollectionsEncoded = Bridge.UPDATE_COLLECTIONS.encode();
         ABIEncoder abiEncoder = (int executionIndex) -> updateCollectionsEncoded;
-        TxBuilder txBuilder = (int executionIndex) -> Helper.buildSendValueTx(new ECKey(), BigInteger.ZERO);
 
         executeAndAverage(
                 "updateCollections-releaseRequests",
                 numCases,
                 abiEncoder,
                 storageInitializer,
-                txBuilder,
+                Helper.getZeroValueRandomSenderTxBuilder(),
                 Helper.getRandomHeightProvider(10),
                 stats
         );
@@ -181,7 +179,6 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
 
         final byte[] updateCollectionsEncoded = Bridge.UPDATE_COLLECTIONS.encode();
         ABIEncoder abiEncoder = (int executionIndex) -> updateCollectionsEncoded;
-        TxBuilder txBuilder = (int executionIndex) -> Helper.buildSendValueTx(new ECKey(), BigInteger.ZERO);
         HeightProvider heightProvider = (int executionIndex) -> Helper.randomInRange(minHeight, maxHeight);
 
         executeAndAverage(
@@ -189,7 +186,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
                 numCases,
                 abiEncoder,
                 storageInitializer,
-                txBuilder,
+                Helper.getZeroValueRandomSenderTxBuilder(),
                 heightProvider,
                 stats
         );

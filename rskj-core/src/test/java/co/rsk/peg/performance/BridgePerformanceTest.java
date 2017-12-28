@@ -19,6 +19,8 @@
 package co.rsk.peg.performance;
 
 import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -35,6 +37,16 @@ import java.util.List;
 })
 public class BridgePerformanceTest {
     private static List<ExecutionStats> statsList;
+    private static boolean running = false;
+
+    @BeforeClass
+    public static void setRunning() {
+        running = true;
+    }
+
+    public static boolean isRunning() {
+        return running;
+    }
 
     @AfterClass
     public static void printStats() {

@@ -109,6 +109,13 @@ public abstract class BridgePerformanceTestCase {
         RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
+    @AfterClass
+    public static void printStatsIfNotInSuite() throws Exception {
+        if (!BridgePerformanceTest.isRunning()) {
+            BridgePerformanceTest.printStats();
+        }
+    }
+
     @Before
     public void setupCpuTime() {
         thread = ManagementFactory.getThreadMXBean();

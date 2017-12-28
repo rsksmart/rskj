@@ -58,7 +58,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
         );
 
         ExecutionStats stats = new ExecutionStats("registerBtcTransaction");
-        executeAndAverage("registerBtcTransaction-lockSuccess", times, getABIEncoder(), storageInitializer, getTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage("registerBtcTransaction-lockSuccess", times, getABIEncoder(), storageInitializer, Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
 
         BridgePerformanceTest.addStats(stats);
     }
@@ -71,10 +71,8 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                 true
         );
 
-        TxBuilder txBuilder = (int executionIndex) -> Helper.buildSendValueTx(new ECKey(), BigInteger.ZERO);
-
         ExecutionStats stats = new ExecutionStats("registerBtcTransaction");
-        executeAndAverage("registerBtcTransaction-alreadyProcessed", times, getABIEncoder(), storageInitializer, txBuilder, Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage("registerBtcTransaction-alreadyProcessed", times, getABIEncoder(), storageInitializer, Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
 
         BridgePerformanceTest.addStats(stats);
     }
@@ -87,10 +85,8 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                 false
         );
 
-        TxBuilder txBuilder = (int executionIndex) -> Helper.buildSendValueTx(new ECKey(), BigInteger.ZERO);
-
         ExecutionStats stats = new ExecutionStats("registerBtcTransaction");
-        executeAndAverage("registerBtcTransaction-notEnoughConfirmations", times, getABIEncoder(), storageInitializer, txBuilder, Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage("registerBtcTransaction-notEnoughConfirmations", times, getABIEncoder(), storageInitializer, Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
 
         BridgePerformanceTest.addStats(stats);
     }
@@ -102,10 +98,6 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                         blockWithTxHeight,
                         pmtOfLockTx.bitcoinSerialize()
                 });
-    }
-
-    private TxBuilder getTxBuilder() {
-        return (int executionIndex) -> Helper.buildSendValueTx(new ECKey(), BigInteger.ZERO);
     }
 
     private BridgeStorageProviderInitializer generateInitializerForLock(int minBtcBlocks, int maxBtcBlocks, int numberOfLockConfirmations, boolean markAsAlreadyProcessed) {
