@@ -38,10 +38,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
-import org.ethereum.rpc.TypeConverter;
-import org.ethereum.util.RLP;
-import org.ethereum.vm.DataWord;
-import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
@@ -79,7 +75,6 @@ public class BridgeSupport {
             "commit",
             "rollback"));
 
-    private final String contractAddress;
     private final BridgeConstants bridgeConstants;
     private final Context btcContext;
     private final BtcBlockStore btcBlockStore;
@@ -98,8 +93,7 @@ public class BridgeSupport {
 
     // Used by unit tests
     public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, Block rskExecutionBlock, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) throws IOException, BlockStoreException {
-    this.rskRepository = repository;
-        this.contractAddress = contractAddress;
+        this.rskRepository = repository;
         this.provider = provider;
         this.rskExecutionBlock = rskExecutionBlock;
         this.bridgeConstants = bridgeConstants;
@@ -129,7 +123,6 @@ public class BridgeSupport {
         this.btcContext = new Context(bridgeConstants.getBtcParams());
         this.btcBlockStore = btcBlockStore;
         this.btcBlockChain = btcBlockChain;
-        this.contractAddress = contractAddress;
         this.rskRepository = repository;
     }
 
