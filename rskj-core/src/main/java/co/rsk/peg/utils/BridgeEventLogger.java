@@ -1,5 +1,6 @@
 package co.rsk.peg.utils;
 
+import org.ethereum.core.Transaction;
 import org.ethereum.vm.LogInfo;
 
 import java.util.List;
