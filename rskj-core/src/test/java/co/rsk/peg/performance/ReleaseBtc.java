@@ -25,6 +25,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.ReleaseRequestQueue;
 import org.ethereum.core.Denomination;
+import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.junit.Test;
 
@@ -38,7 +39,7 @@ public class ReleaseBtc extends BridgePerformanceTestCase {
         int maxCentsBtc = 100;
 
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, int executionIndex) -> {
+        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
             ReleaseRequestQueue queue;
 
             try {

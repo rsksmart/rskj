@@ -26,6 +26,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.ReleaseRequestQueue;
 import co.rsk.peg.ReleaseTransactionSet;
+import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Test;
@@ -50,7 +51,7 @@ public class UpdateCollections extends BridgePerformanceTestCase {
 
     private void updateCollections_nothing(ExecutionStats stats, int numCases) throws IOException {
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, int executionIndex) -> {};
+        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {};
         final byte[] updateCollectionsEncoded = Bridge.UPDATE_COLLECTIONS.encode();
         ABIEncoder abiEncoder = (int executionIndex) -> updateCollectionsEncoded;
         TxBuilder txBuilder = (int executionIndex) -> Helper.buildSendValueTx(new ECKey(), BigInteger.ZERO);
@@ -76,7 +77,7 @@ public class UpdateCollections extends BridgePerformanceTestCase {
         final int maxMilliReleaseBtc = 2000;
 
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, int executionIndex) -> {
+        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
             Random rnd = new Random();
             List<UTXO> utxos;
             ReleaseRequestQueue queue;
@@ -139,7 +140,7 @@ public class UpdateCollections extends BridgePerformanceTestCase {
         final int maxCentOutput = 100;
 
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, int executionIndex) -> {
+        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
             Random rnd = new Random();
             SortedMap<Sha3Hash, BtcTransaction> txsWaitingForSignatures;
             ReleaseTransactionSet txSet;

@@ -18,8 +18,7 @@
 
 package co.rsk.peg.performance;
 
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.db.RepositoryImpl;
@@ -33,6 +32,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.After;
@@ -45,6 +45,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -152,10 +153,53 @@ public abstract class BridgePerformanceTestCase {
         public static HeightProvider getRandomHeightProvider(int max) {
             return (int executionIndex) -> new Random().nextInt(max);
         }
+
+        public static BtcBlock generateAndAddBlocks(BtcBlockChain btcBlockChain, int blocksToGenerate) {
+            BtcBlock block = btcBlockChain.getChainHead().getHeader();
+            int initialHeight = btcBlockChain.getBestChainHeight();
+            while ((btcBlockChain.getBestChainHeight() - initialHeight) < blocksToGenerate) {
+                block = generateBtcBlock(block);
+                btcBlockChain.add(block);
+            }
+            // Return the last generated block (useful)
+            return block;
+        }
+
+        public static BtcBlock generateBtcBlock(BtcBlock prevBlock) {
+            Sha256Hash merkleRoot = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(new Random().nextLong()).toByteArray()));
+            List<BtcTransaction> txs = Collections.emptyList();
+            return generateBtcBlock(prevBlock, txs, merkleRoot);
+        }
+
+        public static BtcBlock generateBtcBlock(BtcBlock prevBlock, List<BtcTransaction> txs, Sha256Hash merkleRoot) {
+            long nonce = 0;
+            boolean verified = false;
+            BtcBlock block = null;
+            while (!verified) {
+                try {
+                    block = new BtcBlock(
+                            networkParameters,
+                            BtcBlock.BLOCK_VERSION_BIP66,
+                            prevBlock.getHash(),
+                            merkleRoot,
+                            prevBlock.getTimeSeconds() + 10,
+                            BtcBlock.EASIEST_DIFFICULTY_TARGET,
+                            nonce,
+                            txs
+                    );
+                    block.verifyHeader();
+                    verified = true;
+                } catch (VerificationException e) {
+                    nonce++;
+                }
+            }
+
+            return block;
+        }
     }
 
     protected interface BridgeStorageProviderInitializer {
-        void initialize(BridgeStorageProvider provider, int executionIndex);
+        void initialize(BridgeStorageProvider provider, Repository repository, int executionIndex);
     }
 
     protected interface TxBuilder {
@@ -181,7 +225,7 @@ public abstract class BridgePerformanceTestCase {
         Repository track = repository.startTracking();
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);
 
-        storageInitializer.initialize(storageProvider, executionIndex);
+        storageInitializer.initialize(storageProvider, track, executionIndex);
 
         try {
             storageProvider.save();

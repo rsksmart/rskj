@@ -29,15 +29,11 @@ import java.util.List;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
         ReleaseBtc.class,
-        UpdateCollections.class
+        UpdateCollections.class,
+        ReceiveHeaders.class
 })
 public class BridgePerformanceTest {
-    protected static List<ExecutionStats> statsList;
-
-    @BeforeClass
-    public static void createStats() {
-        statsList = new ArrayList<>();
-    }
+    private static List<ExecutionStats> statsList;
 
     @AfterClass
     public static void printStats() {
@@ -47,6 +43,13 @@ public class BridgePerformanceTest {
     }
 
     public static void addStats(ExecutionStats stats) {
+        ensureStatsCreated();
         statsList.add(stats);
+    }
+
+    private static void ensureStatsCreated() {
+        if (statsList == null) {
+            statsList = new ArrayList<>();
+        }
     }
 }
