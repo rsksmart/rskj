@@ -196,6 +196,10 @@ public abstract class BridgePerformanceTestCase {
 
             return block;
         }
+
+        public static TxBuilder getZeroValueRandomSenderTxBuilder() {
+            return (int executionIndex) -> Helper.buildSendValueTx(new ECKey(), BigInteger.ZERO);
+        }
     }
 
     protected interface BridgeStorageProviderInitializer {
@@ -278,7 +282,7 @@ public abstract class BridgePerformanceTestCase {
              ExecutionStats stats) {
 
         for (int i = 0; i < times; i++) {
-            System.out.println(String.format("%s %d/%d", name, i, times));
+            System.out.println(String.format("%s %d/%d", name, i+1, times));
 
             ExecutionTracker tracker = execute(abiEncoder, storageInitializer, txBuilder, heightProvider, i);
 

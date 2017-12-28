@@ -44,9 +44,9 @@ public class RegisterBtcTransaction extends BridgePerformanceTestCase {
 
     @Test
     public void registerBtcTransaction() {
-        registerBtcTransaction_lockSuccess(10);
-        registerBtcTransaction_alreadyProcessed(10);
-        registerBtcTransaction_notEnoughConfirmations(10);
+        registerBtcTransaction_lockSuccess(100);
+        registerBtcTransaction_alreadyProcessed(100);
+        registerBtcTransaction_notEnoughConfirmations(100);
     }
 
     private void registerBtcTransaction_lockSuccess(int times) {

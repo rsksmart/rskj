@@ -31,7 +31,8 @@ import java.util.List;
         ReleaseBtc.class,
         UpdateCollections.class,
         ReceiveHeaders.class,
-        RegisterBtcTransaction.class
+        RegisterBtcTransaction.class,
+        AddSignature.class
 })
 public class BridgePerformanceTest {
     private static List<ExecutionStats> statsList;
