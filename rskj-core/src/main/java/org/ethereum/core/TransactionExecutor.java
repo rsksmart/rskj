@@ -417,7 +417,6 @@ public class TransactionExecutor {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());
             receipt.setGasUsed(getGasUsed());
-            receipt.setExecutionResult(getResult().getHReturn());
             receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS);
         }
         return receipt;

@@ -150,7 +150,7 @@ public class BlockExecutor {
 
         if (result.getGasUsed() != block.getGasUsed()) {
             logger.error("Block's given gasUsed doesn't match: {} != {} Block {} {}", block.getGasUsed(), result.getGasUsed(), block.getNumber(), block.getShortHash());
-            panicProcessor.panic("invalidgasused", String.format("Block's given logBloom Hash doesn't match: %s != %s", block.getGasUsed(), result.getGasUsed()));
+            panicProcessor.panic("invalidgasused", String.format("Block's given gasUsed doesn't match: %s != %s", block.getGasUsed(), result.getGasUsed()));
             return false;
         }
 
@@ -252,6 +252,7 @@ public class BlockExecutor {
             receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
             receipt.setTransaction(tx);
             receipt.setLogInfoList(txExecutor.getVMLogs());
+            receipt.setStatus(txExecutor.getReceipt().getStatus());
 
             logger.info("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()),
                     Hex.toHexString(lastStateRootHash));
