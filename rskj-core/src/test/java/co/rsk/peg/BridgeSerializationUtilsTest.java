@@ -493,19 +493,18 @@ public class BridgeSerializationUtilsTest {
         LockWhitelist lockWhitelist = new LockWhitelist(
             Arrays.stream(addressesBytes)
                 .map(bytes -> new Address(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), bytes))
-                .collect(Collectors.toMap(Function.identity(), k -> maxToTransfer))
-        );
+                .collect(Collectors.toMap(Function.identity(), k -> maxToTransfer)),
+                0);
 
         byte[] result = BridgeSerializationUtils.serializeLockWhitelist(lockWhitelist);
         StringBuilder expectedBuilder = new StringBuilder();
-        Arrays.stream(addressesBytes).sorted(
-                (byte[] b1, byte[] b2) -> UnsignedBytes.lexicographicalComparator().compare(b1, b2)
-        ).forEach(bytes -> {
+        Arrays.stream(addressesBytes).sorted(UnsignedBytes.lexicographicalComparator()).forEach(bytes -> {
             expectedBuilder.append("dd");
             expectedBuilder.append(Hex.toHexString(bytes));
             expectedBuilder.append("ff");
             expectedBuilder.append(Hex.toHexString(BigInteger.valueOf(maxToTransfer.value).toByteArray()));
         });
+        expectedBuilder.append("ff00");
         byte[] expected = Hex.decode(expectedBuilder.toString());
         Assert.assertThat(result, is(expected));
     }
@@ -522,11 +521,12 @@ public class BridgeSerializationUtilsTest {
                 .toArray(byte[][]::new);
 
         StringBuilder sampleBuilder = new StringBuilder();
-        sampleBuilder.append("081403140314031403"); // 8 elements of 20 bytes (0x14 bytes) and 3 bytes each, interleaved.
+        sampleBuilder.append("09140314031403140302"); // 9 elements: 8 of 20 bytes (0x14 bytes) and 3 bytes interleaved plus one more element of 2 bytes
         for (int i = 0; i < addressesBytes.length; i++) {
             sampleBuilder.append(Hex.toHexString(addressesBytes[i]));
             sampleBuilder.append("0186a0"); // Coin.MILLICOIN
         }
+        sampleBuilder.append("002a");
         byte[] sample = Hex.decode(sampleBuilder.toString());
 
         LockWhitelist deserializedLockWhitelist = BridgeSerializationUtils.deserializeLockWhitelist(
@@ -539,6 +539,7 @@ public class BridgeSerializationUtilsTest {
         Set<Coin> deserializedCoins = deserializedLockWhitelist.getAddresses().stream().map(deserializedLockWhitelist::getMaxTransferValue).collect(Collectors.toSet());
         Assert.assertThat(deserializedCoins, hasSize(1));
         Assert.assertThat(deserializedCoins, hasItem(Coin.MILLICOIN));
+        Assert.assertThat(deserializedLockWhitelist.getDisableBlockHeight(), is(42));
     }
 
     @Test
@@ -547,7 +548,7 @@ public class BridgeSerializationUtilsTest {
         Map<Address, Coin> whitelist = new HashMap<>();
         whitelist.put(BtcECKey.fromPrivate(BigInteger.valueOf(100L)).toAddress(btcParams), Coin.COIN);
 
-        LockWhitelist originalLockWhitelist = new LockWhitelist(whitelist);
+        LockWhitelist originalLockWhitelist = new LockWhitelist(whitelist, 0);
         LockWhitelist deserializedLockWhitelist = BridgeSerializationUtils.deserializeLockWhitelist(BridgeSerializationUtils.serializeLockWhitelist(originalLockWhitelist), btcParams);
 
         List<Address> originalAddresses = originalLockWhitelist.getAddresses();
