@@ -53,10 +53,6 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs = logs;
     }
 
-    public List<LogInfo> getLogs() {
-        return logs;
-    }
-
     public void logUpdateCollections(Transaction rskTx) {
         this.logs.add(
                 new LogInfo(BRIDGE_CONTRACT_ADDRESS,

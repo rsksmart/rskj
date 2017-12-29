@@ -34,8 +34,6 @@ import java.util.List;
  */
 public interface BridgeEventLogger {
 
-    List<LogInfo> getLogs();
-
     void logUpdateCollections(Transaction rskTx);
 
     void logAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash);
