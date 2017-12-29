@@ -18,7 +18,6 @@
 
 package co.rsk.mine;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 
 /**
@@ -26,13 +25,13 @@ import java.math.BigInteger;
  */
 public class BlockGasPriceRange {
 
-    private static final double VARIATION_PERCENTAGE_RANGE = 0.01;
+    private static final BigInteger VARIATION_PERCENTAGE_RANGE = BigInteger.ONE;
 
     private final BigInteger upperLimit;
     private final BigInteger lowerLimit;
 
     public BlockGasPriceRange(BigInteger center) {
-        BigInteger mgpDelta = BigDecimal.valueOf(center.doubleValue() * VARIATION_PERCENTAGE_RANGE).toBigInteger();
+        BigInteger mgpDelta = center.multiply(VARIATION_PERCENTAGE_RANGE).divide(BigInteger.valueOf(100));
         mgpDelta = (BigInteger.ZERO.compareTo(mgpDelta) == 0) ? BigInteger.ONE : mgpDelta;
         this.upperLimit = center.add(mgpDelta);
         this.lowerLimit = center.subtract(mgpDelta);
