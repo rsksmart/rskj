@@ -26,6 +26,7 @@ import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.vm.VMPerformanceTest;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.Blockchain;
@@ -130,6 +131,14 @@ public abstract class BridgePerformanceTestCase {
     @After
     public void teardownCpuTime() {
         thread.setThreadCpuTimeEnabled(oldCpuTimeEnabled);
+    }
+
+    @After
+    public void forceGC() {
+        long sm = Runtime.getRuntime().freeMemory();
+        VMPerformanceTest.forceGc();
+        long em = Runtime.getRuntime().freeMemory();
+        System.out.println(String.format("GC - free mem before: %d, after: %d", sm, em));
     }
 
     protected static class Helper {
@@ -264,7 +273,7 @@ public abstract class BridgePerformanceTestCase {
         RepositoryTrackWithBenchmarking benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-        Blockchain blockchain = BlockChainBuilder.ofSize(heightProvider.getHeight(executionIndex));
+        Blockchain blockchain = BlockChainBuilder.ofSizeWithNoPendingStateCleaner(heightProvider.getHeight(executionIndex));
         bridge.init(
                 tx,
                 blockchain.getBestBlock(),
@@ -299,6 +308,8 @@ public abstract class BridgePerformanceTestCase {
              TxBuilder txBuilder,
              HeightProvider heightProvider,
              ExecutionStats stats) {
+
+        long sm = Runtime.getRuntime().freeMemory();
 
         for (int i = 0; i < times; i++) {
             System.out.println(String.format("%s %d/%d", name, i+1, times));

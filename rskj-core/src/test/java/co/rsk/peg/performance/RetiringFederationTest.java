@@ -88,7 +88,7 @@ public class RetiringFederationTest extends BridgePerformanceTestCase {
                 times, abiEncoder,
                 buildInitializer(present),
                 Helper.getZeroValueRandomSenderTxBuilder(),
-                Helper.getRandomHeightProvider(20, 30),
+                Helper.getRandomHeightProvider(11, 15),
                 stats
         );
     }

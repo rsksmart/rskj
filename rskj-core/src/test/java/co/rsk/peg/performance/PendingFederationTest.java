@@ -74,7 +74,7 @@ public class PendingFederationTest extends BridgePerformanceTestCase {
                 times, abiEncoder,
                 buildInitializer(present),
                 Helper.getZeroValueRandomSenderTxBuilder(),
-                Helper.getRandomHeightProvider(20, 30),
+                Helper.getRandomHeightProvider(10),
                 stats
         );
     }

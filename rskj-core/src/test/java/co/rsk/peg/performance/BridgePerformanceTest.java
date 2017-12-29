@@ -18,8 +18,8 @@
 
 package co.rsk.peg.performance;
 
+import co.rsk.vm.VMPerformanceTest;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -33,26 +33,46 @@ import java.util.List;
         UpdateCollectionsTest.class,
         ReceiveHeadersTest.class,
         RegisterBtcTransactionTest.class,
-        AddSignatureTest.class
+        AddSignatureTest.class,
+        BtcBlockchainTest.class,
+        LockTest.class,
+        ActiveFederationTest.class,
+        RetiringFederationTest.class,
+        PendingFederationTest.class,
+        FederationChangeTest.class
 })
 public class BridgePerformanceTest {
     private static List<ExecutionStats> statsList;
     private static boolean running = false;
+    private static Mean averageGasPerMicrosecond;
 
     @BeforeClass
     public static void setRunning() {
         running = true;
     }
 
-    public static boolean isRunning() {
-        return running;
+    @BeforeClass
+    public static void estimateReferenceCost() {
+        // Run VM tests and average
+        averageGasPerMicrosecond = new Mean();
+        VMPerformanceTest.ResultLogger resultLogger = (String name, VMPerformanceTest.PerfRes result) -> {
+            long gasPerMicrosecond = result.gas / result.deltaTime;
+            averageGasPerMicrosecond.add(gasPerMicrosecond);
+        };
+        VMPerformanceTest.runWithLogging(resultLogger);
+        // Set reference cost on stats
+        ExecutionStats.gasPerMicrosecond = averageGasPerMicrosecond.getMean();
     }
 
     @AfterClass
     public static void printStats() {
         for (ExecutionStats stats : statsList) {
-            System.out.println(stats);
+            System.out.println(stats.getPrintable());
         }
+    }
+
+    public static boolean isRunning() {
+        return running;
     }
 
     public static void addStats(ExecutionStats stats) {

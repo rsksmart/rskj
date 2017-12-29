@@ -25,6 +25,8 @@ public class ExecutionStats {
     public Mean slotsWritten;
     public Mean slotsCleared;
 
+    public static long gasPerMicrosecond = 0;
+
     public ExecutionStats(String name) {
         this.name = name;
         this.executionTimes = new Mean();
@@ -33,11 +35,15 @@ public class ExecutionStats {
         this.slotsCleared = new Mean();
     }
 
-    @Override
-    public String toString() {
+    public long getEstimatedGas() {
+        return (executionTimes.getMean() / 1000) * gasPerMicrosecond;
+    }
+
+    public String getPrintable() {
         return String.format(
-                "%-45s\tcpu(us): %d\t\treal(us): %d\t\twrt(slots): %d\t\tclr(slots): %d",
+                "%-45s\tgas: %d\t\tcpu(us): %d\t\treal(us): %d\t\twrt(slots): %d\t\tclr(slots): %d",
                 name,
+                getEstimatedGas(),
                 executionTimes.getMean() / 1000,
                 realExecutionTimes.getMean() / 1000,
                 slotsWritten.getMean(),

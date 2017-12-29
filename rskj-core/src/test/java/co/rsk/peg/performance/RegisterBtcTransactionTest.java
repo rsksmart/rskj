@@ -44,12 +44,14 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
 
     @Test
     public void registerBtcTransaction() {
-        registerBtcTransaction_lockSuccess(100);
-        registerBtcTransaction_alreadyProcessed(100);
-        registerBtcTransaction_notEnoughConfirmations(100);
+        ExecutionStats stats = new ExecutionStats("registerBtcTransaction");
+        registerBtcTransaction_lockSuccess(100, stats);
+        registerBtcTransaction_alreadyProcessed(100, stats);
+        registerBtcTransaction_notEnoughConfirmations(100, stats);
+        BridgePerformanceTest.addStats(stats);
     }
 
-    private void registerBtcTransaction_lockSuccess(int times) {
+    private void registerBtcTransaction_lockSuccess(int times, ExecutionStats stats) {
         BridgeStorageProviderInitializer storageInitializer = generateInitializerForLock(
                 1000,
                 2000,
@@ -57,13 +59,11 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                 false
         );
 
-        ExecutionStats stats = new ExecutionStats("registerBtcTransaction");
         executeAndAverage("registerBtcTransaction-lockSuccess", times, getABIEncoder(), storageInitializer, Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
 
-        BridgePerformanceTest.addStats(stats);
     }
 
-    private void registerBtcTransaction_alreadyProcessed(int times) {
+    private void registerBtcTransaction_alreadyProcessed(int times, ExecutionStats stats) {
         BridgeStorageProviderInitializer storageInitializer = generateInitializerForLock(
                 1000,
                 2000,
@@ -71,13 +71,10 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                 true
         );
 
-        ExecutionStats stats = new ExecutionStats("registerBtcTransaction");
         executeAndAverage("registerBtcTransaction-alreadyProcessed", times, getABIEncoder(), storageInitializer, Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
-
-        BridgePerformanceTest.addStats(stats);
     }
 
-    private void registerBtcTransaction_notEnoughConfirmations(int times) {
+    private void registerBtcTransaction_notEnoughConfirmations(int times, ExecutionStats stats) {
         BridgeStorageProviderInitializer storageInitializer = generateInitializerForLock(
                 1000,
                 2000,
@@ -85,10 +82,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
                 false
         );
 
-        ExecutionStats stats = new ExecutionStats("registerBtcTransaction");
         executeAndAverage("registerBtcTransaction-notEnoughConfirmations", times, getABIEncoder(), storageInitializer, Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
-
-        BridgePerformanceTest.addStats(stats);
     }
 
     private ABIEncoder getABIEncoder() {
