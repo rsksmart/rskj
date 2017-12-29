@@ -18,7 +18,6 @@
 
 package co.rsk.mine;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 
 /**
