@@ -60,6 +60,8 @@ import static org.ethereum.util.BIUtil.transfer;
  * @author Oscar Guindzberg
  */
 public class BridgeSupport {
+    public static final int MAX_RELEASE_ITERATIONS = 30;
+
     public static final Integer FEDERATION_CHANGE_GENERIC_ERROR_CODE = -10;
     public static final Integer LOCK_WHITELIST_GENERIC_ERROR_CODE = -10;
     public static final Integer FEE_PER_KB_GENERIC_ERROR_CODE = -10;
@@ -571,6 +573,7 @@ public class BridgeSupport {
      * Newly created btc transactions are added to the btc release tx set,
      * and failed attempts are kept in the release queue for future
      * processing.
+     *
      */
     private void processReleaseRequests() {
         final Wallet activeFederationWallet;
@@ -593,7 +596,7 @@ public class BridgeSupport {
                 getFeePerKb()
         );
 
-        releaseRequestQueue.process((ReleaseRequestQueue.Entry releaseRequest) -> {
+        releaseRequestQueue.process(MAX_RELEASE_ITERATIONS, (ReleaseRequestQueue.Entry releaseRequest) -> {
             Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.buildAmountTo(
                     releaseRequest.getDestination(),
                     releaseRequest.getAmount()

@@ -25,21 +25,11 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
-
-@RunWith(PowerMockRunner.class)
 public class ReleaseRequestQueueTest {
     private List<ReleaseRequestQueue.Entry> queueEntries;
     private ReleaseRequestQueue queue;
@@ -98,7 +88,7 @@ public class ReleaseRequestQueueTest {
         }
 
         Indexer idx = new Indexer();
-        queue.process(entry -> {
+        queue.process(30, entry -> {
             Assert.assertEquals(entry, queueEntries.get(idx.index));
             return idx.index++ % 2 == 0;
         });
@@ -106,6 +96,25 @@ public class ReleaseRequestQueueTest {
         Assert.assertEquals(Arrays.asList(
             new ReleaseRequestQueue.Entry(mockAddress(5), Coin.COIN),
             new ReleaseRequestQueue.Entry(mockAddress(3), Coin.MILLICOIN)
+        ), queue.getEntries());
+    }
+
+    @Test
+    public void processUpToMaxIterationEntries() {
+        class Indexer {
+            public int index = 0;
+        }
+
+        Indexer idx = new Indexer();
+        queue.process(3, entry -> {
+            Assert.assertEquals(entry, queueEntries.get(idx.index));
+            return idx.index++ % 2 == 0;
+        });
+        Assert.assertEquals(3, idx.index);
+        Assert.assertEquals(Arrays.asList(
+            new ReleaseRequestQueue.Entry(mockAddress(3), Coin.MILLICOIN), // this wasn't processed
+            new ReleaseRequestQueue.Entry(mockAddress(8), Coin.CENT.times(5)), // this wasn't processed
+            new ReleaseRequestQueue.Entry(mockAddress(5), Coin.COIN) // this was sent to the back
         ), queue.getEntries());
     }
 
