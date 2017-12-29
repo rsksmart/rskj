@@ -133,6 +133,10 @@ public abstract class BridgePerformanceTestCase {
     }
 
     protected static class Helper {
+        public static Transaction buildTx(ECKey sender) {
+            return buildSendValueTx(sender, BigInteger.ZERO);
+        }
+
         public static Transaction buildSendValueTx(ECKey sender, BigInteger value) {
             byte[] gasPrice = Hex.decode("00");
             byte[] gasLimit = Hex.decode("00");

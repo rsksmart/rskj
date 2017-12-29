@@ -20,9 +20,6 @@ package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.peg.Bridge;
-import co.rsk.peg.BridgeStorageProvider;
-import org.ethereum.core.Denomination;
-import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Test;
@@ -37,19 +34,13 @@ public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
     public void voteFeePerKbChange() throws IOException {
         BridgeStorageProviderInitializer storageInitializer = Helper.buildNoopInitializer();
 
-        final byte[] voteFeePerKbEncoded = Bridge.VOTE_FEE_PER_KB.encode(BigInteger.TEN);
-        ABIEncoder abiEncoder = (int executionIndex) -> voteFeePerKbEncoded;
+        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.VOTE_FEE_PER_KB.encode(BigInteger.valueOf(Helper.randomCoin(Coin.MILLICOIN, 1, 100).getValue()));
 
         TxBuilder txBuilder = (int executionIndex) -> {
-            int minCentsBtc = 5;
-            int maxCentsBtc = 100;
-            long satoshis = Coin.CENT.multiply(Helper.randomInRange(minCentsBtc, maxCentsBtc)).getValue();
-            BigInteger weis = Denomination.satoshisToWeis(BigInteger.valueOf(satoshis));
-
             String generator = "auth-fee-per-kb";
             ECKey sender = ECKey.fromPrivate(HashUtil.sha3(generator.getBytes(StandardCharsets.UTF_8)));
 
-            return Helper.buildSendValueTx(sender, weis);
+            return Helper.buildTx(sender);
         };
 
         ExecutionStats stats = new ExecutionStats("voteFeePerKbChange");
