@@ -161,6 +161,10 @@ public abstract class BridgePerformanceTestCase {
             return (int executionIndex) -> new Random().nextInt(max);
         }
 
+        public static HeightProvider getRandomHeightProvider(int min, int max) {
+            return (int executionIndex) -> randomInRange(min, max);
+        }
+
         public static BtcBlock generateAndAddBlocks(BtcBlockChain btcBlockChain, int blocksToGenerate) {
             BtcBlock block = btcBlockChain.getChainHead().getHeader();
             int initialHeight = btcBlockChain.getBestChainHeight();

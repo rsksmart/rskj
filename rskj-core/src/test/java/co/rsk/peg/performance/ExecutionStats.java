@@ -36,7 +36,7 @@ public class ExecutionStats {
     @Override
     public String toString() {
         return String.format(
-                "%s\t\t\t\tcpu(us): %d\t\treal(us): %d\t\twrt(slots): %d\t\tclr(slots): %d",
+                "%-45s\tcpu(us): %d\t\treal(us): %d\t\twrt(slots): %d\t\tclr(slots): %d",
                 name,
                 executionTimes.getMean() / 1000,
                 realExecutionTimes.getMean() / 1000,
