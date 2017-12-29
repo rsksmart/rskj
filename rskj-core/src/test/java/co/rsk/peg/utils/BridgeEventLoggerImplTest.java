@@ -86,7 +86,7 @@ public class BridgeEventLoggerImplTest {
 
         // Assert address that made the log
         LogInfo result = eventLogs.get(0);
-        Assert.assertArrayEquals(TypeConverter.stringToByteArray(PrecompiledContracts.BRIDGE_ADDR), result.getAddress());
+        Assert.assertArrayEquals(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), result.getAddress());
 
         // Assert log topics
         Assert.assertEquals(1, result.getTopics().size());
