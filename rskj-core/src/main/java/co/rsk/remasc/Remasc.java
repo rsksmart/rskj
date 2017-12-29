@@ -104,7 +104,10 @@ public class Remasc {
             logger.debug("First block has not reached maturity yet, current block is {}", blockNbr);
             return;
         }
-        BlockHeader processingBlockHeader = blockStore.getBlockByHashAndDepth(executionBlock.getParentHash(), remascConstants.getMaturity() - 1).getHeader();
+
+        Block processingBlock = blockStore.getBlockByHashAndDepth(executionBlock.getParentHash(), remascConstants.getMaturity() - 1);
+        BlockHeader processingBlockHeader = processingBlock.getHeader();
+
         // Adds current block fees to accumulated rewardBalance
         BigInteger processingBlockReward = processingBlockHeader.getPaidFees();
         BigInteger rewardBalance = provider.getRewardBalance();
@@ -139,7 +142,7 @@ public class Remasc {
         BridgeSupport bridgeSupport = new BridgeSupport(
                 processingRepository,
                 PrecompiledContracts.BRIDGE_ADDR,
-                null,
+                processingBlock,
                 RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
                 null);
         RemascFederationProvider federationProvider = new RemascFederationProvider(bridgeSupport);
