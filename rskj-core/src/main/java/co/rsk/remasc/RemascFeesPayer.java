@@ -19,7 +19,6 @@
 package co.rsk.remasc;
 
 import org.ethereum.core.Repository;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
@@ -60,7 +59,7 @@ class RemascFeesPayer {
 
     private void logPayment(byte[] blockHash, BigInteger value, byte[] toAddress, List<LogInfo> logs) {
 
-        byte[] loggerContractAddress = TypeConverter.stringToByteArray(this.contractAddress);
+        byte[] loggerContractAddress = Hex.decode(this.contractAddress);
         List<DataWord> topics = Arrays.asList(RemascContract.MINING_FEE_TOPIC, new DataWord(toAddress));
         byte[] data = RLP.encodeList(RLP.encodeElement(blockHash), RLP.encodeBigInteger(value));
 

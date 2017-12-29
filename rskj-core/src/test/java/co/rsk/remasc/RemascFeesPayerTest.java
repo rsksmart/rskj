@@ -61,7 +61,7 @@ public class RemascFeesPayerTest {
 
         // Assert address that made the log
         LogInfo result = logs.get(0);
-        Assert.assertArrayEquals(TypeConverter.stringToByteArray(PrecompiledContracts.REMASC_ADDR), result.getAddress());
+        Assert.assertArrayEquals(Hex.decode(PrecompiledContracts.REMASC_ADDR), result.getAddress());
 
         // Assert log topics
         Assert.assertEquals(2, result.getTopics().size());
