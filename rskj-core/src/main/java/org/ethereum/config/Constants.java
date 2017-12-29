@@ -53,7 +53,7 @@ public class Constants {
 
     private int bestNumberDiffLimit = 100;
 
-    private int newBlockMaxMinInTheFuture = 540;
+    private int newBlockMaxSecondsInTheFuture = 540;
 
     private static final BigInteger SECP256K1N = new BigInteger("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
 
@@ -129,8 +129,8 @@ public class Constants {
         return targetGasLimit;
     }
 
-    public int getNewBlockMaxMinInTheFuture() {
-        return this.newBlockMaxMinInTheFuture;
+    public int getNewBlockMaxSecondsInTheFuture() {
+        return this.newBlockMaxSecondsInTheFuture;
     }
 
     public byte[] getBurnAddress() { return ByteUtils.clone(Constants.BURN_ADDRESS); }

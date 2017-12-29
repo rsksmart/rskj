@@ -831,7 +831,7 @@ public class BlockValidatorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
 
-        int validPeriod = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getNewBlockMaxMinInTheFuture();
+        int validPeriod = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getNewBlockMaxSecondsInTheFuture();
 
         Block block = Mockito.mock(Block.class);
         Mockito.when(block.getTimestamp())

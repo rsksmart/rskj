@@ -80,3 +80,5 @@ gradle/wrapper/gradle-wrapper.jar
 #Classes
 classes/
 
+#Infer
+infer-out/

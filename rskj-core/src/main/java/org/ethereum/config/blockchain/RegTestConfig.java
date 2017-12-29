@@ -48,7 +48,7 @@ public class RegTestConfig extends GenesisConfig {
         }
 
         @Override
-        public int getNewBlockMaxMinInTheFuture() {
+        public int getNewBlockMaxSecondsInTheFuture() {
             return 540;
         }
 
