@@ -63,7 +63,6 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         btc2RskMinimumAcceptableConfirmations = 10;
         rsk2BtcMinimumAcceptableConfirmations = 10;
-        btcBroadcastingMinimumAcceptableBlocks = 30;
 
         updateBridgeExecutionPeriod = 30000; // 30secs
 

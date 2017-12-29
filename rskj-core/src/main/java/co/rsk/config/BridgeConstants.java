@@ -69,10 +69,6 @@ public class BridgeConstants {
         return rsk2BtcMinimumAcceptableConfirmations;
     }
 
-    public int getBtcBroadcastingMinimumAcceptableBlocks() {
-        return btcBroadcastingMinimumAcceptableBlocks;
-    }
-
     public int getUpdateBridgeExecutionPeriod() { return updateBridgeExecutionPeriod; }
 
     public int getMaxBtcHeadersPerRskBlock() { return maxBtcHeadersPerRskBlock; }
