@@ -31,8 +31,8 @@ public class MainNetConfig extends AbstractNetConfig {
 
     public MainNetConfig() {
         add(0, new MainNetBeforeBridgeSyncConfig());
-        // 21 days of 1 block every 14 seconds.
+        // 60 days of 1 block every 14 seconds.
         // On blockchain launch blocks will be faster until difficulty is adjusted to available hashing power.
-        add(129600, new MainNetAfterBridgeSyncConfig());
+        add(370000, new MainNetAfterBridgeSyncConfig());
     }
 }

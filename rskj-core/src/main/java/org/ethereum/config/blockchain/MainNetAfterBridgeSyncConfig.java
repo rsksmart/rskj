@@ -30,7 +30,7 @@ public class MainNetAfterBridgeSyncConfig extends GenesisConfig {
 
         @Override
         public int getNewBlockMaxMinInTheFuture() {
-            return 540;
+            return 60;
         }
 
         @Override
