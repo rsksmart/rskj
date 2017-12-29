@@ -207,6 +207,10 @@ public abstract class BridgePerformanceTestCase {
         public static TxBuilder getZeroValueRandomSenderTxBuilder() {
             return (int executionIndex) -> Helper.buildSendValueTx(new ECKey(), BigInteger.ZERO);
         }
+
+        public static BridgeStorageProviderInitializer buildNoopInitializer() {
+            return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {};
+        }
     }
 
     protected interface BridgeStorageProviderInitializer {
