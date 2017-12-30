@@ -140,6 +140,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     // Adds the given address to the lock whitelist
     public static final CallTransaction.Function REMOVE_LOCK_WHITELIST_ADDRESS = CallTransaction.Function.fromSignature("removeLockWhitelistAddress", new String[]{"string"}, new String[]{"int256"});
 
+    public static final CallTransaction.Function SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY = CallTransaction.Function.fromSignature("setLockWhitelistDisableBlockDelay", new String[]{"int256"}, new String[]{"int256"});
+
     // Returns the current fee per kb
     public static final CallTransaction.Function GET_FEE_PER_KB = CallTransaction.Function.fromSignature("getFeePerKb", new String[]{}, new String[]{"int256"});
     // Adds the given key to the current pending federation
@@ -215,6 +217,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             GET_LOCK_WHITELIST_ADDRESS,
             ADD_LOCK_WHITELIST_ADDRESS,
             REMOVE_LOCK_WHITELIST_ADDRESS,
+            SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY,
             GET_FEE_PER_KB,
             VOTE_FEE_PER_KB
         }).forEach((CallTransaction.Function func) -> {
@@ -806,6 +809,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         return bridgeSupport.removeLockWhitelistAddress(rskTx, addressBase58);
+    }
+
+    public Integer setLockWhitelistDisableBlockDelay(Object[] args) {
+        logger.trace("setLockWhitelistDisableBlockDelay");
+        BigInteger lockWhitelistDisableBlockDelay = (BigInteger) args[0];
+        return bridgeSupport.setLockWhitelistDisableBlockDelay(rskTx, lockWhitelistDisableBlockDelay);
     }
 
     public Integer voteFeePerKbChange(Object[] args)

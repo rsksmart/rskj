@@ -34,16 +34,22 @@ import java.util.*;
  */
 public class LockWhitelist {
 
-    private static final Comparator<Address> LEXICOGRAPHICAL_COMPARATOR = (a1, a2)
-            -> UnsignedBytes.lexicographicalComparator().compare(a1.getHash160(), a2.getHash160());
+    private static final Comparator<Address> LEXICOGRAPHICAL_COMPARATOR
+        = Comparator.comparing(Address::getHash160, UnsignedBytes.lexicographicalComparator());
 
     private SortedMap<Address, Coin> whitelistedAddresses;
+    private int disableBlockHeight;
 
     public LockWhitelist(Map<Address, Coin> whitelistedAddresses) {
+        this(whitelistedAddresses, Integer.MAX_VALUE);
+    }
+
+    public LockWhitelist(Map<Address, Coin> whitelistedAddresses, int disableBlockHeight) {
         // Save a copy so that this can't be modified from the outside
         SortedMap<Address, Coin> sortedWhitelistedAddresses = new TreeMap<>(LEXICOGRAPHICAL_COMPARATOR);
         sortedWhitelistedAddresses.putAll(whitelistedAddresses);
         this.whitelistedAddresses = sortedWhitelistedAddresses;
+        this.disableBlockHeight = disableBlockHeight;
     }
 
     public boolean isWhitelisted(Address address) {
@@ -56,9 +62,9 @@ public class LockWhitelist {
                 .anyMatch(hash -> Arrays.equals(hash, address));
     }
 
-    public boolean isWhitelistedFor(Address address, Coin amount) {
+    public boolean isWhitelistedFor(Address address, Coin amount, int height) {
         Coin maxTransferValue = getMaxTransferValue(address);
-        return isWhitelisted(address) && maxTransferValue !=null && (amount.isLessThan(maxTransferValue) || amount.equals(maxTransferValue));
+        return height > disableBlockHeight || (isWhitelisted(address) && maxTransferValue !=null && (amount.isLessThan(maxTransferValue) || amount.equals(maxTransferValue)));
     }
 
     public Integer getSize() {
@@ -85,5 +91,17 @@ public class LockWhitelist {
 
     public boolean remove(Address address) {
         return whitelistedAddresses.remove(address) != null;
+    }
+
+    public int getDisableBlockHeight() {
+        return disableBlockHeight;
+    }
+
+    public void setDisableBlockHeight(int disableBlockHeight) {
+        this.disableBlockHeight = disableBlockHeight;
+    }
+
+    public boolean isDisableBlockSet() {
+        return disableBlockHeight < Integer.MAX_VALUE;
     }
 }

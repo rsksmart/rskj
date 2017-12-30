@@ -295,19 +295,28 @@ public class BridgeSerializationUtils {
 
     public static byte[] serializeLockWhitelist(LockWhitelist whitelist) {
         List<Address> whitelistAddresses = whitelist.getAddresses();
-        byte[][] serializedLockWhitelist = new byte[whitelistAddresses.size() * 2][];
+        int serializationSize = whitelistAddresses.size() * 2 + 1;
+        byte[][] serializedLockWhitelist = new byte[serializationSize][];
         for (int i = 0; i < whitelistAddresses.size(); i++) {
             Address address = whitelistAddresses.get(i);
             serializedLockWhitelist[2 * i] = RLP.encodeElement(address.getHash160());
             serializedLockWhitelist[2 * i + 1] = RLP.encodeBigInteger(BigInteger.valueOf(whitelist.getMaxTransferValue(address).longValue()));
         }
+        serializedLockWhitelist[serializationSize - 1] = RLP.encodeBigInteger(BigInteger.valueOf(whitelist.getDisableBlockHeight()));
         return RLP.encodeList(serializedLockWhitelist);
     }
 
     public static LockWhitelist deserializeLockWhitelist(byte[] data, NetworkParameters parameters) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
-        Map<Address, Coin> whitelist = new HashMap<>(rlpList.size() / 2);
-        for (int i = 0; i < rlpList.size(); i = i + 2) {
+        int serializedAddressesSize = rlpList.size() - 1;
+
+        // serialized addresses size must be even - key, value pairs expected in sequence
+        if (serializedAddressesSize % 2 != 0) {
+            throw new RuntimeException("deserializeLockWhitelist: expected an even number of addresses, but odd given");
+        }
+
+        Map<Address, Coin> whitelist = new HashMap<>(serializedAddressesSize / 2);
+        for (int i = 0; i < serializedAddressesSize; i = i + 2) {
             byte[] hash160 = rlpList.get(i).getRLPData();
             byte[] maxValueData = rlpList.get(i + 1).getRLPData();
             whitelist.put(
@@ -315,7 +324,8 @@ public class BridgeSerializationUtils {
                 Coin.valueOf(safeToBigInteger(maxValueData).longValueExact())
             );
         }
-        return new LockWhitelist(whitelist);
+        int disableBlockHeight = safeToBigInteger(rlpList.get(serializedAddressesSize).getRLPData()).intValueExact();
+        return new LockWhitelist(whitelist, disableBlockHeight);
     }
 
     private static BigInteger safeToBigInteger(byte[] data) {

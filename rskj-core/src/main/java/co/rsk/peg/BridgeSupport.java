@@ -313,7 +313,7 @@ public class BridgeSupport {
             // Otherwise, transfer SBTC to the sender of the BTC
             // The RSK account to update is the one that matches the pubkey "spent" on the first bitcoin tx input
             LockWhitelist lockWhitelist = provider.getLockWhitelist();
-            if (!lockWhitelist.isWhitelistedFor(senderBtcAddress, totalAmount)) {
+            if (!lockWhitelist.isWhitelistedFor(senderBtcAddress, totalAmount, height)) {
                 locked = false;
                 // Build the list of UTXOs in the BTC transaction sent to either the active
                 // or retiring federation
@@ -1728,6 +1728,30 @@ public class BridgeSupport {
         logger.info("Fee per kb changed to {}", winnerFee);
         provider.setFeePerKb(winnerFee);
         feePerKbElection.clear();
+        return 1;
+    }
+
+    /**
+     * Sets a delay in the BTC best chain to disable lock whitelist
+     * @param tx current RSK transaction
+     * @param disableBlockDelayBI block since current BTC best chain height to disable lock whitelist
+     * @return 1 if it was successful, -1 if a delay was already set, -2 if disableBlockDelay contains an invalid value
+     */
+    public Integer setLockWhitelistDisableBlockDelay(Transaction tx, BigInteger disableBlockDelayBI) {
+        if (!isLockWhitelistChangeAuthorized(tx)) {
+            return LOCK_WHITELIST_GENERIC_ERROR_CODE;
+        }
+
+        LockWhitelist lockWhitelist = provider.getLockWhitelist();
+        if (lockWhitelist.isDisableBlockSet()) {
+            return -1;
+        }
+        int disableBlockDelay = disableBlockDelayBI.intValueExact();
+        int bestChainHeight = btcBlockChain.getBestChainHeight();
+        if (bestChainHeight < 0 || Integer.MAX_VALUE - disableBlockDelay < bestChainHeight) {
+            return -2;
+        }
+        lockWhitelist.setDisableBlockHeight(bestChainHeight + disableBlockDelay);
         return 1;
     }
 

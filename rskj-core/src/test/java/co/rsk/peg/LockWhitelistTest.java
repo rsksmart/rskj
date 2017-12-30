@@ -52,7 +52,7 @@ public class LockWhitelistTest {
                 return address;
             })
             .collect(Collectors.toMap(Function.identity(), i -> Coin.CENT));
-        whitelist = new LockWhitelist(addresses);
+        whitelist = new LockWhitelist(addresses, 0);
     }
 
     @Test
