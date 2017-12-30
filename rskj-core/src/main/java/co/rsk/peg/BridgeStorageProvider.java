@@ -234,7 +234,7 @@ public class BridgeStorageProvider {
     }
 
     public Federation getOldFederation() {
-        if (oldFederation != null) {
+        if (oldFederation != null || shouldSaveOldFederation) {
             return oldFederation;
         }
 
@@ -261,7 +261,7 @@ public class BridgeStorageProvider {
     }
 
     public PendingFederation getPendingFederation() {
-        if (pendingFederation != null) {
+        if (pendingFederation != null || shouldSavePendingFederation) {
             return pendingFederation;
         }
 
