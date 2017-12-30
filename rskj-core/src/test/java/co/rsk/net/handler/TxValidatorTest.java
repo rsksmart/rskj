@@ -21,6 +21,7 @@ package co.rsk.net.handler;
 import co.rsk.TestHelpers.Tx;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.peg.Federation;
+import co.rsk.peg.TxSender;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
@@ -46,7 +47,7 @@ public class TxValidatorTest {
         List<Transaction> result;
         TxValidator txValidator = new TxValidator();
         Map<String, TxTimestamp> times;
-        Map<String, TxsPerAccount> txmap;
+        Map<TxSender, TxsPerAccount> txmap;
         Repository repository = Mockito.mock(Repository.class);
         final long blockGasLimit = 100000;
         WorldManager worldManager = Mockito.mock(WorldManager.class);
@@ -136,7 +137,7 @@ public class TxValidatorTest {
         txs.add(createBridgeTx(1, 0, 1, 0, 0, 6, hashes));
 
         Map<String, TxTimestamp> times;
-        Map<String, TxsPerAccount> txmap;
+        Map<TxSender, TxsPerAccount> txmap;
         Repository repository = Mockito.mock(Repository.class);
         final long blockGasLimit = 100000;
         WorldManager worldManager = Mockito.mock(WorldManager.class);
@@ -165,7 +166,7 @@ public class TxValidatorTest {
         AccountState as = Mockito.mock(AccountState.class);
         Mockito.when(as.getBalance()).thenReturn(BigInteger.valueOf(balance));
         Mockito.when(as.getNonce()).thenReturn(BigInteger.valueOf(nonce));
-        Mockito.when(repository.getAccountState(tx.getSender())).thenReturn(as);
+        Mockito.when(repository.getAccountState(tx.getSender().getBytes())).thenReturn(as);
     }
 
     public static Transaction createBridgeTx(long value, long gaslimit, long gasprice, long nonce, long data, long sender, Random hashes) {

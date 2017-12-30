@@ -18,6 +18,7 @@
 
 package co.rsk.remasc;
 
+import co.rsk.peg.TxSender;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
@@ -52,9 +53,9 @@ public class RemascTransaction extends Transaction {
     }
 
     @Override
-    public byte[] getSender() {
+    public TxSender getSender() {
         // RemascTransaction is not signed so has no sender
-        return new byte[]{0};
+        return new TxSender(new byte[]{0});
     }
 
     @Override

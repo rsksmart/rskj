@@ -48,7 +48,7 @@ public class AddressBasedAuthorizer {
     }
 
     public boolean isAuthorized(Transaction tx) {
-        return isAuthorized(TxSender.fromTx(tx));
+        return isAuthorized(tx.getSender());
     }
 
     public int getNumberOfAuthorizedKeys() {

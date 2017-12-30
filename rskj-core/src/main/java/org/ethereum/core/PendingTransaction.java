@@ -64,7 +64,7 @@ public class PendingTransaction {
 
     public byte[] getSender() {
         if (sender == null) {
-            sender = transaction.getSender();
+            sender = transaction.getSender().getBytes();
         }
         return sender;
     }

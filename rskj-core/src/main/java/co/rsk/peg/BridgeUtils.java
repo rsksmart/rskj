@@ -182,7 +182,7 @@ public class BridgeUtils {
     }
 
     private static boolean isFromFederateMember(org.ethereum.core.Transaction rskTx, Federation federation) {
-        return federation.hasMemberWithRskAddress(rskTx.getSender());
+        return federation.hasMemberWithRskAddress(rskTx.getSender().getBytes());
     }
 
     private static boolean isFromFederationChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {

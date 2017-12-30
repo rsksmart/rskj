@@ -18,9 +18,11 @@
 
 package co.rsk.peg;
 
-import org.ethereum.core.Transaction;
+import com.google.common.primitives.UnsignedBytes;
+import org.spongycastle.util.encoders.Hex;
 
 import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * Immutable representation of a tx
@@ -32,18 +34,21 @@ import java.util.Arrays;
  */
 public final class TxSender {
 
-    public static TxSender fromTx(Transaction tx) {
-        return new TxSender(tx.getSender());
-    }
-    
-    private byte[] senderBytes;
+    /**
+     * This compares using the lexicographical order of the sender unsigned bytes.
+     */
+    public static final Comparator<TxSender> COMPARATOR = Comparator.comparing(
+            TxSender::getBytes,
+            UnsignedBytes.lexicographicalComparator());
 
-    public TxSender(byte[] senderBytes) {
-        this.senderBytes = senderBytes;
+    private final byte[] bytes;
+
+    public TxSender(byte[] bytes) {
+        this.bytes = bytes;
     }
 
     public byte[] getBytes() {
-        return senderBytes;
+        return bytes;
     }
 
     @Override
@@ -57,11 +62,16 @@ public final class TxSender {
         }
 
         TxSender otherSender = (TxSender) other;
-        return Arrays.equals(getBytes(), otherSender.getBytes());
+        return Arrays.equals(bytes, otherSender.bytes);
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(senderBytes);
+        return Arrays.hashCode(bytes);
+    }
+
+    @Override
+    public String toString() {
+        return Hex.toHexString(bytes);
     }
 }

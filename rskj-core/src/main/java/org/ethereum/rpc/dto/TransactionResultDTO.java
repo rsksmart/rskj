@@ -55,7 +55,7 @@ public class TransactionResultDTO {
         blockHash = b != null ? TypeConverter.toJsonHex(b.getHash()) : null;
         blockNumber = b != null ? TypeConverter.toJsonHex(b.getNumber()) : null;
         transactionIndex = index != null ? TypeConverter.toJsonHex(index) : null;
-        from= TypeConverter.toJsonHex(tx.getSender());
+        from= TypeConverter.toJsonHex(tx.getSender().getBytes());
         to = TypeConverter.toJsonHex(tx.getReceiveAddress());
         gas = TypeConverter.toJsonHex(tx.getGasLimit()); // Todo: unclear if it's the gas limit or gas consumed what is asked
 
