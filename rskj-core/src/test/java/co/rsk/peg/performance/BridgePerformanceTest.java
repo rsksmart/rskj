@@ -39,7 +39,9 @@ import java.util.List;
         ActiveFederationTest.class,
         RetiringFederationTest.class,
         PendingFederationTest.class,
-        FederationChangeTest.class
+        FederationChangeTest.class,
+        VoteFeePerKbChangeTest.class,
+        GetFeePerKbTest.class
 })
 public class BridgePerformanceTest {
     private static List<ExecutionStats> statsList;
