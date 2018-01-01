@@ -601,6 +601,16 @@ public class OpCodes {
      *  also the Value parameter is omitted for this opcode
      */
     static final byte OP_DELEGATECALL =(byte)0xf4 ;
+
+    /**
+     *  opcode that can be used to call another contract (or itself) while disallowing any
+     *  modifications to the state during the call (and its subcalls, if present).
+     *  Any opcode that attempts to perform such a modification (see below for details)
+     *  will result in an exception instead of performing the modification.
+     */
+    static final byte OP_STATICCALL =(byte)0xfa ;
+
+
     static final byte OP_HEADER =(byte)0xfc  ;
 
     /**
