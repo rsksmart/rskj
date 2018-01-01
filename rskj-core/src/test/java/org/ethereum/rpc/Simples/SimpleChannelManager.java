@@ -21,6 +21,7 @@ package org.ethereum.rpc.Simples;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
 import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
@@ -60,7 +61,7 @@ public class SimpleChannelManager implements ChannelManager {
 
     @Nonnull
     @Override
-    public Set<NodeID> broadcastBlockHash(@Nonnull byte[] hash, @Nullable Set<NodeID> skip) {
+    public Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, @Nullable Set<NodeID> skip) {
         return new HashSet<>();
     }
 

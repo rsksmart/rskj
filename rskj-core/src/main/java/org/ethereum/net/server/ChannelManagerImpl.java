@@ -214,9 +214,9 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     @Nonnull
-    public Set<NodeID> broadcastBlockHash(@Nonnull final byte[] hash, @Nullable final Set<NodeID> targets) {
+    public Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, @Nullable final Set<NodeID> targets) {
         final Set<NodeID> res = new HashSet<>();
-        final EthMessage newBlockHash = new RskMessage(new NewBlockHashesMessage(hash));
+        final EthMessage newBlockHash = new RskMessage(new NewBlockHashesMessage(identifiers));
 
         synchronized (activePeers) {
             activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
