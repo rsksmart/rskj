@@ -25,6 +25,7 @@ import co.rsk.peg.Federation;
 import co.rsk.peg.PendingFederation;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -33,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+@Ignore
 public class PendingFederationTest extends BridgePerformanceTestCase {
     private PendingFederation pendingFederation;
 

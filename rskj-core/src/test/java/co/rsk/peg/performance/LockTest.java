@@ -28,6 +28,7 @@ import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBlockStore;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
@@ -39,6 +40,7 @@ import java.util.Random;
 // Everything related to locking that is not
 // registerBtcTransaction, which has its own
 // test case given its complexity
+@Ignore
 public class LockTest extends BridgePerformanceTestCase {
     private Sha256Hash randomHashInMap;
 

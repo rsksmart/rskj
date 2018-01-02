@@ -23,6 +23,7 @@ import co.rsk.peg.*;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigInteger;
@@ -33,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Ignore
 public class FederationChangeTest extends BridgePerformanceTestCase {
     // regtest constants
     private static final List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{

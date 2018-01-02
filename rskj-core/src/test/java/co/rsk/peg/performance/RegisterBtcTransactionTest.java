@@ -28,6 +28,7 @@ import co.rsk.peg.RepositoryBlockStore;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+@Ignore
 public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
     private BtcBlock blockWithTx;
     private int blockWithTxHeight;

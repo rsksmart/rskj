@@ -27,10 +27,12 @@ import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBlockStore;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
 
+@Ignore
 public class BtcBlockchainTest extends BridgePerformanceTestCase {
     @Test
     public void getBtcBlockchainBestChainHeight() throws IOException {

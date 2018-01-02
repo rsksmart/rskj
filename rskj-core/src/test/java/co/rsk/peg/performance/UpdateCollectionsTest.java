@@ -29,6 +29,7 @@ import co.rsk.peg.ReleaseTransactionSet;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.SortedMap;
 
+@Ignore
 public class UpdateCollectionsTest extends BridgePerformanceTestCase {
     @Test
     public void updateCollections() throws IOException {

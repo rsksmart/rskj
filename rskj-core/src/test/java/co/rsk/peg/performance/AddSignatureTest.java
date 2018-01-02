@@ -31,6 +31,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.PrecompiledContracts;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -38,6 +39,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+@Ignore
 public class AddSignatureTest extends BridgePerformanceTestCase {
     private BtcTransaction releaseTx;
     private Sha3Hash rskTxHash;

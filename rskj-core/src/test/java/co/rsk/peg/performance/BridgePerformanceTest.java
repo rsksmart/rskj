@@ -21,6 +21,7 @@ package co.rsk.peg.performance;
 import co.rsk.vm.VMPerformanceTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -41,8 +42,11 @@ import java.util.List;
         PendingFederationTest.class,
         FederationChangeTest.class,
         VoteFeePerKbChangeTest.class,
-        GetFeePerKbTest.class
+        GetFeePerKbTest.class,
+        LockWhitelistTest.class,
+        StateForBtcReleaseClientTest.class
 })
+@Ignore
 public class BridgePerformanceTest {
     private static List<ExecutionStats> statsList;
     private static boolean running = false;
@@ -64,6 +68,7 @@ public class BridgePerformanceTest {
         VMPerformanceTest.runWithLogging(resultLogger);
         // Set reference cost on stats
         ExecutionStats.gasPerMicrosecond = averageGasPerMicrosecond.getMean();
+        System.out.println(String.format("Reference cost: %d gas/us", ExecutionStats.gasPerMicrosecond));
     }
 
     @AfterClass

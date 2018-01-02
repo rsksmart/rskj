@@ -27,11 +27,13 @@ import co.rsk.peg.ReleaseRequestQueue;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
 
+@Ignore
 public class ReleaseBtcTest extends BridgePerformanceTestCase {
     @Test
     public void releaseBtc() throws IOException {

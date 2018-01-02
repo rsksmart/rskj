@@ -22,12 +22,14 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.peg.Bridge;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 
+@Ignore
 public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
 
     @Test

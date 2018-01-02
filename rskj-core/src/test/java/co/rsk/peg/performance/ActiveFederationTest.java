@@ -24,6 +24,7 @@ import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+@Ignore
 public class ActiveFederationTest extends BridgePerformanceTestCase {
     private Federation federation;
 
