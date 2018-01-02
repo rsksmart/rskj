@@ -5,7 +5,7 @@
     }
   },
 
-  "nonce": "0x0",
+  "nonce": "0x00",
   "mixhash": "0x00",
   "bitcoinMergedMiningHeader": "0x00",
   "bitcoinMergedMiningMerkleProof": "0x00",
@@ -16,5 +16,5 @@
   "gasLimit": "0x67c280",
   "difficulty": "0x6A94D74F430000",
   "coinbase": "0x3333333333333333333333333333333333333333",
-  "minimumGasPrice": "0xae85bc0"
+  "minimumGasPrice": "0x0AE85BC0"
 }
