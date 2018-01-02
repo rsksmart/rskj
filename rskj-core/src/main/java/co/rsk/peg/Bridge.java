@@ -25,6 +25,7 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ByteArrayWrapper;
@@ -168,61 +169,51 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public Bridge(String contractAddress) {
         this.contractAddress = contractAddress;
 
-        class CostProvider {
-            private long cost;
-
-            public CostProvider(long initialCost) {
-                this.cost = initialCost;
-            }
-
-            public long nextCost() {
-                return cost++;
-            }
-        }
-
-        final CostProvider costProvider = new CostProvider(50001L);
-        Arrays.stream(new CallTransaction.Function[]{
-            UPDATE_COLLECTIONS,
-            RECEIVE_HEADERS,
-            REGISTER_BTC_TRANSACTION,
-            RELEASE_BTC,
-            ADD_SIGNATURE,
-            GET_STATE_FOR_BTC_RELEASE_CLIENT,
-            GET_STATE_FOR_DEBUGGING,
-            GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT,
-            GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR,
-            GET_MINIMUM_LOCK_TX_VALUE,
-            IS_BTC_TX_HASH_ALREADY_PROCESSED,
-            GET_BTC_TX_HASH_PROCESSED_HEIGHT,
-            GET_FEDERATION_ADDRESS,
-            GET_FEDERATION_SIZE,
-            GET_FEDERATION_THRESHOLD,
-            GET_FEDERATOR_PUBLIC_KEY,
-            GET_FEDERATION_CREATION_TIME,
-            GET_FEDERATION_CREATION_BLOCK_NUMBER,
-            GET_RETIRING_FEDERATION_ADDRESS,
-            GET_RETIRING_FEDERATION_SIZE,
-            GET_RETIRING_FEDERATION_THRESHOLD,
-            GET_RETIRING_FEDERATOR_PUBLIC_KEY,
-            GET_RETIRING_FEDERATION_CREATION_TIME,
-            GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER,
-            CREATE_FEDERATION,
-            ADD_FEDERATOR_PUBLIC_KEY,
-            COMMIT_FEDERATION,
-            ROLLBACK_FEDERATION,
-            GET_PENDING_FEDERATION_HASH,
-            GET_PENDING_FEDERATION_SIZE,
-            GET_PENDING_FEDERATOR_PUBLIC_KEY,
-            GET_LOCK_WHITELIST_SIZE,
-            GET_LOCK_WHITELIST_ADDRESS,
-            ADD_LOCK_WHITELIST_ADDRESS,
-            REMOVE_LOCK_WHITELIST_ADDRESS,
-            SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY,
-            GET_FEE_PER_KB,
-            VOTE_FEE_PER_KB
-        }).forEach((CallTransaction.Function func) -> {
+        Arrays.stream(new Object[]{
+            Pair.of(UPDATE_COLLECTIONS, 48000L),
+            Pair.of(RECEIVE_HEADERS, 22000L),
+            Pair.of(REGISTER_BTC_TRANSACTION, 22000L),
+            Pair.of(RELEASE_BTC, 23000L),
+            Pair.of(ADD_SIGNATURE, 70000L),
+            Pair.of(GET_STATE_FOR_BTC_RELEASE_CLIENT, 4000L),
+            Pair.of(GET_STATE_FOR_DEBUGGING, 3_000_000L),
+            Pair.of(GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT, 19000L),
+            Pair.of(GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR, 76000L),
+            Pair.of(GET_MINIMUM_LOCK_TX_VALUE, 2000L),
+            Pair.of(IS_BTC_TX_HASH_ALREADY_PROCESSED, 23000L),
+            Pair.of(GET_BTC_TX_HASH_PROCESSED_HEIGHT, 22000L),
+            Pair.of(GET_FEDERATION_ADDRESS, 11000L),
+            Pair.of(GET_FEDERATION_SIZE, 10000L),
+            Pair.of(GET_FEDERATION_THRESHOLD, 11000L),
+            Pair.of(GET_FEDERATOR_PUBLIC_KEY, 10000L),
+            Pair.of(GET_FEDERATION_CREATION_TIME, 10000L),
+            Pair.of(GET_FEDERATION_CREATION_BLOCK_NUMBER, 10000L),
+            Pair.of(GET_RETIRING_FEDERATION_ADDRESS, 3000L),
+            Pair.of(GET_RETIRING_FEDERATION_SIZE, 3000L),
+            Pair.of(GET_RETIRING_FEDERATION_THRESHOLD, 3000L),
+            Pair.of(GET_RETIRING_FEDERATOR_PUBLIC_KEY, 3000L),
+            Pair.of(GET_RETIRING_FEDERATION_CREATION_TIME, 3000L),
+            Pair.of(GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER, 3000L),
+            Pair.of(CREATE_FEDERATION, 11000L),
+            Pair.of(ADD_FEDERATOR_PUBLIC_KEY, 13000L),
+            Pair.of(COMMIT_FEDERATION, 38000L),
+            Pair.of(ROLLBACK_FEDERATION, 12000L),
+            Pair.of(GET_PENDING_FEDERATION_HASH, 3000L),
+            Pair.of(GET_PENDING_FEDERATION_SIZE, 3000L),
+            Pair.of(GET_PENDING_FEDERATOR_PUBLIC_KEY, 3000L),
+            Pair.of(GET_LOCK_WHITELIST_SIZE, 16000L),
+            Pair.of(GET_LOCK_WHITELIST_ADDRESS, 16000L),
+            Pair.of(ADD_LOCK_WHITELIST_ADDRESS, 25000L),
+            Pair.of(REMOVE_LOCK_WHITELIST_ADDRESS, 24000L),
+            Pair.of(SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY, 24000L),
+            Pair.of(GET_FEE_PER_KB, 2000L),
+            Pair.of(VOTE_FEE_PER_KB, 10000L)
+        }).forEach((Object obj) -> {
+            Pair<CallTransaction.Function, Long> spec = (Pair<CallTransaction.Function, Long>) obj;
+            CallTransaction.Function func = spec.getLeft();
+            Long cost = spec.getRight();
             this.functions.put(new ByteArrayWrapper(func.encodeSignature()),  func);
-            functionCostMap.put(func, costProvider.nextCost());
+            functionCostMap.put(func, cost);
         });
 
         bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
@@ -239,7 +230,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         Long functionCost;
         Long totalCost;
         if (bridgeParsedData == null) {
-            functionCost = 50000L;
+            functionCost = functionCostMap.get(Bridge.RELEASE_BTC);
             totalCost = functionCost;
         } else {
             functionCost = functionCostMap.get(bridgeParsedData.function);
