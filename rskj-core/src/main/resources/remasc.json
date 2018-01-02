@@ -22,7 +22,7 @@
       "paidFeesDivisor": 1
    },
    "main": {
-      "maturity" : 50,
+      "maturity" : 4000,
       "syntheticSpan" : 10,
       "rskLabsDivisor" : 5,
       "punishmentDivisor" : 10,
