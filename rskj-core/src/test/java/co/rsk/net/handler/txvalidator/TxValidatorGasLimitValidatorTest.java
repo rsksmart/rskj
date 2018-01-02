@@ -48,6 +48,7 @@ public class TxValidatorGasLimitValidatorTest {
         Transaction tx1 = Mockito.mock(Transaction.class);
 
         Mockito.when(tx1.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(6));
+        Mockito.when(tx1.getHash()).thenReturn(new byte[32]);
 
         BigInteger gl = BigInteger.valueOf(3);
 
