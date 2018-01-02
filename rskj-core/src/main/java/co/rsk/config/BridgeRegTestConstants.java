@@ -62,7 +62,6 @@ public class BridgeRegTestConstants extends BridgeConstants {
         btc2RskMinimumAcceptableConfirmations = 3;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 5;
         rsk2BtcMinimumAcceptableConfirmations = 3;
-        btcBroadcastingMinimumAcceptableBlocks = 3;
 
         updateBridgeExecutionPeriod = 1 * 15 * 1000; //15 seconds in millis
 
