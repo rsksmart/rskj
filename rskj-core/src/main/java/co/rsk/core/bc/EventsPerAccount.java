@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by SerAdmin on 6/30/2017.
+ * Created by SergioDemianLerner on 6/30/2017.
  * a List of events that belong to a single contract address in a block.
  */
 public class EventsPerAccount {

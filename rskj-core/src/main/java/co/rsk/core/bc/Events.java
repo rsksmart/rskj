@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by SerAdmin on 6/30/2017.
+ * Created by SergioDemianLerner on 6/30/2017.
  */
 public class Events {
     List<EventInfoItem> list;

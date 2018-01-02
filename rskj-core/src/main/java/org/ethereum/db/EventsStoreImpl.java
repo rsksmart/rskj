@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by SerAdmin on 6/30/2017.
+ * Created by SergioDemianLerner on 6/30/2017.
  */
 public class EventsStoreImpl implements EventsStore {
 

@@ -14,7 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Created by SerAdmin on 11/18/2017.
+ * Created by SergioDemianLerner on 11/18/2017.
  */
 public class EventInfo {
     int txIndex;

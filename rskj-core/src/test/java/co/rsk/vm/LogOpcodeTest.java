@@ -38,7 +38,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Created by SerAdmin on 11/17/2017.
+ * Created by SergioDemianLerner on 11/17/2017.
  */
 public class LogOpcodeTest {
     private ProgramInvokeMockImpl invoke;

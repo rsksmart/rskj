@@ -38,7 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by SerAdmin on 11/21/2017.
+ * Created by SergioDemianLerner on 11/21/2017.
  */
 public class EventsStoreImplTest {
 

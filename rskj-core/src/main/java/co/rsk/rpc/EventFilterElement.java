@@ -9,7 +9,7 @@ import java.util.Arrays;
 import static org.ethereum.rpc.TypeConverter.toJsonHex;
 
 /**
- * Created by SerAdmin on 11/23/2017.
+ * Created by SergioDemianLerner on 11/23/2017.
  */
 public class EventFilterElement {
     public String blockNumber;

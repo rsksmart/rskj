@@ -1,7 +1,7 @@
 package co.rsk.core;
 
 /**
- * Created by SerAdmin on 12/5/2017.
+ * Created by SergioDemianLerner on 12/5/2017.
  */
 
 import com.google.common.collect.Lists;

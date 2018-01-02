@@ -45,7 +45,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         return world.getBlockChain().getBestBlock();
     }
 
-    @Ignore
+    @Test
     public void buildBlockchainAndSynchronize() throws InterruptedException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(100, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
@@ -70,7 +70,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
     }
 
-    @Ignore
+    @Test
     public void buildBlockchainAndSynchronize400Blocks() throws InterruptedException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(400, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
@@ -95,7 +95,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
     }
 
-    @Ignore
+    @Test
     public void buildBlockchainWithUnclesAndSynchronize() throws InterruptedException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(10, true, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
@@ -122,7 +122,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
     }
 
-    @Ignore
+    @Test
     public void buildBlockchainPartialAndSynchronize() throws InterruptedException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
@@ -169,7 +169,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
     }
 
-    @Ignore
+    @Test
     public void sendNewBlock() throws InterruptedException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(1, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
@@ -194,7 +194,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
     }
 
-    @Ignore
+    @Test
     public void stopSyncingAfter5SkeletonChunks() {
         Blockchain b1 = BlockChainBuilder.ofSize(30, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 2000, false);
@@ -224,7 +224,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));
     }
 
-    @Ignore
+    @Test
     public void syncInMultipleStepsWithLongBlockchain() {
         Blockchain b1 = BlockChainBuilder.ofSize(300, false);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 4000, false);

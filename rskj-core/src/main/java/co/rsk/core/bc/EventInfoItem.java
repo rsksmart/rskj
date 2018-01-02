@@ -8,7 +8,7 @@ import org.ethereum.util.RLPList;
 import java.util.Arrays;
 
 /**
- * Created by SerAdmin on 11/20/2017.
+ * Created by SergioDemianLerner on 11/20/2017.
  */
 public class EventInfoItem {
     public EventInfo eventInfo;
