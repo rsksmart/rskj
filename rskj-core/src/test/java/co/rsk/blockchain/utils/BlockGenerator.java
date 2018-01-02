@@ -162,8 +162,11 @@ public class BlockGenerator {
     public Block createChildBlock(Block parent) {
         return createChildBlock(parent, 0);
     }
-
-
+  public static byte[] nullReplace(byte[] e) {
+        if (e==null)
+            e = new byte[0];
+        return e;
+    }
 
     public static byte[] removeLastElement(byte[] rlpEncoded) {
         ArrayList<RLPElement> params = RLP.decode2(rlpEncoded);
@@ -501,12 +504,5 @@ public class BlockGenerator {
         return getNewGenesisBlock(initialGasLimit,preMineMap, new byte[] { 0 });
     }
 
-    private static byte[] nullReplace(byte[] e) {
-        if (e == null) {
-            return new byte[0];
-        }
-
-        return e;
-    }
 
 }

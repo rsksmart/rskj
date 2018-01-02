@@ -268,6 +268,9 @@ public class BlockExecutor {
             if (txExecutor.getVMEvents()!=null)
                 events.addAll(txExecutor.getVMEvents());
 
+            if (txExecutor.getVMEvents()!=null)
+                events.addAll(txExecutor.getVMEvents());
+
             logger.info("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()),
                     Hex.toHexString(lastStateRootHash));
 

@@ -317,6 +317,7 @@ public class DataWord implements Comparable<DataWord> {
         return true;
     }
 
+
     // only in case of signed operation
     // when the number is explicit defined
     // as negative

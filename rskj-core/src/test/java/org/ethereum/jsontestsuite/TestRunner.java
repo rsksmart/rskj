@@ -102,11 +102,12 @@ public class TestRunner {
         KeyValueDataSource ds = new HashMapDB();
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
+
         KeyValueDataSource dsp = new HashMapDB();
         dsp.init();
         EventsStore eventsStore = new EventsStoreImpl(dsp);
 
-        BlockChainImpl blockchain = new BlockChainImpl(repository, blockStore, receiptStore, eventsStore, null, null, null, new DummyBlockValidator(), RskSystemProperties.CONFIG);
+        BlockChainImpl blockchain = new BlockChainImpl(repository, blockStore, receiptStore, eventsStore,null, null, null, new DummyBlockValidator(), RskSystemProperties.CONFIG);
         //BlockchainImpl blockchain = new BlockchainImpl(blockStore, repository, wallet, adminInfo, listener,
         //        new CommonConfig().parentHeaderValidator(), receiptStore);
 

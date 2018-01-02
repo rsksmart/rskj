@@ -37,6 +37,7 @@ import java.util.Map;
  * Created by ajlopez on 01/08/2016.
  */
 public class BlockResult {
+
     public static final BlockResult INTERRUPTED_EXECUTION_BLOCK_RESULT = new InterruptedExecutionBlockResult();
 
     private final List<Transaction> executedTransactions;
@@ -53,6 +54,7 @@ public class BlockResult {
                        List<TransactionReceipt> transactionReceipts,
                        List<EventInfoItem> events,
                        byte[] stateRoot, long gasUsed, BigInteger paidFees) {
+
         this.executedTransactions = executedTransactions;
         this.transactionReceipts = transactionReceipts;
         this.events = new Events();
