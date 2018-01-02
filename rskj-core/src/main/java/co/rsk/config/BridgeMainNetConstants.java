@@ -7,6 +7,7 @@ import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.ECKey;
+import org.spongycastle.math.ec.ECPoint;
 import org.spongycastle.util.encoders.Hex;
 
 import java.time.Instant;
@@ -20,8 +21,10 @@ public class BridgeMainNetConstants extends BridgeConstants {
     BridgeMainNetConstants() {
         btcParamsString = NetworkParameters.ID_MAINNET;
 
-        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9"));
-        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da"));
+        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("044c532bcd5454f0eb8dd5f6caa9b0bffe91a5918cc45225e41d3d509de9ee0cc755033c6070103fc41a8551d8d765b7126e582cac099283fb177e410c24df25ea"));
+        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("041aabbeb9b27258f98c2bf21f36677ae7bae09eb2d8c958ef41a20a6e88626d261f17f8ec02af309b7b50c06e2baa05a57166266e038a0a7dce7b70386e8260a3"));
+
+        /*
         BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0206262e6bb2dceea515f77fae4928d87002a04b72f721034e1d4fbf3d84b16c72"));
         BtcECKey federator3PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03481d38fd2113f289347b7fd47e428127de02a078a7e28089ebe0150b74d9dcf7"));
         BtcECKey federator4PublicKey = BtcECKey.fromPublicOnly(Hex.decode("029868937807b41dac42ff5a5b4a1d1711c4f3454f5826933465aa2614c5e90fdf"));
@@ -35,18 +38,19 @@ public class BridgeMainNetConstants extends BridgeConstants {
         BtcECKey federator12PublicKey = BtcECKey.fromPublicOnly(Hex.decode("033965f98e9ec741fdd3281f5cf2a2a0ae89958f4bf4f6862ee73ac9bf2b49e0c7"));
         BtcECKey federator13PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0297d72f4c58b62495adbd49398b39d8fca69c6714ecaec49bd09e9dfcd9dc35cf"));
         BtcECKey federator14PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03c5dc2281b1bf3a8db339dceb4867bbcca1a633f3a65d5f80f6e8aca35b9b191c"));
-
+*/
         List<BtcECKey> genesisFederationPublicKeys = Lists.newArrayList(
-                federator0PublicKey, federator1PublicKey, federator2PublicKey,
+                federator0PublicKey, federator1PublicKey /*, federator2PublicKey,
                 federator3PublicKey, federator4PublicKey, federator5PublicKey,
                 federator6PublicKey, federator7PublicKey, federator8PublicKey,
                 federator9PublicKey, federator10PublicKey, federator11PublicKey,
                 federator12PublicKey, federator13PublicKey, federator14PublicKey
+                */
         );
 
         // Currently set to:
         // Wednesday, January 3, 2018 12:00:00 AM GMT-03:00
-        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400l);
+        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514862000l);
 
         // Expected federation address is:
         // 2NCJZnqZHjvTNn9CUR8WyB3253cB7tPYKUq
