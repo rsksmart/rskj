@@ -65,7 +65,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         maxBtcHeadersPerRskBlock = 500;
 
         minimumLockTxValue = Coin.valueOf(1000000);
-        minimumReleaseTxValue = Coin.valueOf(500000);
+        minimumReleaseTxValue = Coin.valueOf(800000);
 
         // Keys generated with GenNodeKey using generators 'auth-a' through 'auth-e'
         List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
@@ -89,8 +89,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
                 AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
 
-        fundsMigrationAgeBegin = 60L;
-        fundsMigrationAgeEnd = 900L;
+        fundsMigrationAgeBegin = 0L;
+        fundsMigrationAgeEnd = 10585L;
     }
 
     public static BridgeMainNetConstants getInstance() {
