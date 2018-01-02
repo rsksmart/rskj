@@ -45,8 +45,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
         );
 
         // Currently set to:
-        // Sun Dec 03 00:00:00 ART 2017
-        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1512270000l);
+        // Wednesday, January 3, 2018 12:00:00 AM GMT-03:00
+        Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400l);
 
         // Expected federation address is:
         // 2NCJZnqZHjvTNn9CUR8WyB3253cB7tPYKUq
