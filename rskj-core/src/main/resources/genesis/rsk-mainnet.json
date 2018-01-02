@@ -5,16 +5,16 @@
     }
   },
 
-  "nonce": "0xdeadfeeddeadfeed",
+  "nonce": "0x0",
   "mixhash": "0x00",
   "bitcoinMergedMiningHeader": "0x00",
   "bitcoinMergedMiningMerkleProof": "0x00",
   "bitcoinMergedMiningCoinbaseTransaction": "0x00",
-  "timestamp": "0x00",
+  "timestamp": "0x5a4d1da9",
   "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "extraData": "0x434d272841",
   "gasLimit": "0x67c280",
-  "difficulty": "0x0000100000",
+  "difficulty": "0x6A94D74F430000",
   "coinbase": "0x3333333333333333333333333333333333333333",
   "minimumGasPrice": "0xae85bc0"
 }
