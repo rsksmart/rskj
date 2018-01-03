@@ -82,7 +82,7 @@ public class EthModule
 
         byte[] result = bridgeSupport.getStateForDebugging();
 
-        BridgeState state = BridgeStateReader.readSate(TypeConverter.removeZeroX(toJsonHex(result)));
+        BridgeState state = BridgeState.create(result);
 
         return state.stateToMap();
     }
