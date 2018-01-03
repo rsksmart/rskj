@@ -68,7 +68,7 @@ public class EthModule
         arguments.data = Hex.toHexString(Bridge.GET_STATE_FOR_DEBUGGING.encodeSignature());
         arguments.gasPrice = "0x0";
         arguments.value = "0x0";
-        arguments.gas = "0xf4240";
+        arguments.gas = "0x3dc6c0";
         ProgramResult res = eth.callConstant(arguments);
         BridgeState state = BridgeStateReader.readSate(TypeConverter.removeZeroX(toJsonHex(res.getHReturn())));
         return state.stateToMap();
