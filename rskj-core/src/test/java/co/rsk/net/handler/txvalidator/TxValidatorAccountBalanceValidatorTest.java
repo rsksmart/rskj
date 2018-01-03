@@ -85,6 +85,6 @@ public class TxValidatorAccountBalanceValidatorTest {
 
         TxValidatorAccountBalanceValidator tv = new TxValidatorAccountBalanceValidator();
 
-        Assert.assertTrue(tv.validate(tx, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, true));
+        Assert.assertTrue(tv.validate(tx, new AccountState(BigInteger.ZERO, BigInteger.ZERO), BigInteger.ONE, BigInteger.ONE, Long.MAX_VALUE, true));
     }
 }
