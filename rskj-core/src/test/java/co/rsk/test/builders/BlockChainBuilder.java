@@ -92,6 +92,10 @@ public class BlockChainBuilder {
     }
 
     public BlockChainImpl build() {
+        return build(false);
+    }
+
+    public BlockChainImpl build(boolean withoutCleaner) {
         if (repository == null)
             repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));
 
@@ -130,8 +134,12 @@ public class BlockChainBuilder {
 
         blockChain.setRsk(this.rsk);
 
-        PendingStateImpl pendingState = new PendingStateImpl(blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), RskSystemProperties.CONFIG, 10, 100);
-
+        PendingStateImpl pendingState;
+        if (withoutCleaner) {
+            pendingState = new PendingStateImplNoCleaner(blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), RskSystemProperties.CONFIG, 10, 100);
+        } else {
+            pendingState = new PendingStateImpl(blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), RskSystemProperties.CONFIG, 10, 100);
+        }
         blockChain.setPendingState(pendingState);
 
         if (this.genesis != null) {
@@ -163,17 +171,29 @@ public class BlockChainBuilder {
         return blockChain;
     }
 
+    public static Blockchain ofSizeWithNoPendingStateCleaner(int size) {
+        return ofSize(size, false, true);
+    }
+
     public static Blockchain ofSize(int size) {
-        return ofSize(size, false);
+        return ofSize(size, false, false);
     }
 
     public static Blockchain ofSize(int size, boolean mining) {
-        return ofSize(size, mining, null, null);
+        return ofSize(size, mining, null, null, false);
+    }
+
+    public static Blockchain ofSize(int size, boolean mining, boolean withoutCleaner) {
+        return ofSize(size, mining, null, null, withoutCleaner);
     }
 
     public static Blockchain ofSize(int size, boolean mining, List<Account> accounts, List<BigInteger> balances) {
+        return ofSize(size, mining, accounts, balances, false);
+    }
+
+    public static Blockchain ofSize(int size, boolean mining, List<Account> accounts, List<BigInteger> balances, boolean withoutCleaner) {
         BlockChainBuilder builder = new BlockChainBuilder();
-        BlockChainImpl blockChain = builder.build();
+        BlockChainImpl blockChain = builder.build(withoutCleaner);
 
         Block genesis = BlockGenerator.getInstance().getGenesisBlock();
 

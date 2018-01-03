@@ -1330,7 +1330,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public Map<String, Object> eth_bridgeState() throws Exception {
-        return ethModule.bridgeState();
+        return ethModule.bridgeState(blockchain);
     }
 
     @Override

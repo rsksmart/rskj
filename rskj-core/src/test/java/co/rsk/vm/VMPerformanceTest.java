@@ -60,6 +60,13 @@ public class VMPerformanceTest {
         vmpt.tearDown();
     }
 
+    public static void runWithLogging(ResultLogger resultLogger) {
+        VMPerformanceTest vmpt = new VMPerformanceTest();
+        vmpt.setup();
+        vmpt.testVMPerformance1(resultLogger);
+        vmpt.tearDown();
+    }
+
     @Before
     public void setup() {
         invoke = new ProgramInvokeMockImpl();
@@ -141,6 +148,10 @@ public class VMPerformanceTest {
     @Ignore
     @Test
     public void testVMPerformance1() {
+        testVMPerformance1(null);
+    }
+
+    private void testVMPerformance1(ResultLogger resultLogger) {
         thread = ManagementFactory.getThreadMXBean();
         if (!thread.isThreadCpuTimeSupported()) return;
 
@@ -154,7 +165,7 @@ public class VMPerformanceTest {
         System.out.println("Configuration: shortArg =  " + shortArg.toString());
 
         // Program
-        measureProgram("PUSH/POP", Hex.decode("60A0" + "50"), 2, 2, 0, 100); // push "A0", pop it
+        measureProgram("PUSH/POP", Hex.decode("60A0" + "50"), 2, 2, 0, 100, null); // push "A0", pop it
         //measureOpcode(OpCode.NOT, false, 0); // For reference, to see general overhead
         //measureOpcode(OpCode.NOT, false,0); // Re-measure to see if JIT does something
 
@@ -170,26 +181,26 @@ public class VMPerformanceTest {
                 OpCode.XOR, OpCode.BYTE};
 
         //the reference must be measured for a longer time since its faster and has more jitter
-        long refTime21 = measureOpcode(OpCode.OR, true, 0);
+        long refTime21 = measureOpcode(OpCode.OR, true, 0, null);
         //measureOpcode(OpCode.ADD, false, refTime21);
         if (true) {
             for (int i = 0; i < simpleOpcodes.length; i++) {
-                measureOpcode(simpleOpcodes[i], false, refTime21);
+                measureOpcode(simpleOpcodes[i], false, refTime21, resultLogger);
             }
-            long refTime31 = measureOpcode(OpCode.ADDMOD, true, 0);
-            measureOpcode(OpCode.ADDMOD, false, refTime31);
-            measureOpcode(OpCode.MULMOD, false, refTime31);
+            long refTime31 = measureOpcode(OpCode.ADDMOD, true, 0, null);
+            measureOpcode(OpCode.ADDMOD, false, refTime31, resultLogger);
+            measureOpcode(OpCode.MULMOD, false, refTime31, resultLogger);
 
-            long refTime11 = measureOpcode(OpCode.ISZERO, true, 0);
-            measureOpcode(OpCode.ISZERO, false, refTime11);
-            measureOpcode(OpCode.NOT, false, refTime11);
+            long refTime11 = measureOpcode(OpCode.ISZERO, true, 0, null);
+            measureOpcode(OpCode.ISZERO, false, refTime11, resultLogger);
+            measureOpcode(OpCode.NOT, false, refTime11, resultLogger);
         }
         thread.setThreadCpuTimeEnabled(old);
     }
 
 
 
-    public long measureOpcode(OpCode opcode, Boolean reference, long refTime) {
+    public long measureOpcode(OpCode opcode, Boolean reference, long refTime, ResultLogger resultLogger) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         int iCount = 0;
         DataWord maxValue = new DataWord();
@@ -236,8 +247,8 @@ public class VMPerformanceTest {
 
         // execute twice each case.
         // Both times the executed method is exactly equal. We just want to detect any huge variance because of the GC interrupting.
-        measureProgram(name, baos.toByteArray(), iCount, 1, refTime, 100);
-        return measureProgram(name, baos.toByteArray(), iCount, 1, refTime, 100);
+        measureProgram(name, baos.toByteArray(), iCount, 1, refTime, 100, resultLogger);
+        return measureProgram(name, baos.toByteArray(), iCount, 1, refTime, 100, resultLogger);
 
     }
 
@@ -262,7 +273,7 @@ public class VMPerformanceTest {
         }
     }
 
-    private class PerfRes {
+    public class PerfRes {
         public long deltaUsedMemory;
         public long deltaRealTime;
         public long deltaTime; // in microseconds.
@@ -270,7 +281,11 @@ public class VMPerformanceTest {
 
     }
 
-    public long measureProgram(String opcode, byte[] code, int insCount, int divisor, long refTime, int cloneCount) {
+    public interface ResultLogger {
+        void log(String name, PerfRes result);
+    }
+
+    public long measureProgram(String opcode, byte[] code, int insCount, int divisor, long refTime, int cloneCount, ResultLogger resultLogger) {
         // Repeat program 100 times to reduce the overhead of clearing the stack
         // the program must not loop.
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -346,6 +361,10 @@ public class VMPerformanceTest {
                         " time/gas: " + padLeft(Long.toString(best.deltaTime * 100 / best.gas), 6) +
                         " fullReal: " + padLeft(Long.toString(best.deltaRealTime), 7) +
                         " mem[Kb]: " + padLeft(Long.toString(best.deltaUsedMemory / 1000), 10));
+
+        if (resultLogger != null) {
+            resultLogger.log(opcode, best);
+        }
 
         return best.deltaTime;
     }

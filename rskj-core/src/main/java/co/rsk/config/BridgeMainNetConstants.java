@@ -49,7 +49,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400l);
 
         // Expected federation address is:
-        // 2NCJZnqZHjvTNn9CUR8WyB3253cB7tPYKUq
+        // 34zsQPsDRD3mzDWXy3ekBj2sDXPGdeLcL6
         genesisFederation = new Federation(
                 genesisFederationPublicKeys,
                 genesisFederationAddressCreatedAt,
@@ -58,6 +58,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         );
 
         btc2RskMinimumAcceptableConfirmations = 100;
+        btc2RskMinimumAcceptableConfirmationsOnRsk = 1000;
         rsk2BtcMinimumAcceptableConfirmations = 4000;
 
         updateBridgeExecutionPeriod = 3 * 60 * 1000; // 3 minutes

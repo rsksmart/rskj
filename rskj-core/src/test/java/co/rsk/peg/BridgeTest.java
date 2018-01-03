@@ -476,61 +476,61 @@ public class BridgeTest {
 
     @Test
     public void getGasForDataInvalidFunction() {
-        getGasForDataPaidTx(50000, null);
+        getGasForDataPaidTx(23000, null);
     }
 
     @Test
     public void getGasForDataUpdateCollections() {
-        getGasForDataPaidTx(50009, Bridge.UPDATE_COLLECTIONS);
+        getGasForDataPaidTx(48000 + 8, Bridge.UPDATE_COLLECTIONS);
     }
 
     @Test
     public void getGasForDataReceiveHeaders() {
-        getGasForDataPaidTx(50010, Bridge.RECEIVE_HEADERS);
+        getGasForDataPaidTx(22000 + 8, Bridge.RECEIVE_HEADERS);
     }
 
     @Test
     public void getGasForDataRegisterBtcTransaction() {
-        getGasForDataPaidTx(50459, Bridge.REGISTER_BTC_TRANSACTION, new byte[3], 1, new byte[3]);
+        getGasForDataPaidTx(22000 + 228*2, Bridge.REGISTER_BTC_TRANSACTION, new byte[3], 1, new byte[3]);
     }
 
     @Test
     public void getGasForDataReleaseBtc() {
-        getGasForDataPaidTx(50012, Bridge.RELEASE_BTC);
+        getGasForDataPaidTx(23000 + 8, Bridge.RELEASE_BTC);
     }
 
     @Test
     public void getGasForDataAddSignature() {
-        getGasForDataPaidTx(51101, Bridge.ADD_SIGNATURE, new byte[3], new byte[3][2], new byte[3]);
+        getGasForDataPaidTx(70000 + 548*2, Bridge.ADD_SIGNATURE, new byte[3], new byte[3][2], new byte[3]);
     }
     @Test
     public void getGasForDataGSFBRC() {
-        getGasForDataPaidTx(50014, Bridge.GET_STATE_FOR_BTC_RELEASE_CLIENT);
+        getGasForDataPaidTx(4000 + 8, Bridge.GET_STATE_FOR_BTC_RELEASE_CLIENT);
     }
 
     @Test
     public void getGasForDataGSFD() {
-        getGasForDataPaidTx(50015, Bridge.GET_STATE_FOR_DEBUGGING);
+        getGasForDataPaidTx(3_000_000 + 8, Bridge.GET_STATE_FOR_DEBUGGING);
     }
 
     @Test
     public void getGasForDataGBBBCH() {
-        getGasForDataPaidTx(50016, Bridge.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT);
+        getGasForDataPaidTx(19000 + 8, Bridge.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT);
     }
 
     @Test
     public void getGasForDataGBBBL() {
-        getGasForDataPaidTx(50017, Bridge.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR);
+        getGasForDataPaidTx(76000 + 8, Bridge.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR);
     }
 
     @Test
     public void getGasForDataGetFederationAddress() {
-        getGasForDataPaidTx(50021, Bridge.GET_FEDERATION_ADDRESS);
+        getGasForDataPaidTx(11000 + 8, Bridge.GET_FEDERATION_ADDRESS);
     }
 
     @Test
     public void getGasForDataGetMinimumLockTxValue() {
-        getGasForDataPaidTx(50018, Bridge.GET_MINIMUM_LOCK_TX_VALUE);
+        getGasForDataPaidTx(2000 + 8, Bridge.GET_MINIMUM_LOCK_TX_VALUE);
     }
 
     private void getGasForDataPaidTx(int expected, CallTransaction.Function function, Object... funcArgs) {
