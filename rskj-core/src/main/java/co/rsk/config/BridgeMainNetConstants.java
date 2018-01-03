@@ -61,8 +61,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
                 getBtcParams()
         );
 
-        btc2RskMinimumAcceptableConfirmations = 100;
-        rsk2BtcMinimumAcceptableConfirmations = 4000;
+        btc2RskMinimumAcceptableConfirmations = 1;
+        rsk2BtcMinimumAcceptableConfirmations = 4;
 
         updateBridgeExecutionPeriod = 3 * 60 * 1000; // 3 minutes
 
