@@ -19,6 +19,8 @@
 
 package org.ethereum.vm;
 
+import co.rsk.core.bc.EventInfo;
+import co.rsk.core.bc.EventInfoItem;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.MessageCall.MsgType;
@@ -981,6 +983,19 @@ public class VM {
         program.step();
     }
 
+    protected void doLASTEVENTBLOCKNUMBER() {
+        spendOpCodeGas();
+
+        // EXECUTION PHASE
+        DataWord number = program.getLastEventBlockNumber();
+
+        if (isLogEnabled)
+            hint = "lasteventblocknumber: " + number.value();
+
+        program.stackPush(number);
+        program.step();
+    }
+
     protected void doNUMBER(){
         spendOpCodeGas();
         // EXECUTION PHASE
@@ -1080,6 +1095,9 @@ public class VM {
         long newMemSize ;
         int nTopics = op.val() - OpCode.LOG0.val();
 
+        boolean isEventslog = program.isEventModeLoggingSet();
+
+
         if (computeGas) {
             size = stack.get(stack.size() - 2);
             sizeLong = Program.limitToMaxLong(size);
@@ -1091,6 +1109,9 @@ public class VM {
             if (dataCost > Program.MAX_GAS) {
                 throw Program.ExceptionHelper.notEnoughOpGas(op, dataCost, program.getRemainingGas());
             }
+            // Events could cost less than Logs for several reasons:
+            // 1. There is no bloom filter stored for the events, and there is one for receipts (256 bytes less).
+            // 2. Each event (except the first) does not encode the account address (20 bytes less each)
 
             gasCost = GasCost.LOG_GAS +
                     GasCost.LOG_TOPIC_GAS * nTopics +
@@ -1104,7 +1125,7 @@ public class VM {
         DataWord address = program.getOwnerAddress();
 
         DataWord memStart = stack.pop();
-        DataWord memOffset = stack.pop();
+        DataWord memSize = stack.pop();
 
         List<DataWord> topics = new ArrayList<>();
         for (int i = 0; i < nTopics; ++i) {
@@ -1113,8 +1134,18 @@ public class VM {
         }
 
         // Int32 address values guaranteed by previous MAX_MEMORY checks
-        byte[] data = program.memoryChunk(memStart.intValue(), memOffset.intValue());
+        byte[] data = program.memoryChunk(memStart.intValue(), memSize.intValue());
 
+
+        if (isEventslog) {
+            EventInfo eventInfo = new EventInfo(topics, data,program.getTransactionIndexAsInt());
+            EventInfoItem eventInfoItem =new EventInfoItem(eventInfo,
+                            program.getOwnerAddressLast20Bytes());
+
+            program.markBlockNumberOfLastEvent();
+            program.getResult().addEventInfoItem(eventInfoItem);
+        }
+        else {
         LogInfo logInfo =
                 new LogInfo(address.getLast20Bytes(), topics, data);
 
@@ -1123,23 +1154,33 @@ public class VM {
         }
 
         program.getResult().addLogInfo(logInfo);
+        }
+
         // Log topics taken from the stack are lost and never returned to the DataWord pool
         program.disposeWord(memStart);
-        program.disposeWord(memOffset);
+        program.disposeWord(memSize);
         program.step();
     }
 
     protected void doMLOAD(){
         long newMemSize ;
+        DataWord addr = stack.peek();
+        boolean isInternalConfigurationAddress = program.isExactMatchInternalConfigurationRegister(addr);
 
         if (computeGas) {
-            newMemSize = memNeeded(stack.peek(), 32);
+            if (!isInternalConfigurationAddress) {
+                newMemSize = memNeeded(addr, 32);
             gasCost += calcMemGas(oldMemSize, newMemSize, 0);
+            }
             spendOpCodeGas();
         }
         // EXECUTION PHASE
-        DataWord addr = program.stackPop();
-        DataWord data = program.memoryLoad(addr);
+        program.stackPop();
+        DataWord data;
+        if (isInternalConfigurationAddress)
+            data = program.getConfigurationRegister();
+        else
+            data = program.memoryLoad(addr);
 
         if (isLogEnabled) {
             hint = "data: " + data;
@@ -1152,20 +1193,27 @@ public class VM {
 
     protected void doMSTORE() {
         long newMemSize ;
+        DataWord addr = stack.peek();
+        boolean isInternalConfigurationAddress = program.isExactMatchInternalConfigurationRegister(addr);
 
         if (computeGas) {
-            newMemSize = memNeeded(stack.peek(), 32);
+            if (!isInternalConfigurationAddress) {
+                newMemSize = memNeeded(addr, 32);
             gasCost += calcMemGas(oldMemSize, newMemSize, 0);
+            }
             spendOpCodeGas();
         }
         // EXECUTION PHASE
-        DataWord addr = program.stackPop();
+        program.stackPop();
         DataWord value = program.stackPop();
 
         if (isLogEnabled) {
             hint = "addr: " + addr + " value: " + value;
         }
 
+        if (isInternalConfigurationAddress)
+            program.setConfigurationRegister(value);
+        else
         program.memorySave(addr, value);
         program.disposeWord(addr);
         program.disposeWord(value);
@@ -1175,18 +1223,28 @@ public class VM {
     protected void doMSTORE8(){
         long newMemSize ;
 
-        if (computeGas) {
-            newMemSize = memNeeded(stack.peek(), 1);
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
+        DataWord addr = stack.peek();
+        boolean isInternalConfigurationAddress = program.isByteInsideInternalConfigurationRegister(addr);
 
+        if (computeGas) {
+            if (!isInternalConfigurationAddress) {
+                newMemSize = memNeeded(addr, 1);
+            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
+            }
             spendOpCodeGas();
         }
         // EXECUTION PHASE
-        DataWord addr = program.stackPop();
+        program.stackPop();
         DataWord value = program.stackPop();
-        byte[] byteVal = {value.getData()[31]};
+        byte val = value.getData()[31];
+
         //TODO: non-standard single byte memory storage, this should be documented
+        if (isInternalConfigurationAddress)
+            program.setConfigurationRegisterByte(program.getOffsetInInternalConfigurationRegister(addr),val);
+      else {
+            byte[] byteVal = {val};
         program.memorySave(addr.intValue(), byteVal);
+        }
         program.disposeWord(addr);
         program.disposeWord(value);
         program.step();
@@ -1707,6 +1765,8 @@ public class VM {
             case OpCodes.OP_RETURNDATACOPY: doRETURNDATACOPY();
             break;
             case OpCodes.OP_GASPRICE: doGASPRICE();
+            break;
+            case OpCodes.OP_LASTEVENTBLOCKNUMBER: doLASTEVENTBLOCKNUMBER();
             break;
 
             /**

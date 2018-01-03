@@ -19,11 +19,9 @@
 package co.rsk.core;
 
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.core.bc.EventInfoItem;
 import org.ethereum.core.*;
-import org.ethereum.db.BlockInformation;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.TransactionInfo;
+import org.ethereum.db.*;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -42,6 +40,16 @@ public class BlockchainDummy implements Blockchain {
 
     @Override
     public Block getBlockByNumber(long blockNr) {
+        return null;
+    }
+
+    @Override
+    public List<EventInfoItem> getEventsByBlockHash(byte[] hash) {
+        return null;
+    }
+
+    @Override
+    public List<EventInfoItem> getEventsByBlockNumber(long blockNr) {
         return null;
     }
 
@@ -127,6 +135,9 @@ public class BlockchainDummy implements Blockchain {
 
     @Override
     public ReceiptStore getReceiptStore() { return null; }
+
+    @Override
+    public EventsStore getEventsStore() { return null; }
 
     @Override
     public Repository getRepository() { return null; }

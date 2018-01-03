@@ -575,6 +575,8 @@ public class OpCodes {
     static final byte OP_TXINDEX = (byte)0xaa;
     static final byte OP_CODEREPLACE =(byte)0xab;
 
+    static final byte OP_LASTEVENTBLOCKNUMBER =(byte)0xac  ;
+
     /**
      * (0xf0) Create a new account with associated code
      */

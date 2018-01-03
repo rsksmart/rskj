@@ -84,6 +84,15 @@ public class Program {
     //Max size for stack checks
     private static final int MAX_STACKSIZE = 1024;
 
+    private DataWord configurationRegister = new DataWord();
+
+    // The configuration memory offset is 0x80...00. it was previously set to 0xff..ff but
+    // i was changed because:
+    // 1. A buggy contract may underflow the word and access the moemry position 0xff.ff by error.
+    // 2. There is a standard Eth test case that specifically tests for out-of-bounds at 0xff..ff
+    // The only drawback it that it takes more gas to load 0x80..00 than to load 0xff..ff
+    public static final DataWord CONFIG_MEMORY_OFFSET = new DataWord().setByte(0,(byte) 0x80);
+
     private Transaction transaction;
 
     private ProgramInvoke invoke;
@@ -215,6 +224,25 @@ public class Program {
     public Program(byte[] ops, ProgramInvoke programInvoke, Transaction transaction) {
         this(ops, programInvoke);
         this.transaction = transaction;
+    }
+
+    // An address less than the base address of the configuration register could have an overlap
+    // with the 32 byte configuration register.
+    // E.g. the address could be 0x7f...ff
+    // However, we do not support this mixed access. All accesses must be iether 0x80..00 exactly
+    // or byte-access within this range.
+    // MSTORE8 accesses are allowed starting from 0x80..00 to 0x80..0x1f
+
+    public static boolean isExactMatchInternalConfigurationRegister(DataWord addr) {
+        // Internal configuration memory is stored in CONFIG_MEMORY_OFFSET.
+        return addr.equalValue(CONFIG_MEMORY_OFFSET);
+    }
+
+    public static boolean isByteInsideInternalConfigurationRegister(DataWord addr) {
+        // These checks should be faster than greater/lower range tests.
+        if (!addr.equalsByteRange(0,30,CONFIG_MEMORY_OFFSET)) return false;
+        if ((addr.getByte(31) | 0x1f) !=0x1f) return false;
+        return true;
     }
 
     public static void setUseDataWordPool(Boolean value) {
@@ -470,6 +498,35 @@ public class Program {
         return memory.size();
     }
 
+
+    public boolean isEventModeLoggingSet() {
+        // Lowest bit of highest byte
+        return (configurationRegister.getByte(00) & 0x01)!=0;
+    }
+
+    public DataWord getConfigurationRegister() {
+        return configurationRegister.clone();
+    }
+
+    public void setConfigurationRegisterByte(int offset,byte val) {
+        configurationRegister.setByte(offset,val);
+    }
+
+    public int byteAsUnisgnedToInt(byte v) {
+        if (v<0) return (256+v);
+        return v;
+    }
+
+    public int getOffsetInInternalConfigurationRegister(DataWord addr) {
+        // Assumes the addr is effectively in the register memory space
+        // NOTE: This assumes a specific postion of the configuration regiter
+        return byteAsUnisgnedToInt(addr.getByte(31));
+    }
+
+    public void setConfigurationRegister(DataWord value) {
+        configurationRegister.assign(value);
+    }
+
     public void memorySave(DataWord addrB, DataWord value) {
         //
         memory.write(addrB.intValue(), value.getData(), value.getData().length, false);
@@ -708,6 +765,7 @@ public class Program {
             track.commit();
             getResult().addDeleteAccounts(programResult.getDeleteAccounts());
             getResult().addLogInfos(programResult.getLogInfoList());
+            getResult().addEventInfos(result.getEventInfoItemList());
 
             // IN SUCCESS PUSH THE ADDRESS INTO THE STACK
             stackPush(new DataWord(newAddress));
@@ -1046,6 +1104,12 @@ public class Program {
         }
     }
 
+    public DataWord getLastEventBlockNumber() {
+        long lebn = getStorage().getBlockNumberOfLastEvent(getOwnerAddressLast20Bytes());
+        return new DataWord(lebn);
+    }
+
+
     public DataWord getBalance(DataWord address) {
         BigInteger balance = getStorage().getBalance(address.getLast20Bytes());
         return new DataWord(balance.toByteArray());
@@ -1071,8 +1135,17 @@ public class Program {
             return invoke.getCallValue().clone();
     }
 
+   // Optimization, returns a reference to the CallValue object.
+    // Use only for read access.
+    public DataWord getCallValueReadOnly() {
+        return invoke.getCallValue();
+    }
     public DataWord getDataSize() {
         return invoke.getDataSize().clone();
+    }
+
+    public DataWord getDataSizeReadOnly() {
+        return invoke.getDataSize();
     }
 
     public DataWord getDataValue(DataWord index) {
@@ -1104,7 +1177,11 @@ public class Program {
     }
 
     public DataWord getTransactionIndex() {
-        return invoke.getTransactionIndex().clone();
+        return new DataWord(invoke.getTransactionIndex());
+    }
+
+    public int getTransactionIndexAsInt() {
+        return invoke.getTransactionIndex();
     }
 
     public DataWord getDifficulty() {
@@ -1419,6 +1496,13 @@ public class Program {
 
         byte[] copiedData = Arrays.copyOfRange(returnDataBuffer, off.intValueSafe(), Math.toIntExact(endPosition));
         return Optional.of(copiedData);
+
+    }
+
+    public void markBlockNumberOfLastEvent() {
+        // This can be optimized by replacing invoke.getNumber().longValueCheck() by invoke.getNumberAsLong() and allow
+        // invoke to keep the value as long internally.
+        getStorage().setBlockNumberOfLastEvent(getOwnerAddressLast20Bytes(),invoke.getNumber().longValueCheck());
     }
 
     static class ByteCodeIterator {

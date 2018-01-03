@@ -364,8 +364,10 @@ public class MinerManagerTest {
 
     private static class RskImplForTest extends RskImpl {
         public RskImplForTest() {
-            super(null, null, null,
-                    null, null, null, null, null, null, null);
+            super(null, null, null, null, null,
+                    null, null,
+                    null, null, null,
+                    null);
         }
     }
 }

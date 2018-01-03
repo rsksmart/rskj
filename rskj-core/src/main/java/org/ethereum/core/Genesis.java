@@ -68,7 +68,9 @@ public class Genesis extends Block {
         super(parentHash, unclesHash, coinbase, logsBloom, difficulty,
                 number, ByteUtil.longToBytesNoLeadZeroes(gasLimit), gasUsed, timestamp, extraData,
                 mixHash, nonce, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, null, null, minimumGasPrice);
+                bitcoinMergedMiningCoinbaseTransaction,
+                EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
+                null, null, minimumGasPrice);
     }
 
     public static Block getInstance(SystemProperties config) {

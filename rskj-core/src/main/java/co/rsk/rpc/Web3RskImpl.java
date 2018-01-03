@@ -21,6 +21,8 @@ package co.rsk.rpc;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
+import co.rsk.core.bc.EventInfo;
+import co.rsk.core.bc.EventInfoItem;
 import co.rsk.mine.*;
 import co.rsk.rpc.exception.JsonRpcSubmitBlockException;
 import co.rsk.rpc.modules.eth.EthModule;
@@ -29,6 +31,8 @@ import co.rsk.scoring.PeerScoringManager;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
@@ -38,6 +42,8 @@ import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3Impl;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -46,9 +52,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
 /**
  * Created by adrian.eidelman on 3/11/2016.
@@ -166,4 +173,178 @@ public class Web3RskImpl extends Web3Impl {
         return Hex.toHexString(input).substring(56,64);
     }
 
+    public static class Filter {
+        abstract static class FilterEvent {
+            public abstract Object getJsonEventObject();
+        }
+
+        List<FilterEvent> events = new ArrayList<>();
+
+        public synchronized boolean hasNew() {
+            return !events.isEmpty();
+        }
+
+        public synchronized Object[] poll() {
+            Object[] ret = new Object[events.size()];
+            for (int i = 0; i < ret.length; i++) {
+                ret[i] = events.get(i).getJsonEventObject();
+            }
+            this.events.clear();
+            return ret;
+        }
+
+        protected synchronized void add(FilterEvent evt) {
+            events.add(evt);
+        }
+
+        public void newBlockReceived(Block b,List<EventInfoItem> events) {
+        }
+
+        public void newPendingTx(Transaction tx) {
+            // add TransactionReceipt for PendingTx
+        }
+    }
+    class JsonEventFilter extends Filter {
+        class EventFilterEvent extends FilterEvent {
+            private final EventFilterElement el;
+
+            EventFilterEvent(EventFilterElement el) {
+                this.el = el;
+            }
+
+            @Override
+            public EventFilterElement getJsonEventObject() {
+                return el;
+            }
+        }
+
+        EventFilter eventFilter;
+        boolean onNewBlock;
+        boolean onPendingTx;
+
+        public JsonEventFilter(EventFilter eventFilter) {
+            this.eventFilter = eventFilter;
+        }
+
+        void onEventMatch(EventInfo eventInfo, Block b, int txIndex, Transaction tx) {
+            add(new JsonEventFilter.EventFilterEvent(new EventFilterElement(eventInfo, b, txIndex, tx)));
+        }
+
+        void onEventInfoItem(EventInfoItem e, Block b) {
+            int txIndex = e.getEventInfo().getTxIndex();
+            if (eventFilter.matchBloom(e.getBloomFilter())) {
+                EventInfo eventInfo = e.getEventInfo();
+                if (eventFilter.matchesExactly(eventInfo)) {
+                        onEventMatch(e.getEventInfo(), b, txIndex, b.getTransactionsList().get(txIndex));
+                    }
+                }
+        }
+
+
+        void onBlock(Block b, List<EventInfoItem> events) {
+            if (eventFilter.matchBloom(new Bloom(b.getLogBloom()))) {
+                for (EventInfoItem e : events) {
+                    if (eventFilter.matchesContractAddress(e.getAddress())) {
+                        onEventInfoItem(e, b);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void newBlockReceived(Block b, List<EventInfoItem> events) {
+            if (onNewBlock) {
+                onBlock(b,events);
+            }
+        }
+
+        @Override
+        public void newPendingTx(Transaction tx) {
+            //empty method
+        }
+    }
+
+    AtomicInteger filterCounter = new AtomicInteger(1);
+    Map<Integer, Filter> installedFilters = new Hashtable<>();
+
+    //@Override
+    public String eth_newEventFilter(FilterRequest fr) throws Exception {
+        String str = null;
+        try {
+            EventFilter eventFilter = new EventFilter();
+
+            if (fr.address instanceof String) {
+                eventFilter.withContractAddress(stringHexToByteArray((String) fr.address));
+            } else if (fr.address instanceof Collection<?>) {
+                Collection<?> iterable = (Collection<?>)fr.address;
+
+                byte[][] addresses = iterable.stream()
+                        .filter(String.class::isInstance)
+                        .map(String.class::cast)
+                        .map(TypeConverter::stringHexToByteArray)
+                        .toArray(byte[][]::new);
+
+                eventFilter.withContractAddress(addresses);
+            }
+
+            if (fr.topics != null) {
+                for (Object topic : fr.topics) {
+                    if (topic == null) {
+                        eventFilter.withTopic(null);
+                    } else if (topic instanceof String) {
+                        eventFilter.withTopic(new DataWord(stringHexToByteArray((String) topic)).getData());
+                    } else if (topic instanceof Collection<?>) {
+                        Collection<?> iterable = (Collection<?>)topic;
+
+                        byte[][] topics = iterable.stream()
+                                .filter(String.class::isInstance)
+                                .map(String.class::cast)
+                                .map(TypeConverter::stringHexToByteArray)
+                                .map(DataWord::new)
+                                .map(DataWord::getData)
+                                .toArray(byte[][]::new);
+
+                        eventFilter.withTopic(topics);
+                    }
+                }
+            }
+
+            JsonEventFilter filter = new JsonEventFilter(eventFilter);
+
+            int id;
+
+            synchronized (filterLock) {
+                id = filterCounter.getAndIncrement();
+                installedFilters.put(id, filter);
+            }
+
+            Block blockFrom = fr.fromBlock == null ? null : getBlockByNumberOrStr(fr.fromBlock);
+            Block blockTo = fr.toBlock == null ? null : getBlockByNumberOrStr(fr.toBlock);
+
+            if (blockFrom != null) {
+                // need to add historical data
+                blockTo = blockTo == null ? this.blockchain.getBestBlock() : blockTo;
+                for (long blockNum = blockFrom.getNumber(); blockNum <= blockTo.getNumber(); blockNum++) {
+                    filter.onBlock(this.blockchain.getBlockByNumber(blockNum),
+                            this.blockchain.getEventsByBlockNumber(blockNum));
+                }
+            }
+
+            // the following is not precisely documented
+            if ("pending".equalsIgnoreCase(fr.fromBlock) || "pending".equalsIgnoreCase(fr.toBlock)) {
+                filter.onPendingTx = true;
+            } else if ("latest".equalsIgnoreCase(fr.fromBlock) || "latest".equalsIgnoreCase(fr.toBlock)) {
+                filter.onNewBlock = true;
+            }
+
+            // RSK brute force
+            filter.onNewBlock = true;
+
+            return str = TypeConverter.toJsonHex(id);
+        } finally {
+            if (logger.isDebugEnabled()) {
+                logger.debug("eth_newEventFilter(" + fr + "): " + str);
+            }
+        }
+    }
 }

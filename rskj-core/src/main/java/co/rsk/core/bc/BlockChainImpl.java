@@ -28,10 +28,7 @@ import co.rsk.validators.BlockValidator;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.BlockInformation;
-import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.TransactionInfo;
+import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.RLP;
@@ -84,6 +81,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     private final Repository repository;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
+    private final EventsStore eventsStore;
     private PendingState pendingState;
     private EthereumListener listener;
     private final AdminInfo adminInfo;
@@ -101,6 +99,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     public BlockChainImpl(Repository repository,
                           BlockStore blockStore,
                           ReceiptStore receiptStore,
+                          EventsStore eventsStore,
                           PendingState pendingState,
                           EthereumListener listener,
                           AdminInfo adminInfo,
@@ -109,6 +108,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         this.repository = repository;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
+        this.eventsStore =eventsStore;
         this.listener = listener;
         this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
@@ -433,7 +433,19 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public Block getBlockByNumber(long number) { return blockStore.getChainBlockByNumber(number); }
+    public Block getBlockByNumber(long number) {
+        return blockStore.getChainBlockByNumber(number);
+    }
+
+    @Override
+    public List<EventInfoItem> getEventsByBlockNumber(long blockNr) {
+        return eventsStore.get(blockStore.getBlockHashByNumber(blockNr));
+    }
+
+    @Override
+    public List<EventInfoItem> getEventsByBlockHash(byte[] hash) {
+        return eventsStore.get(hash);
+    }
 
     @Override
     public void setBestBlock(Block block) {
@@ -507,6 +519,9 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     @Override
     public ReceiptStore getReceiptStore() { return receiptStore; }
 
+    @Override
+    public EventsStore getEventsStore() { return eventsStore; }
+
     private void switchToBlockChain(Block block, BigInteger totalDifficulty) {
         synchronized (accessLock) {
             storeBlock(block, totalDifficulty, true);
@@ -537,6 +552,16 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         receiptStore.saveMultiple(block.getHash(), result.getTransactionReceipts());
     }
 
+    private void saveEvents(Block block, BlockResult result) {
+        if (result == null)
+            return;
+
+        if (result.getEvents().isEmpty())
+            return;
+
+        eventsStore.save(block.getHash(), result.getEvents().getList());
+    }
+
     private void processBest(final Block block) {
         EventDispatchThread.invokeLater(() -> pendingState.processBest(block));
     }
@@ -544,7 +569,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     private void onBlock(Block block, BlockResult result) {
         if (result != null && listener != null) {
             listener.trace(String.format("Block chain size: [ %d ]", this.getSize()));
-            listener.onBlock(block, result.getTransactionReceipts());
+            listener.onBlock(block, result.getTransactionReceipts(),result.getEvents().getList());
         }
     }
 
@@ -580,16 +605,6 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts) {
-        Trie receiptsTrie = new TrieImpl();
-
-        if (receipts == null || receipts.isEmpty()) {
-            return HashUtil.EMPTY_TRIE_HASH;
-        }
-
-        for (int i = 0; i < receipts.size(); i++) {
-            receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
-        }
-
-        return receiptsTrie.getHash();
+        return BlockResult.calculateReceiptsTrie(receipts);
     }
 }

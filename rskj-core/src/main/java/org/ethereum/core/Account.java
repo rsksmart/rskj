@@ -20,6 +20,13 @@
 package org.ethereum.core;
 
 import org.ethereum.crypto.ECKey;
+import org.spongycastle.util.encoders.Hex;
+
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Representation of an actual account or contract.
@@ -40,5 +47,9 @@ public class Account {
 
     public byte[] getAddress() {
         return address;
+    }
+
+    public String toString() {
+        return Hex.toHexString(getAddress());
     }
 }

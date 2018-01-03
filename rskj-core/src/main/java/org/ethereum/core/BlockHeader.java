@@ -62,6 +62,14 @@ public class BlockHeader implements SerializableObject {
      * list portion, the trie is populate by [key, val] --> [rlp(index), rlp(tx_recipe)]
      * of the block */
     private byte[] receiptTrieRoot;
+
+    /* The SHA3 256-bit hash of the root node of the trie structure
+    * populated with each contract log in the transaction recipes
+    * list portion, the trie is populate by
+    *[key, val] --> [rlp(srcTxIndex,logNum), rlp(LogInfo)]
+    * of the block */
+    private byte[] eventsRoot;
+
     /* The bloom filter for the logs of the block */
     private byte[] logsBloom;
     /* A scalar value corresponding to the difficulty level of this block.
@@ -143,10 +151,29 @@ public class BlockHeader implements SerializableObject {
 
         int r = 15;
 
-        if ((rlpHeader.size() == 19) || (rlpHeader.size() == 16)) {
+        // possible sizes with the uncleCount field
+        // size 19 is with 3 bitcoinMergeMining fields
+        // size 16 is without bitcoinMergeMining fields
+        // size 20 is with contractsLog + 3 bitcoinMergeMining fields
+        // size 17 is with contractsLog  but without bitcoinMergeMining fields
+        // This size checks are only for compatibility with the current testnet
+        // they must be removed for the production relelease
+        int rlpHdrSize =rlpHeader.size();
+        if (( rlpHdrSize== 19) ||
+                (rlpHdrSize == 16) ||
+                (rlpHdrSize == 20) ||
+                (rlpHdrSize == 17)
+                ) {
             byte[] ucBytes = rlpHeader.get(r++).getRLPData();
             this.uncleCount = parseBigInteger(ucBytes).intValueExact();
         }
+
+        if ((rlpHdrSize  == 20) || (rlpHdrSize  == 17)) {
+            this.eventsRoot = rlpHeader.get(r++).getRLPData();
+         }
+
+        if (this.eventsRoot == null)
+            this.eventsRoot = EMPTY_TRIE_HASH;
 
         if (rlpHeader.size() > r) {
             this.bitcoinMergedMiningHeader = rlpHeader.get(r++).getRLPData();
@@ -189,6 +216,7 @@ public class BlockHeader implements SerializableObject {
         this.stateRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
         this.minimumGasPrice = minimumGasPrice;
         this.receiptTrieRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
+        this.eventsRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
         this.uncleCount = uncleCount;
         this.paidFees = BigInteger.ZERO;
         this.bitcoinMergedMiningHeader = bitcoinMergedMiningHeader;
@@ -273,8 +301,16 @@ public class BlockHeader implements SerializableObject {
         this.receiptTrieRoot = receiptTrieRoot;
     }
 
+    public void setEventsRoot(byte[] eventsRoot) {
+        this.eventsRoot = eventsRoot;
+    }
+
     public byte[] getReceiptsRoot() {
         return receiptTrieRoot;
+    }
+
+    public byte[] getEventsRoot() {
+        return eventsRoot;
     }
 
     public void setTransactionsRoot(byte[] stateRoot) {
@@ -455,6 +491,10 @@ public class BlockHeader implements SerializableObject {
 
         byte[] uncleCount = RLP.encodeBigInteger(BigInteger.valueOf(this.uncleCount));
         fieldToEncodeList.add(uncleCount);
+
+        if (eventsRoot == null) this.eventsRoot = EMPTY_TRIE_HASH;
+        byte[] contractsLogRoot = RLP.encodeElement(this.eventsRoot);
+        fieldToEncodeList.add(contractsLogRoot);
 
         if (withMergedMiningFields && hasMiningFields()) {
             byte[] bitcoinMergedMiningHeader = RLP.encodeElement(this.bitcoinMergedMiningHeader);

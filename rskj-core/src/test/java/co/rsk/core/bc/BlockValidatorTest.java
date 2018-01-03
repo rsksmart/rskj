@@ -403,6 +403,8 @@ public class BlockValidatorTest {
     }
 
     @Test
+    // This test is bad and worthless. It is not checking the result of tryToConnect(genesis)
+    // tryToConnect(genesis) is failing.
     public void invalidPOWUncles() {
         IndexedBlockStore store = new IndexedBlockStore();
         store.init(new HashMap<>(), new HashMapDB(), null);
@@ -490,7 +492,7 @@ public class BlockValidatorTest {
 
         Block genesis = blockGenerator.getGenesisBlock();
         Block uncle1a = blockGenerator.createChildBlock(new SimpleBlock(null, null, new byte[]{12, 12}, null, BigInteger.ONE.toByteArray(),
-                0, null, 0L, 0L, new byte[]{}, null, null, null, Block.getTxTrie(null).getHash(), null, null, null));
+                0, null, 0L, 0L, new byte[]{}, null, null, null,null, Block.getTxTrie(null).getHash(), null, null, null));
 
         List<BlockHeader> uncles1 = new ArrayList<>();
         uncles1.add(uncle1a.getHeader());

@@ -109,6 +109,12 @@ public class BlockChainBuilder {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
+        KeyValueDataSource eds = new HashMapDB();
+        eds.init();
+        EventsStore eventsStore = new EventsStoreImpl(eds);
+
+
+
         if (txinfos != null && !txinfos.isEmpty())
             for (TransactionInfo txinfo : txinfos)
                 receiptStore.add(txinfo.getBlockHash(), txinfo.getIndex(), txinfo.getReceipt());
@@ -125,7 +131,7 @@ public class BlockChainBuilder {
         if (this.adminInfo == null)
             this.adminInfo = new AdminInfo();
 
-        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, null, listener, this.adminInfo, blockValidator, RskSystemProperties.CONFIG);
+        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, eventsStore, null,listener, this.adminInfo, blockValidator, RskSystemProperties.CONFIG);
 
         if (this.testing && this.rsk) {
             blockChain.setBlockValidator(new DummyBlockValidator());

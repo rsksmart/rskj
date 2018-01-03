@@ -81,6 +81,7 @@ public class NodeMessageHandlerTest {
         SimpleMessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, scoring, new ProofOfWorkRule(RskSystemProperties.CONFIG));
         Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);

@@ -32,10 +32,7 @@ import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.db.IndexedBlockStore;
-import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.db.*;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.FastByteComparisons;
@@ -790,7 +787,7 @@ public class BlockChainImplTest {
 
     @Test
     public void createWithoutArgumentsAndUnusedMethods() {
-        BlockChainImpl blockChain = new BlockChainImpl(null, null, null, null, null, null, new DummyBlockValidator(), RskSystemProperties.CONFIG);
+        BlockChainImpl blockChain = new BlockChainImpl(null, null, null, null,null, null, null, new DummyBlockValidator(), RskSystemProperties.CONFIG);
         blockChain.setExitOn(0);
         blockChain.close();
     }
@@ -900,11 +897,15 @@ public class BlockChainImplTest {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
+        KeyValueDataSource dsp = new HashMapDB();
+        dsp.init();
+        EventsStore eventsStore = new EventsStoreImpl(dsp);
+
         AdminInfo adminInfo = new SimpleAdminInfo();
 
         EthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
 
-        BlockChainImpl blockChain = new BlockChainImpl(repository, blockStore, receiptStore, null, listener, adminInfo, blockValidator, RskSystemProperties.CONFIG);
+        BlockChainImpl blockChain = new BlockChainImpl(repository, blockStore, receiptStore, null, null,listener, adminInfo, blockValidator, RskSystemProperties.CONFIG);
         PendingStateImpl pendingState = new PendingStateImpl(blockChain, repository, null, null, listener, RskSystemProperties.CONFIG, 10, 100);
         pendingState.init();
         blockChain.setPendingState(pendingState);

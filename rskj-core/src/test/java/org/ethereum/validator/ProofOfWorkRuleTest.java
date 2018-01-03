@@ -18,7 +18,6 @@
  */
 
 package org.ethereum.validator;
-
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.config.RskMiningConstants;
@@ -121,7 +120,6 @@ public class ProofOfWorkRuleTest {
 
         // mined block
         Block b = mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(blockGenerator.getBlock(1), bytes);
-
         Assert.assertFalse(rule.isValid(b));
     }
 

@@ -20,12 +20,15 @@ package co.rsk.vm;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockResult;
+import co.rsk.core.bc.EventInfoItem;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -50,8 +53,7 @@ public class MinerHelper {
     @Autowired
     protected Repository repository;
 
-    @Autowired
-    ProgramInvokeFactory programInvokeFactory;
+    ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
 
 
 
@@ -59,6 +61,8 @@ public class MinerHelper {
     long totalGasUsed = 0;
     BigInteger totalPaidFees = BigInteger.ZERO;
     List<TransactionReceipt> txReceipts;
+    List<EventInfoItem> events;
+
     private GasLimitCalculator gasLimitCalculator;
 
     public MinerHelper(Repository repository , Blockchain blockchain) // , BlockStore blockStore)
@@ -74,6 +78,7 @@ public class MinerHelper {
         totalGasUsed = 0;
         totalPaidFees = BigInteger.ZERO;
         txReceipts = new ArrayList<>();
+        events = new ArrayList<>();
 
         //Repository originalRepo  = ((Repository) ethereum.getRepository()).getSnapshotTo(parent.getStateRoot());
 
@@ -94,13 +99,13 @@ public class MinerHelper {
             logger.error("Strange state in block {} {}", block.getNumber(), Hex.toHexString(block.getHash()));
             panicProcessor.panic("minerserver", String.format("Strange state in block %d %s", block.getNumber(), Hex.toHexString(block.getHash())));
         }
-
-        int txindex = 0;
-
+        int i=0;
         for (Transaction tx : block.getTransactionsList()) {
 
-            TransactionExecutor executor = new TransactionExecutor(tx, txindex++, block.getCoinbase(),
-                    track, blockStore, blockchain.getReceiptStore(),
+            TransactionExecutor executor = new TransactionExecutor(tx, i, block.getCoinbase(),
+                    track, blockStore,
+                    blockchain.getReceiptStore(),
+                    blockchain.getEventsStore(),
                     programInvokeFactory, block, new EthereumListenerAdapter(), totalGasUsed);
 
             executor.init();
@@ -125,7 +130,11 @@ public class MinerHelper {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(executor.getVMLogs());
 
+            if (executor.getVMEvents()!=null)
+                events.addAll(executor.getVMEvents());
+
             txReceipts.add(receipt);
+            i++;
 
         }
     }
@@ -134,12 +143,17 @@ public class MinerHelper {
         processBlock(newBlock, parent);
 
         newBlock.getHeader().setReceiptsRoot(BlockChainImpl.calcReceiptsTrie(txReceipts));
+        newBlock.getHeader().setEventsRoot(BlockResult.calculateEventsTrie(events));
         newBlock.getHeader().setStateRoot(latestStateRootHash);
         newBlock.getHeader().setGasUsed(totalGasUsed);
 
         Bloom logBloom = new Bloom();
         for (TransactionReceipt receipt : txReceipts) {
             logBloom.or(receipt.getBloomFilter());
+        }
+
+        for (EventInfoItem item : events) {
+            logBloom.or(item.getBloomFilter());
         }
 
         newBlock.getHeader().setLogsBloom(logBloom.getData());
