@@ -7,7 +7,6 @@ import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.ECKey;
-import org.spongycastle.math.ec.ECPoint;
 import org.spongycastle.util.encoders.Hex;
 
 import java.time.Instant;
@@ -21,8 +20,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
     BridgeMainNetConstants() {
         btcParamsString = NetworkParameters.ID_MAINNET;
 
-        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("044c532bcd5454f0eb8dd5f6caa9b0bffe91a5918cc45225e41d3d509de9ee0cc755033c6070103fc41a8551d8d765b7126e582cac099283fb177e410c24df25ea"));
-        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("041aabbeb9b27258f98c2bf21f36677ae7bae09eb2d8c958ef41a20a6e88626d261f17f8ec02af309b7b50c06e2baa05a57166266e038a0a7dce7b70386e8260a3"));
+        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("024c532bcd5454f0eb8dd5f6caa9b0bffe91a5918cc45225e41d3d509de9ee0cc7"));
+        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("031aabbeb9b27258f98c2bf21f36677ae7bae09eb2d8c958ef41a20a6e88626d26"));
 
         /*
         BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0206262e6bb2dceea515f77fae4928d87002a04b72f721034e1d4fbf3d84b16c72"));
