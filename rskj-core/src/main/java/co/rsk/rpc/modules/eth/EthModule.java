@@ -18,9 +18,16 @@
 
 package co.rsk.rpc.modules.eth;
 
+import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeStateReader;
+import co.rsk.peg.BridgeSupport;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Repository;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
@@ -62,15 +69,21 @@ public class EthModule
         return ethModuleWallet.accounts();
     }
 
-    public Map<String, Object> bridgeState() throws IOException {
-        Web3.CallArguments arguments = new Web3.CallArguments();
-        arguments.to = "0x" + PrecompiledContracts.BRIDGE_ADDR;
-        arguments.data = Hex.toHexString(Bridge.GET_STATE_FOR_DEBUGGING.encodeSignature());
-        arguments.gasPrice = "0x0";
-        arguments.value = "0x0";
-        arguments.gas = "0x3dc6c0";
-        ProgramResult res = eth.callConstant(arguments);
-        BridgeState state = BridgeStateReader.readSate(TypeConverter.removeZeroX(toJsonHex(res.getHReturn())));
+    public Map<String, Object> bridgeState(Blockchain blockchain) throws IOException, BlockStoreException {
+        Block block = blockchain.getBestBlock();
+        Repository repository = blockchain.getRepository().getSnapshotTo(block.getStateRoot()).startTracking();
+
+        BridgeSupport bridgeSupport = new BridgeSupport(
+                repository,
+                PrecompiledContracts.BRIDGE_ADDR,
+                block,
+                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
+                null);
+
+        byte[] result = bridgeSupport.getStateForDebugging();
+
+        BridgeState state = BridgeStateReader.readSate(TypeConverter.removeZeroX(toJsonHex(result)));
+
         return state.stateToMap();
     }
 
