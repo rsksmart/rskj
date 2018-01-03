@@ -41,7 +41,4 @@ public interface TxFilter {
      * @return Relayable transactions based on the logic of the given filter
      */
     List<Transaction> filter(AccountState state, TxsPerAccount tpa, Block block);
-
-    List<Transaction> filter(AccountState state, TxsPerAccount tpa);
-
 }

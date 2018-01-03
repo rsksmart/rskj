@@ -35,11 +35,6 @@ import java.util.List;
 public class TxFilterAccumCostFilter implements TxFilter {
 
     @Override
-    public List<Transaction> filter(AccountState state, TxsPerAccount tpa) {
-        return this.filter(state, tpa, null);
-    }
-
-    @Override
     public List<Transaction> filter(AccountState state, TxsPerAccount tpa, Block block) {
         BigInteger accumTxCost = BigInteger.valueOf(0);
 
