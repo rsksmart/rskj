@@ -37,7 +37,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         BtcECKey federator14PublicKey = BtcECKey.fromPublicOnly(Hex.decode("04b65694ccccda83cbb1e56b31308acd08e993114c33f66a456b627c2c1c68bed605847b01ee22e2ee5014f547283a872d5ffb728802ec83e3761da32c4a01e705"));
 
         List<BtcECKey> genesisFederationPublicKeys = Lists.newArrayList(
-                federator0PublicKey, federator1PublicKey , federator2PublicKey,
+                federator0PublicKey, federator1PublicKey, federator2PublicKey,
                 federator3PublicKey, federator4PublicKey, federator5PublicKey,
                 federator6PublicKey, federator7PublicKey, federator8PublicKey,
                 federator9PublicKey, federator10PublicKey, federator11PublicKey,
