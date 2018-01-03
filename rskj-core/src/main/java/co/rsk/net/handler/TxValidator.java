@@ -87,7 +87,7 @@ class TxValidator {
             boolean valid = true;
 
             for (TxValidatorStep step : validatorSteps) {
-                if (!step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost)) {
+                if (!step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0)) {
                     valid = false;
                     break;
                 }

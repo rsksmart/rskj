@@ -29,7 +29,7 @@ import java.math.BigInteger;
 public class TxValidatorAccountStateValidator implements TxValidatorStep {
 
     @Override
-    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber, long basicTxCost) {
+    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         return !state.isDeleted();
     }
 

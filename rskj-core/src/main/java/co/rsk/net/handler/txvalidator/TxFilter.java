@@ -37,8 +37,11 @@ public interface TxFilter {
      * @param tx the new transaction
      * @param state the current account state
      * @param tpa old checked txs for this account
+     * @param block block used to consider basic tx cost
      * @return Relayable transactions based on the logic of the given filter
      */
     List<Transaction> filter(AccountState state, TxsPerAccount tpa, Block block);
+
+    List<Transaction> filter(AccountState state, TxsPerAccount tpa);
 
 }
