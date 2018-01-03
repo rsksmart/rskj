@@ -1,6 +1,7 @@
 package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
@@ -16,6 +17,7 @@ import org.ethereum.core.Genesis;
 import org.ethereum.core.ImportResult;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.facade.EthereumImpl;
+import org.ethereum.rpc.TypeConverter;
 import org.ethereum.validator.DifficultyRule;
 import org.junit.After;
 import org.junit.Assert;
@@ -147,6 +149,81 @@ public class MainNetMinerTest {
 
         Mockito.verify(ethereumImpl, Mockito.times(2)).addNewMinedBlock(Mockito.any());
 
+    }
+    /*
+     * This test is much more likely to fail than the
+     * submitBitcoinBlockProofOfWorkNotGoodEnough test. Even then
+     * it should almost never fail.
+     */
+    @Test
+    public void submitBitcoinBlockInvalidBlockDoesntEliminateCache() {
+        /* We need a low, but not too low, target */
+        BlockChainImpl bc = new BlockChainBuilder().build();
+        Genesis gen = (Genesis) BlockChainImplTest.getGenesisBlock(bc);
+        gen.getHeader().setDifficulty(BigInteger.valueOf(300000).toByteArray());
+        bc.setStatus(gen, gen.getCumulativeDifficulty());
+        World world = new World(bc, gen);
+        blockchain = world.getBlockChain();
+
+        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
+        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+
+        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
+        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null,
+                this.blockchain.getPendingState(), blockchain.getRepository(),
+                ConfigUtils.getDefaultMiningConfig(), unclesValidationRule,
+                world.getBlockProcessor(), DIFFICULTY_CALCULATOR,
+                new GasLimitCalculator(RskSystemProperties.CONFIG),
+                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+
+        minerServer.start();
+        MinerWork work = minerServer.getWork();
+
+        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlock(work);
+
+        bitcoinMergedMiningBlock.setNonce(1);
+
+        // Try to submit a block with invalid PoW, this should not eliminate the block from the cache
+        SubmitBlockResult result1 = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+
+        Assert.assertEquals("ERROR", result1.getStatus());
+        Assert.assertNull(result1.getBlockInfo());
+        Mockito.verify(ethereumImpl, Mockito.times(0)).addNewMinedBlock(Mockito.any());
+
+        // Now try to submit the same block, this should work fine since the block remains in the cache
+        findNonce(work, bitcoinMergedMiningBlock);
+
+        SubmitBlockResult result2 = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+
+        Assert.assertEquals("OK", result2.getStatus());
+        Assert.assertNotNull(result2.getBlockInfo());
+        Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+
+        // Finally, submit the same block again and validate that addNewMinedBlock is called again
+        SubmitBlockResult result3 = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+
+        Assert.assertEquals("OK", result3.getStatus());
+        Assert.assertNotNull(result3.getBlockInfo());
+        Mockito.verify(ethereumImpl, Mockito.times(2)).addNewMinedBlock(Mockito.any());
+    }
+
+    private void findNonce(MinerWork work, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
+        BigInteger target = new BigInteger(TypeConverter.stringHexToByteArray(work.getTarget()));
+
+        while (true) {
+            try {
+                // Is our proof of work valid yet?
+                BigInteger blockHashBI = bitcoinMergedMiningBlock.getHash().toBigInteger();
+                if (blockHashBI.compareTo(target) <= 0) {
+                    break;
+                }
+                // No, so increment the nonce and try again.
+                bitcoinMergedMiningBlock.setNonce(bitcoinMergedMiningBlock.getNonce() + 1);
+            } catch (VerificationException e) {
+                throw new RuntimeException(e); // Cannot happen.
+            }
+        }
     }
     private co.rsk.bitcoinj.core.BtcBlock getMergedMiningBlock(MinerWork work) {
         NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
