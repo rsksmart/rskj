@@ -109,7 +109,7 @@ class TxValidator {
             txsPerAccount.getTransactions().add(tx);
 
             for (TxFilter filter : txFilters) {
-                txsPerAccount.setTransactions(filter.filter(state, txsPerAccount));
+                txsPerAccount.setTransactions(filter.filter(state, txsPerAccount, blockchain.getBestBlock()));
             }
 
             acceptedTxs.addAll(txsPerAccount.readyToBeSent(state.getNonce()));
