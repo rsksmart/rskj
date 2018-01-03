@@ -24,7 +24,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 public class PendingStateImplNoCleaner extends PendingStateImpl {
     public PendingStateImplNoCleaner(Blockchain blockChain,
