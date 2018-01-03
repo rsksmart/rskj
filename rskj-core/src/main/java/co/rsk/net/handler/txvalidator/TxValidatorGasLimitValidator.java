@@ -36,7 +36,7 @@ public class TxValidatorGasLimitValidator implements TxValidatorStep {
     private static final Logger logger = LoggerFactory.getLogger("txvalidator");
 
     @Override
-    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber) {
+    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber, long basicTxCost) {
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
 
         if (txGasLimit.compareTo(gasLimit) <= 0 && txGasLimit.compareTo(Constants.getTransactionGasCap()) <= 0) {

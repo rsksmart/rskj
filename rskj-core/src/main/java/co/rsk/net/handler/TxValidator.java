@@ -75,17 +75,19 @@ class TxValidator {
             knownTxs.put(hash, new TxTimestamp(tx, System.currentTimeMillis()));
 
             AccountState state = repository.getAccountState(tx.getSender());
+
             if (state == null) {
                 state = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
             }
             BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(blockchain.getBestBlock().getGasLimit());
             BigInteger minimumGasPrice = BigIntegers.fromUnsignedByteArray(blockchain.getBestBlock().getMinimumGasPrice());
             long bestBlockNumber = blockchain.getBestBlock().getNumber();
+            long basicTxCost = tx.transactionCost(blockchain.getBestBlock());
 
             boolean valid = true;
 
             for (TxValidatorStep step : validatorSteps) {
-                if (!step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber)) {
+                if (!step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost)) {
                     valid = false;
                     break;
                 }

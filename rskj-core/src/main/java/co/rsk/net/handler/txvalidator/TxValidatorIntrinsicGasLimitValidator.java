@@ -29,7 +29,7 @@ import java.math.BigInteger;
 public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
 
     @Override
-    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber) {
+    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber, long basicTxCost) {
         BlockHeader blockHeader = new BlockHeader(new byte[]{},
                 new byte[]{},
                 new byte[]{},

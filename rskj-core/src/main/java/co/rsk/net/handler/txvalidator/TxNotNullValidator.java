@@ -31,7 +31,7 @@ import java.math.BigInteger;
 public class TxNotNullValidator implements  TxValidatorStep {
 
     @Override
-    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber) {
+    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber, long basicTxCost) {
         return tx != null;
     }
 }
