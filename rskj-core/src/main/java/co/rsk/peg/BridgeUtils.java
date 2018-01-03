@@ -177,7 +177,8 @@ public class BridgeUtils {
                (
                        isFromFederateMember(rskTx, bridgeConstants.getGenesisFederation()) ||
                        isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants) ||
-                       isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants)
+                       isFromLockWhitelistChangeAuthorizedSender(rskTx, bridgeConstants) ||
+                       isFromFeePerKbChangeAuthorizedSender(rskTx, bridgeConstants)
                );
     }
 
@@ -192,6 +193,11 @@ public class BridgeUtils {
 
     private static boolean isFromLockWhitelistChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
         AddressBasedAuthorizer authorizer = bridgeConfiguration.getLockWhitelistChangeAuthorizer();
+        return authorizer.isAuthorized(rskTx);
+    }
+
+    private static boolean isFromFeePerKbChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
+        AddressBasedAuthorizer authorizer = bridgeConfiguration.getFeePerKbChangeAuthorizer();
         return authorizer.isAuthorized(rskTx);
     }
 }
