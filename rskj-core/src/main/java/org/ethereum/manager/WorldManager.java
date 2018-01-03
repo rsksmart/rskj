@@ -38,6 +38,7 @@ import org.ethereum.net.client.ConfigCapabilities;
 public interface WorldManager {
 
     void addListener(EthereumListener listener);
+    void removeListener(EthereumListener listener);
 
     Blockchain getBlockchain();
 

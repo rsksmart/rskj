@@ -20,6 +20,7 @@ package co.rsk.mine;
 
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskMiningConstants;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.FamilyUtils;
@@ -34,12 +35,14 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.*;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
+import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.digests.SHA256Digest;
@@ -50,7 +53,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -80,6 +86,18 @@ public class MinerServerImpl implements MinerServer {
     private final BlockExecutor executor;
     private final GasLimitCalculator gasLimitCalculator;
     private final ProofOfWorkRule powRule;
+
+    private boolean isFallbackMining;
+    private int fallbackBlocksGenerated;
+    private Timer fallbackMiningTimer;
+    private Timer refreshWorkTimer;
+    private int millisBetweenFallbackMinedBlocks;
+    private NewBlockListener blockListener;
+
+    private boolean started;
+
+    private byte[] extraData;
+
 
     @GuardedBy("lock")
     private LinkedHashMap<Sha3Hash, Block> blocksWaitingforPoW;
@@ -111,6 +129,8 @@ public class MinerServerImpl implements MinerServer {
 
     private long timeAdjustment;
     private long minimumAcceptableTime;
+    private boolean autoSwitchBetweenNormalAndFallbackMining;
+    private boolean fallbackMiningScheduled;
 
     @Autowired
     public MinerServerImpl(Ethereum ethereum,
@@ -137,12 +157,7 @@ public class MinerServerImpl implements MinerServer {
 
         executor = new BlockExecutor(repository, blockchain, blockStore, null);
 
-        blocksWaitingforPoW = new LinkedHashMap<Sha3Hash, Block>(CACHE_SIZE) {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<Sha3Hash, Block> eldest) {
-                return size() > CACHE_SIZE;
-            }
-        };
+        blocksWaitingforPoW = createNewBlocksWaitingList();
 
         latestPaidFeesWithNotify = BigInteger.ZERO;
         latestParentHash = null;
@@ -150,6 +165,75 @@ public class MinerServerImpl implements MinerServer {
         minFeesNotifyInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
         gasUnitInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
         minerMinGasPriceTarget = toBI(miningConfig.getMinGasPriceTarget());
+
+        // One more second to force continuous reduction in difficulty
+        // TODO(mc) move to MiningConstants
+        millisBetweenFallbackMinedBlocks = (RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getDurationLimit() + 1) * 1000;
+        autoSwitchBetweenNormalAndFallbackMining = !RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BigInteger.ZERO);
+    }
+
+    private LinkedHashMap<Sha3Hash, Block> createNewBlocksWaitingList() {
+        return new LinkedHashMap<Sha3Hash, Block>(CACHE_SIZE)
+        {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<Sha3Hash, Block> eldest) {
+                return size() > CACHE_SIZE;
+            }
+        };
+
+    }
+
+    public int getFallbackBlocksGenerated() {
+        return fallbackBlocksGenerated;
+    }
+
+    public boolean isFallbackMining() {
+        return isFallbackMining;
+    }
+
+    public void setFallbackMiningState() {
+        if (isFallbackMining) {
+            // setFallbackMining() can be called before start
+            if (started) {
+                if (fallbackMiningTimer == null) {
+                    fallbackMiningTimer = new Timer("Private mining timer");
+                }
+                if (!fallbackMiningScheduled) {
+                    fallbackMiningTimer.schedule(new FallbackMiningTask(), millisBetweenFallbackMinedBlocks, millisBetweenFallbackMinedBlocks);
+                    fallbackMiningScheduled = true;
+                }
+            }
+            else {
+                if (fallbackMiningTimer != null) {
+                    fallbackMiningTimer.cancel();
+                    fallbackMiningTimer = null;
+                }
+            }
+        } else {
+            fallbackMiningScheduled = false;
+            if (fallbackMiningTimer != null) {
+                fallbackMiningTimer.cancel();
+                fallbackMiningTimer = null;
+            }
+        }
+    }
+
+    @Override
+    public void setAutoSwitchBetweenNormalAndFallbackMining(boolean p) {
+        autoSwitchBetweenNormalAndFallbackMining = p;
+    }
+
+    public void setFallbackMining(boolean p) {
+        synchronized (lock) {
+            if (isFallbackMining == p) {
+                return;
+            }
+
+            isFallbackMining = p;
+            setFallbackMiningState();
+
+        }
+
     }
 
     @VisibleForTesting
@@ -158,14 +242,139 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @Override
+    public boolean isRunning() {
+        return started;
+    }
+
+    @Override
+    public void stop() {
+        if (!started) {
+            return;
+        }
+
+        synchronized (lock) {
+            started = false;
+            ethereum.removeListener(blockListener);
+            refreshWorkTimer.cancel();
+            refreshWorkTimer = null;
+            setFallbackMiningState();
+        }
+    }
+
+    @Override
     public void start() {
-        ethereum.addListener(new NewBlockListener());
-        buildBlockToMine(blockchain.getBestBlock(), false);
-        new Timer("Refresh work for mining").schedule(new RefreshBlock(), DELAY_BETWEEN_BUILD_BLOCKS_MS, DELAY_BETWEEN_BUILD_BLOCKS_MS);
+        if (started) {
+            return;
+        }
+
+        synchronized (lock) {
+            started = true;
+            blockListener = new NewBlockListener();
+            ethereum.addListener(blockListener);
+            buildBlockToMine(blockchain.getBestBlock(), false);
+
+            if (refreshWorkTimer != null) {
+                refreshWorkTimer.cancel();
+            }
+
+            refreshWorkTimer = new Timer("Refresh work for mining");
+            refreshWorkTimer.schedule(new RefreshBlock(), DELAY_BETWEEN_BUILD_BLOCKS_MS, DELAY_BETWEEN_BUILD_BLOCKS_MS);
+            setFallbackMiningState();
+        }
+    }
+
+    @Nullable
+    public static byte[] readFromFile(String outputFileName) {
+        try {
+            try (FileInputStream fis = new FileInputStream(outputFileName)) {
+                byte[] array = new byte[1024];
+                int r = fis.read(array);
+                array = java.util.Arrays.copyOfRange(array, 0, r);
+                fis.close();
+                return array;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    // TODO: move to configuration
+    static byte[] privKey0 = readFromFile("privkey0.bin");
+    static byte[] privKey1 = readFromFile("privkey1.bin");
+
+    @Override
+    public boolean generateFallbackBlock() {
+        Block newBlock;
+        synchronized (lock) {
+            if (latestBlock == null) {
+                return false;
+            }
+
+            // Iterate and find a block that can be privately mined.
+            Block workingBlock = latestBlock;
+            latestBlock = null; // never reuse
+            newBlock = workingBlock.cloneBlock();
+        }
+
+        boolean isEvenBlockNumber = (newBlock.getNumber() % 2) == 0;
+
+        if (!isEvenBlockNumber && privKey1 == null) {
+            return false;
+        }
+
+        if (isEvenBlockNumber && privKey0 == null) {
+            return false;
+        }
+
+        ECKey privateKey;
+
+        if (isEvenBlockNumber) {
+            privateKey = ECKey.fromPrivate(privKey0);
+        } else {
+            privateKey = ECKey.fromPrivate(privKey1);
+        }
+
+        // fallback mining marker
+        newBlock.setExtraData(new byte[]{42});
+        byte[] signature = fallbackSign(newBlock.getHashForMergedMining(), privateKey);
+
+        newBlock.setBitcoinMergedMiningHeader(signature);
+        newBlock.seal();
+
+        if (!isValid(newBlock)) {
+            String message = "Invalid block supplied by miner: " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber();
+            logger.error(message);
+            return false;
+        } else {
+            ImportResult importResult = ethereum.addNewMinedBlock(newBlock);
+            fallbackBlocksGenerated++;
+            logger.info("Mined block import result is {}: {} {} at height {}", importResult, newBlock.getShortHash(), newBlock.getShortHashForMergedMining(), newBlock.getNumber());
+            return importResult.isSuccessful();
+        }
+
+    }
+
+    private byte[] fallbackSign(byte[] hash, ECKey privKey) {
+        ECKey.ECDSASignature signature = privKey.sign(hash);
+
+        byte vdata = signature.v;
+        byte[] rdata = signature.r.toByteArray();
+        byte[] sdata = signature.s.toByteArray();
+
+        byte[] vencoded = RLP.encodeByte(vdata);
+        byte[] rencoded = RLP.encodeElement(rdata);
+        byte[] sencoded = RLP.encodeElement(sdata);
+
+        return RLP.encodeList(vencoded, rencoded, sencoded);
     }
 
     @Override
     public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
+        return submitBitcoinBlock(blockHashForMergedMining, bitcoinMergedMiningBlock, true);
+    }
+
+
+    public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock, boolean lastTag) {
         logger.debug("Received block with hash {} for merged mining", blockHashForMergedMining);
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningBlock.getTransactions().get(0);
         co.rsk.bitcoinj.core.PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(bitcoinMergedMiningBlock);
@@ -199,7 +408,7 @@ public class MinerServerImpl implements MinerServer {
         logger.info("Received block {} {}", newBlock.getNumber(), Hex.toHexString(newBlock.getHash()));
 
         newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
-        newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(bitcoinMergedMiningCoinbaseTransaction.bitcoinSerialize()));
+        newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(bitcoinMergedMiningCoinbaseTransaction.bitcoinSerialize(), lastTag));
         newBlock.setBitcoinMergedMiningMerkleProof(bitcoinMergedMiningMerkleBranch.bitcoinSerialize());
         newBlock.seal();
 
@@ -231,8 +440,20 @@ public class MinerServerImpl implements MinerServer {
     }
 
     public static byte[] compressCoinbase(byte[] bitcoinMergedMiningCoinbaseTransactionSerialized) {
-        int rskTagPosition = Collections.lastIndexOfSubList(java.util.Arrays.asList(ArrayUtils.toObject(bitcoinMergedMiningCoinbaseTransactionSerialized)),
-                java.util.Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG)));
+        return compressCoinbase(bitcoinMergedMiningCoinbaseTransactionSerialized, true);
+    }
+
+    public static byte[] compressCoinbase(byte[] bitcoinMergedMiningCoinbaseTransactionSerialized, boolean lastOcurrence) {
+        List<Byte> coinBaseTransactionSerializedAsList = java.util.Arrays.asList(ArrayUtils.toObject(bitcoinMergedMiningCoinbaseTransactionSerialized));
+        List<Byte> tagAsList = java.util.Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
+
+        int rskTagPosition;
+        if (lastOcurrence) {
+            rskTagPosition = Collections.lastIndexOfSubList(coinBaseTransactionSerializedAsList, tagAsList);
+        } else {
+            rskTagPosition = Collections.indexOfSubList(coinBaseTransactionSerializedAsList, tagAsList);
+        }
+
         int remainingByteCount = bitcoinMergedMiningCoinbaseTransactionSerialized.length - rskTagPosition - RskMiningConstants.RSK_TAG.length - RskMiningConstants.BLOCK_HEADER_HASH_SIZE;
         if (remainingByteCount > RskMiningConstants.MAX_BYTES_AFTER_MERGED_MINING_HASH) {
             throw new IllegalArgumentException("More than 128 bytes after RSK tag");
@@ -328,6 +549,10 @@ public class MinerServerImpl implements MinerServer {
         return new MinerWork(TypeConverter.toJsonHex(blockMergedMiningHash.getBytes()), TypeConverter.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, TypeConverter.toJsonHex(block.getParentHash()));
     }
 
+    public void setExtraData(byte[] extraData) {
+        this.extraData = extraData;
+    }
+
     /**
      * buildBlockToMine creates a block to mine based on the given block as parent.
      *
@@ -363,6 +588,18 @@ public class MinerServerImpl implements MinerServer {
 
         final Block newBlock = createBlock(newBlockParent, uncles, txs, minimumGasPrice);
 
+        if (autoSwitchBetweenNormalAndFallbackMining) {
+            if (ProofOfWorkRule.isFallbackMiningPossible(
+                    RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants(),
+                    newBlock.getHeader())) {
+
+                setFallbackMining(true);
+            } else {
+                setFallbackMining(false);
+            }
+        }
+
+        newBlock.setExtraData(extraData);
         removePendingTransactions(txsToRemove);
         executor.executeAndFill(newBlock, newBlockParent);
 
@@ -375,12 +612,13 @@ public class MinerServerImpl implements MinerServer {
             }
 
             latestParentHash = parentHash;
-            currentWork = updateGetWork(newBlock, notify);
-
-            latestblockHashWaitingforPoW = new Sha3Hash(newBlock.getHashForMergedMining());
             latestBlock = newBlock;
-            blocksWaitingforPoW.put(latestblockHashWaitingforPoW, latestBlock);
 
+
+            currentWork = updateGetWork(newBlock, notify);
+            latestblockHashWaitingforPoW = new Sha3Hash(newBlock.getHashForMergedMining());
+
+            blocksWaitingforPoW.put(latestblockHashWaitingforPoW, latestBlock);
             logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
         }
 
@@ -532,6 +770,17 @@ public class MinerServerImpl implements MinerServer {
         return validationRules.isValid(newBlock) ? newBlock : new Block(newHeader, txs, null);
     }
 
+    private class FallbackMiningTask extends TimerTask {
+        @Override
+        public void run() {
+            try {
+                generateFallbackBlock();
+            } catch (Throwable th) {
+                logger.error("Unexpected error: {}", th);
+                panicProcessor.panic("mserror", th.getMessage());
+            }
+        }
+    }
     /**
      * RefreshBlocks rebuilds the block to mine.
      */

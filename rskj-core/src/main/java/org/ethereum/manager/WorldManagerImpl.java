@@ -98,6 +98,12 @@ public class WorldManagerImpl implements WorldManager {
     }
 
     @Override
+    public void removeListener(EthereumListener listener) {
+        logger.info("Ethereum listener removed");
+        ((CompositeEthereumListener) this.listener).removeListener(listener);
+    }
+
+    @Override
     public Blockchain getBlockchain() {
         return blockchain;
     }

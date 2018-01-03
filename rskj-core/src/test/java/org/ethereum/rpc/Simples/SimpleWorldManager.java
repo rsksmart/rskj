@@ -58,6 +58,14 @@ public class SimpleWorldManager implements WorldManager {
     }
 
     @Override
+    public void removeListener(EthereumListener listener) {
+        if (this.listener == null) {
+            return;
+        }
+        ((CompositeEthereumListener) this.listener).removeListener(listener);
+    }
+
+    @Override
     public org.ethereum.core.Blockchain getBlockchain() {
         if (blockChain != null)
             return blockChain;

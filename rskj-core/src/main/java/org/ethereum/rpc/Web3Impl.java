@@ -1373,6 +1373,30 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
+    public void evm_fallbackMine() {
+        minerManager.fallbackMineBlock(this.blockchain, minerClient, minerServer);
+        if (logger.isDebugEnabled()) {
+            logger.debug("evm_fallbackMine()");
+        }
+    }
+
+    @Override
+    public void evm_startMining() {
+        minerServer.start();
+        if (logger.isDebugEnabled()) {
+            logger.debug("evm_startMining()");
+        }
+    }
+
+    @Override
+    public void evm_stopMining() {
+        minerServer.stop();
+        if (logger.isDebugEnabled()) {
+            logger.debug("evm_stopMining()");
+        }
+    }
+
+    @Override
     public String evm_increaseTime(String seconds) {
         try {
             long nseconds = stringHexToBigInteger(seconds).longValue();

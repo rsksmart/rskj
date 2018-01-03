@@ -43,8 +43,20 @@ public class Constants {
     private int gasLimitBoundDivisor = 1024;
     private int targetGasLimit = 5000000;
 
+    // Private mining is allowed if difficulty is lower or equal than this value
+    private BigInteger fallbackMiningDifficulty = BigInteger.valueOf((long) 14E15); // 14 peta evert 14 secs = 1 peta/s.
 
-    private BigInteger minimumDifficulty = BigInteger.valueOf(131072);
+    private static long blockPerDay = 24*3600 / 14;
+
+    private long endOfFallbackMiningBlockNumber = blockPerDay*30*6; // Approximately 6 months of private mining fallback, then you're free my child. Fly, fly away.
+
+    // 0.5 peta/s. This means that on reset difficulty will allow private mining.
+    private BigInteger minimumDifficulty = BigInteger.valueOf((long) 14E15 / 2 ); // 0.5 peta/s.
+
+    // Use this to test CPU-mining by Java client:
+    // private BigInteger minimumDifficulty = BigInteger.valueOf((long) 14E4 / 2 ); // 0.005 mega/s.
+
+
     private BigInteger difficultyBoundDivisor = BigInteger.valueOf(2048);
     private int expDifficultyPeriod = 100000;
 
@@ -61,6 +73,10 @@ public class Constants {
 
     private static final byte CHAIN_ID = 30;
 
+    public byte[] fallbackMiningPubKey0 = Hex.decode("04a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7893aba425419bc27a3b6c7e693a24c696f794c2ed877a1593cbee53b037368d7");
+
+    public byte[] fallbackMiningPubKey1 = Hex.decode("04774ae7f858a9411e5ef4246b70c65aac5649980be5c17891bbec17895da008cbd984a032eb6b5e190243dd56d7b7b365372db1e2dff9d6a8301d74c9c953c61b");
+
     public static BigInteger getTransactionGasCap() {
         return TRANSACTION_GAS_CAP;
     }
@@ -73,14 +89,21 @@ public class Constants {
         return MAX_ADDRESS_BYTE_LENGTH;
     }
 
+    // Average Time between blocks
     public int getDurationLimit() {
         return DURATION_LIMIT;
     }
 
-    public BigInteger
-
-    getInitialNonce() {
+    public BigInteger getInitialNonce() {
         return BigInteger.ZERO;
+    }
+
+    public byte[] getFallbackMiningPubKey0() {
+            return fallbackMiningPubKey0;
+    }
+
+    public byte[] getFallbackMiningPubKey1() {
+        return fallbackMiningPubKey1;
     }
 
     public int getMaximumExtraDataSize() {
@@ -98,6 +121,10 @@ public class Constants {
     public BigInteger getMinimumDifficulty() {
         return minimumDifficulty;
     }
+
+    public BigInteger getFallbackMiningDifficulty() { return fallbackMiningDifficulty; }
+
+    public long getEndOfFallbackMiningBlockNumber() { return endOfFallbackMiningBlockNumber; }
 
     public BigInteger getDifficultyBoundDivisor() {
         return difficultyBoundDivisor;

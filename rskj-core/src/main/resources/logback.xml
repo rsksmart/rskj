@@ -16,7 +16,7 @@
             <pattern>%date{yyyy-MM-dd-HH:mm:ss.SSSS} %p [%c{1}]  %m%n</pattern>
         </encoder>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>OFF</level>
+            <level>DEBUG</level>
         </filter>
     </appender>
 

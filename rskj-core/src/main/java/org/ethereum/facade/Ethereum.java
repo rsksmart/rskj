@@ -40,6 +40,8 @@ public interface Ethereum {
 
     void addListener(EthereumListener listener);
 
+    void removeListener(EthereumListener listener);
+
     ImportResult addNewMinedBlock(Block block);
 
     void close();

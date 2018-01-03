@@ -166,6 +166,35 @@ public class MinerClientImpl implements MinerClient {
         return foundNonce;
     }
 
+    @Override
+    public boolean fallbackMineBlock() {
+        // This is not used now. In the future this method could allow
+        // a HSM to provide the signature for an RSK block here.
+
+        if (this.rsk != null) {
+            if (this.rsk.hasBetterBlockToSync()) {
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e1) {
+                }
+                return false;
+            }
+
+            if (this.rsk.isPlayingBlocks()) {
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e1) {
+                }
+                return false;
+            }
+        }
+        if (stop) {
+            logger.info("Interrupted mining because MinerClient was stopped");
+        }
+
+        return minerServer.generateFallbackBlock();
+
+    }
     /**
      * findNonce will try to find a valid nonce for bitcoinMergedMiningBlock, that satisfies the given target difficulty.
      *
