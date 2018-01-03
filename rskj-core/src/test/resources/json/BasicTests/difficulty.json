@@ -5,15 +5,15 @@
         "parentDifficulty" : "10000000000000000",
         "currentTimestamp" : "43",
         "currentBlockNumber" : "42",
-        "currentDifficulty" : "10004882812500000"
+        "currentDifficulty" : "10200000000000000"
     },
- 
+
  "preExpDiffDecrease" : {
         "parentTimestamp" : "42",
         "parentDifficulty" : "10000000000000000",
         "currentTimestamp" : "60",
         "currentBlockNumber" : "42",
-        "currentDifficulty" : "9995117187500000"
+        "currentDifficulty" : "9800000000000000"
     },
  
  "DifficultyTest1" : {

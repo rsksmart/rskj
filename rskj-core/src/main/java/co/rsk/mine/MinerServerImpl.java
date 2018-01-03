@@ -202,6 +202,10 @@ public class MinerServerImpl implements MinerServer {
                     fallbackMiningTimer.schedule(new FallbackMiningTask(), millisBetweenFallbackMinedBlocks, millisBetweenFallbackMinedBlocks);
                     fallbackMiningScheduled = true;
                 }
+                // Because the Refresh occurs only once every minute,
+                // we need to create at least one first block to mine
+                Block bestBlock = blockchain.getBestBlock();
+                buildBlockToMine(bestBlock, false);
             }
             else {
                 if (fallbackMiningTimer != null) {
@@ -312,7 +316,6 @@ public class MinerServerImpl implements MinerServer {
 
             // Iterate and find a block that can be privately mined.
             Block workingBlock = latestBlock;
-            latestBlock = null; // never reuse
             newBlock = workingBlock.cloneBlock();
         }
 
@@ -346,6 +349,7 @@ public class MinerServerImpl implements MinerServer {
             logger.error(message);
             return false;
         } else {
+            latestBlock = null; // never reuse if block is valid
             ImportResult importResult = ethereum.addNewMinedBlock(newBlock);
             fallbackBlocksGenerated++;
             logger.info("Mined block import result is {}: {} {} at height {}", importResult, newBlock.getShortHash(), newBlock.getShortHashForMergedMining(), newBlock.getNumber());
