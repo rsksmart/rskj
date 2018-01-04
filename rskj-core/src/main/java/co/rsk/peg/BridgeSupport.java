@@ -527,6 +527,9 @@ public class BridgeSupport {
 
         if (federationIsInMigrationAge(activeFederation)
                 && hasMinimumFundsToMigrate(retiringFederationWallet)) {
+            logger.info("Active federation (age={}) is in migration age and retiring federation has funds to migrate: {}.",
+                    rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber(),
+                    retiringFederationWallet.getBalance().toFriendlyString());
 
             Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederation.getAddress());
             BtcTransaction btcTx = createResult.getLeft();
@@ -544,6 +547,9 @@ public class BridgeSupport {
 
         if (retiringFederationWallet != null && federationIsPastMigrationAge(activeFederation)) {
             if (retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO)) {
+                logger.info("Federation is past migration age and will try to migrate remaining balance: {}.",
+                        retiringFederationWallet.getBalance().toFriendlyString());
+
                 try {
                     Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederation.getAddress());
                     BtcTransaction btcTx = createResult.getLeft();
@@ -558,10 +564,14 @@ public class BridgeSupport {
                                     utxo.getIndex() == selectedUtxo.getIndex()
                     ));
                 } catch (Exception e) {
-                    logger.error("Unable to complete retiring federation migration. Left balance: {} in {}", retiringFederationWallet.getBalance(), getRetiringFederationAddress());
+                    logger.error("Unable to complete retiring federation migration. Balance left: {} in {}",
+                            retiringFederationWallet.getBalance().toFriendlyString(),
+                            getRetiringFederationAddress());
                     panicProcessor.panic("updateCollection", "Unable to complete retiring federation migration.");
                 }
             }
+
+            logger.info("Retiring federation migration finished. Available UTXOs left: {}.", availableUTXOs.size());
             provider.setOldFederation(null);
         }
     }
