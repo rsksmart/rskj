@@ -171,7 +171,9 @@ public class NodeMessageHandlerTest {
         Assert.assertSame(block, sbp.getBlocks().get(0));
     }
 
-    @Test
+    // TODO: Difficulty in RegTest is so small that this test will sometimes pass and other times fail
+    // This should be executed in a special mode where difficulty is high.
+    @Ignore
     public void processInvalidPoWMessageUsingProcessor() throws UnknownHostException {
         SimpleMessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();
