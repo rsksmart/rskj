@@ -383,7 +383,7 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public int getAverageFallbackMiningTime() {
-        return getInt("fallbackminer.blockTime", 0);
+        return getInt("fallbackMining.blockTime", 0);
     }
 
     public int getTimeoutWaitingRequest() {
