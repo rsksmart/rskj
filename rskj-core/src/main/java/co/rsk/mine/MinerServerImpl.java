@@ -211,7 +211,7 @@ public class MinerServerImpl implements MinerServer {
                     fallbackMiningTimer = new Timer("Private mining timer");
                 }
                 if (!fallbackMiningScheduled) {
-                    fallbackMiningTimer.schedule(new FallbackMiningTask(), 2000,2000 );
+                    fallbackMiningTimer.schedule(new FallbackMiningTask(), 1000,1000 );
                     fallbackMiningScheduled = true;
                 }
                 // Because the Refresh occurs only once every minute,
