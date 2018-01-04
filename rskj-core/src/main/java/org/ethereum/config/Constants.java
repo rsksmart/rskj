@@ -73,9 +73,9 @@ public class Constants {
 
     private static final byte CHAIN_ID = 30;
 
-    public byte[] fallbackMiningPubKey0 = Hex.decode("04440f46b2d24edf926e55f3dfcd1a7dc66f1f660f9f48860e555c146877d494673595d0ffee035aef1ebb46a7cf6db9e62236dee96816bdab9696fade1309055b");
+    public byte[] fallbackMiningPubKey0 = Hex.decode("041e2b148c024770e19c4f31db2233cac791583df95b4d14a5e9fd4b38dc8254b3048f937f169446b19d2eca40db1dd93fab34c0cd8a310afd6e6211f9a89e4bca");
 
-    public byte[] fallbackMiningPubKey1 = Hex.decode("04d552a056025f6172da150e1d71be2ea6b5e7b857975d6e8086a2a0607ef8fcd1ddf3044c790922ffa203199af1fa5e130811660b5d46c793eccc97051ad33901");
+    public byte[] fallbackMiningPubKey1 = Hex.decode("04b55031870df5de88bdb84f65bd1c6f8331c633e759caa5ac7cad3fa4f8a36791e995804bba1558ddcf330a67ff5bfa253fa1d8789735f97a97e849686527976e");
 
     public static BigInteger getTransactionGasCap() {
         return TRANSACTION_GAS_CAP;
