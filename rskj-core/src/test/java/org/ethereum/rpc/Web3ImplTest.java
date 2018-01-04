@@ -257,11 +257,14 @@ public class Web3ImplTest {
         Web3 web3 = new Web3Impl(ethMock, worldManager, mockProperties, minerClient, null, personalModule, null, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null);
 
         Assert.assertTrue("Node is not mining", !web3.eth_mining());
+    try {
+    minerClient.mine();
 
-        minerClient.mine();
-        Assert.assertTrue("Node is mining", web3.eth_mining());
+    Assert.assertTrue("Node is mining", web3.eth_mining());
 
+    } finally {
         minerClient.stop();
+    }
         Assert.assertTrue("Node is not mining", !web3.eth_mining());
     }
 

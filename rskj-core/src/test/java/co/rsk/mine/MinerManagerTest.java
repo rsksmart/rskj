@@ -253,17 +253,20 @@ public class MinerManagerTest {
         minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
         Thread thread = minerClient.createDoWorkThread();
         thread.start();
+        try {
 
-        Awaitility.await().timeout(Duration.FIVE_SECONDS).until(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return minerClient.isMining();
-            }
-        });
+            Awaitility.await().timeout(Duration.FIVE_SECONDS).until(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return minerClient.isMining();
+                }
+            });
 
-        Assert.assertTrue(minerClient.isMining());
-
-        minerClient.stop();
+            Assert.assertTrue(minerClient.isMining());
+        } finally {
+            thread.interrupt(); // enought ?
+            minerClient.stop();
+        }
     }
 
     @Test

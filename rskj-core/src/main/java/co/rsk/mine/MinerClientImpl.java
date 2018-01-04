@@ -61,6 +61,7 @@ public class MinerClientImpl implements MinerClient {
     private volatile boolean newBestBlockArrivedFromAnotherNode = false;
 
     private volatile MinerWork work;
+    private Timer aTimer;
 
     @Autowired
     public MinerClientImpl(Rsk rsk, MinerServer minerServer, RskSystemProperties config) {
@@ -70,7 +71,8 @@ public class MinerClientImpl implements MinerClient {
     }
 
     public void mine() {
-        new Timer("Refresh work for mining").schedule(createRefreshWork(), 0, DELAY_BETWEEN_GETWORK_REFRESH_MS);
+        aTimer = new Timer("Refresh work for mining");
+        aTimer.schedule(createRefreshWork(), 0, DELAY_BETWEEN_GETWORK_REFRESH_MS);
 
         Thread doWorkThread = this.createDoWorkThread();
         doWorkThread.start();
@@ -224,7 +226,9 @@ public class MinerClientImpl implements MinerClient {
     }
 
     public void stop() {
+
         stop = true;
+        aTimer.cancel();
     }
 
     /**

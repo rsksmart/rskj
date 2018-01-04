@@ -74,20 +74,23 @@ public class MainNetMinerTest {
         MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule, world.getBlockProcessor(), DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(RskSystemProperties.CONFIG),
                 new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+        try {
+            minerServer.start();
+            MinerWork work = minerServer.getWork();
 
-        minerServer.start();
-        MinerWork work = minerServer.getWork();
+            co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlock(work);
 
-        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlock(work);
+            bitcoinMergedMiningBlock.setNonce(2);
 
-        bitcoinMergedMiningBlock.setNonce(2);
+            SubmitBlockResult result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
 
-        SubmitBlockResult result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+            Assert.assertEquals("ERROR", result.getStatus());
+            Assert.assertNull(result.getBlockInfo());
 
-        Assert.assertEquals("ERROR", result.getStatus());
-        Assert.assertNull(result.getBlockInfo());
-
-        Mockito.verify(ethereumImpl, Mockito.times(0)).addNewMinedBlock(Mockito.any());
+            Mockito.verify(ethereumImpl, Mockito.times(0)).addNewMinedBlock(Mockito.any());
+        } finally {
+            minerServer.stop();
+        }
     }
 
     //throws IOException, FileNotFoundException
@@ -122,46 +125,48 @@ public class MainNetMinerTest {
                 unclesValidationRule, null, DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(RskSystemProperties.CONFIG),
                 new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(true));
+        try {
+            minerServer.setFallbackMining(true);
 
-        minerServer.setFallbackMining(true);
+            // Accelerate mining
+            ((MinerServerImpl) minerServer).setMillisBetweenFallbackMinedBlocks(2000);
 
-        // Accelerate mining
-        ((MinerServerImpl)minerServer).setMillisBetweenFallbackMinedBlocks(2000);
+            minerServer.start();
 
-        minerServer.start();
+            // Blocks are generated auomatically
+            // but we can call minerServer.generateFallbackBlock() to generate it manually
+            // boolean result = minerServer.generateFallbackBlock();
+            // Assert.assertTrue(result);
+            long start = System.currentTimeMillis();
+            while (((MinerServerImpl) minerServer).getFallbackBlocksGenerated() == 0) {
 
-        // Blocks are generated auomatically
-        // but we can call minerServer.generateFallbackBlock() to generate it manually
-        // boolean result = minerServer.generateFallbackBlock();
-        // Assert.assertTrue(result);
-        long start = System.currentTimeMillis();
-        while (((MinerServerImpl)minerServer).getFallbackBlocksGenerated()==0) {
+                if (System.currentTimeMillis() - start > 10 * 1000) {
+                    Assert.assertTrue(false);
+                }
+                Thread.sleep(1000); //
 
-            if (System.currentTimeMillis()-start>10*1000) {
-                Assert.assertTrue(false);
             }
-            Thread.sleep(1000); //
 
-        }
+            Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+            // mine another
+            // NOTE that is NOT using the next block (parity change) because of the blockchain mockito
+            // to mine a subsequent block, use a real blockchain, not the mockito.
+            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
 
-        Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
-        // mine another
-        // NOTE that is NOT using the next block (parity change) because of the blockchain mockito
-        // to mine a subsequent block, use a real blockchain, not the mockito.
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
-
-        //result = minerServer.generateFallbackBlock();
-        //Assert.assertTrue(result);
-        start = System.currentTimeMillis();
-        while (((MinerServerImpl)minerServer).getFallbackBlocksGenerated()==1) {
-            if (System.currentTimeMillis()-start>10*1000) {
-                Assert.assertTrue(false);
+            //result = minerServer.generateFallbackBlock();
+            //Assert.assertTrue(result);
+            start = System.currentTimeMillis();
+            while (((MinerServerImpl) minerServer).getFallbackBlocksGenerated() == 1) {
+                if (System.currentTimeMillis() - start > 10 * 1000) {
+                    Assert.assertTrue(false);
+                }
+                Thread.sleep(1000); //
             }
-            Thread.sleep(1000); //
+
+            Mockito.verify(ethereumImpl, Mockito.times(2)).addNewMinedBlock(Mockito.any());
+        } finally {
+            minerServer.stop();
         }
-
-        Mockito.verify(ethereumImpl, Mockito.times(2)).addNewMinedBlock(Mockito.any());
-
     }
     /*
      * This test is much more likely to fail than the
@@ -193,7 +198,7 @@ public class MainNetMinerTest {
                 world.getBlockProcessor(), DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(RskSystemProperties.CONFIG),
                 new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
-
+        try {
         minerServer.start();
         MinerWork work = minerServer.getWork();
 
@@ -227,6 +232,9 @@ public class MainNetMinerTest {
         Assert.assertNotNull(result3.getBlockInfo());
         Mockito.verify(ethereumImpl, Mockito.times(2)).addNewMinedBlock(Mockito.any());
         -------------------------------*/
+        } finally {
+            minerServer.stop();
+        }
     }
 
     private void findNonce(MinerWork work, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {

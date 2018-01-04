@@ -124,7 +124,7 @@ public class MinerServerTest {
                 unclesValidationRule, null, DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(RskSystemProperties.CONFIG),
                 new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
-
+        try {
         byte[] extraData = ByteBuffer.allocate(4).putInt(1).array();
         minerServer.setExtraData(extraData);
         minerServer.start();
@@ -155,6 +155,9 @@ public class MinerServerTest {
         Assert.assertEquals("ERROR", result.getStatus());
 
         Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+        } finally {
+            minerServer.stop();
+        }
     }
     @Test
     public void submitBitcoinBlock() {
@@ -168,7 +171,7 @@ public class MinerServerTest {
                 unclesValidationRule, null, DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(RskSystemProperties.CONFIG),
                 new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
-
+        try {
         minerServer.start();
         MinerWork work = minerServer.getWork();
 
@@ -184,6 +187,9 @@ public class MinerServerTest {
         Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
         Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
+        } finally {
+            minerServer.stop();
+        }
     }
 
 
@@ -199,10 +205,13 @@ public class MinerServerTest {
                 new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
 
         minerServer.start();
-
+        try {
         MinerWork work = minerServer.getWork();
 
         assertEquals("0", work.getFeesPaidToMiner());
+        } finally {
+            minerServer.stop();
+        }
     }
 
     @Test
@@ -214,12 +223,15 @@ public class MinerServerTest {
         MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule, null, DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(RskSystemProperties.CONFIG),
                 new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
-
+        try {
         minerServer.start();
 
         MinerWork work = minerServer.getWork();
 
         assertEquals(true, work.getNotify());
+        } finally {
+            minerServer.stop();
+        }
     }
 
     @Test
@@ -232,7 +244,7 @@ public class MinerServerTest {
                 new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
 
         minerServer.start();
-
+        try {
         MinerWork work = minerServer.getWork();
 
         assertEquals(true, work.getNotify());
@@ -240,6 +252,9 @@ public class MinerServerTest {
         work = minerServer.getWork();
 
         assertEquals(false, work.getNotify());
+        } finally {
+            minerServer.stop();
+        }
     }
 
     @Test
@@ -250,7 +265,7 @@ public class MinerServerTest {
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
         MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule, null, DIFFICULTY_CALCULATOR, new GasLimitCalculator(RskSystemProperties.CONFIG),
                 new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
-
+        try {
         minerServer.start();
 
         MinerWork work = minerServer.getWork();
@@ -262,6 +277,9 @@ public class MinerServerTest {
         work = minerServer.getWork();
         assertEquals(hashForMergedMining, work.getBlockHashForMergedMining());
         assertEquals(false, work.getNotify());
+        } finally {
+            minerServer.stop();
+        }
     }
 
     @Test
