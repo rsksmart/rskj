@@ -104,6 +104,7 @@ public class MainNetMinerTest {
     }
 
     @Test
+    @Ignore("This doesn't run in multiple platforms")
     public void generateFallbackMinedBlock() throws InterruptedException {
         // generate private keys for testing now.
         ECKey privateMiningKey0 = ECKey.fromPrivate(BigInteger.TEN);
