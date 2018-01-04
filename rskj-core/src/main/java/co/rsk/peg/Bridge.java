@@ -74,8 +74,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function ADD_SIGNATURE = CallTransaction.Function.fromSignature("addSignature", new String[]{"bytes","bytes[]","bytes"}, new String[]{});
     // Returns a StateForFederator encoded in RLP
     public static final CallTransaction.Function GET_STATE_FOR_BTC_RELEASE_CLIENT = CallTransaction.Function.fromSignature("getStateForBtcReleaseClient", new String[]{}, new String[]{"bytes"});
-    // Returns a BridgeState encoded in RLP
-    public static final CallTransaction.Function GET_STATE_FOR_DEBUGGING = CallTransaction.Function.fromSignature("getStateForDebugging", new String[]{}, new String[]{"bytes"});
     // Return the bitcoin blockchain best chain height know by the bridge contract
     public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT = CallTransaction.Function.fromSignature("getBtcBlockchainBestChainHeight", new String[]{}, new String[]{"int"});
     // Returns an array of block hashes known by the bridge contract. Federators can use this to find what is the latest block in the mainchain the bridge has.
@@ -176,7 +174,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             Pair.of(RELEASE_BTC, 23000L),
             Pair.of(ADD_SIGNATURE, 70000L),
             Pair.of(GET_STATE_FOR_BTC_RELEASE_CLIENT, 4000L),
-            Pair.of(GET_STATE_FOR_DEBUGGING, 3_000_000L),
             Pair.of(GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT, 19000L),
             Pair.of(GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR, 76000L),
             Pair.of(GET_MINIMUM_LOCK_TX_VALUE, 2000L),
@@ -473,18 +470,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         } catch (Exception e) {
             logger.warn("Exception in getStateForBtcReleaseClient", e);
             throw new RuntimeException("Exception in getStateForBtcReleaseClient", e);
-        }
-    }
-
-    public byte[] getStateForDebugging(Object[] args)
-    {
-        logger.trace("getStateForDebugging");
-
-        try {
-            return bridgeSupport.getStateForDebugging();
-        } catch (Exception e) {
-            logger.warn("Exception in getStateForDebugging", e);
-            throw new RuntimeException("Exception in getStateForDebugging", e);
         }
     }
 

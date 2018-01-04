@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.builders.BlockBuilder;
@@ -308,8 +309,7 @@ public class RskForksBridgeTest {
         return rskTx;
     }
 
-
-    private void assertReleaseTransactionState(ReleaseTransactionState state) throws IOException, ClassNotFoundException {
+    private void assertReleaseTransactionState(ReleaseTransactionState state) throws IOException, BlockStoreException {
         BridgeState stateForDebugging = callGetStateForDebuggingTx();
         if (ReleaseTransactionState.WAITING_FOR_SELECTION.equals(state)) {
             Assert.assertEquals(1, stateForDebugging.getReleaseRequestQueue().getEntries().size());
@@ -334,32 +334,19 @@ public class RskForksBridgeTest {
         NO_TX, WAITING_FOR_SIGNATURES, WAITING_FOR_SELECTION, WAITING_FOR_CONFIRMATIONS
     }
 
-    private BridgeState callGetStateForDebuggingTx() throws IOException, ClassNotFoundException {
-        Transaction rskTx = CallTransaction.createRawTransaction(0,
-                Long.MAX_VALUE,
-                Long.MAX_VALUE,
+    private BridgeState callGetStateForDebuggingTx() throws IOException, BlockStoreException {
+        Block block = blockChain.getBestBlock();
+        Repository repository = blockChain.getRepository().getSnapshotTo(block.getStateRoot()).startTracking();
+
+        BridgeSupport bridgeSupport = new BridgeSupport(
+                repository,
                 PrecompiledContracts.BRIDGE_ADDR,
-                0,
-                Bridge.GET_STATE_FOR_DEBUGGING.encode(new Object[]{}));
-        rskTx.sign(new byte[32]);
+                block,
+                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
+                null);
 
-        TransactionExecutor executor = new TransactionExecutor(rskTx, 0, blockChain.getBestBlock().getCoinbase(), repository,
-                        blockChain.getBlockStore(), blockChain.getReceiptStore(), new ProgramInvokeFactoryImpl(), blockChain.getBestBlock())
-                .setLocalCall(true);
+        byte[] result = bridgeSupport.getStateForDebugging();
 
-        executor.init();
-        executor.execute();
-        executor.go();
-        executor.finalization();
-
-        ProgramResult res = executor.getResult();
-
-        Object[] result = Bridge.GET_STATE_FOR_DEBUGGING.decodeResult(res.getHReturn());
-
-        return BridgeState.create((byte[])result[0]);
+        return BridgeState.create(result);
     }
-
-
-
-
 }
