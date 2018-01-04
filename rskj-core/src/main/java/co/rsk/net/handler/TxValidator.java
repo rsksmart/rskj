@@ -24,7 +24,10 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.rpc.TypeConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongycastle.util.BigIntegers;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.LinkedList;
@@ -40,6 +43,7 @@ class TxValidator {
 
     private List<TxValidatorStep> validatorSteps = new LinkedList<>();
     private List<TxFilter> txFilters = new LinkedList<>();
+    private static final Logger logger = LoggerFactory.getLogger("txvalidator");
 
     public TxValidator() {
         validatorSteps.add(new TxValidatorAccountStateValidator());
@@ -88,10 +92,12 @@ class TxValidator {
 
             for (TxValidatorStep step : validatorSteps) {
                 if (!step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0)) {
+                    logger.info("Tx validation failed: validator {} tx {}", step.getClass().getName(), Hex.toHexString(tx.getHash()));
                     valid = false;
                     break;
                 }
             }
+
             if (!valid) {
                 continue;
             }
