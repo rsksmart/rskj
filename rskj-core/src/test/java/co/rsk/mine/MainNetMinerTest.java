@@ -12,6 +12,7 @@ import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.blockchain.FallbackMainNetConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.ImportResult;
@@ -19,12 +20,10 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.validator.DifficultyRule;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.mockito.Mockito;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -41,7 +40,7 @@ public class MainNetMinerTest {
     @Before
     public void setup() {
         oldConfig =RskSystemProperties.CONFIG.getBlockchainConfig();
-        RskSystemProperties.CONFIG.setBlockchainConfig(new MainNetConfig());
+        RskSystemProperties.CONFIG.setBlockchainConfig(new FallbackMainNetConfig());
         DIFFICULTY_CALCULATOR = new DifficultyCalculator(RskSystemProperties.CONFIG);
         World world = new World();
         blockchain = world.getBlockChain();
@@ -94,25 +93,29 @@ public class MainNetMinerTest {
     }
 
     //throws IOException, FileNotFoundException
-    public static void saveToFile(byte[] array, String OUTPUT_FILE_NAME) {
+    public static void saveToFile(byte[] array, File f) {
         try {
-            FileOutputStream fos = new FileOutputStream(OUTPUT_FILE_NAME);
+            FileOutputStream fos = new FileOutputStream(f);
             fos.write(array);
             fos.close();
         } catch (IOException e) {
-            System.out.println("Something is wrong when writing to file "+OUTPUT_FILE_NAME+". Aborting");
+            System.out.println("Something is wrong when writing to file "+f.getName()+". Aborting");
             System.exit(-1);
         }
     }
+
     @Test
     public void generateFallbackMinedBlock() throws InterruptedException {
         // generate private keys for testing now.
         ECKey privateMiningKey0 = ECKey.fromPrivate(BigInteger.TEN);
         ECKey privateMiningKey1 = ECKey.fromPrivate(BigInteger.TEN.add(BigInteger.ONE));
+
+        String path = RskSystemProperties.CONFIG.fallbackMiningKeysDir();
+
         byte[] privKey0 = privateMiningKey0.getPrivKeyBytes();
-        saveToFile(privKey0,"privkey0.bin");
+        saveToFile(privKey0,new File(path ,"privkey0.bin"));
         byte[] privKey1 = privateMiningKey1.getPrivKeyBytes();
-        saveToFile(privKey1,"privkey1.bin");
+        saveToFile(privKey1,new File(path ,"privkey1.bin"));
 
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
@@ -140,7 +143,7 @@ public class MainNetMinerTest {
             long start = System.currentTimeMillis();
             while (((MinerServerImpl) minerServer).getFallbackBlocksGenerated() == 0) {
 
-                if (System.currentTimeMillis() - start > 10 * 1000) {
+                if (System.currentTimeMillis() - start > 20 * 1000) {
                     Assert.assertTrue(false);
                 }
                 Thread.sleep(1000); //
@@ -157,7 +160,7 @@ public class MainNetMinerTest {
             //Assert.assertTrue(result);
             start = System.currentTimeMillis();
             while (((MinerServerImpl) minerServer).getFallbackBlocksGenerated() == 1) {
-                if (System.currentTimeMillis() - start > 10 * 1000) {
+                if (System.currentTimeMillis() - start > 20 * 1000) {
                     Assert.assertTrue(false);
                 }
                 Thread.sleep(1000); //

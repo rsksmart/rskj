@@ -356,6 +356,7 @@ public class MinerServerImpl implements MinerServer {
         newBlock.seal();
 
         if (!isValid(newBlock)) {
+            isValid(newBlock);
             String message = "Invalid block supplied by miner: " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber();
             logger.error(message);
             return false;
