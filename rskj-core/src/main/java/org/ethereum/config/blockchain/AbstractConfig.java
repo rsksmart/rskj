@@ -60,17 +60,39 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
         return getConstants();
     }
 
+
     @Override
     public BigInteger calcDifficulty(BlockHeader curBlockHeader, BlockHeader parent) {
         BigInteger pd = parent.getDifficultyBI();
-
         int uncleCount = curBlockHeader.getUncleCount();
-        long delta = curBlockHeader.getTimestamp()-parent.getTimestamp();
+        long curBlockTS = curBlockHeader.getTimestamp();
+        long parentBlockTS =parent.getTimestamp();
+
+        return calcDifficultyFortConstants(getConstants(),curBlockTS, parentBlockTS,pd,uncleCount);
+    }
+
+    public static BigInteger calcDifficultyFortConstants(Constants constants,
+                                                         long curBlockTS,
+                                                         long parentBlockTS,
+                                                         BigInteger pd ,
+                                                         int uncleCount) {
+        int duration =constants.getDurationLimit();
+        BigInteger difDivisor = constants.getDifficultyBoundDivisor();
+        BigInteger minDif = constants.getMinimumDifficulty();
+        return calcDifficultyWithTimeStamps(curBlockTS, parentBlockTS,pd,uncleCount,duration,difDivisor,minDif );
+    }
+
+    public static BigInteger calcDifficultyWithTimeStamps(long curBlockTS, long parentBlockTS,
+                                                           BigInteger pd,int uncleCount,int duration,
+                                                           BigInteger difDivisor,
+                                                           BigInteger minDif ) {
+
+        long delta = curBlockTS-parentBlockTS;
         if (delta<0) {
             return pd;
         }
 
-        int calcDur =(1+uncleCount)*getConstants().getDurationLimit();
+        int calcDur =(1+uncleCount)*duration;
         int sign = 0;
         if (calcDur>delta) {
             sign =1;
@@ -83,7 +105,7 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
             return pd;
         }
 
-        BigInteger quotient = pd.divide(getConstants().getDifficultyBoundDivisor());
+        BigInteger quotient = pd.divide(difDivisor);
         BigInteger difficulty;
 
         BigInteger fromParent;
@@ -96,7 +118,7 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
         // If parent difficulty is zero (maybe a genesis block), then the first child difficulty MUST
         // be greater or equal getMinimumDifficulty(). That's why the max() is applied in both the add and the sub
         // cases
-        difficulty = max(getConstants().getMinimumDifficulty(), fromParent);
+        difficulty = max(minDif, fromParent);
 
         return difficulty;
     }

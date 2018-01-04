@@ -184,7 +184,8 @@ public class Web3ImplSnapshotTest {
     static MinerServer getMinerServerForTest(World world, SimpleEthereum ethereum) {
         BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
         return new MinerServerImpl(ethereum, world.getBlockChain(), world.getBlockChain().getBlockStore(),
-                world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), ConfigUtils.getDefaultMiningConfig(), rule, world.getBlockProcessor(), new DifficultyCalculator(RskSystemProperties.CONFIG), new GasLimitCalculator(RskSystemProperties.CONFIG), new ProofOfWorkRule(RskSystemProperties.CONFIG));
+                world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), ConfigUtils.getDefaultMiningConfig(), rule, world.getBlockProcessor(), new DifficultyCalculator(RskSystemProperties.CONFIG), new GasLimitCalculator(RskSystemProperties.CONFIG),
+                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
     }
 
     private static void addBlocks(Blockchain blockchain, int size) {

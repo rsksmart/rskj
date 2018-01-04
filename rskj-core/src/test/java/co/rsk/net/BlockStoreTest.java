@@ -165,10 +165,11 @@ public class BlockStoreTest {
     @Test
     public void releaseRange() {
         BlockStore store = new BlockStore();
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        final BlockGenerator generator = new BlockGenerator();
+        Block genesis = generator.getGenesisBlock();
 
-        List<Block> blocks1 = BlockGenerator.getInstance().getBlockChain(genesis, 1000);
-        List<Block> blocks2 = BlockGenerator.getInstance().getBlockChain(genesis, 1000);
+        List<Block> blocks1 = generator.getBlockChain(genesis, 1000);
+        List<Block> blocks2 = generator.getBlockChain(genesis, 1000);
 
         for (Block b : blocks1)
             store.saveBlock(b);

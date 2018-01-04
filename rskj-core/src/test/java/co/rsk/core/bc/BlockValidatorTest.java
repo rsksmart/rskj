@@ -424,7 +424,7 @@ public class BlockValidatorTest {
         Mockito.when(parentValidationRule.isValid(Mockito.any(), Mockito.any())).thenReturn(true);
       
         BlockValidatorImpl validator = new BlockValidatorBuilder()
-                .addBlockUnclesValidationRule(store, new ProofOfWorkRule(RskSystemProperties.CONFIG), parentValidationRule)
+                .addBlockUnclesValidationRule(store, new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false), parentValidationRule)
                 .blockStore(store)
                 .build();
 

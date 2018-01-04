@@ -27,8 +27,13 @@ import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.util.DifficultyUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.digests.SHA256Digest;
@@ -48,11 +53,20 @@ import java.util.List;
 public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidationRule {
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
+
     private final BridgeConstants bridgeConstants;
+    private final Constants constants;
+    private boolean fallbackMiningEnabled = true;
 
     @Autowired
     public ProofOfWorkRule(RskSystemProperties config) {
         this.bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        this.constants = config.getBlockchainConfig().getCommonConstants();
+    }
+
+    public ProofOfWorkRule setFallbackMiningEnabled(boolean e) {
+        fallbackMiningEnabled = e;
+        return this;
     }
 
     @Override
@@ -60,10 +74,65 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         return isValid(block.getHeader());
     }
 
+    public static boolean isFallbackMiningPossible(Constants constants, BlockHeader header) {
+
+        if (header.getNumber() >= constants.getEndOfFallbackMiningBlockNumber()) {
+            return false;
+        }
+
+        if (header.getDifficultyBI().compareTo(constants.getFallbackMiningDifficulty()) > 0) {
+            return false;
+        }
+
+        // If more than 10 minutes have elapsed, and difficulty is lower than 4 peta/s (config)
+        // then private mining is still possible, but only after 10 minutes of inactivity or
+        // previous block was privately mined.
+        // This difficulty reset will be computed in DifficultyRule
+        return true;
+    }
+
+    public boolean isFallbackMiningPossibleAndBlockSigned(BlockHeader header) {
+
+        if (header.getBitcoinMergedMiningCoinbaseTransaction() != null) {
+            return false;
+        }
+
+        if (header.getBitcoinMergedMiningMerkleProof() != null) {
+            return false;
+        }
+
+        if (!fallbackMiningEnabled) {
+            return false;
+        }
+
+        return isFallbackMiningPossible(constants, header);
+
+    }
+
     @Override
     public boolean isValid(BlockHeader header) {
+        // TODO: refactor this an move it to another class. Change the Global ProofOfWorkRule to AuthenticationRule.
+        // TODO: Make ProofOfWorkRule one of the classes that inherits from AuthenticationRule.
+
+        if (isFallbackMiningPossibleAndBlockSigned(header)) {
+            return validFallbackBlockSignature(constants, header, header.getBitcoinMergedMiningHeader());
+        }
+
         co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = bridgeConstants.getBtcParams();
         byte[] bitcoinMergedMiningCoinbaseTransactionCompressed = header.getBitcoinMergedMiningCoinbaseTransaction();
+
+        if (bitcoinMergedMiningCoinbaseTransactionCompressed==null) {
+            return false;
+        }
+
+        if (header.getBitcoinMergedMiningHeader()==null) {
+            return false;
+        }
+
+        if (header.getBitcoinMergedMiningMerkleProof()==null) {
+            return false;
+        }
+
         BtcBlock bitcoinMergedMiningBlock = bitcoinNetworkParameters.getDefaultSerializer().makeBlock(header.getBitcoinMergedMiningHeader());
         PartialMerkleTree bitcoinMergedMiningMerkleBranch  = new PartialMerkleTree(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof(), 0);
 
@@ -106,8 +175,8 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         }
 
         List<Byte> rskTagAsList = Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
-        if (rskTagPosition !=
-                Collections.lastIndexOfSubList(bitcoinMergedMiningCoinbaseTransactionTailAsList, rskTagAsList)) {
+        int lastTag = Collections.lastIndexOfSubList(bitcoinMergedMiningCoinbaseTransactionTailAsList, rskTagAsList);
+        if (rskTagPosition !=lastTag) {
             logger.warn("The valid RSK tag is not the last RSK tag. Tail: {}.", Arrays.toString(bitcoinMergedMiningCoinbaseTransactionTail));
             return false;
         }
@@ -116,6 +185,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
                 rskTagPosition -
                 RskMiningConstants.RSK_TAG.length -
                 RskMiningConstants.BLOCK_HEADER_HASH_SIZE;
+
         if (remainingByteCount > RskMiningConstants.MAX_BYTES_AFTER_MERGED_MINING_HASH) {
             logger.warn("More than 128 bytes after RSK tag");
             return false;
@@ -139,5 +209,38 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         }
 
         return true;
+    }
+
+    public static boolean validFallbackBlockSignature(Constants constants, BlockHeader header, byte[] signatureBytesRLP) {
+
+        if (header.getBitcoinMergedMiningCoinbaseTransaction() != null) {
+            return false;
+        }
+
+        if (header.getBitcoinMergedMiningMerkleProof() != null) {
+            return false;
+        }
+
+        byte[] fallbackMiningPubKeyBytes;
+        boolean isEvenBlockNumber = header.getNumber() % 2 == 0;
+        if (isEvenBlockNumber) {
+            fallbackMiningPubKeyBytes = constants.getFallbackMiningPubKey0();
+        } else {
+            fallbackMiningPubKeyBytes = constants.getFallbackMiningPubKey1();
+        }
+
+        ECKey fallbackMiningPubKey = ECKey.fromPublicOnly(fallbackMiningPubKeyBytes);
+        List<RLPElement> signatureRLP = (RLPList) RLP.decode2(signatureBytesRLP).get(0);
+        if (signatureRLP.size() != 3) {
+            return false;
+        }
+
+        byte[] v = signatureRLP.get(0).getRLPData();
+        byte[] r = signatureRLP.get(1).getRLPData();
+        byte[] s = signatureRLP.get(2).getRLPData();
+
+        ECKey.ECDSASignature signature = ECKey.ECDSASignature.fromComponents(r, s, v[0]);
+
+        return fallbackMiningPubKey.verify(header.getHashForMergedMining(), signature);
     }
 }

@@ -48,7 +48,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class ProofOfWorkRuleTest {
 
-    private ProofOfWorkRule rule = new ProofOfWorkRule(RskSystemProperties.CONFIG);
+    private ProofOfWorkRule rule = new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false);
 
     @Test
     public void test_1() {

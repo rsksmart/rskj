@@ -21,7 +21,11 @@ package co.rsk.mine;
 public interface MinerClient {
     void mine();
 
+    // Mines a PoW block
     boolean mineBlock();
+
+    // Mines a privately-signed block (only accepted if block difficulty is very low)
+    boolean fallbackMineBlock();
 
     void stop();
 

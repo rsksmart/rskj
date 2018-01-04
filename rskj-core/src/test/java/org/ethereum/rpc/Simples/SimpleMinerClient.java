@@ -31,6 +31,10 @@ public class SimpleMinerClient implements MinerClient {
         isMining = true;
     }
 
+    public boolean fallbackMineBlock() {
+        return false;
+    }
+
     public boolean mineBlock() {
         // Unused
         return false;

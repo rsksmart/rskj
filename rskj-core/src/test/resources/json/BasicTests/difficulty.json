@@ -2,18 +2,18 @@
 
   "preExpDiffIncrease" : {
         "parentTimestamp" : "42",
-        "parentDifficulty" : "1000000",
+        "parentDifficulty" : "10000000000000000",
         "currentTimestamp" : "43",
         "currentBlockNumber" : "42",
-        "currentDifficulty" : "1020000"
+        "currentDifficulty" : "10200000000000000"
     },
- 
+
  "preExpDiffDecrease" : {
         "parentTimestamp" : "42",
-        "parentDifficulty" : "1000000",
+        "parentDifficulty" : "10000000000000000",
         "currentTimestamp" : "60",
         "currentBlockNumber" : "42",
-        "currentDifficulty" : "980000"
+        "currentDifficulty" : "9800000000000000"
     },
  
  "DifficultyTest1" : {

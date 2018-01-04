@@ -63,6 +63,11 @@ public class SimpleEthereum implements Ethereum {
     }
 
     @Override
+    public void removeListener(EthereumListener listener) {
+        this.worldManager.removeListener(listener);
+    }
+
+    @Override
     public void close() {
 
     }

@@ -61,6 +61,7 @@ public class MinerClientImpl implements MinerClient {
     private volatile boolean newBestBlockArrivedFromAnotherNode = false;
 
     private volatile MinerWork work;
+    private Timer aTimer;
 
     @Autowired
     public MinerClientImpl(Rsk rsk, MinerServer minerServer, RskSystemProperties config) {
@@ -70,7 +71,8 @@ public class MinerClientImpl implements MinerClient {
     }
 
     public void mine() {
-        new Timer("Refresh work for mining").schedule(createRefreshWork(), 0, DELAY_BETWEEN_GETWORK_REFRESH_MS);
+        aTimer = new Timer("Refresh work for mining");
+        aTimer.schedule(createRefreshWork(), 0, DELAY_BETWEEN_GETWORK_REFRESH_MS);
 
         Thread doWorkThread = this.createDoWorkThread();
         doWorkThread.start();
@@ -166,6 +168,35 @@ public class MinerClientImpl implements MinerClient {
         return foundNonce;
     }
 
+    @Override
+    public boolean fallbackMineBlock() {
+        // This is not used now. In the future this method could allow
+        // a HSM to provide the signature for an RSK block here.
+
+        if (this.rsk != null) {
+            if (this.rsk.hasBetterBlockToSync()) {
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e1) {
+                }
+                return false;
+            }
+
+            if (this.rsk.isPlayingBlocks()) {
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e1) {
+                }
+                return false;
+            }
+        }
+        if (stop) {
+            logger.info("Interrupted mining because MinerClient was stopped");
+        }
+
+        return minerServer.generateFallbackBlock();
+
+    }
     /**
      * findNonce will try to find a valid nonce for bitcoinMergedMiningBlock, that satisfies the given target difficulty.
      *
@@ -195,7 +226,10 @@ public class MinerClientImpl implements MinerClient {
     }
 
     public void stop() {
+
         stop = true;
+        if (aTimer!=null)
+            aTimer.cancel();
     }
 
     /**

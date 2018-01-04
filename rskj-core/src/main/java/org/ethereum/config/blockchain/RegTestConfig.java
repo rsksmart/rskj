@@ -33,6 +33,9 @@ public class RegTestConfig extends GenesisConfig {
         private static final byte CHAIN_ID = 33;
 
         @Override
+        public BigInteger getFallbackMiningDifficulty() { return BigInteger.ZERO; }
+
+        @Override
         public BridgeConstants getBridgeConstants() {
             return BridgeRegTestConstants.getInstance();
         }

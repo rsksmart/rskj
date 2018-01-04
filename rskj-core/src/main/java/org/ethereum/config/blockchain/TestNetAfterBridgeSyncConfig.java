@@ -23,6 +23,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import org.ethereum.config.Constants;
 import org.ethereum.core.BlockHeader;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -31,8 +32,10 @@ public class TestNetAfterBridgeSyncConfig extends GenesisConfig {
 
 
     public static class TestNetConstants extends GenesisConstants {
+
         private static final BigInteger DIFFICULTY_BOUND_DIVISOR = BigInteger.valueOf(50);
         private static final byte CHAIN_ID = 31;
+
 
         @Override
         public BridgeConstants getBridgeConstants() {

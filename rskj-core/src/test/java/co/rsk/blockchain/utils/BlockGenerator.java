@@ -30,6 +30,7 @@ import co.rsk.trie.TrieImpl;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.InitialAddressState;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.BIUtil;
@@ -360,6 +361,66 @@ public class BlockGenerator {
                 txs,       // transaction list
                 null        // uncle list
         );
+    }
+
+    public Block createFallbackMinedChildBlockWithTimeStamp(Block parent, byte[] difficulty, long timeStamp, boolean goodSig) {
+        List<Transaction> txs = new ArrayList<>();
+        Block block = new Block(
+                parent.getHash(), // parent hash
+                EMPTY_LIST_HASH, // uncle hash
+                parent.getCoinbase(),
+                ByteUtils.clone(new Bloom().getData()),
+                difficulty, // difficulty
+                parent.getNumber() + 1,
+                parent.getGasLimit(),
+                parent.getGasUsed(),
+                timeStamp,
+                EMPTY_BYTE_ARRAY,   // extraData
+                EMPTY_BYTE_ARRAY,   // mixHash
+                BigInteger.ZERO.toByteArray(),  // provisory nonce
+                EMPTY_TRIE_HASH,   // receipts root
+                BlockChainImpl.calcTxTrie(txs),  // transaction root
+                ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
+                txs,       // transaction list
+                null,        // uncle list
+                null,
+                BigInteger.ZERO
+        );
+
+        ECKey fallbackMiningKey0 = ECKey.fromPrivate(BigInteger.TEN);
+        ECKey fallbackMiningKey1 = ECKey.fromPrivate(BigInteger.TEN.add(BigInteger.ONE));
+
+        ECKey fallbackKey;
+
+        if (block.getNumber() % 2 == 0) {
+            fallbackKey = fallbackMiningKey0;
+        } else {
+            fallbackKey = fallbackMiningKey1;
+        }
+
+        byte[] signature = fallbackSign(block.getHashForMergedMining(), fallbackKey);
+
+        if (!goodSig) {
+            // just make it a little bad
+            signature[5] = (byte) (signature[5]+1);
+        }
+
+        block.setBitcoinMergedMiningHeader(signature);
+        return block;
+    }
+
+    byte[] fallbackSign(byte[] hash, ECKey privKey) {
+        ECKey.ECDSASignature signature = privKey.sign(hash);
+
+        byte vdata = signature.v;
+        byte[] rdata = signature.r.toByteArray();
+        byte[] sdata = signature.s.toByteArray();
+
+        byte[] vencoded =  RLP.encodeByte(vdata);
+        byte[] rencoded = RLP.encodeElement(rdata);
+        byte[] sencoded = RLP.encodeElement(sdata);
+
+        return RLP.encodeList(vencoded, rencoded, sencoded);
     }
 
     public List<Block> getBlockChain(int size) {

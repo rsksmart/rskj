@@ -27,13 +27,27 @@ public interface MinerServer {
 
     void start();
 
+    void stop();
+
+    boolean isRunning();
+
     SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock);
+
+    boolean generateFallbackBlock();
+
+    void setFallbackMining(boolean p);
+
+    void setAutoSwitchBetweenNormalAndFallbackMining(boolean p);
+
+    boolean isFallbackMining();
 
     byte[] getCoinbaseAddress();
 
     MinerWork getWork();
 
     void buildBlockToMine(@Nonnull Block newParent, boolean createCompetitiveBlock);
+
+    void setExtraData(byte[] extraData);
 
     long getCurrentTimeInSeconds();
 
