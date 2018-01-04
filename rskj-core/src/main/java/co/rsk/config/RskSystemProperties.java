@@ -382,6 +382,10 @@ public class RskSystemProperties extends SystemProperties {
         return getInt("sync.timeoutWaitingPeers", 1);
     }
 
+    public int getAverageFallbackMiningTime() {
+        return getInt("fallbackMining.blockTime", 0);
+    }
+
     public int getTimeoutWaitingRequest() {
         return getInt("sync.timeoutWaitingRequest", 30);
     }

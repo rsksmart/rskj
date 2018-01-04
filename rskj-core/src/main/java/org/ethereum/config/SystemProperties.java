@@ -22,6 +22,7 @@ package org.ethereum.config;
 import com.google.common.annotations.VisibleForTesting;
 import com.typesafe.config.*;
 import org.ethereum.config.blockchain.DevNetConfig;
+import org.ethereum.config.blockchain.FallbackMainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.config.net.*;
@@ -246,6 +247,9 @@ public abstract class SystemProperties {
                 switch(netName) {
                     case "main":
                         blockchainConfig = new MainNetConfig();
+                        break;
+                    case "fallbackmain":
+                        blockchainConfig = new FallbackMainNetConfig();
                         break;
                     case "testnet":
                         blockchainConfig = new TestNetConfig();

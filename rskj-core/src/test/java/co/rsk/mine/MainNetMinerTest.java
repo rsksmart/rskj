@@ -13,13 +13,12 @@ import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
-import org.ethereum.config.net.MainNetConfig;
+import org.ethereum.core.Block;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.ImportResult;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.validator.DifficultyRule;
 import org.junit.*;
 import org.mockito.Mockito;
 
@@ -132,7 +131,7 @@ public class MainNetMinerTest {
             minerServer.setFallbackMining(true);
 
             // Accelerate mining
-            ((MinerServerImpl) minerServer).setMillisBetweenFallbackMinedBlocks(2000);
+            ((MinerServerImpl) minerServer).setSecsBetweenFallbackMinedBlocks(1);
 
             minerServer.start();
 
