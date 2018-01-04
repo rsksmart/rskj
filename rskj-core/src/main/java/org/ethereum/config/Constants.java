@@ -41,7 +41,6 @@ public class Constants {
     private int maximumExtraDataSize = 32;
     private int minGasLimit = 3000000;
     private int gasLimitBoundDivisor = 1024;
-    private int targetGasLimit = 5000000;
 
     // Private mining is allowed if difficulty is lower or equal than this value
     private BigInteger fallbackMiningDifficulty = BigInteger.valueOf((long) 14E15); // 14 peta evert 14 secs = 1 peta/s.
@@ -151,10 +150,6 @@ public class Constants {
     }
 
     public BridgeConstants getBridgeConstants() { return BridgeTestNetConstants.getInstance(); }
-
-    public long getTargetGasLimit() {
-        return targetGasLimit;
-    }
 
     public int getNewBlockMaxSecondsInTheFuture() {
         return this.newBlockMaxSecondsInTheFuture;

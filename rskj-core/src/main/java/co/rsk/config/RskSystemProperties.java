@@ -364,7 +364,7 @@ public class RskSystemProperties extends SystemProperties {
 
     public long getTargetGasLimit() {
         return getLongProperty("targetgaslimit",
-                getBlockchainConfig().getCommonConstants().getTargetGasLimit());
+                6_800_000L);
     }
 
     public boolean getForceTargetGasLimit() {

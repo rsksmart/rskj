@@ -11,7 +11,9 @@ import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Genesis;
@@ -20,6 +22,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.rpc.TypeConverter;
 import org.junit.*;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 
 import java.io.File;
@@ -35,6 +38,8 @@ public class MainNetMinerTest {
     private BlockChainImpl blockchain;
     public static DifficultyCalculator DIFFICULTY_CALCULATOR ;
 
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder();
 
     @Before
     public void setup() {
@@ -104,18 +109,53 @@ public class MainNetMinerTest {
     }
 
     @Test
-    @Ignore("This doesn't run in multiple platforms")
-    public void generateFallbackMinedBlock() throws InterruptedException {
+    public void generateFallbackMinedBlock() throws InterruptedException, IOException {
         // generate private keys for testing now.
         ECKey privateMiningKey0 = ECKey.fromPrivate(BigInteger.TEN);
         ECKey privateMiningKey1 = ECKey.fromPrivate(BigInteger.TEN.add(BigInteger.ONE));
 
-        String path = RskSystemProperties.CONFIG.fallbackMiningKeysDir();
-
         byte[] privKey0 = privateMiningKey0.getPrivKeyBytes();
-        saveToFile(privKey0,new File(path ,"privkey0.bin"));
+        saveToFile(privKey0, new File(folder.getRoot().getCanonicalPath(), "privkey0.bin"));
         byte[] privKey1 = privateMiningKey1.getPrivKeyBytes();
-        saveToFile(privKey1,new File(path ,"privkey1.bin"));
+        saveToFile(privKey1, new File(folder.getRoot().getCanonicalPath(), "privkey1.bin"));
+
+        RskSystemProperties tempConfig = new RskSystemProperties() {
+
+            BlockchainNetConfig blockchainNetConfig = RskSystemProperties.CONFIG.getBlockchainConfig();
+
+            @Override
+            public String fallbackMiningKeysDir() {
+                try {
+                    return folder.getRoot().getCanonicalPath();
+                } catch (Exception e) {}
+                return null;
+            }
+
+            @Override
+            public BlockchainNetConfig getBlockchainConfig() {
+                return new BlockchainNetConfig() {
+                    @Override
+                    public BlockchainConfig getConfigForBlock(long blockNumber) {
+                        return blockchainNetConfig.getConfigForBlock(blockNumber);
+                    }
+
+                    @Override
+                    public Constants getCommonConstants() {
+                        return new Constants() {
+                            @Override
+                            public byte[] getFallbackMiningPubKey0() {
+                                return privateMiningKey0.getPubKey();
+                            }
+                            @Override
+                            public byte[] getFallbackMiningPubKey1() {
+                                return privateMiningKey1.getPubKey();
+                            }
+                        };
+                    }
+                };
+            }
+
+        };
 
 
         EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
@@ -127,7 +167,8 @@ public class MainNetMinerTest {
                 blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
                 unclesValidationRule, null, DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(RskSystemProperties.CONFIG),
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(true));
+                new ProofOfWorkRule(tempConfig).setFallbackMiningEnabled(true),
+                tempConfig);
         try {
             minerServer.setFallbackMining(true);
 

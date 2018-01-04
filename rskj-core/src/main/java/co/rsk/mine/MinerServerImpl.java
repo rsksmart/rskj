@@ -131,6 +131,7 @@ public class MinerServerImpl implements MinerServer {
     private long minimumAcceptableTime;
     private boolean autoSwitchBetweenNormalAndFallbackMining;
     private boolean fallbackMiningScheduled;
+    private final RskSystemProperties rskSystemProperties;
 
     @Autowired
     public MinerServerImpl(Ethereum ethereum,
@@ -144,6 +145,21 @@ public class MinerServerImpl implements MinerServer {
                            DifficultyCalculator difficultyCalculator,
                            GasLimitCalculator gasLimitCalculator,
                            ProofOfWorkRule powRule) {
+        this(ethereum, blockchain, blockStore, pendingState, repository, miningConfig, validationRules, nodeBlockProcessor, difficultyCalculator, gasLimitCalculator, powRule, RskSystemProperties.CONFIG);
+    }
+
+    public MinerServerImpl(Ethereum ethereum,
+                           Blockchain blockchain,
+                           BlockStore blockStore,
+                           PendingState pendingState,
+                           Repository repository,
+                           MiningConfig miningConfig,
+                           @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
+                           BlockProcessor nodeBlockProcessor,
+                           DifficultyCalculator difficultyCalculator,
+                           GasLimitCalculator gasLimitCalculator,
+                           ProofOfWorkRule powRule,
+                           RskSystemProperties rskSystemProperties) {
         this.ethereum = ethereum;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -174,9 +190,9 @@ public class MinerServerImpl implements MinerServer {
                 RskSystemProperties.CONFIG.getAverageFallbackMiningTime();
         // default
         if (secsBetweenFallbackMinedBlocks==0)
-            secsBetweenFallbackMinedBlocks = (RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getDurationLimit());
-
-        autoSwitchBetweenNormalAndFallbackMining = !RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BigInteger.ZERO);
+            secsBetweenFallbackMinedBlocks = (rskSystemProperties.getBlockchainConfig().getCommonConstants().getDurationLimit());
+        this.rskSystemProperties = rskSystemProperties;
+        autoSwitchBetweenNormalAndFallbackMining = !rskSystemProperties.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BigInteger.ZERO);
     }
 
     // This method is used for tests
@@ -333,7 +349,7 @@ public class MinerServerImpl implements MinerServer {
         boolean isEvenBlockNumber = (newBlock.getNumber() % 2) == 0;
 
 
-        String path = RskSystemProperties.CONFIG.fallbackMiningKeysDir();
+        String path = rskSystemProperties.fallbackMiningKeysDir();
 
         if (privKey0==null) privKey0= readFromFile(new File(path,"privkey0.bin"));
         if (privKey1==null) privKey1 = readFromFile(new File(path,"privkey1.bin"));
@@ -622,7 +638,7 @@ public class MinerServerImpl implements MinerServer {
 
         if (autoSwitchBetweenNormalAndFallbackMining) {
             if (ProofOfWorkRule.isFallbackMiningPossible(
-                    RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants(),
+                    rskSystemProperties.getBlockchainConfig().getCommonConstants(),
                     newBlock.getHeader())) {
 
                 setFallbackMining(true);
