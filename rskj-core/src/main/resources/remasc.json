@@ -33,6 +33,18 @@
       "paidFeesMultiplier": 2,
       "paidFeesDivisor": 1
    },
+   "fallbackmain": {
+      "maturity" : 4000,
+      "syntheticSpan" : 10,
+      "rskLabsDivisor" : 5,
+      "punishmentDivisor" : 10,
+      "publishersDivisor" : 10,
+      "federationDivisor" : 100,
+      "rskLabsAddress" : "14d3065c8Eb89895f4df12450EC6b130049F8034",
+      "lateUncleInclusionPunishmentDivisor": 20,
+      "paidFeesMultiplier": 2,
+      "paidFeesDivisor": 1
+   },
    "testnet": {
       "maturity" : 50,
       "syntheticSpan" : 10,

@@ -13,13 +13,12 @@ import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
-import org.ethereum.config.net.MainNetConfig;
+import org.ethereum.core.Block;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.ImportResult;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.validator.DifficultyRule;
 import org.junit.*;
 import org.mockito.Mockito;
 
@@ -104,6 +103,65 @@ public class MainNetMinerTest {
         }
     }
 
+    @Ignore
+    public void showBlockTimesPseudoTest() throws InterruptedException {
+
+        // generate private keys for testing now.
+        ECKey privateMiningKey0 = ECKey.fromPrivate(BigInteger.TEN);
+        ECKey privateMiningKey1 = ECKey.fromPrivate(BigInteger.TEN.add(BigInteger.ONE));
+
+        String path = RskSystemProperties.CONFIG.fallbackMiningKeysDir();
+
+        byte[] privKey0 = privateMiningKey0.getPrivKeyBytes();
+        saveToFile(privKey0,new File(path ,"privkey0.bin"));
+        byte[] privKey1 = privateMiningKey1.getPrivKeyBytes();
+        saveToFile(privKey1,new File(path ,"privkey1.bin"));
+
+
+        EthereumImpl ethereumImpl = Mockito.mock(EthereumImpl.class);
+        Mockito.when(ethereumImpl.addNewMinedBlock(Mockito.any())).thenReturn(ImportResult.IMPORTED_BEST);
+
+        BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
+        Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
+        MinerServer minerServer = new MinerServerImpl(ethereumImpl, blockchain, null,
+                blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
+                unclesValidationRule, null, DIFFICULTY_CALCULATOR,
+                new GasLimitCalculator(RskSystemProperties.CONFIG),
+                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(true));
+        try {
+            minerServer.setFallbackMining(true);
+
+
+            minerServer.start();
+
+            // Blocks are generated auomatically
+            // but we can call minerServer.generateFallbackBlock() to generate it manually
+            // boolean result = minerServer.generateFallbackBlock();
+            // Assert.assertTrue(result);
+            long start = System.currentTimeMillis();
+            long lastNumber = -1;
+            while (true) {
+
+                if (System.currentTimeMillis() - start > 60 * 1000) {
+                    Assert.assertTrue(false);
+                }
+                Block b = blockchain.getBestBlock();
+                if (b.getNumber()>lastNumber) {
+                    lastNumber =b.getNumber();
+                    System.out.println(b.toString());
+                    // Esto debe hacerse porque el mockito de ethereum no genera los eventos
+                    // onBlock()
+                    minerServer.buildBlockToMine(b, false);
+
+                }
+                Thread.sleep(1000); //
+
+            }
+        } finally {
+            minerServer.stop();
+        }
+        }
+
     @Test
     public void generateFallbackMinedBlock() throws InterruptedException {
         // generate private keys for testing now.
@@ -132,7 +190,7 @@ public class MainNetMinerTest {
             minerServer.setFallbackMining(true);
 
             // Accelerate mining
-            ((MinerServerImpl) minerServer).setMillisBetweenFallbackMinedBlocks(2000);
+            ((MinerServerImpl) minerServer).setSecsBetweenFallbackMinedBlocks(1);
 
             minerServer.start();
 

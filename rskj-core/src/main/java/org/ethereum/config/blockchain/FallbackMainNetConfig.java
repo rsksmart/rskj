@@ -10,7 +10,7 @@ import java.math.BigInteger;
  */
 public class FallbackMainNetConfig extends GenesisConfig  {
 
-    public static class FallbackMainNetConstants extends GenesisConstants {
+    public static class FallbackMainNetConstants extends MainNetAfterBridgeSyncConfig.MainNetConstants {
         private static final BigInteger DIFFICULTY_BOUND_DIVISOR = BigInteger.valueOf(50);
         private static final byte CHAIN_ID = 30;
 

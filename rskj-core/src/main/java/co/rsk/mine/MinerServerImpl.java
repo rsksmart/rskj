@@ -92,13 +92,12 @@ public class MinerServerImpl implements MinerServer {
     private int fallbackBlocksGenerated;
     private Timer fallbackMiningTimer;
     private Timer refreshWorkTimer;
-    private int millisBetweenFallbackMinedBlocks;
+    private int secsBetweenFallbackMinedBlocks;
     private NewBlockListener blockListener;
 
     private boolean started;
 
     private byte[] extraData;
-
 
     @GuardedBy("lock")
     private LinkedHashMap<Sha3Hash, Block> blocksWaitingforPoW;
@@ -169,13 +168,20 @@ public class MinerServerImpl implements MinerServer {
 
         // One more second to force continuous reduction in difficulty
         // TODO(mc) move to MiningConstants
-        millisBetweenFallbackMinedBlocks = (RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getDurationLimit() + 1) * 1000;
+
+        // It's not so important to add one because the timer has an average delay of 1 second.
+        secsBetweenFallbackMinedBlocks =
+                RskSystemProperties.CONFIG.getAverageFallbackMiningTime();
+        // default
+        if (secsBetweenFallbackMinedBlocks==0)
+                    secsBetweenFallbackMinedBlocks = (RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getDurationLimit() + 1);
+
         autoSwitchBetweenNormalAndFallbackMining = !RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BigInteger.ZERO);
     }
 
     // This method is used for tests
-    public void setMillisBetweenFallbackMinedBlocks(int m) {
-        millisBetweenFallbackMinedBlocks = m;
+    public void setSecsBetweenFallbackMinedBlocks(int m) {
+        secsBetweenFallbackMinedBlocks = m;
     }
 
     private LinkedHashMap<Sha3Hash, Block> createNewBlocksWaitingList() {
@@ -205,7 +211,7 @@ public class MinerServerImpl implements MinerServer {
                     fallbackMiningTimer = new Timer("Private mining timer");
                 }
                 if (!fallbackMiningScheduled) {
-                    fallbackMiningTimer.schedule(new FallbackMiningTask(), millisBetweenFallbackMinedBlocks, millisBetweenFallbackMinedBlocks);
+                    fallbackMiningTimer.schedule(new FallbackMiningTask(), 2000,2000 );
                     fallbackMiningScheduled = true;
                 }
                 // Because the Refresh occurs only once every minute,
@@ -333,7 +339,7 @@ public class MinerServerImpl implements MinerServer {
         if (privKey1==null) privKey1 = readFromFile(new File(path,"privkey1.bin"));
 
         if (!isEvenBlockNumber && privKey1 == null) {
-        return false;
+           return false;
         }
 
         if (isEvenBlockNumber && privKey0 == null) {
@@ -348,15 +354,25 @@ public class MinerServerImpl implements MinerServer {
             privateKey = ECKey.fromPrivate(privKey1);
         }
 
+        //
+        // Set the timestamp now to control mining interval better
+        //
+        BlockHeader newHeader = newBlock.getHeader();
+
+        newHeader.setTimestamp(this.getCurrentTimeInSeconds());
+        Block parentBlock =blockchain.getBlockByHash(newHeader.getParentHash());
+        newHeader.setDifficulty(
+                difficultyCalculator.calcDifficulty(newHeader, parentBlock.getHeader()).toByteArray());
+
         // fallback mining marker
         newBlock.setExtraData(new byte[]{42});
         byte[] signature = fallbackSign(newBlock.getHashForMergedMining(), privateKey);
 
         newBlock.setBitcoinMergedMiningHeader(signature);
+
         newBlock.seal();
 
         if (!isValid(newBlock)) {
-            isValid(newBlock);
             String message = "Invalid block supplied by miner: " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber();
             logger.error(message);
             return false;
@@ -720,6 +736,8 @@ public class MinerServerImpl implements MinerServer {
          * This method will be called on every block added to the blockchain, even if it doesn't go to the best chain.
          * TODO(???): It would be cleaner to just send this when the blockchain's best block changes.
          * **/
+        // This event executes in the thread context of the caller.
+        // In case of private miner, it's the "Private Mining timer" task
         public void onBlock(Block block, List<TransactionReceipt> receipts) {
             if (isSyncing()) {
                 return;
@@ -790,7 +808,14 @@ public class MinerServerImpl implements MinerServer {
         @Override
         public void run() {
             try {
-                generateFallbackBlock();
+                Block bestBlock = blockchain.getBestBlock();
+                long curtimestampSeconds = getCurrentTimeInSeconds();
+
+
+                if (curtimestampSeconds > bestBlock.getTimestamp() + secsBetweenFallbackMinedBlocks)
+                    {
+                        generateFallbackBlock();
+            }
             } catch (Throwable th) {
                 logger.error("Unexpected error: {}", th);
                 panicProcessor.panic("mserror", th.getMessage());
