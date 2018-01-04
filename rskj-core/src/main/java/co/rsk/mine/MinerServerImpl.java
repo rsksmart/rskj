@@ -174,7 +174,7 @@ public class MinerServerImpl implements MinerServer {
                 RskSystemProperties.CONFIG.getAverageFallbackMiningTime();
         // default
         if (secsBetweenFallbackMinedBlocks==0)
-                    secsBetweenFallbackMinedBlocks = (RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getDurationLimit() + 1);
+            secsBetweenFallbackMinedBlocks = (RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getDurationLimit());
 
         autoSwitchBetweenNormalAndFallbackMining = !RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BigInteger.ZERO);
     }
