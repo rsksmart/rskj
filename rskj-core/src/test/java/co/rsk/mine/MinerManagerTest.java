@@ -70,12 +70,15 @@ public class MinerManagerTest {
         MinerClientImpl.RefreshWork refreshWork = minerClient.createRefreshWork();
 
         Assert.assertNotNull(refreshWork);
+        try {
+            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+            refreshWork.run();
+            Assert.assertTrue(minerClient.mineBlock());
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
-        refreshWork.run();
-        Assert.assertTrue(minerClient.mineBlock());
-
-        Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
+            Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
+        } finally {
+            refreshWork.cancel();
+        }
     }
 
     @Test
@@ -91,16 +94,20 @@ public class MinerManagerTest {
         MinerClientImpl.RefreshWork refreshWork = minerClient.createRefreshWork();
 
         Assert.assertNotNull(refreshWork);
+        try {
+            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+            refreshWork.run();
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
-        refreshWork.run();
-        Assert.assertTrue(minerClient.mineBlock());
+            Assert.assertTrue(minerClient.mineBlock());
 
-        minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
-        refreshWork.run();
-        Assert.assertTrue(minerClient.mineBlock());
+            minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
+            refreshWork.run();
+            Assert.assertTrue(minerClient.mineBlock());
 
-        Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
+            Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
+        } finally {
+            refreshWork.cancel();
+        }
     }
 
     @Test
