@@ -141,7 +141,7 @@ public class DefaultConfig {
                 rskSystemProperties.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit(),
                 new GasLimitConfig(
                         rskSystemProperties.getBlockchainConfig().getCommonConstants().getMinGasLimit(),
-                        rskSystemProperties.getBlockchainConfig().getCommonConstants().getTargetGasLimit(),
+                        rskSystemProperties.getTargetGasLimit(),
                         rskSystemProperties.getForceTargetGasLimit()
                 )
         );
