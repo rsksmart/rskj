@@ -124,15 +124,24 @@ public class MainNetMinerTest {
                 new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(true));
 
         minerServer.setFallbackMining(true);
+
+        // Accelerate mining
+        ((MinerServerImpl)minerServer).setMillisBetweenFallbackMinedBlocks(2000);
+
         minerServer.start();
 
         // Blocks are generated auomatically
         // but we can call minerServer.generateFallbackBlock() to generate it manually
         // boolean result = minerServer.generateFallbackBlock();
         // Assert.assertTrue(result);
-
+        long start = System.currentTimeMillis();
         while (((MinerServerImpl)minerServer).getFallbackBlocksGenerated()==0) {
+
+            if (System.currentTimeMillis()-start>10*1000) {
+                Assert.assertTrue(false);
+            }
             Thread.sleep(1000); //
+
         }
 
         Mockito.verify(ethereumImpl, Mockito.times(1)).addNewMinedBlock(Mockito.any());
@@ -143,7 +152,11 @@ public class MainNetMinerTest {
 
         //result = minerServer.generateFallbackBlock();
         //Assert.assertTrue(result);
+        start = System.currentTimeMillis();
         while (((MinerServerImpl)minerServer).getFallbackBlocksGenerated()==1) {
+            if (System.currentTimeMillis()-start>10*1000) {
+                Assert.assertTrue(false);
+            }
             Thread.sleep(1000); //
         }
 

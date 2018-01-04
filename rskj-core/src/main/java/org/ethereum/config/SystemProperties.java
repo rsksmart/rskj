@@ -20,10 +20,7 @@
 package org.ethereum.config;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
-import com.typesafe.config.ConfigObject;
-import com.typesafe.config.ConfigRenderOptions;
+import com.typesafe.config.*;
 import org.ethereum.config.blockchain.DevNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.config.net.TestNetConfig;
@@ -98,6 +95,7 @@ public abstract class SystemProperties {
 
     // mutable options for tests
     private String databaseDir = null;
+    private String fallbackMiningKeysDir = null;
     private Boolean databaseReset = null;
     private String projectVersion = null;
     private String projectVersionModifier = null;
@@ -398,6 +396,16 @@ public abstract class SystemProperties {
     @ValidateMe
     public String databaseDir() {
         return databaseDir == null ? configFromFiles.getString("database.dir") : databaseDir;
+    }
+
+    // can be missing
+    public String fallbackMiningKeysDir() {
+        try {
+            return fallbackMiningKeysDir == null ? configFromFiles.getString("fallbackMining.keysDir") : fallbackMiningKeysDir;
+        } catch(ConfigException.Missing e) {
+            fallbackMiningKeysDir ="";
+            return fallbackMiningKeysDir;
+        }
     }
 
     public void setDataBaseDir(String dataBaseDir) {

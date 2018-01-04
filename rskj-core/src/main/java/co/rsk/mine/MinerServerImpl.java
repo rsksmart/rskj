@@ -55,6 +55,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -170,6 +171,11 @@ public class MinerServerImpl implements MinerServer {
         // TODO(mc) move to MiningConstants
         millisBetweenFallbackMinedBlocks = (RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getDurationLimit() + 1) * 1000;
         autoSwitchBetweenNormalAndFallbackMining = !RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BigInteger.ZERO);
+    }
+
+    // This method is used for tests
+    public void setMillisBetweenFallbackMinedBlocks(int m) {
+        millisBetweenFallbackMinedBlocks = m;
     }
 
     private LinkedHashMap<Sha3Hash, Block> createNewBlocksWaitingList() {
@@ -288,9 +294,9 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @Nullable
-    public static byte[] readFromFile(String outputFileName) {
+    public static byte[] readFromFile(File aFile) {
         try {
-            try (FileInputStream fis = new FileInputStream(outputFileName)) {
+            try (FileInputStream fis = new FileInputStream(aFile)) {
                 byte[] array = new byte[1024];
                 int r = fis.read(array);
                 array = java.util.Arrays.copyOfRange(array, 0, r);
@@ -302,9 +308,8 @@ public class MinerServerImpl implements MinerServer {
         }
     }
 
-    // TODO: move to configuration
-    static byte[] privKey0 = readFromFile("privkey0.bin");
-    static byte[] privKey1 = readFromFile("privkey1.bin");
+    static byte[] privKey0;
+    static byte[] privKey1;
 
     @Override
     public boolean generateFallbackBlock() {
@@ -321,8 +326,14 @@ public class MinerServerImpl implements MinerServer {
 
         boolean isEvenBlockNumber = (newBlock.getNumber() % 2) == 0;
 
+
+        String path = RskSystemProperties.CONFIG.fallbackMiningKeysDir();
+
+        if (privKey0==null) privKey0= readFromFile(new File(path,"privkey0.bin"));
+        if (privKey1==null) privKey1 = readFromFile(new File(path,"privkey1.bin"));
+
         if (!isEvenBlockNumber && privKey1 == null) {
-            return false;
+        return false;
         }
 
         if (isEvenBlockNumber && privKey0 == null) {
