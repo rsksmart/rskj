@@ -90,10 +90,10 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
 
         TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator();
 
-        Assert.assertTrue(tvigpv.validate(tx1, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE));
-        Assert.assertTrue(tvigpv.validate(tx2, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE));
-        Assert.assertTrue(tvigpv.validate(tx3, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE));
-        Assert.assertTrue(tvigpv.validate(tx4, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE));
+        Assert.assertTrue(tvigpv.validate(tx1, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
+        Assert.assertTrue(tvigpv.validate(tx2, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
+        Assert.assertTrue(tvigpv.validate(tx3, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
+        Assert.assertTrue(tvigpv.validate(tx4, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
     }
 
 
@@ -138,9 +138,9 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
 
         TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator();
 
-        Assert.assertFalse(tvigpv.validate(tx1, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE));
-        Assert.assertFalse(tvigpv.validate(tx2, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE));
-        Assert.assertFalse(tvigpv.validate(tx3, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE));
-        Assert.assertFalse(tvigpv.validate(tx4, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE));
+        Assert.assertFalse(tvigpv.validate(tx1, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
+        Assert.assertFalse(tvigpv.validate(tx2, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
+        Assert.assertFalse(tvigpv.validate(tx3, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
+        Assert.assertFalse(tvigpv.validate(tx4, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
     }
 }

@@ -29,6 +29,6 @@ import java.math.BigInteger;
  */
 public interface TxValidatorStep {
 
-    boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber);
+    boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber, boolean isFreeTx);
 
 }

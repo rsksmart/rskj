@@ -31,7 +31,7 @@ public class TxValidatorAccountStateValidatorTest {
         Mockito.when(state.isDeleted()).thenReturn(false);
 
         TxValidatorAccountStateValidator tvasv = new TxValidatorAccountStateValidator();
-        Assert.assertTrue(tvasv.validate(null, state, null, null, Long.MAX_VALUE));
+        Assert.assertTrue(tvasv.validate(null, state, null, null, Long.MAX_VALUE, false));
     }
 
     @Test
@@ -40,6 +40,6 @@ public class TxValidatorAccountStateValidatorTest {
         Mockito.when(state.isDeleted()).thenReturn(true);
 
         TxValidatorAccountStateValidator tvasv = new TxValidatorAccountStateValidator();
-        Assert.assertFalse(tvasv.validate(null, state, null, null, Long.MAX_VALUE));
+        Assert.assertFalse(tvasv.validate(null, state, null, null, Long.MAX_VALUE, false));
     }
 }

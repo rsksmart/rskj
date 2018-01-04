@@ -18,11 +18,14 @@
 
 package co.rsk.net.handler.txvalidator;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -45,9 +48,9 @@ public class TxValidatorAccountBalanceValidatorTest {
 
         TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator();
 
-        Assert.assertTrue(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE));
-        Assert.assertTrue(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE));
-        Assert.assertTrue(tvabv.validate(tx3, as, null, null, Long.MAX_VALUE));
+        Assert.assertTrue(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false));
+        Assert.assertTrue(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false));
+        Assert.assertTrue(tvabv.validate(tx3, as, null, null, Long.MAX_VALUE, false));
     }
 
     @Test
@@ -64,8 +67,24 @@ public class TxValidatorAccountBalanceValidatorTest {
 
         TxValidatorAccountBalanceValidator tvabv = new TxValidatorAccountBalanceValidator();
 
-        Assert.assertFalse(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE));
-        Assert.assertFalse(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE));
+        Assert.assertFalse(tvabv.validate(tx1, as, null, null, Long.MAX_VALUE, false));
+        Assert.assertFalse(tvabv.validate(tx2, as, null, null, Long.MAX_VALUE, false));
     }
 
+    @Test
+    public void balanceIsNotValidatedIfFreeTx() {
+        Transaction tx = new Transaction(BigInteger.ZERO.toByteArray(),
+                BigInteger.ONE.toByteArray(),
+                BigInteger.valueOf(21071).toByteArray(),
+                new ECKey().getAddress(),
+                BigInteger.ZERO.toByteArray(),
+                Hex.decode("0001"),
+                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+
+        tx.sign(new ECKey().getPrivKeyBytes());
+
+        TxValidatorAccountBalanceValidator tv = new TxValidatorAccountBalanceValidator();
+
+        Assert.assertTrue(tv.validate(tx, new AccountState(BigInteger.ZERO, BigInteger.ZERO), BigInteger.ONE, BigInteger.ONE, Long.MAX_VALUE, true));
+    }
 }

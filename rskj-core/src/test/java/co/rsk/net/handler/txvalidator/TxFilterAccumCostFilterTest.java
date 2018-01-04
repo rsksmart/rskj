@@ -20,6 +20,7 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.net.handler.TxsPerAccount;
 import org.ethereum.core.AccountState;
+import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
@@ -63,28 +64,28 @@ public class TxFilterAccumCostFilterTest {
         tpa1.setTransactions(new LinkedList<>());
         tpa1.getTransactions().add(tx1);
         tpa1.getTransactions().add(tx2);
-        Assert.assertEquals(2, tfacf.filter(as1, tpa1).size());
+        Assert.assertEquals(2, tfacf.filter(as1, tpa1, null).size());
         tpa1.setTransactions(new LinkedList<>());
         tpa1.getTransactions().add(tx1);
         tpa1.getTransactions().add(tx2);
-        Assert.assertEquals(2, tfacf.filter(as2, tpa1).size());
+        Assert.assertEquals(2, tfacf.filter(as2, tpa1, null).size());
         tpa1.setTransactions(new LinkedList<>());
         tpa1.getTransactions().add(tx1);
         tpa1.getTransactions().add(tx2);
-        Assert.assertEquals(2, tfacf.filter(as3, tpa1).size());
+        Assert.assertEquals(2, tfacf.filter(as3, tpa1, null).size());
 
         tpa2.setTransactions(new LinkedList<>());
         tpa2.getTransactions().add(tx1);
         tpa2.getTransactions().add(tx2);
-        Assert.assertEquals(2, tfacf.filter(as1, tpa2).size());
+        Assert.assertEquals(2, tfacf.filter(as1, tpa2, null).size());
         tpa2.setTransactions(new LinkedList<>());
         tpa2.getTransactions().add(tx1);
         tpa2.getTransactions().add(tx2);
-        Assert.assertEquals(2, tfacf.filter(as2, tpa2).size());
+        Assert.assertEquals(2, tfacf.filter(as2, tpa2, null).size());
         tpa2.setTransactions(new LinkedList<>());
         tpa2.getTransactions().add(tx1);
         tpa2.getTransactions().add(tx2);
-        Assert.assertEquals(2, tfacf.filter(as3, tpa2).size());
+        Assert.assertEquals(2, tfacf.filter(as3, tpa2, null).size());
     }
 
     @Test
@@ -94,6 +95,7 @@ public class TxFilterAccumCostFilterTest {
         AccountState as1 = Mockito.mock(AccountState.class);
         AccountState as2 = Mockito.mock(AccountState.class);
         AccountState as3 = Mockito.mock(AccountState.class);
+
         TxsPerAccount tpa1 = new TxsPerAccount();
         TxsPerAccount tpa2 = new TxsPerAccount();
 
@@ -118,28 +120,28 @@ public class TxFilterAccumCostFilterTest {
         tpa1.setTransactions(new LinkedList<>());
         tpa1.getTransactions().add(tx1);
         tpa1.getTransactions().add(tx2);
-        Assert.assertEquals(0, tfacf.filter(as1, tpa1).size());
+        Assert.assertEquals(0, tfacf.filter(as1, tpa1, null).size());
         tpa1.setTransactions(new LinkedList<>());
         tpa1.getTransactions().add(tx1);
         tpa1.getTransactions().add(tx2);
-        Assert.assertEquals(1, tfacf.filter(as2, tpa1).size());
+        Assert.assertEquals(1, tfacf.filter(as2, tpa1, null).size());
         tpa1.setTransactions(new LinkedList<>());
         tpa1.getTransactions().add(tx1);
         tpa1.getTransactions().add(tx2);
-        Assert.assertEquals(1, tfacf.filter(as3, tpa1).size());
+        Assert.assertEquals(1, tfacf.filter(as3, tpa1, null).size());
 
         tpa2.setTransactions(new LinkedList<>());
         tpa2.getTransactions().add(tx1);
         tpa2.getTransactions().add(tx2);
-        Assert.assertEquals(0, tfacf.filter(as1, tpa2).size());
+        Assert.assertEquals(0, tfacf.filter(as1, tpa2, null).size());
         tpa2.setTransactions(new LinkedList<>());
         tpa2.getTransactions().add(tx1);
         tpa2.getTransactions().add(tx2);
-        Assert.assertEquals(1, tfacf.filter(as2, tpa2).size());
+        Assert.assertEquals(1, tfacf.filter(as2, tpa2, null).size());
         tpa2.setTransactions(new LinkedList<>());
         tpa2.getTransactions().add(tx1);
         tpa2.getTransactions().add(tx2);
-        Assert.assertEquals(1, tfacf.filter(as3, tpa2).size());
+        Assert.assertEquals(1, tfacf.filter(as3, tpa2, null).size());
     }
 
 }

@@ -39,8 +39,8 @@ public class TxValidatorNonceRangeValidatorTest {
         Mockito.when(as.getNonce()).thenReturn(BigInteger.valueOf(0));
 
         TxValidatorNonceRangeValidator tvnrv = new TxValidatorNonceRangeValidator();
-        Assert.assertTrue(tvnrv.validate(tx1, as, null, null, Long.MAX_VALUE));
-        Assert.assertTrue(tvnrv.validate(tx2, as, null, null, Long.MAX_VALUE));
+        Assert.assertTrue(tvnrv.validate(tx1, as, null, null, Long.MAX_VALUE, false));
+        Assert.assertTrue(tvnrv.validate(tx2, as, null, null, Long.MAX_VALUE, false));
     }
 
     @Test
@@ -54,7 +54,7 @@ public class TxValidatorNonceRangeValidatorTest {
         Mockito.when(as.getNonce()).thenReturn(BigInteger.valueOf(1));
 
         TxValidatorNonceRangeValidator tvnrv = new TxValidatorNonceRangeValidator();
-        Assert.assertFalse(tvnrv.validate(tx1, as, null, null, Long.MAX_VALUE));
-        Assert.assertFalse(tvnrv.validate(tx2, as, null, null, Long.MAX_VALUE));
+        Assert.assertFalse(tvnrv.validate(tx1, as, null, null, Long.MAX_VALUE, false));
+        Assert.assertFalse(tvnrv.validate(tx2, as, null, null, Long.MAX_VALUE, false));
     }
 }

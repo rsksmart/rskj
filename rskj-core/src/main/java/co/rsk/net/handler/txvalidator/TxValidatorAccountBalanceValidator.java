@@ -29,9 +29,9 @@ import java.math.BigInteger;
 public class TxValidatorAccountBalanceValidator implements TxValidatorStep {
 
     @Override
-    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber) {
+    public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         BigInteger txGasLimit = tx.getGasLimitAsInteger();
         BigInteger maximumPrice = txGasLimit.multiply(tx.getGasPriceAsInteger());
-        return state.getBalance().compareTo(maximumPrice) >= 0;
+        return isFreeTx || state.getBalance().compareTo(maximumPrice) >= 0;
     }
 }

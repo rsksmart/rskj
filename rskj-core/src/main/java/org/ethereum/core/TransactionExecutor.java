@@ -172,8 +172,14 @@ public class TransactionExecutor {
             return false;
         }
 
-        BigInteger txGasCost = toBI(tx.getGasPrice()).multiply(txGasLimit);
-        BigInteger totalCost = toBI(tx.getValue()).add(txGasCost);
+
+        BigInteger totalCost = BigInteger.ZERO;
+        if (basicTxCost > 0 ) {
+            // Estimate transaction cost only if is not a free trx
+            BigInteger txGasCost = toBI(tx.getGasPrice()).multiply(txGasLimit);
+            totalCost = toBI(tx.getValue()).add(txGasCost);
+        }
+
         BigInteger senderBalance = track.getBalance(tx.getSender());
 
         if (!isCovers(senderBalance, totalCost)) {

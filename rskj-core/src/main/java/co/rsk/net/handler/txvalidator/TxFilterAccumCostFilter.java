@@ -20,6 +20,7 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.net.handler.TxsPerAccount;
 import org.ethereum.core.AccountState;
+import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 
 import java.math.BigInteger;
@@ -34,17 +35,23 @@ import java.util.List;
 public class TxFilterAccumCostFilter implements TxFilter {
 
     @Override
-    public List<Transaction> filter(AccountState state, TxsPerAccount tpa) {
+    public List<Transaction> filter(AccountState state, TxsPerAccount tpa, Block block) {
         BigInteger accumTxCost = BigInteger.valueOf(0);
+
         tpa.getTransactions().sort((t1, t2) -> {
             BigInteger n1 = new BigInteger(1, t1.getNonce());
             BigInteger n2 = new BigInteger(1, t2.getNonce());
             return n1.compareTo(n2);
         });
+
         List<Transaction> newTxs = new LinkedList<>();
 
         for (Transaction t : tpa.getTransactions()) {
-            BigInteger gasCost = new BigInteger(1, t.getGasLimit()).multiply(new BigInteger(1, t.getGasPrice()));
+            BigInteger gasCost = BigInteger.ZERO;
+            if (block == null || t.transactionCost(block) > 0) {
+                gasCost = new BigInteger(1, t.getGasLimit()).multiply(new BigInteger(1, t.getGasPrice()));
+            }
+
             if (accumTxCost.add(gasCost).compareTo(state.getBalance()) > 0) {
                 break;
             }

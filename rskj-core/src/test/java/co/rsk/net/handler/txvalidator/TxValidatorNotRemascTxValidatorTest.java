@@ -33,12 +33,12 @@ public class TxValidatorNotRemascTxValidatorTest {
         TxValidatorNotRemascTxValidator validator = new TxValidatorNotRemascTxValidator();
         Transaction tx1 = Mockito.mock(RemascTransaction.class);
         Mockito.when(tx1.getHash()).thenReturn(new byte[32]);
-        Assert.assertFalse(validator.validate(tx1, null, null, null, 0));
+        Assert.assertFalse(validator.validate(tx1, null, null, null, 0, false));
     }
 
     @Test
     public void commonTx() {
         TxValidatorNotRemascTxValidator validator = new TxValidatorNotRemascTxValidator();
-        Assert.assertTrue(validator.validate(Mockito.mock(Transaction.class), null, null, null, 0));
+        Assert.assertTrue(validator.validate(Mockito.mock(Transaction.class), null, null, null, 0, false));
     }
 }

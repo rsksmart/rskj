@@ -42,6 +42,6 @@ public class TxPendingValidator {
 
     public boolean isValid(Transaction tx, BigInteger gasLimit) {
         return validatorSteps.stream()
-                .allMatch(v -> v.validate(tx, null, gasLimit, null, 0));
+                .allMatch(v -> v.validate(tx, null, gasLimit, null, 0, false));
     }
 }

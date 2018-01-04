@@ -20,6 +20,7 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.net.handler.TxsPerAccount;
 import org.ethereum.core.AccountState;
+import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 
 import java.util.List;
@@ -36,8 +37,8 @@ public interface TxFilter {
      * @param tx the new transaction
      * @param state the current account state
      * @param tpa old checked txs for this account
+     * @param block block used to consider basic tx cost
      * @return Relayable transactions based on the logic of the given filter
      */
-    List<Transaction> filter(AccountState state, TxsPerAccount tpa);
-
+    List<Transaction> filter(AccountState state, TxsPerAccount tpa, Block block);
 }
