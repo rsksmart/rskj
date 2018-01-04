@@ -228,7 +228,8 @@ public class MinerClientImpl implements MinerClient {
     public void stop() {
 
         stop = true;
-        aTimer.cancel();
+        if (aTimer!=null)
+            aTimer.cancel();
     }
 
     /**
