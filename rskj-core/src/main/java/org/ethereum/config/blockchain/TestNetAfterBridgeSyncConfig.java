@@ -23,7 +23,6 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import org.ethereum.config.Constants;
 import org.ethereum.core.BlockHeader;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
