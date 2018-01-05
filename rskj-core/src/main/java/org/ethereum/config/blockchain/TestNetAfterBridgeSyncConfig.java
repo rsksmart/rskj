@@ -35,11 +35,16 @@ public class TestNetAfterBridgeSyncConfig extends GenesisConfig {
 
         private static final BigInteger DIFFICULTY_BOUND_DIVISOR = BigInteger.valueOf(50);
         private static final byte CHAIN_ID = 31;
-
+        private BigInteger minimumDifficulty = BigInteger.valueOf(131072);
 
         @Override
         public BridgeConstants getBridgeConstants() {
             return BridgeTestNetConstants.getInstance();
+        }
+
+        @Override
+        public BigInteger getMinimumDifficulty() {
+            return minimumDifficulty;
         }
 
         @Override
