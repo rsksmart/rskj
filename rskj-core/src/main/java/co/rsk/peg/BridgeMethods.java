@@ -84,6 +84,15 @@ public enum BridgeMethods {
             19000L,
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBestChainHeight
     ),
+    GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT(
+            CallTransaction.Function.fromSignature(
+                    "getBtcBlockchainInitialBlockHeight",
+                    new String[]{},
+                    new String[]{"int"}
+            ),
+            19000L,
+            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainInitialBlockHeight
+    ),
     GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR(
             CallTransaction.Function.fromSignature(
                     "getBtcBlockchainBlockLocator",
@@ -92,6 +101,15 @@ public enum BridgeMethods {
             ),
             76000L,
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockLocator
+    ),
+    GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH(
+            CallTransaction.Function.fromSignature(
+                    "getBtcBlockchainBlockHashAtDepth",
+                    new String[]{"int256"},
+                    new String[]{"bytes"}
+            ),
+            76000L,
+            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHashAtDepth
     ),
     GET_BTC_TX_HASH_PROCESSED_HEIGHT(
             CallTransaction.Function.fromSignature(
