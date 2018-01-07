@@ -53,8 +53,5 @@ public interface Blockchain {
      */
     Block getBestBlock();
 
-    // RSK
-    boolean isRsk();
-    void setRsk(boolean isrsk);
     void setBlockRecorder(BlockRecorder blockRecorder);
 }

@@ -46,7 +46,6 @@ import java.util.List;
  */
 public class BlockChainBuilder {
     private boolean testing;
-    private boolean rsk;
 
     private List<Block> blocks;
     private List<TransactionInfo> txinfos;
@@ -63,11 +62,6 @@ public class BlockChainBuilder {
 
     public BlockChainBuilder setTesting(boolean value) {
         this.testing = value;
-        return this;
-    }
-
-    public BlockChainBuilder setRsk(boolean value) {
-        this.rsk = value;
         return this;
     }
 
@@ -127,12 +121,10 @@ public class BlockChainBuilder {
 
         BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, null, listener, this.adminInfo, blockValidator, RskSystemProperties.CONFIG);
 
-        if (this.testing && this.rsk) {
+        if (this.testing) {
             blockChain.setBlockValidator(new DummyBlockValidator());
             blockChain.setNoValidation(true);
         }
-
-        blockChain.setRsk(this.rsk);
 
         PendingStateImpl pendingState;
         if (withoutCleaner) {
