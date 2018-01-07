@@ -44,6 +44,7 @@ import org.ethereum.rpc.JsonRpcNettyServer;
 import org.ethereum.rpc.JsonRpcWeb3FilterHandler;
 import org.ethereum.rpc.JsonRpcWeb3ServerHandler;
 import org.ethereum.rpc.Web3;
+import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +70,7 @@ public class Start {
     private final Repository repository;
     private final Blockchain blockchain;
     private final ChannelManager channelManager;
+    private final SyncPool syncPool;
 
     public static void main(String[] args) throws Exception {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
@@ -87,7 +89,8 @@ public class Start {
                  Web3Factory web3Factory,
                  Repository repository,
                  Blockchain blockchain,
-                 ChannelManager channelManager) {
+                 ChannelManager channelManager,
+                 SyncPool syncPool) {
         this.rsk = rsk;
         this.worldManager = worldManager;
         this.udpServer = udpServer;
@@ -98,6 +101,7 @@ public class Start {
         this.repository = repository;
         this.blockchain = blockchain;
         this.channelManager = channelManager;
+        this.syncPool = syncPool;
     }
 
     public void startNode(String[] args) throws Exception {
@@ -140,8 +144,11 @@ public class Start {
             logger.info("RPC disabled");
         }
 
-        if (rskSystemProperties.waitForSync()) {
-            waitRskSyncDone(rsk);
+        if (rskSystemProperties.isSyncEnabled()) {
+            syncPool.start();
+            if (rskSystemProperties.waitForSync()) {
+                waitRskSyncDone(rsk);
+            }
         }
 
         if (rskSystemProperties.minerServerEnabled()) {
@@ -155,6 +162,7 @@ public class Start {
         if (rskSystemProperties.peerDiscovery()) {
             enablePeerDiscovery();
         }
+
     }
 
     private void enablePeerDiscovery() {
@@ -197,6 +205,7 @@ public class Start {
     public void stop() {
         logger.info("Shutting down RSK node");
         rsk.close();
+        syncPool.stop();
     }
 
     private void setupRecorder(Rsk rsk, @Nullable String blocksRecorderFileName) {
