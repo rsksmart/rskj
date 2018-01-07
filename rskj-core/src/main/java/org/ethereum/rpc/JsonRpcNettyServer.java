@@ -26,7 +26,12 @@ public class JsonRpcNettyServer {
     private final JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler;
     private final JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler;
 
-    public JsonRpcNettyServer(int port, int socketLinger, boolean reuseAddress, CorsConfiguration corsConfiguration, JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler, JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler) {
+    public JsonRpcNettyServer(int port,
+                              int socketLinger,
+                              boolean reuseAddress,
+                              CorsConfiguration corsConfiguration,
+                              JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler,
+                              JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler) {
         this.port = port;
         this.socketLinger = socketLinger;
         this.reuseAddress = reuseAddress;
