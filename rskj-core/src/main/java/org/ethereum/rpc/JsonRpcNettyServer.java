@@ -15,8 +15,11 @@ import io.netty.handler.codec.http.cors.CorsHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
+import java.net.InetAddress;
+
 public class JsonRpcNettyServer {
 
+    private final InetAddress host;
     private int port;
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
@@ -26,12 +29,14 @@ public class JsonRpcNettyServer {
     private final JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler;
     private final JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler;
 
-    public JsonRpcNettyServer(int port,
+    public JsonRpcNettyServer(InetAddress host,
+                              int port,
                               int socketLinger,
                               boolean reuseAddress,
                               CorsConfiguration corsConfiguration,
                               JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler,
                               JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler) {
+        this.host = host;
         this.port = port;
         this.socketLinger = socketLinger;
         this.reuseAddress = reuseAddress;
@@ -70,7 +75,7 @@ public class JsonRpcNettyServer {
                     p.addLast(jsonRpcWeb3ServerHandler);
                 }
             });
-        b.bind(port).sync();
+        b.bind(host, port).sync();
     }
 
     public void stop() {

@@ -12,6 +12,7 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,7 +55,7 @@ public class JsonRpcNettyServerTest {
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*");
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules);
-        JsonRpcNettyServer server = new JsonRpcNettyServer(randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler);
+        JsonRpcNettyServer server = new JsonRpcNettyServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler);
         server.start();
 
         HttpURLConnection conn = sendJsonRpcMessage(randomPort, contentType);

@@ -38,6 +38,8 @@ import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -169,6 +171,19 @@ public class RskSystemProperties extends SystemProperties {
     public int rpcPort() {
         return configFromFiles.hasPath("rpc.port") ?
                 configFromFiles.getInt("rpc.port") : 4444;
+    }
+
+    public InetAddress rpcHost() {
+        if (!configFromFiles.hasPath("rpc.host")) {
+            return InetAddress.getLoopbackAddress();
+        }
+        String host = configFromFiles.getString("rpc.host");
+        try {
+            return InetAddress.getByName(host);
+        } catch (UnknownHostException e) {
+            logger.warn("Unable to bind to {}. Using loopback instead", e);
+            return InetAddress.getLoopbackAddress();
+        }
     }
 
     public boolean isWalletEnabled() {
