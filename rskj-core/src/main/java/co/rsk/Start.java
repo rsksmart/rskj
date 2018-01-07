@@ -74,6 +74,7 @@ public class Start {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
         Start runner = ctx.getBean(Start.class);
         runner.startNode(args);
+        Runtime.getRuntime().addShutdownHook(new Thread(runner::stop));
     }
 
     @Autowired
@@ -191,6 +192,11 @@ public class Start {
                 throw e1;
             }
         }
+    }
+
+    public void stop() {
+        logger.info("Shutting down RSK node");
+        rsk.close();
     }
 
     private void setupRecorder(Rsk rsk, @Nullable String blocksRecorderFileName) {
