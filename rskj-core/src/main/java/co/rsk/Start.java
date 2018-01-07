@@ -18,29 +18,42 @@
 
 package co.rsk;
 
+import co.rsk.blocks.FileBlockPlayer;
+import co.rsk.blocks.FileBlockRecorder;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Rsk;
+import co.rsk.core.RskImpl;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.mine.TxBuilder;
 import co.rsk.mine.TxBuilderEx;
+import co.rsk.net.BlockProcessResult;
 import co.rsk.net.Metrics;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.rpc.CorsConfiguration;
 import org.ethereum.cli.CLIInterface;
 import org.ethereum.config.DefaultConfig;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
 import org.ethereum.core.Repository;
 import org.ethereum.manager.WorldManager;
+import org.ethereum.net.eth.EthVersion;
+import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.JsonRpcNettyServer;
 import org.ethereum.rpc.JsonRpcWeb3FilterHandler;
 import org.ethereum.rpc.JsonRpcWeb3ServerHandler;
 import org.ethereum.rpc.Web3;
+import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Nullable;
+import java.util.stream.Collectors;
 
 @Component
 public class Start {
@@ -54,6 +67,8 @@ public class Start {
     private final RskSystemProperties rskSystemProperties;
     private final Web3Factory web3Factory;
     private final Repository repository;
+    private final Blockchain blockchain;
+    private final ChannelManager channelManager;
 
     public static void main(String[] args) throws Exception {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
@@ -69,7 +84,9 @@ public class Start {
                  MinerClient minerClient,
                  RskSystemProperties rskSystemProperties,
                  Web3Factory web3Factory,
-                 Repository repository) {
+                 Repository repository,
+                 Blockchain blockchain,
+                 ChannelManager channelManager) {
         this.rsk = rsk;
         this.worldManager = worldManager;
         this.udpServer = udpServer;
@@ -78,12 +95,26 @@ public class Start {
         this.rskSystemProperties = rskSystemProperties;
         this.web3Factory = web3Factory;
         this.repository = repository;
+        this.blockchain = blockchain;
+        this.channelManager = channelManager;
     }
 
     public void startNode(String[] args) throws Exception {
         logger.info("Starting RSK");
 
         CLIInterface.call(rskSystemProperties, args);
+        logger.info("Running {},  core version: {}-{}", rskSystemProperties.genesisInfo(), rskSystemProperties.projectVersion(), rskSystemProperties.projectVersionModifier());
+        BuildInfo.printInfo();
+
+        rsk.init();
+        if (logger.isInfoEnabled()) {
+            String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
+            logger.info("Capability eth version: [{}]", versions);
+        }
+        if (rskSystemProperties.isBlocksEnabled()) {
+            setupRecorder(rsk, rskSystemProperties.blocksRecorder());
+            setupPlayer(rsk, channelManager, blockchain, rskSystemProperties.blocksPlayer());
+        }
 
         if (!"".equals(rskSystemProperties.blocksLoader())) {
             rskSystemProperties.setSyncEnabled(Boolean.FALSE);
@@ -158,6 +189,39 @@ public class Start {
             } catch (InterruptedException e1) {
                 logger.trace("Wait sync done was interrupted", e1);
                 throw e1;
+            }
+        }
+    }
+
+    private void setupRecorder(Rsk rsk, @Nullable String blocksRecorderFileName) {
+        if (blocksRecorderFileName != null) {
+            rsk.getBlockchain().setBlockRecorder(new FileBlockRecorder(blocksRecorderFileName));
+        }
+    }
+
+    private void setupPlayer(Rsk rsk, ChannelManager cm, Blockchain bc, @Nullable String blocksPlayerFileName) {
+        if (blocksPlayerFileName == null) {
+            return;
+        }
+
+        new Thread(() -> {
+            RskImpl rskImpl = (RskImpl) rsk;
+            try (FileBlockPlayer bplayer = new FileBlockPlayer(blocksPlayerFileName)) {
+                rskImpl.setIsPlayingBlocks(true);
+                connectBlocks(bplayer, bc, cm);
+            } catch (Exception e) {
+                logger.error("Error", e);
+            } finally {
+                rskImpl.setIsPlayingBlocks(false);
+            }
+        }).start();
+    }
+
+    private void connectBlocks(FileBlockPlayer bplayer, Blockchain bc, ChannelManager cm) {
+        for (Block block = bplayer.readBlock(); block != null; block = bplayer.readBlock()) {
+            ImportResult tryToConnectResult = bc.tryToConnect(block);
+            if (BlockProcessResult.importOk(tryToConnectResult)) {
+                cm.broadcastBlock(block, null);
             }
         }
     }
