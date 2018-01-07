@@ -35,7 +35,7 @@ public class RemascFederationProviderTest {
 
     private static RemascFederationProvider getRemascFederationProvider() throws IOException, BlockStoreException {
         Genesis genesisBlock = new BlockGenerator().getGenesisBlock();
-        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setRsk(true).setGenesis(genesisBlock);
+        BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock);
         Blockchain blockchain = builder.build();
 
         BridgeSupport bridgeSupport = new BridgeSupport(blockchain.getRepository(),

@@ -404,7 +404,7 @@ public class BridgeSupportTest {
         List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
         BlockChainBuilder builder = new BlockChainBuilder();
 
-        Blockchain blockchain = builder.setTesting(true).setRsk(true).build();
+        Blockchain blockchain = builder.setTesting(true).build();
 
 
         for (Block block : blocks)
@@ -462,7 +462,7 @@ public class BridgeSupportTest {
         List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
         BlockChainBuilder builder = new BlockChainBuilder();
 
-        Blockchain blockchain = builder.setTesting(true).setRsk(true).build();
+        Blockchain blockchain = builder.setTesting(true).build();
 
         for (Block block : blocks)
             blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);
@@ -577,7 +577,7 @@ public class BridgeSupportTest {
 
         BlockChainBuilder builder = new BlockChainBuilder();
 
-        Blockchain blockchain = builder.setTesting(true).setRsk(true).setGenesis(genesisBlock).build();
+        Blockchain blockchain = builder.setTesting(true).setGenesis(genesisBlock).build();
 
         for (Block block : blocks)
             blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);
@@ -663,7 +663,7 @@ public class BridgeSupportTest {
         List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
 
         BlockChainBuilder builder = new BlockChainBuilder();
-        Blockchain blockchain = builder.setTesting(true).setRsk(true).build();
+        Blockchain blockchain = builder.setTesting(true).build();
 
         for (Block block : blocks)
             blockchain.getBlockStore().saveBlock(block, BigInteger.ONE, true);

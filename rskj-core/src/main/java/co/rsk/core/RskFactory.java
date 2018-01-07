@@ -109,7 +109,6 @@ public class RskFactory {
                 pendingState, config, compositeEthereumListener, receiptStore, nodeBlockProcessor, repository);
 
         rsk.init();
-        rsk.getBlockchain().setRsk(true);  //TODO: check if we can remove this field from org.ethereum.facade.Blockchain
         if (logger.isInfoEnabled()) {
             String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
             logger.info("Capability eth version: [{}]", versions);
