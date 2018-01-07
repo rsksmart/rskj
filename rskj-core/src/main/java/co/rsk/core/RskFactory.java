@@ -92,32 +92,30 @@ public class RskFactory {
                       ChannelManager channelManager,
                       PeerServer peerServer,
                       ProgramInvokeFactory programInvokeFactory,
-                      PendingState pendingState,
                       SystemProperties config,
                       CompositeEthereumListener compositeEthereumListener,
-                      ReceiptStore receiptStore,
-                      PeerScoringManager peerScoringManager,
                       NodeBlockProcessor nodeBlockProcessor,
-                      NodeMessageHandler nodeMessageHandler,
-                      RskSystemProperties rskSystemProperties,
-                      org.ethereum.core.Repository repository) {
+                      RskSystemProperties rskSystemProperties) {
 
         logger.info("Running {},  core version: {}-{}", config.genesisInfo(), config.projectVersion(), config.projectVersionModifier());
         BuildInfo.printInfo();
 
         RskImpl rsk = new RskImpl(worldManager, channelManager, peerServer, programInvokeFactory,
-                pendingState, config, compositeEthereumListener, receiptStore, nodeBlockProcessor, repository);
+                config, compositeEthereumListener, nodeBlockProcessor);
 
         rsk.init();
         rsk.getBlockchain().setRsk(true);  //TODO: check if we can remove this field from org.ethereum.facade.Blockchain
+
         if (logger.isInfoEnabled()) {
             String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
             logger.info("Capability eth version: [{}]", versions);
         }
+
         if (rskSystemProperties.isBlocksEnabled()) {
             setupRecorder(rsk, rskSystemProperties.blocksRecorder());
             setupPlayer(rsk, channelManager, blockchain, rskSystemProperties.blocksPlayer());
         }
+
         return rsk;
     }
 

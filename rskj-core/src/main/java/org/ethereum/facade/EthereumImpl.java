@@ -50,8 +50,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class EthereumImpl implements Ethereum {
-
-    private static final Logger logger = LoggerFactory.getLogger("facade");
     private static final Logger gLogger = LoggerFactory.getLogger("general");
 
     private final WorldManager worldManager;
@@ -70,20 +68,19 @@ public class EthereumImpl implements Ethereum {
                         ChannelManager channelManager,
                         PeerServer peerServer,
                         ProgramInvokeFactory programInvokeFactory,
-                        PendingState pendingState,
                         SystemProperties config,
-                        CompositeEthereumListener compositeEthereumListener,
-                        ReceiptStore receiptStore,
-                        Repository repository) {
+                        CompositeEthereumListener compositeEthereumListener) {
         this.worldManager = worldManager;
         this.channelManager = channelManager;
         this.peerServer = peerServer;
         this.programInvokeFactory = programInvokeFactory;
-        this.pendingState = pendingState;
         this.config = config;
         this.compositeEthereumListener = compositeEthereumListener;
-        this.receiptStore = receiptStore;
-        this.repository = repository;
+
+        // WorldManager derived fields
+        this.pendingState = this.worldManager.getBlockchain().getPendingState();
+        this.receiptStore = this.worldManager.getBlockchain().getReceiptStore();
+        this.repository = this.worldManager.getBlockchain().getRepository();
     }
 
     @Override
