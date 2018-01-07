@@ -46,6 +46,7 @@ import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
@@ -65,6 +66,7 @@ public class EthereumImpl implements Ethereum {
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
     private final Repository repository;
+    private ExecutorService peerServiceExecutor;
 
     public EthereumImpl(WorldManager worldManager,
                         ChannelManager channelManager,
@@ -89,13 +91,14 @@ public class EthereumImpl implements Ethereum {
     @Override
     public void init() {
         if (config.listenPort() > 0) {
-            Executors.newSingleThreadExecutor(runnable -> {
-                Thread thread = new Thread(runnable);
+            peerServiceExecutor = Executors.newSingleThreadExecutor(runnable -> {
+                Thread thread = new Thread(runnable, "Peer Server");
                 thread.setUncaughtExceptionHandler((exceptionThread, exception) -> {
                     gLogger.error("Unable to start peer server", exception);
                 });
                 return thread;
-            }).execute(() -> peerServer.start(config.listenPort()));
+            });
+            peerServiceExecutor.execute(() -> peerServer.start(config.listenPort()));
         }
         compositeEthereumListener.addListener(gasPriceTracker);
 
@@ -129,7 +132,9 @@ public class EthereumImpl implements Ethereum {
 
     @Override
     public void close() {
-//        worldManager.close();
+        if (peerServiceExecutor != null) {
+            peerServiceExecutor.shutdown();
+        }
     }
 
     @Override
