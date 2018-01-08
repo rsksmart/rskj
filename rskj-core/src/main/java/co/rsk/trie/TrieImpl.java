@@ -351,7 +351,7 @@ public class TrieImpl implements Trie {
         }
 
         if (this.encodedSharedPath != null) {
-            byte[] sharedPath = decodePath(this.encodedSharedPath, this.arity, this.sharedPathLength);
+            byte[] sharedPath = PathEncoder.decode(this.encodedSharedPath, this.arity, this.sharedPathLength);
 
             for (int k = 0; k < sharedPath.length; k++, position++) {
                 if (position >= length) {
@@ -588,7 +588,7 @@ public class TrieImpl implements Trie {
         }
 
         if (this.encodedSharedPath != null) {
-            byte[] sharedPath = decodePath(this.encodedSharedPath, this.arity, this.sharedPathLength);
+            byte[] sharedPath = PathEncoder.decode(this.encodedSharedPath, this.arity, this.sharedPathLength);
 
             for (int k = 0; k < sharedPath.length; k++, position++) {
                 if (position >= length) {
@@ -959,7 +959,7 @@ public class TrieImpl implements Trie {
             trieSharedPath = positionPath;
         }
         else {
-            trieSharedPath = ByteUtils.concatenate(decodePath(trie.encodedSharedPath, trie.arity, trie.sharedPathLength), positionPath);
+            trieSharedPath = ByteUtils.concatenate(PathEncoder.decode(trie.encodedSharedPath, trie.arity, trie.sharedPathLength), positionPath);
         }
 
         byte[] newSharedPath;
@@ -968,13 +968,13 @@ public class TrieImpl implements Trie {
             newSharedPath = trieSharedPath;
         }
         else {
-            byte[] childSharedPath = decodePath(firstChild.encodedSharedPath, firstChild.arity, firstChild.sharedPathLength);
+            byte[] childSharedPath = PathEncoder.decode(firstChild.encodedSharedPath, firstChild.arity, firstChild.sharedPathLength);
             newSharedPath = ByteUtils.concatenate(trieSharedPath, childSharedPath);
         }
 
         TrieImpl newTrie = (TrieImpl)firstChild.cloneTrie();
         newTrie.sharedPathLength = newSharedPath.length;
-        newTrie.encodedSharedPath = encodePath(newSharedPath, firstChild.arity);
+        newTrie.encodedSharedPath = PathEncoder.encode(newSharedPath, firstChild.arity);
 
         return newTrie;
     }
@@ -983,7 +983,7 @@ public class TrieImpl implements Trie {
         int position = keyPosition;
 
         if (this.encodedSharedPath != null) {
-            byte[] sharedPath = decodePath(this.encodedSharedPath, this.arity, this.sharedPathLength);
+            byte[] sharedPath = PathEncoder.decode(this.encodedSharedPath, this.arity, this.sharedPathLength);
 
             int k = lengthOfCommonPath(key, length, keyPosition, sharedPath);
 
@@ -1010,7 +1010,7 @@ public class TrieImpl implements Trie {
             int lshared = length - position;
             byte[] shared = new byte[lshared];
             System.arraycopy(key, position, shared, 0, lshared);
-            return new TrieImpl(this.arity, this.store, encodePath(shared, this.arity), lshared, value, this.isSecure);
+            return new TrieImpl(this.arity, this.store, PathEncoder.encode(shared, this.arity), lshared, value, this.isSecure);
         }
 
         TrieImpl[] newNodes = cloneNodes(true);
@@ -1057,13 +1057,13 @@ public class TrieImpl implements Trie {
 
         TrieImpl newChildTrie = new TrieImpl(this.arity, null, 0, this.value, newChildNodes, newChildHashes, this.store).withSecure(this.isSecure);
 
-        byte[] sharedPath = decodePath(this.encodedSharedPath, this.arity, this.sharedPathLength);
+        byte[] sharedPath = PathEncoder.decode(this.encodedSharedPath, this.arity, this.sharedPathLength);
 
         if (sharedPath.length > nshared + 1) {
             int newSharedLength = sharedPath.length - nshared - 1;
             byte[] newShared = new byte[newSharedLength];
             System.arraycopy(sharedPath, nshared + 1, newShared, 0, newSharedLength);
-            newChildTrie.encodedSharedPath = encodePath(newShared, this.arity);
+            newChildTrie.encodedSharedPath = PathEncoder.encode(newShared, this.arity);
             newChildTrie.sharedPathLength = newSharedLength;
         }
 
@@ -1076,7 +1076,7 @@ public class TrieImpl implements Trie {
         if (nshared > 0) {
             byte[] newSharedPath = new byte[nshared];
             System.arraycopy(sharedPath, 0, newSharedPath, 0, nshared);
-            newTrie.encodedSharedPath = encodePath(newSharedPath, this.arity);
+            newTrie.encodedSharedPath = PathEncoder.encode(newSharedPath, this.arity);
             newTrie.sharedPathLength = nshared;
         }
 
@@ -1255,120 +1255,6 @@ public class TrieImpl implements Trie {
         }
 
         return 0;
-    }
-
-    @VisibleForTesting
-    @Nonnull
-    public static byte[] encodePath(byte[] path, int arity) {
-        if (path == null) {
-            throw new IllegalArgumentException("path");
-        }
-
-        if (arity == 2) {
-            return encodeBinaryPath(path);
-        }
-
-        if (arity == 16) {
-            return encodeHexadecimalPath(path);
-        }
-
-        throw new IllegalArgumentException(INVALID_ARITY);
-    }
-
-    @VisibleForTesting
-    @Nonnull
-    public static byte[] decodePath(byte[] encoded, int arity, int length) {
-        if (encoded == null) {
-            throw new IllegalArgumentException("encoded");
-        }
-
-        if (arity == 2) {
-            return decodeBinaryPath(encoded, length);
-        }
-
-        if (arity == 16) {
-            return decodeHexadecimalPath(encoded, length);
-        }
-
-        throw new IllegalArgumentException(INVALID_ARITY);
-    }
-
-    @Nonnull
-    private static byte[] encodeBinaryPath(byte[] path) {
-        int lpath = path.length;
-        int lencoded = lpath / 8 + (lpath % 8 == 0 ? 0 : 1);
-
-        byte[] encoded = new byte[lencoded];
-        int nbyte = 0;
-
-        for (int k = 0; k < lpath; k++) {
-            int offset = k % 8;
-
-            if (k > 0 && offset == 0) {
-                nbyte++;
-            }
-
-            if (path[k] == 0) {
-                continue;
-            }
-
-            encoded[nbyte] |= 0x80 >> offset;
-        }
-
-        return encoded;
-    }
-
-    @Nonnull
-    private static byte[] decodeBinaryPath(byte[] encoded, int length) {
-        byte[] path = new byte[length];
-
-        for (int k = 0; k < length; k++) {
-            int nbyte = k / 8;
-            int offset = k % 8;
-
-            if (((encoded[nbyte] >> (7 - offset)) & 0x01) != 0) {
-                path[k] = 1;
-            }
-        }
-
-        return path;
-    }
-
-    private static byte[] encodeHexadecimalPath(byte[] path) {
-        int lpath = path.length;
-        int lencoded = lpath / 2 + (lpath % 2 == 0 ? 0 : 1);
-
-        byte[] encoded = new byte[lencoded];
-        int nbyte = 0;
-
-        for (int k = 0; k < lpath; k++) {
-            if (k > 0 && k % 2 == 0) {
-                nbyte++;
-            }
-
-            if (path[k] == 0) {
-                continue;
-            }
-
-            int offset = k % 2;
-            encoded[nbyte] |= (path[k] & 0x0f) << ((1 - offset) * 4);
-        }
-
-        return encoded;
-    }
-
-    private static byte[] decodeHexadecimalPath(byte[] encoded, int length) {
-        byte[] path = new byte[length];
-
-        for (int k = 0; k < length; k++) {
-            int nbyte = k / 2;
-            int offset = k % 2;
-
-            int value = (encoded[nbyte] >> ((1 - offset) * 4)) & 0x0f;
-            path[k] = (byte)value;
-        }
-
-        return path;
     }
 
     /**
