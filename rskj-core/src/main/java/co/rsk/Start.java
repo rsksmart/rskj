@@ -57,8 +57,8 @@ public class Start {
 
     public static void main(String[] args) throws Exception {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
-        Start start = ctx.getBean(Start.class);
-        start.startNode(args);
+        Start runner = ctx.getBean(Start.class);
+        runner.startNode(args);
     }
 
     @Autowired
