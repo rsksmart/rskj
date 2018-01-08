@@ -173,6 +173,7 @@ public class Start {
 
         messageHandler.start();
         txHandler.start();
+        channelManager.start();
     }
 
     private void enablePeerDiscovery() {
@@ -218,6 +219,7 @@ public class Start {
         syncPool.stop();
         messageHandler.stop();
         txHandler.stop();
+        channelManager.stop();
     }
 
     private void setupRecorder(Rsk rsk, @Nullable String blocksRecorderFileName) {

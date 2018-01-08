@@ -49,10 +49,7 @@ import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 /**
@@ -80,13 +77,13 @@ public class ChannelManagerImpl implements ChannelManager {
     // but the iterator directly use the internal array)
     private List<Channel> newPeers = new CopyOnWriteArrayList<>();
 
-    private ScheduledExecutorService mainWorker = Executors.newSingleThreadScheduledExecutor();
+    private ScheduledExecutorService mainWorker = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "newPeersProcessor"));
     private int maxActivePeers;
     private Map<InetAddress, Date> recentlyDisconnected = Collections.synchronizedMap(new LRUMap<InetAddress, Date>(500));
     private NodeFilter trustedPeers;
 
-    @PostConstruct
-    public void init() {
+    @Override
+    public void start() {
         maxActivePeers = config.maxActivePeers();
         trustedPeers = config.peerTrusted();
         mainWorker.scheduleWithFixedDelay((Runnable) () -> {
@@ -96,6 +93,11 @@ public class ChannelManagerImpl implements ChannelManager {
                 logger.error("Error", e);
             }
         }, 0, 1, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void stop() {
+        mainWorker.shutdown();
     }
 
     private void processNewPeers() {

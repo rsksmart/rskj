@@ -39,8 +39,11 @@ public class SimpleChannelManager implements ChannelManager {
     private Set<NodeID> lastSkip;
 
     @Override
-    public void init() {
+    public void start() {
+    }
 
+    @Override
+    public void stop() {
     }
 
     @Override
