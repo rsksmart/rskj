@@ -119,6 +119,7 @@ public class Start {
         logger.info("Running {},  core version: {}-{}", rskSystemProperties.genesisInfo(), rskSystemProperties.projectVersion(), rskSystemProperties.projectVersionModifier());
         BuildInfo.printInfo();
 
+        channelManager.start();
         txHandler.start();
         messageHandler.start();
 
@@ -218,6 +219,7 @@ public class Start {
         rsk.close();
         messageHandler.stop();
         txHandler.stop();
+        channelManager.stop();
     }
 
     private void setupRecorder(Rsk rsk, @Nullable String blocksRecorderFileName) {
