@@ -39,6 +39,14 @@ public abstract class HashRateCalculator {
         this.headerCache = headerCache;
     }
 
+    public void start() {
+        headerCache.start();
+    }
+
+    public void stop() {
+        headerCache.stop();
+    }
+
     public abstract BigInteger calculateNodeHashRate(Duration duration);
 
     public BigInteger calculateNetHashRate(Duration period) {

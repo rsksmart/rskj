@@ -171,6 +171,16 @@ public class Web3Impl implements Web3 {
         };
     }
 
+    @Override
+    public void start() {
+        hashRateCalculator.start();
+    }
+
+    @Override
+    public void stop() {
+        hashRateCalculator.stop();
+    }
+
     public long JSonHexToLong(String x) throws Exception {
         if (!x.startsWith("0x")) {
             throw new Exception("Incorrect hex syntax");

@@ -43,7 +43,14 @@ public class RskCustomCache<K, T> {
                 return new Thread(r, "BlockHeaderCacheTimer");
             }
         });
-        this.startCleanUp();
+    }
+
+    public void start() {
+        startCleanUp();
+    }
+
+    public void stop() {
+        cacheTimer.shutdown();
     }
 
     public void remove(K key) {
