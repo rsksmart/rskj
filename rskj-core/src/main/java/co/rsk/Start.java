@@ -31,6 +31,7 @@ import co.rsk.net.BlockProcessResult;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.Metrics;
 import co.rsk.net.discovery.UDPServer;
+import co.rsk.net.handler.TxHandler;
 import co.rsk.rpc.CorsConfiguration;
 import org.ethereum.cli.CLIInterface;
 import org.ethereum.config.DefaultConfig;
@@ -73,6 +74,7 @@ public class Start {
     private final ChannelManager channelManager;
     private final SyncPool syncPool;
     private final MessageHandler messageHandler;
+    private final TxHandler txHandler;
 
     public static void main(String[] args) throws Exception {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
@@ -93,7 +95,8 @@ public class Start {
                  Blockchain blockchain,
                  ChannelManager channelManager,
                  SyncPool syncPool,
-                 MessageHandler messageHandler) {
+                 MessageHandler messageHandler,
+                 TxHandler txHandler) {
         this.rsk = rsk;
         this.worldManager = worldManager;
         this.udpServer = udpServer;
@@ -106,6 +109,7 @@ public class Start {
         this.channelManager = channelManager;
         this.syncPool = syncPool;
         this.messageHandler = messageHandler;
+        this.txHandler = txHandler;
     }
 
     public void startNode(String[] args) throws Exception {
@@ -115,6 +119,7 @@ public class Start {
         logger.info("Running {},  core version: {}-{}", rskSystemProperties.genesisInfo(), rskSystemProperties.projectVersion(), rskSystemProperties.projectVersionModifier());
         BuildInfo.printInfo();
 
+        txHandler.start();
         messageHandler.start();
 
         rsk.init();
@@ -212,6 +217,7 @@ public class Start {
         syncPool.stop();
         rsk.close();
         messageHandler.stop();
+        txHandler.stop();
     }
 
     private void setupRecorder(Rsk rsk, @Nullable String blocksRecorderFileName) {
