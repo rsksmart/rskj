@@ -127,6 +127,10 @@ public interface Web3 {
         }
     }
 
+    void start();
+
+    void stop();
+
     String web3_clientVersion();
     String web3_sha3(String data) throws Exception;
     String net_version();

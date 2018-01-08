@@ -76,6 +76,8 @@ public class Start {
     private final MessageHandler messageHandler;
     private final TxHandler txHandler;
 
+    private Web3 web3Service;
+
     public static void main(String[] args) throws Exception {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
         Start runner = ctx.getBean(Start.class);
@@ -181,7 +183,8 @@ public class Start {
     }
 
     private void enableRpc() throws InterruptedException {
-        Web3 web3Service = web3Factory.newInstance();
+        web3Service = web3Factory.newInstance();
+        web3Service.start();
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, rskSystemProperties.getRpcModules());
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler(rskSystemProperties.corsDomains());
         new JsonRpcNettyServer(
@@ -216,6 +219,9 @@ public class Start {
     public void stop() {
         logger.info("Shutting down RSK node");
         syncPool.stop();
+        if (rskSystemProperties.isRpcEnabled()) {
+            web3Service.stop();
+        }
         rsk.close();
         messageHandler.stop();
         txHandler.stop();
