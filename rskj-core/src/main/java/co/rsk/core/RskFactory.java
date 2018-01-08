@@ -119,27 +119,6 @@ public class RskFactory {
     }
 
     @Bean
-    public NodeMessageHandler getNodeMessageHandler(NodeBlockProcessor nodeBlockProcessor,
-                                                    SyncProcessor syncProcessor,
-                                                    ChannelManager channelManager,
-                                                    PendingState pendingState,
-                                                    TxHandler txHandler,
-                                                    PeerScoringManager peerScoringManager,
-                                                    ProofOfWorkRule proofOfWorkRule) {
-
-        NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(nodeBlockProcessor,
-                syncProcessor,
-                channelManager,
-                pendingState,
-                txHandler,
-                peerScoringManager,
-                proofOfWorkRule);
-
-        nodeMessageHandler.start();
-        return nodeMessageHandler;
-    }
-
-    @Bean
     public SyncPool getSyncPool(EthereumListener ethereumListener, Blockchain blockchain, SystemProperties config, NodeManager nodeManager, SyncPool.PeerClientFactory peerClientFactory) {
         return new SyncPool(ethereumListener, blockchain, config, nodeManager, peerClientFactory);
     }

@@ -28,6 +28,7 @@ import co.rsk.mine.MinerServer;
 import co.rsk.mine.TxBuilder;
 import co.rsk.mine.TxBuilderEx;
 import co.rsk.net.BlockProcessResult;
+import co.rsk.net.MessageHandler;
 import co.rsk.net.Metrics;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.rpc.CorsConfiguration;
@@ -71,6 +72,7 @@ public class Start {
     private final Blockchain blockchain;
     private final ChannelManager channelManager;
     private final SyncPool syncPool;
+    private final MessageHandler messageHandler;
 
     public static void main(String[] args) throws Exception {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
@@ -90,7 +92,8 @@ public class Start {
                  Repository repository,
                  Blockchain blockchain,
                  ChannelManager channelManager,
-                 SyncPool syncPool) {
+                 SyncPool syncPool,
+                 MessageHandler messageHandler) {
         this.rsk = rsk;
         this.worldManager = worldManager;
         this.udpServer = udpServer;
@@ -102,6 +105,7 @@ public class Start {
         this.blockchain = blockchain;
         this.channelManager = channelManager;
         this.syncPool = syncPool;
+        this.messageHandler = messageHandler;
     }
 
     public void startNode(String[] args) throws Exception {
@@ -163,6 +167,7 @@ public class Start {
             enablePeerDiscovery();
         }
 
+        messageHandler.start();
     }
 
     private void enablePeerDiscovery() {
@@ -206,6 +211,7 @@ public class Start {
         logger.info("Shutting down RSK node");
         rsk.close();
         syncPool.stop();
+        messageHandler.stop();
     }
 
     private void setupRecorder(Rsk rsk, @Nullable String blocksRecorderFileName) {
