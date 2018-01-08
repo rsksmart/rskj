@@ -19,7 +19,6 @@
 package co.rsk.trie;
 
 import co.rsk.panic.PanicProcessor;
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.util.RLP;
@@ -28,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 import org.spongycastle.util.encoders.Hex;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -491,11 +489,13 @@ public class TrieImpl implements Trie {
 
         byte flags = 0;
 
-        if (this.isSecure)
+        if (this.isSecure) {
             flags |= 1;
+        }
 
-        if (hasLongVal)
+        if (hasLongVal) {
             flags |= 2;
+        }
 
         buffer.put(flags);
         buffer.putShort((short) bits);
