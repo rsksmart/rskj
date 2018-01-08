@@ -35,6 +35,8 @@ import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -45,9 +47,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-/**
- * Created by ajlopez on 5/10/2016.
- */
+@Component
 public class NodeMessageHandler implements MessageHandler, Runnable {
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
@@ -73,6 +73,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private TxHandler txHandler;
 
+    @Autowired
     public NodeMessageHandler(@Nonnull final BlockProcessor blockProcessor,
                               final SyncProcessor syncProcessor,
                               @Nullable final ChannelManager channelManager,
@@ -183,10 +184,12 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         }
     }
 
+    @Override
     public void start() {
         new Thread(this).start();
     }
 
+    @Override
     public void stop() {
         this.stopped = true;
     }
