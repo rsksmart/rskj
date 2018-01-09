@@ -999,8 +999,8 @@ public class BridgeSupport {
     /**
      * Returns the bitcoin blockchain initial stored block height
      */
-    public int getBtcBlockchainInitialBlockHeight() {
-        return initialBtcStoredBlock.getHeight();
+    public int getBtcBlockchainInitialBlockHeight() throws IOException {
+        return getLowestBlock().getHeight();
     }
 
     /**
@@ -1043,10 +1043,13 @@ public class BridgeSupport {
         return blockLocator;
     }
 
-    public Sha256Hash getBtcBlockchainBlockHashAtDepth(int depth) throws BlockStoreException {
+    public Sha256Hash getBtcBlockchainBlockHashAtDepth(int depth) throws BlockStoreException, IOException {
+        Context.propagate(btcContext);
+        this.ensureBtcBlockChain();
+        
         StoredBlock head = btcBlockChain.getChainHead();
 
-        int maxDepth = head.getHeight() - initialBtcStoredBlock.getHeight();
+        int maxDepth = head.getHeight() - getLowestBlock().getHeight();
 
         if (depth < 0 || depth > maxDepth) {
             throw new IndexOutOfBoundsException(String.format("Depth must be between 0 and %d", maxDepth));
