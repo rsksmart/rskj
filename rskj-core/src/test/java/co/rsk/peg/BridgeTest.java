@@ -2146,7 +2146,6 @@ public class BridgeTest {
         Assert.assertEquals(mockedResult, Sha256Hash.wrap(bridge.getBtcBlockchainBlockHashAtDepth(new Object[]{BigInteger.valueOf(555)})));
     }
 
-
     private Block getGenesisBlock() {
         return new BlockGenerator().getGenesisBlock();
     }
