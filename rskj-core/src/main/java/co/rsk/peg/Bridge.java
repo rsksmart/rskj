@@ -452,7 +452,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     {
         logger.trace("getBtcBlockchainInitialBlockHeight");
 
-        return bridgeSupport.getBtcBlockchainInitialBlockHeight();
+        try {
+            return bridgeSupport.getBtcBlockchainInitialBlockHeight();
+        } catch (Exception e) {
+            logger.warn("Exception in getBtcBlockchainInitialBlockHeight", e);
+            throw new RuntimeException("Exception in getBtcBlockchainInitialBlockHeight", e);
+        }
     }
 
     @Deprecated
@@ -483,7 +488,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         Sha256Hash blockHash = null;
         try {
             blockHash = bridgeSupport.getBtcBlockchainBlockHashAtDepth(depth);
-        } catch (BlockStoreException e) {
+        } catch (Exception e) {
             logger.warn("Exception in getBtcBlockchainBlockHashAtDepth", e);
             throw new RuntimeException("Exception in getBtcBlockchainBlockHashAtDepth", e);
         }
