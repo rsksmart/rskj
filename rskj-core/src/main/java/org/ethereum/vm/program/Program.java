@@ -1555,7 +1555,6 @@ public class Program {
             return;
         }
 
-
         long requiredGas = contract.getGasForData(data);
         if (requiredGas > msg.getGas().longValue()) {
 
@@ -1566,7 +1565,8 @@ public class Program {
 
             this.refundGas(msg.getGas().longValue() - requiredGas, "call pre-compiled");
 
-            if (contract instanceof Bridge || contract instanceof RemascContract) {
+            // Special initialization for Bridge and Remasc contracts
+            if (contract.getClass() == Bridge.class || contract.getClass() == RemascContract.class) {
                 // CREATE CALL INTERNAL TRANSACTION
                 InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, EMPTY_BYTE_ARRAY, "call");
 
@@ -1576,6 +1576,7 @@ public class Program {
 
                 contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, null);
             }
+
             byte[] out = contract.execute(data);
 
             this.memorySave(msg.getOutDataOffs().intValue(), out);

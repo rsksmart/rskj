@@ -17,6 +17,7 @@
  */
 package co.rsk.peg;
 
+import org.ethereum.config.BlockchainConfig;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.db.ByteArrayWrapper;
 
@@ -91,7 +92,8 @@ public enum BridgeMethods {
                     new String[]{"int"}
             ),
             19000L,
-            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainInitialBlockHeight
+            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainInitialBlockHeight,
+            (blockchainConfig -> blockchainConfig.isRfs55())
     ),
     GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR(
             CallTransaction.Function.fromSignature(
@@ -109,7 +111,8 @@ public enum BridgeMethods {
                     new String[]{"bytes"}
             ),
             76000L,
-            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHashAtDepth
+            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHashAtDepth,
+            (blockchainConfig -> blockchainConfig.isRfs55())
     ),
     GET_BTC_TX_HASH_PROCESSED_HEIGHT(
             CallTransaction.Function.fromSignature(
@@ -398,12 +401,18 @@ public enum BridgeMethods {
                         ));
     private final CallTransaction.Function function;
     private final long cost;
+    private final Function<BlockchainConfig, Boolean> _isEnabled;
     private final BridgeMethodExecutor executor;
 
     BridgeMethods(CallTransaction.Function function, long cost, BridgeMethodExecutor executor) {
+        this(function, cost, executor, (blockchainConfig) -> true);
+    }
+
+    BridgeMethods(CallTransaction.Function function, long cost, BridgeMethodExecutor executor, Function<BlockchainConfig, Boolean> isEnabled) {
         this.function = function;
         this.cost = cost;
         this.executor = executor;
+        this._isEnabled = isEnabled;
     }
 
     public static Optional<BridgeMethods> findBySignature(byte[] encoding) {
@@ -413,7 +422,9 @@ public enum BridgeMethods {
     public CallTransaction.Function getFunction() {
         return function;
     }
-
+    public Boolean isEnabled(BlockchainConfig blockchainConfig) {
+        return this._isEnabled.apply(blockchainConfig);
+    }
     public long getCost() {
         return cost;
     }
