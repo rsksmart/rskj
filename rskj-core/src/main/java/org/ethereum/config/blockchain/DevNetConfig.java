@@ -21,6 +21,7 @@ package org.ethereum.config.blockchain;
 
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeDevNetConstants;
+import org.ethereum.config.blockchain.testnet.TestNetAfterBridgeSyncConfig;
 
 /**
  * Created by Oscar Guindzberg on 25.10.2016.
@@ -49,4 +50,13 @@ public class DevNetConfig extends TestNetAfterBridgeSyncConfig {
         return true;
     }
 
+    @Override
+    public boolean isRfs55() {
+        return true;
+    }
+
+    @Override
+    public boolean isRfs90() {
+        return true;
+    }
 }
