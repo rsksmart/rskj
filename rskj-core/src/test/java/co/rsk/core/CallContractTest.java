@@ -38,7 +38,7 @@ public class CallContractTest {
         byte[] code = new byte[] { 0x60, 0x01, 0x60, 0x00, 0x52, 0x60, 0x20, 0x60, 0x00, (byte)0xf3 };
         Account account = new AccountBuilder(world).name("acc1").code(code).build();
 
-        ProgramResult result = callContract(world, new RskAddress(account.getAddress().getBytes()), new byte[0]);
+        ProgramResult result = callContract(world, account.getAddress(), new byte[0]);
 
         Assert.assertNotNull(result);
 

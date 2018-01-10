@@ -401,7 +401,7 @@ public class Transaction implements SerializableObject {
             rlpParse();
         }
 
-        return this.receiveAddress == RskAddress.nullAddress();
+        return this.receiveAddress.equals(RskAddress.nullAddress());
     }
 
     /*
@@ -425,7 +425,7 @@ public class Transaction implements SerializableObject {
         } catch (SignatureException e) {
             logger.error(e.getMessage(), e);
             panicProcessor.panic("transaction", e.getMessage());
-            sender = new RskAddress(null);
+            sender = RskAddress.nullAddress();
         }
 
         return sender;
@@ -550,7 +550,7 @@ public class Transaction implements SerializableObject {
     }
 
     private byte[] encodeRskAddress(RskAddress address) {
-        if (address == null) {
+        if (address == null || address.equals(RskAddress.nullAddress())) {
             return RLP.encodeElement(null);
         }
 
@@ -616,11 +616,11 @@ public class Transaction implements SerializableObject {
         return new Transaction(nonce, hexArgs.getGasPrice(), hexArgs.getGasLimit(), hexArgs.getToAddress(), hexArgs.getValue(), hexArgs.getData());
     }
 
-    private static RskAddress parseRskAddress(@Nullable byte[] addressBytes) {
-        if (addressBytes == null || ByteUtil.isAllZeroes(addressBytes)) {
+    public static RskAddress parseRskAddress(@Nullable byte[] bytes) {
+        if (bytes == null || ByteUtil.isAllZeroes(bytes)) {
             return RskAddress.nullAddress();
         } else {
-            return new RskAddress(addressBytes);
+            return new RskAddress(bytes);
         }
     }
 

@@ -19,7 +19,6 @@
 
 package org.ethereum.vm.program;
 
-import co.rsk.core.RskAddress;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -46,7 +45,7 @@ public class InternalTransaction extends Transaction {
         this.parentHash = parentHash;
         this.deep = deep;
         this.index = index;
-        this.sender = new RskAddress(nullToEmpty(sendAddress));
+        this.sender = Transaction.parseRskAddress(sendAddress);
         this.note = note;
     }
 

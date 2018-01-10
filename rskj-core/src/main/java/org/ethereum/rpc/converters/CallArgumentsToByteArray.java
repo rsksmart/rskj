@@ -83,7 +83,7 @@ public class CallArgumentsToByteArray {
     }
 
     public byte[] getFromAddress() {
-        if (args.from == null) {
+        if (args.from == null || args.from.isEmpty()) {
             return RskAddress.nullAddress().getBytes();
         }
 

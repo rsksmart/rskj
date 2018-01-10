@@ -51,7 +51,7 @@ public final class RskAddress {
 
     public RskAddress(byte[] bytes) {
         if (bytes.length != LENGTH_IN_BYTES) {
-            throw new RuntimeException(String.format("An RSK address must be %d-byte long", LENGTH_IN_BYTES));
+            throw new RuntimeException(String.format("An RSK address must be %d bytes long", LENGTH_IN_BYTES));
         }
 
         this.bytes = bytes;

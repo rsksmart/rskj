@@ -428,13 +428,13 @@ public class BlockExecutorTest {
     /////////////////////////////////////////////
     @Test(expected = RuntimeException.class)
     public void executeBlocksWithOneStrangeTransactions1() {
-        // will fail to create an address that is not 20-byte long
+        // will fail to create an address that is not 20 bytes long
         executeBlockWithOneStrangeTransaction(true, false, generateBlockWithOneStrangeTransaction(0));
     }
 
     @Test(expected = RuntimeException.class)
     public void executeBlocksWithOneStrangeTransactions2() {
-        // will fail to create an address that is not 20-byte long
+        // will fail to create an address that is not 20 bytes long
         executeBlockWithOneStrangeTransaction(true, true, generateBlockWithOneStrangeTransaction(1));
     }
 
