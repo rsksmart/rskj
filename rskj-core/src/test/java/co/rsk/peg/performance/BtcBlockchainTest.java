@@ -32,6 +32,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 @Ignore
 public class BtcBlockchainTest extends BridgePerformanceTestCase {
@@ -40,6 +41,22 @@ public class BtcBlockchainTest extends BridgePerformanceTestCase {
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT.encode();
         ExecutionStats stats = new ExecutionStats("getBtcBlockchainBestChainHeight");
         executeAndAverage("getBtcBlockchainBestChainHeight", 200, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        BridgePerformanceTest.addStats(stats);
+    }
+
+    @Test
+    public void getBtcBlockchainInitialBlockHeight() throws IOException {
+        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT.encode();
+        ExecutionStats stats = new ExecutionStats("getBtcBlockchainInitialBlockHeight");
+        executeAndAverage("getBtcBlockchainInitialBlockHeight", 200, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        BridgePerformanceTest.addStats(stats);
+    }
+
+    @Test
+    public void getBtcBlockchainBlockHashAtDepth() throws IOException {
+        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH.encode(new Object[]{BigInteger.ZERO});
+        ExecutionStats stats = new ExecutionStats("getBtcBlockchainBlockHashAtDepth");
+        executeAndAverage("getBtcBlockchainBlockHashAtDepth", 200, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
         BridgePerformanceTest.addStats(stats);
     }
 
