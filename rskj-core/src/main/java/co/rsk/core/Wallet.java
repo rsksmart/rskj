@@ -32,6 +32,7 @@ import javax.annotation.concurrent.GuardedBy;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Wallet {
     @GuardedBy("accessLock")
@@ -39,6 +40,9 @@ public class Wallet {
 
     @GuardedBy("accessLock")
     private final Map<RskAddress, byte[]> accounts = new HashMap<>();
+
+    @GuardedBy("accessLock")
+    private final List<byte[]> initialAccounts = new ArrayList<>();
 
     private final Object accessLock = new Object();
     private final Map<RskAddress, Long> unlocksTimeouts = new HashMap<>();
@@ -57,6 +61,7 @@ public class Wallet {
             }
 
             keys.addAll(accounts.keySet());
+            keys.removeAll(this.initialAccounts.stream().map(bytes -> new RskAddress(bytes)).collect(Collectors.toList()));
 
             for (RskAddress address: keys) {
                 addresses.add(address.getBytes());
@@ -168,7 +173,12 @@ public class Wallet {
 
     public byte[] addAccountWithPrivateKey(byte[] privateKeyBytes) {
         Account account = new Account(ECKey.fromPrivate(privateKeyBytes));
-        return addAccount(account).getBytes();
+
+        synchronized (accessLock) {
+            byte[] address = addAccount(account).getBytes();
+            this.initialAccounts.add(address);
+            return address;
+        }
     }
 
     public byte[] addAccountWithPrivateKey(byte[] privateKeyBytes, String passphrase) {

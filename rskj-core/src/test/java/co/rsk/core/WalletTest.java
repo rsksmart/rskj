@@ -90,6 +90,38 @@ public class WalletTest {
     }
 
     @Test
+    public void addAccountWithPassphraseAndWithSeed() {
+        Wallet wallet = WalletFactory.createWallet();
+
+        RskAddress address1 = wallet.addAccount("passphrase");
+        Assert.assertNotNull(address1);
+
+        byte[] address2 = wallet.addAccountWithSeed("seed");
+        Assert.assertNotNull(address2);
+
+        List<byte[]> addresses = wallet.getAccountAddresses();
+
+        Assert.assertNotNull(addresses);
+        Assert.assertFalse(addresses.isEmpty());
+        Assert.assertEquals(2, addresses.size());
+
+        byte[] addr = addresses.get(0);
+
+        Assert.assertNotNull(addr);
+        Assert.assertArrayEquals(address2, addr);
+
+        addr = addresses.get(1);
+
+        Assert.assertNotNull(addr);
+        Assert.assertArrayEquals(address1.getBytes(), addr);
+
+        Account account = wallet.getAccount(address1, "passphrase");
+
+        Assert.assertNotNull(account);
+        Assert.assertEquals(address1, account.getAddress());
+    }
+
+    @Test
     public void unlockAccountWithPassphrase() {
         Wallet wallet = WalletFactory.createWallet();
 
