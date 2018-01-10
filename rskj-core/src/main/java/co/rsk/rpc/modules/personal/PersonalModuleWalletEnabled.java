@@ -56,8 +56,13 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
 
     @Override
     public void init(RskSystemProperties properties) {
+        // dev node has 10 accouts with balance (in rsk-dev.json
+        // with seed cow, cow1..cow9
         if (properties.getBlockchainConfig() instanceof RegTestConfig) {
             newAccountWithSeed("cow");
+
+            for (int k = 1; k <= 9; k++)
+                newAccountWithSeed("cow" + k);
         }
 
         // This creates a new account based on a configured secret passphrase,
