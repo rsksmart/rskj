@@ -63,6 +63,7 @@ import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.server.*;
 import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.sync.SyncPool;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -169,10 +170,14 @@ public class RskFactory {
     public PendingState getPendingState(BlockChainImpl blockchain,
                                         org.ethereum.db.BlockStore blockStore,
                                         org.ethereum.core.Repository repository,
-                                        RskSystemProperties config) {
+                                        RskSystemProperties config,
+                                        ProgramInvokeFactory programInvokeFactory,
+                                        EthereumListener listener) {
         PendingStateImpl pendingState = new PendingStateImpl(
                 blockchain,
                 blockStore,
+                listener,
+                programInvokeFactory,
                 repository,
                 config
         );

@@ -892,8 +892,7 @@ public class BlockChainImplTest {
         EthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
 
         BlockChainImpl blockChain = new BlockChainImpl(repository, blockStore, receiptStore, null, listener, adminInfo, blockValidator, RskSystemProperties.CONFIG);
-        PendingStateImpl pendingState = new PendingStateImpl(blockChain, repository, null, null, listener, RskSystemProperties.CONFIG, 10, 100);
-        pendingState.init();
+        PendingStateImpl pendingState = new PendingStateImpl(blockChain, repository, null, null, listener, 10, 100);
         blockChain.setPendingState(pendingState);
 
         return blockChain;
