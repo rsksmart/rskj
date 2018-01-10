@@ -61,8 +61,9 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         if (properties.getBlockchainConfig() instanceof RegTestConfig) {
             newAccountWithSeed("cow");
 
-            for (int k = 1; k <= 9; k++)
+            for (int k = 1; k <= 9; k++) {
                 newAccountWithSeed("cow" + k);
+            }
         }
 
         // This creates a new account based on a configured secret passphrase,
@@ -83,8 +84,10 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     @Override
     public String newAccountWithSeed(String seed) {
         String s = null;
+
         try {
             byte[] address = this.wallet.addAccountWithSeed(seed);
+
             return s = TypeConverter.toJsonHex(address);
         } finally {
             LOGGER.debug("personal_newAccountWithSeed(*****): {}", s);
@@ -94,6 +97,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     @Override
     public String newAccount(String passphrase) {
         String s = null;
+
         try {
             byte[] address = this.wallet.addAccount(passphrase).getBytes();
             return s = TypeConverter.toJsonHex(address);
