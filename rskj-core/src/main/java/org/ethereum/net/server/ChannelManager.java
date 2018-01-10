@@ -40,7 +40,8 @@ import java.util.Set;
 
 public interface ChannelManager {
 
-    void init();
+    void start();
+    void stop();
 
     boolean isRecentlyDisconnected(InetAddress peerAddr);
 

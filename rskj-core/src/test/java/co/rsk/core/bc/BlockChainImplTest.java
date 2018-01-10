@@ -170,19 +170,6 @@ public class BlockChainImplTest {
     }
 
     @Test
-    public void isRskDefaultValue() {
-        BlockChainImpl blockChain = createBlockChain();
-        Assert.assertFalse(blockChain.isRsk());
-    }
-
-    @Test
-    public void setRskValue() {
-        BlockChainImpl blockChain = createBlockChain();
-        blockChain.setRsk(true);
-        Assert.assertTrue(blockChain.isRsk());
-    }
-
-    @Test
     public void addBlockOne() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);

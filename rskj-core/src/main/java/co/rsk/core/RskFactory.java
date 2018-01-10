@@ -19,8 +19,6 @@
 package co.rsk.core;
 
 import co.rsk.Start;
-import co.rsk.blocks.FileBlockPlayer;
-import co.rsk.blocks.FileBlockRecorder;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
@@ -41,9 +39,7 @@ import co.rsk.scoring.PunishmentParameters;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.SystemProperties;
-import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
-import org.ethereum.core.ImportResult;
 import org.ethereum.core.PendingState;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
@@ -58,7 +54,6 @@ import org.ethereum.net.MessageQueue;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.client.PeerClient;
-import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.handler.EthHandlerFactory;
 import org.ethereum.net.eth.handler.EthHandlerFactoryImpl;
 import org.ethereum.net.message.StaticMessages;
@@ -68,8 +63,6 @@ import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.server.*;
 import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.sync.SyncPool;
-import org.ethereum.util.BuildInfo;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -77,81 +70,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
-import javax.annotation.Nullable;
-import java.util.stream.Collectors;
-
 @Configuration
 @ComponentScan("org.ethereum")
 public class RskFactory {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
-
-    @Bean
-    public Rsk getRsk(WorldManager worldManager,
-                      Blockchain blockchain,
-                      ChannelManager channelManager,
-                      PeerServer peerServer,
-                      ProgramInvokeFactory programInvokeFactory,
-                      PendingState pendingState,
-                      SystemProperties config,
-                      CompositeEthereumListener compositeEthereumListener,
-                      ReceiptStore receiptStore,
-                      PeerScoringManager peerScoringManager,
-                      NodeBlockProcessor nodeBlockProcessor,
-                      NodeMessageHandler nodeMessageHandler,
-                      RskSystemProperties rskSystemProperties,
-                      org.ethereum.core.Repository repository) {
-
-        logger.info("Running {},  core version: {}-{}", config.genesisInfo(), config.projectVersion(), config.projectVersionModifier());
-        BuildInfo.printInfo();
-
-        RskImpl rsk = new RskImpl(worldManager, channelManager, peerServer, programInvokeFactory,
-                pendingState, config, compositeEthereumListener, receiptStore, nodeBlockProcessor, repository);
-
-        rsk.init();
-        rsk.getBlockchain().setRsk(true);  //TODO: check if we can remove this field from org.ethereum.facade.Blockchain
-        if (logger.isInfoEnabled()) {
-            String versions = EthVersion.supported().stream().map(EthVersion::name).collect(Collectors.joining(", "));
-            logger.info("Capability eth version: [{}]", versions);
-        }
-        if (rskSystemProperties.isBlocksEnabled()) {
-            setupRecorder(rsk, rskSystemProperties.blocksRecorder());
-            setupPlayer(rsk, channelManager, blockchain, rskSystemProperties.blocksPlayer());
-        }
-        return rsk;
-    }
-
-    private void setupRecorder(RskImpl rsk, @Nullable String blocksRecorderFileName) {
-        if (blocksRecorderFileName != null) {
-            rsk.getBlockchain().setBlockRecorder(new FileBlockRecorder(blocksRecorderFileName));
-        }
-    }
-
-    private void setupPlayer(RskImpl rsk, ChannelManager cm, Blockchain bc, @Nullable String blocksPlayerFileName) {
-        if (blocksPlayerFileName == null) {
-            return;
-        }
-
-        new Thread(() -> {
-            try (FileBlockPlayer bplayer = new FileBlockPlayer(blocksPlayerFileName)) {
-                rsk.setIsPlayingBlocks(true);
-                connectBlocks(bplayer, bc, cm);
-            } catch (Exception e) {
-                logger.error("Error", e);
-            } finally {
-                rsk.setIsPlayingBlocks(false);
-            }
-        }).start();
-    }
-
-    private void connectBlocks(FileBlockPlayer bplayer, Blockchain bc, ChannelManager cm) {
-        for (Block block = bplayer.readBlock(); block != null; block = bplayer.readBlock()) {
-            ImportResult tryToConnectResult = bc.tryToConnect(block);
-            if (BlockProcessResult.importOk(tryToConnectResult)) {
-                cm.broadcastBlock(block, null);
-            }
-        }
-    }
 
     @Bean
     public PeerScoringManager getPeerScoringManager(SystemProperties config) {
@@ -193,27 +116,6 @@ public class RskFactory {
                                                 BlockNodeInformation nodeInformation,
                                                 SyncConfiguration syncConfiguration) {
             return new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
-    }
-
-    @Bean
-    public NodeMessageHandler getNodeMessageHandler(NodeBlockProcessor nodeBlockProcessor,
-                                                    SyncProcessor syncProcessor,
-                                                    ChannelManager channelManager,
-                                                    PendingState pendingState,
-                                                    TxHandler txHandler,
-                                                    PeerScoringManager peerScoringManager,
-                                                    ProofOfWorkRule proofOfWorkRule) {
-
-        NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(nodeBlockProcessor,
-                syncProcessor,
-                channelManager,
-                pendingState,
-                txHandler,
-                peerScoringManager,
-                proofOfWorkRule);
-
-        nodeMessageHandler.start();
-        return nodeMessageHandler;
     }
 
     @Bean

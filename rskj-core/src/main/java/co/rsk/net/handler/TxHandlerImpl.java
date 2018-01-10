@@ -27,6 +27,8 @@ import org.ethereum.rpc.TypeConverter;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -42,6 +44,7 @@ public class TxHandlerImpl implements TxHandler {
     private Map<String, TxTimestamp> knownTxs = new HashMap<>();
     private Lock knownTxsLock = new ReentrantLock();
     private Map<String, TxsPerAccount> txsPerAccounts = new HashMap<>();
+    private ScheduledExecutorService executorService;
 
     /**
      * This method will fork two `threads` and should not be instanced more than
@@ -60,10 +63,20 @@ public class TxHandlerImpl implements TxHandler {
         this.repository = (Repository) repository;
 
         // Clean old transactions every so seconds
-        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(this::cleanOldTxs, 120, 120, TimeUnit.SECONDS);
+        this.executorService = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TxHandler"));
 
         // Clean txs on new block
         worldManager.addListener(new TxHandlerImpl.Listener());
+    }
+
+    @Override
+    public void start() {
+        executorService.scheduleWithFixedDelay(this::cleanOldTxs, 120, 120, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void stop() {
+        executorService.shutdown();
     }
 
     @VisibleForTesting TxHandlerImpl() {

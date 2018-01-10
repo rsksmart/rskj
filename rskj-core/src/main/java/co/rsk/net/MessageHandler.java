@@ -28,4 +28,8 @@ public interface MessageHandler {
     void processMessage(MessageChannel sender, Message message);
 
     void postMessage(MessageChannel sender, Message message) throws InterruptedException;
+
+    void start();
+
+    void stop();
 }
