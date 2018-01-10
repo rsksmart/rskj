@@ -85,7 +85,6 @@ public class SyncPool implements Iterable<Channel> {
         this.nodeManager = nodeManager;
         this.peerClientFactory = peerClientFactory;
         this.syncPoolExecutor = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "syncPool"));
-        updateLowerUsefulDifficulty();
     }
 
     public void start() {
@@ -374,7 +373,7 @@ public class SyncPool implements Iterable<Channel> {
         );
     }
 
-    private void updateLowerUsefulDifficulty() {
+    public void updateLowerUsefulDifficulty() {
         BigInteger td = blockchain.getTotalDifficulty();
         if (td.compareTo(lowerUsefulDifficulty) > 0) {
             lowerUsefulDifficulty = td;

@@ -159,6 +159,7 @@ public class Start {
         }
 
         if (rskSystemProperties.isSyncEnabled()) {
+            syncPool.updateLowerUsefulDifficulty();
             syncPool.start();
             if (rskSystemProperties.waitForSync()) {
                 waitRskSyncDone(rsk);
