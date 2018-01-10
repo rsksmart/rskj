@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import co.rsk.core.RskAddress;
+import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Before;
@@ -156,12 +157,12 @@ public class ABICallElectionTest {
     }
 
     private RskAddress createVoter(String hex) {
-        return RskAddress.fromHex(hex);
+        return RskAddress.fromHex(TestUtils.padZeroesLeft(hex, 40));
     }
 
     private ECKey createMockKeyForAddress(String hex) {
         ECKey mockedKey = mock(ECKey.class);
-        when(mockedKey.getAddress()).thenReturn(Hex.decode(hex));
+        when(mockedKey.getAddress()).thenReturn(Hex.decode(TestUtils.padZeroesLeft(hex, 40)));
         return mockedKey;
     }
 }

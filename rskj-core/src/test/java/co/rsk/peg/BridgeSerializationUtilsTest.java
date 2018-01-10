@@ -26,6 +26,7 @@ import org.ethereum.util.RLPList;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -49,7 +50,7 @@ import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ RLP.class })
+@PrepareForTest({ RLP.class, BridgeSerializationUtils.class, RskAddress.class })
 public class BridgeSerializationUtilsTest {
     @Test
     public void serializeMapOfHashesToLong() throws Exception {
@@ -291,15 +292,15 @@ public class BridgeSerializationUtilsTest {
         Map<ABICallSpec, List<RskAddress>> sampleVotes = new HashMap<>();
         sampleVotes.put(
                 new ABICallSpec("one-function", new byte[][]{}),
-                Arrays.asList(RskAddress.fromHex("8899"), RskAddress.fromHex("aabb"))
+                Arrays.asList(mockAddress("8899"), mockAddress("aabb"))
         );
         sampleVotes.put(
                 new ABICallSpec("another-function", new byte[][]{ Hex.decode("01"), Hex.decode("0203") }),
-                Arrays.asList(RskAddress.fromHex("ccdd"), RskAddress.fromHex("eeff"), RskAddress.fromHex("0011"))
+                Arrays.asList(mockAddress("ccdd"), mockAddress("eeff"), mockAddress("0011"))
         );
         sampleVotes.put(
                 new ABICallSpec("yet-another-function", new byte[][]{ Hex.decode("0405") }),
-                Arrays.asList(RskAddress.fromHex("fa"), RskAddress.fromHex("ca"))
+                Arrays.asList(mockAddress("fa"), mockAddress("ca"))
         );
 
         ABICallElection sample = new ABICallElection(mockedAuthorizer, sampleVotes);
@@ -340,6 +341,15 @@ public class BridgeSerializationUtilsTest {
     public void deserializeElection_nonEmpty() throws Exception {
         PowerMockito.mockStatic(RLP.class);
         mock_RLP_decode2(InnerListMode.STARTING_WITH_FF_RECURSIVE);
+
+        mockAddressInstantiation("aa");
+        mockAddressInstantiation("bbccdd");
+        mockAddressInstantiation("55");
+        mockAddressInstantiation("66");
+        mockAddressInstantiation("77");
+        mockAddressInstantiation("1111");
+        mockAddressInstantiation("3333");
+        mockAddressInstantiation("5555");
 
         AddressBasedAuthorizer mockedAuthorizer = mock(AddressBasedAuthorizer.class);
         when(mockedAuthorizer.isAuthorized(any(RskAddress.class))).thenReturn(true);
@@ -391,10 +401,12 @@ public class BridgeSerializationUtilsTest {
         spec = new ABICallSpec("funct", new byte[][]{});
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                RskAddress.fromHex("aa"),
-                RskAddress.fromHex("bbccdd")
+                mockAddress("aa"),
+                mockAddress("bbccdd")
         );
-        Assert.assertEquals(voters, election.getVotes().get(spec));
+
+        Assert.assertArrayEquals(voters.get(0).getBytes(), election.getVotes().get(spec).get(0).getBytes());
+        Assert.assertArrayEquals(voters.get(1).getBytes(), election.getVotes().get(spec).get(1).getBytes());
 
         spec = new ABICallSpec("other-funct", new byte[][]{
                 Hex.decode("1122"),
@@ -402,23 +414,30 @@ public class BridgeSerializationUtilsTest {
         });
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                RskAddress.fromHex("55"),
-                RskAddress.fromHex("66"),
-                RskAddress.fromHex("77")
+                mockAddress("55"),
+                mockAddress("66"),
+                mockAddress("77")
         );
-        Assert.assertEquals(voters, election.getVotes().get(spec));
+
+        Assert.assertArrayEquals(voters.get(0).getBytes(), election.getVotes().get(spec).get(0).getBytes());
+        Assert.assertArrayEquals(voters.get(1).getBytes(), election.getVotes().get(spec).get(1).getBytes());
+        Assert.assertArrayEquals(voters.get(2).getBytes(), election.getVotes().get(spec).get(2).getBytes());
 
         spec = new ABICallSpec("random-funct", new byte[][]{
                 Hex.decode("aabb")
         });
         Assert.assertTrue(election.getVotes().containsKey(spec));
         voters = Arrays.asList(
-                RskAddress.fromHex("1111"),
-                RskAddress.fromHex("3333"),
-                RskAddress.fromHex("5555"),
-                RskAddress.fromHex("77")
+                mockAddress("1111"),
+                mockAddress("3333"),
+                mockAddress("5555"),
+                mockAddress("77")
         );
-        Assert.assertEquals(voters, election.getVotes().get(spec));
+
+        Assert.assertArrayEquals(voters.get(0).getBytes(), election.getVotes().get(spec).get(0).getBytes());
+        Assert.assertArrayEquals(voters.get(1).getBytes(), election.getVotes().get(spec).get(1).getBytes());
+        Assert.assertArrayEquals(voters.get(2).getBytes(), election.getVotes().get(spec).get(2).getBytes());
+        Assert.assertArrayEquals(voters.get(3).getBytes(), election.getVotes().get(spec).get(3).getBytes());
     }
 
     @Test
@@ -923,5 +942,17 @@ public class BridgeSerializationUtilsTest {
             offset += bytes[i].length;
         }
         return result;
+    }
+
+    private void mockAddressInstantiation(String addr) throws Exception {
+        PowerMockito.whenNew(RskAddress.class)
+                .withArguments(Hex.decode(addr))
+                .then((InvocationOnMock invocation) -> mockAddress(addr));
+    }
+
+    private RskAddress mockAddress(String addr) {
+        RskAddress mock = PowerMockito.mock(RskAddress.class);
+        Mockito.when(mock.getBytes()).thenReturn(Hex.decode(addr));
+        return mock;
     }
 }

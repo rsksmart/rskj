@@ -49,6 +49,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -104,7 +105,7 @@ public class BridgeSupportTest {
     private static BridgeConstants bridgeConstants;
     private static NetworkParameters btcParams;
 
-    private static final String TO_ADDRESS = "00000000000000000006";
+    private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger DUST_AMOUNT = new BigInteger("1");
     private static final BigInteger AMOUNT = new BigInteger("1000000000000000000");
     private static final BigInteger NONCE = new BigInteger("0");
@@ -2749,7 +2750,7 @@ public class BridgeSupportTest {
     @Test
     public void addLockWhitelistAddress_notAuthorized() throws IOException {
         Transaction mockedTx = mock(Transaction.class);
-        byte[] senderBytes = Hex.decode("aabbcc");
+        byte[] senderBytes = Hex.decode("0000000000000000000000000000000000aabbcc");
         RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
@@ -2820,7 +2821,7 @@ public class BridgeSupportTest {
     @Test
     public void removeLockWhitelistAddress_notAuthorized() throws IOException {
         Transaction mockedTx = mock(Transaction.class);
-        byte[] senderBytes = Hex.decode("aabbcc");
+        byte[] senderBytes = Hex.decode("0000000000000000000000000000000000aabbcc");
         RskAddress sender = new RskAddress(senderBytes);
         when(mockedTx.getSender()).thenReturn(sender);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
@@ -2857,7 +2858,7 @@ public class BridgeSupportTest {
         when(provider.getFeePerKbElection(any()))
                 .thenReturn(new ABICallElection(null));
         when(tx.getSender())
-                .thenReturn(new RskAddress(new byte[] {0x43}));
+                .thenReturn(new RskAddress(ByteUtil.leftPadBytes(new byte[] {0x43}, 20)));
         when(constants.getFeePerKbChangeAuthorizer())
                 .thenReturn(authorizer);
         when(authorizer.isAuthorized(tx))
@@ -2876,7 +2877,7 @@ public class BridgeSupportTest {
         BridgeConstants constants = mock(BridgeConstants.class);
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
 
-        byte[] senderBytes = {0x43};
+        byte[] senderBytes = ByteUtil.leftPadBytes(new byte[]{0x43}, 20);
         when(provider.getFeePerKbElection(any()))
                 .thenReturn(new ABICallElection(authorizer));
         when(tx.getSender())
@@ -2899,7 +2900,7 @@ public class BridgeSupportTest {
         BridgeConstants constants = mock(BridgeConstants.class);
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
 
-        byte[] senderBytes = {0x43};
+        byte[] senderBytes = ByteUtil.leftPadBytes(new byte[]{0x43}, 20);
         when(provider.getFeePerKbElection(any()))
                 .thenReturn(new ABICallElection(authorizer));
         when(tx.getSender())
@@ -2926,7 +2927,7 @@ public class BridgeSupportTest {
         BridgeConstants constants = mock(BridgeConstants.class);
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
 
-        byte[] senderBytes = {0x43};
+        byte[] senderBytes = ByteUtil.leftPadBytes(new byte[]{0x43}, 20);
         when(provider.getFeePerKbElection(any()))
                 .thenReturn(new ABICallElection(authorizer));
         when(tx.getSender())

@@ -57,7 +57,7 @@ public class CallTransaction {
         return new Transaction(longToBytesNoLeadZeroes(nonce),
                 longToBytesNoLeadZeroes(gasPrice),
                 longToBytesNoLeadZeroes(gasLimit),
-                toAddress == RskAddress.nullAddress() ? null : toAddress.getBytes(),
+                toAddress.equals(RskAddress.nullAddress()) ? null : toAddress.getBytes(),
                 longToBytesNoLeadZeroes(value),
                 data,
                 Transaction.getConfigChainId());

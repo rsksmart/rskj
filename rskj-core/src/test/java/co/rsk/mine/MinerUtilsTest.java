@@ -23,6 +23,7 @@ import co.rsk.core.RskAddress;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -114,7 +115,8 @@ public class MinerUtilsTest {
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Map<RskAddress, BigInteger> accountNounces = new HashMap();
-        accountNounces.put(new RskAddress(BigInteger.valueOf(new Random(0).nextLong()).toByteArray()), BigInteger.valueOf(0));
+        byte[] addressBytes = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
+        accountNounces.put(new RskAddress(addressBytes), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
         BigInteger minGasPrice = BigInteger.valueOf(2);
 
@@ -131,7 +133,8 @@ public class MinerUtilsTest {
         txs.add(tx);
         Mockito.when(tx.getGasPrice()).thenReturn(null);
         Map<RskAddress, BigInteger> accountNounces = new HashMap();
-        accountNounces.put(new RskAddress(BigInteger.valueOf(new Random(0).nextLong()).toByteArray()), BigInteger.valueOf(0));
+        byte[] addressBytes = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
+        accountNounces.put(new RskAddress(addressBytes), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
         BigInteger minGasPrice = BigInteger.valueOf(2);
 

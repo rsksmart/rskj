@@ -108,7 +108,7 @@ public class ReversibleTransactionExecutorTest {
         ContractDetails contract = contractRunner.addContract(greeter.runtimeBytecode);
 
         Web3.CallArguments args = new Web3.CallArguments();
-        args.from = "0x23"; // someone else
+        args.from = "0x0000000000000000000000000000000000000023"; // someone else
         args.to = TypeConverter.toJsonHex(contract.getAddress());
         args.data = TypeConverter.toJsonHex(greeterFn.encode("greet me"));
         args.gasPrice = "0x0";
@@ -138,7 +138,7 @@ public class ReversibleTransactionExecutorTest {
         ContractDetails contract = contractRunner.addContract(countcalls.runtimeBytecode);
 
         Web3.CallArguments args = new Web3.CallArguments();
-        args.from = "0x23"; // someone else
+        args.from = "0x0000000000000000000000000000000000000023"; // someone else
         args.to = TypeConverter.toJsonHex(contract.getAddress());
         args.data = TypeConverter.toJsonHex(callsFn.encodeSignature());
         args.gasPrice = "0x0";

@@ -425,7 +425,7 @@ public class BridgeSupport {
 
         //as we can't send btc from contracts we want to send them back to the sender
         if (senderCode != null && senderCode.length > 0) {
-            logger.trace("Contract {} tried to release funds. Release is just allowed from standard accounts.", rskTx.toString());
+            logger.trace("Contract {} tried to release funds. Release is just allowed from standard accounts.", rskTx);
             throw new Program.OutOfGasException("Contract calling releaseBTC");
         }
 

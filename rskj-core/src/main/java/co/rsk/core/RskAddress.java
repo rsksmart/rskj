@@ -33,7 +33,12 @@ import java.util.Comparator;
  */
 public final class RskAddress {
 
-    private static final RskAddress NULL_ADDRESS = new RskAddress(new byte[0]);
+    /**
+     * This is the size of an RSK address in bytes.
+     */
+    private static final int LENGTH_IN_BYTES = 20;
+
+    private static final RskAddress NULL_ADDRESS = new RskAddress(new byte[LENGTH_IN_BYTES]);
 
     /**
      * This compares using the lexicographical order of the sender unsigned bytes.
@@ -45,6 +50,10 @@ public final class RskAddress {
     private final byte[] bytes;
 
     public RskAddress(byte[] bytes) {
+        if (bytes.length != LENGTH_IN_BYTES) {
+            throw new RuntimeException(String.format("An RSK address must be %d-byte long", LENGTH_IN_BYTES));
+        }
+
         this.bytes = bytes;
     }
 

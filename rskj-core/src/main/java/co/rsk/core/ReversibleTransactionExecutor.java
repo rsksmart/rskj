@@ -64,9 +64,6 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
                                                          ProgramInvokeFactory programInvokeFactory,
                                                          Block executionBlock,
                                                          Web3.CallArguments args) {
-        if (args.from == null) {
-            args.from = "";
-        }
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
 
         return executeTransaction(coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock,

@@ -426,13 +426,15 @@ public class BlockExecutorTest {
     //////////////////////////////////////////////
     // Testing strange Txs
     /////////////////////////////////////////////
-    @Test
+    @Test(expected = RuntimeException.class)
     public void executeBlocksWithOneStrangeTransactions1() {
+        // will fail to create an address that is not 20-byte long
         executeBlockWithOneStrangeTransaction(true, false, generateBlockWithOneStrangeTransaction(0));
     }
 
-    @Test
+    @Test(expected = RuntimeException.class)
     public void executeBlocksWithOneStrangeTransactions2() {
+        // will fail to create an address that is not 20-byte long
         executeBlockWithOneStrangeTransaction(true, true, generateBlockWithOneStrangeTransaction(1));
     }
 

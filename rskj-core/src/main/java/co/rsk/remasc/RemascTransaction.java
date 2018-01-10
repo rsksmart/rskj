@@ -54,8 +54,7 @@ public class RemascTransaction extends Transaction {
     @Override
     public RskAddress getSender() {
         // RemascTransaction is not signed so has no sender
-        // TODO(mc): we should use RskAddress.nullAddress(), but that changes Repository.getNonce semantics
-        return new RskAddress(new byte[]{0});
+        return RskAddress.nullAddress();
     }
 
     @Override

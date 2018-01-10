@@ -61,7 +61,7 @@ public class BridgeUtilsTest {
 
     private static final Logger logger = LoggerFactory.getLogger("test");
 
-    private static final String TO_ADDRESS = "00000000000000000006";
+    private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger AMOUNT = new BigInteger("1");
     private static final BigInteger NONCE = new BigInteger("0");
     private static final BigInteger GAS_PRICE = new BigInteger("100");
