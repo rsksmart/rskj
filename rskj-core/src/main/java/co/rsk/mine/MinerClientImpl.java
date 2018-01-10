@@ -103,10 +103,10 @@ public class MinerClientImpl implements MinerClient {
 
     public void doWork() {
         try {
-            if (mineBlock() &&
+            if (mineBlock()) &&
                 (config.getBlockchainConfig() instanceof RegTestConfig ||
-                config.getBlockchainConfig() instanceof DevNetConfig)) {
-                Thread.sleep(20000);
+                 config.getBlockchainConfig() instanceof DevNetConfig)) {
+                Thread.sleep(1000);
             }
         } catch (Exception e) {
             logger.error("Error on mining", e);
