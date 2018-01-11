@@ -1010,7 +1010,7 @@ public class Web3ImplTest {
             e.printStackTrace();
         }
 
-        String expectedSignature = "0x" + wallet.getAccount(RskAddress.fromHex(addr1)).getEcKey().sign(hash).r.toString() + wallet.getAccount(RskAddress.fromHex(addr1)).getEcKey().sign(hash).s.toString() + wallet.getAccount(RskAddress.fromHex(addr1)).getEcKey().sign(hash).v;
+        String expectedSignature = "0x" + wallet.getAccount(new RskAddress(addr1)).getEcKey().sign(hash).r.toString() + wallet.getAccount(new RskAddress(addr1)).getEcKey().sign(hash).s.toString() + wallet.getAccount(new RskAddress(addr1)).getEcKey().sign(hash).v;
 
         Assert.assertTrue("Signature is not the same one returned by the key", expectedSignature.compareTo(signature) == 0);
     }
@@ -1025,7 +1025,7 @@ public class Web3ImplTest {
         Account account = null;
 
         try {
-            account = wallet.getAccount(RskAddress.fromHex(addr), "passphrase1");
+            account = wallet.getAccount(new RskAddress(addr), "passphrase1");
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -1064,11 +1064,11 @@ public class Web3ImplTest {
 
         org.junit.Assert.assertNotNull(address);
 
-        Account account0 = wallet.getAccount(RskAddress.fromHex(address));
+        Account account0 = wallet.getAccount(new RskAddress(address));
 
         org.junit.Assert.assertNull(account0);
 
-        Account account = wallet.getAccount(RskAddress.fromHex(address), "passphrase1");
+        Account account = wallet.getAccount(new RskAddress(address), "passphrase1");
 
         org.junit.Assert.assertNotNull(account);
         org.junit.Assert.assertEquals(address, "0x" + Hex.toHexString(account.getAddress().getBytes()));
@@ -1126,7 +1126,7 @@ public class Web3ImplTest {
 
         // ***** Verifies tx hash
         Transaction tx = Transaction.create(toAddress.substring(2), value, nonce, gasPrice, gasLimit, args.data);
-        Account account = wallet.getAccount(RskAddress.fromHex(addr1), "passphrase1");
+        Account account = wallet.getAccount(new RskAddress(addr1), "passphrase1");
         tx.sign(account.getEcKey().getPrivKeyBytes());
 
         String expectedHash = TypeConverter.toJsonHex(tx.getHash());
@@ -1141,13 +1141,13 @@ public class Web3ImplTest {
 
         String addr = web3.personal_newAccount("passphrase1");
 
-        Account account0 = wallet.getAccount(RskAddress.fromHex(addr));
+        Account account0 = wallet.getAccount(new RskAddress(addr));
 
         org.junit.Assert.assertNull(account0);
 
         org.junit.Assert.assertTrue(web3.personal_unlockAccount(addr, "passphrase1", ""));
 
-        Account account = wallet.getAccount(RskAddress.fromHex(addr));
+        Account account = wallet.getAccount(new RskAddress(addr));
 
         org.junit.Assert.assertNotNull(account);
     }
@@ -1159,7 +1159,7 @@ public class Web3ImplTest {
 
         String addr = web3.personal_newAccount("passphrase1");
 
-        Account account0 = wallet.getAccount(RskAddress.fromHex(addr));
+        Account account0 = wallet.getAccount(new RskAddress(addr));
 
         org.junit.Assert.assertNull(account0);
 
@@ -1175,19 +1175,19 @@ public class Web3ImplTest {
 
         String addr = web3.personal_newAccount("passphrase1");
 
-        Account account0 = wallet.getAccount(RskAddress.fromHex(addr));
+        Account account0 = wallet.getAccount(new RskAddress(addr));
 
         org.junit.Assert.assertNull(account0);
 
         org.junit.Assert.assertTrue(web3.personal_unlockAccount(addr, "passphrase1", ""));
 
-        Account account = wallet.getAccount(RskAddress.fromHex(addr));
+        Account account = wallet.getAccount(new RskAddress(addr));
 
         org.junit.Assert.assertNotNull(account);
 
         org.junit.Assert.assertTrue(web3.personal_lockAccount(addr));
 
-        Account account1 = wallet.getAccount(RskAddress.fromHex(addr));
+        Account account1 = wallet.getAccount(new RskAddress(addr));
 
         org.junit.Assert.assertNull(account1);
     }
@@ -1228,7 +1228,7 @@ public class Web3ImplTest {
 
         // ***** Verifies tx hash
         Transaction tx = Transaction.create(toAddress.substring(2), value, nonce, gasPrice, gasLimit, args.data);
-        tx.sign(wallet.getAccount(RskAddress.fromHex(addr1)).getEcKey().getPrivKeyBytes());
+        tx.sign(wallet.getAccount(new RskAddress(addr1)).getEcKey().getPrivKeyBytes());
 
         String expectedHash = TypeConverter.toJsonHex(tx.getHash());
 

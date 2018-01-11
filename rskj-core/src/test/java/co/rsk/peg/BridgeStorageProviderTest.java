@@ -656,8 +656,8 @@ public class BridgeStorageProviderTest {
         byte[] electionFee = new byte[] {0x43, 0x19};
         ABICallSpec expectedWinner = new ABICallSpec("setFeePerKb", new byte[][]{electionFee});
         List<RskAddress> voters = new ArrayList<>();
-        voters.add(RskAddress.fromHex("0000000000000000000000000000000000001321"));
-        voters.add(RskAddress.fromHex("0000000000000000000000000000000000004049"));
+        voters.add(new RskAddress("0000000000000000000000000000000000001321"));
+        voters.add(new RskAddress("0000000000000000000000000000000000004049"));
         HashMap<ABICallSpec, List<RskAddress>> electionVotes = new HashMap<>();
         electionVotes.put(expectedWinner, voters);
         byte[] serializedElection = BridgeSerializationUtils.serializeElection(

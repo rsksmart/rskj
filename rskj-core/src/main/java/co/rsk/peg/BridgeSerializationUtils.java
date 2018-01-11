@@ -498,7 +498,7 @@ public class BridgeSerializationUtils {
     // using the lexicographical order of the voters' unsigned bytes
     private static byte[] serializeVoters(List<RskAddress> voters) {
         List<byte[]> encodedKeys = voters.stream()
-                .sorted(RskAddress.COMPARATOR)
+                .sorted(RskAddress.LEXICOGRAPHICAL_COMPARATOR)
                 .map(key -> RLP.encodeElement(key.getBytes()))
                 .collect(Collectors.toList());
         return RLP.encodeList(encodedKeys.toArray(new byte[0][]));

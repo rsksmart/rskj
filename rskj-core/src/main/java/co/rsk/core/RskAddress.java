@@ -43,12 +43,22 @@ public final class RskAddress {
     /**
      * This compares using the lexicographical order of the sender unsigned bytes.
      */
-    public static final Comparator<RskAddress> COMPARATOR = Comparator.comparing(
+    public static final Comparator<RskAddress> LEXICOGRAPHICAL_COMPARATOR = Comparator.comparing(
             RskAddress::getBytes,
             UnsignedBytes.lexicographicalComparator());
 
     private final byte[] bytes;
 
+    /**
+     * @param address the hex-encoded 20 bytes long address, with or without 0x prefix.
+     */
+    public RskAddress(String address) {
+        this(TypeConverter.stringHexToByteArray(address));
+    }
+
+    /**
+     * @param bytes the 20 bytes long raw address bytes.
+     */
     public RskAddress(byte[] bytes) {
         if (bytes.length != LENGTH_IN_BYTES) {
             throw new RuntimeException(String.format("An RSK address must be %d bytes long", LENGTH_IN_BYTES));
@@ -62,13 +72,6 @@ public final class RskAddress {
      */
     public static RskAddress nullAddress() {
         return NULL_ADDRESS;
-    }
-
-    /**
-     * @return the address corresponding to the hex string.
-     */
-    public static RskAddress fromHex(String address) {
-        return new RskAddress(TypeConverter.stringHexToByteArray(address));
     }
 
     public byte[] getBytes() {

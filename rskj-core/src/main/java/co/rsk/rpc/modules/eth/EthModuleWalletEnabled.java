@@ -88,7 +88,7 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
     public String sign(String addr, String data) {
         String s = null;
         try {
-            Account account = this.wallet.getAccount(RskAddress.fromHex(addr));
+            Account account = this.wallet.getAccount(new RskAddress(addr));
             if (account == null) {
                 throw new JsonRpcInvalidParamException("Account not found");
             }
@@ -110,7 +110,7 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
     }
 
     private Account getAccount(String address) {
-        return this.wallet.getAccount(RskAddress.fromHex(address));
+        return this.wallet.getAccount(new RskAddress(address));
     }
 
     private String sign(String data, ECKey ecKey) {

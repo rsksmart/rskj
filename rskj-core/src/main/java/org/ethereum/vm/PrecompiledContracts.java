@@ -57,10 +57,10 @@ public class PrecompiledContracts {
     public static final String BRIDGE_ADDR_STR = "0000000000000000000000000000000001000006";
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
 
-    public static final RskAddress BRIDGE_ADDR = RskAddress.fromHex(BRIDGE_ADDR_STR);
-    public static final RskAddress IDENTITY_ADDR = RskAddress.fromHex(IDENTITY_ADDR_STR);
-    public static final RskAddress REMASC_ADDR = RskAddress.fromHex(REMASC_ADDR_STR);
-    public static final RskAddress SAMPLE_ADDR = RskAddress.fromHex(SAMPLE_ADDR_STR);
+    public static final RskAddress BRIDGE_ADDR = new RskAddress(BRIDGE_ADDR_STR);
+    public static final RskAddress IDENTITY_ADDR = new RskAddress(IDENTITY_ADDR_STR);
+    public static final RskAddress REMASC_ADDR = new RskAddress(REMASC_ADDR_STR);
+    public static final RskAddress SAMPLE_ADDR = new RskAddress(SAMPLE_ADDR_STR);
 
     private static final String RSK_NATIVECONTRACT_REQUIREDPREFIX = "000000000000000000000000";
     private static ECRecover ecRecover = new ECRecover();

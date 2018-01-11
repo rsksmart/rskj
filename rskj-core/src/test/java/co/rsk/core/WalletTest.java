@@ -124,7 +124,7 @@ public class WalletTest {
     public void unlockNonexistentAccount() {
         Wallet wallet = WalletFactory.createWallet();
 
-        RskAddress address = RskAddress.fromHex("0x0000000000000000000000000000000000000023");
+        RskAddress address = new RskAddress("0x0000000000000000000000000000000000000023");
         Assert.assertFalse(wallet.unlockAccount(address, "passphrase"));
     }
 
@@ -154,7 +154,7 @@ public class WalletTest {
     public void lockNonexistentAccount() {
         Wallet wallet = WalletFactory.createWallet();
 
-        RskAddress address = RskAddress.fromHex("0x0000000000000000000000000000000000000023");
+        RskAddress address = new RskAddress("0x0000000000000000000000000000000000000023");
         Assert.assertFalse(wallet.lockAccount(address));
     }
 
@@ -177,7 +177,7 @@ public class WalletTest {
     public void getUnknownAccount() {
         Wallet wallet = WalletFactory.createWallet();
 
-        RskAddress address = RskAddress.fromHex("0x0000000000000000000000000000000000000023");
+        RskAddress address = new RskAddress("0x0000000000000000000000000000000000000023");
         Account account = wallet.getAccount(address);
 
         Assert.assertNull(account);

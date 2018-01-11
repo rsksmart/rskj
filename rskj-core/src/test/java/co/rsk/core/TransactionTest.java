@@ -181,7 +181,7 @@ public class TransactionTest {
                     Repository track = repository.startTracking();
 
                     Transaction txConst = CallTransaction.createCallTransaction(0, 0, 100000000000000L,
-                            RskAddress.fromHex("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
+                            new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
                             CallTransaction.Function.fromSignature("get"));
                     txConst.sign(new byte[32]);
 
