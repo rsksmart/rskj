@@ -19,30 +19,24 @@
 
 package org.ethereum.crypto;
 
-import org.ethereum.core.ImmutableTransaction;
-import org.ethereum.core.Transaction;
-import org.ethereum.crypto.ECKey.ECDSASignature;
-
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-
+import org.ethereum.core.ImmutableTransaction;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey.ECDSASignature;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
-
 import java.math.BigInteger;
-
 import java.security.SignatureException;
-
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
@@ -168,6 +162,7 @@ public class ECKeyTest {
     }
 
     @Test
+    @Ignore("The TX sender is not 20-byte long")
     public void testVerifySignature3() throws SignatureException {
 
         byte[] rawtx = Hex.decode("f86e80893635c9adc5dea000008609184e72a00082109f9479b08ad8787060333663d19704909ee7b1903e58801ba0899b92d0c76cbf18df24394996beef19c050baa9823b4a9828cd9b260c97112ea0c9e62eb4cf0a9d95ca35c8830afac567619d6b3ebee841a3c8be61d35acd8049");

@@ -18,6 +18,8 @@
 
 package co.rsk.peg;
 
+import co.rsk.core.RskAddress;
+import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
 import org.junit.Before;
@@ -33,7 +35,7 @@ public class ABICallElectionTest {
     private ABICallSpec spec_fna, spec_fnb;
     private ABICallElection election;
     private AddressBasedAuthorizer authorizer;
-    private Map<ABICallSpec, List<TxSender>> votes;
+    private Map<ABICallSpec, List<RskAddress>> votes;
 
     @Before
     public void createVotesAuthorizerAndElection() {
@@ -154,13 +156,13 @@ public class ABICallElectionTest {
         Assert.assertEquals(Arrays.asList(createVoter("aa"), createVoter("bb")), election.getVotes().get(spec_fnb));
     }
 
-    private TxSender createVoter(String hex) {
-        return new TxSender(Hex.decode(hex));
+    private RskAddress createVoter(String hex) {
+        return new RskAddress(TestUtils.padZeroesLeft(hex, 40));
     }
 
     private ECKey createMockKeyForAddress(String hex) {
         ECKey mockedKey = mock(ECKey.class);
-        when(mockedKey.getAddress()).thenReturn(Hex.decode(hex));
+        when(mockedKey.getAddress()).thenReturn(Hex.decode(TestUtils.padZeroesLeft(hex, 40)));
         return mockedKey;
     }
 }

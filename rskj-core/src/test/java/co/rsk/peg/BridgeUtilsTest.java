@@ -28,6 +28,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.CoinSelector;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
@@ -60,7 +61,7 @@ public class BridgeUtilsTest {
 
     private static final Logger logger = LoggerFactory.getLogger("test");
 
-    private static final String TO_ADDRESS = "00000000000000000006";
+    private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger AMOUNT = new BigInteger("1");
     private static final BigInteger NONCE = new BigInteger("0");
     private static final BigInteger GAS_PRICE = new BigInteger("100");
@@ -395,7 +396,7 @@ public class BridgeUtilsTest {
     }
 
 
-    private void isFreeBridgeTx(boolean expected, String destinationAddress, BlockchainNetConfig config, byte[] privKeyBytes) {
+    private void isFreeBridgeTx(boolean expected, RskAddress destinationAddress, BlockchainNetConfig config, byte[] privKeyBytes) {
         BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
         RskSystemProperties.CONFIG.setBlockchainConfig(config);
 

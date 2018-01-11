@@ -65,7 +65,7 @@ public class CodeReplaceTest {
         Transaction tx1 = createTx(blockchain, sender, new byte[0], code);
         executeTransaction(blockchain, tx1);
         // Now we can directly check the store and see the new code.
-        byte[] createdContract = tx1.getContractAddress();
+        byte[] createdContract = tx1.getContractAddress().getBytes();
         byte[] expectedCode  = Arrays.copyOfRange(code, 12, 12+20);
         byte[] installedCode = blockchain.getRepository().getContractDetails(createdContract).getCode();
         // assert the contract has been created
@@ -81,7 +81,7 @@ public class CodeReplaceTest {
         byte[] code2 = assembler.assemble(asm2);
 
         // The second transaction changes the contract code
-        Transaction tx2 = createTx(blockchain, sender, tx1.getContractAddress(), code2);
+        Transaction tx2 = createTx(blockchain, sender, tx1.getContractAddress().getBytes(), code2);
         TransactionExecutor executor2 = executeTransaction(blockchain, tx2);
         byte[] installedCode2 = blockchain.getRepository().getContractDetails(createdContract).getCode();
         // assert the contract code has been created
@@ -89,7 +89,7 @@ public class CodeReplaceTest {
         Assert.assertEquals(1, executor2.getResult().getCodeChanges().size()); // there is one code change
 
         // We could add a third tx to execute the new code
-        Transaction tx3 = createTx(blockchain, sender, tx1.getContractAddress(), new byte[0]);
+        Transaction tx3 = createTx(blockchain, sender, tx1.getContractAddress().getBytes(), new byte[0]);
         TransactionExecutor executor3 = executeTransaction(blockchain, tx3);
         // check return code from contract call
         Assert.assertArrayEquals(Hex.decode("FF"), executor3.getResult().getHReturn());

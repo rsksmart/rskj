@@ -35,6 +35,7 @@ import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -104,7 +105,7 @@ public class BridgeTest {
 
         track = repository.startTracking();
 
-        Transaction rskTx = Transaction.create(PrecompiledContracts.BRIDGE_ADDR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = Transaction.create(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
         World world = new World();
@@ -144,7 +145,7 @@ public class BridgeTest {
         World world = new World();
         List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(world.getBlockChain().getBestBlock(), 10);
 
-        Transaction rskTx = Transaction.create(PrecompiledContracts.BRIDGE_ADDR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        Transaction rskTx = Transaction.create(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         world.getBlockChain().getBlockStore().saveBlock(blocks.get(1), BigInteger.ONE, true);
@@ -939,5 +940,15 @@ public class BridgeTest {
 
         Assert.assertEquals(-10, bridge.voteFeePerKbChange(new Object[]{ "i'm not a byte array" }).intValue());
         verify(bridgeSupportMock, never()).voteFederationChange(any(), any());
+    }
+
+    @Test
+    public void precompiledContractAddress() {
+        Assert.assertArrayEquals(
+                PrecompiledContracts.BRIDGE_ADDR.getBytes(),
+                Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR));
+        Assert.assertArrayEquals(
+                PrecompiledContracts.BRIDGE_ADDR.getBytes(),
+                TypeConverter.stringHexToByteArray(PrecompiledContracts.BRIDGE_ADDR_STR));
     }
 }

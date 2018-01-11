@@ -101,7 +101,7 @@ public class BlockChainImplTest {
 
         Assert.assertArrayEquals(genesis.getStateRoot(), repository.getRoot());
 
-        Assert.assertEquals(new BigInteger("21000000000000000000000000"), repository.getBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR)));
+        Assert.assertEquals(new BigInteger("21000000000000000000000000"), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR.getBytes()));
     }
 
 
@@ -128,7 +128,7 @@ public class BlockChainImplTest {
 
         Assert.assertArrayEquals(genesis.getStateRoot(), repository.getRoot());
 
-        Assert.assertEquals(new BigInteger("21000000000000000000000000"), repository.getBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR)));
+        Assert.assertEquals(new BigInteger("21000000000000000000000000"), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR.getBytes()));
     }
 
     @Test
@@ -159,7 +159,7 @@ public class BlockChainImplTest {
 
         Assert.assertArrayEquals(genesis.getStateRoot(), repository.getRoot());
 
-        Assert.assertEquals(new BigInteger("21000000000000000000000000"), repository.getBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR)));
+        Assert.assertEquals(new BigInteger("21000000000000000000000000"), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR.getBytes()));
     }
 
     @Test
@@ -830,7 +830,7 @@ public class BlockChainImplTest {
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block));
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create("06", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(1L), BigInteger.TEN);
+        Transaction tx = Transaction.create("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(1L), BigInteger.TEN);
         tx.sign(new byte[]{22, 11, 00});
         txs.add(tx);
 
@@ -860,7 +860,7 @@ public class BlockChainImplTest {
         track.commit();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create("0100", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.valueOf(22000L));
+        Transaction tx = Transaction.create("0000000000000000000000000000000000000100", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.valueOf(22000L));
         tx.sign(account.getEcKey().getPrivKeyBytes());
         txs.add(tx);
 

@@ -19,18 +19,17 @@
 package co.rsk.mine;
 
 import co.rsk.TestHelpers.Tx;
+import co.rsk.core.RskAddress;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
-import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.util.*;
-
-import static org.ethereum.util.ByteUtil.wrap;
 
 public class MinerUtilsTest {
 
@@ -70,9 +69,9 @@ public class MinerUtilsTest {
         //Mockito.when(tx.checkGasPrice(Mockito.any(BigInteger.class))).thenReturn(true);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
-        Map<ByteArrayWrapper, BigInteger> accountNounces = new HashMap();
+        Map<RskAddress, BigInteger> accountNounces = new HashMap();
         Repository repository = Mockito.mock(Repository.class);
-        Mockito.when(repository.getNonce(tx.getSender())).thenReturn(BigInteger.valueOf(0));
+        Mockito.when(repository.getNonce(tx.getSender().getBytes())).thenReturn(BigInteger.valueOf(0));
         BigInteger minGasPrice = BigInteger.valueOf(1);
 
         List<Transaction> res = new MinerUtils().filterTransactions(new LinkedList<>(), txs, accountNounces, repository, minGasPrice);
@@ -85,8 +84,8 @@ public class MinerUtilsTest {
         //Mockito.when(tx.checkGasPrice(Mockito.any(BigInteger.class))).thenReturn(true);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
-        Map<ByteArrayWrapper, BigInteger> accountNounces = new HashMap();
-        accountNounces.put(wrap(tx.getSender()), BigInteger.valueOf(0));
+        Map<RskAddress, BigInteger> accountNounces = new HashMap();
+        accountNounces.put(tx.getSender(), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
         BigInteger minGasPrice = BigInteger.valueOf(1);
 
@@ -99,8 +98,8 @@ public class MinerUtilsTest {
         Transaction tx = Tx.create(0, 50000, 2, 0, 0, 0, new Random(0));
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
-        Map<ByteArrayWrapper, BigInteger> accountNounces = new HashMap();
-        accountNounces.put(wrap(tx.getSender()), BigInteger.valueOf(0));
+        Map<RskAddress, BigInteger> accountNounces = new HashMap();
+        accountNounces.put(tx.getSender(), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
         BigInteger minGasPrice = BigInteger.valueOf(1);
 
@@ -115,8 +114,9 @@ public class MinerUtilsTest {
         Transaction tx = Tx.create(0, 50000, 1, 0, 0, 0, new Random(0));
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
-        Map<ByteArrayWrapper, BigInteger> accountNounces = new HashMap();
-        accountNounces.put(wrap(BigInteger.valueOf(new Random(0).nextLong()).toByteArray()), BigInteger.valueOf(0));
+        Map<RskAddress, BigInteger> accountNounces = new HashMap();
+        byte[] addressBytes = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
+        accountNounces.put(new RskAddress(addressBytes), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
         BigInteger minGasPrice = BigInteger.valueOf(2);
 
@@ -132,8 +132,9 @@ public class MinerUtilsTest {
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Mockito.when(tx.getGasPrice()).thenReturn(null);
-        Map<ByteArrayWrapper, BigInteger> accountNounces = new HashMap();
-        accountNounces.put(wrap(BigInteger.valueOf(new Random(0).nextLong()).toByteArray()), BigInteger.valueOf(0));
+        Map<RskAddress, BigInteger> accountNounces = new HashMap();
+        byte[] addressBytes = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
+        accountNounces.put(new RskAddress(addressBytes), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
         BigInteger minGasPrice = BigInteger.valueOf(2);
 

@@ -62,7 +62,7 @@ public class ContractRunner {
                         .code(TypeConverter.stringHexToByteArray(runtimeBytecode))
                         .build();
 
-        return repository.getContractDetails(contractAccount.getAddress());
+        return repository.getContractDetails(contractAccount.getAddress().getBytes());
     }
 
     public ProgramResult createContract(byte[] bytecode) {
@@ -74,11 +74,11 @@ public class ContractRunner {
         createContract(bytecode);
         Transaction creationTx = contractCreateTx(bytecode);
         executeTransaction(creationTx);
-        return runContract(creationTx.getContractAddress(), encodedCall, value);
+        return runContract(creationTx.getContractAddress().getBytes(), encodedCall, value);
     }
 
     private Transaction contractCreateTx(byte[] bytecode) {
-        BigInteger nonceCreate = repository.getNonce(sender.getAddress());
+        BigInteger nonceCreate = repository.getNonce(sender.getAddress().getBytes());
         return new TransactionBuilder()
                 .gasLimit(BigInteger.valueOf(10_000_000))
                 .sender(sender)
@@ -88,7 +88,7 @@ public class ContractRunner {
     }
 
     private ProgramResult runContract(byte[] contractAddress, byte[] encodedCall, BigInteger value) {
-        BigInteger nonceExecute = repository.getNonce(sender.getAddress());
+        BigInteger nonceExecute = repository.getNonce(sender.getAddress().getBytes());
         Transaction transaction = new TransactionBuilder()
                 // a large gas limit will allow running any contract
                 .gasLimit(BigInteger.valueOf(10_000_000))

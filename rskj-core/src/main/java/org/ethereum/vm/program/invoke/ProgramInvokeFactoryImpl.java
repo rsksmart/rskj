@@ -51,15 +51,15 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
 
         /***         ADDRESS op       ***/
         // YP: Get address of currently executing account.
-        byte[] address = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
+        byte[] address = tx.isContractCreation() ? tx.getContractAddress().getBytes() : tx.getReceiveAddress().getBytes();
 
         /***         ORIGIN op       ***/
         // YP: This is the sender of original transaction; it is never a contract.
-        byte[] origin = tx.getSender();
+        byte[] origin = tx.getSender().getBytes();
 
         /***         CALLER op       ***/
         // YP: This is the address of the account that is directly responsible for this execution.
-        byte[] caller = tx.getSender();
+        byte[] caller = tx.getSender().getBytes();
 
         /***         BALANCE op       ***/
         byte[] balance = repository.getBalance(address).toByteArray();

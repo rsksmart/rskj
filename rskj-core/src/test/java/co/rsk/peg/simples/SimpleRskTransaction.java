@@ -18,6 +18,7 @@
 
 package co.rsk.peg.simples;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.SHA3Helper;
@@ -33,6 +34,7 @@ public class SimpleRskTransaction extends Transaction {
     public SimpleRskTransaction(byte[] hash) {
         super(null);
         this.hash = hash;
+        this.sender = new RskAddress(ECKey.fromPrivate(SHA3Helper.sha3("cow".getBytes())).getAddress());
     }
 
     @Override
@@ -43,9 +45,4 @@ public class SimpleRskTransaction extends Transaction {
 
     @Override
     public String toString() { return "Tx " + this.getHash().toString(); }
-
-    @Override
-    public synchronized byte[] getSender() {
-        return ECKey.fromPrivate(SHA3Helper.sha3("cow".getBytes())).getAddress();
-    }
 }

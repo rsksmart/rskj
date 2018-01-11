@@ -19,10 +19,10 @@
 package co.rsk.validators;
 
 import co.rsk.panic.PanicProcessor;
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
-import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -66,7 +66,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
 
         Repository parentRepo = repository.getSnapshotTo(parent.getStateRoot());
 
-        Map<ByteArrayWrapper, BigInteger> curNonce = new HashMap<>();
+        Map<RskAddress, BigInteger> curNonce = new HashMap<>();
 
         for (Transaction tx : txs) {
             try {
@@ -76,21 +76,20 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
                 return false;
             }
 
-            byte[] txSender = tx.getSender();
-            ByteArrayWrapper key = new ByteArrayWrapper(txSender);
-            BigInteger expectedNonce = curNonce.get(key);
+            RskAddress sender = tx.getSender();
+            BigInteger expectedNonce = curNonce.get(sender);
             if (expectedNonce == null) {
-                expectedNonce = parentRepo.getNonce(txSender);
+                expectedNonce = parentRepo.getNonce(sender.getBytes());
             }
-            curNonce.put(key, expectedNonce.add(ONE));
+            curNonce.put(sender, expectedNonce.add(ONE));
             BigInteger txNonce = new BigInteger(1, tx.getNonce());
 
             if (!expectedNonce.equals(txNonce)) {
                 logger.warn("Invalid transaction: Tx nonce {} != expected nonce {} (parent nonce: {}): {}",
-                        txNonce, expectedNonce, parentRepo.getNonce(txSender), tx);
+                        txNonce, expectedNonce, parentRepo.getNonce(sender.getBytes()), tx);
 
                 panicProcessor.panic("invalidtransaction", String.format("Invalid transaction: Tx nonce %s != expected nonce %s (parent nonce: %s): %s",
-                        txNonce.toString(), expectedNonce.toString(), parentRepo.getNonce(txSender).toString(), Hex.toHexString(tx.getHash())));
+                        txNonce.toString(), expectedNonce.toString(), parentRepo.getNonce(sender.getBytes()).toString(), Hex.toHexString(tx.getHash())));
 
                 return false;
             }

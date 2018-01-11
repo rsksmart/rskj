@@ -19,7 +19,6 @@
 package co.rsk.validators;
 
 import co.rsk.remasc.RemascTransaction;
-import co.rsk.validators.RemascValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
@@ -48,7 +47,7 @@ public class RemascValidationRuleTest {
         Block b = Mockito.mock(Block.class);
 
         List<Transaction> tx = new ArrayList<>();
-        tx.add(Transaction.create("0001", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN));
+        tx.add(Transaction.create("0000000000000000000000000000000000000001", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN));
 
         Mockito.when(b.getTransactionsList()).thenReturn(tx);
 
@@ -63,7 +62,7 @@ public class RemascValidationRuleTest {
 
         List<Transaction> tx = new ArrayList<>();
         tx.add(new RemascTransaction(1L));
-        tx.add(Transaction.create("0001", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN));
+        tx.add(Transaction.create("0000000000000000000000000000000000000001", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN));
 
         Mockito.when(b.getTransactionsList()).thenReturn(tx);
 
@@ -77,7 +76,7 @@ public class RemascValidationRuleTest {
         Block b = Mockito.mock(Block.class);
 
         List<Transaction> tx = new ArrayList<>();
-        tx.add(Transaction.create("0001", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN));
+        tx.add(Transaction.create("0000000000000000000000000000000000000001", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN));
         tx.add(new RemascTransaction(1L));
 
         Mockito.when(b.getTransactionsList()).thenReturn(tx);

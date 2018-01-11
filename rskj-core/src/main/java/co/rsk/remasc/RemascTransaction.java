@@ -18,11 +18,11 @@
 
 package co.rsk.remasc;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
-import org.spongycastle.util.encoders.Hex;
 
 /**
  * Tx that invokes Remasc's processMinersFees method.
@@ -39,7 +39,7 @@ public class RemascTransaction extends Transaction {
         super(ByteUtil.longToBytesNoLeadZeroes(blockNumber - 1),
                 ZERO_BYTE_ARRAY,
                 ZERO_BYTE_ARRAY,
-                Hex.decode(PrecompiledContracts.REMASC_ADDR),
+                PrecompiledContracts.REMASC_ADDR.getBytes(),
                 ZERO_BYTE_ARRAY,
                 null,
                 (byte) 0);
@@ -52,9 +52,9 @@ public class RemascTransaction extends Transaction {
     }
 
     @Override
-    public byte[] getSender() {
+    public RskAddress getSender() {
         // RemascTransaction is not signed so has no sender
-        return new byte[]{0};
+        return RskAddress.nullAddress();
     }
 
     @Override

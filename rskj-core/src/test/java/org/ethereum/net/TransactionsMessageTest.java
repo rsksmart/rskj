@@ -63,7 +63,7 @@ public class TransactionsMessageTest {
         assertEquals("5d2aee0490a9228024158433d650335116b4af5a30b8abb10e9b7f9f7e090fd8", Hex.toHexString(tx.getHash()));
         assertEquals("04", Hex.toHexString(tx.getNonce()));
         assertEquals("1bc16d674ec80000", Hex.toHexString(tx.getValue()));
-        assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", Hex.toHexString(tx.getReceiveAddress()));
+        assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", tx.getReceiveAddress().toString());
         assertEquals("64", Hex.toHexString(tx.getGasPrice()));
         assertEquals("09184e72a000", Hex.toHexString(tx.getGasLimit()));
         assertEquals("", ByteUtil.toHexString(tx.getData()));
@@ -121,7 +121,7 @@ public class TransactionsMessageTest {
                 Hex.toHexString(tx3.getValue()));
 
         assertEquals("09184e72a000",
-                Hex.toHexString(tx3.getReceiveAddress()));
+                Hex.toHexString(tx3.getReceiveAddress().getBytes()));
 
         assertNull(tx3.getGasPrice());
 
@@ -152,7 +152,7 @@ public class TransactionsMessageTest {
                 Hex.toHexString(tx1.getValue()));
 
         assertEquals("09184e72a000",
-                Hex.toHexString(tx1.getReceiveAddress()));
+                Hex.toHexString(tx1.getReceiveAddress().getBytes()));
 
         assertNull(tx1.getGasPrice());
 
@@ -177,7 +177,7 @@ public class TransactionsMessageTest {
     public void test_3() throws Exception {
 
         String expected =
-                "f872f870808b00d3c21bcecceda10000009479b08ad8787060333663d19704909ee7b1903e588609184e72a000824255801ca00f410a70e42b2c9854a8421d32c87c370a2b9fff0a27f9f031bb4443681d73b5a018a7dc4c4f9dee9f3dc35cb96ca15859aa27e219a8e4a8547be6bd3206979858";
+                "f872f870808609184e72a0008242559479b08ad8787060333663d19704909ee7b1903e588b00d3c21bcecceda1000000801ca07c3f47d609d453737ddcf7c403190f67432c41e1f26051296b24e4e10a837083a0375fdb6d3b82dae7e1e78aa7d7413d0bfefeb05341058361d2b5a53d9c8783d6";
 
         BigInteger value = new BigInteger("1000000000000000000000000");
 
@@ -185,10 +185,10 @@ public class TransactionsMessageTest {
         ECKey ecKey = ECKey.fromPrivate(privKey);
 
         byte[] gasPrice = Hex.decode("09184e72a000");
-        byte[] gas = Hex.decode("4255");
+        byte[] gasLimit = Hex.decode("4255");
 
-        Transaction tx = new Transaction(null, value.toByteArray(),
-                ecKey.getAddress(), gasPrice, gas, null);
+        Transaction tx = new Transaction(null, gasPrice,
+                gasLimit, ecKey.getAddress(), value.toByteArray(), null);
 
         tx.sign(privKey);
         tx.getEncoded();

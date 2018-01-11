@@ -29,6 +29,7 @@ import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.utils.BridgeEventLogger;
@@ -89,12 +90,12 @@ public class BridgeSupport {
     private StoredBlock initialBtcStoredBlock;
 
     // Used by bridge
-    public BridgeSupport(Repository repository, String contractAddress, Block rskExecutionBlock, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) throws IOException, BlockStoreException {
-        this(repository, contractAddress, new BridgeStorageProvider(repository, contractAddress, bridgeConstants), rskExecutionBlock, bridgeConstants, eventLogger);
+    public BridgeSupport(Repository repository, RskAddress contractAddress, Block rskExecutionBlock, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) throws IOException, BlockStoreException {
+        this(repository, new BridgeStorageProvider(repository, contractAddress, bridgeConstants), rskExecutionBlock, bridgeConstants, eventLogger);
     }
 
     // Used by unit tests
-    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, Block rskExecutionBlock, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) throws IOException, BlockStoreException {
+    public BridgeSupport(Repository repository, BridgeStorageProvider provider, Block rskExecutionBlock, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) throws IOException, BlockStoreException {
         this.rskRepository = repository;
         this.provider = provider;
         this.rskExecutionBlock = rskExecutionBlock;
@@ -104,7 +105,7 @@ public class BridgeSupport {
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         this.btcContext = new Context(btcParams);
 
-        this.btcBlockStore = new RepositoryBlockStore(repository, contractAddress);
+        this.btcBlockStore = new RepositoryBlockStore(repository, PrecompiledContracts.BRIDGE_ADDR);
         if (btcBlockStore.getChainHead().getHeader().getHash().equals(btcParams.getGenesisBlock().getHash())) {
             // We are building the blockstore for the first time, so we have not set the checkpoints yet.
             long time = getActiveFederation().getCreationTime().toEpochMilli();
@@ -119,7 +120,7 @@ public class BridgeSupport {
 
 
     // Used by unit tests
-    public BridgeSupport(Repository repository, String contractAddress, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) {
+    public BridgeSupport(Repository repository, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) {
         this.provider = provider;
         this.bridgeConstants = bridgeConstants;
         this.btcContext = new Context(bridgeConstants.getBtcParams());
@@ -350,7 +351,7 @@ public class BridgeSupport {
 
                 transfer(
                         rskRepository,
-                        Hex.decode(PrecompiledContracts.BRIDGE_ADDR),
+                        PrecompiledContracts.BRIDGE_ADDR.getBytes(),
                         sender,
                         Denomination.satoshisToWeis(BigInteger.valueOf(totalAmount.getValue()))
                 );
@@ -420,11 +421,11 @@ public class BridgeSupport {
      * @throws IOException
      */
     public void releaseBtc(Transaction rskTx) throws IOException {
-        byte[] senderCode = rskRepository.getCode(rskTx.getSender());
+        byte[] senderCode = rskRepository.getCode(rskTx.getSender().getBytes());
 
         //as we can't send btc from contracts we want to send them back to the sender
         if (senderCode != null && senderCode.length > 0) {
-            logger.trace("Contract {} tried to release funds. Release is just allowed from standard accounts.", Hex.toHexString(rskTx.getSender()));
+            logger.trace("Contract {} tried to release funds. Release is just allowed from standard accounts.", rskTx);
             throw new Program.OutOfGasException("Contract calling releaseBTC");
         }
 
@@ -731,7 +732,7 @@ public class BridgeSupport {
         if (spentByFederation.isLessThan(sentByUser)) {
             Coin coinsToBurn = sentByUser.subtract(spentByFederation);
             byte[] burnAddress = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress();
-            transfer(rskRepository, Hex.decode(PrecompiledContracts.BRIDGE_ADDR), burnAddress, Denomination.satoshisToWeis(BigInteger.valueOf(coinsToBurn.getValue())));
+            transfer(rskRepository, PrecompiledContracts.BRIDGE_ADDR.getBytes(), burnAddress, Denomination.satoshisToWeis(BigInteger.valueOf(coinsToBurn.getValue())));
         }
     }
 
@@ -1476,7 +1477,7 @@ public class BridgeSupport {
 
         ABICallElection election = provider.getFederationElection(authorizer);
         // Register the vote. It is expected to succeed, since all previous checks succeeded
-        if (!election.vote(callSpec, TxSender.fromTx(tx))) {
+        if (!election.vote(callSpec, tx.getSender())) {
             logger.warn("Unexpected federation change vote failure");
             return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
         }
@@ -1704,10 +1705,9 @@ public class BridgeSupport {
             return FEE_PER_KB_GENERIC_ERROR_CODE;
         }
 
-        TxSender voter = TxSender.fromTx(tx);
         ABICallElection feePerKbElection = provider.getFeePerKbElection(authorizer);
         ABICallSpec feeVote = new ABICallSpec("setFeePerKb", new byte[][]{BridgeSerializationUtils.serializeCoin(feePerKb)});
-        boolean successfulVote = feePerKbElection.vote(feeVote, voter);
+        boolean successfulVote = feePerKbElection.vote(feeVote, tx.getSender());
         if (!successfulVote) {
             return -1;
         }

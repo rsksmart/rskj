@@ -25,7 +25,6 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.Federation;
 import org.ethereum.core.Block;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -86,7 +85,7 @@ public class BridgeEventLoggerImplTest {
 
         // Assert address that made the log
         LogInfo result = eventLogs.get(0);
-        Assert.assertArrayEquals(Hex.decode(PrecompiledContracts.BRIDGE_ADDR), result.getAddress());
+        Assert.assertArrayEquals(PrecompiledContracts.BRIDGE_ADDR.getBytes(), result.getAddress());
 
         // Assert log topics
         Assert.assertEquals(1, result.getTopics().size());

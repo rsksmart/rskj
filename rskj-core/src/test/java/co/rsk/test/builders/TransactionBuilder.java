@@ -91,7 +91,7 @@ public class TransactionBuilder {
 
     public Transaction build() {
         Transaction tx = Transaction.create(
-                receiver != null ? Hex.toHexString(receiver.getAddress()) : (receiverAddress != null ? Hex.toHexString(receiverAddress) : null),
+                receiver != null ? Hex.toHexString(receiver.getAddress().getBytes()) : (receiverAddress != null ? Hex.toHexString(receiverAddress) : null),
                 value, nonce, gasPrice, gasLimit, data);
         tx.sign(sender.getEcKey().getPrivKeyBytes());
 

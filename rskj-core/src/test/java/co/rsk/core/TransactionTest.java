@@ -20,26 +20,18 @@ package co.rsk.core;
 
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
-import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.spongycastle.util.BigIntegers;
 import org.spongycastle.util.encoders.Hex;
 
-import java.io.IOException;
 import java.math.BigInteger;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -189,7 +181,7 @@ public class TransactionTest {
                     Repository track = repository.startTracking();
 
                     Transaction txConst = CallTransaction.createCallTransaction(0, 0, 100000000000000L,
-                            "095e7baea6a6c7c4c2dfeb977efac326af552d87", 0,
+                            new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
                             CallTransaction.Function.fromSignature("get"));
                     txConst.sign(new byte[32]);
 
@@ -271,7 +263,8 @@ public class TransactionTest {
 
     @Test
     public void isNotContractCreationWhenReceiveAddressIsBridgeAddress() {
-        Transaction tx = Transaction.create(PrecompiledContracts.BRIDGE_ADDR, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = Transaction.create(PrecompiledContracts.BRIDGE_ADDR_STR, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
         Assert.assertFalse(tx.isContractCreation());
     }
+
 }

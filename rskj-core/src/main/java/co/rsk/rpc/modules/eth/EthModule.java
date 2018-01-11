@@ -20,16 +20,12 @@ package co.rsk.rpc.modules.eth;
 
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeState;
-import co.rsk.peg.BridgeStateReader;
 import co.rsk.peg.BridgeSupport;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.facade.Ethereum;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.exception.JsonRpcUnimplementedMethodException;
@@ -37,7 +33,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

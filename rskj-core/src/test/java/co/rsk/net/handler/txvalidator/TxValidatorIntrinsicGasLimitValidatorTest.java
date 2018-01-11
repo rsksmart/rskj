@@ -81,7 +81,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
         Transaction tx4 = new Transaction(BigInteger.ZERO.toByteArray(),
                 BigInteger.ZERO.toByteArray(),
                 BigInteger.ZERO.toByteArray(),
-                Hex.decode(PrecompiledContracts.BRIDGE_ADDR),
+                PrecompiledContracts.BRIDGE_ADDR.getBytes(),
                 BigInteger.ZERO.toByteArray(),
                 null,
                 RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());

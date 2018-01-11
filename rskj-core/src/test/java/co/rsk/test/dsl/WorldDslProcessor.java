@@ -119,12 +119,12 @@ public class WorldDslProcessor {
         Account account = world.getAccountByName(accountName);
 
         if (account != null)
-            accountAddress = account.getAddress();
+            accountAddress = account.getAddress().getBytes();
         else {
             Transaction tx = world.getTransactionByName(accountName);
 
             if (tx != null)
-                accountAddress = tx.getContractAddress();
+                accountAddress = tx.getContractAddress().getBytes();
             else
                 accountAddress = Hex.decode(accountName);
         }

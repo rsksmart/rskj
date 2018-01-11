@@ -22,6 +22,7 @@ package org.ethereum.core;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
+import co.rsk.core.RskAddress;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.crypto.ECKey;
@@ -41,6 +42,7 @@ import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 import org.spongycastle.util.BigIntegers;
 import org.spongycastle.util.encoders.Hex;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.security.SignatureException;
 import java.util.Arrays;
@@ -78,7 +80,7 @@ public class Transaction implements SerializableObject {
 
     /* the address of the destination account
      * In creation transaction the receive address is - 0 */
-    private byte[] receiveAddress;
+    private RskAddress receiveAddress;
 
     /* the amount of ether to pay as a transaction fee
      * to the miner for each unit of gas */
@@ -106,7 +108,7 @@ public class Transaction implements SerializableObject {
      * (including public key recovery bits) */
     private ECDSASignature signature;
 
-    protected byte[] sendAddress;
+    protected RskAddress sender;
 
     /* Tx in encoded form */
     protected byte[] rlpEncoded;
@@ -140,7 +142,7 @@ public class Transaction implements SerializableObject {
         this.nonce = ByteUtil.cloneBytes(nonce);
         this.gasPrice = ByteUtil.cloneBytes(gasPrice);
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
-        this.receiveAddress = ByteUtil.cloneBytes(receiveAddress);
+        this.receiveAddress = parseRskAddress(ByteUtil.cloneBytes(receiveAddress));
         if (value == null || ByteUtil.isSingleZero(value)) {
             this.value = EMPTY_BYTE_ARRAY;
         } else {
@@ -148,10 +150,6 @@ public class Transaction implements SerializableObject {
         }
         this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
-
-        if (receiveAddress == null) {
-            this.receiveAddress = ByteUtil.EMPTY_BYTE_ARRAY;
-        }
 
         parsed = true;
     }
@@ -207,7 +205,7 @@ public class Transaction implements SerializableObject {
         if (getNonce().length > DATAWORD_LENGTH) {
             throw new RuntimeException("Nonce is not valid");
         }
-        if (receiveAddress != null && receiveAddress.length != 0 && receiveAddress.length != Constants.getMaxAddressByteLength()) {
+        if (receiveAddress != null && receiveAddress.getBytes().length != 0 && receiveAddress.getBytes().length != Constants.getMaxAddressByteLength()) {
             throw new RuntimeException("Receive address is not valid");
         }
         if (gasLimit.length > DATAWORD_LENGTH) {
@@ -226,7 +224,7 @@ public class Transaction implements SerializableObject {
             if (BigIntegers.asUnsignedByteArray(signature.s).length > DATAWORD_LENGTH) {
                 throw new RuntimeException("Signature S is not valid");
             }
-            if (getSender() != null && getSender().length != Constants.getMaxAddressByteLength()) {
+            if (getSender().getBytes() != null && getSender().getBytes().length != Constants.getMaxAddressByteLength()) {
                 throw new RuntimeException("Sender is not valid");
             }
         }
@@ -238,7 +236,7 @@ public class Transaction implements SerializableObject {
         this.nonce = transaction.get(0).getRLPData();
         this.gasPrice = transaction.get(1).getRLPData();
         this.gasLimit = transaction.get(2).getRLPData();
-        this.receiveAddress = transaction.get(3).getRLPData();
+        this.receiveAddress = parseRskAddress(transaction.get(3).getRLPData());
         this.value = transaction.get(4).getRLPData();
         this.data = transaction.get(5).getRLPData();
         // only parse signature in case tx is signed
@@ -297,7 +295,7 @@ public class Transaction implements SerializableObject {
         return value == null ? ZERO_BYTE_ARRAY : value;
     }
 
-    public byte[] getReceiveAddress() {
+    public RskAddress getReceiveAddress() {
         if (!parsed) {
             rlpParse();
         }
@@ -389,12 +387,13 @@ public class Transaction implements SerializableObject {
         this.rlpEncoded = null;
     }
 
-    public byte[] getContractAddress() {
+    @Nullable
+    public RskAddress getContractAddress() {
         if (!isContractCreation()) {
             return null;
         }
 
-        return HashUtil.calcNewAddr(this.getSender(), this.getNonce());
+        return new RskAddress(HashUtil.calcNewAddr(this.getSender().getBytes(), this.getNonce()));
     }
 
     public boolean isContractCreation() {
@@ -402,17 +401,7 @@ public class Transaction implements SerializableObject {
             rlpParse();
         }
 
-        if (this.receiveAddress == null) {
-            return true;
-        }
-
-        for (int k = 0; k < this.receiveAddress.length; k++) {
-            if (this.receiveAddress[k] != 0) {
-                return false;
-            }
-        }
-
-        return true;
+        return this.receiveAddress.equals(RskAddress.nullAddress());
     }
 
     /*
@@ -425,18 +414,21 @@ public class Transaction implements SerializableObject {
         return ECKey.recoverFromSignature((signature.v - 27) & ~4, signature, rawHash, true);
     }
 
-    public synchronized byte[] getSender() {
+    public synchronized RskAddress getSender() {
+        if (sender != null) {
+            return sender;
+        }
+
         try {
-            if (sendAddress == null) {
-                ECKey key = ECKey.signatureToKey(getRawHash(), getSignature().toBase64());
-                sendAddress = key.getAddress();
-            }
-            return sendAddress;
+            ECKey key = ECKey.signatureToKey(getRawHash(), getSignature().toBase64());
+            sender = new RskAddress(key.getAddress());
         } catch (SignatureException e) {
             logger.error(e.getMessage(), e);
             panicProcessor.panic("transaction", e.getMessage());
+            sender = RskAddress.nullAddress();
         }
-        return null;
+
+        return sender;
     }
 
     public byte getChainId() {
@@ -456,7 +448,7 @@ public class Transaction implements SerializableObject {
                 "  nonce=" + ByteUtil.toHexString(nonce) +
                 ", gasPrice=" + ByteUtil.toHexString(gasPrice) +
                 ", gas=" + ByteUtil.toHexString(gasLimit) +
-                ", receiveAddress=" + ByteUtil.toHexString(receiveAddress) +
+                ", receiveAddress=" + receiveAddress.toString() +
                 ", value=" + ByteUtil.toHexString(value) +
                 ", data=" + ByteUtil.toHexString(data) +
                 ", signatureV=" + (signature == null ? "" : signature.v) +
@@ -488,7 +480,7 @@ public class Transaction implements SerializableObject {
         }
         byte[] toEncodeGasPrice = RLP.encodeElement(this.gasPrice);
         byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
-        byte[] toEncodeReceiveAddress = RLP.encodeElement(this.receiveAddress);
+        byte[] toEncodeReceiveAddress = encodeRskAddress(this.receiveAddress);
         byte[] toEncodeValue = RLP.encodeElement(this.value);
         byte[] toEncodeData = RLP.encodeElement(this.data);
 
@@ -523,7 +515,7 @@ public class Transaction implements SerializableObject {
         }
         byte[] toEncodeGasPrice = RLP.encodeElement(this.gasPrice);
         byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
-        byte[] toEncodeReceiveAddress = RLP.encodeElement(this.receiveAddress);
+        byte[] toEncodeReceiveAddress = encodeRskAddress(this.receiveAddress);
         byte[] toEncodeValue = RLP.encodeElement(this.value);
         byte[] toEncodeData = RLP.encodeElement(this.data);
 
@@ -555,6 +547,14 @@ public class Transaction implements SerializableObject {
         this.hash = this.getHash();
 
         return rlpEncoded;
+    }
+
+    private byte[] encodeRskAddress(RskAddress address) {
+        if (address == null || address.equals(RskAddress.nullAddress())) {
+            return RLP.encodeElement(null);
+        }
+
+        return RLP.encodeElement(address.getBytes());
     }
 
     public BigInteger getGasPriceAsInteger() {
@@ -615,4 +615,13 @@ public class Transaction implements SerializableObject {
 
         return new Transaction(nonce, hexArgs.getGasPrice(), hexArgs.getGasLimit(), hexArgs.getToAddress(), hexArgs.getValue(), hexArgs.getData());
     }
+
+    public static RskAddress parseRskAddress(@Nullable byte[] bytes) {
+        if (bytes == null || ByteUtil.isAllZeroes(bytes)) {
+            return RskAddress.nullAddress();
+        } else {
+            return new RskAddress(bytes);
+        }
+    }
+
 }

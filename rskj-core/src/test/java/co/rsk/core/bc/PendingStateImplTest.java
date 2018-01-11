@@ -98,8 +98,8 @@ public class PendingStateImplTest {
         Account account1 = createAccount(1);
         Account account2 = createAccount(2);
 
-        Assert.assertEquals(BigInteger.TEN, repository.getBalance(account1.getAddress()));
-        Assert.assertEquals(BigInteger.TEN, repository.getBalance(account2.getAddress()));
+        Assert.assertEquals(BigInteger.TEN, repository.getBalance(account1.getAddress().getBytes()));
+        Assert.assertEquals(BigInteger.TEN, repository.getBalance(account2.getAddress().getBytes()));
     }
 
     @Test
@@ -134,7 +134,7 @@ public class PendingStateImplTest {
         pendingState.addPendingTransaction(tx);
 
         Repository repository = pendingState.getRepository();
-        Assert.assertEquals(BigInteger.valueOf(1001000), repository.getBalance(receiver.getAddress()));
+        Assert.assertEquals(BigInteger.valueOf(1001000), repository.getBalance(receiver.getAddress().getBytes()));
     }
 
     @Test
@@ -148,7 +148,7 @@ public class PendingStateImplTest {
         pendingState.addPendingTransaction(tx2);
 
         Repository repository = pendingState.getRepository();
-        Assert.assertEquals(BigInteger.valueOf(1004000), repository.getBalance(receiver.getAddress()));
+        Assert.assertEquals(BigInteger.valueOf(1004000), repository.getBalance(receiver.getAddress().getBytes()));
     }
 
     @Test
@@ -161,7 +161,7 @@ public class PendingStateImplTest {
         pendingState.addPendingTransaction(tx);
 
         Repository repository = pendingState.getRepository();
-        Assert.assertEquals(BigInteger.valueOf(1000000), repository.getBalance(receiver.getAddress()));
+        Assert.assertEquals(BigInteger.valueOf(1000000), repository.getBalance(receiver.getAddress().getBytes()));
     }
 
     @Test
@@ -368,7 +368,7 @@ public class PendingStateImplTest {
         pendingState.updateState();
 
         Repository repository = pendingState.getRepository();
-        Assert.assertEquals(BigInteger.valueOf(1004000), repository.getBalance(receiver.getAddress()));
+        Assert.assertEquals(BigInteger.valueOf(1004000), repository.getBalance(receiver.getAddress().getBytes()));
     }
 
     @Test
@@ -454,9 +454,9 @@ public class PendingStateImplTest {
 
         pendingState.addPendingTransaction(tx);
 
-        Assert.assertNotNull(tx.getContractAddress());
+        Assert.assertNotNull(tx.getContractAddress().getBytes());
         // Stored value at 0 position should be 1, one more than the blockchain best block
-        Assert.assertEquals(DataWord.ONE, pendingState.getRepository().getStorageValue(tx.getContractAddress(), DataWord.ZERO));
+        Assert.assertEquals(DataWord.ONE, pendingState.getRepository().getStorageValue(tx.getContractAddress().getBytes(), DataWord.ZERO));
     }
 
     private static PendingStateImpl createSampleNewPendingState() {
@@ -475,8 +475,8 @@ public class PendingStateImplTest {
 
         for (int k = 1; k <= naccounts; k++) {
             Account account = createAccount(k);
-            track.createAccount(account.getAddress());
-            track.addBalance(account.getAddress(), balance);
+            track.createAccount(account.getAddress().getBytes());
+            track.addBalance(account.getAddress().getBytes(), balance);
         }
 
         track.commit();

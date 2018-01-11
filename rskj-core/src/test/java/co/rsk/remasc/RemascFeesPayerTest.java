@@ -19,7 +19,6 @@
 package co.rsk.remasc;
 
 import org.ethereum.core.Repository;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -61,7 +60,7 @@ public class RemascFeesPayerTest {
 
         // Assert address that made the log
         LogInfo result = logs.get(0);
-        Assert.assertArrayEquals(Hex.decode(PrecompiledContracts.REMASC_ADDR), result.getAddress());
+        Assert.assertArrayEquals(PrecompiledContracts.REMASC_ADDR.getBytes(), result.getAddress());
 
         // Assert log topics
         Assert.assertEquals(2, result.getTopics().size());
@@ -78,7 +77,7 @@ public class RemascFeesPayerTest {
         Assert.assertEquals(value, RLP.decodeBigInteger(dataList.get(1).getRLPData(), 0));
 
         // Assert repository calls are made right
-        verify(repositoryMock, times(1)).addBalance(Hex.decode(PrecompiledContracts.REMASC_ADDR), value.negate());
+        verify(repositoryMock, times(1)).addBalance(PrecompiledContracts.REMASC_ADDR.getBytes(), value.negate());
         verify(repositoryMock, times(1)).addBalance(toAddress, value);
     }
 }

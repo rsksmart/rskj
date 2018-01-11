@@ -57,10 +57,10 @@ public class TxBuilderEx {
         final ECKey key = ECKey.fromPrivate(privateKeyBytes);
 
         final Account targetAcc = new Account(new ECKey(Utils.getRandom()));
-        final String targetAddress = Hex.toHexString(targetAcc.getAddress());
+        final String targetAddress = targetAcc.getAddress().toString();
 
         final Account target2Acc = new Account(new ECKey(Utils.getRandom()));
-        final String target2Address = Hex.toHexString(target2Acc.getAddress());
+        final String target2Address = target2Acc.getAddress().toString();
 
         logger.trace("Accounts {} {} {}", Hex.toHexString(key.getAddress()), targetAddress, target2Address);
 
@@ -119,7 +119,7 @@ public class TxBuilderEx {
                         Repository prepository = worldManager.getPendingState().getRepository();
                         AccountState accountState;
 
-                        accountState = prepository.getAccountState(targetAcc.getAddress());
+                        accountState = prepository.getAccountState(targetAcc.getAddress().getBytes());
 
                         BigInteger accnonce = accountState.getNonce();
 

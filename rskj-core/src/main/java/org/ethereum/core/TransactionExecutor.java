@@ -155,19 +155,19 @@ public class TransactionExecutor {
             return false;
         }
 
-        BigInteger reqNonce = track.getNonce(tx.getSender());
+        BigInteger reqNonce = track.getNonce(tx.getSender().getBytes());
         BigInteger txNonce = toBI(tx.getNonce());
         if (isNotEqual(reqNonce, txNonce)) {
 
             if (logger.isWarnEnabled()) {
-                logger.warn("Invalid nonce: sender {}, required: {} , tx.nonce: {}, tx {}", Hex.toHexString(tx.getSender()), reqNonce, txNonce, Hex.toHexString(tx.getHash()));
+                logger.warn("Invalid nonce: sender {}, required: {} , tx.nonce: {}, tx {}", tx.getSender(), reqNonce, txNonce, Hex.toHexString(tx.getHash()));
                 logger.warn("Transaction Data: {}", tx);
                 logger.warn("Tx Included in the following block: {}", this.executionBlock.getShortDescr());
             }
 
             execError(String.format("Invalid nonce: required: %s , tx.nonce: %s", reqNonce, txNonce));
 
-            panicProcessor.panic("invalidnonce", String.format("Invalid nonce: sender %s, required: %d , tx.nonce: %d, tx %s", Hex.toHexString(tx.getSender()), reqNonce.longValue(), txNonce.longValue(), Hex.toHexString(tx.getHash())));
+            panicProcessor.panic("invalidnonce", String.format("Invalid nonce: sender %s, required: %d , tx.nonce: %d, tx %s", tx.getSender(), reqNonce.longValue(), txNonce.longValue(), Hex.toHexString(tx.getHash())));
 
             return false;
         }
@@ -180,7 +180,7 @@ public class TransactionExecutor {
             totalCost = toBI(tx.getValue()).add(txGasCost);
         }
 
-        BigInteger senderBalance = track.getBalance(tx.getSender());
+        BigInteger senderBalance = track.getBalance(tx.getSender().getBytes());
 
         if (!isCovers(senderBalance, totalCost)) {
 
@@ -196,7 +196,7 @@ public class TransactionExecutor {
         }
 
         // Prevent transactions with excessive address size
-        byte[] receiveAddress = tx.getReceiveAddress();
+        byte[] receiveAddress = tx.getReceiveAddress().getBytes();
         if (receiveAddress != null && !Arrays.equals(receiveAddress, EMPTY_BYTE_ARRAY) && receiveAddress.length > Constants.getMaxAddressByteLength()) {
             if (logger.isWarnEnabled()) {
                 logger.warn("Receiver address to long: size: {}, tx {}", receiveAddress.length, Hex.toHexString(tx.getHash()));
@@ -234,11 +234,11 @@ public class TransactionExecutor {
 
         if (!localCall) {
 
-            track.increaseNonce(tx.getSender());
+            track.increaseNonce(tx.getSender().getBytes());
 
             BigInteger txGasLimit = toBI(tx.getGasLimit());
             BigInteger txGasCost = toBI(tx.getGasPrice()).multiply(txGasLimit);
-            track.addBalance(tx.getSender(), txGasCost.negate());
+            track.addBalance(tx.getSender().getBytes(), txGasCost.negate());
 
             if (logger.isInfoEnabled()) {
                 logger.info("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, toBI(tx.getGasPrice()), txGasLimit);
@@ -259,7 +259,7 @@ public class TransactionExecutor {
 
         logger.info("Call transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
 
-        byte[] targetAddress = tx.getReceiveAddress();
+        byte[] targetAddress = tx.getReceiveAddress().getBytes();
 
         // DataWord(targetAddress)) can fail with exception:
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
@@ -309,15 +309,15 @@ public class TransactionExecutor {
 
         if (result.getException() == null) {
             BigInteger endowment = toBI(tx.getValue());
-            transfer(cacheTrack, tx.getSender(), targetAddress, endowment);
+            transfer(cacheTrack, tx.getSender().getBytes(), targetAddress, endowment);
         }
     }
 
     private void create() {
-        byte[] newContractAddress = tx.getContractAddress();
+        byte[] newContractAddress = tx.getContractAddress().getBytes();
         if (isEmpty(tx.getData())) {
             mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
-            cacheTrack.createAccount(tx.getContractAddress());
+            cacheTrack.createAccount(newContractAddress);
         } else {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
@@ -333,7 +333,7 @@ public class TransactionExecutor {
         }
 
         BigInteger endowment = toBI(tx.getValue());
-        transfer(cacheTrack, tx.getSender(), newContractAddress, endowment);
+        transfer(cacheTrack, tx.getSender().getBytes(), newContractAddress, endowment);
     }
 
     private void execError(String err) {
@@ -387,7 +387,7 @@ public class TransactionExecutor {
                 } else {
                     mEndGas = mEndGas.subtract(BigInteger.valueOf(returnDataGasValue));
                     program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
-                    cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
+                    cacheTrack.saveCode(tx.getContractAddress().getBytes(), result.getHReturn());
                 }
             }
 
@@ -457,7 +457,7 @@ public class TransactionExecutor {
             // Accumulate refunds for suicides
             result.addFutureRefund((long)result.getDeleteAccounts().size() * GasCost.SUICIDE_REFUND);
             long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
-            byte[] addr = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
+            byte[] addr = tx.isContractCreation() ? tx.getContractAddress().getBytes() : tx.getReceiveAddress().getBytes();
             mEndGas = mEndGas.add(BigInteger.valueOf(gasRefund));
 
             summaryBuilder
@@ -482,8 +482,8 @@ public class TransactionExecutor {
         TransactionExecutionSummary summary = summaryBuilder.build();
 
         // Refund for gas leftover
-        track.addBalance(tx.getSender(), summary.getLeftover().add(summary.getRefund()));
-        logger.info("Pay total refund to sender: [{}], refund val: [{}]", Hex.toHexString(tx.getSender()), summary.getRefund());
+        track.addBalance(tx.getSender().getBytes(), summary.getLeftover().add(summary.getRefund()));
+        logger.info("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
 
         // Transfer fees to miner
         BigInteger summaryFee = summary.getFee();
@@ -491,7 +491,7 @@ public class TransactionExecutor {
         //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
         if(RskSystemProperties.CONFIG.isRemascEnabled()) {
             logger.info("Adding fee to remasc contract account");
-            track.addBalance(Hex.decode(PrecompiledContracts.REMASC_ADDR), summaryFee);
+            track.addBalance(PrecompiledContracts.REMASC_ADDR.getBytes(), summaryFee);
         } else {
             track.addBalance(coinbase, summaryFee);
         }

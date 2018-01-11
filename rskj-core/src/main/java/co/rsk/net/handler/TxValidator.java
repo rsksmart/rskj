@@ -19,6 +19,7 @@
 package co.rsk.net.handler;
 
 import co.rsk.net.handler.txvalidator.*;
+import co.rsk.core.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
@@ -63,7 +64,7 @@ class TxValidator {
                                 Blockchain blockchain,
                                 List<Transaction> txs,
                                 Map<String, TxTimestamp> knownTxs,
-                                Map<String, TxsPerAccount> txsPerAccounts) {
+                                Map<RskAddress, TxsPerAccount> txsPerAccounts) {
         //FIXME(mmarquez): this method is quite coupled with TxHandlerImpl
         // but it should be fixed when NodeMessageHandler stops managing the wire txs
         // and related stuff
@@ -78,7 +79,7 @@ class TxValidator {
             }
             knownTxs.put(hash, new TxTimestamp(tx, System.currentTimeMillis()));
 
-            AccountState state = repository.getAccountState(tx.getSender());
+            AccountState state = repository.getAccountState(tx.getSender().getBytes());
 
             if (state == null) {
                 state = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
@@ -102,7 +103,7 @@ class TxValidator {
                 continue;
             }
 
-            String addr = TypeConverter.toJsonHex(tx.getSender());
+            RskAddress addr = tx.getSender();
 
             txsPerAccounts.computeIfAbsent(addr, key -> new TxsPerAccount());
 

@@ -19,6 +19,7 @@
 
 package org.ethereum;
 
+import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.Block;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.vm.DataWord;
@@ -106,5 +107,15 @@ public final class TestUtils {
         return result;
     }
 
+    public static String padRight(String s, int n) {
+        return String.format("%1$-" + n + "s", s);
+    }
 
+    public static String padLeft(String s, int n) {
+        return String.format("%1$" + n + "s", s);
+    }
+
+    public static String padZeroesLeft(String s, int n) {
+        return StringUtils.leftPad(s, n, '0');
+    }
 }

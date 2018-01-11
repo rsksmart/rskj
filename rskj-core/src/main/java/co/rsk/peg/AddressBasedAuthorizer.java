@@ -18,6 +18,7 @@
 
 package co.rsk.peg;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 
@@ -41,14 +42,14 @@ public class AddressBasedAuthorizer {
         this.requiredCalculation = requiredCalculation;
     }
 
-    public boolean isAuthorized(TxSender sender) {
+    public boolean isAuthorized(RskAddress sender) {
         return authorizedKeys.stream()
                 .map(key -> key.getAddress())
                 .anyMatch(address -> Arrays.equals(address, sender.getBytes()));
     }
 
     public boolean isAuthorized(Transaction tx) {
-        return isAuthorized(TxSender.fromTx(tx));
+        return isAuthorized(tx.getSender());
     }
 
     public int getNumberOfAuthorizedKeys() {

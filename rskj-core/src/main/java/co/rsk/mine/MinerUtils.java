@@ -22,11 +22,11 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import com.google.common.collect.Lists;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.ethereum.util.BIUtil.toBI;
-import static org.ethereum.util.ByteUtil.wrap;
 
 /**
  * Created by oscar on 26/09/2016.
@@ -151,28 +150,27 @@ public class MinerUtils {
         return new LinkedList<>(ret);
     }
 
-    public List<org.ethereum.core.Transaction> filterTransactions(List<org.ethereum.core.Transaction> txsToRemove, List<org.ethereum.core.Transaction> txs, Map<ByteArrayWrapper, BigInteger> accountNonces, Repository originalRepo, BigInteger minGasPrice) {
+    public List<org.ethereum.core.Transaction> filterTransactions(List<org.ethereum.core.Transaction> txsToRemove, List<org.ethereum.core.Transaction> txs, Map<RskAddress, BigInteger> accountNonces, Repository originalRepo, BigInteger minGasPrice) {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
                 logger.info("Pending transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
-                byte[] txSender = tx.getSender();
+                RskAddress txSender = tx.getSender();
 
-                logger.info("Examining transaction {} sender: {} value: {} nonce: {}", Hex.toHexString(tx.getHash()), Hex.toHexString(txSender), Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
+                logger.info("Examining transaction {} sender: {} value: {} nonce: {}", Hex.toHexString(tx.getHash()), txSender, Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
 
-                ByteArrayWrapper wrappedSender = wrap(txSender);
                 BigInteger txNonce = new BigInteger(1, tx.getNonce());
 
                 BigInteger expectedNonce;
 
-                if (accountNonces.containsKey(wrappedSender)) {
-                    expectedNonce = new BigInteger(1, accountNonces.get(wrappedSender).toByteArray()).add(BigInteger.ONE);
+                if (accountNonces.containsKey(txSender)) {
+                    expectedNonce = new BigInteger(1, accountNonces.get(txSender).toByteArray()).add(BigInteger.ONE);
                 } else {
-                    expectedNonce = originalRepo.getNonce(txSender);
+                    expectedNonce = originalRepo.getNonce(txSender.getBytes());
                 }
 
                 if (!(tx instanceof RemascTransaction) && tx.getGasPriceAsInteger().compareTo(minGasPrice) < 0) {
-                    logger.warn("Rejected transaction {} because of low gas account {}, removing tx from pending state.", Hex.toHexString(tx.getHash()), Hex.toHexString(txSender));
+                    logger.warn("Rejected transaction {} because of low gas account {}, removing tx from pending state.", Hex.toHexString(tx.getHash()), txSender);
 
                     txsToRemove.add(tx);
                     continue;
@@ -183,9 +181,9 @@ public class MinerUtils {
                     continue;
                 }
 
-                accountNonces.put(wrappedSender, txNonce);
+                accountNonces.put(txSender, txNonce);
 
-                logger.info("Accepted transaction {} sender: {} value: {} nonce: {}", Hex.toHexString(tx.getHash()), Hex.toHexString(txSender), Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
+                logger.info("Accepted transaction {} sender: {} value: {} nonce: {}", Hex.toHexString(tx.getHash()), txSender, Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
             } catch (Exception e) {
                 // Txs that can't be selected by any reason should be removed from pending state
                 String hash = null == tx.getHash() ? "" : Hex.toHexString(tx.getHash());

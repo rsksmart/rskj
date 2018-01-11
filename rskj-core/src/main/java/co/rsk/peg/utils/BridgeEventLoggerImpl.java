@@ -29,7 +29,6 @@ import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +41,7 @@ import java.util.stream.Collectors;
  */
 public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
-    private static final byte[] BRIDGE_CONTRACT_ADDRESS = Hex.decode(PrecompiledContracts.BRIDGE_ADDR);
+    private static final byte[] BRIDGE_CONTRACT_ADDRESS = PrecompiledContracts.BRIDGE_ADDR.getBytes();
 
     private final BridgeConstants bridgeConstants;
 
@@ -57,7 +56,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(
                 new LogInfo(BRIDGE_CONTRACT_ADDRESS,
                             Collections.singletonList(Bridge.UPDATE_COLLECTIONS_TOPIC),
-                            RLP.encodeElement(rskTx.getSender())
+                            RLP.encodeElement(rskTx.getSender().getBytes())
                 )
         );
     }

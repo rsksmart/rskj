@@ -18,6 +18,7 @@
 
 package co.rsk.vm;
 
+import org.ethereum.TestUtils;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.spongycastle.util.encoders.Hex;
@@ -252,14 +253,6 @@ public class VMPerformanceTest {
 
     }
 
-    public static String padRight(String s, int n) {
-        return String.format("%1$-" + n + "s", s);
-    }
-
-    public static String padLeft(String s, int n) {
-        return String.format("%1$" + n + "s", s);
-    }
-
     /**
      * This method guarantees that garbage collection is
      * done unlike <code>{@link System#gc()}</code>
@@ -353,14 +346,14 @@ public class VMPerformanceTest {
             percent = 0;
 
         System.out.println(
-                padRight(opcode, 12) + ":" +
-                        " full: " + padLeft(Long.toString(best.deltaTime), 7) +
-                        " ref: " + padLeft(Long.toString(best.deltaTime - refTime), 7) +
-                        " (% ref): " + padLeft(Long.toString(percent), 5) +
-                        " gas: " + padLeft(Long.toString(best.gas), 6) +
-                        " time/gas: " + padLeft(Long.toString(best.deltaTime * 100 / best.gas), 6) +
-                        " fullReal: " + padLeft(Long.toString(best.deltaRealTime), 7) +
-                        " mem[Kb]: " + padLeft(Long.toString(best.deltaUsedMemory / 1000), 10));
+                TestUtils.padRight(opcode, 12) + ":" +
+                        " full: " + TestUtils.padLeft(Long.toString(best.deltaTime), 7) +
+                        " ref: " + TestUtils.padLeft(Long.toString(best.deltaTime - refTime), 7) +
+                        " (% ref): " + TestUtils.padLeft(Long.toString(percent), 5) +
+                        " gas: " + TestUtils.padLeft(Long.toString(best.gas), 6) +
+                        " time/gas: " + TestUtils.padLeft(Long.toString(best.deltaTime * 100 / best.gas), 6) +
+                        " fullReal: " + TestUtils.padLeft(Long.toString(best.deltaRealTime), 7) +
+                        " mem[Kb]: " + TestUtils.padLeft(Long.toString(best.deltaUsedMemory / 1000), 10));
 
         if (resultLogger != null) {
             resultLogger.log(opcode, best);

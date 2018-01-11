@@ -23,7 +23,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
-import org.ethereum.core.PendingTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -37,7 +36,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static java.util.Arrays.asList;
 
@@ -70,17 +71,6 @@ public class CommonConfig {
         KeyValueDataSource ds = new LevelDbDataSource(name);
         ds.init();
         return ds;
-    }
-
-    @Bean
-    public Set<PendingTransaction> wireTransactions() {
-        String storage = "LevelDB";
-        try {
-            storage = "In memory";
-            return Collections.synchronizedSet(new HashSet<PendingTransaction>());
-        } finally {
-            logger.info("{} 'wireTransactions' storage created.", storage);
-        }
     }
 
     @Bean

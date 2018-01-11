@@ -24,15 +24,13 @@ import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.World;
-import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.*;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.rpc.TypeConverter;
 import org.junit.Assert;
@@ -40,8 +38,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -82,10 +78,10 @@ public class MinerServerTest {
         Mockito.when(tx1.getHash()).thenReturn(s1);
         Mockito.when(tx1.getEncoded()).thenReturn(new byte[32]);
 
-        Mockito.when(repository.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);
-        Mockito.when(repository.getNonce(new byte[]{0})).thenReturn(BigInteger.ZERO);
-        Mockito.when(repository.getBalance(tx1.getSender())).thenReturn(BigInteger.valueOf(4200000L));
-        Mockito.when(repository.getBalance(new byte[]{0})).thenReturn(BigInteger.valueOf(4200000L));
+        Mockito.when(repository.getNonce(tx1.getSender().getBytes())).thenReturn(BigInteger.ZERO);
+        Mockito.when(repository.getNonce(RskAddress.nullAddress().getBytes())).thenReturn(BigInteger.ZERO);
+        Mockito.when(repository.getBalance(tx1.getSender().getBytes())).thenReturn(BigInteger.valueOf(4200000L));
+        Mockito.when(repository.getBalance(RskAddress.nullAddress().getBytes())).thenReturn(BigInteger.valueOf(4200000L));
 
         List<Transaction> txs = new ArrayList<>(Arrays.asList(tx1));
 

@@ -64,9 +64,6 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
                                                          ProgramInvokeFactory programInvokeFactory,
                                                          Block executionBlock,
                                                          Web3.CallArguments args) {
-        if (args.from == null) {
-            args.from = "";
-        }
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
 
         return executeTransaction(coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock,
@@ -86,12 +83,7 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
 
         private UnsignedTransaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] fromAddress) {
             super(nonce, gasPrice, gasLimit, receiveAddress, value, data);
-            this.sendAddress = fromAddress;
-        }
-
-        @Override
-        public byte[] getSender() {
-            return sendAddress;
+            this.sender = new RskAddress(fromAddress);
         }
 
         @Override

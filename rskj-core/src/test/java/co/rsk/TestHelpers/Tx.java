@@ -18,13 +18,13 @@
 
 package co.rsk.TestHelpers;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 
 import static org.mockito.Matchers.any;
@@ -43,11 +43,13 @@ public class Tx {
         Mockito.when(transaction.getNonce()).thenReturn(BigInteger.valueOf(nonce).toByteArray());
         Mockito.when(transaction.getNonceAsInteger()).thenReturn(BigInteger.valueOf(nonce));
 
-        byte[] returnSender = new byte[20];
-        r.nextBytes(returnSender);
+        byte[] returnSenderBytes = new byte[20];
+        r.nextBytes(returnSenderBytes);
+        RskAddress returnSender = new RskAddress(returnSenderBytes);
 
-        byte[] returnReceiveAddress = new byte[20];
-        r.nextBytes(returnReceiveAddress);
+        byte[] returnReceiveAddressBytes = new byte[20];
+        r.nextBytes(returnReceiveAddressBytes);
+        RskAddress returnReceiveAddress = new RskAddress(returnReceiveAddressBytes);
 
         Mockito.when(transaction.getSender()).thenReturn(returnSender);
         Mockito.when(transaction.getHash()).thenReturn(BigInteger.valueOf(hashes.nextLong()).toByteArray());

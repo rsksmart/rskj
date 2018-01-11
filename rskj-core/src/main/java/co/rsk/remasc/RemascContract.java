@@ -19,6 +19,7 @@
 package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
+import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
@@ -67,7 +68,7 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
 
     public static final String REMASC_CONFIG = "remasc.json";
 
-    public RemascContract(String contractAddress, RemascConfig remascConfig) {
+    public RemascContract(RskAddress contractAddress, RemascConfig remascConfig) {
         this.contractAddress = contractAddress;
         this.functions = new HashMap<>();
         this.functions.put(new ByteArrayWrapper(PROCESS_MINERS_FEES.encodeSignature()), PROCESS_MINERS_FEES);

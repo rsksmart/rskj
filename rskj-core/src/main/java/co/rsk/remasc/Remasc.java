@@ -21,6 +21,7 @@ package co.rsk.remasc;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.SelectionRule;
 import co.rsk.peg.BridgeSupport;
 import org.apache.commons.collections4.CollectionUtils;
@@ -61,7 +62,7 @@ public class Remasc {
 
     private List<LogInfo> logs;
 
-    Remasc(Transaction executionTx, Repository repository, String contractAddress, Block executionBlock, BlockStore blockStore, RemascConfig remascConstants, List<LogInfo> logs) {
+    Remasc(Transaction executionTx, Repository repository, RskAddress contractAddress, Block executionBlock, BlockStore blockStore, RemascConfig remascConstants, List<LogInfo> logs) {
         this.executionTx = executionTx;
         this.repository = repository;
         this.executionBlock = executionBlock;
