@@ -19,6 +19,8 @@
 
 package org.ethereum.jsontestsuite.builder;
 
+import co.rsk.config.ConfigHelper;
+import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -26,7 +28,6 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ContractDetailsCacheImpl;
-import co.rsk.db.RepositoryImpl;
 import org.ethereum.jsontestsuite.model.AccountTck;
 
 import java.util.HashMap;
@@ -57,7 +58,7 @@ public class RepositoryBuilder {
             detailsBatch.put(wrap(parseData(address)), detailsCache);
         }
 
-        RepositoryImpl repositoryDummy = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
+        RepositoryImpl repositoryDummy = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
         Repository track = repositoryDummy.startTracking();
         track.updateBatch(stateBatch, detailsBatch);
         track.commit();

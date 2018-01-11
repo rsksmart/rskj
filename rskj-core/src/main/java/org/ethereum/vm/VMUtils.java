@@ -19,16 +19,19 @@
 
 package org.ethereum.vm;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.ethereum.vm.trace.Serializers;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.zip.*;
-
-import static co.rsk.config.RskSystemProperties.CONFIG;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public final class VMUtils {
     private VMUtils() {
@@ -50,12 +53,12 @@ public final class VMUtils {
         }
     }
 
-    public static void saveProgramTraceFile(String txHash, boolean compress, ProgramTrace trace) throws IOException {
-        Path tracePath = Paths.get(CONFIG.databaseDir(), CONFIG.vmTraceDir());
+    public static void saveProgramTraceFile(RskSystemProperties config, String txHash, ProgramTrace trace) throws IOException {
+        Path tracePath = Paths.get(config.databaseDir(), config.vmTraceDir());
         File traceDir = tracePath.toFile();
         if (!traceDir.exists()) {
             traceDir.mkdirs();
         }
-        saveProgramTraceFile(tracePath, txHash, compress, trace);
+        saveProgramTraceFile(tracePath, txHash, config.vmTraceCompressed(), trace);
     }
 }

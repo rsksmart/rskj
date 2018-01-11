@@ -20,7 +20,7 @@ package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.peg.Bridge;
@@ -51,7 +51,7 @@ import java.util.List;
 import java.util.Random;
 
 public abstract class BridgePerformanceTestCase {
-    protected static NetworkParameters networkParameters = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+    protected static NetworkParameters networkParameters = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
     protected static BlockchainNetConfig blockchainNetConfigOriginal;
     protected static BridgeConstants bridgeConstants;
 
@@ -99,15 +99,15 @@ public abstract class BridgePerformanceTestCase {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
-        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
-        bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        blockchainNetConfigOriginal = ConfigHelper.CONFIG.getBlockchainConfig();
+        ConfigHelper.CONFIG.setBlockchainConfig(new RegTestConfig());
+        bridgeConstants = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         networkParameters = bridgeConstants.getBtcParams();
     }
 
     @AfterClass
     public static void tearDownAfterClass() throws Exception {
-        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        ConfigHelper.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @AfterClass
@@ -151,7 +151,7 @@ public abstract class BridgePerformanceTestCase {
             byte[] gasLimit = Hex.decode("00");
 
             Transaction tx = new Transaction(
-                    null,
+                    ConfigHelper.CONFIG, null,
                     gasPrice,
                     gasLimit,
                     sender.getAddress(),
@@ -253,7 +253,7 @@ public abstract class BridgePerformanceTestCase {
 
         ExecutionTracker executionInfo = new ExecutionTracker(thread);
 
-        RepositoryImpl repository = new RepositoryImpl();
+        RepositoryImpl repository = new RepositoryImpl(ConfigHelper.CONFIG);
         Repository track = repository.startTracking();
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);
 
@@ -270,9 +270,9 @@ public abstract class BridgePerformanceTestCase {
 
         List<LogInfo> logs = new ArrayList<>();
 
-        RepositoryTrackWithBenchmarking benchmarkerTrack = new RepositoryTrackWithBenchmarking(repository);
+        RepositoryTrackWithBenchmarking benchmarkerTrack = new RepositoryTrackWithBenchmarking(ConfigHelper.CONFIG, repository);
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        Bridge bridge = new Bridge(ConfigHelper.CONFIG, PrecompiledContracts.BRIDGE_ADDR);
         Blockchain blockchain = BlockChainBuilder.ofSizeWithNoPendingStateCleaner(heightProvider.getHeight(executionIndex));
         bridge.init(
                 tx,

@@ -18,6 +18,7 @@
 
 package co.rsk.blocks;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Block;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +35,10 @@ public class FileBlockPlayer implements BlockPlayer, AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger("blockplayer");
     private BufferedReader reader;
     private FileReader freader;
+    private final RskSystemProperties config;
 
-    public FileBlockPlayer(String filename) {
+    public FileBlockPlayer(RskSystemProperties config, String filename) {
+        this.config = config;
         try {
             this.freader = new FileReader(filename);
             this.reader = new BufferedReader(this.freader);
@@ -55,7 +58,7 @@ public class FileBlockPlayer implements BlockPlayer, AutoCloseable {
 
             String[] parts = line.split(",");
 
-            return new Block(Hex.decode(parts[parts.length - 1]));
+            return new Block(config, Hex.decode(parts[parts.length - 1]));
         }
         catch (IOException ex) {
             logger.error("Exception reader block", ex);

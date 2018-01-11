@@ -18,6 +18,7 @@
 
 package co.rsk.core;
 
+import co.rsk.config.ConfigHelper;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import org.ethereum.core.*;
@@ -50,7 +51,7 @@ public class CallContractTest {
     }
 
     private static ProgramResult callContract(World world, RskAddress receiveAddress, byte[] data) {
-        Transaction tx = CallTransaction.createRawTransaction(0, 0, 100000000000000L,
+        Transaction tx = CallTransaction.createRawTransaction(ConfigHelper.CONFIG, 0, 0, 100000000000000L,
                 receiveAddress, 0, data);
         tx.sign(new byte[32]);
 
@@ -60,7 +61,7 @@ public class CallContractTest {
 
         try {
             org.ethereum.core.TransactionExecutor executor = new org.ethereum.core.TransactionExecutor
-                    (tx, 0, bestBlock.getCoinbase(), repository, world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(),
+                    (ConfigHelper.CONFIG, tx, 0, bestBlock.getCoinbase(), repository, world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(),
                             new ProgramInvokeFactoryImpl(), bestBlock)
                     .setLocalCall(true);
 

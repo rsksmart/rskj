@@ -19,7 +19,7 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.db.RepositoryImpl;
@@ -48,7 +48,7 @@ public class ImportLightTest {
 
     @BeforeClass
     public static void setup() {
-        RskSystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig(new GenesisConfig.GenesisConstants() {
+        ConfigHelper.CONFIG.setBlockchainConfig(new GenesisConfig(new GenesisConfig.GenesisConstants() {
             @Override
             public BigInteger getMinimumDifficulty() {
                 return BigInteger.ONE;
@@ -58,14 +58,14 @@ public class ImportLightTest {
 
     @AfterClass
     public static void cleanup() {
-        RskSystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+        ConfigHelper.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
     }
 
     public static BlockChainImpl createBlockchain(Genesis genesis) {
-        IndexedBlockStore blockStore = new IndexedBlockStore();
+        IndexedBlockStore blockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
         blockStore.init(new HashMap<>(), new HashMapDB(), null);
 
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
 
         EthereumListenerAdapter listener = new EthereumListenerAdapter();
 
@@ -74,19 +74,18 @@ public class ImportLightTest {
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
         BlockChainImpl blockchain = new BlockChainImpl(
-                repository,
+                ConfigHelper.CONFIG, repository,
                 blockStore,
                 receiptStore,
                 null,
                 listener,
                 new AdminInfo(),
-                new DummyBlockValidator(),
-                RskSystemProperties.CONFIG
+                new DummyBlockValidator()
         );
 
         blockchain.setNoValidation(true);
 
-        PendingStateImpl pendingState = new PendingStateImpl(blockchain, repository, null, null, listener, 10, 100);
+        PendingStateImpl pendingState = new PendingStateImpl(ConfigHelper.CONFIG, blockchain, repository, null, null, listener, 10, 100);
 
         blockchain.setPendingState(pendingState);
 

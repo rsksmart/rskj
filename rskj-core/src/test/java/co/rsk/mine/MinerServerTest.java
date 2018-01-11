@@ -21,8 +21,8 @@ package co.rsk.mine;
 import co.rsk.TestHelpers.Tx;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.VerificationException;
+import co.rsk.config.ConfigHelper;
 import co.rsk.config.ConfigUtils;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
@@ -52,7 +52,7 @@ import static org.junit.Assert.*;
  * Created by adrian.eidelman on 3/16/2016.
  */
 public class MinerServerTest {
-    public static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(RskSystemProperties.CONFIG);
+    public static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(ConfigHelper.CONFIG);
 
     private BlockChainImpl blockchain;
 
@@ -90,10 +90,10 @@ public class MinerServerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServerImpl minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, localPendingState,
+        MinerServerImpl minerServer = new MinerServerImpl(ConfigHelper.CONFIG, ethereumImpl, this.blockchain, null, localPendingState,
                 repository, ConfigUtils.getDefaultMiningConfig(), unclesValidationRule,
-                null, DIFFICULTY_CALCULATOR, new GasLimitCalculator(RskSystemProperties.CONFIG),
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                null, DIFFICULTY_CALCULATOR, new GasLimitCalculator(ConfigHelper.CONFIG),
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         minerServer.buildBlockToMine(blockchain.getBestBlock(), false);
         Block blockAtHeightOne = minerServer.getBlocksWaitingforPoW().entrySet().iterator().next().getValue();
@@ -115,11 +115,11 @@ public class MinerServerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, blockchain, null,
+        MinerServer minerServer = new MinerServerImpl(ConfigHelper.CONFIG, ethereumImpl, blockchain, null,
                 blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
                 unclesValidationRule, null, DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(RskSystemProperties.CONFIG),
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new GasLimitCalculator(ConfigHelper.CONFIG),
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
         try {
         byte[] extraData = ByteBuffer.allocate(4).putInt(1).array();
         minerServer.setExtraData(extraData);
@@ -162,11 +162,11 @@ public class MinerServerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, blockchain, null,
+        MinerServer minerServer = new MinerServerImpl(ConfigHelper.CONFIG, ethereumImpl, blockchain, null,
                 blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
                 unclesValidationRule, null, DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(RskSystemProperties.CONFIG),
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new GasLimitCalculator(ConfigHelper.CONFIG),
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
         try {
         minerServer.start();
         MinerWork work = minerServer.getWork();
@@ -196,9 +196,9 @@ public class MinerServerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule, null, DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(RskSystemProperties.CONFIG),
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+        MinerServer minerServer = new MinerServerImpl(ConfigHelper.CONFIG, ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule, null, DIFFICULTY_CALCULATOR,
+                new GasLimitCalculator(ConfigHelper.CONFIG),
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         minerServer.start();
         try {
@@ -216,9 +216,9 @@ public class MinerServerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule, null, DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(RskSystemProperties.CONFIG),
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+        MinerServer minerServer = new MinerServerImpl(ConfigHelper.CONFIG, ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule, null, DIFFICULTY_CALCULATOR,
+                new GasLimitCalculator(ConfigHelper.CONFIG),
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
         try {
         minerServer.start();
 
@@ -236,8 +236,8 @@ public class MinerServerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule, null, DIFFICULTY_CALCULATOR, new GasLimitCalculator(RskSystemProperties.CONFIG),
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+        MinerServer minerServer = new MinerServerImpl(ConfigHelper.CONFIG, ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule, null, DIFFICULTY_CALCULATOR, new GasLimitCalculator(ConfigHelper.CONFIG),
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         minerServer.start();
         try {
@@ -259,8 +259,8 @@ public class MinerServerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ethereumImpl, this.blockchain, null, blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule, null, DIFFICULTY_CALCULATOR, new GasLimitCalculator(RskSystemProperties.CONFIG),
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+        MinerServer minerServer = new MinerServerImpl(ConfigHelper.CONFIG, ethereumImpl, this.blockchain, null, blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule, null, DIFFICULTY_CALCULATOR, new GasLimitCalculator(ConfigHelper.CONFIG),
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
         try {
         minerServer.start();
 
@@ -282,9 +282,9 @@ public class MinerServerTest {
     public void getCurrentTimeInMilliseconds() {
         long current = System.currentTimeMillis() / 1000;
 
-        MinerServer server = new MinerServerImpl(null, null, null, null,
+        MinerServer server = new MinerServerImpl(ConfigHelper.CONFIG, null, null, null, null,
                 null, ConfigUtils.getDefaultMiningConfig(), null, null, DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(RskSystemProperties.CONFIG), new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new GasLimitCalculator(ConfigHelper.CONFIG), new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         long result = server.getCurrentTimeInSeconds();
 
@@ -296,10 +296,10 @@ public class MinerServerTest {
     public void increaseTime() {
         long current = System.currentTimeMillis() / 1000;
 
-        MinerServer server = new MinerServerImpl(null, null, null, null,
+        MinerServer server = new MinerServerImpl(ConfigHelper.CONFIG, null, null, null, null,
                 null, ConfigUtils.getDefaultMiningConfig(), null, null,
-                DIFFICULTY_CALCULATOR, new GasLimitCalculator(RskSystemProperties.CONFIG),
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                DIFFICULTY_CALCULATOR, new GasLimitCalculator(ConfigHelper.CONFIG),
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         Assert.assertEquals(10, server.increaseTime(10));
 
@@ -313,8 +313,8 @@ public class MinerServerTest {
     public void increaseTimeUsingNegativeNumberHasNoEffect() {
         long current = System.currentTimeMillis() / 1000;
 
-        MinerServer server = new MinerServerImpl(null, null, null, null, null, ConfigUtils.getDefaultMiningConfig(), null, null, DIFFICULTY_CALCULATOR, new GasLimitCalculator(RskSystemProperties.CONFIG),
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+        MinerServer server = new MinerServerImpl(ConfigHelper.CONFIG, null, null, null, null, null, ConfigUtils.getDefaultMiningConfig(), null, null, DIFFICULTY_CALCULATOR, new GasLimitCalculator(ConfigHelper.CONFIG),
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         Assert.assertEquals(0, server.increaseTime(-10));
 
@@ -327,8 +327,8 @@ public class MinerServerTest {
     public void increaseTimeTwice() {
         long current = System.currentTimeMillis() / 1000;
 
-        MinerServer server = new MinerServerImpl(null, null, null, null, null, ConfigUtils.getDefaultMiningConfig(), null, null, DIFFICULTY_CALCULATOR, new GasLimitCalculator(RskSystemProperties.CONFIG),
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+        MinerServer server = new MinerServerImpl(ConfigHelper.CONFIG, null, null, null, null, null, ConfigUtils.getDefaultMiningConfig(), null, null, DIFFICULTY_CALCULATOR, new GasLimitCalculator(ConfigHelper.CONFIG),
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         Assert.assertEquals(5, server.increaseTime(5));
         Assert.assertEquals(10, server.increaseTime(5));

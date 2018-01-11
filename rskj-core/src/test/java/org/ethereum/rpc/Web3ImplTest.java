@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc;
 
+import co.rsk.config.ConfigHelper;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
@@ -89,7 +90,7 @@ public class Web3ImplTest {
 
         String netVersion = web3.net_version();
 
-        Assert.assertTrue("RSK net version different than expected", netVersion.compareTo(Byte.toString(RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId())) == 0);
+        Assert.assertTrue("RSK net version different than expected", netVersion.compareTo(Byte.toString(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId())) == 0);
     }
 
     @Test
@@ -223,7 +224,7 @@ public class Web3ImplTest {
         World world = new World();
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
-        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(ConfigHelper.CONFIG, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
         worldManager.setPendingState(pendingState);
         Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(10000000)).build();
         Account acc2 = new AccountBuilder(world).name("acc2").build();
@@ -414,7 +415,7 @@ public class Web3ImplTest {
         World world = new World();
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
-        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(ConfigHelper.CONFIG, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
         worldManager.setPendingState(pendingState);
         Web3Impl web3 = createWeb3(worldManager);
 
@@ -1122,7 +1123,7 @@ public class Web3ImplTest {
         }
 
         // ***** Verifies tx hash
-        Transaction tx = Transaction.create(toAddress.substring(2), value, nonce, gasPrice, gasLimit, args.data);
+        Transaction tx = Transaction.create(ConfigHelper.CONFIG, toAddress.substring(2), value, nonce, gasPrice, gasLimit, args.data);
         Account account = wallet.getAccount(new RskAddress(addr1), "passphrase1");
         tx.sign(account.getEcKey().getPrivKeyBytes());
 
@@ -1224,7 +1225,7 @@ public class Web3ImplTest {
         }
 
         // ***** Verifies tx hash
-        Transaction tx = Transaction.create(toAddress.substring(2), value, nonce, gasPrice, gasLimit, args.data);
+        Transaction tx = Transaction.create(ConfigHelper.CONFIG, toAddress.substring(2), value, nonce, gasPrice, gasLimit, args.data);
         tx.sign(wallet.getAccount(new RskAddress(addr1)).getEcKey().getPrivKeyBytes());
 
         String expectedHash = TypeConverter.toJsonHex(tx.getHash());
@@ -1243,7 +1244,7 @@ public class Web3ImplTest {
     private Web3Impl createWeb3Mocked(World world, Block block1) {
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
-        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(ConfigHelper.CONFIG, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
         worldManager.setPendingState(pendingState);
         Ethereum ethMock = Mockito.mock(Ethereum.class);
         ProgramResult res = new ProgramResult();
@@ -1255,20 +1256,20 @@ public class Web3ImplTest {
     private Web3Impl createWeb3(SimpleEthereum eth, PeerServer peerServer) {
         wallet = WalletFactory.createWallet();
         WorldManager worldManager = Web3Mocks.getMockWorldManager();
-        PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(eth, wallet, null);
-        EthModule ethModule = new EthModule(eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(eth, wallet, null));
+        PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(ConfigHelper.CONFIG, eth, wallet, null);
+        EthModule ethModule = new EthModule(ConfigHelper.CONFIG, eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(ConfigHelper.CONFIG, eth, wallet, null));
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
-        return new Web3RskImpl(eth, worldManager, RskSystemProperties.CONFIG, minerClient, Web3Mocks.getMockMinerServer(), personalModule, ethModule, channelManager, Web3Mocks.getMockRepository(), null, null, null, peerServer);
+        return new Web3RskImpl(eth, worldManager, ConfigHelper.CONFIG, minerClient, Web3Mocks.getMockMinerServer(), personalModule, ethModule, channelManager, Web3Mocks.getMockRepository(), null, null, null, peerServer);
     }
 
     private Web3Impl createWeb3(Ethereum eth, WorldManager worldManager) {
         wallet = WalletFactory.createWallet();
-        PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(eth, wallet, worldManager.getPendingState());
-        EthModule ethModule = new EthModule(eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(eth, wallet, worldManager.getPendingState()));
+        PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(ConfigHelper.CONFIG, eth, wallet, worldManager.getPendingState());
+        EthModule ethModule = new EthModule(ConfigHelper.CONFIG, eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(ConfigHelper.CONFIG, eth, wallet, worldManager.getPendingState()));
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
-        return new Web3RskImpl(eth, worldManager, RskSystemProperties.CONFIG, minerClient, Web3Mocks.getMockMinerServer(), personalModule, ethModule, channelManager, Web3Mocks.getMockRepository(), null, null, null, null);
+        return new Web3RskImpl(eth, worldManager, ConfigHelper.CONFIG, minerClient, Web3Mocks.getMockMinerServer(), personalModule, ethModule, channelManager, Web3Mocks.getMockRepository(), null, null, null, null);
     }
 
     @Test
@@ -1281,7 +1282,7 @@ public class Web3ImplTest {
 
         Mockito.when(systemProperties.customSolcPath()).thenReturn(solc);
         Ethereum eth = Mockito.mock(Ethereum.class);
-        EthModule ethModule = new EthModule(eth, new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)), null);
+        EthModule ethModule = new EthModule(ConfigHelper.CONFIG, eth, new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)), null);
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
         Web3Impl web3 = new Web3RskImpl(eth, null, systemProperties, null, null, personalModule, ethModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, null, null);
         String contract = "pragma solidity ^0.4.1; contract rsk { function multiply(uint a) returns(uint d) {   return a * 7;   } }";
@@ -1310,8 +1311,8 @@ public class Web3ImplTest {
         Wallet wallet = WalletFactory.createWallet();
         Ethereum eth = Web3Mocks.getMockEthereum();
         WorldManager worldManager = Web3Mocks.getMockWorldManager();
-        EthModule ethModule = new EthModule(eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(eth, wallet, null));
-        Web3Impl web3 = new Web3RskImpl(eth, worldManager, RskSystemProperties.CONFIG, null, null, new PersonalModuleWalletDisabled(), ethModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, null, null);
+        EthModule ethModule = new EthModule(ConfigHelper.CONFIG, eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(ConfigHelper.CONFIG, eth, wallet, null));
+        Web3Impl web3 = new Web3RskImpl(eth, worldManager, ConfigHelper.CONFIG, null, null, new PersonalModuleWalletDisabled(), ethModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, null, null);
 
         String contract = "pragma solidity ^0.4.1; contract rsk { function multiply(uint a) returns(uint d) {   return a * 7;   } }";
 

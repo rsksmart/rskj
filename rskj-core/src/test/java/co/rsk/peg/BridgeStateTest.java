@@ -18,7 +18,8 @@
 
 package co.rsk.peg;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.ConfigHelper;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
@@ -35,12 +36,13 @@ import java.io.IOException;
 public class BridgeStateTest {
     @Test
     public void recreateFromEmptyStorageProvider() throws IOException {
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
+        BridgeConstants bridgeConstants = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);
 
         BridgeState state = new BridgeState(42, provider);
 
-        BridgeState clone = BridgeState.create(state.getEncoded());
+        BridgeState clone = BridgeState.create(bridgeConstants, state.getEncoded());
 
         Assert.assertNotNull(clone);
         Assert.assertEquals(42, clone.getBtcBlockchainBestChainHeight());

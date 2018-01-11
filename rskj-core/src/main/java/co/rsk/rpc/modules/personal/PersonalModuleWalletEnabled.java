@@ -45,8 +45,10 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     private final Ethereum eth;
     private final Wallet wallet;
     private final PendingState pendingState;
+    private final RskSystemProperties config;
 
-    public PersonalModuleWalletEnabled(Ethereum eth, Wallet wallet, PendingState pendingState) {
+    public PersonalModuleWalletEnabled(RskSystemProperties config, Ethereum eth, Wallet wallet, PendingState pendingState) {
+        this.config = config;
         this.eth = eth;
         this.wallet = wallet;
         this.pendingState = pendingState;
@@ -180,7 +182,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
             args.data = args.data.substring(2);
         }
 
-        Transaction tx = Transaction.create(toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
+        Transaction tx = Transaction.create(config, toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
 
         tx.sign(account.getEcKey().getPrivKeyBytes());
 

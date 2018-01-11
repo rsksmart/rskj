@@ -19,6 +19,7 @@
 
 package org.ethereum.net.eth.message;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -36,12 +37,15 @@ public class NewBlockMessage extends EthMessage {
 
     private Block block;
     private byte[] difficulty;
+    private final RskSystemProperties config;
 
-    public NewBlockMessage(byte[] encoded) {
+    public NewBlockMessage(RskSystemProperties config, byte[] encoded) {
         super(encoded);
+        this.config = config;
     }
 
-    public NewBlockMessage(Block block, byte[] difficulty) {
+    public NewBlockMessage(RskSystemProperties config, Block block, byte[] difficulty) {
+        this.config = config;
         this.block = block;
         this.difficulty = difficulty;
         encode();
@@ -59,7 +63,7 @@ public class NewBlockMessage extends EthMessage {
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
 
         RLPList blockRLP = ((RLPList) paramsList.get(0));
-        block = new Block(blockRLP.getRLPData());
+        block = new Block(config, blockRLP.getRLPData());
         difficulty = paramsList.get(1).getRLPData();
 
         parsed = true;

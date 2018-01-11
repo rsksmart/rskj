@@ -18,6 +18,7 @@
 
 package co.rsk.remasc;
 
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Sha3Hash;
@@ -101,7 +102,7 @@ class RemascTestRunner {
         List<Block> mainChainBlocks = new ArrayList<>();
         this.blockchain.tryToConnect(this.genesis);
 
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(),
+        BlockExecutor blockExecutor = new BlockExecutor(ConfigHelper.CONFIG, blockchain.getRepository(),
                 blockchain, blockchain.getBlockStore(), null);
 
         for(int i = 0; i <= this.initialHeight; i++) {
@@ -172,13 +173,13 @@ class RemascTestRunner {
                                     ECKey txSigningKey, Long difficulty) {
         if (minerFee == 0) throw new IllegalArgumentException();
         Transaction tx = new Transaction(
-                BigInteger.valueOf(txNonce).toByteArray(),
+                ConfigHelper.CONFIG, BigInteger.valueOf(txNonce).toByteArray(),
                 BigInteger.ONE.toByteArray(),
                 BigInteger.valueOf(minerFee).toByteArray(),
                 new ECKey().getAddress() ,
                 BigInteger.valueOf(txValue).toByteArray(),
                 null,
-                Transaction.getConfigChainId());
+                Transaction.getConfigChainId(ConfigHelper.CONFIG));
 
         tx.sign(txSigningKey.getPrivKeyBytes());
         //createBlook 1
@@ -194,7 +195,7 @@ class RemascTestRunner {
             }
         }
 
-        Transaction remascTx = new RemascTransaction(parentBlock.getNumber() + 1);
+        Transaction remascTx = new RemascTransaction(ConfigHelper.CONFIG, parentBlock.getNumber() + 1);
         txs.add(remascTx);
 
         long difficultyAsLong = difficulty == null?BigIntegers.fromUnsignedByteArray(parentBlock.getDifficulty()).longValue():difficulty;
@@ -212,7 +213,7 @@ class RemascTestRunner {
         }
 
         Block block =  new Block(
-                parentBlock.getHash(),          // parent hash
+                ConfigHelper.CONFIG, parentBlock.getHash(),          // parent hash
                 EMPTY_LIST_HASH,       // uncle hash
                 coinbase.getBytes(),            // coinbase
                 new Bloom().getData(),          // logs bloom

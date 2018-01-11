@@ -18,7 +18,7 @@
 
 package co.rsk.jsontestsuite;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import org.ethereum.jsontestsuite.GitHubJSONTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
@@ -28,7 +28,7 @@ import org.junit.runners.MethodSorters;
 import java.io.IOException;
 import java.util.Collections;
 
-import static co.rsk.config.RskSystemProperties.CONFIG;
+import static co.rsk.config.ConfigHelper.CONFIG;
 
 /**
  * @author Angel J Lopez
@@ -40,7 +40,7 @@ public class LocalBlockTest {
 
     @BeforeClass
     public static void init() {
-        RskSystemProperties.CONFIG.disableRemasc();
+        ConfigHelper.CONFIG.disableRemasc();
     }
 
     private void run(String name) throws IOException, ParseException {
@@ -150,7 +150,7 @@ public class LocalBlockTest {
 
     @AfterClass
     public static void destroy() {
-        RskSystemProperties.CONFIG.enableRemasc();
+        ConfigHelper.CONFIG.enableRemasc();
     }
 
 

@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.trie.Trie;
@@ -57,6 +58,7 @@ public class Block {
 
     private static final Logger logger = LoggerFactory.getLogger("block");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
+    private final RskSystemProperties config;
 
     private BlockHeader header;
 
@@ -74,24 +76,26 @@ public class Block {
     /* Indicates if this block can or cannot be changed */
     private volatile boolean sealed;
 
-    public Block(byte[] rawData) {
-        this.rlpEncoded = rawData;
-        this.sealed = true;
+    public Block(RskSystemProperties config, byte[] rawData) {
+        this(config, rawData, true);
     }
 
-    protected Block(byte[] rawData, boolean sealed) {
+    protected Block(RskSystemProperties config, byte[] rawData, boolean sealed) {
+        this.config = config;
         this.rlpEncoded = rawData;
         this.sealed = sealed;
     }
 
-    public Block(BlockHeader header) {
+    public Block(RskSystemProperties config, BlockHeader header) {
+        this.config = config;
         this.header = header;
         this.parsed = true;
     }
 
-    public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
+    public Block(RskSystemProperties config, BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
 
-        this(header.getParentHash(),
+        this(config,
+                header.getParentHash(),
                 header.getUnclesHash(),
                 header.getCoinbase(),
                 header.getLogsBloom(),
@@ -114,7 +118,7 @@ public class Block {
                 header.getMinimumGasPrice());
     }
 
-    public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
+    public Block(RskSystemProperties config, byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp, byte[] extraData,
                  byte[] mixHash,
@@ -123,7 +127,7 @@ public class Block {
                  byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
 
-        this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
+        this(config, parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
                 gasUsed, timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot,
                 stateRoot, transactionsList, uncleList, minimumGasPrice, BigInteger.ZERO);
 
@@ -134,14 +138,14 @@ public class Block {
         this.flushRLP();
     }
 
-    public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
+    public Block(RskSystemProperties config, byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp, byte[] extraData,
                  byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, BigInteger paidFees) {
 
-        this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
+        this(config, parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
                 gasUsed, timestamp, extraData, mixHash, nonce, transactionsList, uncleList, minimumGasPrice);
 
         this.header.setPaidFees(paidFees);
@@ -156,11 +160,12 @@ public class Block {
         this.flushRLP();
     }
 
-    public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
+    public Block(RskSystemProperties config, byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp,
                  byte[] extraData, byte[] mixHash, byte[] nonce,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
+        this.config = config;
 
         if (transactionsList == null) {
             this.transactionsList = Collections.emptyList();
@@ -181,8 +186,8 @@ public class Block {
         this.parsed = true;
     }
 
-    public static Block fromValidData(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
-        Block block = new Block((byte[])null);
+    public static Block fromValidData(RskSystemProperties config, BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
+        Block block = new Block(config, (byte[])null);
         block.parsed = true;
         block.header = header;
         block.transactionsList = transactionsList;
@@ -202,9 +207,7 @@ public class Block {
 
     // Clone this block allowing modifications
     public Block cloneBlock() {
-        Block clone = new Block(this.getEncoded(), false);
-
-        return clone;
+        return new Block(config, this.getEncoded(), false);
     }
 
     private void parseRLP() {
@@ -480,16 +483,16 @@ public class Block {
         return toStringBuff.toString();
     }
 
-    private static List<Transaction> parseTxs(RLPList txTransactions) {
+    private List<Transaction> parseTxs(RLPList txTransactions) {
         List<Transaction> parsedTxs = new ArrayList<>();
 
         for (int i = 0; i < txTransactions.size(); i++) {
             RLPElement transactionRaw = txTransactions.get(i);
-            Transaction tx = new ImmutableTransaction(transactionRaw.getRLPData());
+            Transaction tx = new ImmutableTransaction(config, transactionRaw.getRLPData());
 
             if (isRemascTransaction(tx, i, txTransactions.size())) {
                 // It is the remasc transaction
-                tx = new RemascTransaction(transactionRaw.getRLPData());
+                tx = new RemascTransaction(config, transactionRaw.getRLPData());
             }
             parsedTxs.add(tx);
         }

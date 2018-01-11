@@ -46,8 +46,6 @@ import org.mapdb.DBMaker;
 import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -69,19 +67,13 @@ import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
 public class DefaultConfig {
     private static Logger logger = LoggerFactory.getLogger("general");
 
-    @Autowired
-    ApplicationContext appCtx;
-
-    @Autowired
-    SystemProperties config;
-
     @PostConstruct
     public void init() {
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> logger.error("Uncaught exception", e));
     }
 
     @Bean
-    public BlockStore blockStore() {
+    public BlockStore blockStore(RskSystemProperties config) {
         String database = config.databaseDir();
 
         File blockIndexDirectory = new File(database + "/blocks/");
@@ -103,10 +95,10 @@ public class DefaultConfig {
                 .counterEnable()
                 .makeOrGet();
 
-        KeyValueDataSource blocksDB = new LevelDbDataSource("blocks");
+        KeyValueDataSource blocksDB = new LevelDbDataSource(config, "blocks");
         blocksDB.init();
 
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(config);
 
         indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
@@ -114,8 +106,8 @@ public class DefaultConfig {
     }
 
     @Bean
-    public ReceiptStore receiptStore() {
-        KeyValueDataSource ds = new LevelDbDataSource("receipts");
+    public ReceiptStore receiptStore(RskSystemProperties config) {
+        KeyValueDataSource ds = new LevelDbDataSource(config, "receipts");
         ds.init();
         return new ReceiptStoreImpl(ds);
     }
@@ -149,7 +141,7 @@ public class DefaultConfig {
 
     @Bean
     public RskSystemProperties rskSystemProperties() {
-        return RskSystemProperties.CONFIG;
+        return new RskSystemProperties();
     }
 
     @Bean
@@ -185,7 +177,7 @@ public class DefaultConfig {
 
         BlockCompositeRule unclesBlockHeaderValidator = new BlockCompositeRule(proofOfWorkRule, blockTimeStampValidationRule, new ValidGasUsedRule());
 
-        BlockUnclesValidationRule blockUnclesValidationRule = new BlockUnclesValidationRule(blockStore, uncleListLimit, uncleGenLimit, unclesBlockHeaderValidator, unclesBlockParentHeaderValidator);
+        BlockUnclesValidationRule blockUnclesValidationRule = new BlockUnclesValidationRule(config, blockStore, uncleListLimit, uncleGenLimit, unclesBlockHeaderValidator, unclesBlockParentHeaderValidator);
 
         int minGasLimit = commonConstants.getMinGasLimit();
         int maxExtraDataSize = commonConstants.getMaximumExtraDataSize();
@@ -194,8 +186,7 @@ public class DefaultConfig {
     }
 
     @Bean
-    public NetworkStateExporter networkStateExporter() {
-        Repository repository = appCtx.getBean(Repository.class);
+    public NetworkStateExporter networkStateExporter(Repository repository) {
         return new NetworkStateExporter(repository);
     }
 
@@ -217,7 +208,7 @@ public class DefaultConfig {
         BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod);
         BlockCompositeRule unclesBlockHeaderValidator = new BlockCompositeRule(proofOfWorkRule, blockTimeStampValidationRule, new ValidGasUsedRule());
 
-        return new BlockUnclesValidationRule(blockStore, uncleListLimit, uncleGenLimit, unclesBlockHeaderValidator, unclesBlockParentHeaderValidator);
+        return new BlockUnclesValidationRule(config, blockStore, uncleListLimit, uncleGenLimit, unclesBlockHeaderValidator, unclesBlockParentHeaderValidator);
     }
 
     @Bean

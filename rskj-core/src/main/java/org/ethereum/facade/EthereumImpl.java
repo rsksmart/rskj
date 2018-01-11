@@ -19,8 +19,8 @@
 
 package org.ethereum.facade;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.ReversibleTransactionExecutor;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
@@ -60,7 +60,7 @@ public class EthereumImpl implements Ethereum {
     private final PeerServer peerServer;
     private final ProgramInvokeFactory programInvokeFactory;
     private final PendingState pendingState;
-    private final SystemProperties config;
+    private final RskSystemProperties config;
     private final CompositeEthereumListener compositeEthereumListener;
     private final ReceiptStore receiptStore;
 
@@ -68,12 +68,12 @@ public class EthereumImpl implements Ethereum {
     private final Repository repository;
     private ExecutorService peerServiceExecutor;
 
-    public EthereumImpl(WorldManager worldManager,
+    public EthereumImpl(RskSystemProperties config,
+                        WorldManager worldManager,
                         ChannelManager channelManager,
                         PeerServer peerServer,
                         ProgramInvokeFactory programInvokeFactory,
                         PendingState pendingState,
-                        SystemProperties config,
                         CompositeEthereumListener compositeEthereumListener,
                         ReceiptStore receiptStore,
                         Repository repository) {
@@ -150,7 +150,7 @@ public class EthereumImpl implements Ethereum {
         byte[] valueBytes = ByteUtil.bigIntegerToBytes(value);
         byte chainId = config.getBlockchainConfig().getCommonConstants().getChainId();
 
-        return new Transaction(nonceBytes, gasPriceBytes, gasBytes,
+        return new Transaction(config, nonceBytes, gasPriceBytes, gasBytes,
                 receiveAddress, valueBytes, data, chainId);
     }
 
@@ -176,12 +176,13 @@ public class EthereumImpl implements Ethereum {
     public ProgramResult callConstant(Web3.CallArguments args) {
         Block bestBlock = getBlockchain().getBestBlock();
         return ReversibleTransactionExecutor.executeTransaction(
-                bestBlock.getCoinbase(),
+                config,
                 repository,
                 worldManager.getBlockStore(),
                 receiptStore,
                 programInvokeFactory,
                 bestBlock,
+                bestBlock.getCoinbase(),
                 args
         ).getResult();
     }

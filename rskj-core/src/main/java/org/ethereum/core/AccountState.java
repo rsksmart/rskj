@@ -19,17 +19,15 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.RskSystemProperties;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-
 import org.spongycastle.util.BigIntegers;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
-import static org.ethereum.crypto.HashUtil.*;
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class AccountState {
@@ -72,12 +70,7 @@ public class AccountState {
     private boolean dirty = false;
     private boolean deleted = false;
 
-    public static final AccountState EMPTY = new AccountState();
-
-
-    public AccountState() {
-        this(RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce(), BigInteger.ZERO);
-    }
+    public static final AccountState EMPTY = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
 
     public AccountState(BigInteger nonce, BigInteger balance) {
         this.nonce = nonce;
@@ -202,10 +195,8 @@ public class AccountState {
     }
 
     public AccountState clone() {
-        AccountState accountState = new AccountState();
+        AccountState accountState = new AccountState(nonce, balance);
 
-        accountState.addToBalance(this.getBalance());
-        accountState.setNonce(this.getNonce());
         accountState.setCodeHash(this.getCodeHash());
         accountState.setStateRoot(this.getStateRoot());
         accountState.setDirty(false);

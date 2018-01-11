@@ -18,6 +18,7 @@
 
 package co.rsk.remasc;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -31,12 +32,12 @@ import org.ethereum.vm.PrecompiledContracts;
 public class RemascTransaction extends Transaction {
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
-    public RemascTransaction(byte[] rawData) {
-        super(rawData);
+    public RemascTransaction(RskSystemProperties config, byte[] rawData) {
+        super(config, rawData);
     }
 
-    public RemascTransaction(long blockNumber) {
-        super(ByteUtil.longToBytesNoLeadZeroes(blockNumber - 1),
+    public RemascTransaction(RskSystemProperties config, long blockNumber) {
+        super(config, ByteUtil.longToBytesNoLeadZeroes(blockNumber - 1),
                 ZERO_BYTE_ARRAY,
                 ZERO_BYTE_ARRAY,
                 PrecompiledContracts.REMASC_ADDR.getBytes(),

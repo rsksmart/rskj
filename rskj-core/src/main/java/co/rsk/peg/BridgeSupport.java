@@ -70,7 +70,7 @@ public class BridgeSupport {
     private static final Logger logger = LoggerFactory.getLogger("BridgeSupport");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private enum StorageFederationReference { NONE, NEW, OLD, GENESIS }
+    private enum StorageFederationReference { NONE, NEW, OLD, GENESIS;}
 
     private final List<String> FEDERATION_CHANGE_FUNCTIONS = Collections.unmodifiableList(Arrays.asList(
             "create",
@@ -84,28 +84,30 @@ public class BridgeSupport {
     private final BtcBlockChain btcBlockChain;
     private final BridgeStorageProvider provider;
     private final Repository rskRepository;
+    private final RskSystemProperties config;
 
-    private BridgeEventLogger eventLogger;
+    private final BridgeEventLogger eventLogger;
     private org.ethereum.core.Block rskExecutionBlock;
     private StoredBlock initialBtcStoredBlock;
 
     // Used by bridge
-    public BridgeSupport(Repository repository, RskAddress contractAddress, Block rskExecutionBlock, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) throws IOException, BlockStoreException {
-        this(repository, new BridgeStorageProvider(repository, contractAddress, bridgeConstants), rskExecutionBlock, bridgeConstants, eventLogger);
+    public BridgeSupport(RskSystemProperties config, Repository repository, BridgeEventLogger eventLogger, RskAddress contractAddress, Block rskExecutionBlock) throws IOException, BlockStoreException {
+        this(config, repository, eventLogger, new BridgeStorageProvider(repository, contractAddress, config.getBlockchainConfig().getCommonConstants().getBridgeConstants()), rskExecutionBlock);
     }
 
     // Used by unit tests
-    public BridgeSupport(Repository repository, BridgeStorageProvider provider, Block rskExecutionBlock, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) throws IOException, BlockStoreException {
+    public BridgeSupport(RskSystemProperties config, Repository repository, BridgeEventLogger eventLogger, BridgeStorageProvider provider, Block rskExecutionBlock) throws IOException, BlockStoreException {
         this.rskRepository = repository;
         this.provider = provider;
         this.rskExecutionBlock = rskExecutionBlock;
-        this.bridgeConstants = bridgeConstants;
+        this.config = config;
+        this.bridgeConstants = this.config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         this.eventLogger = eventLogger;
 
-        NetworkParameters btcParams = bridgeConstants.getBtcParams();
+        NetworkParameters btcParams = this.bridgeConstants.getBtcParams();
         this.btcContext = new Context(btcParams);
 
-        this.btcBlockStore = new RepositoryBlockStore(repository, PrecompiledContracts.BRIDGE_ADDR);
+        this.btcBlockStore = new RepositoryBlockStore(config, repository, PrecompiledContracts.BRIDGE_ADDR);
         if (btcBlockStore.getChainHead().getHeader().getHash().equals(btcParams.getGenesisBlock().getHash())) {
             // We are building the blockstore for the first time, so we have not set the checkpoints yet.
             long time = getActiveFederation().getCreationTime().toEpochMilli();
@@ -120,10 +122,11 @@ public class BridgeSupport {
 
 
     // Used by unit tests
-    public BridgeSupport(Repository repository, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain, BridgeConstants bridgeConstants, BridgeEventLogger eventLogger) {
+    public BridgeSupport(RskSystemProperties config, Repository repository, BridgeEventLogger eventLogger, BridgeConstants bridgeConstants, BridgeStorageProvider provider, BtcBlockStore btcBlockStore, BtcBlockChain btcBlockChain) {
         this.provider = provider;
+        this.config = config;
         this.bridgeConstants = bridgeConstants;
-        this.btcContext = new Context(bridgeConstants.getBtcParams());
+        this.btcContext = new Context(this.bridgeConstants.getBtcParams());
         this.btcBlockStore = btcBlockStore;
         this.btcBlockChain = btcBlockChain;
         this.rskRepository = repository;
@@ -731,7 +734,7 @@ public class BridgeSupport {
         Coin spentByFederation = sumInputs.subtract(change);
         if (spentByFederation.isLessThan(sentByUser)) {
             Coin coinsToBurn = sentByUser.subtract(spentByFederation);
-            byte[] burnAddress = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress();
+            byte[] burnAddress = config.getBlockchainConfig().getCommonConstants().getBurnAddress();
             transfer(rskRepository, PrecompiledContracts.BRIDGE_ADDR.getBytes(), burnAddress, Denomination.satoshisToWeis(BigInteger.valueOf(coinsToBurn.getValue())));
         }
     }

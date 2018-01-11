@@ -18,7 +18,7 @@
 
 package co.rsk.validators;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.vm.DataWord;
@@ -37,19 +37,19 @@ public class GasLimitRuleTests {
 
     @Test // pass rule
     public void gasLimitGreaterThanMinimumGasLimit() {
-        Block block = getBlock(RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit() + 1);
+        Block block = getBlock(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit() + 1);
         assertTrue(rule.isValid(block));
     }
 
     @Test // pass rule
     public void gasLimitEqualMinimumGasLimit() {
-        Block block = getBlock(RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit());
+        Block block = getBlock(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit());
         assertTrue(rule.isValid(block));
     }
 
     @Test // no pass rule
     public void gasLimitLessThanMinimumGasLimit() {
-        Block block = getBlock(RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit() - 1);
+        Block block = getBlock(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit() - 1);
         assertFalse(rule.isValid(block));
     }
 
@@ -60,6 +60,6 @@ public class GasLimitRuleTests {
                 gasLimit, 0,
                 0, null, null,0);
 
-        return new Block(header);
+        return new Block(ConfigHelper.CONFIG, header);
     }
 }

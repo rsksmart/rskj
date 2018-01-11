@@ -22,12 +22,12 @@ import co.rsk.config.MiningConfig;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.net.BlockProcessor;
 import co.rsk.panic.PanicProcessor;
-import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.BlockValidationRule;
@@ -131,10 +131,11 @@ public class MinerServerImpl implements MinerServer {
     private long minimumAcceptableTime;
     private boolean autoSwitchBetweenNormalAndFallbackMining;
     private boolean fallbackMiningScheduled;
-    private final RskSystemProperties rskSystemProperties;
+    private final RskSystemProperties config;
 
     @Autowired
-    public MinerServerImpl(Ethereum ethereum,
+    public MinerServerImpl(RskSystemProperties config,
+                           Ethereum ethereum,
                            Blockchain blockchain,
                            BlockStore blockStore,
                            PendingState pendingState,
@@ -145,21 +146,7 @@ public class MinerServerImpl implements MinerServer {
                            DifficultyCalculator difficultyCalculator,
                            GasLimitCalculator gasLimitCalculator,
                            ProofOfWorkRule powRule) {
-        this(ethereum, blockchain, blockStore, pendingState, repository, miningConfig, validationRules, nodeBlockProcessor, difficultyCalculator, gasLimitCalculator, powRule, RskSystemProperties.CONFIG);
-    }
-
-    public MinerServerImpl(Ethereum ethereum,
-                           Blockchain blockchain,
-                           BlockStore blockStore,
-                           PendingState pendingState,
-                           Repository repository,
-                           MiningConfig miningConfig,
-                           @Qualifier("minerServerBlockValidation") BlockValidationRule validationRules,
-                           BlockProcessor nodeBlockProcessor,
-                           DifficultyCalculator difficultyCalculator,
-                           GasLimitCalculator gasLimitCalculator,
-                           ProofOfWorkRule powRule,
-                           RskSystemProperties rskSystemProperties) {
+        this.config = config;
         this.ethereum = ethereum;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -171,7 +158,7 @@ public class MinerServerImpl implements MinerServer {
         this.gasLimitCalculator = gasLimitCalculator;
         this.powRule = powRule;
 
-        executor = new BlockExecutor(repository, blockchain, blockStore, null);
+        executor = new BlockExecutor(config, repository, blockchain, blockStore, null);
 
         blocksWaitingforPoW = createNewBlocksWaitingList();
 
@@ -187,12 +174,12 @@ public class MinerServerImpl implements MinerServer {
 
         // It's not so important to add one because the timer has an average delay of 1 second.
         secsBetweenFallbackMinedBlocks =
-                RskSystemProperties.CONFIG.getAverageFallbackMiningTime();
+                config.getAverageFallbackMiningTime();
         // default
-        if (secsBetweenFallbackMinedBlocks==0)
-            secsBetweenFallbackMinedBlocks = (rskSystemProperties.getBlockchainConfig().getCommonConstants().getDurationLimit());
-        this.rskSystemProperties = rskSystemProperties;
-        autoSwitchBetweenNormalAndFallbackMining = !rskSystemProperties.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BigInteger.ZERO);
+        if (secsBetweenFallbackMinedBlocks==0) {
+            secsBetweenFallbackMinedBlocks = (config.getBlockchainConfig().getCommonConstants().getDurationLimit());
+        }
+        autoSwitchBetweenNormalAndFallbackMining = !config.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BigInteger.ZERO);
     }
 
     // This method is used for tests
@@ -349,10 +336,15 @@ public class MinerServerImpl implements MinerServer {
         boolean isEvenBlockNumber = (newBlock.getNumber() % 2) == 0;
 
 
-        String path = rskSystemProperties.fallbackMiningKeysDir();
+        String path = config.fallbackMiningKeysDir();
 
-        if (privKey0==null) privKey0= readFromFile(new File(path,"privkey0.bin"));
-        if (privKey1==null) privKey1 = readFromFile(new File(path,"privkey1.bin"));
+        if (privKey0 == null) {
+            privKey0 = readFromFile(new File(path, "privkey0.bin"));
+        }
+
+        if (privKey1 == null) {
+            privKey1 = readFromFile(new File(path, "privkey1.bin"));
+        }
 
         if (!isEvenBlockNumber && privKey1 == null) {
            return false;
@@ -638,7 +630,7 @@ public class MinerServerImpl implements MinerServer {
 
         if (autoSwitchBetweenNormalAndFallbackMining) {
             if (ProofOfWorkRule.isFallbackMiningPossible(
-                    rskSystemProperties.getBlockchainConfig().getCommonConstants(),
+                    config.getBlockchainConfig().getCommonConstants(),
                     newBlock.getHeader())) {
 
                 setFallbackMining(true);
@@ -734,7 +726,7 @@ public class MinerServerImpl implements MinerServer {
         List<Transaction> txs = new MinerUtils().getAllTransactions(pendingState);
         logger.debug("txsList size {}", txs.size());
 
-        Transaction remascTx = new RemascTransaction(parent.getNumber() + 1);
+        Transaction remascTx = new RemascTransaction(config, parent.getNumber() + 1);
         txs.add(remascTx);
 
         Map<RskAddress, BigInteger> accountNonces = new HashMap<>();
@@ -816,8 +808,8 @@ public class MinerServerImpl implements MinerServer {
 
     private Block createBlock(Block newBlockParent, List<BlockHeader> uncles, List<Transaction> txs, BigInteger minimumGasPrice) {
         final BlockHeader newHeader = createHeader(newBlockParent, uncles, txs, minimumGasPrice);
-        final Block newBlock = new Block(newHeader, txs, uncles);
-        return validationRules.isValid(newBlock) ? newBlock : new Block(newHeader, txs, null);
+        final Block newBlock = new Block(config, newHeader, txs, uncles);
+        return validationRules.isValid(newBlock) ? newBlock : new Block(config, newHeader, txs, null);
     }
 
     private class FallbackMiningTask extends TimerTask {

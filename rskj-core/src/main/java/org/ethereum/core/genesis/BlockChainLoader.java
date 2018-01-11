@@ -19,8 +19,8 @@
 
 package org.ethereum.core.genesis;
 
+import co.rsk.config.RskSystemProperties;
 import org.apache.commons.lang3.StringUtils;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
@@ -42,14 +42,14 @@ public class BlockChainLoader {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
 
-    private SystemProperties properties;
-    private BlockStore blockStore;
-    private Repository repository;
-    private Blockchain blockchain;
-    private EthereumListener listener;
+    private final RskSystemProperties config;
+    private final BlockStore blockStore;
+    private final Repository repository;
+    private final Blockchain blockchain;
+    private final EthereumListener listener;
 
-    public BlockChainLoader(Blockchain blockchain, SystemProperties properties, BlockStore blockStore, Repository repository, EthereumListener listener) {
-        this.properties = properties;
+    public BlockChainLoader(RskSystemProperties config, Blockchain blockchain, BlockStore blockStore, Repository repository, EthereumListener listener) {
+        this.config = config;
         this.blockStore = blockStore;
         this.repository = repository;
         this.blockchain = blockchain;
@@ -58,7 +58,7 @@ public class BlockChainLoader {
 
     public void loadBlockchain() {
 
-        if (!properties.databaseReset()) {
+        if (!config.databaseReset()) {
             blockStore.load();
         }
 
@@ -66,8 +66,8 @@ public class BlockChainLoader {
         if (bestBlock == null) {
             logger.info("DB is empty - adding Genesis");
 
-            BigInteger initialNonce = properties.getBlockchainConfig().getCommonConstants().getInitialNonce();
-            Genesis genesis = GenesisLoader.loadGenesis(properties.genesisInfo(), initialNonce, true);
+            BigInteger initialNonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
+            Genesis genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), initialNonce, true);
             for (ByteArrayWrapper address : genesis.getPremine().keySet()) {
                 repository.createAccount(address.getData());
                 InitialAddressState initialAddressState = genesis.getPremine().get(address);
@@ -105,7 +105,7 @@ public class BlockChainLoader {
                     Hex.toHexString(blockchain.getBestBlock().getStateRoot()));
         }
 
-        String rootHash = properties.rootHashStart();
+        String rootHash = config.rootHashStart();
         if (StringUtils.isNotBlank(rootHash)) {
 
             // update world state by dummy hash

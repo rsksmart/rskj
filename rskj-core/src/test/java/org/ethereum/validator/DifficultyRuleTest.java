@@ -18,7 +18,7 @@
 
 package org.ethereum.validator;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.DifficultyCalculator;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.vm.DataWord;
@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
  * @since 02.23.2016
  */
 public class DifficultyRuleTest {
-    private final DifficultyRule rule = new DifficultyRule(new DifficultyCalculator(RskSystemProperties.CONFIG));
+    private final DifficultyRule rule = new DifficultyRule(new DifficultyCalculator(ConfigHelper.CONFIG));
 
     @Ignore
     @Test // pass rule

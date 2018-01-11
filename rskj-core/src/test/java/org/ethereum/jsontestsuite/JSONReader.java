@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import org.apache.commons.codec.binary.Base64;
 import org.h2.util.IOUtils;
 import org.json.simple.JSONArray;
@@ -42,7 +42,7 @@ public class JSONReader {
 
     public static String loadJSON(String filename) {
         String json = "";
-        if (!RskSystemProperties.CONFIG.vmTestLoadLocal())
+        if (!ConfigHelper.CONFIG.vmTestLoadLocal())
             json = getFromUrl("https://raw.githubusercontent.com/ethereum/tests/develop/" + filename);
         return json.isEmpty() ? getFromLocal(filename) : json;
     }
@@ -68,7 +68,7 @@ public class JSONReader {
 
     public static String loadJSONFromCommit(String filename, String shacommit) {
         String json = "";
-        if (!RskSystemProperties.CONFIG.vmTestLoadLocal())
+        if (!ConfigHelper.CONFIG.vmTestLoadLocal())
             json = getFromUrl("https://raw.githubusercontent.com/ethereum/tests/" + shacommit + "/" + filename);
         if (!json.isEmpty()) json = json.replaceAll("//", "data");
         return json.isEmpty() ? getFromLocal(filename) : json;

@@ -18,6 +18,7 @@
 
 package co.rsk.db;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
@@ -53,30 +54,27 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
 
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
+    private final RskSystemProperties config;
     private TrieStore store;
     private Trie trie;
     private DetailsDataStore detailsDataStore;
     private boolean closed;
 
-    public RepositoryImpl() {
-        this(null);
+    public RepositoryImpl(RskSystemProperties config) {
+        this(config, null);
     }
 
-    public RepositoryImpl(TrieStore store) {
-        this.store = store;
-        this.trie = new TrieImpl(store, true);
-        this.detailsDataStore = new DetailsDataStore();
-        this.detailsDataStore.setDB(new DatabaseImpl(new HashMapDB()));
+    public RepositoryImpl(RskSystemProperties config, TrieStore store) {
+        this(config, store, new HashMapDB());
     }
 
-    public RepositoryImpl(TrieStore store, KeyValueDataSource detailsDS) {
-        this.store = store;
-        this.trie = new TrieImpl(store, true);
-        this.detailsDataStore = new DetailsDataStore();
+    public RepositoryImpl(RskSystemProperties config, TrieStore store, KeyValueDataSource detailsDS) {
+        this(config, store, new DetailsDataStore(config));
         this.detailsDataStore.setDB(new DatabaseImpl(detailsDS));
     }
 
-    public RepositoryImpl(TrieStore store, DetailsDataStore detailsDataStore) {
+    public RepositoryImpl(RskSystemProperties config, TrieStore store, DetailsDataStore detailsDataStore) {
+        this.config = config;
         this.store = store;
         this.trie = new TrieImpl(store, true);
         this.detailsDataStore = detailsDataStore;
@@ -86,7 +84,7 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     public synchronized AccountState createAccount(final byte[] addr) {
         AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         updateAccountState(addr, accountState);
-        updateContractDetails(addr, new ContractDetailsImpl());
+        updateContractDetails(addr, new ContractDetailsImpl(config));
         return accountState;
     }
 
@@ -272,7 +270,7 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
 
     @Override
     public synchronized Repository startTracking() {
-        return new RepositoryTrack(this);
+        return new RepositoryTrack(config, this);
     }
 
     @Override
@@ -344,7 +342,7 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
                 ContractDetailsCacheImpl contractDetailsCache = (ContractDetailsCacheImpl) contractDetails;
 
                 if (contractDetailsCache.getOriginalContractDetails() == null) {
-                    ContractDetails originalContractDetails = new ContractDetailsImpl();
+                    ContractDetails originalContractDetails = new ContractDetailsImpl(config);
                     originalContractDetails.setAddress(hash.getData());
                     contractDetailsCache.setOriginalContractDetails(originalContractDetails);
                     contractDetailsCache.commit();
@@ -400,7 +398,7 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
 
     @Override
     public synchronized Repository getSnapshotTo(byte[] root) {
-        RepositoryImpl snapshotRepository = new RepositoryImpl(this.store, this.detailsDataStore);
+        RepositoryImpl snapshotRepository = new RepositoryImpl(this.config, this.store, this.detailsDataStore);
         snapshotRepository.syncToRoot(root);
         return snapshotRepository;
     }

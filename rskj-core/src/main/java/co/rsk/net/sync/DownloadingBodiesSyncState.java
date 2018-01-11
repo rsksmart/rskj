@@ -1,5 +1,6 @@
 package co.rsk.net.sync;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.BodyResponseMessage;
@@ -50,14 +51,17 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     // peers that can be used to download blocks
     private final List<NodeID> suitablePeers;
+    private final RskSystemProperties config;
 
-    public DownloadingBodiesSyncState(SyncConfiguration syncConfiguration,
+    public DownloadingBodiesSyncState(RskSystemProperties config,
+                                      SyncConfiguration syncConfiguration,
                                       SyncEventsHandler syncEventsHandler,
                                       SyncInformation syncInformation,
                                       List<Deque<BlockHeader>> pendingHeaders,
                                       Map<NodeID, List<BlockIdentifier>> skeletons) {
 
         super(syncInformation, syncEventsHandler, syncConfiguration);
+        this.config = config;
         this.blockUnclesHashValidationRule = new BlockUnclesHashValidationRule();
         this.blockTransactionsValidationRule = new BlockRootValidationRule();
         this.pendingBodyResponses = new HashMap<>();
@@ -84,7 +88,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
         // we already checked that this message was expected
         BlockHeader header = pendingBodyResponses.remove(message.getId()).header;
-        Block block = Block.fromValidData(header, message.getTransactions(), message.getUncles());
+        Block block = Block.fromValidData(config, header, message.getTransactions(), message.getUncles());
         if (!blockUnclesHashValidationRule.isValid(block) || !blockTransactionsValidationRule.isValid(block)) {
             handleInvalidMessage(peerId, header);
             return;

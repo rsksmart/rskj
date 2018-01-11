@@ -18,6 +18,7 @@
 
 package co.rsk.core;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -41,7 +42,7 @@ public class TransactionTest {
 
     @Test  /* achieve public key of the sender */
     public void test2() throws Exception {
-        if (Transaction.getConfigChainId() != 0)
+        if (Transaction.getConfigChainId(ConfigHelper.CONFIG) != 0)
             return;
 
         // cat --> 79b08ad8787060333663d19704909ee7b1903e58
@@ -58,7 +59,7 @@ public class TransactionTest {
         byte[] gas = Hex.decode("4255");
 
         // Tn (nonce); Tp(pgas); Tg(gaslimi); Tt(value); Tv(value); Ti(sender);  Tw; Tr; Ts
-        Transaction tx = new Transaction(null, gasPrice, gas, ecKey.getAddress(),
+        Transaction tx = new Transaction(ConfigHelper.CONFIG, null, gasPrice, gas, ecKey.getAddress(),
                 value.toByteArray(),
                 null);
 
@@ -180,7 +181,7 @@ public class TransactionTest {
                 {
                     Repository track = repository.startTracking();
 
-                    Transaction txConst = CallTransaction.createCallTransaction(0, 0, 100000000000000L,
+                    Transaction txConst = CallTransaction.createCallTransaction(ConfigHelper.CONFIG, 0, 0, 100000000000000L,
                             new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
                             CallTransaction.Function.fromSignature("get"));
                     txConst.sign(new byte[32]);
@@ -188,7 +189,7 @@ public class TransactionTest {
                     Block bestBlock = block;
 
                     TransactionExecutor executor = new TransactionExecutor
-                            (txConst, 0, bestBlock.getCoinbase(), track, new BlockStoreDummy(), null,
+                            (ConfigHelper.CONFIG, txConst, 0, bestBlock.getCoinbase(), track, new BlockStoreDummy(), null,
                                     invokeFactory, bestBlock)
                             .setLocalCall(true);
 
@@ -220,7 +221,7 @@ public class TransactionTest {
         byte[] value = BigInteger.valueOf(1000000000000000000L).toByteArray();
         byte[] data = new byte[0];
         byte chainId = 1;
-        Transaction tx = new Transaction(nonce, gasPrice, gas, to, value, data, chainId);
+        Transaction tx = new Transaction(ConfigHelper.CONFIG, nonce, gasPrice, gas, to, value, data, chainId);
         byte[] encoded = tx.getEncodedRaw();
         byte[] hash = tx.getRawHash();
         String strenc = Hex.toHexString(encoded);
@@ -233,37 +234,37 @@ public class TransactionTest {
 
     @Test
     public void isContractCreationWhenReceiveAddressIsNull() {
-        Transaction tx = Transaction.create(null, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = Transaction.create(ConfigHelper.CONFIG, null, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
         Assert.assertTrue(tx.isContractCreation());
     }
 
     @Test
     public void isContractCreationWhenReceiveAddressIsEmptyString() {
-        Transaction tx = Transaction.create("", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = Transaction.create(ConfigHelper.CONFIG, "", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
         Assert.assertTrue(tx.isContractCreation());
     }
 
     @Test
     public void isContractCreationWhenReceiveAddressIs00() {
-        Transaction tx = Transaction.create("00", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = Transaction.create(ConfigHelper.CONFIG, "00", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
         Assert.assertTrue(tx.isContractCreation());
     }
 
     @Test
     public void isContractCreationWhenReceiveAddressIsFortyZeroes() {
-        Transaction tx = Transaction.create("0000000000000000000000000000000000000000", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = Transaction.create(ConfigHelper.CONFIG, "0000000000000000000000000000000000000000", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
         Assert.assertTrue(tx.isContractCreation());
     }
 
     @Test
     public void isNotContractCreationWhenReceiveAddressIsCowAddress() {
-        Transaction tx = Transaction.create("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = Transaction.create(ConfigHelper.CONFIG, "cd2a3d9f938e13cd947ec05abc7fe734df8dd826", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
         Assert.assertFalse(tx.isContractCreation());
     }
 
     @Test
     public void isNotContractCreationWhenReceiveAddressIsBridgeAddress() {
-        Transaction tx = Transaction.create(PrecompiledContracts.BRIDGE_ADDR_STR, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
+        Transaction tx = Transaction.create(ConfigHelper.CONFIG, PrecompiledContracts.BRIDGE_ADDR_STR, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L));
         Assert.assertFalse(tx.isContractCreation());
     }
 

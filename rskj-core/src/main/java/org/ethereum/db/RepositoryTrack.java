@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.db.ContractDetailsImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
@@ -48,15 +49,18 @@ public class RepositoryTrack implements Repository {
     private static final byte[] EMPTY_DATA_HASH = HashUtil.sha3(EMPTY_BYTE_ARRAY);
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
-    Map<ByteArrayWrapper, AccountState> cacheAccounts = new HashMap<>();
-    Map<ByteArrayWrapper, ContractDetails> cacheDetails = new HashMap<>();
+    private final Map<ByteArrayWrapper, AccountState> cacheAccounts = new HashMap<>();
+    private final Map<ByteArrayWrapper, ContractDetails> cacheDetails = new HashMap<>();
 
-    DetailsDataStore dds = new DetailsDataStore();
+    private final RskSystemProperties config;
+    private final DetailsDataStore dds;
 
     Repository repository;
 
-    public RepositoryTrack(Repository repository) {
+    public RepositoryTrack(RskSystemProperties config, Repository repository) {
+        this.config = config;
         this.repository = repository;
+        dds = new DetailsDataStore(this.config);
         dds.setDB(new DatabaseImpl(new HashMapDB()));
     }
 
@@ -66,7 +70,7 @@ public class RepositoryTrack implements Repository {
         synchronized (repository) {
             logger.trace("createAccount: [{}]", Hex.toHexString(addr));
 
-            AccountState accountState = new AccountState();
+            AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
             cacheAccounts.put(wrap(addr), accountState);
 
             ContractDetails contractDetails = new ContractDetailsCacheImpl(null);
@@ -322,7 +326,7 @@ public class RepositoryTrack implements Repository {
     public Repository startTracking() {
         logger.debug("start tracking");
 
-        return new RepositoryTrack(this);
+        return new RepositoryTrack(config, this);
     }
 
 

@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -37,10 +38,10 @@ public class InternalTransaction extends Transaction {
     private boolean rejected = false;
     private String note;
 
-    public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
+    public InternalTransaction(RskSystemProperties config, byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
                                byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
 
-        super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data));
+        super(config, nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data));
 
         this.parentHash = parentHash;
         this.deep = deep;

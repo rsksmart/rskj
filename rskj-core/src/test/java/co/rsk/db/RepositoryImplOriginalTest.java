@@ -19,7 +19,7 @@
 
 package co.rsk.db;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Genesis;
@@ -52,7 +52,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test1() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
 
         byte[] cow   = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         byte[] horse = Hex.decode("13978AEE95F38490E9769C39B2773ED763D9CD5F");
@@ -69,7 +69,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test2() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         byte[] horse = Hex.decode("13978AEE95F38490E9769C39B2773ED763D9CD5F");
@@ -85,7 +85,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test3() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         byte[] horse = Hex.decode("13978AEE95F38490E9769C39B2773ED763D9CD5F");
@@ -104,7 +104,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test4() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
         Repository track = repository.startTracking();
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
@@ -128,7 +128,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test5() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
 
         Repository track = repository.startTracking();
 
@@ -158,7 +158,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test6() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
         Repository track = repository.startTracking();
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
@@ -190,7 +190,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test7() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
         Repository track = repository.startTracking();
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
@@ -212,7 +212,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test8() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
         Repository track = repository.startTracking();
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
@@ -234,7 +234,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test7_1() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
         Repository track1 = repository.startTracking();
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
@@ -267,7 +267,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test7_2() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
         Repository track1 = repository.startTracking();
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
@@ -300,7 +300,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test9() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
         Repository track = repository.startTracking();
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
@@ -328,7 +328,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test10() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
         Repository track = repository.startTracking();
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
@@ -357,7 +357,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test11() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
         Repository track = repository.startTracking();
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
@@ -382,7 +382,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test12() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
         Repository track = repository.startTracking();
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
@@ -407,10 +407,10 @@ public class RepositoryImplOriginalTest {
 
     @Test  // Let's upload genesis pre-mine just like in the real world
     public void test13() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
         Repository track = repository.startTracking();
 
-        Genesis genesis = (Genesis)Genesis.getInstance(RskSystemProperties.CONFIG);
+        Genesis genesis = (Genesis)Genesis.getInstance(ConfigHelper.CONFIG);
         for (ByteArrayWrapper key : genesis.getPremine().keySet()) {
             repository.createAccount(key.getData());
             repository.addBalance(key.getData(), genesis.getPremine().get(key).getAccountState().getBalance());
@@ -426,7 +426,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test14() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         byte[] horse = Hex.decode("13978AEE95F38490E9769C39B2773ED763D9CD5F");
@@ -461,7 +461,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test15() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         byte[] horse = Hex.decode("13978AEE95F38490E9769C39B2773ED763D9CD5F");
@@ -495,7 +495,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test16() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         byte[] horse = Hex.decode("13978AEE95F38490E9769C39B2773ED763D9CD5F");
@@ -554,7 +554,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test16_2() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         byte[] horse = Hex.decode("13978AEE95F38490E9769C39B2773ED763D9CD5F");
@@ -608,7 +608,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test16_3() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         byte[] horse = Hex.decode("13978AEE95F38490E9769C39B2773ED763D9CD5F");
@@ -662,7 +662,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test16_4() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         byte[] horse = Hex.decode("13978AEE95F38490E9769C39B2773ED763D9CD5F");
@@ -706,7 +706,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test16_5() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
         byte[] horse = Hex.decode("13978AEE95F38490E9769C39B2773ED763D9CD5F");
@@ -746,7 +746,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test17() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
 
@@ -772,7 +772,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test18() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
         Repository repoTrack2 = repository.startTracking(); //track
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
@@ -796,7 +796,7 @@ public class RepositoryImplOriginalTest {
 
     @Test
     public void test19() {
-        Repository repository = new RepositoryImpl();
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
         Repository track = repository.startTracking();
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
@@ -841,7 +841,7 @@ public class RepositoryImplOriginalTest {
     @Test // testing for snapshot
     public void test20() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new RepositoryImpl(store);
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, store);
         byte[] root = repository.getRoot();
 
         byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
@@ -901,7 +901,7 @@ public class RepositoryImplOriginalTest {
     @Test // testing for snapshot
     public void testMultiThread() throws InterruptedException {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
-        final Repository repository = new RepositoryImpl(store);
+        final Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, store);
 
         final byte[] cow = Hex.decode("CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826");
 

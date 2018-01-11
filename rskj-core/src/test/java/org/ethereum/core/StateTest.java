@@ -20,7 +20,7 @@
 package org.ethereum.core;
 
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import co.rsk.trie.Trie;
@@ -131,7 +131,7 @@ public class StateTest {
 
     private Trie generateGenesisState() {
         Trie trie = new TrieImpl();
-        Genesis genesis = (Genesis)Genesis.getInstance(RskSystemProperties.CONFIG);
+        Genesis genesis = (Genesis)Genesis.getInstance(ConfigHelper.CONFIG);
 
         for (ByteArrayWrapper key : genesis.getPremine().keySet())
             trie = trie.put(key.getData(), genesis.getPremine().get(key).getAccountState().getEncoded());

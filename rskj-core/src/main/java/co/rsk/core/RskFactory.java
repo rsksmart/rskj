@@ -100,7 +100,8 @@ public class RskFactory {
     }
 
     @Bean
-    public SyncProcessor getSyncProcessor(Blockchain blockchain,
+    public SyncProcessor getSyncProcessor(RskSystemProperties config,
+                                          Blockchain blockchain,
                                           BlockSyncService blockSyncService,
                                           PeerScoringManager peerScoringManager,
                                           SyncConfiguration syncConfiguration,
@@ -108,7 +109,7 @@ public class RskFactory {
                                           ProofOfWorkRule proofOfWorkRule) {
 
         // TODO(lsebrie): add new BlockCompositeRule(new ProofOfWorkRule(), blockTimeStampValidationRule, new ValidGasUsedRule());
-        return new SyncProcessor(blockchain, blockSyncService, peerScoringManager, syncConfiguration, proofOfWorkRule, difficultyCalculator);
+        return new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, syncConfiguration, proofOfWorkRule, difficultyCalculator);
     }
 
     @Bean
@@ -120,13 +121,13 @@ public class RskFactory {
     }
 
     @Bean
-    public SyncPool getSyncPool(EthereumListener ethereumListener, Blockchain blockchain, SystemProperties config, NodeManager nodeManager, SyncPool.PeerClientFactory peerClientFactory) {
+    public SyncPool getSyncPool(EthereumListener ethereumListener, Blockchain blockchain, RskSystemProperties config, NodeManager nodeManager, SyncPool.PeerClientFactory peerClientFactory) {
         return new SyncPool(ethereumListener, blockchain, config, nodeManager, peerClientFactory);
     }
 
     @Bean
-    public TxHandler getTxHandler(WorldManager worldManager, Repository repository, Blockchain blockchain) {
-        return new TxHandlerImpl(worldManager, repository, blockchain);
+    public TxHandler getTxHandler(RskSystemProperties config, WorldManager worldManager, Repository repository, Blockchain blockchain) {
+        return new TxHandlerImpl(config, worldManager, repository, blockchain);
     }
 
     @Bean
@@ -155,14 +156,14 @@ public class RskFactory {
                                         BlockValidator blockValidator,
                                         RskSystemProperties config) {
         return new BlockChainImpl(
+                config,
                 repository,
                 blockStore,
                 receiptStore,
                 null, // circular dependency
                 listener,
                 adminInfo,
-                blockValidator,
-                config
+                blockValidator
         );
     }
 
@@ -199,7 +200,7 @@ public class RskFactory {
     }
 
     @Bean
-    public EthereumChannelInitializer.ChannelFactory getChannelFactory(SystemProperties config,
+    public EthereumChannelInitializer.ChannelFactory getChannelFactory(RskSystemProperties config,
                                                                        EthereumListener ethereumListener,
                                                                        ConfigCapabilities configCapabilities,
                                                                        NodeManager nodeManager,
@@ -209,7 +210,7 @@ public class RskFactory {
         return () -> {
             HandshakeHandler handshakeHandler = new HandshakeHandler(config, peerScoringManager);
             MessageQueue messageQueue = new MessageQueue();
-            P2pHandler p2pHandler = new P2pHandler(ethereumListener, configCapabilities, config);
+            P2pHandler p2pHandler = new P2pHandler(config, ethereumListener, configCapabilities);
             MessageCodec messageCodec = new MessageCodec(ethereumListener, config);
             return new Channel(config, messageQueue, p2pHandler, messageCodec, handshakeHandler, nodeManager, ethHandlerFactory, staticMessages);
         };
@@ -222,7 +223,7 @@ public class RskFactory {
                                                                                   RskSystemProperties config,
                                                                                   CompositeEthereumListener ethereumListener){
         // TODO: break MessageHandler circular dependency
-        return () -> new RskWireProtocol(peerScoringManager, ctx.getBean(MessageHandler.class), blockchain, config, ethereumListener);
+        return () -> new RskWireProtocol(config, peerScoringManager, ctx.getBean(MessageHandler.class), blockchain, ethereumListener);
     }
 
     @Bean
@@ -240,27 +241,27 @@ public class RskFactory {
         }
 
         logger.info("Local wallet enabled");
-        KeyValueDataSource ds = new LevelDbDataSource("wallet");
+        KeyValueDataSource ds = new LevelDbDataSource(config, "wallet");
         ds.init();
         return new Wallet(ds);
     }
 
     @Bean
-    public PersonalModule getPersonalModuleWallet(Rsk rsk, Wallet wallet, PendingState pendingState) {
+    public PersonalModule getPersonalModuleWallet(RskSystemProperties config, Rsk rsk, Wallet wallet, PendingState pendingState) {
         if (wallet == null) {
             return new PersonalModuleWalletDisabled();
         }
 
-        return new PersonalModuleWalletEnabled(rsk, wallet, pendingState);
+        return new PersonalModuleWalletEnabled(config, rsk, wallet, pendingState);
     }
 
     @Bean
-    public EthModuleWallet getEthModuleWallet(Rsk rsk, Wallet wallet, PendingState pendingState) {
+    public EthModuleWallet getEthModuleWallet(RskSystemProperties config, Rsk rsk, Wallet wallet, PendingState pendingState) {
         if (wallet == null) {
             return new EthModuleWalletDisabled();
         }
 
-        return new EthModuleWalletEnabled(rsk, wallet, pendingState);
+        return new EthModuleWalletEnabled(config, rsk, wallet, pendingState);
     }
 
     @Bean

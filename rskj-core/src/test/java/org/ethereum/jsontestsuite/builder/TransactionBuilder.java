@@ -19,6 +19,7 @@
 
 package org.ethereum.jsontestsuite.builder;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.core.Transaction;
 import org.ethereum.jsontestsuite.model.TransactionTck;
 
@@ -32,7 +33,7 @@ public class TransactionBuilder {
         if (transactionTck.getSecretKey() != null){
 
             transaction = new Transaction(
-                    parseVarData(transactionTck.getNonce()),
+                    ConfigHelper.CONFIG, parseVarData(transactionTck.getNonce()),
                     parseVarData(transactionTck.getGasPrice()),
                     parseVarData(transactionTck.getGasLimit()),
                     parseData(transactionTck.getTo()),
@@ -43,7 +44,7 @@ public class TransactionBuilder {
         } else {
 
             transaction = new Transaction(
-                    parseNumericData(transactionTck.getNonce()),
+                    ConfigHelper.CONFIG, parseNumericData(transactionTck.getNonce()),
                     parseNumericData(transactionTck.getGasPrice()),
                     parseVarData(transactionTck.getGasLimit()),
                     parseData(transactionTck.getTo()),

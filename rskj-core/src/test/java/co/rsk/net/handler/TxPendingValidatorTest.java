@@ -19,16 +19,14 @@
 package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
+import co.rsk.config.ConfigHelper;
 import co.rsk.remasc.RemascTransaction;
-import org.ethereum.core.*;
-import org.ethereum.manager.WorldManager;
+import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
-import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Random;
 
 public class TxPendingValidatorTest {
 
@@ -44,7 +42,7 @@ public class TxPendingValidatorTest {
     @Test
     public void remascTx() {
         TxPendingValidator validator = new TxPendingValidator();
-        Assert.assertFalse(validator.isValid(new RemascTransaction(0), null));
+        Assert.assertFalse(validator.isValid(new RemascTransaction(ConfigHelper.CONFIG, 0), null));
     }
 
     @Test

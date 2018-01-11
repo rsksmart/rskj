@@ -19,6 +19,7 @@
 
 package org.ethereum.core.genesis;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.db.ContractDetailsImpl;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
@@ -29,10 +30,16 @@ import org.spongycastle.util.encoders.Hex;
  */
 public class ContractDetailsMapper {
 
+    private final RskSystemProperties config;
+
+    public ContractDetailsMapper(RskSystemProperties config) {
+        this.config = config;
+    }
+
     public ContractDetails mapFromContract(Contract contract) {
         ContractDetails contractDetails;
 
-        contractDetails = new ContractDetailsImpl();
+        contractDetails = new ContractDetailsImpl(config);
 
         if (contract.getCode()!=null) {
             contractDetails.setCode(Hex.decode(contract.getCode()));

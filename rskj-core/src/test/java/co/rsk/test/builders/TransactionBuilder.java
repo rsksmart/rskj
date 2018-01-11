@@ -18,6 +18,7 @@
 
 package co.rsk.test.builders;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.core.Account;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
@@ -91,12 +92,13 @@ public class TransactionBuilder {
 
     public Transaction build() {
         Transaction tx = Transaction.create(
-                receiver != null ? Hex.toHexString(receiver.getAddress().getBytes()) : (receiverAddress != null ? Hex.toHexString(receiverAddress) : null),
+                ConfigHelper.CONFIG, receiver != null ? Hex.toHexString(receiver.getAddress().getBytes()) : (receiverAddress != null ? Hex.toHexString(receiverAddress) : null),
                 value, nonce, gasPrice, gasLimit, data);
         tx.sign(sender.getEcKey().getPrivKeyBytes());
 
-        if (this.immutable)
-            return new ImmutableTransaction(tx.getEncoded());
+        if (this.immutable) {
+            return new ImmutableTransaction(ConfigHelper.CONFIG, tx.getEncoded());
+        }
 
         return tx;
     }

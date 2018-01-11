@@ -18,6 +18,8 @@
 
 package co.rsk.core;
 
+import co.rsk.config.ConfigHelper;
+import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,7 +29,6 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ContractDetails;
-import co.rsk.db.RepositoryImpl;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.AfterClass;
@@ -35,7 +36,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +58,7 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testEmptyRepo() throws Exception {
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
 
         Map result = writeAndReadJson(repository);
 
@@ -64,7 +67,7 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testNoContracts() throws Exception {
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
         String address1String = "1000000000000000000000000000000000000000";
         byte[] address1 = Hex.decode(address1String);
         repository.createAccount(address1);
@@ -108,13 +111,13 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testContracts() throws Exception {
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
         String address1String = "1000000000000000000000000000000000000000";
         byte[] address1 = Hex.decode(address1String);
         repository.createAccount(address1);
         repository.addBalance(address1, BigInteger.ONE);
         repository.increaseNonce(address1);
-        ContractDetails contractDetails = new co.rsk.db.ContractDetailsImpl();
+        ContractDetails contractDetails = new co.rsk.db.ContractDetailsImpl(ConfigHelper.CONFIG);
         contractDetails.setCode(new byte[] {1, 2, 3, 4});
         contractDetails.put(DataWord.ZERO, DataWord.ONE);
         contractDetails.putBytes(DataWord.ONE, new byte[] {5, 6, 7, 8});

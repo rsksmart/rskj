@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.DifficultyCalculator;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
@@ -46,19 +46,19 @@ import static org.junit.Assert.assertEquals;
 public class GitHubBasicTest {
 
     private static final Logger logger = LoggerFactory.getLogger("TCK-Test");
-    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(RskSystemProperties.CONFIG);
+    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(ConfigHelper.CONFIG);
 
     public String shacommit = "99afe8f5aad7bca5d0f1b1685390a4dea32d73c3";
 
     @After
     public void recover() {
-        RskSystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+        ConfigHelper.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
     }
 
     @Test
     public void runDifficultyTest() throws IOException, ParseException {
 
-        RskSystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+        ConfigHelper.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficulty.json", shacommit);
 
@@ -78,7 +78,7 @@ public class GitHubBasicTest {
     @Test
     public void runDifficultyFrontierTest() throws IOException, ParseException {
 
-        RskSystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+        ConfigHelper.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficultyFrontier.json", shacommit);
 
@@ -98,7 +98,7 @@ public class GitHubBasicTest {
     @Test
     public void runDifficultyHomesteadTest() throws IOException, ParseException {
 
-        RskSystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig());
+        ConfigHelper.CONFIG.setBlockchainConfig(new GenesisConfig());
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficultyHomestead.json", shacommit);
 

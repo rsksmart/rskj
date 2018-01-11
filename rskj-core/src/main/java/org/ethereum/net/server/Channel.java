@@ -19,11 +19,11 @@
 
 package org.ethereum.net.server;
 
+import co.rsk.config.RskSystemProperties;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.timeout.ReadTimeoutHandler;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeaderWrapper;
 import org.ethereum.core.BlockWrapper;
@@ -61,7 +61,7 @@ public class Channel {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
 
-    private final SystemProperties config;
+    private final RskSystemProperties config;
     private final MessageQueue msgQueue;
     private final P2pHandler p2pHandler;
     private final MessageCodec messageCodec;
@@ -80,9 +80,9 @@ public class Channel {
     private boolean discoveryMode;
     private boolean isActive;
 
-    private PeerStatistics peerStats = new PeerStatistics();
+    private final PeerStatistics peerStats = new PeerStatistics();
 
-    public Channel(SystemProperties config,
+    public Channel(RskSystemProperties config,
                    MessageQueue msgQueue,
                    P2pHandler p2pHandler,
                    MessageCodec messageCodec,
@@ -195,7 +195,7 @@ public class Channel {
 
     private MessageFactory createEthMessageFactory(EthVersion version) {
         switch (version) {
-            case V62:   return new Eth62MessageFactory();
+            case V62:   return new Eth62MessageFactory(config);
             default:    throw new IllegalArgumentException("Eth " + version + " is not supported");
         }
     }

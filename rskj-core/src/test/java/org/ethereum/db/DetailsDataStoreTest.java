@@ -19,20 +19,14 @@
 
 package org.ethereum.db;
 
+import co.rsk.config.ConfigHelper;
 import co.rsk.db.ContractDetailsImpl;
-import org.ethereum.config.SystemProperties;
-import org.ethereum.datasource.DataSourcePool;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
-import javax.annotation.Nullable;
-import java.util.Map;
-
 import static org.ethereum.TestUtils.*;
-import static org.ethereum.util.ByteUtil.toHexString;
 import static org.junit.Assert.*;
 
 public class DetailsDataStoreTest {
@@ -40,7 +34,7 @@ public class DetailsDataStoreTest {
     @Test
     public void test1(){
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore();
+        DetailsDataStore dds = new DetailsDataStore(ConfigHelper.CONFIG);
         dds.setDB(db);
 
         byte[] c_key = Hex.decode("1a2b");
@@ -48,7 +42,7 @@ public class DetailsDataStoreTest {
         byte[] key =  Hex.decode("11");
         byte[] value =  Hex.decode("aa");
 
-        ContractDetails contractDetails = new ContractDetailsImpl();
+        ContractDetails contractDetails = new ContractDetailsImpl(ConfigHelper.CONFIG);
         contractDetails.setAddress(randomAddress());
         contractDetails.setCode(code);
         contractDetails.put(new DataWord(key), new DataWord(value));
@@ -73,7 +67,7 @@ public class DetailsDataStoreTest {
     public void test2(){
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore();
+        DetailsDataStore dds = new DetailsDataStore(ConfigHelper.CONFIG);
         dds.setDB(db);
 
         byte[] c_key = Hex.decode("1a2b");
@@ -81,7 +75,7 @@ public class DetailsDataStoreTest {
         byte[] key =  Hex.decode("11");
         byte[] value =  Hex.decode("aa");
 
-        ContractDetails contractDetails = new ContractDetailsImpl();
+        ContractDetails contractDetails = new ContractDetailsImpl(ConfigHelper.CONFIG);
         contractDetails.setCode(code);
         contractDetails.setAddress(randomAddress());
         contractDetails.put(new DataWord(key), new DataWord(value));
@@ -110,7 +104,7 @@ public class DetailsDataStoreTest {
     public void test3(){
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore();
+        DetailsDataStore dds = new DetailsDataStore(ConfigHelper.CONFIG);
         dds.setDB(db);
 
         byte[] c_key = Hex.decode("1a2b");
@@ -118,7 +112,7 @@ public class DetailsDataStoreTest {
         byte[] key =  Hex.decode("11");
         byte[] value =  Hex.decode("aa");
 
-        ContractDetails contractDetails = new ContractDetailsImpl();
+        ContractDetails contractDetails = new ContractDetailsImpl(ConfigHelper.CONFIG);
         contractDetails.setCode(code);
         contractDetails.put(new DataWord(key), new DataWord(value));
 
@@ -149,7 +143,7 @@ public class DetailsDataStoreTest {
     public void test4() {
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore();
+        DetailsDataStore dds = new DetailsDataStore(ConfigHelper.CONFIG);
         dds.setDB(db);
 
         byte[] c_key = Hex.decode("1a2b");

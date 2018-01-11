@@ -18,6 +18,7 @@
 
 package co.rsk.net.eth;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.messages.Message;
 import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.eth.message.EthMessageCodes;
@@ -28,13 +29,16 @@ import org.ethereum.util.RLPList;
  * Created by ajlopez on 5/14/2016.
  */
 public class RskMessage extends EthMessage {
+    private final RskSystemProperties config;
     private Message message;
 
-    public RskMessage(byte[] encoded) {
+    public RskMessage(RskSystemProperties config, byte[] encoded) {
         super(encoded);
+        this.config = config;
     }
 
-    public RskMessage(Message message) {
+    public RskMessage(RskSystemProperties config, Message message) {
+        this.config = config;
         this.message = message;
         this.parsed = true;
     }
@@ -55,7 +59,7 @@ public class RskMessage extends EthMessage {
     protected void parse() {
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
 
-        this.message = Message.create((RLPList) paramsList.get(0));
+        this.message = Message.create(config, (RLPList) paramsList.get(0));
 
         this.parsed = true;
     }

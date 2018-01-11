@@ -74,14 +74,14 @@ import static org.ethereum.rpc.TypeConverter.*;
 public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
 
-    private SnapshotManager snapshotManager = new SnapshotManager();
-    private MinerManager minerManager = new MinerManager();
+    private final SnapshotManager snapshotManager = new SnapshotManager();
+    private final MinerManager minerManager = new MinerManager();
 
     public org.ethereum.facade.Repository repository;
 
     public Ethereum eth;
 
-    private String baseClientVersion = "RskJ";
+    private final String baseClientVersion = "RskJ";
 
     CompositeEthereumListener compositeEthereumListener;
 
@@ -89,9 +89,9 @@ public class Web3Impl implements Web3 {
 
     private final Object filterLock = new Object();
 
-    private MinerClient minerClient;
+    private final MinerClient minerClient;
     protected MinerServer minerServer;
-    private ChannelManager channelManager;
+    private final ChannelManager channelManager;
     private final PeerScoringManager peerScoringManager;
     private final PeerServer peerServer;
 
@@ -103,8 +103,8 @@ public class Web3Impl implements Web3 {
     private final PendingState pendingState;
     private final RskSystemProperties properties;
 
-    private PersonalModule personalModule;
-    private EthModule ethModule;
+    private final PersonalModule personalModule;
+    private final EthModule ethModule;
 
     protected Web3Impl(Ethereum eth,
                        WorldManager worldManager,
@@ -606,7 +606,7 @@ public class Web3Impl implements Web3 {
     public String eth_sendRawTransaction(String rawData) throws Exception {
         String s = null;
         try {
-            Transaction tx = new ImmutableTransaction(stringHexToByteArray(rawData));
+            Transaction tx = new ImmutableTransaction(properties, stringHexToByteArray(rawData));
 
             if (null == tx.getGasLimit()
                     || null == tx.getGasPrice()
@@ -861,7 +861,7 @@ public class Web3Impl implements Web3 {
             BlockHeader uncleHeader = block.getUncleList().get(idx);
             Block uncle = blockchain.getBlockByHash(uncleHeader.getHash());
             if (uncle == null) {
-                uncle = new Block(uncleHeader, Collections.emptyList(), Collections.emptyList());
+                uncle = new Block(properties, uncleHeader, Collections.emptyList(), Collections.emptyList());
             }
             return s = getBlockResult(uncle, false);
         } finally {

@@ -52,6 +52,8 @@ public class ContractDetailsImpl implements ContractDetails {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final Logger logger = LoggerFactory.getLogger("contractdetails");
 
+    private final RskSystemProperties config;
+
     private Trie trie;
     private byte[] code;
     private byte[] address;
@@ -62,15 +64,17 @@ public class ContractDetailsImpl implements ContractDetails {
     private boolean closed;
     private Set<ByteArrayWrapper> keys = new HashSet<>();
 
-    public ContractDetailsImpl(byte[] encoded) {
+    public ContractDetailsImpl(RskSystemProperties config, byte[] encoded) {
+        this.config = config;
         decode(encoded);
     }
 
-    public ContractDetailsImpl() {
-        this(null, new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), null);
+    public ContractDetailsImpl(RskSystemProperties config) {
+        this(config, null, new TrieImpl(new TrieStoreImpl(new HashMapDB()), true), null);
     }
 
-    public ContractDetailsImpl(byte[] address, Trie trie, byte[] code) {
+    public ContractDetailsImpl(RskSystemProperties config, byte[] address, Trie trie, byte[] code) {
+        this.config = config;
         this.address = ByteUtils.clone(address);
         this.trie = trie;
         this.code = ByteUtils.clone(code);
@@ -188,7 +192,7 @@ public class ContractDetailsImpl implements ContractDetails {
         this.originalExternalStorage = this.externalStorage;
 
         if (this.externalStorage) {
-            this.trie = new TrieImpl(new TrieStoreImpl(levelDbByName(getDataSourceName())), true).getSnapshotTo(rlpStorage.getRLPData());
+            this.trie = new TrieImpl(new TrieStoreImpl(levelDbByName(config, getDataSourceName())), true).getSnapshotTo(rlpStorage.getRLPData());
         } else {
             this.trie = TrieImpl.deserialize(rlpStorage.getRLPData());
         }
@@ -328,7 +332,7 @@ public class ContractDetailsImpl implements ContractDetails {
                 // switching to data source
 
                 logger.trace("switching to data source, hash {}, address {}", hashString, addressString);
-                KeyValueDataSource ds = levelDbByName(this.getDataSourceName());
+                KeyValueDataSource ds = levelDbByName(config, this.getDataSourceName());
                 TrieStoreImpl newStore = new TrieStoreImpl(ds);
                 TrieStoreImpl originalStore = (TrieStoreImpl)((TrieImpl) this.trie).getStore();
                 newStore.copyFrom(originalStore);
@@ -362,14 +366,14 @@ public class ContractDetailsImpl implements ContractDetails {
 
         this.trie.save();
 
-        ContractDetailsImpl details = new ContractDetailsImpl(this.address, this.trie.getSnapshotTo(hash), this.code);
+        ContractDetailsImpl details = new ContractDetailsImpl(this.config, this.address, this.trie.getSnapshotTo(hash), this.code);
         details.keys = new HashSet<>();
         details.keys.addAll(this.keys);
         details.externalStorage = this.externalStorage;
         details.originalExternalStorage = this.originalExternalStorage;
 
         if (this.externalStorage) {
-            levelDbByName(getDataSourceName());
+            levelDbByName(config, getDataSourceName());
         }
 
         logger.trace("getting contract details snapshot hash {}, address {}, storage size {}, has external storage {}", details.getStorageHashAsString(), details.getAddressAsString(), details.getStorageSize(), details.hasExternalStorage());
@@ -400,7 +404,7 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
     private void checkExternalStorage() {
-        this.externalStorage = (keys.size() > RskSystemProperties.CONFIG.detailsInMemoryStorageLimit()) || this.externalStorage;
+        this.externalStorage = (keys.size() > config.detailsInMemoryStorageLimit()) || this.externalStorage;
     }
 
     private String getDataSourceName() {
@@ -427,7 +431,7 @@ public class ContractDetailsImpl implements ContractDetails {
         }
 
         logger.trace("reopening contract details data source");
-        KeyValueDataSource ds = levelDbByName(this.getDataSourceName());
+        KeyValueDataSource ds = levelDbByName(config, this.getDataSourceName());
         TrieStoreImpl newStore = new TrieStoreImpl(ds);
         Trie newTrie = newStore.retrieve(this.trie.getHash());
         this.trie = newTrie;

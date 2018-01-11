@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.config.ConfigHelper;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.*;
@@ -288,7 +289,7 @@ public class ReceiptStoreImplTest {
         // TODO calculate cumulative gas
         TransactionReceipt receipt = new TransactionReceipt(stateRoot, gasUsed, gasUsed, bloom, logs, new byte[]{0x01});
 
-        receipt.setTransaction(new Transaction(null, null, null, null, null, null));
+        receipt.setTransaction(new Transaction(ConfigHelper.CONFIG, null, null, null, null, null, null));
 
         return receipt;
     }

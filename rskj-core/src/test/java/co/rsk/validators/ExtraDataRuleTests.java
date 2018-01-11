@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
@@ -36,7 +37,7 @@ public class ExtraDataRuleTests {
         BlockHeader blockHeader = Mockito.mock(BlockHeader.class);
         Mockito.when(blockHeader.getExtraData()).thenReturn(new byte[32]);
 
-        Block block = new Block(blockHeader);
+        Block block = new Block(ConfigHelper.CONFIG, blockHeader);
 
         ExtraDataRule rule = new ExtraDataRule(42);
 
@@ -49,7 +50,7 @@ public class ExtraDataRuleTests {
         BlockHeader blockHeader = Mockito.mock(BlockHeader.class);
         Mockito.when(blockHeader.getExtraData()).thenReturn(null);
 
-        Block block = new Block(blockHeader);
+        Block block = new Block(ConfigHelper.CONFIG, blockHeader);
 
         ExtraDataRule rule = new ExtraDataRule(42);
 
@@ -62,7 +63,7 @@ public class ExtraDataRuleTests {
         BlockHeader blockHeader = Mockito.mock(BlockHeader.class);
         Mockito.when(blockHeader.getExtraData()).thenReturn(new byte[43]);
 
-        Block block = new Block(blockHeader);
+        Block block = new Block(ConfigHelper.CONFIG, blockHeader);
 
         ExtraDataRule rule = new ExtraDataRule(42);
 

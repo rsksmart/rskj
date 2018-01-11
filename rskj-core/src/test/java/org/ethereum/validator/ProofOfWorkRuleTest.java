@@ -21,8 +21,8 @@ package org.ethereum.validator;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blockchain.utils.BlockMiner;
+import co.rsk.config.ConfigHelper;
 import co.rsk.config.RskMiningConstants;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.mine.MinerUtils;
 import co.rsk.util.DifficultyUtils;
@@ -48,7 +48,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class ProofOfWorkRuleTest {
 
-    private ProofOfWorkRule rule = new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false);
+    private ProofOfWorkRule rule = new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false);
 
     @Test
     public void test_1() {
@@ -77,7 +77,7 @@ public class ProofOfWorkRuleTest {
         byte[] lastField = b.getBitcoinMergedMiningCoinbaseTransaction(); // last field
         b.flushRLP();// force re-encode
         byte[] encoded = b.getEncoded();
-        Block b2 = new Block(encoded);
+        Block b2 = new Block(ConfigHelper.CONFIG, encoded);
         byte[] lastField2 = b2.getBitcoinMergedMiningCoinbaseTransaction(); // last field
         b2.flushRLP();// force re-encode
         byte[] encoded2 = b2.getEncoded();
@@ -137,7 +137,7 @@ public class ProofOfWorkRuleTest {
         BlockMiner.findNonce(bitcoinMergedMiningBlock, targetBI);
 
         // We need to clone to allow modifications
-        Block newBlock = new Block(block.getEncoded()).cloneBlock();
+        Block newBlock = new Block(ConfigHelper.CONFIG, block.getEncoded()).cloneBlock();
 
         newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
 

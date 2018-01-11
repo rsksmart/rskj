@@ -19,6 +19,7 @@
 
 package org.ethereum.net.server;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.Metrics;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
@@ -31,7 +32,6 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.LRUMap;
 import org.ethereum.config.NodeFilter;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
@@ -67,7 +67,7 @@ public class ChannelManagerImpl implements ChannelManager {
     private static final int INBOUND_CONNECTION_BAN_TIMEOUT = 10 * 1000;
     private final Map<ByteArrayWrapper, Channel> activePeers = Collections.synchronizedMap(new HashMap<>());
     @Autowired
-    SystemProperties config;
+    RskSystemProperties config;
     @Autowired
     SyncPool syncPool;
 
@@ -166,7 +166,7 @@ public class ChannelManagerImpl implements ChannelManager {
 
         synchronized (activePeers) {
             TransactionsMessage txsmsg = new TransactionsMessage(tx);
-            EthMessage msg = new RskMessage(txsmsg);
+            EthMessage msg = new RskMessage(config, txsmsg);
             for (Channel channel : activePeers.values()) {
                 if (channel != receivedFrom) {
                     channel.sendMessage(msg);
@@ -189,8 +189,8 @@ public class ChannelManagerImpl implements ChannelManager {
 
         final Set<NodeID> res = new HashSet<>();
         final BlockIdentifier bi = new BlockIdentifier(block.getHash(), block.getNumber());
-        final EthMessage newBlock = new RskMessage(new BlockMessage(block));
-        final EthMessage newBlockHashes = new RskMessage(new NewBlockHashesMessage(Arrays.asList(bi)));
+        final EthMessage newBlock = new RskMessage(config, new BlockMessage(block));
+        final EthMessage newBlockHashes = new RskMessage(config, new NewBlockHashesMessage(Arrays.asList(bi)));
         synchronized (activePeers) {
             // Get a randomized list with all the peers that don't have the block yet.
             activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
@@ -219,7 +219,7 @@ public class ChannelManagerImpl implements ChannelManager {
     @Nonnull
     public Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, @Nullable final Set<NodeID> targets) {
         final Set<NodeID> res = new HashSet<>();
-        final EthMessage newBlockHash = new RskMessage(new NewBlockHashesMessage(identifiers));
+        final EthMessage newBlockHash = new RskMessage(config, new NewBlockHashesMessage(identifiers));
 
         synchronized (activePeers) {
             activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
@@ -250,7 +250,7 @@ public class ChannelManagerImpl implements ChannelManager {
         transactions.add(transaction);
 
         final Set<NodeID> res = new HashSet<>();
-        final EthMessage newTransactions = new RskMessage(new TransactionsMessage(transactions));
+        final EthMessage newTransactions = new RskMessage(config, new TransactionsMessage(transactions));
 
         synchronized (activePeers) {
             final Vector<Channel> peers = activePeers.values().stream()
@@ -267,7 +267,7 @@ public class ChannelManagerImpl implements ChannelManager {
 
     @Override
     public int broadcastStatus(Status status) {
-        final EthMessage message = new RskMessage(new StatusMessage(status));
+        final EthMessage message = new RskMessage(config, new StatusMessage(status));
 
         int npeers = 0;
 
@@ -305,7 +305,7 @@ public class ChannelManagerImpl implements ChannelManager {
      */
     @Deprecated // Use broadcastBlock
     public void sendNewBlock(Block block, Channel receivedFrom) {
-        EthMessage message = new RskMessage(new BlockMessage(block));
+        EthMessage message = new RskMessage(config, new BlockMessage(block));
 
         synchronized (activePeers) {
             for (Channel channel : activePeers.values()) {

@@ -19,8 +19,7 @@
 package co.rsk.remasc;
 
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.*;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.BridgeSupport;
@@ -28,8 +27,6 @@ import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RemascConfig;
-import co.rsk.config.RemascConfigFactory;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
@@ -73,8 +70,8 @@ public class RemascProcessMinerFeesTest {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
-        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
+        blockchainNetConfigOriginal = ConfigHelper.CONFIG.getBlockchainConfig();
+        ConfigHelper.CONFIG.setBlockchainConfig(new RegTestConfig());
         remascConfig = new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest");
 
         accountsAddressesUpToD = new LinkedList<>();
@@ -86,7 +83,7 @@ public class RemascProcessMinerFeesTest {
 
     @AfterClass
     public static void tearDownAfterClass() throws Exception {
-        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        ConfigHelper.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @Test
@@ -112,7 +109,7 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockWithOneTx);
         blocks.addAll(createSimpleBlocks(blockWithOneTx, 9));
 
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
+        BlockExecutor blockExecutor = new BlockExecutor(ConfigHelper.CONFIG, blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
@@ -155,7 +152,7 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockWithOneTx);
         blocks.addAll(createSimpleBlocks(blockWithOneTx, 9));
 
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
+        BlockExecutor blockExecutor = new BlockExecutor(ConfigHelper.CONFIG, blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
@@ -213,7 +210,7 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockThatIncludesUncle);
         blocks.addAll(createSimpleBlocks(blockThatIncludesUncle, 8));
 
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
+        BlockExecutor blockExecutor = new BlockExecutor(ConfigHelper.CONFIG, blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
@@ -315,7 +312,7 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockThatIncludesUnclesE);
         blocks.addAll(createSimpleBlocks(blockThatIncludesUnclesE, 7));
 
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), blockchain,
+        BlockExecutor blockExecutor = new BlockExecutor(ConfigHelper.CONFIG, blockchain.getRepository(), blockchain,
                 blockchain.getBlockStore(), null);
 
         for (Block b : blocks) {
@@ -431,7 +428,7 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockThatIncludesUncleC);
         blocks.addAll(createSimpleBlocks(blockThatIncludesUncleC, 7));
 
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
+        BlockExecutor blockExecutor = new BlockExecutor(ConfigHelper.CONFIG, blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
@@ -506,7 +503,7 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockWithOneTxD);
         blocks.addAll(createSimpleBlocks(blockWithOneTxD, 7));
 
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(),
+        BlockExecutor blockExecutor = new BlockExecutor(ConfigHelper.CONFIG, blockchain.getRepository(),
                 blockchain, blockchain.getBlockStore(), null);
 
         for (Block b : blocks) {
@@ -590,7 +587,7 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockWithOneTx);
         blocks.addAll(createSimpleBlocks(blockWithOneTx, 9));
 
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
+        BlockExecutor blockExecutor = new BlockExecutor(ConfigHelper.CONFIG, blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
@@ -611,13 +608,13 @@ public class RemascProcessMinerFeesTest {
 
         // A hacker trying to screw the system creates a tx to remasc and a fool/accomplice miner includes that tx in a block
         Transaction tx = new Transaction(
-                BigInteger.valueOf(1).toByteArray(),
+                ConfigHelper.CONFIG, BigInteger.valueOf(1).toByteArray(),
                 BigInteger.ONE.toByteArray(),
                 BigInteger.valueOf(minerFee).toByteArray(),
                 PrecompiledContracts.REMASC_ADDR.getBytes() ,
                 BigInteger.valueOf(txValue*2).toByteArray(),
                 null,
-                Transaction.getConfigChainId());
+                Transaction.getConfigChainId(ConfigHelper.CONFIG));
         tx.sign(cowKey.getPrivKeyBytes());
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
                 PegTestUtils.createHash3(), PegTestUtils.createHash3(), null, null, tx);
@@ -654,7 +651,7 @@ public class RemascProcessMinerFeesTest {
         blocks.add(blockWithOneTx);
         blocks.addAll(createSimpleBlocks(blockWithOneTx, 9));
 
-        BlockExecutor blockExecutor = new BlockExecutor(blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
+        BlockExecutor blockExecutor = new BlockExecutor(ConfigHelper.CONFIG, blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
 
         for (Block b : blocks) {
             blockExecutor.executeAndFillAll(b, blockchain.getBestBlock());
@@ -687,23 +684,23 @@ public class RemascProcessMinerFeesTest {
 //        }
         long txCreateContractGasLimit = 53755 + 32000;
         Transaction txCreateContract = new Transaction(
-                BigInteger.valueOf(1).toByteArray(),
+                ConfigHelper.CONFIG, BigInteger.valueOf(1).toByteArray(),
                 BigInteger.ONE.toByteArray(),
                 BigInteger.valueOf(txCreateContractGasLimit).toByteArray(),
                 null ,
                 BigInteger.valueOf(0).toByteArray(),
                 Hex.decode("6060604052346000575b6077806100176000396000f30060606040525b3460005760495b6000600890508073ffffffffffffffffffffffffffffffffffffffff166040518090506000604051808303816000866161da5a03f1915050505b50565b0000a165627a7a7230582036692fbb1395da1688af0189be5b0ac18df3d93a2402f4fc8f927b31c1baa2460029"),
-                Transaction.getConfigChainId());
+                Transaction.getConfigChainId(ConfigHelper.CONFIG));
         txCreateContract.sign(cowKey.getPrivKeyBytes());
         long txCallRemascGasLimit = 21828;
         Transaction txCallRemasc = new Transaction(
-                BigInteger.valueOf(2).toByteArray(),
+                ConfigHelper.CONFIG, BigInteger.valueOf(2).toByteArray(),
                 BigInteger.ONE.toByteArray(),
                 BigInteger.valueOf(txCallRemascGasLimit).toByteArray(),
                 Hex.decode("da7ce79725418f4f6e13bf5f520c89cec5f6a974") ,
                 BigInteger.valueOf(0).toByteArray(),
                 null,
-                Transaction.getConfigChainId());
+                Transaction.getConfigChainId(ConfigHelper.CONFIG));
         txCallRemasc.sign(cowKey.getPrivKeyBytes());
 
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
@@ -919,10 +916,9 @@ public class RemascProcessMinerFeesTest {
 
     private void validateFederatorsBalanceIsCorrect(Repository repository, long federationReward) throws IOException, BlockStoreException {
         BridgeSupport bridgeSupport = new BridgeSupport(
-            repository,
+                ConfigHelper.CONFIG, repository,
+                null,
             PrecompiledContracts.BRIDGE_ADDR,
-            null,
-            BridgeRegTestConstants.getInstance(),
             null);
         RemascFederationProvider provider = new RemascFederationProvider(bridgeSupport);
 

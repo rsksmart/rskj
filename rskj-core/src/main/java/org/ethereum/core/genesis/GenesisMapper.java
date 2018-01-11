@@ -19,6 +19,7 @@
 
 package org.ethereum.core.genesis;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Genesis;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.json.Utils;
@@ -30,6 +31,11 @@ import org.ethereum.util.RLP;
  */
 public class GenesisMapper {
     private static final byte[] EMPTY_LIST_HASH = HashUtil.sha3(RLP.encodeList());
+    private final RskSystemProperties config;
+
+    public GenesisMapper(RskSystemProperties config) {
+        this.config = config;
+    }
 
     public Genesis mapFromJson(GenesisJson json, boolean rskFormat) {
         byte[] nonce = Utils.parseData(json.nonce);
@@ -58,7 +64,7 @@ public class GenesisMapper {
             minGasPrice = Utils.parseData(json.getMinimumGasPrice());
         }
 
-        return new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, Genesis.getZeroHash(),
+        return new Genesis(config, parentHash, EMPTY_LIST_HASH, coinbase, Genesis.getZeroHash(),
                 difficulty, 0, gasLimit, 0, timestamp, extraData,
                 mixHash, nonce, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, minGasPrice);

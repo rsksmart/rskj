@@ -19,15 +19,11 @@
 
 package org.ethereum.db;
 
-import co.rsk.db.ContractDetailsImpl;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.apache.commons.collections4.MapUtils;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPItem;
-import org.ethereum.util.RLPList;
 import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
 
@@ -47,9 +43,9 @@ public class ContractDetailsCacheImpl implements ContractDetails {
     private Map<DataWord, DataWord> storage = new HashMap<>();
     private Map<DataWord, byte[]> bytesStorage = new HashMap<>();
 
-    ContractDetails origContract = new ContractDetailsImpl();
+    ContractDetails origContract;
 
-    private byte[] code = EMPTY_BYTE_ARRAY;
+    private byte[] code;
 
     private boolean dirty = false;
     private boolean deleted = false;

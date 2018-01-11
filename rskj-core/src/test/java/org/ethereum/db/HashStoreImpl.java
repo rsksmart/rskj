@@ -31,7 +31,7 @@ import java.util.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static co.rsk.config.RskSystemProperties.CONFIG;
+import static co.rsk.config.ConfigHelper.CONFIG;
 
 /**
  * @author Mikhail Kalinin

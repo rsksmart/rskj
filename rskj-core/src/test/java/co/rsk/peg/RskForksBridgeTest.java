@@ -19,7 +19,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Coin;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.util.BIUtil;
@@ -50,13 +50,13 @@ public class RskForksBridgeTest {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
-        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
+        blockchainNetConfigOriginal = ConfigHelper.CONFIG.getBlockchainConfig();
+        ConfigHelper.CONFIG.setBlockchainConfig(new RegTestConfig());
     }
 
     @AfterClass
     public static void tearDownAfterClass() throws Exception {
-        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        ConfigHelper.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
 
@@ -236,7 +236,7 @@ public class RskForksBridgeTest {
         long value = 0;
         BigInteger gasPrice = BigInteger.valueOf(0);
         BigInteger gasLimit = BigInteger.valueOf(1000000);
-        Transaction rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
+        Transaction rskTx = CallTransaction.createCallTransaction(ConfigHelper.CONFIG, nonce, gasPrice.longValue(),
                 gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
                 Bridge.ADD_LOCK_WHITELIST_ADDRESS, new Object[]{ "mhxk5q8QdGFoaP4SJ3DPtXjrbxAgxjNm3C", BigInteger.valueOf(Coin.COIN.multiply(4).value) });
         rskTx.sign(whitelistManipulationKey.getPrivKeyBytes());
@@ -255,7 +255,7 @@ public class RskForksBridgeTest {
         long value = 0;
         BigInteger gasPrice = BigInteger.valueOf(0);
         BigInteger gasLimit = BigInteger.valueOf(1000000);
-        Transaction rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
+        Transaction rskTx = CallTransaction.createCallTransaction(ConfigHelper.CONFIG, nonce, gasPrice.longValue(),
                 gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
                 Bridge.RECEIVE_HEADERS, new Object[]{headerArray});
         rskTx.sign(keyHoldingRSKs.getPrivKeyBytes());
@@ -273,7 +273,7 @@ public class RskForksBridgeTest {
         long value = 0;
         BigInteger gasPrice = BigInteger.valueOf(0);
         BigInteger gasLimit = BigInteger.valueOf(100000);
-        Transaction rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
+        Transaction rskTx = CallTransaction.createCallTransaction(ConfigHelper.CONFIG, nonce, gasPrice.longValue(),
                 gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
                 Bridge.REGISTER_BTC_TRANSACTION, txSerialized, blockHeight, pmtSerialized);
         rskTx.sign(keyHoldingRSKs.getPrivKeyBytes());
@@ -289,7 +289,7 @@ public class RskForksBridgeTest {
         long value = 1000000000000000000l;
         BigInteger gasPrice = BigInteger.valueOf(0);
         BigInteger gasLimit = BigInteger.valueOf(100000);
-        Transaction rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
+        Transaction rskTx = CallTransaction.createCallTransaction(ConfigHelper.CONFIG, nonce, gasPrice.longValue(),
                 gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
                 Bridge.RELEASE_BTC);
         rskTx.sign(keyHoldingRSKs.getPrivKeyBytes());
@@ -301,7 +301,7 @@ public class RskForksBridgeTest {
         long value = 0;
         BigInteger gasPrice = BigInteger.valueOf(0);
         BigInteger gasLimit = BigInteger.valueOf(100000);
-        Transaction rskTx = CallTransaction.createCallTransaction(nonce, gasPrice.longValue(),
+        Transaction rskTx = CallTransaction.createCallTransaction(ConfigHelper.CONFIG, nonce, gasPrice.longValue(),
                 gasLimit.longValue(), PrecompiledContracts.BRIDGE_ADDR, value,
                 Bridge.UPDATE_COLLECTIONS);
         rskTx.sign(new ECKey().getPrivKeyBytes());
@@ -335,7 +335,7 @@ public class RskForksBridgeTest {
     }
 
     private BridgeState callGetStateForDebuggingTx() throws IOException, ClassNotFoundException {
-        Transaction rskTx = CallTransaction.createRawTransaction(0,
+        Transaction rskTx = CallTransaction.createRawTransaction(ConfigHelper.CONFIG, 0,
                 Long.MAX_VALUE,
                 Long.MAX_VALUE,
                 PrecompiledContracts.BRIDGE_ADDR,
@@ -343,7 +343,7 @@ public class RskForksBridgeTest {
                 Bridge.GET_STATE_FOR_DEBUGGING.encode(new Object[]{}));
         rskTx.sign(new byte[32]);
 
-        TransactionExecutor executor = new TransactionExecutor(rskTx, 0, blockChain.getBestBlock().getCoinbase(), repository,
+        TransactionExecutor executor = new TransactionExecutor(ConfigHelper.CONFIG, rskTx, 0, blockChain.getBestBlock().getCoinbase(), repository,
                         blockChain.getBlockStore(), blockChain.getReceiptStore(), new ProgramInvokeFactoryImpl(), blockChain.getBestBlock())
                 .setLocalCall(true);
 
@@ -356,7 +356,7 @@ public class RskForksBridgeTest {
 
         Object[] result = Bridge.GET_STATE_FOR_DEBUGGING.decodeResult(res.getHReturn());
 
-        return BridgeState.create((byte[])result[0]);
+        return BridgeState.create(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(), (byte[])result[0]);
     }
 
 

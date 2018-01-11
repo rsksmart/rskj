@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
@@ -86,22 +87,22 @@ public class Program {
 
     private Transaction transaction;
 
-    private ProgramInvoke invoke;
-    private ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
+    private final ProgramInvoke invoke;
+    private final ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
 
     private ProgramOutListener listener;
-    private ProgramTraceListener traceListener = new ProgramTraceListener();
-    private CompositeProgramListener programListener = new CompositeProgramListener();
+    private final ProgramTraceListener traceListener;
+    private final CompositeProgramListener programListener = new CompositeProgramListener();
 
-    private Stack stack;
-    private Memory memory;
-    private Storage storage;
+    private final Stack stack;
+    private final Memory memory;
+    private final Storage storage;
     private byte[] returnDataBuffer;
 
-    private ProgramResult result = new ProgramResult();
-    private ProgramTrace trace = new ProgramTrace();
+    private final ProgramResult result = new ProgramResult();
+    private final ProgramTrace trace;
 
-    private byte[] ops;
+    private final byte[] ops;
     private int pc;
     private byte lastOp;
     private byte previouslyExecutedOp;
@@ -173,14 +174,16 @@ public class Program {
      * performed. Until that moment, dataWordPool is enabled by setting useDataWordPool=true
      *
      *******************************************************************************************************************/
-    private java.util.Stack<DataWord> dataWordPool;
+    private final java.util.Stack<DataWord> dataWordPool;
 
     private static Boolean useDataWordPool = true;
 
+    private final RskSystemProperties config;
     boolean isLogEnabled;
     boolean isGasLogEnabled;
 
-    public Program(byte[] ops, ProgramInvoke programInvoke) {
+    public Program(RskSystemProperties config, byte[] ops, ProgramInvoke programInvoke) {
+        this.config = config;
         isLogEnabled = logger.isInfoEnabled();
         isGasLogEnabled = gasLogger.isInfoEnabled();
 
@@ -200,7 +203,7 @@ public class Program {
         this.stack = setupProgramListener(new Stack());
         this.stack.ensureCapacity(1024); // faster?
         this.storage = setupProgramListener(new Storage(programInvoke));
-        this.trace = new ProgramTrace(programInvoke);
+        this.trace = new ProgramTrace(config, programInvoke);
 
         if (useDataWordPool) {
             this.dataWordPool = new java.util.Stack<>();
@@ -210,10 +213,11 @@ public class Program {
         }
 
         precompile();
+        traceListener = new ProgramTraceListener(config);
     }
 
-    public Program(byte[] ops, ProgramInvoke programInvoke, Transaction transaction) {
-        this(ops, programInvoke);
+    public Program(RskSystemProperties config, byte[] ops, ProgramInvoke programInvoke, Transaction transaction) {
+        this(config, ops, programInvoke);
         this.transaction = transaction;
     }
 
@@ -240,6 +244,7 @@ public class Program {
         byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(senderAddress).toByteArray() : nonce;
 
         return getResult().addInternalTransaction(
+                config,
                 transaction.getHash(),
                 getCallDeep(),
                 senderNonce,
@@ -653,8 +658,8 @@ public class Program {
         ProgramResult programResult = ProgramResult.empty();
         returnDataBuffer = null; // reset return buffer right before the call
         if (isNotEmpty(programCode)) {
-            VM vm = new VM();
-            Program program = new Program(programCode, programInvoke, internalTx);
+            VM vm = new VM(config);
+            Program program = new Program(config, programCode, programInvoke, internalTx);
             vm.play(program);
             programResult = program.getResult();
         }
@@ -879,8 +884,8 @@ public class Program {
                 msg.getType() == MsgType.DELEGATECALL ? getCallValue() : msg.getEndowment(),
                 limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(), byTestingSuite());
 
-        VM vm = new VM();
-        Program program = new Program(programCode, programInvoke, internalTx);
+        VM vm = new VM(config);
+        Program program = new Program(config, programCode, programInvoke, internalTx);
         vm.play(program);
         childResult  = program.getResult();
 
@@ -1566,7 +1571,7 @@ public class Program {
                 // CREATE CALL INTERNAL TRANSACTION
                 InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, EMPTY_BYTE_ARRAY, "call");
 
-                Block executionBlock = new Block(getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getData(), EMPTY_BYTE_ARRAY,
+                Block executionBlock = new Block(config, getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getData(), EMPTY_BYTE_ARRAY,
                         getDifficulty().getData(), getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
                         EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, new ArrayList<>(), new ArrayList<>(), null);
 

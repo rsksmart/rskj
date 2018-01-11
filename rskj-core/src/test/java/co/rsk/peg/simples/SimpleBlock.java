@@ -18,6 +18,7 @@
 
 package co.rsk.peg.simples;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
@@ -40,7 +41,7 @@ public class SimpleBlock extends Block {
                        byte[] nonce, byte[] receiptsRoot,
                        byte[] transactionsRoot, byte[] stateRoot,
                        List<Transaction> transactionsList, List<BlockHeader> uncleList) {
-        super(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit, gasUsed,
+        super(ConfigHelper.CONFIG, parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit, gasUsed,
                 timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot, stateRoot,
                     transactionsList, uncleList, BigInteger.TEN.toByteArray(), BigInteger.ZERO);
 

@@ -1,11 +1,13 @@
 package org.ethereum.core;
 
+import co.rsk.config.RskSystemProperties;
+
 /**
  * Created by ajlopez on 02/08/2017.
  */
 public class ImmutableTransaction extends Transaction {
-    public ImmutableTransaction(byte[] rawData) {
-        super(rawData);
+    public ImmutableTransaction(RskSystemProperties config, byte[] rawData) {
+        super(config, rawData);
     }
 
     @Override

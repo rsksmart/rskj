@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 
@@ -44,7 +45,7 @@ public class TrackDatabaseTest {
     @Test
     public void test1() {
 
-        KeyValueDataSource keyValueDataSource = new LevelDbDataSource("temp");
+        KeyValueDataSource keyValueDataSource = new LevelDbDataSource(ConfigHelper.CONFIG, "temp");
         keyValueDataSource.init();
 
         DatabaseImpl db1 = new DatabaseImpl(keyValueDataSource);

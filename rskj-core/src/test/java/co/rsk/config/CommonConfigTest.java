@@ -37,7 +37,7 @@ public class CommonConfigTest {
     public void createRepositoryUsingNewRepository() {
         CommonConfig config = new CommonConfig();
 
-        Repository repository = config.repository();
+        Repository repository = config.repository(ConfigHelper.CONFIG);
 
         Assert.assertNotNull(repository);
         Assert.assertTrue(repository instanceof RepositoryImpl);
@@ -57,7 +57,7 @@ public class CommonConfigTest {
     public void createParentHeaderValidator() {
         CommonConfig config = new CommonConfig();
 
-        ParentBlockHeaderValidator result = config.parentHeaderValidator(RskSystemProperties.CONFIG, new DifficultyCalculator(RskSystemProperties.CONFIG));
+        ParentBlockHeaderValidator result = config.parentHeaderValidator(ConfigHelper.CONFIG, new DifficultyCalculator(ConfigHelper.CONFIG));
 
         Assert.assertNotNull(result);
     }

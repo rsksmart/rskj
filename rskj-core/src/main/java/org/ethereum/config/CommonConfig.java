@@ -31,7 +31,6 @@ import org.ethereum.util.FileUtil;
 import org.ethereum.validator.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -50,25 +49,22 @@ public class CommonConfig {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
 
-    @Autowired
-    SystemProperties config = RskSystemProperties.CONFIG;
-
     @Bean
-    public Repository repository() {
+    public Repository repository(RskSystemProperties config) {
         String databaseDir = config.databaseDir();
         if (config.databaseReset()){
             FileUtil.recursiveDelete(databaseDir);
             logger.info("Database reset done");
         }
 
-        KeyValueDataSource ds = makeDataSource("state");
-        KeyValueDataSource detailsDS = makeDataSource("details");
+        KeyValueDataSource ds = makeDataSource(config, "state");
+        KeyValueDataSource detailsDS = makeDataSource(config, "details");
 
-        return new RepositoryImpl(new TrieStoreImpl(ds), detailsDS);
+        return new RepositoryImpl(config, new TrieStoreImpl(ds), detailsDS);
     }
 
-    private KeyValueDataSource makeDataSource(String name) {
-        KeyValueDataSource ds = new LevelDbDataSource(name);
+    private KeyValueDataSource makeDataSource(RskSystemProperties config, String name) {
+        KeyValueDataSource ds = new LevelDbDataSource(config, name);
         ds.init();
         return ds;
     }

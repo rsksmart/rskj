@@ -19,6 +19,7 @@
 
 package org.ethereum.net.eth.message;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
@@ -35,19 +36,20 @@ import java.util.List;
 public class TransactionsMessage extends EthMessage {
 
     private List<Transaction> transactions;
+    private final RskSystemProperties config;
 
-    public TransactionsMessage(byte[] encoded) {
+    public TransactionsMessage(RskSystemProperties config, byte[] encoded) {
         super(encoded);
+        this.config = config;
     }
 
-    public TransactionsMessage(Transaction transaction) {
-
-        transactions = new ArrayList<>();
+    public TransactionsMessage(RskSystemProperties config, Transaction transaction) {
+        this(config, new ArrayList<>());
         transactions.add(transaction);
-        parsed = true;
     }
 
-    public TransactionsMessage(List<Transaction> transactionList) {
+    public TransactionsMessage(RskSystemProperties config, List<Transaction> transactionList) {
+        this.config = config;
         this.transactions = transactionList;
         parsed = true;
     }
@@ -58,7 +60,7 @@ public class TransactionsMessage extends EthMessage {
         transactions = new ArrayList<>();
         for (int i = 0; i < paramsList.size(); ++i) {
             RLPList rlpTxData = (RLPList) paramsList.get(i);
-            Transaction tx = new ImmutableTransaction(rlpTxData.getRLPData());
+            Transaction tx = new ImmutableTransaction(config, rlpTxData.getRLPData());
             transactions.add(tx);
         }
         parsed = true;

@@ -18,6 +18,7 @@
 
 package co.rsk.vm;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
@@ -243,7 +244,7 @@ public class VMExecutionTest {
     @Test
     public void dupnArgumentIsNotJumpdest() {
         byte[] code = compiler.compile("JUMPDEST DUPN 0x5b 0x5b");
-        Program program = new Program(code, invoke);
+        Program program = new Program(ConfigHelper.CONFIG, code, invoke);
 
         BitSet jumpdestSet = program.getJumpdestSet();
 
@@ -258,7 +259,7 @@ public class VMExecutionTest {
     @Test
     public void swapnArgumentIsNotJumpdest() {
         byte[] code = compiler.compile("JUMPDEST SWAPN 0x5b 0x5b");
-        Program program = new Program(code, invoke);
+        Program program = new Program(ConfigHelper.CONFIG, code, invoke);
 
         BitSet jumpdestSet = program.getJumpdestSet();
 
@@ -355,9 +356,9 @@ public class VMExecutionTest {
     }
 
     private Program executeCode(byte[] code, int nsteps) {
-        VM vm = new VM();
+        VM vm = new VM(ConfigHelper.CONFIG);
 
-        Program program = new Program(code, invoke);
+        Program program = new Program(ConfigHelper.CONFIG, code, invoke);
 
         for (int k = 0; k < nsteps; k++)
             vm.step(program);

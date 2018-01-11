@@ -18,6 +18,7 @@
 
 package co.rsk.vm;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.TestUtils;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
@@ -158,7 +159,7 @@ public class VMPerformanceTest {
 
         Boolean old = thread.isThreadCpuTimeEnabled();
         thread.setThreadCpuTimeEnabled(true);
-        vm = new VM();
+        vm = new VM(ConfigHelper.CONFIG);
         if (useProfiler)
             waitForProfiler();
 
@@ -286,7 +287,7 @@ public class VMPerformanceTest {
             baos.write(code, 0, code.length);
         byte[] newCode = baos.toByteArray();
 
-        program = new Program(newCode, invoke);
+        program = new Program(ConfigHelper.CONFIG, newCode, invoke);
         int sa = program.getStartAddr();
 
         long myLoops = maxLoops / cloneCount;
@@ -463,7 +464,7 @@ public class VMPerformanceTest {
 } // contract
         */
 
-        vm = new VM();
+        vm = new VM(ConfigHelper.CONFIG);
         // Strip the first 16 bytes which are added by Solidity to store the contract.
         byte[] codePlusPrefix = Hex.decode(
                 //---------------------------------------------------------------------------------------------------------------------nn
@@ -490,7 +491,7 @@ public class VMPerformanceTest {
         ------------------------------------------------------------------------------------------------------------------------------------------------------*/
         byte[] code = Arrays.copyOfRange(codePlusPrefix,16,codePlusPrefix.length);
 
-        program =new Program(code, invoke);
+        program =new Program(ConfigHelper.CONFIG, code, invoke);
 
         //String s_expected_1 = "000000000000000000000000000000000000000000000000000000033FFC1244"; // 55
         //String s_expected_1 = "00000000000000000000000000000000000000000000000000000002EE333961";// 50
@@ -549,7 +550,7 @@ public class VMPerformanceTest {
          }
          } // contract
          ********************************************************************************************/
-        vm = new VM();
+        vm = new VM(ConfigHelper.CONFIG);
         /////////////////////////////////////////////////////////////////////////////////////////////////
         // To increase precesion of the measurement, the maximum k value was increased
         // until the contract took more than 30 seconds
@@ -605,7 +606,7 @@ public class VMPerformanceTest {
     -----------------------------------------------------------------------------*/
 
     public void testRunTime(byte[] code, String s_expected) {
-        program = new Program(code, invoke);
+        program = new Program(ConfigHelper.CONFIG, code, invoke);
         System.out.println("-----------------------------------------------------------------------------");
         System.out.println("Starting test....");
         System.out.println("Configuration: Program.useDataWordPool =  " + Program.getUseDataWordPool().toString());

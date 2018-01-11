@@ -18,7 +18,7 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.validators.*;
 import org.ethereum.core.Repository;
@@ -95,9 +95,9 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addBlockUnclesValidationRule(BlockStore blockStore, BlockValidationRule validationRule, BlockParentDependantValidationRule parentValidationRule) {
-        int uncleListLimit = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getUncleListLimit();
-        int uncleGenLimit = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
-        this.blockUnclesValidationRule = new BlockUnclesValidationRule(blockStore, uncleListLimit, uncleGenLimit, validationRule, parentValidationRule);
+        int uncleListLimit = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getUncleListLimit();
+        int uncleGenLimit = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getUncleGenerationLimit();
+        this.blockUnclesValidationRule = new BlockUnclesValidationRule(ConfigHelper.CONFIG, blockStore, uncleListLimit, uncleGenLimit, validationRule, parentValidationRule);
         return this;
     }
 
@@ -117,12 +117,12 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addDifficultyRule() {
-        this.difficultyRule = new BlockDifficultyRule(new DifficultyCalculator(RskSystemProperties.CONFIG));
+        this.difficultyRule = new BlockDifficultyRule(new DifficultyCalculator(ConfigHelper.CONFIG));
         return this;
     }
 
     public BlockValidatorBuilder addParentGasLimitRule() {
-        parentGasLimitRule = new BlockParentGasLimitRule(RskSystemProperties.CONFIG.getBlockchainConfig().
+        parentGasLimitRule = new BlockParentGasLimitRule(ConfigHelper.CONFIG.getBlockchainConfig().
                         getCommonConstants().getGasLimitBoundDivisor());
         return this;
     }

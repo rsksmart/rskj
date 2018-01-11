@@ -18,6 +18,7 @@
 
 package co.rsk.mine;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.BlockProcessor;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -41,6 +42,7 @@ import java.security.SecureRandom;
 
 public class TxBuilder {
 
+    private final RskSystemProperties config;
     private final Ethereum ethereum;
     private final BlockProcessor blockProcessor;
     private final Repository repository;
@@ -51,7 +53,8 @@ public class TxBuilder {
     private byte[] privateKeyBytes  = HashUtil.sha3("this is a seed".getBytes(StandardCharsets.UTF_8));
     private ECKey key;
 
-    public TxBuilder(Ethereum ethereum, BlockProcessor blockProcessor, Repository repository) {
+    public TxBuilder(RskSystemProperties config, Ethereum ethereum, BlockProcessor blockProcessor, Repository repository) {
+        this.config = config;
         this.ethereum = ethereum;
         this.blockProcessor = blockProcessor;
         this.repository = repository;
@@ -117,7 +120,7 @@ public class TxBuilder {
     {
         String toAddress = Hex.toHexString(new ECKey(Utils.getRandom()).getAddress());
 
-        Transaction tx = Transaction.create(toAddress, BigInteger.valueOf(1000), txNonce, gasPrice, gasLimit);
+        Transaction tx = Transaction.create(config, toAddress, BigInteger.valueOf(1000), txNonce, gasPrice, gasLimit);
         tx.sign(privateKeyBytes);
 
         return tx;

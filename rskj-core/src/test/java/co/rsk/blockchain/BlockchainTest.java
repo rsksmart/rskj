@@ -19,20 +19,15 @@
 package co.rsk.blockchain;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
-import co.rsk.core.DifficultyCalculator;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
-import co.rsk.validators.ProofOfWorkRule;
-import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
-import org.ethereum.validator.DifficultyRule;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;
@@ -186,7 +181,7 @@ public class BlockchainTest {
 
         Block block2 = BlockGenerator.getInstance().createChildBlock(blockchain.getBestBlock());
         Block block2b = BlockGenerator.getInstance().createBlock(10, 5);
-        Block block3 = Block.fromValidData(block2.getHeader(), block2b.getTransactionsList(), block2b.getUncleList());
+        Block block3 = Block.fromValidData(ConfigHelper.CONFIG, block2.getHeader(), block2b.getTransactionsList(), block2b.getUncleList());
         ImportResult importResult2 = blockchain.tryToConnect(block3);
         Assert.assertFalse(importResult2.isSuccessful());
     }

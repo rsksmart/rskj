@@ -18,7 +18,7 @@
 
 package co.rsk.vm;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
@@ -66,7 +66,7 @@ public class MinerHelper {
         this.repository = repository;
         this.blockchain = blockchain;
        // this.blockStore =blockStore;
-        gasLimitCalculator = new GasLimitCalculator(RskSystemProperties.CONFIG);
+        gasLimitCalculator = new GasLimitCalculator(ConfigHelper.CONFIG);
     }
 
     public void processBlock( Block block, Block parent) {
@@ -99,7 +99,7 @@ public class MinerHelper {
 
         for (Transaction tx : block.getTransactionsList()) {
 
-            TransactionExecutor executor = new TransactionExecutor(tx, txindex++, block.getCoinbase(),
+            TransactionExecutor executor = new TransactionExecutor(ConfigHelper.CONFIG, tx, txindex++, block.getCoinbase(),
                     track, blockStore, blockchain.getReceiptStore(),
                     programInvokeFactory, block, new EthereumListenerAdapter(), totalGasUsed);
 
@@ -144,8 +144,8 @@ public class MinerHelper {
 
         newBlock.getHeader().setLogsBloom(logBloom.getData());
 
-        BigInteger minGasLimit = BigInteger.valueOf(RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit());
-        BigInteger targetGasLimit = BigInteger.valueOf(RskSystemProperties.CONFIG.getTargetGasLimit());
+        BigInteger minGasLimit = BigInteger.valueOf(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit());
+        BigInteger targetGasLimit = BigInteger.valueOf(ConfigHelper.CONFIG.getTargetGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
         BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit, BigInteger.valueOf(totalGasUsed), minGasLimit, targetGasLimit, false);
 

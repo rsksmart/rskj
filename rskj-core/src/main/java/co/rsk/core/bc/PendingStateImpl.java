@@ -57,9 +57,7 @@ public class PendingStateImpl implements PendingState {
     private final Map<ByteArrayWrapper, Long> transactionBlocks = new HashMap<>();
     private final Map<ByteArrayWrapper, Long> transactionTimes = new HashMap<>();
 
-    private ScheduledExecutorService cleanerTimer;
-    private ScheduledFuture<?> cleanerFuture;
-
+    private final RskSystemProperties config;
     private final Blockchain blockChain;
     private final BlockStore blockStore;
     private final Repository repository;
@@ -67,6 +65,9 @@ public class PendingStateImpl implements PendingState {
     private final EthereumListener listener;
     private final int outdatedThreshold;
     private final int outdatedTimeout;
+
+    private ScheduledExecutorService cleanerTimer;
+    private ScheduledFuture<?> cleanerFuture;
 
     private Block bestBlock;
 
@@ -79,7 +80,8 @@ public class PendingStateImpl implements PendingState {
                             ProgramInvokeFactory programInvokeFactory,
                             Repository repository,
                             RskSystemProperties config) {
-        this(blockChain,
+        this(config,
+                blockChain,
                 repository,
                 blockStore,
                 programInvokeFactory,
@@ -88,13 +90,15 @@ public class PendingStateImpl implements PendingState {
                 config.txOutdatedTimeout());
     }
 
-    public PendingStateImpl(Blockchain blockChain,
+    public PendingStateImpl(RskSystemProperties config,
+                            Blockchain blockChain,
                             Repository repository,
                             BlockStore blockStore,
                             ProgramInvokeFactory programInvokeFactory,
                             EthereumListener listener,
                             int outdatedThreshold,
                             int outdatedTimeout) {
+        this.config = config;
         this.blockChain = blockChain;
         this.blockStore = blockStore;
         this.repository = repository;
@@ -384,7 +388,7 @@ public class PendingStateImpl implements PendingState {
         Block best = blockChain.getBestBlock();
 
         TransactionExecutor executor = new TransactionExecutor(
-                tx, 0, best.getCoinbase(), pendingStateRepository,
+                config, tx, 0, best.getCoinbase(), pendingStateRepository,
                 blockStore, blockChain.getReceiptStore(), programInvokeFactory, createFakePendingBlock(best)
         );
 
@@ -414,7 +418,7 @@ public class PendingStateImpl implements PendingState {
         Trie txsTrie = new TrieImpl();
 
         // creating fake lightweight calculated block with no hashes calculations
-        return new Block(best.getHash(),
+        return new Block(config, best.getHash(),
                             emptyUncleHashList, // uncleHash
                             new byte[32], //coinbase
                             new byte[32], // log bloom - from tx receipts

@@ -19,6 +19,7 @@
 
 package co.rsk.db;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Repository;
 import org.ethereum.db.RepositoryTrack;
 import org.ethereum.vm.DataWord;
@@ -61,8 +62,8 @@ public class RepositoryTrackWithBenchmarking extends RepositoryTrack {
 
     private final Statistics statistics;
 
-    public RepositoryTrackWithBenchmarking(Repository repository) {
-        super(repository);
+    public RepositoryTrackWithBenchmarking(RskSystemProperties config, Repository repository) {
+        super(config, repository);
         statistics = new Statistics();
     }
 

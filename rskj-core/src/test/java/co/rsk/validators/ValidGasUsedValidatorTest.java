@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
@@ -38,7 +39,7 @@ public class ValidGasUsedValidatorTest {
         Mockito.when(blockHeader.getGasUsed()).thenReturn(20L);
         Mockito.when(blockHeader.getGasLimit()).thenReturn(BigInteger.valueOf(107L).toByteArray());
 
-        Block block = new Block(blockHeader);
+        Block block = new Block(ConfigHelper.CONFIG, blockHeader);
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 
@@ -52,7 +53,7 @@ public class ValidGasUsedValidatorTest {
         Mockito.when(blockHeader.getGasUsed()).thenReturn(120L);
         Mockito.when(blockHeader.getGasLimit()).thenReturn(BigInteger.valueOf(107L).toByteArray());
 
-        Block block = new Block(blockHeader);
+        Block block = new Block(ConfigHelper.CONFIG, blockHeader);
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 
@@ -66,7 +67,7 @@ public class ValidGasUsedValidatorTest {
         Mockito.when(blockHeader.getGasUsed()).thenReturn(-120L);
         Mockito.when(blockHeader.getGasLimit()).thenReturn(BigInteger.valueOf(107L).toByteArray());
 
-        Block block = new Block(blockHeader);
+        Block block = new Block(ConfigHelper.CONFIG, blockHeader);
 
         ValidGasUsedRule gasUsedRule = new ValidGasUsedRule();
 

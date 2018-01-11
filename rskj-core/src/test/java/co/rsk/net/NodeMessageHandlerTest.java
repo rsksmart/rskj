@@ -19,7 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.handler.TxHandlerImpl;
@@ -67,13 +67,13 @@ public class NodeMessageHandlerTest {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
-        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
+        blockchainNetConfigOriginal = ConfigHelper.CONFIG.getBlockchainConfig();
+        ConfigHelper.CONFIG.setBlockchainConfig(new RegTestConfig());
     }
 
     @AfterClass
     public static void tearDownAfterClass() throws Exception {
-        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        ConfigHelper.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @Test
@@ -81,7 +81,7 @@ public class NodeMessageHandlerTest {
         SimpleMessageChannel sender = new SimpleMessageChannel();
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
-        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, scoring, new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+        NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, scoring, new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
         Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
@@ -135,7 +135,7 @@ public class NodeMessageHandlerTest {
         PeerScoringManager scoring = createPeerScoringManager();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, scoring,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
         Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
@@ -155,7 +155,7 @@ public class NodeMessageHandlerTest {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null,
                 null,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
         Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
         Message message = new BlockMessage(block);
 
@@ -180,7 +180,7 @@ public class NodeMessageHandlerTest {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null,
                 null, scoring,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
         Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
         byte[] mergedMiningHeader = block.getBitcoinMergedMiningHeader();
         mergedMiningHeader[76] += 3; //change merged mining nonce.
@@ -234,7 +234,7 @@ public class NodeMessageHandlerTest {
     public void processFutureBlockMessageUsingProcessor() throws UnknownHostException {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, null,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
         Block block = BlockGenerator.getInstance().getGenesisBlock();
         Message message = new BlockMessage(block);
         SimpleMessageChannel sender = new SimpleMessageChannel();
@@ -255,7 +255,7 @@ public class NodeMessageHandlerTest {
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         final Block block = BlockGenerator.getInstance().createChildBlock(BlockGenerator.getInstance().getGenesisBlock());
         final Status status = new Status(block.getNumber(), block.getHash());
@@ -308,9 +308,9 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
-        final SyncProcessor syncProcessor = new SyncProcessor(blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), syncConfiguration, new DummyBlockValidationRule(), null);
+        final SyncProcessor syncProcessor = new SyncProcessor(ConfigHelper.CONFIG, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), syncConfiguration, new DummyBlockValidationRule(), null);
         final NodeMessageHandler handler = new NodeMessageHandler(bp, syncProcessor, null, null, null, null,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         final Block block = BlockGenerator.getInstance().createChildBlock(BlockGenerator.getInstance().getGenesisBlock());
         final Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), blockchain.getTotalDifficulty());
@@ -339,7 +339,7 @@ public class NodeMessageHandlerTest {
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null,
-                null, new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                null, new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -375,7 +375,7 @@ public class NodeMessageHandlerTest {
 
         NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null,
                 null,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -432,7 +432,7 @@ public class NodeMessageHandlerTest {
 
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null,
                 null,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -468,7 +468,7 @@ public class NodeMessageHandlerTest {
 
         NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null,
                 null,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -503,7 +503,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         class TestCase {
             protected final NewBlockHashesMessage message;
@@ -613,7 +613,7 @@ public class NodeMessageHandlerTest {
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
 
         final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, null, null, txHandler, null,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         Message message = mock(Message.class);
         Mockito.when(message.getMessageType()).thenReturn(MessageType.NEW_BLOCK_HASHES);
@@ -642,7 +642,7 @@ public class NodeMessageHandlerTest {
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
         final NodeBlockProcessor bp = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final NodeMessageHandler handler = new NodeMessageHandler(bp, null, null, null, null, null,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         int baseBlock = 9;
 
@@ -771,7 +771,7 @@ public class NodeMessageHandlerTest {
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
         final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, state, txmock, scoring,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
         sender.setPeerNodeID(new byte[] {1});
@@ -828,7 +828,7 @@ public class NodeMessageHandlerTest {
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
         final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, state, txmock, scoring,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -860,10 +860,10 @@ public class NodeMessageHandlerTest {
         PendingState state = mock(PendingState.class);
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
-        TxHandler txHandler = new TxHandlerImpl(mock(WorldManager.class), mock(RepositoryImpl.class), blockchain);
+        TxHandler txHandler = new TxHandlerImpl(ConfigHelper.CONFIG, mock(WorldManager.class), mock(RepositoryImpl.class), blockchain);
 
         final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, state, txHandler, scoring,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
@@ -900,7 +900,7 @@ public class NodeMessageHandlerTest {
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
 
         final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, null, txHandler, null,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         Message message = mock(Message.class);
         Mockito.when(message.getMessageType()).thenReturn(MessageType.TRANSACTIONS);
@@ -919,7 +919,7 @@ public class NodeMessageHandlerTest {
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
         final NodeMessageHandler handler = new NodeMessageHandler(blockProcessor, null, channelManager, pendingState, txmock, RskMockFactory.getPeerScoringManager(),
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
         sender.setPeerNodeID(new byte[] {1});
@@ -953,7 +953,7 @@ public class NodeMessageHandlerTest {
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null,
                 null,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
         Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
         Message message = new BlockRequestMessage(100, block.getHash());
 
@@ -968,7 +968,7 @@ public class NodeMessageHandlerTest {
         byte[] hash = HashUtil.randomHash();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(sbp, null, null, null, null, null,
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
         Message message = new BlockHeadersRequestMessage(100, hash, 50);
 
         processor.processMessage(new SimpleMessageChannel(), message);

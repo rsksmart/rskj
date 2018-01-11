@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -45,18 +46,21 @@ public class BlockWrapper {
     private long receivedAt = 0;
     private boolean newBlock;
     private byte[] nodeId;
+    private final RskSystemProperties config;
 
-    public BlockWrapper(Block block, byte[] nodeId) {
-        this(block, false, nodeId);
+    public BlockWrapper(RskSystemProperties config, Block block, byte[] nodeId) {
+        this(config, block, false, nodeId);
     }
 
-    public BlockWrapper(Block block, boolean newBlock, byte[] nodeId) {
+    public BlockWrapper(RskSystemProperties config, Block block, boolean newBlock, byte[] nodeId) {
+        this.config = config;
         this.block = block;
         this.newBlock = newBlock;
         this.nodeId = nodeId;
     }
 
-    public BlockWrapper(byte[] bytes) {
+    public BlockWrapper(RskSystemProperties config, byte[] bytes) {
+        this.config = config;
         parse(bytes);
     }
 
@@ -161,7 +165,7 @@ public class BlockWrapper {
         byte[] receivedAtBytes = wrapper.get(2).getRLPData();
         byte[] newBlockBytes = wrapper.get(3).getRLPData();
 
-        this.block = new Block(blockBytes);
+        this.block = new Block(config, blockBytes);
         this.importFailedAt = importFailedBytes == null ? 0 : new BigInteger(1, importFailedBytes).longValue();
         this.receivedAt = receivedAtBytes == null ? 0 : new BigInteger(1, receivedAtBytes).longValue();
         byte newBlock = newBlockBytes == null ? 0 : new BigInteger(1, newBlockBytes).byteValue();

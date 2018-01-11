@@ -19,6 +19,7 @@
 package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
@@ -58,22 +59,22 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
     private static final CallTransaction.Function PROCESS_MINERS_FEES = CallTransaction.Function.fromSignature("processMinersFees", new String[]{}, new String[]{});
     public static final CallTransaction.Function GET_STATE_FOR_DEBUGGING = CallTransaction.Function.fromSignature("getStateForDebugging", new String[]{}, new String[]{"bytes"});
 
-    private Map<ByteArrayWrapper, CallTransaction.Function> functions;
-
-    private RemascConfig config;
-
-    private Remasc remasc;
-
     static final DataWord MINING_FEE_TOPIC = new DataWord(TypeConverter.stringToByteArray("mining_fee_topic"));
-
     public static final String REMASC_CONFIG = "remasc.json";
 
-    public RemascContract(RskAddress contractAddress, RemascConfig remascConfig) {
+    private final RskSystemProperties config;
+    private final RemascConfig remascConfig;
+
+    private final Map<ByteArrayWrapper, CallTransaction.Function> functions;
+    private Remasc remasc;
+
+    public RemascContract(RskSystemProperties config, RemascConfig remascConfig, RskAddress contractAddress) {
+        this.config = config;
+        this.remascConfig = remascConfig;
         this.contractAddress = contractAddress;
         this.functions = new HashMap<>();
         this.functions.put(new ByteArrayWrapper(PROCESS_MINERS_FEES.encodeSignature()), PROCESS_MINERS_FEES);
         this.functions.put(new ByteArrayWrapper(GET_STATE_FOR_DEBUGGING.encodeSignature()), GET_STATE_FOR_DEBUGGING);
-        this.config = remascConfig;
     }
 
     @Override
@@ -84,7 +85,7 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public void init(Transaction executionTx, Block executionBlock, Repository repository, BlockStore blockStore, ReceiptStore receiptStore, List<LogInfo> logs) {
-        this.remasc = new Remasc(executionTx, repository, contractAddress, executionBlock, blockStore, this.config, logs);
+        this.remasc = new Remasc(this.config, repository, blockStore, remascConfig, executionTx, contractAddress, executionBlock, logs);
     }
 
     @Override

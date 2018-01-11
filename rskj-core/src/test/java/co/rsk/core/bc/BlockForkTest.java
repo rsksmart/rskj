@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.ConfigHelper;
 import org.ethereum.core.Block;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -158,7 +159,7 @@ public class BlockForkTest {
     }
 
     private static BlockStore createBlockStore() {
-        IndexedBlockStore blockStore = new IndexedBlockStore();
+        IndexedBlockStore blockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
         blockStore.init(new HashMap<>(), new HashMapDB(), null);
         return blockStore;
     }

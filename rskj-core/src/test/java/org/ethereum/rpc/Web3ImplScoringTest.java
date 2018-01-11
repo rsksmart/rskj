@@ -18,7 +18,7 @@
 
 package org.ethereum.rpc;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.net.NodeID;
@@ -355,9 +355,9 @@ public class Web3ImplScoringTest {
         rsk.worldManager = worldManager;
 
         Wallet wallet = WalletFactory.createWallet();
-        PersonalModule pm = new PersonalModuleWalletEnabled(rsk, wallet, null);
-        EthModule em = new EthModule(rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(rsk, wallet, null));
-        return new Web3RskImpl(rsk, worldManager, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), rsk.getRepository(), peerScoringManager, null, null, null);
+        PersonalModule pm = new PersonalModuleWalletEnabled(ConfigHelper.CONFIG, rsk, wallet, null);
+        EthModule em = new EthModule(ConfigHelper.CONFIG, rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(ConfigHelper.CONFIG, rsk, wallet, null));
+        return new Web3RskImpl(rsk, worldManager, ConfigHelper.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), rsk.getRepository(), peerScoringManager, null, null, null);
     }
 
     private static NodeID generateNodeID() {

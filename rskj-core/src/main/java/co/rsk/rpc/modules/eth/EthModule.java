@@ -48,12 +48,14 @@ public class EthModule
 
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
+    private final RskSystemProperties config;
     private final Ethereum eth;
     private final EthModuleSolidity ethModuleSolidity;
     private final EthModuleWallet ethModuleWallet;
 
     @Autowired
-    public EthModule(Ethereum eth, EthModuleSolidity ethModuleSolidity, EthModuleWallet ethModuleWallet) {
+    public EthModule(RskSystemProperties config, Ethereum eth, EthModuleSolidity ethModuleSolidity, EthModuleWallet ethModuleWallet) {
+        this.config = config;
         this.eth = eth;
         this.ethModuleSolidity = ethModuleSolidity;
         this.ethModuleWallet = ethModuleWallet;
@@ -69,15 +71,15 @@ public class EthModule
         Repository repository = blockchain.getRepository().getSnapshotTo(block.getStateRoot()).startTracking();
 
         BridgeSupport bridgeSupport = new BridgeSupport(
+                config,
                 repository,
+                null,
                 PrecompiledContracts.BRIDGE_ADDR,
-                block,
-                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
-                null);
+                block);
 
         byte[] result = bridgeSupport.getStateForDebugging();
 
-        BridgeState state = BridgeState.create(result);
+        BridgeState state = BridgeState.create(config.getBlockchainConfig().getCommonConstants().getBridgeConstants(), result);
 
         return state.stateToMap();
     }

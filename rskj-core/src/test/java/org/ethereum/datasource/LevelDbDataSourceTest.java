@@ -19,6 +19,7 @@
 
 package org.ethereum.datasource;
 
+import co.rsk.config.ConfigHelper;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -34,7 +35,7 @@ public class LevelDbDataSourceTest {
 
     @Test
     public void testBatchUpdating() {
-        LevelDbDataSource dataSource = new LevelDbDataSource("test");
+        LevelDbDataSource dataSource = new LevelDbDataSource(ConfigHelper.CONFIG, "test");
         dataSource.init();
 
         final int batchSize = 100;
@@ -49,7 +50,7 @@ public class LevelDbDataSourceTest {
 
     @Test
     public void testPutting() {
-        LevelDbDataSource dataSource = new LevelDbDataSource("test");
+        LevelDbDataSource dataSource = new LevelDbDataSource(ConfigHelper.CONFIG, "test");
         dataSource.init();
 
         byte[] key = randomBytes(32);

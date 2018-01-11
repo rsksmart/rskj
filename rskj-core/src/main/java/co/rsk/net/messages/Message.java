@@ -18,6 +18,7 @@
 
 package co.rsk.net.messages;
 
+import co.rsk.config.RskSystemProperties;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -41,18 +42,18 @@ public abstract class Message {
     }
 
     @VisibleForTesting
-    static Message create(byte[] encoded) {
-        return create((RLPList) RLP.decode2(encoded).get(0));
+    static Message create(RskSystemProperties config, byte[] encoded) {
+        return create(config, (RLPList) RLP.decode2(encoded).get(0));
     }
 
-    public static Message create(ArrayList<RLPElement> paramsList) {
+    public static Message create(RskSystemProperties config, ArrayList<RLPElement> paramsList) {
         byte[] body = paramsList.get(1).getRLPData();
 
         if (body != null) {
             int type = paramsList.get(0).getRLPData()[0];
             MessageType messageType = MessageType.valueOfType(type);
             RLPList list = (RLPList) RLP.decode2(body).get(0);
-            return messageType.createMessage(list);
+            return messageType.createMessage(config, list);
 
         }
         return null;
