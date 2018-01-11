@@ -64,7 +64,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         // wallets in production for security reasons.
         Account coinbaseAccount = properties.localCoinbaseAccount();
         if (coinbaseAccount != null) {
-            this.wallet.addAccount(coinbaseAccount).getBytes();
+            this.wallet.addAccount(coinbaseAccount);
         }
 
         // initializes wallet accounts based on configuration

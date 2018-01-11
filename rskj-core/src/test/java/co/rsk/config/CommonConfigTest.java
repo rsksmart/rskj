@@ -21,7 +21,6 @@ package co.rsk.config;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.db.RepositoryImpl;
 import org.ethereum.config.CommonConfig;
-import org.ethereum.core.PendingTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.validator.ParentBlockHeaderValidator;
@@ -29,7 +28,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * Created by ajlopez on 10/04/2017.
@@ -53,15 +51,6 @@ public class CommonConfigTest {
 
         Assert.assertNotNull(result);
         Assert.assertTrue(result.isEmpty());
-    }
-
-    @Test
-    public void createWireTransactions() {
-        CommonConfig config = new CommonConfig();
-
-        Set<PendingTransaction> result = config.wireTransactions();
-
-        Assert.assertNotNull(result);
     }
 
     @Test
