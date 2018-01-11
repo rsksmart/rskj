@@ -18,7 +18,6 @@
 
 package co.rsk.peg;
 
-import co.rsk.asm.EVMAssembler;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -28,22 +27,15 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
-import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.bitcoin.SimpleBtcTransaction;
 import co.rsk.test.World;
-import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.VM;
-import org.ethereum.vm.program.Program;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
-import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -73,9 +65,6 @@ public class BridgeTest {
     private static final BigInteger GAS_LIMIT = new BigInteger("1000");
     private static final String DATA = "80af2871";
     private static RskSystemProperties config = new RskSystemProperties();
-
-    private BlockchainNetConfig oldConfig;
-    private BlockchainNetConfig testConfig;
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
@@ -978,77 +967,5 @@ public class BridgeTest {
 
     private Block getGenesisBlock() {
         return new BlockGenerator().getGenesisBlock();
-    }
-
-    // These are more sort of "integration" tests, in the sense that they test the behavior of the bridge in a
-    // certain context and with a more real-world-like runtime environment.
-    //
-    // In this case, in the context of a call from another contract within an actual VM execution environment,
-    // pre and post the RFS-90 fork.
-
-    @Test
-    public void testCallFromContract_preRfs90() {
-        try {
-            runBridgeCallFromContract(false);
-            Assert.fail();
-        } catch (RuntimeException e) {}
-    }
-
-    @Test
-    public void testCallFromContract() {
-        Program result = runBridgeCallFromContract(true);
-        long output = new BigInteger(result.memoryChunk(0x30, 0x20)).longValue();
-        Assert.assertEquals(BridgeRegTestConstants.getInstance().getMinimumLockTxValue().value, output);
-    }
-
-    private Program runBridgeCallFromContract(boolean isRfs90) {
-        simulateConfig(isRfs90);
-        config.setBlockchainConfig(testConfig);
-
-        EVMAssembler assembler = new EVMAssembler();
-        ProgramInvoke invoke = new ProgramInvokeMockImpl();
-
-        // Save code on the sender's address so that the bridge
-        // thinks its being called by a contract
-        byte[] callerCode = assembler.assemble("0xaabb 0xccdd 0xeeff");
-        invoke.getRepository().saveCode(new RskAddress(invoke.getOwnerAddress().getLast20Bytes()), callerCode);
-
-        VM vm = new VM(config);
-            
-        // Encode a call to the bridge's getMinimumLockTxValue function
-        // That means first pushing the corresponding encoded ABI storage to memory (MSTORE)
-        // and then doing a DELEGATECALL to the corresponding address with the correct parameters
-        String bridgeFunctionHex = Hex.toHexString(Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode());
-        bridgeFunctionHex = String.format("0x%s%s", bridgeFunctionHex, String.join("", Collections.nCopies(32*2 - bridgeFunctionHex.length(), "0")));
-        String asm = String.format("%s 0x00 MSTORE 0x20 0x30 0x20 0x00 0x0000000000000000000000000000000001000006 0x6000 DELEGATECALL", bridgeFunctionHex);
-        int numOps = asm.split(" ").length;
-        byte[] code = assembler.assemble(asm);
-
-        // Mock a transaction, all we really need is a hash
-        Transaction tx = mock(Transaction.class);
-        when(tx.getHash()).thenReturn(HashUtil.sha3(Hex.decode("aabbccdd")));
-
-        // Run the program on the VM
-        Program program = new Program(config, code, invoke, tx);
-        for (int i = 0; i < numOps; i++) {
-            vm.step(program);
-        }
-        restoreConfig();
-
-        // Return the resulting program (and its state)
-        return program;
-    }
-
-    private void simulateConfig(boolean isRfs90) {
-        oldConfig = config.getBlockchainConfig();
-        testConfig = spy(RegTestConfig.class);
-        BlockchainConfig preRfs90Config = spy(RegTestConfig.class);
-        when(preRfs90Config.isRfs90()).thenReturn(isRfs90);
-        when(testConfig.getConfigForBlock(any(Long.class))).thenReturn(preRfs90Config);
-        Assert.assertEquals(isRfs90, testConfig.getConfigForBlock(1L).isRfs90());
-    }
-
-    private void restoreConfig() {
-        config.setBlockchainConfig(oldConfig);
     }
 }
