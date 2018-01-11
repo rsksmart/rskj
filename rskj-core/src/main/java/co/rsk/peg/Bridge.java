@@ -366,8 +366,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         ));
 
         if (blockchainConfig.isRfs55()) {
-            functionsAndCosts.add(Pair.of(GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT, 19000L)); // TODO: estimate cost
-            functionsAndCosts.add(Pair.of(GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH, 76000L)); // TODO: estimate cost
+            functionsAndCosts.add(Pair.of(GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT, 20000L));
+            functionsAndCosts.add(Pair.of(GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH, 20000L));
         }
 
         functionsAndCosts.stream().forEach((Object obj) -> {
