@@ -31,8 +31,6 @@ import org.junit.runners.MethodSorters;
 import java.io.IOException;
 import java.util.Collections;
 
-import static co.rsk.config.ConfigHelper.CONFIG;
-
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Ignore
 public class GitHubBlockTest {
@@ -43,7 +41,7 @@ public class GitHubBlockTest {
     @Ignore // test for conveniently running a single test
     @Test
     public void runSingleTest() throws ParseException, IOException {
-        CONFIG.setGenesisInfo("frontier.json");
+        ConfigHelper.CONFIG.setGenesisInfo("frontier.json");
         ConfigHelper.CONFIG.setBlockchainConfig(new GenesisConfig());
 
         String json = JSONReader.loadJSONFromCommit("BlockchainTests/Homestead/bcTotalDifficultyTest.json", shacommit);
@@ -100,7 +98,7 @@ public class GitHubBlockTest {
     @Ignore
     @Test
     public void runBCValidBlockTest() throws ParseException, IOException {
-        CONFIG.setGenesisInfo("frontier.json");
+        ConfigHelper.CONFIG.setGenesisInfo("frontier.json");
         run("bcValidBlockTest", true, true);
     }
 

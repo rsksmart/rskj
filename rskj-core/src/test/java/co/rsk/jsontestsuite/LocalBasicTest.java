@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import static co.rsk.config.ConfigHelper.CONFIG;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -55,7 +54,7 @@ public class LocalBasicTest {
     public void setup() {
         // if not set explicitly
         // this test fails being run by Gradle
-        CONFIG.setGenesisInfo("frontier.json");
+        ConfigHelper.CONFIG.setGenesisInfo("frontier.json");
 
         originalBlockchainConfig = ConfigHelper.CONFIG.getBlockchainConfig();
         ConfigHelper.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);

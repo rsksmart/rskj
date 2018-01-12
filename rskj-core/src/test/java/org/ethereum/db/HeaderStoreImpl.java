@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.config.ConfigHelper;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.BlockHeaderWrapper;
 import org.ethereum.datasource.mapdb.MapDBFactory;
@@ -33,8 +34,6 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-
-import static co.rsk.config.ConfigHelper.CONFIG;
 
 /**
  * @author Mikhail Kalinin
@@ -71,7 +70,7 @@ public class HeaderStoreImpl implements HeaderStore {
                             .valueSerializer(Serializers.BLOCK_HEADER_WRAPPER)
                             .makeOrGet();
 
-                    if(CONFIG.databaseReset()) {
+                    if(ConfigHelper.CONFIG.databaseReset()) {
                         headers.clear();
                         db.commit();
                     }

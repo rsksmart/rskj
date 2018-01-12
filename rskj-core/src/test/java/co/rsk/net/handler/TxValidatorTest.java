@@ -35,6 +35,8 @@ import org.mockito.Mockito;
 import java.math.BigInteger;
 import java.util.*;
 
+import static org.mockito.Matchers.eq;
+
 public class TxValidatorTest {
 
 
@@ -120,7 +122,7 @@ public class TxValidatorTest {
         txs = new LinkedList<>();
         txs.addAll(vtxs);
         txs.addAll(itxs);
-        TxValidator txValidator = new TxValidator(co.rsk.config.ConfigHelper.CONFIG, repository, worldManager.getBlockchain());
+        TxValidator txValidator = new TxValidator(ConfigHelper.CONFIG, repository, worldManager.getBlockchain());
         result = txValidator.filterTxs(txs, times, txmap);
         Assert.assertEquals(vtxs, result);
     }
@@ -149,7 +151,7 @@ public class TxValidatorTest {
         times = new HashMap<>();
         txmap = new HashMap<>();
 
-        TxValidator txValidator = new TxValidator(co.rsk.config.ConfigHelper.CONFIG, repository, worldManager.getBlockchain());
+        TxValidator txValidator = new TxValidator(ConfigHelper.CONFIG, repository, worldManager.getBlockchain());
         List<Transaction> result = txValidator.filterTxs(txs, times, txmap);
         Assert.assertTrue(result.size() == 1);
 
@@ -172,7 +174,7 @@ public class TxValidatorTest {
         Transaction transaction = Tx.create(value, gaslimit, gasprice, nonce, data, sender, hashes);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(PrecompiledContracts.BRIDGE_ADDR);
         Mockito.when(transaction.getSignature()).thenReturn(new ECKey.ECDSASignature(BigInteger.ONE, BigInteger.ONE));
-        Mockito.when(transaction.transactionCost(ConfigHelper.CONFIG, Mockito.any())).thenReturn(new Long(0));
+        Mockito.when(transaction.transactionCost(eq(ConfigHelper.CONFIG), Mockito.any())).thenReturn(new Long(0));
         Mockito.when(transaction.getGasLimitAsInteger()).thenReturn(BigInteger.ZERO);
         // Federation is the genesis federation ATM
         Federation federation = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getGenesisFederation();

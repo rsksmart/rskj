@@ -50,7 +50,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-import javax.annotation.PostConstruct;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -66,11 +65,6 @@ import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
 @Import(CommonConfig.class)
 public class DefaultConfig {
     private static Logger logger = LoggerFactory.getLogger("general");
-
-    @PostConstruct
-    public void init() {
-        Thread.setDefaultUncaughtExceptionHandler((t, e) -> logger.error("Uncaught exception", e));
-    }
 
     @Bean
     public BlockStore blockStore(RskSystemProperties config) {

@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockHeaderWrapper;
 import org.ethereum.datasource.mapdb.MapDBFactoryImpl;
@@ -37,8 +38,6 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static co.rsk.config.ConfigHelper.CONFIG;
 
 /**
  * Created by Anton Nashatyrev on 25.12.2015.
@@ -63,8 +62,8 @@ public class HeaderStoreTest {
     public void setup() throws InstantiationException, IllegalAccessException, URISyntaxException, IOException {
         BigInteger bi = new BigInteger(32, new Random());
         testDb = "test_db_" + bi;
-        CONFIG.setDataBaseDir(testDb);
-        CONFIG.setDatabaseReset(false);
+        ConfigHelper.CONFIG.setDataBaseDir(testDb);
+        ConfigHelper.CONFIG.setDatabaseReset(false);
 
         hs = new HeaderStoreImpl();
         hs.setMapDBFactory(new MapDBFactoryImpl());

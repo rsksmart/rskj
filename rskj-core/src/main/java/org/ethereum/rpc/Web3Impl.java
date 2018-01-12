@@ -101,14 +101,14 @@ public class Web3Impl implements Web3 {
     private final ConfigCapabilities configCapabilities;
     private final BlockStore blockStore;
     private final PendingState pendingState;
-    private final RskSystemProperties properties;
+    private final RskSystemProperties config;
 
     private final PersonalModule personalModule;
     private final EthModule ethModule;
 
     protected Web3Impl(Ethereum eth,
                        WorldManager worldManager,
-                       RskSystemProperties properties,
+                       RskSystemProperties config,
                        MinerClient minerClient,
                        MinerServer minerServer,
                        PersonalModule personalModule,
@@ -132,7 +132,7 @@ public class Web3Impl implements Web3 {
         this.configCapabilities = worldManager.getConfigCapabilities();
         this.blockStore = worldManager.getBlockStore();
         this.pendingState = worldManager.getPendingState();
-        this.properties = properties;
+        this.config = config;
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 
         compositeEthereumListener = new CompositeEthereumListener();
@@ -140,7 +140,7 @@ public class Web3Impl implements Web3 {
         compositeEthereumListener.addListener(this.setupListener());
 
         this.eth.addListener(compositeEthereumListener);
-        personalModule.init(this.properties);
+        personalModule.init(this.config);
     }
 
     public EthereumListener setupListener() {
@@ -217,9 +217,9 @@ public class Web3Impl implements Web3 {
     @Override
     public String web3_clientVersion() {
 
-        String clientVersion = baseClientVersion + "/" + properties.projectVersion() + "/" +
+        String clientVersion = baseClientVersion + "/" + config.projectVersion() + "/" +
                 System.getProperty("os.name") + "/Java1.8/" +
-                properties.projectVersionModifier() + "-" + BuildInfo.getBuildHash();
+                config.projectVersionModifier() + "-" + BuildInfo.getBuildHash();
 
         if (logger.isDebugEnabled()) {
             logger.debug("web3_clientVersion(): " + clientVersion);
@@ -247,7 +247,7 @@ public class Web3Impl implements Web3 {
     public String net_version() {
         String s = null;
         try {
-            byte netVersion = properties.getBlockchainConfig().getCommonConstants().getChainId();
+            byte netVersion = config.getBlockchainConfig().getCommonConstants().getChainId();
             return s = Byte.toString(netVersion);
         }
         finally {
@@ -1224,7 +1224,7 @@ public class Web3Impl implements Web3 {
 
         Map<String, String> map = new HashMap<>();
 
-        for (ModuleDescription module : properties.getRpcModules()) {
+        for (ModuleDescription module : config.getRpcModules()) {
             if (module.isEnabled()) {
                 map.put(module.getName(), module.getVersion());
             }

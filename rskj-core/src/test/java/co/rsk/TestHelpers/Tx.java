@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 
 
 public class Tx {
@@ -75,7 +76,7 @@ public class Tx {
             b[i] = bytes.get(i);
         }
         Mockito.when(transaction.getData()).thenReturn(b);
-        Mockito.when(transaction.transactionCost(ConfigHelper.CONFIG, any(Block.class))).thenReturn(amount);
+        Mockito.when(transaction.transactionCost(eq(ConfigHelper.CONFIG), any(Block.class))).thenReturn(amount);
 
         return transaction;
     }

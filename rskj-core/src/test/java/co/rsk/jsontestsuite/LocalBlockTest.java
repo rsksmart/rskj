@@ -28,8 +28,6 @@ import org.junit.runners.MethodSorters;
 import java.io.IOException;
 import java.util.Collections;
 
-import static co.rsk.config.ConfigHelper.CONFIG;
-
 /**
  * @author Angel J Lopez
  * @since 02.23.2016
@@ -51,7 +49,7 @@ public class LocalBlockTest {
     @Ignore // to fix after adding prefix to tx raw encode
     @Test
     public void runSingleTest() throws ParseException, IOException {
-        CONFIG.setGenesisInfo("frontier.json");
+        ConfigHelper.CONFIG.setGenesisInfo("frontier.json");
 
         String json = JSONReader.loadJSONFromResource("json/BlockchainTests/bcValidBlockTest.json", loader);
         GitHubJSONTestSuite.runGitHubJsonSingleBlockTest(json, "RecallSuicidedContractInOneBlock");
@@ -90,7 +88,7 @@ public class LocalBlockTest {
     @Test
     @Ignore
     public void runBCValidBlockTest() throws ParseException, IOException {
-        CONFIG.setGenesisInfo("frontier.json");
+        ConfigHelper.CONFIG.setGenesisInfo("frontier.json");
         run("bcValidBlockTest");
     }
 

@@ -49,7 +49,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static co.rsk.config.ConfigHelper.CONFIG;
 import static org.junit.Assert.*;
 
 /**
@@ -95,8 +94,8 @@ public class BlockQueueTest {
 
         BigInteger bi = new BigInteger(32, new Random());
         testDb = "test_db_" + bi;
-        CONFIG.setDataBaseDir(testDb);
-        CONFIG.setDatabaseReset(false);
+        ConfigHelper.CONFIG.setDataBaseDir(testDb);
+        ConfigHelper.CONFIG.setDatabaseReset(false);
 
         MapDBFactory mapDBFactory = new MapDBFactoryImpl();
         blockQueue = new BlockQueueImpl();
