@@ -202,7 +202,7 @@ public class Web3ImplScoringTest {
     public void addAndRemoveBannedAddressUsingIPV6() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
-        InetAddress address = generateIPAddressV4();
+        InetAddress address = generateIPAddressV6();
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
