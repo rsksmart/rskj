@@ -91,7 +91,7 @@ public class TransactionTest {
         byte[] gas = Hex.decode("4255");
 
         // Tn (nonce); Tp(pgas); Tg(gaslimi); Tt(value); Tv(value); Ti(sender);  Tw; Tr; Ts
-        Transaction tx = new Transaction(ConfigHelper.CONFIG, null, gasPrice, gas, ecKey.getAddress(),
+        Transaction tx = new Transaction(null, gasPrice, gas, ecKey.getAddress(),
                 value.toByteArray(),
                 null);
 
@@ -133,7 +133,7 @@ public class TransactionTest {
         byte[] gasLimit = Hex.decode("4255");
         BigInteger value = new BigInteger("1000000000000000000000000");
 
-        Transaction tx = new Transaction(ConfigHelper.CONFIG, nonce, gasPrice, gasLimit,
+        Transaction tx = new Transaction(nonce, gasPrice, gasLimit,
                 ecKey.getAddress(), value.toByteArray(), null);
 
         tx.sign(senderPrivKey);
@@ -174,7 +174,7 @@ public class TransactionTest {
     @Ignore
     @Test
     public void testTransactionFromSignedRLP() throws Exception {
-        Transaction txSigned = new ImmutableTransaction(ConfigHelper.CONFIG, Hex.decode(RLP_ENCODED_SIGNED_TX));
+        Transaction txSigned = new ImmutableTransaction(Hex.decode(RLP_ENCODED_SIGNED_TX));
 
         assertEquals(HASH_TX, Hex.toHexString(txSigned.getHash()));
         assertEquals(RLP_ENCODED_SIGNED_TX, Hex.toHexString(txSigned.getEncoded()));
@@ -193,7 +193,7 @@ public class TransactionTest {
     @Ignore
     @Test
     public void testTransactionFromUnsignedRLP() throws Exception {
-        Transaction txUnsigned = new ImmutableTransaction(ConfigHelper.CONFIG, Hex.decode(RLP_ENCODED_UNSIGNED_TX));
+        Transaction txUnsigned = new ImmutableTransaction(Hex.decode(RLP_ENCODED_UNSIGNED_TX));
 
         assertEquals(HASH_TX, Hex.toHexString(txUnsigned.getHash()));
         assertEquals(RLP_ENCODED_UNSIGNED_TX, Hex.toHexString(txUnsigned.getEncoded()));
@@ -214,7 +214,7 @@ public class TransactionTest {
     @Ignore
     @Test
     public void testTransactionFromNew1() throws MissingPrivateKeyException {
-        Transaction txNew = new Transaction(ConfigHelper.CONFIG, testNonce, testGasPrice, testGasLimit, testReceiveAddress, testValue, testData);
+        Transaction txNew = new Transaction(testNonce, testGasPrice, testGasLimit, testReceiveAddress, testValue, testData);
 
         assertEquals("", Hex.toHexString(txNew.getNonce()));
         assertEquals(new BigInteger(1, testGasPrice), new BigInteger(1, txNew.getGasPrice()));
@@ -251,7 +251,7 @@ public class TransactionTest {
         byte[] value = Hex.decode("2386f26fc10000"); //10000000000000000"
         byte[] data = new byte[0];
 
-        Transaction tx = new Transaction(ConfigHelper.CONFIG, nonce, gasPrice, gas, recieveAddress, value, data);
+        Transaction tx = new Transaction(nonce, gasPrice, gas, recieveAddress, value, data);
 
         // Testing unsigned
         String encodedUnsigned = Hex.toHexString(tx.getEncoded());
@@ -282,7 +282,7 @@ public class TransactionTest {
                 ("4560005444602054600f60056002600a02010b0d630000001d596002602054630000003b5860066000530860056006600202010a0d6300000036596004604054630000003b586005606054");
 
 
-        Transaction tx1 = new Transaction(ConfigHelper.CONFIG, nonce, gasPrice, gas,
+        Transaction tx1 = new Transaction(nonce, gasPrice, gas,
                 recieveAddress, endowment, init);
         tx1.sign(senderPrivKey);
 
@@ -290,7 +290,7 @@ public class TransactionTest {
 
 
         System.out.println(Hex.toHexString(payload));
-        Transaction tx2 = new ImmutableTransaction(ConfigHelper.CONFIG, payload);
+        Transaction tx2 = new ImmutableTransaction(payload);
 //        tx2.getSender();
 
         String plainTx1 = Hex.toHexString(tx1.getEncodedRaw());
@@ -680,7 +680,7 @@ public class TransactionTest {
                                    byte[] data, long value) throws InterruptedException {
         BigInteger nonce = blockchain.getRepository().getNonce(sender.getAddress());
         Transaction tx = new Transaction(
-                ConfigHelper.CONFIG, ByteUtil.bigIntegerToBytes(nonce),
+                ByteUtil.bigIntegerToBytes(nonce),
                 ByteUtil.longToBytesNoLeadZeroes(1),
                 ByteUtil.longToBytesNoLeadZeroes(3_000_000),
                 receiveAddress,

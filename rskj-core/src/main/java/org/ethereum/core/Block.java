@@ -19,7 +19,6 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.trie.Trie;
@@ -58,7 +57,6 @@ public class Block {
 
     private static final Logger logger = LoggerFactory.getLogger("block");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
-    private final RskSystemProperties config;
 
     private BlockHeader header;
 
@@ -76,25 +74,23 @@ public class Block {
     /* Indicates if this block can or cannot be changed */
     private volatile boolean sealed;
 
-    public Block(RskSystemProperties config, byte[] rawData) {
-        this(config, rawData, true);
+    public Block(byte[] rawData) {
+        this(rawData, true);
     }
 
-    protected Block(RskSystemProperties config, byte[] rawData, boolean sealed) {
-        this.config = config;
+    protected Block(byte[] rawData, boolean sealed) {
         this.rlpEncoded = rawData;
         this.sealed = sealed;
     }
 
-    public Block(RskSystemProperties config, BlockHeader header) {
-        this.config = config;
+    public Block(BlockHeader header) {
         this.header = header;
         this.parsed = true;
     }
 
-    public Block(RskSystemProperties config, BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
+    public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
 
-        this(config,
+        this(
                 header.getParentHash(),
                 header.getUnclesHash(),
                 header.getCoinbase(),
@@ -118,7 +114,7 @@ public class Block {
                 header.getMinimumGasPrice());
     }
 
-    public Block(RskSystemProperties config, byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
+    public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp, byte[] extraData,
                  byte[] mixHash,
@@ -127,7 +123,7 @@ public class Block {
                  byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
 
-        this(config, parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
+        this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
                 gasUsed, timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot,
                 stateRoot, transactionsList, uncleList, minimumGasPrice, BigInteger.ZERO);
 
@@ -138,14 +134,14 @@ public class Block {
         this.flushRLP();
     }
 
-    public Block(RskSystemProperties config, byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
+    public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp, byte[] extraData,
                  byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, BigInteger paidFees) {
 
-        this(config, parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
+        this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
                 gasUsed, timestamp, extraData, mixHash, nonce, transactionsList, uncleList, minimumGasPrice);
 
         this.header.setPaidFees(paidFees);
@@ -160,12 +156,11 @@ public class Block {
         this.flushRLP();
     }
 
-    public Block(RskSystemProperties config, byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
+    public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp,
                  byte[] extraData, byte[] mixHash, byte[] nonce,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
-        this.config = config;
 
         if (transactionsList == null) {
             this.transactionsList = Collections.emptyList();
@@ -186,8 +181,8 @@ public class Block {
         this.parsed = true;
     }
 
-    public static Block fromValidData(RskSystemProperties config, BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
-        Block block = new Block(config, (byte[])null);
+    public static Block fromValidData(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
+        Block block = new Block((byte[])null);
         block.parsed = true;
         block.header = header;
         block.transactionsList = transactionsList;
@@ -207,7 +202,7 @@ public class Block {
 
     // Clone this block allowing modifications
     public Block cloneBlock() {
-        return new Block(config, this.getEncoded(), false);
+        return new Block(this.getEncoded(), false);
     }
 
     private void parseRLP() {
@@ -488,11 +483,11 @@ public class Block {
 
         for (int i = 0; i < txTransactions.size(); i++) {
             RLPElement transactionRaw = txTransactions.get(i);
-            Transaction tx = new ImmutableTransaction(config, transactionRaw.getRLPData());
+            Transaction tx = new ImmutableTransaction(transactionRaw.getRLPData());
 
             if (isRemascTransaction(tx, i, txTransactions.size())) {
                 // It is the remasc transaction
-                tx = new RemascTransaction(config, transactionRaw.getRLPData());
+                tx = new RemascTransaction(transactionRaw.getRLPData());
             }
             parsedTxs.add(tx);
         }

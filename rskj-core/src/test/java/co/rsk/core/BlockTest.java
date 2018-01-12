@@ -20,7 +20,6 @@ package co.rsk.core;
 
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.core.*;
@@ -46,7 +45,7 @@ public class BlockTest {
         List<Transaction> txs = new ArrayList<>();
 
         Transaction txNotToRemasc = new Transaction(
-                ConfigHelper.CONFIG, BigInteger.ZERO.toByteArray(),
+                BigInteger.ZERO.toByteArray(),
                 BigInteger.ONE.toByteArray(),
                 BigInteger.valueOf(21000).toByteArray(),
                 new ECKey().getAddress() ,
@@ -56,7 +55,7 @@ public class BlockTest {
         txs.add(txNotToRemasc);
 
         Transaction txToRemascThatIsNotTheLatestTx = new Transaction(
-                ConfigHelper.CONFIG, BigInteger.ZERO.toByteArray(),
+                BigInteger.ZERO.toByteArray(),
                 BigInteger.ONE.toByteArray(),
                 BigInteger.valueOf(21000).toByteArray(),
                 PrecompiledContracts.REMASC_ADDR.getBytes(),
@@ -65,11 +64,11 @@ public class BlockTest {
         txToRemascThatIsNotTheLatestTx.sign(new ECKey().getPrivKeyBytes());
         txs.add(txToRemascThatIsNotTheLatestTx);
 
-        Transaction remascTx = new RemascTransaction(ConfigHelper.CONFIG, 1);
+        Transaction remascTx = new RemascTransaction(1);
         txs.add(remascTx);
 
         Block block =  new Block(
-                ConfigHelper.CONFIG, PegTestUtils.createHash3().getBytes(),          // parent hash
+                PegTestUtils.createHash3().getBytes(),          // parent hash
                 EMPTY_LIST_HASH,       // uncle hash
                 PegTestUtils.createHash3().getBytes(),            // coinbase
                 new Bloom().getData(),          // logs bloom
@@ -90,7 +89,7 @@ public class BlockTest {
                 BigInteger.ZERO
         );
 
-        Block parsedBlock = new Block(ConfigHelper.CONFIG, block.getEncoded());
+        Block parsedBlock = new Block(block.getEncoded());
         Assert.assertEquals(ImmutableTransaction.class, parsedBlock.getTransactionsList().get(0).getClass());
         Assert.assertEquals(ImmutableTransaction.class, parsedBlock.getTransactionsList().get(1).getClass());
         Assert.assertEquals(RemascTransaction.class, parsedBlock.getTransactionsList().get(2).getClass());

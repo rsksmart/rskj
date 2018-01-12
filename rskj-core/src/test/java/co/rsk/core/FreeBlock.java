@@ -201,7 +201,7 @@ public class FreeBlock {
 
         for (int i = 0; i < txTransactions.size(); i++) {
             RLPElement transactionRaw = txTransactions.get(i);
-            Transaction tx = new ImmutableTransaction(co.rsk.config.ConfigHelper.CONFIG, transactionRaw.getRLPData());
+            Transaction tx = new ImmutableTransaction(transactionRaw.getRLPData());
             parsedTxs.add(tx);
         }
 

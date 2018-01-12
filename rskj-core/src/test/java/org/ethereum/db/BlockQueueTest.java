@@ -79,7 +79,7 @@ public class BlockQueueTest {
 
         for (String blockRLP : strData) {
             Block block = new Block(
-                    ConfigHelper.CONFIG, Hex.decode(blockRLP)
+                    Hex.decode(blockRLP)
             );
 
             if (block.getNumber() % 10 == 0)
@@ -184,7 +184,7 @@ public class BlockQueueTest {
         Block b1_ = blocks.get(1);
         BlockHeader header = b1_.getHeader().cloneHeader();
         header.setNumber(b1.getNumber());
-        b1_ = new Block(ConfigHelper.CONFIG, header, b1_.getTransactionsList(), b1_.getUncleList());
+        b1_ = new Block(header, b1_.getTransactionsList(), b1_.getUncleList());
 
         blockQueue.add(new BlockWrapper(ConfigHelper.CONFIG, b1, nodeId));
         assertTrue(b1.isEqual(blockQueue.peek().getBlock()));

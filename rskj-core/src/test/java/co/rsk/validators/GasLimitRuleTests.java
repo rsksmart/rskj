@@ -60,6 +60,6 @@ public class GasLimitRuleTests {
                 gasLimit, 0,
                 0, null, null,0);
 
-        return new Block(ConfigHelper.CONFIG, header);
+        return new Block(header);
     }
 }

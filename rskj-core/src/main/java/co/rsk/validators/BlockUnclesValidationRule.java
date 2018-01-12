@@ -119,7 +119,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         for (BlockHeader uncle : uncles) {
             byte[] uhash = uncle.getHash();
 
-            Block blockForUncleHeader = new Block(config, uncle);
+            Block blockForUncleHeader = new Block(uncle);
 
             if (!this.validations.isValid(blockForUncleHeader)
                     || !validateParentNumber(uncle, blockNumber)) {

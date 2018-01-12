@@ -18,6 +18,7 @@
 
 package co.rsk.TestHelpers;
 
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -53,7 +54,7 @@ public class Tx {
 
         Mockito.when(transaction.getSender()).thenReturn(returnSender);
         Mockito.when(transaction.getHash()).thenReturn(BigInteger.valueOf(hashes.nextLong()).toByteArray());
-        Mockito.when(transaction.acceptTransactionSignature()).thenReturn(Boolean.TRUE);
+        Mockito.when(transaction.acceptTransactionSignature(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId())).thenReturn(Boolean.TRUE);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(returnReceiveAddress);
         ArrayList<Byte> bytes = new ArrayList();
         long amount = 21000;
@@ -74,7 +75,7 @@ public class Tx {
             b[i] = bytes.get(i);
         }
         Mockito.when(transaction.getData()).thenReturn(b);
-        Mockito.when(transaction.transactionCost(any(Block.class))).thenReturn(amount);
+        Mockito.when(transaction.transactionCost(ConfigHelper.CONFIG, any(Block.class))).thenReturn(amount);
 
         return transaction;
     }

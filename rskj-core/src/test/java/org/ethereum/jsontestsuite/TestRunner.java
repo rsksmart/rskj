@@ -131,7 +131,7 @@ public class TestRunner {
             Block tBlock = null;
             try {
                 byte[] rlp = parseData(blockTck.getRlp());
-                tBlock = new Block(ConfigHelper.CONFIG, rlp);
+                tBlock = new Block(rlp);
 
                 ArrayList<String> outputSummary =
                         BlockHeaderValidator.valid(tBlock.getHeader(), block.getHeader());
@@ -571,7 +571,7 @@ public class TestRunner {
         byte[] data = tx.getData();
 
         org.ethereum.core.Transaction transaction = new org.ethereum.core.Transaction(
-                ConfigHelper.CONFIG, nonceBytes, gasPriceBytes, gasBytes,
+                nonceBytes, gasPriceBytes, gasBytes,
                 toAddr, valueBytes, data);
 
         return transaction;

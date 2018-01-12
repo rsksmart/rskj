@@ -91,7 +91,7 @@ public class BlockStressTest {
         String blockRLP;
         while(null != (blockRLP = reader.readLine())) {
             Block block = new Block(
-                    ConfigHelper.CONFIG, Hex.decode(blockRLP)
+                    Hex.decode(blockRLP)
             );
             blockSource.put(block.getHash(), block);
 

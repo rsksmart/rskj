@@ -795,7 +795,7 @@ public class BlockValidatorTest {
         List<Transaction> txs = new ArrayList<>();
         Transaction tx = Transaction.create(ConfigHelper.CONFIG, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
         tx.sign(new byte[]{});
-        txs.add(new RemascTransaction(ConfigHelper.CONFIG, BigInteger.ONE.longValue()));
+        txs.add(new RemascTransaction(BigInteger.ONE.longValue()));
         txs.add(tx);
 
         Block block = new BlockBuilder().parent(genesis).transactions(txs).build();
@@ -816,7 +816,7 @@ public class BlockValidatorTest {
         Transaction tx = Transaction.create(ConfigHelper.CONFIG, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN);
         tx.sign(new byte[]{});
         txs.add(tx);
-        txs.add(new RemascTransaction(ConfigHelper.CONFIG, BigInteger.ONE.longValue()));
+        txs.add(new RemascTransaction(BigInteger.ONE.longValue()));
         Block block = new BlockBuilder().parent(genesis).transactions(txs).build();
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addRemascValidationRule()

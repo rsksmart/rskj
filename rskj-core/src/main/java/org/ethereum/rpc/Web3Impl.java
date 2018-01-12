@@ -606,7 +606,7 @@ public class Web3Impl implements Web3 {
     public String eth_sendRawTransaction(String rawData) throws Exception {
         String s = null;
         try {
-            Transaction tx = new ImmutableTransaction(properties, stringHexToByteArray(rawData));
+            Transaction tx = new ImmutableTransaction(stringHexToByteArray(rawData));
 
             if (null == tx.getGasLimit()
                     || null == tx.getGasPrice()
@@ -861,7 +861,7 @@ public class Web3Impl implements Web3 {
             BlockHeader uncleHeader = block.getUncleList().get(idx);
             Block uncle = blockchain.getBlockByHash(uncleHeader.getHash());
             if (uncle == null) {
-                uncle = new Block(properties, uncleHeader, Collections.emptyList(), Collections.emptyList());
+                uncle = new Block(uncleHeader, Collections.emptyList(), Collections.emptyList());
             }
             return s = getBlockResult(uncle, false);
         } finally {

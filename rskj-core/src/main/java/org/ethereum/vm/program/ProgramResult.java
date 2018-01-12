@@ -19,7 +19,6 @@
 
 package org.ethereum.vm.program;
 
-import co.rsk.config.RskSystemProperties;
 import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
@@ -178,9 +177,9 @@ public class ProgramResult {
         return internalTransactions;
     }
 
-    public InternalTransaction addInternalTransaction(RskSystemProperties config, byte[] parentHash, int deep, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
+    public InternalTransaction addInternalTransaction(byte[] parentHash, int deep, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
                                                       byte[] senderAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
-        InternalTransaction transaction = new InternalTransaction(config, parentHash, deep, size(internalTransactions), nonce, gasPrice, gasLimit, senderAddress, receiveAddress, value, data, note);
+        InternalTransaction transaction = new InternalTransaction(parentHash, deep, size(internalTransactions), nonce, gasPrice, gasLimit, senderAddress, receiveAddress, value, data, note);
         getInternalTransactions().add(transaction);
         return transaction;
     }

@@ -25,7 +25,6 @@ import co.rsk.peg.BridgeUtils;
 import co.rsk.core.RskAddress;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.config.Constants;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.ECDSASignature;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
@@ -116,10 +115,7 @@ public class Transaction implements SerializableObject {
      * from the RLP-encoded data */
     private boolean parsed = false;
 
-    private final RskSystemProperties config;
-
-    protected Transaction(RskSystemProperties config, byte[] rawData) {
-        this.config = config;
+    protected Transaction(byte[] rawData) {
         this.rlpEncoded = rawData;
         parsed = false;
     }
@@ -129,19 +125,18 @@ public class Transaction implements SerializableObject {
      * or simple send tx
      * [ nonce, gasPrice, gasLimit, receiveAddress, value, data, signature(v, r, s) ]
      */
-    public Transaction(RskSystemProperties config, byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
-        this(config, nonce, gasPrice, gasLimit, receiveAddress, value, data, (byte) 0);
+    public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
+        this(nonce, gasPrice, gasLimit, receiveAddress, value, data, (byte) 0);
     }
 
-    public Transaction(RskSystemProperties config, byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] r, byte[] s, byte v) {
-        this(config, nonce, gasPrice, gasLimit, receiveAddress, value, data, (byte) 0);
+    public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] r, byte[] s, byte v) {
+        this(nonce, gasPrice, gasLimit, receiveAddress, value, data, (byte) 0);
 
         this.signature = ECDSASignature.fromComponents(r, s, v);
     }
 
-    public Transaction(RskSystemProperties config, byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data,
+    public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data,
                        byte chainId) {
-        this.config = config;
         this.nonce = ByteUtil.cloneBytes(nonce);
         this.gasPrice = ByteUtil.cloneBytes(gasPrice);
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
@@ -158,7 +153,7 @@ public class Transaction implements SerializableObject {
     }
 
     public Transaction toImmutableTransaction() {
-        return new ImmutableTransaction(config, this.getEncoded());
+        return new ImmutableTransaction(this.getEncoded());
     }
 
     private byte extractChainIdFromV(byte v) {
@@ -183,7 +178,7 @@ public class Transaction implements SerializableObject {
     // There was a method called NEW_getTransactionCost that implemented this alternative solution:
     // "return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION)
     //         + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;"
-    public long transactionCost(Block block){
+    public long transactionCost(RskSystemProperties config, Block block){
         if (!parsed) {
             rlpParse();
         }
@@ -360,7 +355,7 @@ public class Transaction implements SerializableObject {
         return signature;
     }
 
-    public boolean acceptTransactionSignature() {
+    public boolean acceptTransactionSignature(byte currentChainId) {
         ECDSASignature signature = getSignature();
         if (signature == null) {
             return false;
@@ -376,7 +371,7 @@ public class Transaction implements SerializableObject {
 
         byte chId = this.getChainId();
 
-        if (chId !=0 && chId != getConfigChainId(config)) {
+        if (chId !=0 && chId != currentChainId) {
             return false;
         }
 
@@ -599,17 +594,13 @@ public class Transaction implements SerializableObject {
     }
 
     public static Transaction create(RskSystemProperties config, String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData) {
-        return new Transaction(config, BigIntegers.asUnsignedByteArray(nonce),
+        return new Transaction(BigIntegers.asUnsignedByteArray(nonce),
                 BigIntegers.asUnsignedByteArray(gasPrice),
                 BigIntegers.asUnsignedByteArray(gasLimit),
                 to != null ? Hex.decode(to) : null,
                 BigIntegers.asUnsignedByteArray(amount),
                 decodedData,
-                getConfigChainId(config));
-    }
-
-    public static byte getConfigChainId(SystemProperties config) {
-        return config.getBlockchainConfig().getCommonConstants().getChainId();
+                config.getBlockchainConfig().getCommonConstants().getChainId());
     }
 
     public static RskAddress parseRskAddress(@Nullable byte[] bytes) {

@@ -167,7 +167,7 @@ public class ECKeyTest {
 
         byte[] rawtx = Hex.decode("f86e80893635c9adc5dea000008609184e72a00082109f9479b08ad8787060333663d19704909ee7b1903e58801ba0899b92d0c76cbf18df24394996beef19c050baa9823b4a9828cd9b260c97112ea0c9e62eb4cf0a9d95ca35c8830afac567619d6b3ebee841a3c8be61d35acd8049");
 
-        Transaction tx = new ImmutableTransaction(co.rsk.config.ConfigHelper.CONFIG, rawtx);
+        Transaction tx = new ImmutableTransaction(rawtx);
         ECKey key = ECKey.signatureToKey(HashUtil.sha3(rawtx), tx.getSignature().toBase64());
 
         System.out.println("Signature public key\t: " + Hex.toHexString(key.getPubKey()));

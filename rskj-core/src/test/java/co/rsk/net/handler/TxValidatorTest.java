@@ -172,7 +172,7 @@ public class TxValidatorTest {
         Transaction transaction = Tx.create(value, gaslimit, gasprice, nonce, data, sender, hashes);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(PrecompiledContracts.BRIDGE_ADDR);
         Mockito.when(transaction.getSignature()).thenReturn(new ECKey.ECDSASignature(BigInteger.ONE, BigInteger.ONE));
-        Mockito.when(transaction.transactionCost(Mockito.any())).thenReturn(new Long(0));
+        Mockito.when(transaction.transactionCost(ConfigHelper.CONFIG, Mockito.any())).thenReturn(new Long(0));
         Mockito.when(transaction.getGasLimitAsInteger()).thenReturn(BigInteger.ZERO);
         // Federation is the genesis federation ATM
         Federation federation = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getGenesisFederation();

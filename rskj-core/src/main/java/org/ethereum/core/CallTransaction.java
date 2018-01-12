@@ -55,14 +55,14 @@ public class CallTransaction {
 
     public static Transaction createRawTransaction(RskSystemProperties config, long nonce, long gasPrice, long gasLimit, RskAddress toAddress,
                                                    long value, byte[] data) {
-        return new Transaction(config,
+        return new Transaction(
                 longToBytesNoLeadZeroes(nonce),
                 longToBytesNoLeadZeroes(gasPrice),
                 longToBytesNoLeadZeroes(gasLimit),
                 toAddress.equals(RskAddress.nullAddress()) ? null : toAddress.getBytes(),
                 longToBytesNoLeadZeroes(value),
                 data,
-                Transaction.getConfigChainId(config));
+                config.getBlockchainConfig().getCommonConstants().getChainId());
     }
 
 

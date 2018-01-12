@@ -42,7 +42,7 @@ public class TransactionTest {
 
     @Test  /* achieve public key of the sender */
     public void test2() throws Exception {
-        if (Transaction.getConfigChainId(ConfigHelper.CONFIG) != 0)
+        if (ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId() != 0)
             return;
 
         // cat --> 79b08ad8787060333663d19704909ee7b1903e58
@@ -59,7 +59,7 @@ public class TransactionTest {
         byte[] gas = Hex.decode("4255");
 
         // Tn (nonce); Tp(pgas); Tg(gaslimi); Tt(value); Tv(value); Ti(sender);  Tw; Tr; Ts
-        Transaction tx = new Transaction(ConfigHelper.CONFIG, null, gasPrice, gas, ecKey.getAddress(),
+        Transaction tx = new Transaction(null, gasPrice, gas, ecKey.getAddress(),
                 value.toByteArray(),
                 null);
 
@@ -221,7 +221,7 @@ public class TransactionTest {
         byte[] value = BigInteger.valueOf(1000000000000000000L).toByteArray();
         byte[] data = new byte[0];
         byte chainId = 1;
-        Transaction tx = new Transaction(ConfigHelper.CONFIG, nonce, gasPrice, gas, to, value, data, chainId);
+        Transaction tx = new Transaction(nonce, gasPrice, gas, to, value, data, chainId);
         byte[] encoded = tx.getEncodedRaw();
         byte[] hash = tx.getRawHash();
         String strenc = Hex.toHexString(encoded);

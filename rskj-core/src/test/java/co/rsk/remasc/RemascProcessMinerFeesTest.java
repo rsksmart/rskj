@@ -608,13 +608,13 @@ public class RemascProcessMinerFeesTest {
 
         // A hacker trying to screw the system creates a tx to remasc and a fool/accomplice miner includes that tx in a block
         Transaction tx = new Transaction(
-                ConfigHelper.CONFIG, BigInteger.valueOf(1).toByteArray(),
+                BigInteger.valueOf(1).toByteArray(),
                 BigInteger.ONE.toByteArray(),
                 BigInteger.valueOf(minerFee).toByteArray(),
                 PrecompiledContracts.REMASC_ADDR.getBytes() ,
                 BigInteger.valueOf(txValue*2).toByteArray(),
                 null,
-                Transaction.getConfigChainId(ConfigHelper.CONFIG));
+                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx.sign(cowKey.getPrivKeyBytes());
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
                 PegTestUtils.createHash3(), PegTestUtils.createHash3(), null, null, tx);
@@ -684,23 +684,23 @@ public class RemascProcessMinerFeesTest {
 //        }
         long txCreateContractGasLimit = 53755 + 32000;
         Transaction txCreateContract = new Transaction(
-                ConfigHelper.CONFIG, BigInteger.valueOf(1).toByteArray(),
+                BigInteger.valueOf(1).toByteArray(),
                 BigInteger.ONE.toByteArray(),
                 BigInteger.valueOf(txCreateContractGasLimit).toByteArray(),
                 null ,
                 BigInteger.valueOf(0).toByteArray(),
                 Hex.decode("6060604052346000575b6077806100176000396000f30060606040525b3460005760495b6000600890508073ffffffffffffffffffffffffffffffffffffffff166040518090506000604051808303816000866161da5a03f1915050505b50565b0000a165627a7a7230582036692fbb1395da1688af0189be5b0ac18df3d93a2402f4fc8f927b31c1baa2460029"),
-                Transaction.getConfigChainId(ConfigHelper.CONFIG));
+                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         txCreateContract.sign(cowKey.getPrivKeyBytes());
         long txCallRemascGasLimit = 21828;
         Transaction txCallRemasc = new Transaction(
-                ConfigHelper.CONFIG, BigInteger.valueOf(2).toByteArray(),
+                BigInteger.valueOf(2).toByteArray(),
                 BigInteger.ONE.toByteArray(),
                 BigInteger.valueOf(txCallRemascGasLimit).toByteArray(),
                 Hex.decode("da7ce79725418f4f6e13bf5f520c89cec5f6a974") ,
                 BigInteger.valueOf(0).toByteArray(),
                 null,
-                Transaction.getConfigChainId(ConfigHelper.CONFIG));
+                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         txCallRemasc.sign(cowKey.getPrivKeyBytes());
 
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),

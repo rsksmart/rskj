@@ -561,7 +561,7 @@ public class BlockExecutorTest {
         }
 
         Transaction tx = new Transaction(
-                ConfigHelper.CONFIG, BigIntegers.asUnsignedByteArray(nonce),
+                BigIntegers.asUnsignedByteArray(nonce),
                 BigIntegers.asUnsignedByteArray(BigInteger.ONE), //gasPrice
                 gasLimitData, // gasLimit
                 to,

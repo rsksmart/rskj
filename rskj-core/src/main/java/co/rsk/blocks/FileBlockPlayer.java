@@ -58,7 +58,7 @@ public class FileBlockPlayer implements BlockPlayer, AutoCloseable {
 
             String[] parts = line.split(",");
 
-            return new Block(config, Hex.decode(parts[parts.length - 1]));
+            return new Block(Hex.decode(parts[parts.length - 1]));
         }
         catch (IOException ex) {
             logger.error("Exception reader block", ex);

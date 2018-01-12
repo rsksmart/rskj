@@ -97,7 +97,7 @@ public class TransactionBuilder {
         tx.sign(sender.getEcKey().getPrivKeyBytes());
 
         if (this.immutable) {
-            return new ImmutableTransaction(ConfigHelper.CONFIG, tx.getEncoded());
+            return new ImmutableTransaction(tx.getEncoded());
         }
 
         return tx;

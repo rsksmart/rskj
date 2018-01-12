@@ -244,7 +244,6 @@ public class Program {
         byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(senderAddress).toByteArray() : nonce;
 
         return getResult().addInternalTransaction(
-                config,
                 transaction.getHash(),
                 getCallDeep(),
                 senderNonce,
@@ -1571,7 +1570,7 @@ public class Program {
                 // CREATE CALL INTERNAL TRANSACTION
                 InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, EMPTY_BYTE_ARRAY, "call");
 
-                Block executionBlock = new Block(config, getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getData(), EMPTY_BYTE_ARRAY,
+                Block executionBlock = new Block(getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getData(), EMPTY_BYTE_ARRAY,
                         getDifficulty().getData(), getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
                         EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, new ArrayList<>(), new ArrayList<>(), null);
 

@@ -71,12 +71,12 @@ public class BlockchainVMTest {
         byte[] dstAddress = randomAddress();
         BigInteger transactionGas =new BigInteger("21000");
         Transaction t = new Transaction(
-                ConfigHelper.CONFIG, ZERO_BYTE_ARRAY,
+                ZERO_BYTE_ARRAY,
                 BigInteger.ONE.toByteArray(), transactionGas.toByteArray(),
                 dstAddress ,
                 transferAmount.toByteArray(),
                 null,
-                Transaction.getConfigChainId(ConfigHelper.CONFIG));
+                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
 
         t.sign(binfo.faucetKey.getPrivKeyBytes());
         txs.add(t);

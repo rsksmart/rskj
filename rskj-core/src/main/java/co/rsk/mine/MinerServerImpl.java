@@ -726,7 +726,7 @@ public class MinerServerImpl implements MinerServer {
         List<Transaction> txs = new MinerUtils().getAllTransactions(pendingState);
         logger.debug("txsList size {}", txs.size());
 
-        Transaction remascTx = new RemascTransaction(config, parent.getNumber() + 1);
+        Transaction remascTx = new RemascTransaction(parent.getNumber() + 1);
         txs.add(remascTx);
 
         Map<RskAddress, BigInteger> accountNonces = new HashMap<>();
@@ -808,8 +808,8 @@ public class MinerServerImpl implements MinerServer {
 
     private Block createBlock(Block newBlockParent, List<BlockHeader> uncles, List<Transaction> txs, BigInteger minimumGasPrice) {
         final BlockHeader newHeader = createHeader(newBlockParent, uncles, txs, minimumGasPrice);
-        final Block newBlock = new Block(config, newHeader, txs, uncles);
-        return validationRules.isValid(newBlock) ? newBlock : new Block(config, newHeader, txs, null);
+        final Block newBlock = new Block(newHeader, txs, uncles);
+        return validationRules.isValid(newBlock) ? newBlock : new Block(newHeader, txs, null);
     }
 
     private class FallbackMiningTask extends TimerTask {

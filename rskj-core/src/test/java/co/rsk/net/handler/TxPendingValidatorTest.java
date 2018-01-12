@@ -19,7 +19,6 @@
 package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
-import co.rsk.config.ConfigHelper;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
@@ -42,7 +41,7 @@ public class TxPendingValidatorTest {
     @Test
     public void remascTx() {
         TxPendingValidator validator = new TxPendingValidator();
-        Assert.assertFalse(validator.isValid(new RemascTransaction(ConfigHelper.CONFIG, 0), null));
+        Assert.assertFalse(validator.isValid(new RemascTransaction(0), null));
     }
 
     @Test

@@ -418,7 +418,7 @@ public class PendingStateImpl implements PendingState {
         Trie txsTrie = new TrieImpl();
 
         // creating fake lightweight calculated block with no hashes calculations
-        return new Block(config, best.getHash(),
+        return new Block(best.getHash(),
                             emptyUncleHashList, // uncleHash
                             new byte[32], //coinbase
                             new byte[32], // log bloom - from tx receipts

@@ -188,7 +188,7 @@ public class TransactionsMessageTest {
         byte[] gasPrice = Hex.decode("09184e72a000");
         byte[] gasLimit = Hex.decode("4255");
 
-        Transaction tx = new Transaction(ConfigHelper.CONFIG, null, gasPrice,
+        Transaction tx = new Transaction(null, gasPrice,
                 gasLimit, ecKey.getAddress(), value.toByteArray(), null);
 
         tx.sign(privKey);

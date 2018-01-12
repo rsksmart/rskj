@@ -103,7 +103,7 @@ public class BlockGenerator {
         byte[] bitcoinMergedMiningMerkleProof = null;
         byte[] bitcoinMergedMiningCoinbaseTransaction = null;
 
-        Genesis genesis = new Genesis(ConfigHelper.CONFIG, parentHash, EMPTY_LIST_HASH, coinbase, getZeroHash(),
+        Genesis genesis = new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, getZeroHash(),
                 difficulty, 0, gasLimit, 0, timestamp, extraData,
                 mixHash, nonce, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, BigInteger.valueOf(100L).toByteArray());
@@ -169,7 +169,7 @@ public class BlockGenerator {
         byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
 
         return new Block(
-                ConfigHelper.CONFIG, parent.getHash(), // parent hash
+                parent.getHash(), // parent hash
                 unclesListHash, // uncle hash
                 parent.getCoinbase(),
                 ByteUtils.clone(new Bloom().getData()),
@@ -204,7 +204,7 @@ public class BlockGenerator {
         }
 
         return new Block(
-                ConfigHelper.CONFIG, parent.getHash(), // parent hash
+                parent.getHash(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
                 coinbase, // coinbase
                 logBloom.getData(), // logs bloom
@@ -291,7 +291,7 @@ public class BlockGenerator {
 
         newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
 
-        Block newBlock = new Block(ConfigHelper.CONFIG, newHeader, txs, uncles);
+        Block newBlock = new Block(newHeader, txs, uncles);
 
         return newBlock;
     }
@@ -311,7 +311,7 @@ public class BlockGenerator {
                 , BigInteger.valueOf(100L));
 
         return new Block(
-                ConfigHelper.CONFIG, parent.getHash(), // parent hash
+                parent.getHash(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase(), // coinbase
                 logBloom.getData(), // logs bloom
@@ -366,7 +366,7 @@ public class BlockGenerator {
     public Block createFallbackMinedChildBlockWithTimeStamp(Block parent, byte[] difficulty, long timeStamp, boolean goodSig) {
         List<Transaction> txs = new ArrayList<>();
         Block block = new Block(
-                ConfigHelper.CONFIG, parent.getHash(), // parent hash
+                parent.getHash(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase(),
                 ByteUtils.clone(new Bloom().getData()),

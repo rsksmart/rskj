@@ -1,6 +1,5 @@
 package co.rsk.blockchain.utils;
 
-import co.rsk.config.ConfigHelper;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.mine.MinerUtils;
 import co.rsk.util.DifficultyUtils;
@@ -30,7 +29,7 @@ public class BlockMiner {
         findNonce(bitcoinMergedMiningBlock, targetBI);
 
         // We need to clone to allow modifications
-        Block newBlock = new Block(ConfigHelper.CONFIG, block.getEncoded()).cloneBlock();
+        Block newBlock = new Block(block.getEncoded()).cloneBlock();
 
         newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
 

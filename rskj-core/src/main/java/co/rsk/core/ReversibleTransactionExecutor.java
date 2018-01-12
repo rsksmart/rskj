@@ -53,7 +53,7 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
         Repository repository = track.getSnapshotTo(executionBlock.getStateRoot()).startTracking();
 
         byte[] nonce = repository.getNonce(fromAddress).toByteArray();
-        UnsignedTransaction tx = new UnsignedTransaction(config, nonce, gasPrice, gasLimit, toAddress, value, data, fromAddress);
+        UnsignedTransaction tx = new UnsignedTransaction(nonce, gasPrice, gasLimit, toAddress, value, data, fromAddress);
 
         ReversibleTransactionExecutor executor = new ReversibleTransactionExecutor(config, tx, coinbase, repository, blockStore, receiptStore, programInvokeFactory, executionBlock);
         return executor.executeTransaction();
@@ -84,13 +84,13 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
 
     private static class UnsignedTransaction extends Transaction {
 
-        private UnsignedTransaction(RskSystemProperties config, byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] fromAddress) {
-            super(config, nonce, gasPrice, gasLimit, receiveAddress, value, data);
+        private UnsignedTransaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] fromAddress) {
+            super(nonce, gasPrice, gasLimit, receiveAddress, value, data);
             this.sender = new RskAddress(fromAddress);
         }
 
         @Override
-        public boolean acceptTransactionSignature() {
+        public boolean acceptTransactionSignature(byte chainId) {
             // We only allow executing unsigned transactions
             // in the context of a reversible transaction execution.
             return true;

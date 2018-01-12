@@ -60,7 +60,7 @@ public class GenesisLoader {
 
             GenesisJson genesisJson  = new ObjectMapper().readValue(json, type);
 
-            Genesis genesis = new GenesisMapper(config).mapFromJson(genesisJson, isRsk);
+            Genesis genesis = new GenesisMapper().mapFromJson(genesisJson, isRsk);
 
             Map<ByteArrayWrapper, InitialAddressState> premine = generatePreMine(config, initialNonce, genesisJson.getAlloc());
             genesis.setPremine(premine);

@@ -19,7 +19,6 @@
 
 package org.ethereum.jsontestsuite.builder;
 
-import co.rsk.config.ConfigHelper;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
@@ -53,7 +52,7 @@ public class BlockBuilder {
 
         BlockHeader blockHeader = BlockHeaderBuilder.build(header);
         Block block = new Block(
-                ConfigHelper.CONFIG, blockHeader,
+                blockHeader,
                 transactions, uncles);
 
         return block;
@@ -63,7 +62,7 @@ public class BlockBuilder {
     public static Block build(Env env){
 
         Block block = new Block(
-                ConfigHelper.CONFIG, ByteUtil.EMPTY_BYTE_ARRAY,
+                ByteUtil.EMPTY_BYTE_ARRAY,
                 ByteUtil.EMPTY_BYTE_ARRAY,
                 env.getCurrentCoinbase(),
                 ByteUtil.EMPTY_BYTE_ARRAY,

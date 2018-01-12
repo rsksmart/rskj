@@ -120,7 +120,7 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     public boolean init() {
-        basicTxCost = tx.transactionCost(executionBlock);
+        basicTxCost = tx.transactionCost(config, executionBlock);
 
         if (localCall) {
             readyToExecute = true;
@@ -207,7 +207,7 @@ public class TransactionExecutor {
             return false;
         }
 
-        if (!tx.acceptTransactionSignature()) {
+        if (!tx.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId())) {
             if (logger.isWarnEnabled()) {
                 logger.warn("Transaction {} signature not accepted: {}", Hex.toHexString(tx.getHash()), tx.getSignature());
                 logger.warn("Transaction Data: {}", tx);
@@ -357,7 +357,7 @@ public class TransactionExecutor {
         try {
 
             // Charge basic cost of the transaction
-            program.spendGas(tx.transactionCost(executionBlock), "TRANSACTION COST");
+            program.spendGas(tx.transactionCost(config, executionBlock), "TRANSACTION COST");
 
             if (config.playVM()) {
                 vm.play(program);

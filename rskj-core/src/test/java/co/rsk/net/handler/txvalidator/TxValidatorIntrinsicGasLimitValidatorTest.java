@@ -51,7 +51,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
 
     @Test
     public void validIntrinsicGasPrice() {
-        Transaction tx1 = new Transaction(ConfigHelper.CONFIG, BigInteger.ZERO.toByteArray(),
+        Transaction tx1 = new Transaction(BigInteger.ZERO.toByteArray(),
                             BigInteger.ZERO.toByteArray(),
                             BigInteger.valueOf(21000).toByteArray(),
                             new ECKey().getAddress(),
@@ -60,7 +60,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                             ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx1.sign(new ECKey().getPrivKeyBytes());
 
-        Transaction tx2 = new Transaction(ConfigHelper.CONFIG, BigInteger.ZERO.toByteArray(),
+        Transaction tx2 = new Transaction(BigInteger.ZERO.toByteArray(),
                 BigInteger.ZERO.toByteArray(),
                 BigInteger.valueOf(30000).toByteArray(),
                 new ECKey().getAddress(),
@@ -69,7 +69,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx2.sign(new ECKey().getPrivKeyBytes());
 
-        Transaction tx3 = new Transaction(ConfigHelper.CONFIG, BigInteger.ZERO.toByteArray(),
+        Transaction tx3 = new Transaction(BigInteger.ZERO.toByteArray(),
                 BigInteger.ZERO.toByteArray(),
                 BigInteger.valueOf(21072).toByteArray(),
                 new ECKey().getAddress(),
@@ -78,7 +78,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx3.sign(new ECKey().getPrivKeyBytes());
 
-        Transaction tx4 = new Transaction(ConfigHelper.CONFIG, BigInteger.ZERO.toByteArray(),
+        Transaction tx4 = new Transaction(BigInteger.ZERO.toByteArray(),
                 BigInteger.ZERO.toByteArray(),
                 BigInteger.ZERO.toByteArray(),
                 PrecompiledContracts.BRIDGE_ADDR.getBytes(),
@@ -100,7 +100,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
 
     @Test
     public void invalidIntrinsicGasPrice() {
-        Transaction tx1 = new Transaction(ConfigHelper.CONFIG, BigInteger.ZERO.toByteArray(),
+        Transaction tx1 = new Transaction(BigInteger.ZERO.toByteArray(),
                 BigInteger.ZERO.toByteArray(),
                 BigInteger.valueOf(21071).toByteArray(),
                 new ECKey().getAddress(),
@@ -109,7 +109,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx1.sign(new ECKey().getPrivKeyBytes());
 
-        Transaction tx2 = new Transaction(ConfigHelper.CONFIG, BigInteger.ZERO.toByteArray(),
+        Transaction tx2 = new Transaction(BigInteger.ZERO.toByteArray(),
                 BigInteger.ZERO.toByteArray(),
                 BigInteger.valueOf(20999).toByteArray(),
                 new ECKey().getAddress(),
@@ -118,7 +118,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx2.sign(new ECKey().getPrivKeyBytes());
 
-        Transaction tx3 = new Transaction(ConfigHelper.CONFIG, BigInteger.ZERO.toByteArray(),
+        Transaction tx3 = new Transaction(BigInteger.ZERO.toByteArray(),
                 BigInteger.ZERO.toByteArray(),
                 BigInteger.ZERO.toByteArray(),
                 new ECKey().getAddress(),
@@ -127,7 +127,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx3.sign(new ECKey().getPrivKeyBytes());
 
-        Transaction tx4 = new Transaction(ConfigHelper.CONFIG, BigInteger.ZERO.toByteArray(),
+        Transaction tx4 = new Transaction(BigInteger.ZERO.toByteArray(),
                 BigInteger.ZERO.toByteArray(),
                 BigInteger.ZERO.toByteArray(),
                 new ECKey().getAddress(),

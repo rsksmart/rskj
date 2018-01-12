@@ -45,6 +45,7 @@ class TxValidator {
 
     private static final Logger logger = LoggerFactory.getLogger("txvalidator");
 
+    private final RskSystemProperties config;
     private final Repository repository;
     private final Blockchain blockchain;
 
@@ -52,6 +53,7 @@ class TxValidator {
     private final List<TxFilter> txFilters = new LinkedList<>();
 
     public TxValidator(RskSystemProperties config, Repository repository, Blockchain blockchain) {
+        this.config = config;
         this.repository = repository;
         this.blockchain = blockchain;
         validatorSteps.add(new TxValidatorAccountStateValidator());
@@ -61,7 +63,7 @@ class TxValidator {
         validatorSteps.add(new TxValidatorMinimuGasPriceValidator());
         validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(config));
 
-        txFilters.add(new TxFilterAccumCostFilter());
+        txFilters.add(new TxFilterAccumCostFilter(config));
     }
 
     /**
@@ -92,7 +94,7 @@ class TxValidator {
             BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(blockchain.getBestBlock().getGasLimit());
             BigInteger minimumGasPrice = BigIntegers.fromUnsignedByteArray(blockchain.getBestBlock().getMinimumGasPrice());
             long bestBlockNumber = blockchain.getBestBlock().getNumber();
-            long basicTxCost = tx.transactionCost(blockchain.getBestBlock());
+            long basicTxCost = tx.transactionCost(config, blockchain.getBestBlock());
 
             boolean valid = true;
 

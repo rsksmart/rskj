@@ -18,6 +18,7 @@
 
 package co.rsk.net;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
@@ -53,6 +54,8 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
     public static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
     public static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
+
+    private final RskSystemProperties config;
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
     private final ChannelManager channelManager;
@@ -74,13 +77,15 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private TxHandler txHandler;
 
     @Autowired
-    public NodeMessageHandler(@Nonnull final BlockProcessor blockProcessor,
+    public NodeMessageHandler(RskSystemProperties config,
+                              @Nonnull final BlockProcessor blockProcessor,
                               final SyncProcessor syncProcessor,
                               @Nullable final ChannelManager channelManager,
                               @Nullable final PendingState pendingState,
                               final TxHandler txHandler,
                               @Nullable final PeerScoringManager peerScoringManager,
                               @Nonnull BlockValidationRule blockValidationRule) {
+        this.config = config;
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
@@ -405,7 +410,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
         List<Transaction> txs = new LinkedList();
         for (Transaction tx : messageTxs) {
-            if (!tx.acceptTransactionSignature()) {
+            if (!tx.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId())) {
                 recordEvent(sender, EventType.INVALID_TRANSACTION);
             } else {
                 txs.add(tx);

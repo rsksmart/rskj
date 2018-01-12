@@ -151,7 +151,7 @@ public abstract class BridgePerformanceTestCase {
             byte[] gasLimit = Hex.decode("00");
 
             Transaction tx = new Transaction(
-                    ConfigHelper.CONFIG, null,
+                    null,
                     gasPrice,
                     gasLimit,
                     sender.getAddress(),

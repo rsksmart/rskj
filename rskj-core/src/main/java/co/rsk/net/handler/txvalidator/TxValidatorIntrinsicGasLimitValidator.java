@@ -53,7 +53,7 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
                 new byte[]{},
                 0
         );
-        Block block = new Block(config, blockHeader);
-        return BigInteger.valueOf(tx.transactionCost(block)).compareTo(tx.getGasLimitAsInteger()) <= 0;
+        Block block = new Block(blockHeader);
+        return BigInteger.valueOf(tx.transactionCost(config, block)).compareTo(tx.getGasLimitAsInteger()) <= 0;
     }
 }

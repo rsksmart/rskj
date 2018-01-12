@@ -172,7 +172,7 @@ public class BridgeUtils {
         // Once the original federation changes, txs are always paid.
         return PrecompiledContracts.BRIDGE_ADDR.equals(receiveAddress) &&
                blockchainConfig.getConfigForBlock(blockNumber).areBridgeTxsFree() &&
-               rskTx.acceptTransactionSignature() &&
+               rskTx.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId()) &&
                (
                        isFromFederateMember(rskTx, bridgeConstants.getGenesisFederation()) ||
                        isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants) ||

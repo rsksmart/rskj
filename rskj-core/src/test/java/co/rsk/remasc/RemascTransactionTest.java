@@ -18,7 +18,6 @@
 
 package co.rsk.remasc;
 
-import co.rsk.config.ConfigHelper;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -26,9 +25,9 @@ public class RemascTransactionTest {
 
     @Test
     public void serializationTest() throws Exception{
-        RemascTransaction tx = new RemascTransaction(ConfigHelper.CONFIG, 10);
+        RemascTransaction tx = new RemascTransaction(10);
         byte[] encoded = tx.getEncoded();
-        RemascTransaction tx2 = new RemascTransaction(co.rsk.config.ConfigHelper.CONFIG, encoded);
+        RemascTransaction tx2 = new RemascTransaction(encoded);
         Assert.assertEquals(tx, tx2);
         Assert.assertArrayEquals(tx.getHash(), tx2.getHash());
     }

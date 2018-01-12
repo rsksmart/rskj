@@ -150,7 +150,7 @@ public class EthereumImpl implements Ethereum {
         byte[] valueBytes = ByteUtil.bigIntegerToBytes(value);
         byte chainId = config.getBlockchainConfig().getCommonConstants().getChainId();
 
-        return new Transaction(config, nonceBytes, gasPriceBytes, gasBytes,
+        return new Transaction(nonceBytes, gasPriceBytes, gasBytes,
                 receiveAddress, valueBytes, data, chainId);
     }
 

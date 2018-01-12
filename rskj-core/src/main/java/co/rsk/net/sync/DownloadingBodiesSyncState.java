@@ -88,7 +88,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
         // we already checked that this message was expected
         BlockHeader header = pendingBodyResponses.remove(message.getId()).header;
-        Block block = Block.fromValidData(config, header, message.getTransactions(), message.getUncles());
+        Block block = Block.fromValidData(header, message.getTransactions(), message.getUncles());
         if (!blockUnclesHashValidationRule.isValid(block) || !blockTransactionsValidationRule.isValid(block)) {
             handleInvalidMessage(peerId, header);
             return;

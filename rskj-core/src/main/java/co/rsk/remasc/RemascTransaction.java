@@ -32,12 +32,12 @@ import org.ethereum.vm.PrecompiledContracts;
 public class RemascTransaction extends Transaction {
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
-    public RemascTransaction(RskSystemProperties config, byte[] rawData) {
-        super(config, rawData);
+    public RemascTransaction(byte[] rawData) {
+        super(rawData);
     }
 
-    public RemascTransaction(RskSystemProperties config, long blockNumber) {
-        super(config, ByteUtil.longToBytesNoLeadZeroes(blockNumber - 1),
+    public RemascTransaction(long blockNumber) {
+        super(ByteUtil.longToBytesNoLeadZeroes(blockNumber - 1),
                 ZERO_BYTE_ARRAY,
                 ZERO_BYTE_ARRAY,
                 PrecompiledContracts.REMASC_ADDR.getBytes(),
@@ -47,7 +47,7 @@ public class RemascTransaction extends Transaction {
     }
 
     @Override
-    public long transactionCost(Block block) {
+    public long transactionCost(RskSystemProperties config, Block block) {
         // RemascTransaction does not pay any fees
         return 0;
     }
@@ -59,7 +59,7 @@ public class RemascTransaction extends Transaction {
     }
 
     @Override
-    public boolean acceptTransactionSignature() {
+    public boolean acceptTransactionSignature(byte chainId) {
         // RemascTransaction is not signed and not signature validation should be done
         return true;
     }

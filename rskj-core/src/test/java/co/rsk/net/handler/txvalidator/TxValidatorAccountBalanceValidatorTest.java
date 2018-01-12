@@ -73,7 +73,7 @@ public class TxValidatorAccountBalanceValidatorTest {
 
     @Test
     public void balanceIsNotValidatedIfFreeTx() {
-        Transaction tx = new Transaction(ConfigHelper.CONFIG, BigInteger.ZERO.toByteArray(),
+        Transaction tx = new Transaction(BigInteger.ZERO.toByteArray(),
                 BigInteger.ONE.toByteArray(),
                 BigInteger.valueOf(21071).toByteArray(),
                 new ECKey().getAddress(),

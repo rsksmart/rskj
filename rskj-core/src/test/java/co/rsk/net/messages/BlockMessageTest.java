@@ -18,7 +18,6 @@
 
 package co.rsk.net.messages;
 
-import co.rsk.config.ConfigHelper;
 import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,7 +37,7 @@ public class BlockMessageTest {
 
     @Test
     public void getBlock() {
-        Block block = new Block(ConfigHelper.CONFIG, Hex.decode(rlp));
+        Block block = new Block(Hex.decode(rlp));
         BlockMessage message = new BlockMessage(block);
         Assert.assertSame(block, message.getBlock());
     }

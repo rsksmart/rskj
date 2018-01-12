@@ -63,7 +63,7 @@ public class NewBlockMessage extends EthMessage {
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
 
         RLPList blockRLP = ((RLPList) paramsList.get(0));
-        block = new Block(config, blockRLP.getRLPData());
+        block = new Block(blockRLP.getRLPData());
         difficulty = paramsList.get(1).getRLPData();
 
         parsed = true;

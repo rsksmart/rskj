@@ -18,9 +18,9 @@
 
 package co.rsk.net.handler.txvalidator;
 
+import co.rsk.config.ConfigHelper;
 import co.rsk.net.handler.TxsPerAccount;
 import org.ethereum.core.AccountState;
-import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
@@ -59,7 +59,7 @@ public class TxFilterAccumCostFilterTest {
         Mockito.when(as2.getNonce()).thenReturn(BigInteger.valueOf(0));
         Mockito.when(as3.getNonce()).thenReturn(BigInteger.valueOf(0));
 
-        TxFilterAccumCostFilter tfacf = new TxFilterAccumCostFilter();
+        TxFilterAccumCostFilter tfacf = new TxFilterAccumCostFilter(ConfigHelper.CONFIG);
 
         tpa1.setTransactions(new LinkedList<>());
         tpa1.getTransactions().add(tx1);
@@ -115,7 +115,7 @@ public class TxFilterAccumCostFilterTest {
         Mockito.when(as2.getNonce()).thenReturn(BigInteger.valueOf(0));
         Mockito.when(as3.getNonce()).thenReturn(BigInteger.valueOf(0));
 
-        TxFilterAccumCostFilter tfacf = new TxFilterAccumCostFilter();
+        TxFilterAccumCostFilter tfacf = new TxFilterAccumCostFilter(ConfigHelper.CONFIG);
 
         tpa1.setTransactions(new LinkedList<>());
         tpa1.getTransactions().add(tx1);

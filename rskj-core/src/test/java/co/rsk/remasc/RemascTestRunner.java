@@ -173,13 +173,13 @@ class RemascTestRunner {
                                     ECKey txSigningKey, Long difficulty) {
         if (minerFee == 0) throw new IllegalArgumentException();
         Transaction tx = new Transaction(
-                ConfigHelper.CONFIG, BigInteger.valueOf(txNonce).toByteArray(),
+                BigInteger.valueOf(txNonce).toByteArray(),
                 BigInteger.ONE.toByteArray(),
                 BigInteger.valueOf(minerFee).toByteArray(),
                 new ECKey().getAddress() ,
                 BigInteger.valueOf(txValue).toByteArray(),
                 null,
-                Transaction.getConfigChainId(ConfigHelper.CONFIG));
+                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
 
         tx.sign(txSigningKey.getPrivKeyBytes());
         //createBlook 1
@@ -195,7 +195,7 @@ class RemascTestRunner {
             }
         }
 
-        Transaction remascTx = new RemascTransaction(ConfigHelper.CONFIG, parentBlock.getNumber() + 1);
+        Transaction remascTx = new RemascTransaction(parentBlock.getNumber() + 1);
         txs.add(remascTx);
 
         long difficultyAsLong = difficulty == null?BigIntegers.fromUnsignedByteArray(parentBlock.getDifficulty()).longValue():difficulty;
@@ -213,7 +213,7 @@ class RemascTestRunner {
         }
 
         Block block =  new Block(
-                ConfigHelper.CONFIG, parentBlock.getHash(),          // parent hash
+                parentBlock.getHash(),          // parent hash
                 EMPTY_LIST_HASH,       // uncle hash
                 coinbase.getBytes(),            // coinbase
                 new Bloom().getData(),          // logs bloom

@@ -59,7 +59,7 @@ public class RskMessage extends EthMessage {
     protected void parse() {
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
 
-        this.message = Message.create(config, (RLPList) paramsList.get(0));
+        this.message = Message.create((RLPList) paramsList.get(0));
 
         this.parsed = true;
     }

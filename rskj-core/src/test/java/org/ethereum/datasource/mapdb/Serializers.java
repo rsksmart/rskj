@@ -110,7 +110,7 @@ public class Serializers {
         @Override
         public Block deserialize(DataInput in, int available) throws IOException {
             byte[] bytes = BYTE_ARRAY.deserialize(in, available);
-            return bytes.length > 0 ? new Block(ConfigHelper.CONFIG, bytes) : null;
+            return bytes.length > 0 ? new Block(bytes) : null;
         }
     };
     private static byte[] getBytes(ByteArrayWrapper wrapper) {

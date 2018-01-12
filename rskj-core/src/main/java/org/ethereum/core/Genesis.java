@@ -54,18 +54,18 @@ public class Genesis extends Block {
     private static final byte[] ZERO_HASH_2048 = new byte[256];
     protected static final long NUMBER = 0;
 
-    public Genesis(RskSystemProperties config, byte[] rawData){
+    public Genesis(byte[] rawData){
         // TODO(ajlopez) Genesis block should be sealed
-        super(config, rawData, false);
+        super(rawData, false);
     }
 
-    public Genesis(RskSystemProperties config, byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
+    public Genesis(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
                    byte[] difficulty, long number, long gasLimit,
                    long gasUsed, long timestamp,
                    byte[] extraData, byte[] mixHash, byte[] nonce,
                    byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                    byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] minimumGasPrice){
-        super(config, parentHash, unclesHash, coinbase, logsBloom, difficulty,
+        super(parentHash, unclesHash, coinbase, logsBloom, difficulty,
                 number, ByteUtil.longToBytesNoLeadZeroes(gasLimit), gasUsed, timestamp, extraData,
                 mixHash, nonce, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, null, null, minimumGasPrice);

@@ -131,13 +131,13 @@ public class CodeReplaceTest {
                                    byte[] data, long value) throws InterruptedException {
         BigInteger nonce = blockchain.getRepository().getNonce(sender.getAddress());
         Transaction tx = new Transaction(
-                ConfigHelper.CONFIG, ByteUtil.bigIntegerToBytes(nonce),
+                ByteUtil.bigIntegerToBytes(nonce),
                 ByteUtil.longToBytesNoLeadZeroes(1),
                 ByteUtil.longToBytesNoLeadZeroes(3_000_000),
                 receiveAddress,
                 ByteUtil.longToBytesNoLeadZeroes(value),
                 data,
-                Transaction.getConfigChainId(ConfigHelper.CONFIG));
+                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx.sign(sender.getPrivKeyBytes());
         return tx;
     }

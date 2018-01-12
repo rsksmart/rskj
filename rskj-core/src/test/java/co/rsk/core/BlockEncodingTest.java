@@ -18,7 +18,6 @@
 
 package co.rsk.core;
 
-import co.rsk.config.ConfigHelper;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.core.Block;
@@ -46,7 +45,7 @@ public class BlockEncodingTest {
         List<Transaction> txs = new ArrayList<>();
 
         Transaction tx = new Transaction(
-                ConfigHelper.CONFIG, BigInteger.ZERO.toByteArray(),
+                BigInteger.ZERO.toByteArray(),
                 BigInteger.ONE.toByteArray(),
                 BigInteger.valueOf(21000).toByteArray(),
                 new ECKey().getAddress(),
@@ -82,7 +81,7 @@ public class BlockEncodingTest {
         );
 
         // Now decode, and re-encode
-        Block parsedBlock = new Block(ConfigHelper.CONFIG, fblock.getEncoded());
+        Block parsedBlock = new Block(fblock.getEncoded());
         // must throw java.lang.ArithmeticException
         parsedBlock.getGasLimit(); // forced parse
 
