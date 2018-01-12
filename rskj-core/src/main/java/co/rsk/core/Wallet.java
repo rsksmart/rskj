@@ -55,8 +55,9 @@ public class Wallet {
         Set<RskAddress> keys = new HashSet<>();
 
         synchronized(accessLock) {
-            for (RskAddress address: this.initialAccounts)
+            for (RskAddress address: this.initialAccounts) {
                 addresses.add(address.getBytes());
+            }
 
             for (byte[] address: keyDS.keys()) {
                 keys.add(new RskAddress(address));
