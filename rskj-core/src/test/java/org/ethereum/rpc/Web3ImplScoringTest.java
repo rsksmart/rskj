@@ -54,7 +54,7 @@ public class Web3ImplScoringTest {
     public void addBannedAddressUsingIPV4() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
-        InetAddress address = generateIPAddressV4();
+        InetAddress address = generateNonLocalIPAddressV4();
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -95,7 +95,7 @@ public class Web3ImplScoringTest {
     public void addBannedAddressUsingIPV4AndMask() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
-        InetAddress address = generateIPAddressV4();
+        InetAddress address = generateNonLocalIPAddressV4();
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -109,9 +109,7 @@ public class Web3ImplScoringTest {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         // generate a random non-local IPv4 address
-        byte[] addressBytes = generateIPv4AddressBytes();
-        addressBytes[0] = (byte) 173;
-        InetAddress address = InetAddress.getByAddress(addressBytes);
+        InetAddress address = generateNonLocalIPAddressV4();
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -129,9 +127,7 @@ public class Web3ImplScoringTest {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         // generate a random local IPv4 address
-        byte[] addressBytes = generateIPv4AddressBytes();
-        addressBytes[0] = (byte) 127;
-        InetAddress address = InetAddress.getByAddress(addressBytes);
+        InetAddress address = generateLocalIPAddressV4();
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -143,9 +139,7 @@ public class Web3ImplScoringTest {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         // generate a random non-local IPv4 address
-        byte[] addressBytes = generateIPv4AddressBytes();
-        addressBytes[0] = (byte) 173;
-        InetAddress address = InetAddress.getByAddress(addressBytes);
+        InetAddress address = generateNonLocalIPAddressV4();
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -163,9 +157,7 @@ public class Web3ImplScoringTest {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
         // generate a random local IPv4 address
-        byte[] addressBytes = generateIPv4AddressBytes();
-        addressBytes[0] = (byte) 127;
-        InetAddress address = InetAddress.getByAddress(addressBytes);
+        InetAddress address = generateLocalIPAddressV4();
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
@@ -246,7 +238,7 @@ public class Web3ImplScoringTest {
     @Test
     public void getPeerList() throws UnknownHostException {
         NodeID node = generateNodeID();
-        InetAddress address = generateIPAddressV4();
+        InetAddress address = generateNonLocalIPAddressV4();
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         peerScoringManager.recordEvent(node, address, EventType.VALID_BLOCK);
         peerScoringManager.recordEvent(node, address, EventType.VALID_TRANSACTION);
@@ -328,8 +320,15 @@ public class Web3ImplScoringTest {
         Assert.assertEquals("192.168.56.1/16", result[0]);
     }
 
-    private static InetAddress generateIPAddressV4() throws UnknownHostException {
+    private static InetAddress generateNonLocalIPAddressV4() throws UnknownHostException {
         byte[] bytes = generateIPv4AddressBytes();
+        bytes[0] = (byte) 173;
+        return InetAddress.getByAddress(bytes);
+    }
+
+    private static InetAddress generateLocalIPAddressV4() throws UnknownHostException {
+        byte[] bytes = generateIPv4AddressBytes();
+        bytes[0] = (byte) 127;
         return InetAddress.getByAddress(bytes);
     }
 
