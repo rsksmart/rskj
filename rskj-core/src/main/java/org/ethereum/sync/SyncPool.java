@@ -38,6 +38,7 @@ import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.Math.min;
@@ -75,6 +76,7 @@ public class SyncPool implements Iterable<Channel> {
     private final SystemProperties config;
     private final NodeManager nodeManager;
     private final PeerClientFactory peerClientFactory;
+    private final ScheduledExecutorService syncPoolExecutor;
 
     public SyncPool(EthereumListener ethereumListener, Blockchain blockchain, SystemProperties config, NodeManager nodeManager, PeerClientFactory peerClientFactory) {
         this.ethereumListener = ethereumListener;
@@ -82,30 +84,28 @@ public class SyncPool implements Iterable<Channel> {
         this.config = config;
         this.nodeManager = nodeManager;
         this.peerClientFactory = peerClientFactory;
+        this.syncPoolExecutor = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "syncPool"));
+    }
 
-        if (!config.isSyncEnabled()) {
-            return;
-        }
-
-        updateLowerUsefulDifficulty();
-
-        Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            heartBeat();
-                            processConnections();
-                            updateLowerUsefulDifficulty();
-                            fillUp();
-                            prepareActive();
-                        } catch (Throwable t) {
-                            logger.error("Unhandled exception", t);
-                            panicProcessor.panic("syncpool", String.format("Unhandled exception {}", t.getMessage()));
-                        }
-                    }
-                }, WORKER_TIMEOUT, WORKER_TIMEOUT, TimeUnit.SECONDS
+    public void start() {
+        syncPoolExecutor.scheduleWithFixedDelay(
+            () -> {
+                try {
+                    heartBeat();
+                    processConnections();
+                    updateLowerUsefulDifficulty();
+                    fillUp();
+                    prepareActive();
+                } catch (Throwable t) {
+                    logger.error("Unhandled exception", t);
+                    panicProcessor.panic("syncpool", t.getMessage());
+                }
+            }, WORKER_TIMEOUT, WORKER_TIMEOUT, TimeUnit.SECONDS
         );
+    }
+
+    public void stop() {
+        syncPoolExecutor.shutdown();
     }
 
     public void add(Channel peer) {
@@ -373,7 +373,7 @@ public class SyncPool implements Iterable<Channel> {
         );
     }
 
-    private void updateLowerUsefulDifficulty() {
+    public void updateLowerUsefulDifficulty() {
         BigInteger td = blockchain.getTotalDifficulty();
         if (td.compareTo(lowerUsefulDifficulty) > 0) {
             lowerUsefulDifficulty = td;

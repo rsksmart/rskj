@@ -34,9 +34,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.PostConstruct;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -53,45 +51,41 @@ import static org.ethereum.util.BIUtil.toBI;
 public class PendingStateImpl implements PendingState {
     private static final Logger logger = LoggerFactory.getLogger("pendingstate");
     private static final byte[] emptyUncleHashList = sha3(RLP.encodeList(new byte[0]));
-    private final RskSystemProperties config;
 
-    private Map<ByteArrayWrapper, Transaction> pendingTransactions = new HashMap<>();
-    private Map<ByteArrayWrapper, Transaction> wireTransactions = new HashMap<>();
-    private Map<ByteArrayWrapper, Long> transactionBlocks = new HashMap<>();
-    private Map<ByteArrayWrapper, Long> transactionTimes = new HashMap<>();
-
-    private int outdatedThreshold = 0;
-    private int outdatedTimeout = 0;
+    private final Map<ByteArrayWrapper, Transaction> pendingTransactions = new HashMap<>();
+    private final Map<ByteArrayWrapper, Transaction> wireTransactions = new HashMap<>();
+    private final Map<ByteArrayWrapper, Long> transactionBlocks = new HashMap<>();
+    private final Map<ByteArrayWrapper, Long> transactionTimes = new HashMap<>();
 
     private ScheduledExecutorService cleanerTimer;
     private ScheduledFuture<?> cleanerFuture;
 
-    @Autowired
-    private BlockStore blockStore;
-
-    @Autowired
-    private ProgramInvokeFactory programInvokeFactory;
-
-    @Autowired
-    private EthereumListener listener;
-
     private final Blockchain blockChain;
+    private final BlockStore blockStore;
     private final Repository repository;
+    private final ProgramInvokeFactory programInvokeFactory;
+    private final EthereumListener listener;
+    private final int outdatedThreshold;
+    private final int outdatedTimeout;
 
     private Block bestBlock;
 
     private Repository pendingStateRepository;
-    private TxPendingValidator validator = new TxPendingValidator();
+    private final TxPendingValidator validator = new TxPendingValidator();
 
-    @Autowired
     public PendingStateImpl(Blockchain blockChain,
                             BlockStore blockStore,
+                            EthereumListener listener,
+                            ProgramInvokeFactory programInvokeFactory,
                             Repository repository,
                             RskSystemProperties config) {
-        this.blockChain = blockChain;
-        this.blockStore = blockStore;
-        this.repository = repository;
-        this.config = config;
+        this(blockChain,
+                repository,
+                blockStore,
+                programInvokeFactory,
+                listener,
+                config.txOutdatedThreshold(),
+                config.txOutdatedTimeout());
     }
 
     public PendingStateImpl(Blockchain blockChain,
@@ -99,36 +93,18 @@ public class PendingStateImpl implements PendingState {
                             BlockStore blockStore,
                             ProgramInvokeFactory programInvokeFactory,
                             EthereumListener listener,
-                            RskSystemProperties config,
                             int outdatedThreshold,
                             int outdatedTimeout) {
-        this(blockChain, blockStore, repository, config);
+        this.blockChain = blockChain;
+        this.blockStore = blockStore;
+        this.repository = repository;
         this.programInvokeFactory = programInvokeFactory;
+        this.listener = listener;
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
-        this.listener = listener;
 
-        init();
-    }
-
-    @Override
-    @PostConstruct
-    public final synchronized void init() {
-        if (this.repository != null) {
-            this.pendingStateRepository = repository.startTracking();
-        }
-
-        if (this.blockChain != null) {
-            this.bestBlock = blockChain.getBestBlock();
-        }
-
-        if (this.outdatedThreshold == 0) {
-            this.outdatedThreshold = config.txOutdatedThreshold();
-        }
-
-        if (this.outdatedTimeout == 0) {
-            this.outdatedTimeout = config.txOutdatedTimeout();
-        }
+        this.pendingStateRepository = repository.startTracking();
+        this.bestBlock = blockChain.getBestBlock();
 
         if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "PendingStateCleanerTimer"));

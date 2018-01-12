@@ -43,7 +43,14 @@ public class RskCustomCache<K, T> {
                 return new Thread(r, "BlockHeaderCacheTimer");
             }
         });
-        this.startCleanUp();
+    }
+
+    public void start() {
+        cacheTimer.scheduleAtFixedRate(this::cleanUp, this.timeToLive, this.timeToLive, TimeUnit.MILLISECONDS);
+    }
+
+    public void stop() {
+        cacheTimer.shutdown();
     }
 
     public void remove(K key) {
@@ -73,14 +80,5 @@ public class RskCustomCache<K, T> {
                 iter.remove();
             }
         }
-    }
-
-    private void startCleanUp() {
-        cacheTimer.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                cleanUp();
-            }
-        }, this.timeToLive, this.timeToLive, TimeUnit.MILLISECONDS);
     }
 }

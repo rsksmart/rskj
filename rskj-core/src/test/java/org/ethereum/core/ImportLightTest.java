@@ -86,7 +86,7 @@ public class ImportLightTest {
 
         blockchain.setNoValidation(true);
 
-        PendingStateImpl pendingState = new PendingStateImpl(blockchain, null, null, null, listener, RskSystemProperties.CONFIG, 10, 100);
+        PendingStateImpl pendingState = new PendingStateImpl(blockchain, repository, null, null, listener, 10, 100);
 
         blockchain.setPendingState(pendingState);
 

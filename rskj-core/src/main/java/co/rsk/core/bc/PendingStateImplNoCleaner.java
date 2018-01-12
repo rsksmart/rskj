@@ -18,7 +18,6 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
@@ -31,10 +30,9 @@ public class PendingStateImplNoCleaner extends PendingStateImpl {
                                      BlockStore blockStore,
                                      ProgramInvokeFactory programInvokeFactory,
                                      EthereumListener listener,
-                                     RskSystemProperties config,
                                      int outdatedThreshold,
                                      int outdatedTimeout) {
-        super(blockChain, repository, blockStore, programInvokeFactory, listener, config, outdatedThreshold, outdatedTimeout);
+        super(blockChain, repository, blockStore, programInvokeFactory, listener, outdatedThreshold, outdatedTimeout);
     }
 
     @Override

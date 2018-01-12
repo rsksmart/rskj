@@ -34,11 +34,6 @@ public class SimplePendingState implements PendingState {
     private List<Transaction> wireTransactions = new ArrayList<>();
 
     @Override
-    public void init() {
-
-    }
-
-    @Override
     public void start() {
 
     }

@@ -95,7 +95,6 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     private final Object accessLock = new Object();
     private final BlockExecutor blockExecutor;
     private BlockRecorder blockRecorder;
-    private boolean isrsk;
     private boolean noValidation;
 
     public BlockChainImpl(Repository repository,
@@ -443,16 +442,6 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     @Override
     public Block getBestBlock() {
         return this.status.getBestBlock();
-    }
-
-    @Override
-    public boolean isRsk() {
-        return this.isrsk;
-    }
-
-    @Override
-    public void setRsk(boolean isrsk) {
-        this.isrsk = isrsk;
     }
 
     public void setNoValidation(boolean noValidation) {

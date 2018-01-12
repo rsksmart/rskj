@@ -32,6 +32,7 @@ public class RskTestFactory {
     private IndexedBlockStore blockStore;
     private PendingState pendingState;
     private RepositoryImpl repository;
+    private ProgramInvokeFactoryImpl programInvokeFactory;
 
     public RskTestFactory() {
         Genesis genesis = BlockGenerator.getInstance().getGenesisBlock();
@@ -82,13 +83,21 @@ public class RskTestFactory {
         Repository track = getRepository().startTracking();
         TransactionExecutor executor = new TransactionExecutor(transaction, 0, new byte[32],
                 getRepository(), getBlockStore(), getReceiptStore(),
-                new ProgramInvokeFactoryImpl(), getBlockchain().getBestBlock());
+                getProgramInvokeFactory(), getBlockchain().getBestBlock());
         executor.init();
         executor.execute();
         executor.go();
         executor.finalization();
         track.commit();
         return executor;
+    }
+
+    private ProgramInvokeFactoryImpl getProgramInvokeFactory() {
+        if (programInvokeFactory == null) {
+            programInvokeFactory = new ProgramInvokeFactoryImpl();
+        }
+
+        return programInvokeFactory;
     }
 
     public BlockChainImpl getBlockchain() {
@@ -127,7 +136,14 @@ public class RskTestFactory {
 
     public PendingState getPendingState() {
         if (pendingState == null) {
-            pendingState = new PendingStateImpl(getBlockchain(), getBlockStore(), getRepository(), RskSystemProperties.CONFIG);
+            pendingState = new PendingStateImpl(
+                    getBlockchain(),
+                    getBlockStore(),
+                    null,
+                    getProgramInvokeFactory(),
+                    getRepository(),
+                    RskSystemProperties.CONFIG
+            );
         }
 
         return pendingState;
