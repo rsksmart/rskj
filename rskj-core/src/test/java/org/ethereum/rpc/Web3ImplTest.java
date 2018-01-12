@@ -350,7 +350,6 @@ public class Web3ImplTest {
     }
 
     @Test
-    @Ignore("This is affected by the state set in some other test")
     public void getTransactionReceiptNotInMainBlockchain() throws Exception {
         World world = new World();
         SimpleWorldManager worldManager = new SimpleWorldManager();
@@ -368,7 +367,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
         Block block1b = new BlockBuilder(world).parent(genesis)
                 .difficulty(block1.getDifficultyBI().longValue()-1).build();
-        Block block2b = new BlockBuilder(world).parent(block1b).build();
+        Block block2b = new BlockBuilder(world).difficulty(2).parent(block1b).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
 
@@ -623,7 +622,6 @@ public class Web3ImplTest {
     }
 
     @Test
-    @Ignore("This is affected by the state set in some other test")
     public void getBlocksByNumber() throws Exception {
         World world = new World();
         SimpleWorldManager worldManager = new SimpleWorldManager();
@@ -636,7 +634,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
         Block block1b = new BlockBuilder(world).difficulty(block1.getDifficultyBI().longValue()-1).parent(genesis).build();
         block1b.setBitcoinMergedMiningHeader(new byte[]{0x01});
-        Block block2b = new BlockBuilder(world).parent(block1b).build();
+        Block block2b = new BlockBuilder(world).difficulty(2).parent(block1b).build();
         block2b.setBitcoinMergedMiningHeader(new byte[] { 0x02 });
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
@@ -705,7 +703,6 @@ public class Web3ImplTest {
     }
 
     @Test
-    @Ignore("This is affected by the state set in some other test")
     public void getBlockByHash() throws Exception {
         World world = new World();
         SimpleWorldManager worldManager = new SimpleWorldManager();
@@ -719,7 +716,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
         Block block1b = new BlockBuilder(world).difficulty(block1.getDifficultyBI().longValue()-1).parent(genesis).build();
         block1b.setBitcoinMergedMiningHeader(new byte[] { 0x01 });
-        Block block2b = new BlockBuilder(world).parent(block1b).build();
+        Block block2b = new BlockBuilder(world).difficulty(2).parent(block1b).build();
         block2b.setBitcoinMergedMiningHeader(new byte[] { 0x02 });
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
