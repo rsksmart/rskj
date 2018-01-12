@@ -410,19 +410,6 @@ public class BridgeTest {
     }
 
     @Test
-    public void exceptionInGetStateForDebugging() {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
-
-        try {
-            bridge.getStateForDebugging(null);
-            Assert.fail();
-        }
-        catch (RuntimeException ex) {
-            Assert.assertEquals("Exception in getStateForDebugging", ex.getMessage());
-        }
-    }
-
-    @Test
     public void exceptionInGetBtcBlockchainBestChainHeight() {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
 
@@ -507,11 +494,6 @@ public class BridgeTest {
     @Test
     public void getGasForDataGSFBRC() {
         getGasForDataPaidTx(4000 + 8, Bridge.GET_STATE_FOR_BTC_RELEASE_CLIENT);
-    }
-
-    @Test
-    public void getGasForDataGSFD() {
-        getGasForDataPaidTx(3_000_000 + 8, Bridge.GET_STATE_FOR_DEBUGGING);
     }
 
     @Test
