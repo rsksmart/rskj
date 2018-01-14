@@ -26,4 +26,6 @@ public interface SyncInformation {
     void reportEvent(String message, EventType eventType, NodeID peerId, Object... arguments);
 
     int getScore(NodeID key);
+
+    boolean isFarEnough(NodeID peerNodeID);
 }

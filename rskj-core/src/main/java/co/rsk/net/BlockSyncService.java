@@ -129,9 +129,13 @@ public class BlockSyncService {
         }
     }
 
-    public boolean hasBetterBlockToSync() {
+    public boolean hasBetterBlockToSync(long blockNumber){
         int blocksDistance = syncConfiguration.getChunkSize() / CHUNK_PART_LIMIT;
-        return getLastKnownBlockNumber() >= getBestBlockNumber() + blocksDistance;
+        return blockNumber >= getBestBlockNumber() + blocksDistance;
+    }
+
+    public boolean hasBetterBlockToSync() {
+        return hasBetterBlockToSync(getLastKnownBlockNumber());
     }
 
     public long getLastKnownBlockNumber() {

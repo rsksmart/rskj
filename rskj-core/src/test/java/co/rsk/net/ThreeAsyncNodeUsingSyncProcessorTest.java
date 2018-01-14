@@ -87,11 +87,11 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
     @Test
     public void synchronizeNewNodeWithBestChain() throws InterruptedException {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(30,false, true);
-        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(50,false, true);
+        SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(60,false, true);
         SimpleAsyncNode node3 = SimpleAsyncNode.createNodeWithWorldBlockChain(0,false, true);
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
-        Assert.assertEquals(50, node2.getBestBlock().getNumber());
+        Assert.assertEquals(60, node2.getBestBlock().getNumber());
         Assert.assertEquals(0, node3.getBestBlock().getNumber());
 
         node1.sendFullStatusTo(node3);
@@ -104,19 +104,19 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertTrue(node3.getSyncProcessor().getExpectedResponses().isEmpty());
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
-        Assert.assertEquals(50, node2.getBestBlock().getNumber());
+        Assert.assertEquals(60, node2.getBestBlock().getNumber());
         Assert.assertEquals(30, node3.getBestBlock().getNumber());
         Assert.assertArrayEquals(node1.getBestBlock().getHash(), node3.getBestBlock().getHash());
 
         node2.sendFullStatusTo(node3);
         // sync setup
-        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(50, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        node3.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(60, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 50 new blocks from node 2
-        node3.waitExactlyNTasksWithTimeout(50);
+        node3.waitExactlyNTasksWithTimeout(60);
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
-        Assert.assertEquals(50, node2.getBestBlock().getNumber());
-        Assert.assertEquals(50, node3.getBestBlock().getNumber());
+        Assert.assertEquals(60, node2.getBestBlock().getNumber());
+        Assert.assertEquals(60, node3.getBestBlock().getNumber());
 
         Assert.assertArrayEquals(node2.getBestBlock().getHash(), node3.getBestBlock().getHash());
 
@@ -474,7 +474,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
     public void dontSynchronizeNodeWithShorterChainAndThenSynchronizeWithNewPeer() throws InterruptedException {
         Blockchain b1 = BlockChainBuilder.ofSize(30, true);
         Blockchain b2 = BlockChainBuilder.copyAndExtend(b1, 43, true);
-        Blockchain b3 = BlockChainBuilder.copyAndExtend(b2, 7, true);
+        Blockchain b3 = BlockChainBuilder.copyAndExtend(b2, 27, true);
 
         SimpleAsyncNode node1 = SimpleAsyncNode.createNode(b1, SyncConfiguration.IMMEDIATE_FOR_TESTING);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNode(b2, SyncConfiguration.IMMEDIATE_FOR_TESTING);
@@ -482,7 +482,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
         Assert.assertEquals(73, node2.getBestBlock().getNumber());
-        Assert.assertEquals(80, node3.getBestBlock().getNumber());
+        Assert.assertEquals(100, node3.getBestBlock().getNumber());
 
         node1.sendFullStatusTo(node2);
         // receive status, do nothing
@@ -493,17 +493,17 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
         Assert.assertEquals(73, node2.getBestBlock().getNumber());
-        Assert.assertEquals(80, node3.getBestBlock().getNumber());
+        Assert.assertEquals(100, node3.getBestBlock().getNumber());
 
         node3.sendFullStatusTo(node2);
         // sync setup
-        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(80, 73, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(100, 73, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // synchronize 7 new blocks from node 3
-        node2.waitExactlyNTasksWithTimeout(7);
+        node2.waitExactlyNTasksWithTimeout(27);
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
-        Assert.assertEquals(80, node2.getBestBlock().getNumber());
-        Assert.assertEquals(80, node3.getBestBlock().getNumber());
+        Assert.assertEquals(100, node2.getBestBlock().getNumber());
+        Assert.assertEquals(100, node3.getBestBlock().getNumber());
         Assert.assertArrayEquals(node2.getBestBlock().getHash(), node3.getBestBlock().getHash());
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());

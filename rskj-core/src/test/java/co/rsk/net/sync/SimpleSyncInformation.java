@@ -40,6 +40,11 @@ public class SimpleSyncInformation implements SyncInformation {
     }
 
     @Override
+    public boolean isFarEnough(NodeID peerNodeID) {
+        return true;
+    }
+
+    @Override
     public boolean hasLowerDifficulty(NodeID nodeID) {
         return hasLowerDifficulty;
     }

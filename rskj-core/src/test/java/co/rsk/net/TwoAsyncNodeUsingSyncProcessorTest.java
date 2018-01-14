@@ -96,22 +96,22 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
     @Test
     public void buildBlockchainWithUnclesAndSynchronize() throws InterruptedException {
-        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(10, true, true);
+        SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(24, true, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
         node1.sendFullStatusTo(node2);
         // find connection point
-        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(10, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(24, 0, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // get blocks
-        node2.waitExactlyNTasksWithTimeout(10);
+        node2.waitExactlyNTasksWithTimeout(24);
 
         node2.sendFullStatusTo(node1);
 
         node1.joinWithTimeout();
         node2.joinWithTimeout();
 
-        Assert.assertEquals(10, node1.getBestBlock().getNumber());
-        Assert.assertEquals(10, node2.getBestBlock().getNumber());
+        Assert.assertEquals(24, node1.getBestBlock().getNumber());
+        Assert.assertEquals(24, node2.getBestBlock().getNumber());
         Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
@@ -126,27 +126,27 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(getGenesis(), 10, 0, false, true, null);
+        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(getGenesis(), 30, 0, false, true, null);
 
         for (Block block : blocks) {
             BlockMessage message = new BlockMessage(block);
             node1.receiveMessageFrom(null, message);
             node1.waitExactlyNTasksWithTimeout(1);
 
-            if (block.getNumber() <= 5) {
+            if (block.getNumber() <= 3) {
                 node2.receiveMessageFrom(null, message);
                 node2.waitExactlyNTasksWithTimeout(1);
             }
         }
 
-        Assert.assertEquals(10, node1.getBestBlock().getNumber());
-        Assert.assertEquals(5, node2.getBestBlock().getNumber());
+        Assert.assertEquals(30, node1.getBestBlock().getNumber());
+        Assert.assertEquals(3, node2.getBestBlock().getNumber());
 
         node1.sendFullStatusTo(node2);
         // find connection point
-        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(10, 5, SyncConfiguration.IMMEDIATE_FOR_TESTING));
+        node2.waitUntilNTasksWithTimeout(SyncUtils.syncSetupRequests(30, 3, SyncConfiguration.IMMEDIATE_FOR_TESTING));
         // get blocks
-        node2.waitExactlyNTasksWithTimeout(5);
+        node2.waitExactlyNTasksWithTimeout(27);
         // drain node 1 for next test
         node1.clearQueue();
 
@@ -157,8 +157,8 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         node1.joinWithTimeout();
         node2.joinWithTimeout();
 
-        Assert.assertEquals(10, node1.getBestBlock().getNumber());
-        Assert.assertEquals(10, node2.getBestBlock().getNumber());
+        Assert.assertEquals(30, node1.getBestBlock().getNumber());
+        Assert.assertEquals(30, node2.getBestBlock().getNumber());
         Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
