@@ -180,12 +180,12 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         }
 
         try {
-            logger.info("Try connect block hash: {}, number: {}",
+            logger.trace("Try connect block hash: {}, number: {}",
                     Hex.toHexString(block.getHash()).substring(0, 6),
                     block.getNumber());
 
             synchronized (connectLock) {
-                logger.info("Start try connect");
+                logger.trace("Start try connect");
                 long saveTime = System.nanoTime();
                 ImportResult result = internalTryToConnect(block);
                 long totalTime = System.nanoTime() - saveTime;
@@ -211,7 +211,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         Block bestBlock;
         BigInteger bestTotalDifficulty;
 
-        logger.info("get current state");
+        logger.trace("get current state");
 
         // get current state
         synchronized (accessLock) {
@@ -229,7 +229,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         }
         // else, Get parent AND total difficulty
         else {
-            logger.info("get parent and total difficulty");
+            logger.trace("get parent and total difficulty");
             parent = blockStore.getBlockByHash(block.getParentHash());
 
             if (parent == null) {
@@ -255,7 +255,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
 
         if (parent != null) {
             long saveTime = System.nanoTime();
-            logger.info("execute start");
+            logger.trace("execute start");
 
             if (this.noValidation) {
                 result = blockExecutor.executeAll(block, parent.getStateRoot());
@@ -263,11 +263,11 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
                 result = blockExecutor.execute(block, parent.getStateRoot(), false);
             }
 
-            logger.info("execute done");
+            logger.trace("execute done");
 
             boolean isValid = noValidation ? true : blockExecutor.validate(block, result);
 
-            logger.info("validate done");
+            logger.trace("validate done");
 
             if (!isValid) {
                 return ImportResult.INVALID_BLOCK;
@@ -279,17 +279,17 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
                 adminInfo.addBlockExecTime(totalTime);
             }
 
-            logger.info("block: num: [{}] hash: [{}], executed after: [{}]nano", block.getNumber(), block.getShortHash(), totalTime);
+            logger.trace("block: num: [{}] hash: [{}], executed after: [{}]nano", block.getNumber(), block.getShortHash(), totalTime);
         }
 
         // the new accumulated difficulty
         BigInteger totalDifficulty = parentTotalDifficulty.add(block.getCumulativeDifficulty());
-        logger.info("TD: updated to {}", totalDifficulty);
+        logger.trace("TD: updated to {}", totalDifficulty);
 
         // It is the new best block
         if (SelectionRule.shouldWeAddThisBlock(totalDifficulty, status.getTotalDifficulty(),block, bestBlock)) {
             if (bestBlock != null && !bestBlock.isParentOf(block)) {
-                logger.info("Rebranching: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
+                logger.trace("Rebranching: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
                         bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
                         status.getTotalDifficulty().toString(), totalDifficulty.toString());
                 BlockFork fork = new BlockFork();
@@ -321,7 +321,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         // It is not the new best block
         else {
             if (bestBlock != null && !bestBlock.isParentOf(block)) {
-                logger.info("No rebranch: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
+                logger.trace("No rebranch: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
                         bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
                         status.getTotalDifficulty().toString(), totalDifficulty.toString());
             }
@@ -509,7 +509,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
 
     private void storeBlock(Block block, BigInteger totalDifficulty, boolean inBlockChain) {
         blockStore.saveBlock(block, totalDifficulty, inBlockChain);
-        logger.info("Block saved: number: {}, hash: {}, TD: {}",
+        logger.trace("Block saved: number: {}, hash: {}, TD: {}",
                 block.getNumber(), block.getShortHash(), totalDifficulty);
     }
 
@@ -553,11 +553,11 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
             long saveTime = System.nanoTime();
             repository.flush();
             long totalTime = System.nanoTime() - saveTime;
-            logger.info("repository flush: [{}]nano", totalTime);
+            logger.trace("repository flush: [{}]nano", totalTime);
             saveTime = System.nanoTime();
             blockStore.flush();
             totalTime = System.nanoTime() - saveTime;
-            logger.info("blockstore flush: [{}]nano", totalTime);
+            logger.trace("blockstore flush: [{}]nano", totalTime);
         }
         nFlush++;
         nFlush = nFlush % config.flushNumberOfBlocks();

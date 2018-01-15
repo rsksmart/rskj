@@ -186,7 +186,7 @@ public class BlockExecutor {
     }
 
     private BlockResult execute(Block block, byte[] stateRoot, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
-        logger.info("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
+        logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
         Repository initialRepository = repository.getSnapshotTo(stateRoot);
 
@@ -202,7 +202,7 @@ public class BlockExecutor {
         int txindex = 0;
 
         for (Transaction tx : block.getTransactionsList()) {
-            logger.info("apply block: [{}] tx: [{}] ", block.getNumber(), i);
+            logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
 
             TransactionExecutor txExecutor = new TransactionExecutor(config, tx, txindex++, block.getCoinbase(), track, blockStore, blockChain.getReceiptStore(), programInvokeFactory, block, listener, totalGasUsed);
 
@@ -224,11 +224,11 @@ public class BlockExecutor {
             txExecutor.go();
             txExecutor.finalization();
 
-            logger.info("tx executed");
+            logger.trace("tx executed");
 
             track.commit();
 
-            logger.info("track commit");
+            logger.trace("track commit");
 
             long gasUsed = txExecutor.getGasUsed();
             totalGasUsed += gasUsed;
@@ -246,16 +246,16 @@ public class BlockExecutor {
             receipt.setLogInfoList(txExecutor.getVMLogs());
             receipt.setStatus(txExecutor.getReceipt().getStatus());
 
-            logger.info("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()),
+            logger.trace("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()),
                     Hex.toHexString(lastStateRootHash));
 
-            logger.info("tx[{}].receipt", i);
+            logger.trace("tx[{}].receipt", i);
 
             i++;
 
             receipts.add(receipt);
 
-            logger.info("tx done");
+            logger.trace("tx done");
         }
 
         return new BlockResult(executedTransactions, receipts, lastStateRootHash, totalGasUsed, totalPaidFees);

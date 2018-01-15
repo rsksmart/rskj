@@ -166,19 +166,19 @@ public class PendingStateImpl implements PendingState {
         List<Transaction> added = new ArrayList<>();
         Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
 
-        logger.info("Trying add {} wire transactions using block {} {}", transactions.size(), bnumber, getBestBlock().getShortHash());
+        logger.trace("Trying add {} wire transactions using block {} {}", transactions.size(), bnumber, getBestBlock().getShortHash());
 
         for (Transaction tx : transactions) {
             if (!shouldAcceptTx(tx)) {
                 continue;
             }
 
-            logger.info("Trying add wire transaction nonce {} hash {}", tx.getHash(), toBI(tx.getNonce()));
+            logger.trace("Trying add wire transaction nonce {} hash {}", tx.getHash(), toBI(tx.getNonce()));
 
             ByteArrayWrapper hash = new ByteArrayWrapper(tx.getHash());
 
             if (pendingTransactions.containsKey(hash) || wireTransactions.containsKey(hash)) {
-                logger.info("TX already exists: {} ", tx);
+                logger.trace("TX already exists: {} ", tx);
                 continue;
             }
 
@@ -197,7 +197,7 @@ public class PendingStateImpl implements PendingState {
             });
         }
 
-        logger.info("Wire transaction list added: {} new, {} valid of received {}, #of known txs: {}", added.size(), added.size(), transactions.size(), transactions.size());
+        logger.trace("Wire transaction list added: {} new, {} valid of received {}, #of known txs: {}", added.size(), added.size(), transactions.size(), transactions.size());
 
         return added;
     }
@@ -301,7 +301,7 @@ public class PendingStateImpl implements PendingState {
 
             if (block < currentBlock - depth) {
                 toremove.add(entry.getKey());
-                logger.info(
+                logger.trace(
                         "Clear outdated transaction, block.number: [{}] hash: [{}]",
                         block,
                         entry.getKey().toString());
@@ -324,7 +324,7 @@ public class PendingStateImpl implements PendingState {
 
             if (txtime <= timeSeconds) {
                 toremove.add(entry.getKey());
-                logger.info(
+                logger.trace(
                         "Clear outdated transaction, hash: [{}]",
                         entry.getKey().toString());
             }
@@ -348,7 +348,7 @@ public class PendingStateImpl implements PendingState {
             byte[] bhash = tx.getHash();
             ByteArrayWrapper hash = new ByteArrayWrapper(bhash);
             pendingTransactions.remove(hash);
-            logger.info("Clear pending transaction, hash: [{}]", Hex.toHexString(bhash));
+            logger.trace("Clear pending transaction, hash: [{}]", Hex.toHexString(bhash));
         }
     }
 
@@ -358,7 +358,7 @@ public class PendingStateImpl implements PendingState {
             byte[] bhash = tx.getHash();
             ByteArrayWrapper hash = new ByteArrayWrapper(bhash);
             wireTransactions.remove(hash);
-            logger.info("Clear wire transaction, hash: [{}]", Hex.toHexString(bhash));
+            logger.trace("Clear wire transaction, hash: [{}]", Hex.toHexString(bhash));
         }
     }
 
@@ -384,7 +384,7 @@ public class PendingStateImpl implements PendingState {
     }
 
     private void executeTransaction(Transaction tx) {
-        logger.info("Apply pending state tx: {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+        logger.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
 
         Block best = blockChain.getBestBlock();
 

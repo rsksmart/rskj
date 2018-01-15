@@ -24,7 +24,6 @@ import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import com.google.common.io.ByteStreams;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import org.ethereum.config.SystemProperties;
@@ -41,10 +40,7 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.InvalidCipherTextException;
 import org.spongycastle.math.ec.ECPoint;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -112,7 +108,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
 
     public void initiate(ChannelHandlerContext ctx) throws Exception {
 
-        loggerNet.info("RLPX protocol activated");
+        loggerNet.trace("RLPX protocol activated");
 
         nodeId = myKey.getNodeId();
 
@@ -139,9 +135,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
 
         channel.getNodeStatistics().rlpxAuthMessagesSent.add();
 
-        if (loggerNet.isInfoEnabled()) {
-            loggerNet.info("To: \t{} \tSend: \t{}", ctx.channel().remoteAddress(), msg);
-        }
+        loggerNet.trace("To: \t{} \tSend: \t{}", ctx.channel().remoteAddress(), msg);
     }
 
     // consume handshake, producing no resulting message to upper layers
@@ -161,7 +155,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
                     // trying to decode as pre-EIP-8
 
                     AuthResponseMessage response = handshake.handleAuthResponse(myKey, initiatePacket, responsePacket);
-                    loggerNet.info("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), response);
+                    loggerNet.trace("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), response);
 
                 } catch (Throwable t) {
 
@@ -174,16 +168,16 @@ public class HandshakeHandler extends ByteToMessageDecoder {
                     }
 
                     AuthResponseMessageV4 response = handshake.handleAuthResponseV4(myKey, initiatePacket, responsePacket);
-                    loggerNet.info("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), response);
+                    loggerNet.trace("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), response);
                 }
 
                 EncryptionHandshake.Secrets secrets = this.handshake.getSecrets();
                 this.frameCodec = new FrameCodec(secrets);
 
-                loggerNet.info("auth exchange done");
+                loggerNet.trace("auth exchange done");
                 channel.sendHelloMessage(ctx, frameCodec, Hex.toHexString(nodeId), null);
             } else {
-                loggerWire.info("MessageCodec: Buffer bytes: " + buffer.readableBytes());
+                loggerWire.debug("MessageCodec: Buffer bytes: " + buffer.readableBytes());
                 List<Frame> frames = frameCodec.readFrames(buffer);
                 if (frames == null || frames.isEmpty()) {
                     return;
@@ -192,17 +186,13 @@ public class HandshakeHandler extends ByteToMessageDecoder {
                 byte[] payload = ByteStreams.toByteArray(frame.getStream());
                 if (frame.getType() == P2pMessageCodes.HELLO.asByte()) {
                     HelloMessage helloMessage = new HelloMessage(payload);
-                    if (loggerNet.isInfoEnabled()) {
-                        loggerNet.info("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), helloMessage);
-                    }
+                    loggerNet.trace("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), helloMessage);
                     isHandshakeDone = true;
                     this.channel.publicRLPxHandshakeFinished(ctx, frameCodec, helloMessage);
                     recordSuccessfulHandshake(ctx);
                 } else {
                     DisconnectMessage message = new DisconnectMessage(payload);
-                    if (loggerNet.isInfoEnabled()) {
-                        loggerNet.info("From: \t{} \tRecv: \t{}", channel, message);
-                    }
+                    loggerNet.trace("From: \t{} \tRecv: \t{}", channel, message);
                     channel.getNodeStatistics().nodeDisconnectedRemote(message.getReason());
                 }
             }
@@ -224,10 +214,10 @@ public class HandshakeHandler extends ByteToMessageDecoder {
 
                     // trying to decode as pre-EIP-8
                     AuthInitiateMessage initiateMessage = handshake.decryptAuthInitiate(authInitPacket, myKey);
-                    loggerNet.info("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), initiateMessage);
+                    loggerNet.trace("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), initiateMessage);
 
                     AuthResponseMessage response = handshake.makeAuthInitiate(initiateMessage, myKey);
-                    loggerNet.info("To: \t{} \tSend: \t{}", ctx.channel().remoteAddress(), response);
+                    loggerNet.trace("To: \t{} \tSend: \t{}", ctx.channel().remoteAddress(), response);
                     responsePacket = handshake.encryptAuthResponse(response);
 
                 } catch (Throwable t) {
@@ -242,10 +232,10 @@ public class HandshakeHandler extends ByteToMessageDecoder {
                         }
 
                         AuthInitiateMessageV4 initiateMessage = handshake.decryptAuthInitiateV4(authInitPacket, myKey);
-                        loggerNet.info("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), initiateMessage);
+                        loggerNet.trace("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), initiateMessage);
 
                         AuthResponseMessageV4 response = handshake.makeAuthInitiateV4(initiateMessage, myKey);
-                        loggerNet.info("To: \t{} \tSend: \t{}", ctx.channel().remoteAddress(), response);
+                        loggerNet.trace("To: \t{} \tSend: \t{}", ctx.channel().remoteAddress(), response);
                         responsePacket = handshake.encryptAuthResponseV4(response);
 
                     } catch (InvalidCipherTextException ce) {
@@ -280,7 +270,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
 
                 Message message = new P2pMessageFactory().create((byte) frame.getType(),
                         ByteStreams.toByteArray(frame.getStream()));
-                loggerNet.info("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), message);
+                loggerNet.trace("From: \t{} \tRecv: \t{}", ctx.channel().remoteAddress(), message);
 
                 if (frame.getType() == P2pMessageCodes.DISCONNECT.asByte()) {
                     loggerNet.info("Active remote peer disconnected right after handshake.");
@@ -346,14 +336,14 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         recordFailedHandshake(ctx);
+        String exceptionLog = String.format("Handshake failed: {} ({})", ctx.channel().remoteAddress(), cause.getMessage());
         if (channel.isDiscoveryMode()) {
-            loggerNet.debug("Handshake failed: " + ctx.channel().remoteAddress() + "(" + cause.getMessage() + ")");
+            loggerNet.debug(exceptionLog);
         } else {
             if (cause instanceof IOException) {
-                loggerNet.info("Handshake failed: " + ctx.channel().remoteAddress() + "(" + cause.getMessage() + ")");
-                loggerNet.debug("Handshake failed: " + ctx.channel().remoteAddress(), cause);
+                loggerNet.info(exceptionLog);
             } else {
-                loggerNet.error("Handshake failed: " + ctx.channel().remoteAddress() + "(" + cause.getMessage() + ")");
+                loggerNet.error(exceptionLog);
             }
         }
         ctx.close();
