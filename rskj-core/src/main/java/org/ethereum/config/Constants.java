@@ -21,7 +21,7 @@ package org.ethereum.config;
 
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeTestNetConstants;
-import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
+import co.rsk.core.RskAddress;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigDecimal;
@@ -68,7 +68,7 @@ public class Constants {
 
     private static final BigInteger SECP256K1N = new BigInteger("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
 
-    private static final byte[] BURN_ADDRESS = Hex.decode("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+    private static final RskAddress BURN_ADDRESS = new RskAddress("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 
     private static final byte CHAIN_ID = 30;
 
@@ -155,7 +155,7 @@ public class Constants {
         return this.newBlockMaxSecondsInTheFuture;
     }
 
-    public byte[] getBurnAddress() { return ByteUtils.clone(Constants.BURN_ADDRESS); }
+    public RskAddress getBurnAddress() { return Constants.BURN_ADDRESS; }
 
     /**
      * EIP155: https://github.com/ethereum/EIPs/issues/155

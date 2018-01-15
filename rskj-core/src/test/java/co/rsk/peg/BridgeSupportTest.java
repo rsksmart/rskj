@@ -612,7 +612,7 @@ public class BridgeSupportTest {
         Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
         Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(21000000-2600)), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
-        Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(2600)), repository.getBalance(new RskAddress(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress())));
+        Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(2600)), repository.getBalance(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress()));
         // Check the wallet has been emptied
         Assert.assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
     }
