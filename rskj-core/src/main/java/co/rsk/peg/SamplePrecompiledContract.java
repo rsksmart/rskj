@@ -100,26 +100,25 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
 
     public int Method1(Object... args)
     {
-        byte[] addr = Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
-        byte[] contractAddr = contractAddress.getBytes();
+        RskAddress addr = new RskAddress("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
 
         BigInteger balance = new BigInteger("50000");
         repository.addBalance(addr, balance);
 
         DataWord keyWord = new DataWord("result".getBytes(StandardCharsets.UTF_8));
-        DataWord storedValue = repository.getStorageValue(contractAddr, keyWord);
+        DataWord storedValue = repository.getStorageValue(contractAddress, keyWord);
         int result = (storedValue != null ? storedValue.intValue() : 0) + 1;
         DataWord valWord = new DataWord(result);
-        repository.addStorageRow(contractAddr, keyWord, valWord);
+        repository.addStorageRow(contractAddress, keyWord, valWord);
 
-        logs.add(new LogInfo(contractAddr, null, null));
+        logs.add(new LogInfo(contractAddress.getBytes(), null, null));
 
         return result;
     }
 
     public void AddBalance(Object... args)
     {
-        byte[] addr = Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
+        RskAddress addr = new RskAddress("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
 
         BigInteger balance = new BigInteger("50000");
         repository.addBalance(addr, balance);
@@ -127,28 +126,24 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
 
     public int GetBalance(Object... args)
     {
-        byte[] addr = Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
+        RskAddress addr = new RskAddress("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
 
         return repository.getBalance(addr).intValue();
     }
 
     public void IncrementResult(Object... args)
     {
-        byte[] contractAddr = contractAddress.getBytes();
-
         DataWord keyWord = new DataWord("result".getBytes(StandardCharsets.UTF_8));
-        DataWord storedValue = repository.getStorageValue(contractAddr, keyWord);
+        DataWord storedValue = repository.getStorageValue(contractAddress, keyWord);
         int result = (storedValue != null ? storedValue.intValue() : 0) + 1;
         DataWord valWord = new DataWord(result);
-        repository.addStorageRow(contractAddr, keyWord, valWord);
+        repository.addStorageRow(contractAddress, keyWord, valWord);
     }
 
     public int GetResult(Object... args)
     {
-        byte[] contractAddr = contractAddress.getBytes();
-
         DataWord keyWord = new DataWord("result".getBytes(StandardCharsets.UTF_8));
-        DataWord storedValue = repository.getStorageValue(contractAddr, keyWord);
+        DataWord storedValue = repository.getStorageValue(contractAddress, keyWord);
         int result = (storedValue != null ? storedValue.intValue() : 0);
 
         return result;

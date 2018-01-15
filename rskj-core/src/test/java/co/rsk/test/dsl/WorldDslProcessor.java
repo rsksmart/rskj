@@ -19,6 +19,7 @@
 package co.rsk.test.dsl;
 
 import co.rsk.config.ConfigHelper;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.net.NodeBlockProcessor;
@@ -115,19 +116,19 @@ public class WorldDslProcessor {
         String accountName = cmd.getArgument(0);
         BigInteger expected = new BigInteger(cmd.getArgument(1));
 
-        byte[] accountAddress;
+        RskAddress accountAddress;
 
         Account account = world.getAccountByName(accountName);
 
         if (account != null)
-            accountAddress = account.getAddress().getBytes();
+            accountAddress = account.getAddress();
         else {
             Transaction tx = world.getTransactionByName(accountName);
 
             if (tx != null)
-                accountAddress = tx.getContractAddress().getBytes();
+                accountAddress = tx.getContractAddress();
             else
-                accountAddress = Hex.decode(accountName);
+                accountAddress = new RskAddress(accountName);
         }
 
         BigInteger accountBalance = world.getRepository().getBalance(accountAddress);

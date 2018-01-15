@@ -20,6 +20,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.config.ConfigHelper;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.util.BIUtil;
@@ -78,7 +79,7 @@ public class RskForksBridgeTest {
         genesis = (Genesis)blockChain.getBestBlock();
         keyHoldingRSKs = new ECKey();
         BigInteger balance = new BigInteger("10000000000000000000");
-        repository.addBalance(keyHoldingRSKs.getAddress(), balance);
+        repository.addBalance(new RskAddress(keyHoldingRSKs.getAddress()), balance);
         genesis.setStateRoot(repository.getRoot());
         genesis.flushRLP();
 

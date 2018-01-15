@@ -61,7 +61,7 @@ public class TxHandlerImpl implements TxHandler {
      * @param repository
      * @param blockchain
      */
-    public TxHandlerImpl(RskSystemProperties config, WorldManager worldManager, org.ethereum.facade.Repository repository, Blockchain blockchain) {
+    public TxHandlerImpl(RskSystemProperties config, WorldManager worldManager, org.ethereum.core.Repository repository, Blockchain blockchain) {
         this.config = config;
         this.blockchain = blockchain;
         this.repository = (Repository) repository;

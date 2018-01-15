@@ -19,6 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
@@ -43,12 +44,11 @@ import java.util.Set;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.crypto.SHA3Helper.sha3;
-import static org.ethereum.util.ByteUtil.wrap;
 
 /**
  * Created by ajlopez on 29/03/2017.
  */
-public class RepositoryImpl implements Repository, org.ethereum.facade.Repository {
+public class RepositoryImpl implements Repository {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private static final byte[] EMPTY_DATA_HASH = HashUtil.sha3(EMPTY_BYTE_ARRAY);
 
@@ -81,7 +81,7 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     }
 
     @Override
-    public synchronized AccountState createAccount(final byte[] addr) {
+    public synchronized AccountState createAccount(RskAddress addr) {
         AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         updateAccountState(addr, accountState);
         updateContractDetails(addr, new ContractDetailsImpl(config));
@@ -89,16 +89,16 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     }
 
     @Override
-    public synchronized boolean isExist(byte[] addr) {
+    public synchronized boolean isExist(RskAddress addr) {
         return getAccountState(addr) != null;
     }
 
     @Override
-    public synchronized AccountState getAccountState(byte[] addr) {
+    public synchronized AccountState getAccountState(RskAddress addr) {
         AccountState result = null;
         byte[] accountData = null;
 
-        accountData = this.trie.get(addr);
+        accountData = this.trie.get(addr.getBytes());
 
         if (accountData != null && accountData.length != 0) {
             result = new AccountState(accountData);
@@ -108,13 +108,12 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     }
 
     @Override
-    public synchronized void delete(byte[] addr)
-    {
-        this.trie = this.trie.delete(addr);
+    public synchronized void delete(RskAddress addr) {
+        this.trie = this.trie.delete(addr.getBytes());
     }
 
     @Override
-    public synchronized void hibernate(byte[] addr) {
+    public synchronized void hibernate(RskAddress addr) {
         AccountState account = getAccountStateOrCreateNew(addr);
 
         account.hibernate();
@@ -122,7 +121,7 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     }
 
     @Override
-    public synchronized BigInteger increaseNonce(byte[] addr) {
+    public synchronized BigInteger increaseNonce(RskAddress addr) {
         AccountState account = getAccountStateOrCreateNew(addr);
 
         account.incrementNonce();
@@ -132,13 +131,13 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     }
 
     @Override
-    public synchronized BigInteger getNonce(byte[] addr) {
+    public synchronized BigInteger getNonce(RskAddress addr) {
         AccountState account = getAccountStateOrCreateNew(addr);
         return account.getNonce();
     }
 
     @Override
-    public synchronized ContractDetails getContractDetails(byte[] addr) {
+    public synchronized ContractDetails getContractDetails(RskAddress addr) {
         // That part is important cause if we have
         // to sync details storage according the trie root
         // saved in the account
@@ -148,7 +147,7 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
             storageRoot = getAccountState(addr).getStateRoot();
         }
 
-        ContractDetails details =  detailsDataStore.get(addr);
+        ContractDetails details =  detailsDataStore.get(addr.getBytes());
         if (details != null) {
             details = details.getSnapshotTo(storageRoot);
         }
@@ -157,7 +156,7 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     }
 
     @Override
-    public synchronized void saveCode(byte[] addr, byte[] code) {
+    public synchronized void saveCode(RskAddress addr, byte[] code) {
         AccountState accountState = getAccountState(addr);
         ContractDetails details = getContractDetails(addr);
 
@@ -174,7 +173,7 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     }
 
     @Override
-    public synchronized byte[] getCode(byte[] addr) {
+    public synchronized byte[] getCode(RskAddress addr) {
         if (!isExist(addr)) {
             return EMPTY_BYTE_ARRAY;
         }
@@ -196,7 +195,7 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     }
 
     @Override
-    public synchronized void addStorageRow(byte[] addr, DataWord key, DataWord value) {
+    public synchronized void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
         ContractDetails details = getContractDetails(addr);
         if (details == null) {
             createAccount(addr);
@@ -209,7 +208,7 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     }
 
     @Override
-    public synchronized void addStorageBytes(byte[] addr, DataWord key, byte[] value) {
+    public synchronized void addStorageBytes(RskAddress addr, DataWord key, byte[] value) {
         ContractDetails details = getContractDetails(addr);
 
         if (details == null) {
@@ -223,25 +222,25 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     }
 
     @Override
-    public synchronized DataWord getStorageValue(byte[] addr, DataWord key) {
+    public synchronized DataWord getStorageValue(RskAddress addr, DataWord key) {
         ContractDetails details = getContractDetails(addr);
         return (details == null) ? null : details.get(key);
     }
 
     @Override
-    public synchronized byte[] getStorageBytes(byte[] addr, DataWord key) {
+    public synchronized byte[] getStorageBytes(RskAddress addr, DataWord key) {
         ContractDetails details = getContractDetails(addr);
         return (details == null) ? null : details.getBytes(key);
     }
 
     @Override
-    public synchronized BigInteger getBalance(byte[] addr) {
+    public synchronized BigInteger getBalance(RskAddress addr) {
         AccountState account = getAccountState(addr);
         return (account == null) ? AccountState.EMPTY.getBalance() : account.getBalance();
     }
 
     @Override
-    public synchronized BigInteger addBalance(byte[] addr, BigInteger value) {
+    public synchronized BigInteger addBalance(RskAddress addr, BigInteger value) {
         AccountState account = getAccountStateOrCreateNew(addr);
 
         BigInteger result = account.addToBalance(value);
@@ -251,12 +250,13 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     }
 
     @Override
-    public synchronized Set<ByteArrayWrapper> getAccountsKeys() {
-        Set<ByteArrayWrapper> result = new HashSet<>();
+    public synchronized Set<RskAddress> getAccountsKeys() {
+        Set<RskAddress> result = new HashSet<>();
 
         for (ByteArrayWrapper key : detailsDataStore.keys()) {
-            if (this.isExist(key.getData())) {
-                result.add(key);
+            RskAddress addr = new RskAddress(key.getData());
+            if (this.isExist(addr)) {
+                result.add(addr);
             }
         }
 
@@ -320,20 +320,19 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     }
 
     @Override
-    public synchronized void updateBatch(Map<ByteArrayWrapper, AccountState> stateCache,
-                                         Map<ByteArrayWrapper, ContractDetails> detailsCache) {
+    public synchronized void updateBatch(Map<RskAddress, AccountState> stateCache,
+                                         Map<RskAddress, ContractDetails> detailsCache) {
         logger.info("updatingBatch: detailsCache.size: {}", detailsCache.size());
 
-        for (Map.Entry<ByteArrayWrapper, AccountState> entry : stateCache.entrySet()) {
-            ByteArrayWrapper hash = entry.getKey();
+        for (Map.Entry<RskAddress, AccountState> entry : stateCache.entrySet()) {
+            RskAddress addr = entry.getKey();
             AccountState accountState = entry.getValue();
 
-            ContractDetails contractDetails = detailsCache.get(hash);
+            ContractDetails contractDetails = detailsCache.get(addr);
 
             if (accountState.isDeleted()) {
-                delete(hash.getData());
-                logger.debug("delete: [{}]",
-                        Hex.toHexString(hash.getData()));
+                delete(addr);
+                logger.debug("delete: [{}]", addr);
             } else {
                 if (!contractDetails.isDirty()) {
                     continue;
@@ -343,21 +342,20 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
 
                 if (contractDetailsCache.getOriginalContractDetails() == null) {
                     ContractDetails originalContractDetails = new ContractDetailsImpl(config);
-                    originalContractDetails.setAddress(hash.getData());
+                    originalContractDetails.setAddress(addr.getBytes());
                     contractDetailsCache.setOriginalContractDetails(originalContractDetails);
                     contractDetailsCache.commit();
                 }
 
                 contractDetails = contractDetailsCache.getOriginalContractDetails();
 
-                byte[] data = hash.getData();
-                updateContractDetails(data, contractDetails);
+                updateContractDetails(addr, contractDetails);
 
                 if (!Arrays.equals(accountState.getCodeHash(), EMPTY_TRIE_HASH)) {
                     accountState.setStateRoot(contractDetails.getStorageHash());
                 }
 
-                updateAccountState(data, accountState);
+                updateAccountState(addr, accountState);
             }
         }
 
@@ -381,19 +379,17 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     }
 
     @Override
-    public synchronized void loadAccount(byte[] addr,
-                                         Map<ByteArrayWrapper, AccountState> cacheAccounts,
-                                         Map<ByteArrayWrapper, ContractDetails> cacheDetails) {
-
+    public synchronized void loadAccount(RskAddress addr,
+                                         Map<RskAddress, AccountState> cacheAccounts,
+                                         Map<RskAddress, ContractDetails> cacheDetails) {
         AccountState account = getAccountState(addr);
         ContractDetails details = getContractDetails(addr);
 
         account = (account == null) ? new AccountState(BigInteger.ZERO, BigInteger.ZERO) : account.clone();
         details = new ContractDetailsCacheImpl(details);
 
-        ByteArrayWrapper wrappedAddress = wrap(addr);
-        cacheAccounts.put(wrappedAddress, account);
-        cacheDetails.put(wrappedAddress, details);
+        cacheAccounts.put(addr, account);
+        cacheDetails.put(addr, details);
     }
 
     @Override
@@ -409,17 +405,17 @@ public class RepositoryImpl implements Repository, org.ethereum.facade.Repositor
     }
 
     @Override
-    public synchronized void updateContractDetails(final byte[] address, final ContractDetails contractDetails) {
-        detailsDataStore.update(address, contractDetails);
+    public synchronized void updateContractDetails(RskAddress addr, final ContractDetails contractDetails) {
+        detailsDataStore.update(addr.getBytes(), contractDetails);
     }
 
     @Override
-    public synchronized void updateAccountState(final byte[] addr, final AccountState accountState) {
-        this.trie = this.trie.put(addr, accountState.getEncoded());
+    public synchronized void updateAccountState(RskAddress addr, final AccountState accountState) {
+        this.trie = this.trie.put(addr.getBytes(), accountState.getEncoded());
     }
 
     @Nonnull
-    private synchronized AccountState getAccountStateOrCreateNew(byte[] addr) {
+    private synchronized AccountState getAccountStateOrCreateNew(RskAddress addr) {
         AccountState account = getAccountState(addr);
         return (account == null) ? createAccount(addr) : account;
     }

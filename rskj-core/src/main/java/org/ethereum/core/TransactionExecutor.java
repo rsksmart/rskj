@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
@@ -155,7 +156,7 @@ public class TransactionExecutor {
             return false;
         }
 
-        BigInteger reqNonce = track.getNonce(tx.getSender().getBytes());
+        BigInteger reqNonce = track.getNonce(tx.getSender());
         BigInteger txNonce = toBI(tx.getNonce());
         if (isNotEqual(reqNonce, txNonce)) {
 
@@ -180,7 +181,7 @@ public class TransactionExecutor {
             totalCost = toBI(tx.getValue()).add(txGasCost);
         }
 
-        BigInteger senderBalance = track.getBalance(tx.getSender().getBytes());
+        BigInteger senderBalance = track.getBalance(tx.getSender());
 
         if (!isCovers(senderBalance, totalCost)) {
 
@@ -234,11 +235,11 @@ public class TransactionExecutor {
 
         if (!localCall) {
 
-            track.increaseNonce(tx.getSender().getBytes());
+            track.increaseNonce(tx.getSender());
 
             BigInteger txGasLimit = toBI(tx.getGasLimit());
             BigInteger txGasCost = toBI(tx.getGasPrice()).multiply(txGasLimit);
-            track.addBalance(tx.getSender().getBytes(), txGasCost.negate());
+            track.addBalance(tx.getSender(), txGasCost.negate());
 
             if (logger.isInfoEnabled()) {
                 logger.info("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, toBI(tx.getGasPrice()), txGasLimit);
@@ -259,13 +260,13 @@ public class TransactionExecutor {
 
         logger.info("Call transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
 
-        byte[] targetAddress = tx.getReceiveAddress().getBytes();
+        RskAddress targetAddress = tx.getReceiveAddress();
 
         // DataWord(targetAddress)) can fail with exception:
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
         // if targetAddress size is greater than 32 bytes.
         // But init() will detect this earlier
-        precompiledContract = PrecompiledContracts.getContractForAddress(config, new DataWord(targetAddress));
+        precompiledContract = PrecompiledContracts.getContractForAddress(config, new DataWord(targetAddress.getBytes()));
 
         if (precompiledContract != null) {
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
@@ -275,7 +276,7 @@ public class TransactionExecutor {
             if (!localCall && txGasLimit.compareTo(BigInteger.valueOf(requiredGas)) < 0) {
                 // no refund
                 // no endowment
-                execError("Out of Gas calling precompiled contract 0x" + Hex.toHexString(targetAddress) +
+                execError("Out of Gas calling precompiled contract 0x" + targetAddress.toString() +
                         ", required: " + (requiredGas + basicTxCost) + ", left: " + mEndGas);
                 mEndGas = BigInteger.ZERO;
                 return;
@@ -309,12 +310,12 @@ public class TransactionExecutor {
 
         if (result.getException() == null) {
             BigInteger endowment = toBI(tx.getValue());
-            transfer(cacheTrack, tx.getSender().getBytes(), targetAddress, endowment);
+            transfer(cacheTrack, tx.getSender(), targetAddress, endowment);
         }
     }
 
     private void create() {
-        byte[] newContractAddress = tx.getContractAddress().getBytes();
+        RskAddress newContractAddress = tx.getContractAddress();
         if (isEmpty(tx.getData())) {
             mEndGas = toBI(tx.getGasLimit()).subtract(BigInteger.valueOf(basicTxCost));
             cacheTrack.createAccount(newContractAddress);
@@ -333,7 +334,7 @@ public class TransactionExecutor {
         }
 
         BigInteger endowment = toBI(tx.getValue());
-        transfer(cacheTrack, tx.getSender().getBytes(), newContractAddress, endowment);
+        transfer(cacheTrack, tx.getSender(), newContractAddress, endowment);
     }
 
     private void execError(String err) {
@@ -387,7 +388,7 @@ public class TransactionExecutor {
                 } else {
                     mEndGas = mEndGas.subtract(BigInteger.valueOf(returnDataGasValue));
                     program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
-                    cacheTrack.saveCode(tx.getContractAddress().getBytes(), result.getHReturn());
+                    cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
                 }
             }
 
@@ -457,7 +458,7 @@ public class TransactionExecutor {
             // Accumulate refunds for suicides
             result.addFutureRefund((long)result.getDeleteAccounts().size() * GasCost.SUICIDE_REFUND);
             long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
-            byte[] addr = tx.isContractCreation() ? tx.getContractAddress().getBytes() : tx.getReceiveAddress().getBytes();
+            RskAddress addr = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
             mEndGas = mEndGas.add(BigInteger.valueOf(gasRefund));
 
             summaryBuilder
@@ -482,7 +483,7 @@ public class TransactionExecutor {
         TransactionExecutionSummary summary = summaryBuilder.build();
 
         // Refund for gas leftover
-        track.addBalance(tx.getSender().getBytes(), summary.getLeftover().add(summary.getRefund()));
+        track.addBalance(tx.getSender(), summary.getLeftover().add(summary.getRefund()));
         logger.info("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
 
         // Transfer fees to miner
@@ -491,9 +492,9 @@ public class TransactionExecutor {
         //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
         if(config.isRemascEnabled()) {
             logger.info("Adding fee to remasc contract account");
-            track.addBalance(PrecompiledContracts.REMASC_ADDR.getBytes(), summaryFee);
+            track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
         } else {
-            track.addBalance(coinbase, summaryFee);
+            track.addBalance(new RskAddress(coinbase), summaryFee);
         }
 
         this.paidFees = summaryFee;
@@ -502,9 +503,9 @@ public class TransactionExecutor {
             logger.info("Processing result");
             logs = notRejectedLogInfos;
 
-            result.getCodeChanges().forEach((key, value) -> track.saveCode(key.getLast20Bytes(), value));
+            result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key.getLast20Bytes()), value));
             // Traverse list of suicides
-            result.getDeleteAccounts().forEach(address -> track.delete(address.getLast20Bytes()));
+            result.getDeleteAccounts().forEach(address -> track.delete(new RskAddress(address.getLast20Bytes())));
         }
 
         if (listener != null) {

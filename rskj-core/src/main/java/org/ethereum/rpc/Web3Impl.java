@@ -19,6 +19,7 @@
 package org.ethereum.rpc;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.core.SnapshotManager;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
@@ -77,7 +78,7 @@ public class Web3Impl implements Web3 {
     private final SnapshotManager snapshotManager = new SnapshotManager();
     private final MinerManager minerManager = new MinerManager();
 
-    public org.ethereum.facade.Repository repository;
+    public org.ethereum.core.Repository repository;
 
     public Ethereum eth;
 
@@ -114,7 +115,7 @@ public class Web3Impl implements Web3 {
                        PersonalModule personalModule,
                        EthModule ethModule,
                        ChannelManager channelManager,
-                       org.ethereum.facade.Repository repository,
+                       org.ethereum.core.Repository repository,
                        PeerScoringManager peerScoringManager,
                        PeerServer peerServer) {
         this.eth = eth;
@@ -439,16 +440,16 @@ public class Web3Impl implements Web3 {
             throw new NullPointerException();
         }
 
-        byte[] addressAsByteArray = stringHexToByteArray(address);
-        BigInteger balance = repository.getBalance(addressAsByteArray);
+        RskAddress addr = new RskAddress(address);
+        BigInteger balance = repository.getBalance(addr);
 
         return toJsonHex(balance);
     }
 
     @Override
     public String eth_getBalance(String address) throws Exception {
-        byte[] addressAsByteArray = stringHexToByteArray(address);
-        BigInteger balance = this.repository.getBalance(addressAsByteArray);
+        RskAddress addr = new RskAddress(address);
+        BigInteger balance = this.repository.getBalance(addr);
 
         return toJsonHex(balance);
     }
@@ -457,13 +458,13 @@ public class Web3Impl implements Web3 {
     public String eth_getStorageAt(String address, String storageIdx, String blockId) throws Exception {
         String s = null;
         try {
-            byte[] addressAsByteArray = stringHexToByteArray(address);
+            RskAddress addr = new RskAddress(address);
             Repository repository = getRepoByJsonBlockId(blockId);
             if(repository == null) {
                 return null;
             }
             DataWord storageValue = repository.
-                    getStorageValue(addressAsByteArray, new DataWord(stringHexToByteArray(storageIdx)));
+                    getStorageValue(addr, new DataWord(stringHexToByteArray(storageIdx)));
             if (storageValue != null) {
                 return s = TypeConverter.toJsonHex(storageValue.getData());
             } else {
@@ -480,11 +481,11 @@ public class Web3Impl implements Web3 {
     public String eth_getTransactionCount(String address, String blockId) throws Exception {
         String s = null;
         try {
-            byte[] addressAsByteArray = TypeConverter.stringHexToByteArray(address);
+            RskAddress addr = new RskAddress(address);
 
             Repository repository = getRepoByJsonBlockId(blockId);
             if (repository != null) {
-                BigInteger nonce = repository.getNonce(addressAsByteArray);
+                BigInteger nonce = repository.getNonce(addr);
                 return s = TypeConverter.toJsonHex(nonce);
             } else {
                 return null;
@@ -578,10 +579,10 @@ public class Web3Impl implements Web3 {
             if(block == null) {
                 return null;
             }
-            byte[] addressAsByteArray = TypeConverter.stringHexToByteArray(address);
+            RskAddress addr = new RskAddress(address);
             Repository repository = getRepoByJsonBlockId(blockId);
             if(repository != null) {
-                byte[] code = repository.getCode(addressAsByteArray);
+                byte[] code = repository.getCode(addr);
                 s = TypeConverter.toJsonHex(code);
             }
             return s;

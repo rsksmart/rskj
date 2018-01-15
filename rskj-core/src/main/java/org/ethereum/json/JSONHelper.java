@@ -19,6 +19,7 @@
 
 package org.ethereum.json;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.db.ByteArrayWrapper;
@@ -109,10 +110,10 @@ public class JSONHelper {
 
         ObjectNode statesNode = blockNode.objectNode();
         for (ByteArrayWrapper key : keys) {
-            byte[] keyBytes = key.getData();
-            AccountState accountState = repository.getAccountState(keyBytes);
-            ContractDetails details = repository.getContractDetails(keyBytes);
-            dumpState(statesNode, Hex.toHexString(keyBytes), accountState, details);
+            RskAddress addr = new RskAddress(key.getData());
+            AccountState accountState = repository.getAccountState(addr);
+            ContractDetails details = repository.getContractDetails(addr);
+            dumpState(statesNode, addr.toString(), accountState, details);
         }
         blockNode.set("state", statesNode);
 

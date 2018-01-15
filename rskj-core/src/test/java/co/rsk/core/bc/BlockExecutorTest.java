@@ -80,7 +80,7 @@ public class BlockExecutorTest {
         Assert.assertTrue(result.getTransactionReceipts().isEmpty());
         Assert.assertArrayEquals(repository.getRoot(), result.getStateRoot());
 
-        AccountState accountState = repository.getAccountState(account.getAddress().getBytes());
+        AccountState accountState = repository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.TEN, accountState.getBalance());
@@ -126,14 +126,14 @@ public class BlockExecutorTest {
             Assert.assertEquals(0, result.getLogsBloom()[k]);
         }
 
-        AccountState accountState = repository.getAccountState(account.getAddress().getBytes());
+        AccountState accountState = repository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance());
 
         Repository finalRepository = repository.getSnapshotTo(result.getStateRoot());
 
-        accountState = finalRepository.getAccountState(account.getAddress().getBytes());
+        accountState = finalRepository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance());
@@ -154,8 +154,8 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, new BlockchainDummy(), null, null);
 
-        Transaction tx1 = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress().getBytes()));
-        Transaction tx2 = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress().getBytes()).add(BigInteger.ONE));
+        Transaction tx1 = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
+        Transaction tx2 = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()).add(BigInteger.ONE));
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx1);
         txs.add(tx2);
@@ -196,14 +196,14 @@ public class BlockExecutorTest {
         for (int k = 0; k < result.getLogsBloom().length; k++)
             Assert.assertEquals(0, result.getLogsBloom()[k]);
 
-        AccountState accountState = repository.getAccountState(account.getAddress().getBytes());
+        AccountState accountState = repository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(60000), accountState.getBalance());
 
         Repository finalRepository = repository.getSnapshotTo(result.getStateRoot());
 
-        accountState = finalRepository.getAccountState(account.getAddress().getBytes());
+        accountState = finalRepository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(60000 - 42000 - 20), accountState.getBalance());
@@ -244,8 +244,8 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, new BlockchainDummy(), null, null);
 
-        Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress().getBytes()));
-        Transaction tx2 = createTransaction(account3, account2, BigInteger.TEN, repository.getNonce(account3.getAddress().getBytes()));
+        Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
+        Transaction tx2 = createTransaction(account3, account2, BigInteger.TEN, repository.getNonce(account3.getAddress()));
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         txs.add(tx2);
@@ -282,8 +282,8 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, new BlockchainDummy(), null, null);
 
-        Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress().getBytes()));
-        Transaction tx2 = createTransaction(account3, account2, BigInteger.TEN, repository.getNonce(account3.getAddress().getBytes()));
+        Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
+        Transaction tx2 = createTransaction(account3, account2, BigInteger.TEN, repository.getNonce(account3.getAddress()));
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         txs.add(tx2);
@@ -387,7 +387,7 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, new BlockchainDummy(), null, null);
 
-        Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress().getBytes()));
+        Transaction tx = createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()));
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
 
@@ -412,8 +412,8 @@ public class BlockExecutorTest {
 
     public static Account createAccount(String seed, Repository repository, BigInteger balance) {
         Account account = createAccount(seed);
-        repository.createAccount(account.getAddress().getBytes());
-        repository.addBalance(account.getAddress().getBytes(), balance);
+        repository.createAccount(account.getAddress());
+        repository.addBalance(account.getAddress(), balance);
         return account;
     }
 
@@ -496,14 +496,14 @@ public class BlockExecutorTest {
         for (int k = 0; k < result.getLogsBloom().length; k++)
             Assert.assertEquals(0, result.getLogsBloom()[k]);
 
-        AccountState accountState = repository.getAccountState(account.getAddress().getBytes());
+        AccountState accountState = repository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance());
 
         Repository finalRepository = repository.getSnapshotTo(result.getStateRoot());
 
-        accountState = finalRepository.getAccountState(account.getAddress().getBytes());
+        accountState = finalRepository.getAccountState(account.getAddress());
 
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance());
@@ -525,8 +525,8 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, new BlockchainDummy(), null, null);
 
-        Transaction tx = createStrangeTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress().getBytes()), strangeTransactionType);
         List<Transaction> txs = new ArrayList<>();
+        Transaction tx = createStrangeTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()), strangeTransactionType);
         txs.add(tx);
 
         List<BlockHeader> uncles = new ArrayList<>();

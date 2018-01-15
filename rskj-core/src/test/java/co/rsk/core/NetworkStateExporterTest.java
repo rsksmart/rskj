@@ -69,25 +69,24 @@ public class NetworkStateExporterTest {
     public void testNoContracts() throws Exception {
         Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
         String address1String = "1000000000000000000000000000000000000000";
-        byte[] address1 = Hex.decode(address1String);
+        RskAddress address1 = new RskAddress(address1String);
         repository.createAccount(address1);
         repository.addBalance(address1, BigInteger.ONE);
         repository.increaseNonce(address1);
         String address2String = "2000000000000000000000000000000000000000";
-        byte[] address2 = Hex.decode(address2String);
+        RskAddress address2 = new RskAddress(address2String);
         repository.createAccount(address2);
         repository.addBalance(address2, BigInteger.TEN);
         repository.increaseNonce(address2);
         repository.increaseNonce(address2);
 
-        byte[] remascSender = ZERO_BYTE_ARRAY;
+        RskAddress remascSender = RskAddress.nullAddress();
         repository.createAccount(remascSender);
         repository.increaseNonce(remascSender);
 
-        byte[] remascAddr = PrecompiledContracts.REMASC_ADDR.getBytes();
-        repository.createAccount(remascAddr);
-        repository.addBalance(remascAddr, BigInteger.TEN);
-        repository.increaseNonce(remascAddr);
+        repository.createAccount(PrecompiledContracts.REMASC_ADDR);
+        repository.addBalance(PrecompiledContracts.REMASC_ADDR, BigInteger.TEN);
+        repository.increaseNonce(PrecompiledContracts.REMASC_ADDR);
 
 
         Map result = writeAndReadJson(repository);
@@ -113,7 +112,7 @@ public class NetworkStateExporterTest {
     public void testContracts() throws Exception {
         Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
         String address1String = "1000000000000000000000000000000000000000";
-        byte[] address1 = Hex.decode(address1String);
+        RskAddress address1 = new RskAddress(address1String);
         repository.createAccount(address1);
         repository.addBalance(address1, BigInteger.ONE);
         repository.increaseNonce(address1);

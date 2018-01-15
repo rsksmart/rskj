@@ -110,7 +110,7 @@ public class BridgeStorageProviderTest {
 
         track = repository.startTracking();
 
-        byte[] contractAddress = PrecompiledContracts.BRIDGE_ADDR.getBytes();
+        RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
 
         Assert.assertNotNull(repository.getContractDetails(contractAddress));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("btcTxHashesAP".getBytes())));
@@ -253,7 +253,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         Whitebox.setInternalState(storageProvider, "btcContext", contextMock);
 
-        when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
             byte[] contractAddress = invocation.getArgumentAt(0, byte[].class);
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
@@ -287,7 +287,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         Whitebox.setInternalState(storageProvider, "btcContext", contextMock);
 
-        when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             storageBytesCalls.add(0);
             byte[] contractAddress = invocation.getArgumentAt(0, byte[].class);
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
@@ -332,7 +332,7 @@ public class BridgeStorageProviderTest {
             Assert.assertEquals(new DataWord("newFederation".getBytes(StandardCharsets.UTF_8)), address);
             Assert.assertTrue(Arrays.equals(new byte[]{(byte)0xbb}, data));
             return null;
-        }).when(repositoryMock).addStorageBytes(any(byte[].class), any(DataWord.class), any(byte[].class));
+        }).when(repositoryMock).addStorageBytes(new RskAddress(any(byte[].class)), any(DataWord.class), any(byte[].class));
 
         storageProvider.saveNewFederation();
         // Shouldn't have tried to save nor serialize anything
@@ -353,7 +353,7 @@ public class BridgeStorageProviderTest {
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
             byte[] contractAddress = invocation.getArgumentAt(0, byte[].class);
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
@@ -385,7 +385,7 @@ public class BridgeStorageProviderTest {
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
             byte[] contractAddress = invocation.getArgumentAt(0, byte[].class);
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
@@ -430,7 +430,7 @@ public class BridgeStorageProviderTest {
             Assert.assertEquals(new DataWord("federationElection".getBytes(StandardCharsets.UTF_8)), address);
             Assert.assertTrue(Arrays.equals(Hex.decode("aabb"), data));
             return null;
-        }).when(repositoryMock).addStorageBytes(any(byte[].class), any(DataWord.class), any(byte[].class));
+        }).when(repositoryMock).addStorageBytes(new RskAddress(any(byte[].class)), any(DataWord.class), any(byte[].class));
 
         storageProvider.saveFederationElection();
         // Shouldn't have tried to save nor serialize anything
@@ -453,7 +453,7 @@ public class BridgeStorageProviderTest {
         when(contextMock.getParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         Whitebox.setInternalState(storageProvider, "btcContext", contextMock);
 
-        when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
             byte[] contractAddress = invocation.getArgumentAt(0, byte[].class);
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
@@ -486,7 +486,7 @@ public class BridgeStorageProviderTest {
         when(contextMock.getParams()).thenReturn(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         Whitebox.setInternalState(storageProvider, "btcContext", contextMock);
 
-        when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
             byte[] contractAddress = invocation.getArgumentAt(0, byte[].class);
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
@@ -531,7 +531,7 @@ public class BridgeStorageProviderTest {
             Assert.assertEquals(new DataWord("lockWhitelist".getBytes(StandardCharsets.UTF_8)), address);
             Assert.assertTrue(Arrays.equals(Hex.decode("ccdd"), data));
             return null;
-        }).when(repositoryMock).addStorageBytes(any(byte[].class), any(DataWord.class), any(byte[].class));
+        }).when(repositoryMock).addStorageBytes(new RskAddress(any(byte[].class)), any(DataWord.class), any(byte[].class));
 
         storageProvider.saveLockWhitelist();
         // Shouldn't have tried to save nor serialize anything
@@ -551,7 +551,7 @@ public class BridgeStorageProviderTest {
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
             byte[] contractAddress = invocation.getArgumentAt(0, byte[].class);
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
@@ -582,7 +582,7 @@ public class BridgeStorageProviderTest {
         Repository repositoryMock = mock(Repository.class);
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class))).then((InvocationOnMock invocation) -> {
             calls.add(0);
             byte[] contractAddress = invocation.getArgumentAt(0, byte[].class);
             DataWord address = invocation.getArgumentAt(1, DataWord.class);
@@ -633,7 +633,7 @@ public class BridgeStorageProviderTest {
         HashMap<ABICallSpec, List<RskAddress>> electionVotes = new HashMap<>();
         byte[] serializedElection = BridgeSerializationUtils.serializeElection(
                 new ABICallElection(authorizerMock, electionVotes));
-        when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class)))
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class)))
                 .thenReturn(serializedElection);
         when(authorizerMock.getRequiredAuthorizedKeys())
                 .thenReturn(1);
@@ -662,7 +662,7 @@ public class BridgeStorageProviderTest {
         electionVotes.put(expectedWinner, voters);
         byte[] serializedElection = BridgeSerializationUtils.serializeElection(
                 new ABICallElection(authorizerMock, electionVotes));
-        when(repositoryMock.getStorageBytes(any(byte[].class), any(DataWord.class)))
+        when(repositoryMock.getStorageBytes(any(RskAddress.class), any(DataWord.class)))
                 .thenReturn(serializedElection);
 
         ABICallElection result = storageProvider.getFeePerKbElection(authorizerMock);

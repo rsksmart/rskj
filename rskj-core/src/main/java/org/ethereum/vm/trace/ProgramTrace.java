@@ -20,6 +20,7 @@
 package org.ethereum.vm.trace;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.RepositoryTrack;
@@ -95,7 +96,7 @@ public class ProgramTrace {
             repository = ((RepositoryTrack) repository).getOriginRepository();
         }
 
-        byte[] address = programInvoke.getOwnerAddress().getLast20Bytes();
+        RskAddress address = new RskAddress(programInvoke.getOwnerAddress().getLast20Bytes());
         return repository.getContractDetails(address);
     }
 

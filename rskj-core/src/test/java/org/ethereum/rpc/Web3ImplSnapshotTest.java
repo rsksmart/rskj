@@ -170,7 +170,7 @@ public class Web3ImplSnapshotTest {
 
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
-        ethereum.repository = (org.ethereum.facade.Repository) world.getRepository();
+        ethereum.repository = world.getRepository();
         ethereum.worldManager = worldManager;
 
         return new Web3Impl(ethereum, worldManager, Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, Web3Mocks.getMockChannelManager(), ethereum.repository, null, null);

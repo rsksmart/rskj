@@ -45,7 +45,6 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.facade.Ethereum;
-import org.ethereum.facade.Repository;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
@@ -829,7 +828,7 @@ public class Web3ImplTest {
 
         Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(100000000)).build();
         byte[] code = new byte[] { 0x01, 0x02, 0x03 };
-        world.getRepository().saveCode(acc1.getAddress().getBytes(), code);
+        world.getRepository().saveCode(acc1.getAddress(), code);
         Block genesis = world.getBlockChain().getBestBlock();
         genesis.setStateRoot(world.getRepository().getRoot());
         genesis.flushRLP();
@@ -931,7 +930,7 @@ public class Web3ImplTest {
 
         Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(100000000)).build();
         byte[] code = new byte[] { 0x01, 0x02, 0x03 };
-        world.getRepository().saveCode(acc1.getAddress().getBytes(), code);
+        world.getRepository().saveCode(acc1.getAddress(), code);
 
         String accountAddress = Hex.toHexString(acc1.getAddress().getBytes());
 

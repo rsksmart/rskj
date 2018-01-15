@@ -19,10 +19,10 @@
 
 package org.ethereum.vm.program;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.DetailsDataStore;
 import org.ethereum.vm.DataWord;
@@ -42,11 +42,11 @@ import java.util.Set;
 public class Storage implements Repository, ProgramListenerAware {
 
     private final Repository repository;
-    private final DataWord address;
+    private final RskAddress address;
     private ProgramListener traceListener;
 
     public Storage(ProgramInvoke programInvoke) {
-        this.address = programInvoke.getOwnerAddress();
+        this.address = new RskAddress(programInvoke.getOwnerAddress().getLast20Bytes());
         this.repository = programInvoke.getRepository();
     }
 
@@ -56,22 +56,22 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public AccountState createAccount(byte[] addr) {
+    public AccountState createAccount(RskAddress addr) {
         return repository.createAccount(addr);
     }
 
     @Override
-    public boolean isExist(byte[] addr) {
+    public boolean isExist(RskAddress addr) {
         return repository.isExist(addr);
     }
 
     @Override
-    public AccountState getAccountState(byte[] addr) {
+    public AccountState getAccountState(RskAddress addr) {
         return repository.getAccountState(addr);
     }
 
     @Override
-    public void delete(byte[] addr) {
+    public void delete(RskAddress addr) {
         if (canListenTrace(addr)) {
             traceListener.onStorageClear();
         }
@@ -79,37 +79,37 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void hibernate(byte[] addr) {
+    public void hibernate(RskAddress addr) {
         repository.hibernate(addr);
     }
 
     @Override
-    public BigInteger increaseNonce(byte[] addr) {
+    public BigInteger increaseNonce(RskAddress addr) {
         return repository.increaseNonce(addr);
     }
 
     @Override
-    public BigInteger getNonce(byte[] addr) {
+    public BigInteger getNonce(RskAddress addr) {
         return repository.getNonce(addr);
     }
 
     @Override
-    public ContractDetails getContractDetails(byte[] addr) {
+    public ContractDetails getContractDetails(RskAddress addr) {
         return repository.getContractDetails(addr);
     }
 
     @Override
-    public void saveCode(byte[] addr, byte[] code) {
+    public void saveCode(RskAddress addr, byte[] code) {
         repository.saveCode(addr, code);
     }
 
     @Override
-    public byte[] getCode(byte[] addr) {
+    public byte[] getCode(RskAddress addr) {
         return repository.getCode(addr);
     }
 
     @Override
-    public void addStorageRow(byte[] addr, DataWord key, DataWord value) {
+    public void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
         if (canListenTrace(addr)) {
             traceListener.onStoragePut(key, value);
         }
@@ -117,39 +117,39 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void addStorageBytes(byte[] addr, DataWord key, byte[] value) {
+    public void addStorageBytes(RskAddress addr, DataWord key, byte[] value) {
         if (canListenTrace(addr)) {
             traceListener.onStoragePut(key, value);
         }
         repository.addStorageBytes(addr, key, value);
     }
 
-    private boolean canListenTrace(byte[] address) {
-        return this.address.equals(new DataWord(address)) && (traceListener != null);
+    private boolean canListenTrace(RskAddress address) {
+        return this.address.equals(address) && traceListener != null;
     }
 
     @Override
-    public DataWord getStorageValue(byte[] addr, DataWord key) {
+    public DataWord getStorageValue(RskAddress addr, DataWord key) {
         return repository.getStorageValue(addr, key);
     }
 
     @Override
-    public byte[] getStorageBytes(byte[] addr, DataWord key) {
+    public byte[] getStorageBytes(RskAddress addr, DataWord key) {
         return repository.getStorageBytes(addr, key);
     }
 
     @Override
-    public BigInteger getBalance(byte[] addr) {
+    public BigInteger getBalance(RskAddress addr) {
         return repository.getBalance(addr);
     }
 
     @Override
-    public BigInteger addBalance(byte[] addr, BigInteger value) {
+    public BigInteger addBalance(RskAddress addr, BigInteger value) {
         return repository.addBalance(addr, value);
     }
 
     @Override
-    public Set<ByteArrayWrapper> getAccountsKeys() {
+    public Set<RskAddress> getAccountsKeys() {
         return repository.getAccountsKeys();
     }
 
@@ -205,9 +205,9 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void updateBatch(Map<ByteArrayWrapper, AccountState> accountStates, Map<ByteArrayWrapper, ContractDetails> contractDetails) {
-        for (ByteArrayWrapper address : contractDetails.keySet()) {
-            if (!canListenTrace(address.getData())) {
+    public void updateBatch(Map<RskAddress, AccountState> accountStates, Map<RskAddress, ContractDetails> contractDetails) {
+        for (RskAddress address : contractDetails.keySet()) {
+            if (!canListenTrace(address)) {
                 return;
             }
 
@@ -229,7 +229,7 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void loadAccount(byte[] addr, Map<ByteArrayWrapper, AccountState> cacheAccounts, Map<ByteArrayWrapper, ContractDetails> cacheDetails) {
+    public void loadAccount(RskAddress addr, Map<RskAddress, AccountState> cacheAccounts, Map<RskAddress, ContractDetails> cacheDetails) {
         repository.loadAccount(addr, cacheAccounts, cacheDetails);
     }
 
@@ -244,12 +244,12 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void updateContractDetails(byte[] address, ContractDetails contractDetails) {
+    public void updateContractDetails(RskAddress addr, ContractDetails contractDetails) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void updateAccountState(byte[] data, AccountState accountState) {
+    public void updateAccountState(RskAddress addr, AccountState accountState) {
         throw new UnsupportedOperationException();
     }
 

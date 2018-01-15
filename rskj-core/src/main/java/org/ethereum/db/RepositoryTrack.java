@@ -20,6 +20,7 @@
 package org.ethereum.db;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
@@ -39,7 +40,6 @@ import java.util.Set;
 
 import static org.ethereum.crypto.SHA3Helper.sha3;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.util.ByteUtil.wrap;
 
 /**
  * @author Roman Mandeleil
@@ -49,8 +49,8 @@ public class RepositoryTrack implements Repository {
     private static final byte[] EMPTY_DATA_HASH = HashUtil.sha3(EMPTY_BYTE_ARRAY);
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
-    private final Map<ByteArrayWrapper, AccountState> cacheAccounts = new HashMap<>();
-    private final Map<ByteArrayWrapper, ContractDetails> cacheDetails = new HashMap<>();
+    private final Map<RskAddress, AccountState> cacheAccounts = new HashMap<>();
+    private final Map<RskAddress, ContractDetails> cacheDetails = new HashMap<>();
 
     private final RskSystemProperties config;
     private final DetailsDataStore dds;
@@ -65,43 +65,43 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public AccountState createAccount(byte[] addr) {
+    public AccountState createAccount(RskAddress addr) {
 
         synchronized (repository) {
-            logger.trace("createAccount: [{}]", Hex.toHexString(addr));
+            logger.trace("createAccount: [{}]", addr);
 
             AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
-            cacheAccounts.put(wrap(addr), accountState);
+            cacheAccounts.put(addr, accountState);
 
             ContractDetails contractDetails = new ContractDetailsCacheImpl(null);
             contractDetails.setDirty(true);
-            cacheDetails.put(wrap(addr), contractDetails);
+            cacheDetails.put(addr, contractDetails);
 
             return accountState;
         }
     }
 
     @Override
-    public AccountState getAccountState(byte[] addr) {
+    public AccountState getAccountState(RskAddress addr) {
 
         synchronized (repository) {
 
-            AccountState accountState = cacheAccounts.get(wrap(addr));
+            AccountState accountState = cacheAccounts.get(addr);
 
             if (accountState == null) {
                 repository.loadAccount(addr, cacheAccounts, cacheDetails);
 
-                accountState = cacheAccounts.get(wrap(addr));
+                accountState = cacheAccounts.get(addr);
             }
             return accountState;
         }
     }
 
     @Override
-    public boolean isExist(byte[] addr) {
+    public boolean isExist(RskAddress addr) {
 
         synchronized (repository) {
-            AccountState accountState = cacheAccounts.get(wrap(addr));
+            AccountState accountState = cacheAccounts.get(addr);
             if (accountState != null) {
                 return !accountState.isDeleted();
             }
@@ -111,14 +111,14 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public ContractDetails getContractDetails(byte[] addr) {
+    public ContractDetails getContractDetails(RskAddress addr) {
 
         synchronized (repository) {
-            ContractDetails contractDetails = cacheDetails.get(wrap(addr));
+            ContractDetails contractDetails = cacheDetails.get(addr);
 
             if (contractDetails == null) {
                 repository.loadAccount(addr, cacheAccounts, cacheDetails);
-                contractDetails = cacheDetails.get(wrap(addr));
+                contractDetails = cacheDetails.get(addr);
             }
 
             return contractDetails;
@@ -126,29 +126,29 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public void loadAccount(byte[] addr, Map<ByteArrayWrapper, AccountState> cacheAccounts,
-                            Map<ByteArrayWrapper, ContractDetails> cacheDetails) {
+    public void loadAccount(RskAddress addr, Map<RskAddress, AccountState> cacheAccounts,
+                            Map<RskAddress, ContractDetails> cacheDetails) {
 
         synchronized (repository) {
-            AccountState accountState = this.cacheAccounts.get(wrap(addr));
-            ContractDetails contractDetails = this.cacheDetails.get(wrap(addr));
+            AccountState accountState = this.cacheAccounts.get(addr);
+            ContractDetails contractDetails = this.cacheDetails.get(addr);
 
             if (accountState == null) {
                 repository.loadAccount(addr, this.cacheAccounts, this.cacheDetails);
-                accountState = this.cacheAccounts.get(wrap(addr));
-                contractDetails = this.cacheDetails.get(wrap(addr));
+                accountState = this.cacheAccounts.get(addr);
+                contractDetails = this.cacheDetails.get(addr);
             }
 
-            cacheAccounts.put(wrap(addr), accountState.clone());
+            cacheAccounts.put(addr, accountState.clone());
             ContractDetails contractDetailsLvl2 = new ContractDetailsCacheImpl(contractDetails);
-            cacheDetails.put(wrap(addr), contractDetailsLvl2);
+            cacheDetails.put(addr, contractDetailsLvl2);
         }
     }
 
 
     @Override
-    public void delete(byte[] addr) {
-        logger.trace("delete account: [{}]", Hex.toHexString(addr));
+    public void delete(RskAddress addr) {
+        logger.trace("delete account: [{}]", addr);
 
         synchronized (repository) {
             getAccountState(addr).setDeleted(true);
@@ -157,7 +157,7 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public BigInteger increaseNonce(byte[] addr) {
+    public BigInteger increaseNonce(RskAddress addr) {
 
         synchronized (repository) {
             AccountState accountState = getAccountState(addr);
@@ -171,7 +171,7 @@ public class RepositoryTrack implements Repository {
             BigInteger saveNonce = accountState.getNonce();
             accountState.incrementNonce();
 
-            logger.trace("increase nonce addr: [{}], from: [{}], to: [{}]", Hex.toHexString(addr),
+            logger.trace("increase nonce addr: [{}], from: [{}], to: [{}]", addr,
                     saveNonce, accountState.getNonce());
 
             return accountState.getNonce();
@@ -179,7 +179,7 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public void hibernate(byte[] addr) {
+    public void hibernate(RskAddress addr) {
 
         synchronized (repository) {
             AccountState accountState = getAccountState(addr);
@@ -192,10 +192,10 @@ public class RepositoryTrack implements Repository {
 
             accountState.hibernate();
         }
-        logger.trace("hibernate addr: [{}]", Hex.toHexString(addr));
+        logger.trace("hibernate addr: [{}]", addr);
     }
 
-    public BigInteger setNonce(byte[] addr, BigInteger bigInteger) {
+    public BigInteger setNonce(RskAddress addr, BigInteger bigInteger) {
         synchronized (repository) {
             AccountState accountState = getAccountState(addr);
 
@@ -208,7 +208,7 @@ public class RepositoryTrack implements Repository {
             BigInteger saveNonce = accountState.getNonce();
             accountState.setNonce(bigInteger);
 
-            logger.trace("increase nonce addr: [{}], from: [{}], to: [{}]", Hex.toHexString(addr),
+            logger.trace("increase nonce addr: [{}], from: [{}], to: [{}]", addr,
                     saveNonce, accountState.getNonce());
 
             return accountState.getNonce();
@@ -217,19 +217,19 @@ public class RepositoryTrack implements Repository {
 
 
     @Override
-    public BigInteger getNonce(byte[] addr) {
+    public BigInteger getNonce(RskAddress addr) {
         AccountState accountState = getAccountState(addr);
         return accountState == null ? AccountState.EMPTY.getNonce() : accountState.getNonce();
     }
 
     @Override
-    public BigInteger getBalance(byte[] addr) {
+    public BigInteger getBalance(RskAddress addr) {
         AccountState accountState = getAccountState(addr);
         return accountState == null ? AccountState.EMPTY.getBalance() : accountState.getBalance();
     }
 
     @Override
-    public BigInteger addBalance(byte[] addr, BigInteger value) {
+    public BigInteger addBalance(RskAddress addr, BigInteger value) {
 
         synchronized (repository) {
             AccountState accountState = getAccountState(addr);
@@ -240,7 +240,7 @@ public class RepositoryTrack implements Repository {
             getContractDetails(addr).setDirty(true);
             BigInteger newBalance = accountState.addToBalance(value);
 
-            logger.trace("adding to balance addr: [{}], balance: [{}], delta: [{}]", Hex.toHexString(addr),
+            logger.trace("adding to balance addr: [{}], balance: [{}], delta: [{}]", addr,
                     newBalance, value);
 
             return newBalance;
@@ -248,8 +248,8 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public void saveCode(byte[] addr, byte[] code) {
-        logger.trace("saving code addr: [{}], code: [{}]", Hex.toHexString(addr),
+    public void saveCode(RskAddress addr, byte[] code) {
+        logger.trace("saving code addr: [{}], code: [{}]", addr,
                 Hex.toHexString(code));
         synchronized (repository) {
             getContractDetails(addr).setCode(code);
@@ -259,7 +259,7 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public byte[] getCode(byte[] addr) {
+    public byte[] getCode(RskAddress addr) {
 
         synchronized (repository) {
             if (!isExist(addr)) {
@@ -276,9 +276,9 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public void addStorageRow(byte[] addr, DataWord key, DataWord value) {
+    public void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
 
-        logger.trace("add storage row, addr: [{}], key: [{}] val: [{}]", Hex.toHexString(addr),
+        logger.trace("add storage row, addr: [{}], key: [{}] val: [{}]", addr,
                 key.toString(), value.toString());
 
         synchronized (repository) {
@@ -287,9 +287,9 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public void addStorageBytes(byte[] addr, DataWord key, byte[] value) {
+    public void addStorageBytes(RskAddress addr, DataWord key, byte[] value) {
 
-        logger.trace("add storage bytes, addr: [{}], key: [{}]", Hex.toHexString(addr),
+        logger.trace("add storage bytes, addr: [{}], key: [{}]", addr,
                 key.toString());
 
         synchronized (repository) {
@@ -298,21 +298,21 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public DataWord getStorageValue(byte[] addr, DataWord key) {
+    public DataWord getStorageValue(RskAddress addr, DataWord key) {
         synchronized (repository) {
             return getContractDetails(addr).get(key);
         }
     }
 
     @Override
-    public byte[] getStorageBytes(byte[] addr, DataWord key) {
+    public byte[] getStorageBytes(RskAddress addr, DataWord key) {
         synchronized (repository) {
             return getContractDetails(addr).getBytes(key);
         }
     }
 
     @Override
-    public Set<ByteArrayWrapper> getAccountsKeys() {
+    public Set<RskAddress> getAccountsKeys() {
         throw new UnsupportedOperationException();
     }
 
@@ -377,18 +377,18 @@ public class RepositoryTrack implements Repository {
     }
 
     public void dumpChanges() {
-        HashMap<ByteArrayWrapper, AccountState> accountStates = new HashMap<>();
-        HashMap<ByteArrayWrapper, ContractDetails> contractDetails= new HashMap<>();
+        HashMap<RskAddress, AccountState> accountStates = new HashMap<>();
+        HashMap<RskAddress, ContractDetails> contractDetails= new HashMap<>();
         updateBatch(accountStates,contractDetails);
 
         StringBuilder buf = new StringBuilder();
         buf.append("accountStates:\n");
-        for (HashMap.Entry<ByteArrayWrapper, AccountState> entry : accountStates.entrySet()) {
+        for (HashMap.Entry<RskAddress, AccountState> entry : accountStates.entrySet()) {
             buf.append(entry.getKey()).append(':').append(entry.getValue()).append('\n');
         }
 
         buf.append("contractDetails:\n");
-        for (HashMap.Entry<ByteArrayWrapper, ContractDetails> entry : contractDetails.entrySet()) {
+        for (HashMap.Entry<RskAddress, ContractDetails> entry : contractDetails.entrySet()) {
             buf.append(entry.getKey()).append(':').append(entry.getValue()).append('\n');
         }
 
@@ -396,15 +396,15 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public void updateBatch(Map<ByteArrayWrapper, AccountState> accountStates,
-                            Map<ByteArrayWrapper, ContractDetails> contractDetails) {
+    public void updateBatch(Map<RskAddress, AccountState> accountStates,
+                            Map<RskAddress, ContractDetails> contractDetails) {
 
         synchronized (repository) {
-            for (Map.Entry<ByteArrayWrapper, AccountState> entry : accountStates.entrySet()) {
+            for (Map.Entry<RskAddress, AccountState> entry : accountStates.entrySet()) {
                 cacheAccounts.put(entry.getKey(), entry.getValue());
             }
 
-            for (Map.Entry<ByteArrayWrapper, ContractDetails> entry : contractDetails.entrySet()) {
+            for (Map.Entry<RskAddress, ContractDetails> entry : contractDetails.entrySet()) {
 
                 ContractDetailsCacheImpl contractDetailsCache = (ContractDetailsCacheImpl) entry.getValue();
                 if (    contractDetailsCache.origContract != null
@@ -454,20 +454,20 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public void updateContractDetails(byte[] address, ContractDetails contractDetails) {
+    public void updateContractDetails(RskAddress addr, ContractDetails contractDetails) {
         synchronized (repository) {
-            logger.trace("updateContractDetails: [{}]", Hex.toHexString(address));
+            logger.trace("updateContractDetails: [{}]", addr);
             ContractDetails contractDetailsCache = new ContractDetailsCacheImpl(null);
             contractDetails.setDirty(true);
-            cacheDetails.put(wrap(address), contractDetailsCache);
+            cacheDetails.put(addr, contractDetailsCache);
         }
     }
 
     @Override
-    public void updateAccountState(byte[] address, AccountState accountState) {
+    public void updateAccountState(RskAddress addr, AccountState accountState) {
         synchronized (repository) {
-            logger.trace("updateAccountState: [{}]", Hex.toHexString(address));
-            cacheAccounts.put(wrap(address), accountState);
+            logger.trace("updateAccountState: [{}]", addr);
+            cacheAccounts.put(addr, accountState);
         }
     }
 }

@@ -25,7 +25,6 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -43,7 +42,6 @@ import java.math.BigInteger;
  * Created by mario on 13/01/17.
  */
 public class NetworkStateExporter {
-    private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
     private static final Logger logger = LoggerFactory.getLogger(NetworkStateExporter.class);
 
     private Repository repository;
@@ -62,9 +60,9 @@ public class NetworkStateExporter {
         try(FileWriter fw = new FileWriter(dumpFile.getAbsoluteFile()); BufferedWriter bw = new BufferedWriter(fw)) {
             JsonNodeFactory jsonFactory = new JsonNodeFactory(false);
             ObjectNode mainNode = jsonFactory.objectNode();
-            for (ByteArrayWrapper address : frozenRepository.getAccountsKeys()) {
-                if(!address.equals(new ByteArrayWrapper(ZERO_BYTE_ARRAY))) {
-                    mainNode.set(Hex.toHexString(address.getData()), createAccountNode(mainNode, address.getData(), frozenRepository));
+            for (RskAddress address : frozenRepository.getAccountsKeys()) {
+                if(!address.equals(RskAddress.nullAddress())) {
+                    mainNode.set(address.toString(), createAccountNode(mainNode, address, frozenRepository));
                 }
             }
             ObjectMapper mapper = new ObjectMapper();
@@ -90,16 +88,15 @@ public class NetworkStateExporter {
         return contractNode;
     }
 
-    private ObjectNode createAccountNode(ObjectNode mainNode, byte[] address, Repository frozenRepository) {
+    private ObjectNode createAccountNode(ObjectNode mainNode, RskAddress addr, Repository frozenRepository) {
         ObjectNode accountNode = mainNode.objectNode();
-        AccountState accountState = frozenRepository.getAccountState(address);
+        AccountState accountState = frozenRepository.getAccountState(addr);
         BigInteger balance = accountState.getBalance();
         accountNode.put("balance", balance.toString());
         BigInteger nonce = accountState.getNonce();
         accountNode.put("nonce", nonce.toString());
-        ContractDetails contractDetails = frozenRepository.getContractDetails(address);
-        RskAddress addWrapper = new RskAddress(address);
-        if (!contractDetails.isNullObject() && !PrecompiledContracts.REMASC_ADDR.equals(addWrapper)) {
+        ContractDetails contractDetails = frozenRepository.getContractDetails(addr);
+        if (!contractDetails.isNullObject() && !PrecompiledContracts.REMASC_ADDR.equals(addr)) {
             accountNode.set("contract", createContractNode(contractDetails, accountNode));
         }
         return accountNode;

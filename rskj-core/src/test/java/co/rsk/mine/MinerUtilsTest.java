@@ -71,7 +71,7 @@ public class MinerUtilsTest {
         txs.add(tx);
         Map<RskAddress, BigInteger> accountNounces = new HashMap();
         Repository repository = Mockito.mock(Repository.class);
-        Mockito.when(repository.getNonce(tx.getSender().getBytes())).thenReturn(BigInteger.valueOf(0));
+        Mockito.when(repository.getNonce(tx.getSender())).thenReturn(BigInteger.valueOf(0));
         BigInteger minGasPrice = BigInteger.valueOf(1);
 
         List<Transaction> res = new MinerUtils().filterTransactions(new LinkedList<>(), txs, accountNounces, repository, minGasPrice);

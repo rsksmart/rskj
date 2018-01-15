@@ -611,8 +611,8 @@ public class BridgeSupportTest {
         Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
-        Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(21000000-2600)), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR.getBytes()));
-        Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(2600)), repository.getBalance(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress()));
+        Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(21000000-2600)), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
+        Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(2600)), repository.getBalance(new RskAddress(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress())));
         // Check the wallet has been emptied
         Assert.assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
     }
@@ -1147,7 +1147,7 @@ public class BridgeSupportTest {
         org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(ConfigHelper.CONFIG, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);;
 
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
-        track.saveCode(tx.getSender().getBytes(), new byte[] {0x1});
+        track.saveCode(tx.getSender(), new byte[] {0x1});
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
         BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, track, mock(BridgeEventLogger.class), provider, null);
 
@@ -1338,7 +1338,7 @@ public class BridgeSupportTest {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
         Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR.getBytes(), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
+        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
         Repository track = repository.startTracking();
         Block executionBlock = Mockito.mock(Block.class);
         Mockito.when(executionBlock.getNumber()).thenReturn(10L);
@@ -1403,7 +1403,7 @@ public class BridgeSupportTest {
 
         track.commit();
 
-        Assert.assertEquals(BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR.getBytes()));
+        Assert.assertEquals(BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
@@ -1434,7 +1434,7 @@ public class BridgeSupportTest {
         Federation retiringFederation = new Federation(retiringFederationKeys, Instant.ofEpochMilli(1000L), 1L, parameters);
 
         Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR.getBytes(), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
+        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
         Block executionBlock = Mockito.mock(Block.class);
         Mockito.when(executionBlock.getNumber()).thenReturn(15L);
 
@@ -1525,7 +1525,7 @@ public class BridgeSupportTest {
         Federation federation2 = new Federation(federation2Keys, Instant.ofEpochMilli(2000L), 0L, parameters);
 
         Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR.getBytes(), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
+        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
         Block executionBlock = Mockito.mock(Block.class);
         Mockito.when(executionBlock.getNumber()).thenReturn(10L);
 
@@ -1603,14 +1603,14 @@ public class BridgeSupportTest {
         BigInteger totalAmountExpectedToHaveBeenLocked = amountToHaveBeenCreditedToSrc1
                 .add(amountToHaveBeenCreditedToSrc2)
                 .add(amountToHaveBeenCreditedToSrc3);
-        byte[] srcKey1RskAddress = org.ethereum.crypto.ECKey.fromPrivate(srcKey1.getPrivKey()).getAddress();
-        byte[] srcKey2RskAddress = org.ethereum.crypto.ECKey.fromPrivate(srcKey2.getPrivKey()).getAddress();
-        byte[] srcKey3RskAddress = org.ethereum.crypto.ECKey.fromPrivate(srcKey3.getPrivKey()).getAddress();
+        RskAddress srcKey1RskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(srcKey1.getPrivKey()).getAddress());
+        RskAddress srcKey2RskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(srcKey2.getPrivKey()).getAddress());
+        RskAddress srcKey3RskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(srcKey3.getPrivKey()).getAddress());
 
         Assert.assertEquals(amountToHaveBeenCreditedToSrc1, repository.getBalance(srcKey1RskAddress));
         Assert.assertEquals(amountToHaveBeenCreditedToSrc2, repository.getBalance(srcKey2RskAddress));
         Assert.assertEquals(amountToHaveBeenCreditedToSrc3, repository.getBalance(srcKey3RskAddress));
-        Assert.assertEquals(BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()).subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR.getBytes()));
+        Assert.assertEquals(BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()).subtract(totalAmountExpectedToHaveBeenLocked), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
@@ -1648,7 +1648,7 @@ public class BridgeSupportTest {
         Federation federation2 = new Federation(federation2Keys, Instant.ofEpochMilli(2000L), 0L, parameters);
 
         Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
-        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR.getBytes(), BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
+        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()));
         Block executionBlock = Mockito.mock(Block.class);
         Mockito.when(executionBlock.getNumber()).thenReturn(10L);
 
@@ -1712,14 +1712,14 @@ public class BridgeSupportTest {
 
         track.commit();
 
-        byte[] srcKey1RskAddress = org.ethereum.crypto.ECKey.fromPrivate(srcKey1.getPrivKey()).getAddress();
-        byte[] srcKey2RskAddress = org.ethereum.crypto.ECKey.fromPrivate(srcKey2.getPrivKey()).getAddress();
-        byte[] srcKey3RskAddress = org.ethereum.crypto.ECKey.fromPrivate(srcKey3.getPrivKey()).getAddress();
+        RskAddress srcKey1RskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(srcKey1.getPrivKey()).getAddress());
+        RskAddress srcKey2RskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(srcKey2.getPrivKey()).getAddress());
+        RskAddress srcKey3RskAddress = new RskAddress(org.ethereum.crypto.ECKey.fromPrivate(srcKey3.getPrivKey()).getAddress());
 
         Assert.assertEquals(0, repository.getBalance(srcKey1RskAddress).intValue());
         Assert.assertEquals(0, repository.getBalance(srcKey2RskAddress).intValue());
         Assert.assertEquals(0, repository.getBalance(srcKey3RskAddress).intValue());
-        Assert.assertEquals(BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR.getBytes()));
+        Assert.assertEquals(BigInteger.valueOf(21000000).multiply(Denomination.SBTC.value()), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 

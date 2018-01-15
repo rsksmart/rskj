@@ -19,6 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -62,7 +63,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
 
         /***         ADDRESS op       ***/
         // YP: Get address of currently executing account.
-        byte[] address = tx.isContractCreation() ? tx.getContractAddress().getBytes() : tx.getReceiveAddress().getBytes();
+        RskAddress address = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
 
         /***         ORIGIN op       ***/
         // YP: This is the sender of original transaction; it is never a contract.
@@ -108,7 +109,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
         /*** GASLIMIT op ***/
         byte[] gaslimit = env.getCurrentGasLimit();
 
-        return new ProgramInvokeImpl(address, origin, caller, balance,
+        return new ProgramInvokeImpl(address.getBytes(), origin, caller, balance,
                 gasPrice, gas, callValue, data, lastHash, coinbase,
                 timestamp, number, txindex, difficulty, gaslimit, repository, blockStore);
     }

@@ -78,10 +78,10 @@ public class MinerServerTest {
         Mockito.when(tx1.getHash()).thenReturn(s1);
         Mockito.when(tx1.getEncoded()).thenReturn(new byte[32]);
 
-        Mockito.when(repository.getNonce(tx1.getSender().getBytes())).thenReturn(BigInteger.ZERO);
-        Mockito.when(repository.getNonce(RskAddress.nullAddress().getBytes())).thenReturn(BigInteger.ZERO);
-        Mockito.when(repository.getBalance(tx1.getSender().getBytes())).thenReturn(BigInteger.valueOf(4200000L));
-        Mockito.when(repository.getBalance(RskAddress.nullAddress().getBytes())).thenReturn(BigInteger.valueOf(4200000L));
+        Mockito.when(repository.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);
+        Mockito.when(repository.getNonce(RskAddress.nullAddress())).thenReturn(BigInteger.ZERO);
+        Mockito.when(repository.getBalance(tx1.getSender())).thenReturn(BigInteger.valueOf(4200000L));
+        Mockito.when(repository.getBalance(RskAddress.nullAddress())).thenReturn(BigInteger.valueOf(4200000L));
 
         List<Transaction> txs = new ArrayList<>(Arrays.asList(tx1));
 

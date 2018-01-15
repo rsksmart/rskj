@@ -350,11 +350,11 @@ public class BridgeSupport {
                 }
             } else {
                 org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
-                byte[] sender = key.getAddress();
+                RskAddress sender = new RskAddress(key.getAddress());
 
                 transfer(
                         rskRepository,
-                        PrecompiledContracts.BRIDGE_ADDR.getBytes(),
+                        PrecompiledContracts.BRIDGE_ADDR,
                         sender,
                         Denomination.satoshisToWeis(BigInteger.valueOf(totalAmount.getValue()))
                 );
@@ -424,7 +424,7 @@ public class BridgeSupport {
      * @throws IOException
      */
     public void releaseBtc(Transaction rskTx) throws IOException {
-        byte[] senderCode = rskRepository.getCode(rskTx.getSender().getBytes());
+        byte[] senderCode = rskRepository.getCode(rskTx.getSender());
 
         //as we can't send btc from contracts we want to send them back to the sender
         if (senderCode != null && senderCode.length > 0) {
@@ -735,7 +735,7 @@ public class BridgeSupport {
         if (spentByFederation.isLessThan(sentByUser)) {
             Coin coinsToBurn = sentByUser.subtract(spentByFederation);
             byte[] burnAddress = config.getBlockchainConfig().getCommonConstants().getBurnAddress();
-            transfer(rskRepository, PrecompiledContracts.BRIDGE_ADDR.getBytes(), burnAddress, Denomination.satoshisToWeis(BigInteger.valueOf(coinsToBurn.getValue())));
+            transfer(rskRepository, PrecompiledContracts.BRIDGE_ADDR, new RskAddress(burnAddress), Denomination.satoshisToWeis(BigInteger.valueOf(coinsToBurn.getValue())));
         }
     }
 

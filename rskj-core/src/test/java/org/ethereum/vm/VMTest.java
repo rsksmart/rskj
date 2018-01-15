@@ -21,6 +21,7 @@ package org.ethereum.vm;
 
 import co.rsk.asm.EVMAssembler;
 import co.rsk.config.ConfigHelper;
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Repository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.Program;
@@ -1676,8 +1677,8 @@ public class VMTest {
         vm.step(program);
 
         DataWord key = new DataWord(Hex.decode(s_expected_key));
-        DataWord val = program.getStorage().getStorageValue(invoke.getOwnerAddress()
-                .getNoLeadZeroesData(), key);
+        DataWord val = program.getStorage().getStorageValue(new RskAddress(invoke.getOwnerAddress()
+                .getLast20Bytes()), key);
 
         assertEquals(s_expected_val, Hex.toHexString(val.getData()).toUpperCase());
     }
@@ -1700,7 +1701,7 @@ public class VMTest {
 
         Repository repository = program.getStorage();
         DataWord key = new DataWord(Hex.decode(s_expected_key));
-        DataWord val = repository.getStorageValue(invoke.getOwnerAddress().getNoLeadZeroesData(), key);
+        DataWord val = repository.getStorageValue(new RskAddress(invoke.getOwnerAddress().getLast20Bytes()), key);
 
         assertEquals(s_expected_val, Hex.toHexString(val.getData()).toUpperCase());
     }
@@ -1923,8 +1924,8 @@ public class VMTest {
         vm.step(program);
 
         DataWord key = new DataWord(Hex.decode(s_expected_key));
-        DataWord val = program.getStorage().getStorageValue(invoke.getOwnerAddress()
-                .getNoLeadZeroesData(), key);
+        DataWord val = program.getStorage().getStorageValue(new RskAddress(invoke.getOwnerAddress()
+                .getLast20Bytes()), key);
 
         assertTrue(program.isStopped());
         assertEquals(s_expected_val, Hex.toHexString(val.getData()).toUpperCase());
@@ -1948,8 +1949,8 @@ public class VMTest {
         vm.step(program);
 
         DataWord key = new DataWord(Hex.decode(s_expected_key));
-        DataWord val = program.getStorage().getStorageValue(invoke.getOwnerAddress()
-                .getNoLeadZeroesData(), key);
+        DataWord val = program.getStorage().getStorageValue(new RskAddress(invoke.getOwnerAddress()
+                .getLast20Bytes()), key);
 
         assertTrue(program.isStopped());
         assertEquals(s_expected_val, Hex.toHexString(val.getData()).toUpperCase());

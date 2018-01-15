@@ -409,7 +409,7 @@ public class BridgeStorageProvider {
     }
 
     private <T> T getFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) throws IOException {
-        byte[] data = repository.getStorageBytes(contractAddress.getBytes(), keyAddress);
+        byte[] data = repository.getStorageBytes(contractAddress, keyAddress);
         return deserializer.deserialize(data);
     }
 
@@ -426,7 +426,7 @@ public class BridgeStorageProvider {
         if (object != null) {
             data = serializer.serialize(object);
         }
-        repository.addStorageBytes(contractAddress.getBytes(), addressKey, data);
+        repository.addStorageBytes(contractAddress, addressKey, data);
     }
 
     private interface RepositoryDeserializer<T> {

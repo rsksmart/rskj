@@ -19,7 +19,7 @@
 
 package org.ethereum.core;
 
-import org.ethereum.db.ByteArrayWrapper;
+import co.rsk.core.RskAddress;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.DetailsDataStore;
 import org.ethereum.vm.DataWord;
@@ -41,7 +41,7 @@ public interface Repository {
      * @param addr of the contract
      * @return newly created account state
      */
-    AccountState createAccount(byte[] addr);
+    AccountState createAccount(RskAddress addr);
 
 
     /**
@@ -49,7 +49,7 @@ public interface Repository {
      * @return - true if account exist,
      *           false otherwise
      */
-    boolean isExist(byte[] addr);
+    boolean isExist(RskAddress addr);
 
     /**
      * Retrieve an account
@@ -57,21 +57,21 @@ public interface Repository {
      * @param addr of the account
      * @return account state as stored in the database
      */
-    AccountState getAccountState(byte[] addr);
+    AccountState getAccountState(RskAddress addr);
 
     /**
      * Deletes the account
      *
      * @param addr of the account
      */
-    void delete(byte[] addr);
+    void delete(RskAddress addr);
 
     /**
      * Hibernates the account
      *
      * @param addr of the account
      */
-    void hibernate(byte[] addr);
+    void hibernate(RskAddress addr);
 
         /**
      * Increase the account nonce of the given account by one
@@ -79,7 +79,7 @@ public interface Repository {
      * @param addr of the account
      * @return new value of the nonce
      */
-    BigInteger increaseNonce(byte[] addr);
+    BigInteger increaseNonce(RskAddress addr);
 
     /**
      * Get current nonce of a given account
@@ -87,7 +87,7 @@ public interface Repository {
      * @param addr of the account
      * @return value of the nonce
      */
-    BigInteger getNonce(byte[] addr);
+    BigInteger getNonce(RskAddress addr);
 
     /**
      * Retrieve contract details for a given account from the database
@@ -95,7 +95,7 @@ public interface Repository {
      * @param addr of the account
      * @return new contract details
      */
-    ContractDetails getContractDetails(byte[] addr);
+    ContractDetails getContractDetails(RskAddress addr);
 
     /**
      * Store code associated with an account
@@ -103,7 +103,7 @@ public interface Repository {
      * @param addr for the account
      * @param code that will be associated with this account
      */
-    void saveCode(byte[] addr, byte[] code);
+    void saveCode(RskAddress addr, byte[] code);
 
     /**
      * Retrieve the code associated with an account
@@ -111,7 +111,7 @@ public interface Repository {
      * @param addr of the account
      * @return code in byte-array format
      */
-    byte[] getCode(byte[] addr);
+    byte[] getCode(RskAddress addr);
 
     /**
      * Put a value in storage of an account at a given key
@@ -120,9 +120,9 @@ public interface Repository {
      * @param key of the data to store
      * @param value is the data to store
      */
-    void addStorageRow(byte[] addr, DataWord key, DataWord value);
+    void addStorageRow(RskAddress addr, DataWord key, DataWord value);
 
-    void addStorageBytes(byte[] addr, DataWord key, byte[] value);
+    void addStorageBytes(RskAddress addr, DataWord key, byte[] value);
 
     /**
      * Retrieve storage value from an account for a given key
@@ -131,9 +131,9 @@ public interface Repository {
      * @param key associated with this value
      * @return data in the form of a <code>DataWord</code>
      */
-    DataWord getStorageValue(byte[] addr, DataWord key);
+    DataWord getStorageValue(RskAddress addr, DataWord key);
 
-    byte[] getStorageBytes(byte[] addr, DataWord key);
+    byte[] getStorageBytes(RskAddress addr, DataWord key);
 
     /**
      * Retrieve balance of an account
@@ -141,7 +141,7 @@ public interface Repository {
      * @param addr of the account
      * @return balance of the account as a <code>BigInteger</code> value
      */
-    BigInteger getBalance(byte[] addr);
+    BigInteger getBalance(RskAddress addr);
 
     /**
      * Add value to the balance of an account
@@ -150,12 +150,12 @@ public interface Repository {
      * @param value to be added
      * @return new balance of the account
      */
-    BigInteger addBalance(byte[] addr, BigInteger value);
+    BigInteger addBalance(RskAddress addr, BigInteger value);
 
     /**
      * @return Returns set of all the account addresses
      */
-    Set<ByteArrayWrapper> getAccountsKeys();
+    Set<RskAddress> getAccountsKeys();
 
     /**
      * Dump the full state of the current repository into a file with JSON format
@@ -217,20 +217,21 @@ public interface Repository {
      */
     void reset();
 
-    void updateBatch(Map<ByteArrayWrapper, AccountState> accountStates,
-                            Map<ByteArrayWrapper, ContractDetails> contractDetailes);
+    void updateBatch(Map<RskAddress, AccountState> accountStates,
+                     Map<RskAddress, ContractDetails> contractDetailes);
 
 
     byte[] getRoot();
 
-    void loadAccount(byte[] addr, Map<ByteArrayWrapper, AccountState> cacheAccounts,
-                     Map<ByteArrayWrapper, ContractDetails> cacheDetails);
+    void loadAccount(RskAddress addr,
+                     Map<RskAddress, AccountState> cacheAccounts,
+                     Map<RskAddress, ContractDetails> cacheDetails);
 
     Repository getSnapshotTo(byte[] root);
 
     DetailsDataStore getDetailsDataStore();
 
-    void updateContractDetails(final byte[] address, final ContractDetails contractDetails);
+    void updateContractDetails(RskAddress addr, final ContractDetails contractDetails);
 
-    void updateAccountState(byte[] data, AccountState accountState);
+    void updateAccountState(RskAddress addr, AccountState accountState);
 }

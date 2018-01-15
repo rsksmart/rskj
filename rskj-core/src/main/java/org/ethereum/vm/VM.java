@@ -20,6 +20,7 @@
 package org.ethereum.vm;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.MessageCall.MsgType;
@@ -1486,7 +1487,7 @@ public class VM {
         long callGas = GasCost.CALL;
 
         //check to see if account does not exist and is not a precompiled contract
-        if (op == OpCode.CALL && !program.getStorage().isExist(codeAddress.getLast20Bytes())) {
+        if (op == OpCode.CALL && !program.getStorage().isExist(new RskAddress(codeAddress.getLast20Bytes()))) {
             callGas += GasCost.NEW_ACCT_CALL;
         }
 
@@ -1548,7 +1549,7 @@ public class VM {
         if (computeGas) {
             gasCost = GasCost.SUICIDE;
             DataWord suicideAddressWord = stack.get(stack.size() - 1);
-            if (!program.getStorage().isExist(suicideAddressWord.getLast20Bytes())) {
+            if (!program.getStorage().isExist(new RskAddress(suicideAddressWord.getLast20Bytes()))) {
                 gasCost += GasCost.NEW_ACCT_SUICIDE;
             }
             spendOpCodeGas();
@@ -1989,7 +1990,7 @@ public class VM {
                 case SUICIDE:
 
                     ContractDetails details = program.getStorage()
-                            .getContractDetails(program.getOwnerAddress().getLast20Bytes());
+                            .getContractDetails(new RskAddress(program.getOwnerAddress().getLast20Bytes()));
                     List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
                     Collections.sort(storageKeys);
 
@@ -2018,7 +2019,7 @@ public class VM {
 
             dumpLogger.trace("    STORAGE");
             ContractDetails details = program.getStorage()
-                    .getContractDetails(program.getOwnerAddress().getLast20Bytes());
+                    .getContractDetails(new RskAddress(program.getOwnerAddress().getLast20Bytes()));
             List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
             Collections.sort(storageKeys);
 

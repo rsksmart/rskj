@@ -52,7 +52,7 @@ public class AccountBuilderTest {
 
         Assert.assertNotNull(account);
         Assert.assertTrue(account.getEcKey().hasPrivKey());
-        Assert.assertEquals(balance, world.getRepository().getBalance(account.getAddress().getBytes()));
-        Assert.assertArrayEquals(code, world.getRepository().getCode(account.getAddress().getBytes()));
+        Assert.assertEquals(balance, world.getRepository().getBalance(account.getAddress()));
+        Assert.assertArrayEquals(code, world.getRepository().getCode(account.getAddress()));
     }
 }

@@ -19,6 +19,7 @@
 package co.rsk.remasc;
 
 import co.rsk.config.ConfigHelper;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Sha3Hash;
@@ -157,9 +158,9 @@ class RemascTestRunner {
     }
 
     public static BigInteger getAccountBalance(Repository repository, byte[] address) {
-        AccountState accountState = repository.getAccountState(address);
+        AccountState accountState = repository.getAccountState(new RskAddress(address));
 
-        return accountState == null ? null : repository.getAccountState(address).getBalance();
+        return accountState == null ? null : repository.getAccountState(new RskAddress(address)).getBalance();
     }
 
     public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, Sha3Hash coinbase,

@@ -62,7 +62,7 @@ class RemascStorageProvider {
 
         DataWord address = new DataWord(REWARD_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
 
-        DataWord value = this.repository.getStorageValue(this.contractAddress.getBytes(), address);
+        DataWord value = this.repository.getStorageValue(this.contractAddress, address);
 
         if (value == null) {
             return BigInteger.ZERO;
@@ -82,7 +82,7 @@ class RemascStorageProvider {
 
         DataWord address = new DataWord(REWARD_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
 
-        this.repository.addStorageRow(this.contractAddress.getBytes(), address, new DataWord(this.rewardBalance.toByteArray()));
+        this.repository.addStorageRow(this.contractAddress, address, new DataWord(this.rewardBalance.toByteArray()));
     }
 
     public BigInteger getBurnedBalance() {
@@ -92,7 +92,7 @@ class RemascStorageProvider {
 
         DataWord address = new DataWord(BURNED_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
 
-        DataWord value = this.repository.getStorageValue(this.contractAddress.getBytes(), address);
+        DataWord value = this.repository.getStorageValue(this.contractAddress, address);
 
         if (value == null) {
             return BigInteger.ZERO;
@@ -116,7 +116,7 @@ class RemascStorageProvider {
 
         DataWord address = new DataWord(BURNED_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
 
-        this.repository.addStorageRow(this.contractAddress.getBytes(), address, new DataWord(this.burnedBalance.toByteArray()));
+        this.repository.addStorageRow(this.contractAddress, address, new DataWord(this.burnedBalance.toByteArray()));
     }
 
     public SortedMap<Long, List<Sibling>> getSiblings() {
@@ -126,7 +126,7 @@ class RemascStorageProvider {
 
         DataWord address = new DataWord(SIBLINGS_KEY.getBytes(StandardCharsets.UTF_8));
 
-        byte[] bytes = this.repository.getStorageBytes(this.contractAddress.getBytes(), address);
+        byte[] bytes = this.repository.getStorageBytes(this.contractAddress, address);
 
         siblings = getSiblingsFromBytes(bytes);
 
@@ -179,7 +179,7 @@ class RemascStorageProvider {
 
         DataWord address = new DataWord(SIBLINGS_KEY.getBytes(StandardCharsets.UTF_8));
 
-        this.repository.addStorageBytes(this.contractAddress.getBytes(), address, bytes);
+        this.repository.addStorageBytes(this.contractAddress, address, bytes);
     }
 
     public static byte[] getSiblingsBytes(SortedMap<Long, List<Sibling>> siblings) {
@@ -217,7 +217,7 @@ class RemascStorageProvider {
 
         DataWord address = new DataWord(BROKEN_SELECTION_RULE_KEY.getBytes(StandardCharsets.UTF_8));
 
-        byte[] bytes = this.repository.getStorageBytes(this.contractAddress.getBytes(), address);
+        byte[] bytes = this.repository.getStorageBytes(this.contractAddress, address);
 
         if (bytes == null || bytes.length == 0) {
             return Boolean.FALSE;
@@ -245,7 +245,7 @@ class RemascStorageProvider {
 
         bytes[0] = (byte)(this.brokenSelectionRule ? 1 : 0);
 
-        this.repository.addStorageBytes(this.contractAddress.getBytes(), address, bytes);
+        this.repository.addStorageBytes(this.contractAddress, address, bytes);
     }
 
     /*

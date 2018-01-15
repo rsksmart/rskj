@@ -19,6 +19,7 @@
 package co.rsk.mine;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.net.BlockProcessor;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -76,12 +77,13 @@ public class TxBuilder {
 
                     SecureRandom random = new SecureRandom();
 
-                    AccountState accountState = repository.getAccountState(key.getAddress());
+                    RskAddress addr = new RskAddress(key.getAddress());
+                    AccountState accountState = repository.getAccountState(addr);
                     BigInteger nonce = accountState.getNonce();
 
                     while (!stop) {
                         if ((random.nextInt() % 10) == 0) {
-                            nonce = repository.getAccountState(key.getAddress()).getNonce();
+                            nonce = repository.getAccountState(addr).getNonce();
                         }
 
                         TxBuilder.this.createNewTx(nonce);

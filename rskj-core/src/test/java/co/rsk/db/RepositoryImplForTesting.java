@@ -19,6 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.config.ConfigHelper;
+import co.rsk.core.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
@@ -32,19 +33,19 @@ public class RepositoryImplForTesting extends RepositoryImpl {
     }
 
     @Override
-    public synchronized void addStorageRow(byte[] addr, DataWord key, DataWord value) {
+    public synchronized void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
         super.addStorageRow(addr, key, value);
         AccountState accountState = getAccountState(addr);
-        ContractDetails details = getDetailsDataStore().get(addr);
+        ContractDetails details = getDetailsDataStore().get(addr.getBytes());
         accountState.setStateRoot(details.getStorageHash());
         updateAccountState(addr, accountState);
     }
 
     @Override
-    public synchronized void addStorageBytes(byte[] addr, DataWord key, byte[] value) {
+    public synchronized void addStorageBytes(RskAddress addr, DataWord key, byte[] value) {
         super.addStorageBytes(addr, key, value);
         AccountState accountState = getAccountState(addr);
-        ContractDetails details = getDetailsDataStore().get(addr);
+        ContractDetails details = getDetailsDataStore().get(addr.getBytes());
         accountState.setStateRoot(details.getStorageHash());
         updateAccountState(addr, accountState);
     }

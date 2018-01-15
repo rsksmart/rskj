@@ -21,8 +21,8 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
+import org.ethereum.core.Repository;
 import org.ethereum.facade.Ethereum;
-import org.ethereum.facade.Repository;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
 
