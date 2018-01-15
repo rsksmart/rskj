@@ -20,10 +20,10 @@
 package org.ethereum.db;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,46 +32,45 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.String.format;
-import static org.ethereum.util.ByteUtil.wrap;
 
+/**
+ * A store for contract details.
+ */
 public class DetailsDataStore {
 
     private static final Logger gLogger = LoggerFactory.getLogger("general");
 
-    private DatabaseImpl db = null;
-    private Map<ByteArrayWrapper, ContractDetails> cache = new ConcurrentHashMap<>();
-    private Set<ByteArrayWrapper> removes = new HashSet<>();
+    private final Map<RskAddress, ContractDetails> cache = new ConcurrentHashMap<>();
+    private final Set<RskAddress> removes = new HashSet<>();
+
     private final RskSystemProperties config;
+    private final DatabaseImpl db;
 
-    public DetailsDataStore(RskSystemProperties config) {
+    public DetailsDataStore(RskSystemProperties config, DatabaseImpl db) {
         this.config = config;
-    }
-
-    public synchronized void setDB(DatabaseImpl db) {
         this.db = db;
     }
 
-    public synchronized ContractDetails get(byte[] key) {
-        ByteArrayWrapper wrappedKey = wrap(key);
-        ContractDetails details = cache.get(wrappedKey);
+    public synchronized ContractDetails get(RskAddress addr) {
+        ContractDetails details = cache.get(addr);
 
         if (details == null) {
 
-            if (removes.contains(wrappedKey)) {
+            if (removes.contains(addr)) {
                 return null;
             }
-            byte[] data = db.get(key);
+            byte[] data = db.get(addr.getBytes());
             if (data == null) {
                 return null;
             }
 
             details = createContractDetails(data);
-            cache.put(wrappedKey, details);
+            cache.put(addr, details);
 
             float out = ((float) data.length) / 1048576;
             if (out > 10) {
                 String sizeFmt = format("%02.2f", out);
-                gLogger.debug("loaded: key: " + Hex.toHexString(key) + " size: " + sizeFmt + "MB");
+                gLogger.debug("loaded: address: {}, size: {}MB", addr, sizeFmt);
             }
         }
 
@@ -82,18 +81,15 @@ public class DetailsDataStore {
         return new ContractDetailsImpl(config, data);
     }
 
-    public synchronized void update(byte[] key, ContractDetails contractDetails) {
-        contractDetails.setAddress(key);
-
-        ByteArrayWrapper wrappedKey = wrap(key);
-        cache.put(wrappedKey, contractDetails);
-        removes.remove(wrappedKey);
+    public synchronized void update(RskAddress addr, ContractDetails contractDetails) {
+        contractDetails.setAddress(addr.getBytes());
+        cache.put(addr, contractDetails);
+        removes.remove(addr);
     }
 
-    public synchronized void remove(byte[] key) {
-        ByteArrayWrapper wrappedKey = wrap(key);
-        cache.remove(wrappedKey);
-        removes.add(wrappedKey);
+    public synchronized void remove(RskAddress addr) {
+        cache.remove(addr);
+        removes.add(addr);
     }
 
     public synchronized void flush() {
@@ -112,11 +108,11 @@ public class DetailsDataStore {
         long totalSize = 0;
 
         Map<byte[], byte[]> batch = new HashMap<>();
-        for (Map.Entry<ByteArrayWrapper, ContractDetails> entry : cache.entrySet()) {
+        for (Map.Entry<RskAddress, ContractDetails> entry : cache.entrySet()) {
             ContractDetails details = entry.getValue();
             details.syncStorage();
 
-            byte[] key = entry.getKey().getData();
+            byte[] key = entry.getKey().getBytes();
             byte[] value = details.getEncoded();
 
             batch.put(key, value);
@@ -125,8 +121,8 @@ public class DetailsDataStore {
 
         db.getDb().updateBatch(batch);
 
-        for (ByteArrayWrapper key : removes) {
-            db.delete(key.getData());
+        for (RskAddress key : removes) {
+            db.delete(key.getBytes());
         }
 
         cache.clear();
@@ -136,10 +132,10 @@ public class DetailsDataStore {
     }
 
 
-    public synchronized Set<ByteArrayWrapper> keys() {
-        Set<ByteArrayWrapper> keys = new HashSet<>();
+    public synchronized Set<RskAddress> keys() {
+        Set<RskAddress> keys = new HashSet<>();
         keys.addAll(cache.keySet());
-        keys.addAll(db.dumpKeys());
+        keys.addAll(db.dumpKeys(RskAddress::new));
 
         return keys;
     }

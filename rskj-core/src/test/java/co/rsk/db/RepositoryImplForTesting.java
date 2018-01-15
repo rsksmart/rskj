@@ -36,7 +36,7 @@ public class RepositoryImplForTesting extends RepositoryImpl {
     public synchronized void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
         super.addStorageRow(addr, key, value);
         AccountState accountState = getAccountState(addr);
-        ContractDetails details = getDetailsDataStore().get(addr.getBytes());
+        ContractDetails details = getDetailsDataStore().get(addr);
         accountState.setStateRoot(details.getStorageHash());
         updateAccountState(addr, accountState);
     }
@@ -45,7 +45,7 @@ public class RepositoryImplForTesting extends RepositoryImpl {
     public synchronized void addStorageBytes(RskAddress addr, DataWord key, byte[] value) {
         super.addStorageBytes(addr, key, value);
         AccountState accountState = getAccountState(addr);
-        ContractDetails details = getDetailsDataStore().get(addr.getBytes());
+        ContractDetails details = getDetailsDataStore().get(addr);
         accountState.setStateRoot(details.getStorageHash());
         updateAccountState(addr, accountState);
     }

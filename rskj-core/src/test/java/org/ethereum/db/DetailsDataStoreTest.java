@@ -20,6 +20,7 @@
 package org.ethereum.db;
 
 import co.rsk.config.ConfigHelper;
+import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;
@@ -34,10 +35,9 @@ public class DetailsDataStoreTest {
     @Test
     public void test1(){
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(ConfigHelper.CONFIG);
-        dds.setDB(db);
+        DetailsDataStore dds = new DetailsDataStore(ConfigHelper.CONFIG, db);
 
-        byte[] c_key = Hex.decode("1a2b");
+        RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
         byte[] key =  Hex.decode("11");
         byte[] value =  Hex.decode("aa");
@@ -67,10 +67,9 @@ public class DetailsDataStoreTest {
     public void test2(){
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(ConfigHelper.CONFIG);
-        dds.setDB(db);
+        DetailsDataStore dds = new DetailsDataStore(ConfigHelper.CONFIG, db);
 
-        byte[] c_key = Hex.decode("1a2b");
+        RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
         byte[] key =  Hex.decode("11");
         byte[] value =  Hex.decode("aa");
@@ -104,10 +103,9 @@ public class DetailsDataStoreTest {
     public void test3(){
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(ConfigHelper.CONFIG);
-        dds.setDB(db);
+        DetailsDataStore dds = new DetailsDataStore(ConfigHelper.CONFIG, db);
 
-        byte[] c_key = Hex.decode("1a2b");
+        RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
         byte[] key =  Hex.decode("11");
         byte[] value =  Hex.decode("aa");
@@ -143,10 +141,9 @@ public class DetailsDataStoreTest {
     public void test4() {
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(ConfigHelper.CONFIG);
-        dds.setDB(db);
+        DetailsDataStore dds = new DetailsDataStore(ConfigHelper.CONFIG, db);
 
-        byte[] c_key = Hex.decode("1a2b");
+        RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
 
         ContractDetails contractDetails = dds.get(c_key);
         assertNull(contractDetails);

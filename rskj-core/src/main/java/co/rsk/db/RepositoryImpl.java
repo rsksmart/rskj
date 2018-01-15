@@ -69,8 +69,7 @@ public class RepositoryImpl implements Repository {
     }
 
     public RepositoryImpl(RskSystemProperties config, TrieStore store, KeyValueDataSource detailsDS) {
-        this(config, store, new DetailsDataStore(config));
-        this.detailsDataStore.setDB(new DatabaseImpl(detailsDS));
+        this(config, store, new DetailsDataStore(config, new DatabaseImpl(detailsDS)));
     }
 
     public RepositoryImpl(RskSystemProperties config, TrieStore store, DetailsDataStore detailsDataStore) {
@@ -147,7 +146,7 @@ public class RepositoryImpl implements Repository {
             storageRoot = getAccountState(addr).getStateRoot();
         }
 
-        ContractDetails details =  detailsDataStore.get(addr.getBytes());
+        ContractDetails details =  detailsDataStore.get(addr);
         if (details != null) {
             details = details.getSnapshotTo(storageRoot);
         }
@@ -253,8 +252,7 @@ public class RepositoryImpl implements Repository {
     public synchronized Set<RskAddress> getAccountsKeys() {
         Set<RskAddress> result = new HashSet<>();
 
-        for (ByteArrayWrapper key : detailsDataStore.keys()) {
-            RskAddress addr = new RskAddress(key.getData());
+        for (RskAddress addr : detailsDataStore.keys()) {
             if (this.isExist(addr)) {
                 result.add(addr);
             }
@@ -406,7 +404,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized void updateContractDetails(RskAddress addr, final ContractDetails contractDetails) {
-        detailsDataStore.update(addr.getBytes(), contractDetails);
+        detailsDataStore.update(addr, contractDetails);
     }
 
     @Override

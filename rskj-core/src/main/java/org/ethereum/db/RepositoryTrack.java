@@ -60,8 +60,7 @@ public class RepositoryTrack implements Repository {
     public RepositoryTrack(RskSystemProperties config, Repository repository) {
         this.config = config;
         this.repository = repository;
-        dds = new DetailsDataStore(this.config);
-        dds.setDB(new DatabaseImpl(new HashMapDB()));
+        dds = new DetailsDataStore(this.config, new DatabaseImpl(new HashMapDB()));
     }
 
     @Override
