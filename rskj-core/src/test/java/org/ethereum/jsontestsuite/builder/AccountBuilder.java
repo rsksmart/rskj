@@ -19,11 +19,13 @@
 
 package org.ethereum.jsontestsuite.builder;
 
-import org.ethereum.core.AccountState;
+import co.rsk.config.ConfigHelper;
 import co.rsk.db.ContractDetailsImpl;
+import org.ethereum.core.AccountState;
 import org.ethereum.jsontestsuite.model.AccountTck;
 import org.ethereum.vm.DataWord;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,11 +37,11 @@ public class AccountBuilder {
 
     public static StateWrap build(AccountTck account) {
 
-        ContractDetailsImpl details = new ContractDetailsImpl();
+        ContractDetailsImpl details = new ContractDetailsImpl(ConfigHelper.CONFIG);
         details.setCode(parseData(account.getCode()));
         details.setStorage(convertStorage(account.getStorage()));
 
-        AccountState state = new AccountState();
+        AccountState state = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
 
         state.addToBalance(unifiedNumericToBigInteger(account.getBalance()));
         state.setNonce(unifiedNumericToBigInteger(account.getNonce()));

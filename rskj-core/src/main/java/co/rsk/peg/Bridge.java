@@ -27,8 +27,11 @@ import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
+import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
@@ -158,7 +161,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private Map<ByteArrayWrapper, CallTransaction.Function> functions = new HashMap<>();
     private static Map<CallTransaction.Function, Long> functionCostMap = new HashMap<>();
 
-    private BridgeConstants bridgeConstants;
+    private final RskSystemProperties config;
+    private final BridgeConstants bridgeConstants;
 
     private org.ethereum.core.Transaction rskTx;
     private org.ethereum.core.Block rskExecutionBlock;
@@ -167,7 +171,9 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     private BridgeSupport bridgeSupport;
 
-    public Bridge(RskAddress contractAddress) {
+    public Bridge(RskSystemProperties config, RskAddress contractAddress) {
+        this.config = config;
+        this.bridgeConstants = this.config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         this.contractAddress = contractAddress;
 
         Arrays.stream(new Object[]{
@@ -216,13 +222,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             this.functions.put(new ByteArrayWrapper(func.encodeSignature()),  func);
             functionCostMap.put(func, cost);
         });
-
-        bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
     }
 
     @Override
     public long getGasForData(byte[] data) {
-        if (BridgeUtils.isFreeBridgeTx(rskTx, rskExecutionBlock.getNumber())) {
+        if (BridgeUtils.isFreeBridgeTx(config, rskTx, rskExecutionBlock.getNumber())) {
             return 0;
         }
 
@@ -284,7 +288,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     @Override
-    public void init(org.ethereum.core.Transaction rskTx, org.ethereum.core.Block rskExecutionBlock, Repository repository, org.ethereum.db.BlockStore rskBlockStore, ReceiptStore rskReceiptStore, List<LogInfo> logs) {
+    public void init(Transaction rskTx, Block rskExecutionBlock, Repository repository, BlockStore rskBlockStore, ReceiptStore rskReceiptStore, List<LogInfo> logs) {
         this.rskTx = rskTx;
         this.rskExecutionBlock = rskExecutionBlock;
         this.repository = repository;
@@ -337,7 +341,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     private BridgeSupport setup() throws Exception {
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(this.bridgeConstants, this.logs);
-        return new BridgeSupport(repository, contractAddress, rskExecutionBlock, bridgeConstants, eventLogger);
+        return new BridgeSupport(this.config, repository, eventLogger, contractAddress, rskExecutionBlock);
     }
 
     private void teardown() throws IOException {

@@ -18,7 +18,7 @@
 
 package co.rsk.jsontestsuite;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.DifficultyCalculator;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.net.MainNetConfig;
@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -55,15 +54,15 @@ public class LocalBasicTest {
     public void setup() {
         // if not set explicitly
         // this test fails being run by Gradle
-        CONFIG.setGenesisInfo("frontier.json");
+        ConfigHelper.CONFIG.setGenesisInfo("frontier.json");
 
-        originalBlockchainConfig = RskSystemProperties.CONFIG.getBlockchainConfig();
-        RskSystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+        originalBlockchainConfig = ConfigHelper.CONFIG.getBlockchainConfig();
+        ConfigHelper.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
     }
 
     @After
     public void tearDown() {
-        RskSystemProperties.CONFIG.setBlockchainConfig(originalBlockchainConfig);
+        ConfigHelper.CONFIG.setBlockchainConfig(originalBlockchainConfig);
     }
 
 
@@ -80,7 +79,7 @@ public class LocalBasicTest {
 
             BlockHeader current = testCase.getCurrent();
             BlockHeader parent = testCase.getParent();
-            BigInteger calc = new DifficultyCalculator(RskSystemProperties.CONFIG).calcDifficulty(current, parent);
+            BigInteger calc = new DifficultyCalculator(ConfigHelper.CONFIG).calcDifficulty(current, parent);
             int c = calc.compareTo(parent.getDifficultyBI());
             if (c>0)
                 logger.info(" Difficulty increase test\n");

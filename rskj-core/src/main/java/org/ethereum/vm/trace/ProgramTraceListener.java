@@ -19,15 +19,18 @@
 
 package org.ethereum.vm.trace;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.listener.ProgramListenerAdaptor;
 
-import static co.rsk.config.RskSystemProperties.CONFIG;
-
 public class ProgramTraceListener extends ProgramListenerAdaptor {
 
-    private final boolean enabled = CONFIG.vmTrace();
+    private final boolean enabled;
     private OpActions actions = new OpActions();
+
+    public ProgramTraceListener(RskSystemProperties config) {
+        enabled = config.vmTrace();
+    }
 
     @Override
     public void onMemoryExtend(int delta) {

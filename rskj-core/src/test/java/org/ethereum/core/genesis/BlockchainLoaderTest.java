@@ -19,12 +19,11 @@
 
 package org.ethereum.core.genesis;
 
+import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImplTest;
-import co.rsk.trie.TrieStoreImpl;
-import org.spongycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
@@ -33,6 +32,7 @@ import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -45,7 +45,7 @@ public class BlockchainLoaderTest {
 
         Blockchain blockchain = BlockChainImplTest.createBlockChain();
 
-        SystemProperties systemProperties = Mockito.mock(SystemProperties.class);
+        RskSystemProperties systemProperties = Mockito.mock(RskSystemProperties.class);
 
         Constants constants = Mockito.mock(Constants.class);
         Mockito.when(constants.getInitialNonce()).thenReturn(BigInteger.ZERO);
@@ -53,6 +53,7 @@ public class BlockchainLoaderTest {
         BlockchainNetConfig blockchainNetConfig = Mockito.mock(BlockchainNetConfig.class);
         Mockito.when(blockchainNetConfig.getCommonConstants()).thenReturn(constants);
 
+        Mockito.when(systemProperties.databaseDir()).thenReturn(ConfigHelper.CONFIG.databaseDir());
         Mockito.when(systemProperties.getBlockchainConfig()).thenReturn(blockchainNetConfig);
         Mockito.when(systemProperties.genesisInfo()).thenReturn(jsonFile);
 
@@ -63,7 +64,7 @@ public class BlockchainLoaderTest {
 
         Repository repository = blockchain.getRepository();
 
-        BlockChainLoader blockChainLoader = new BlockChainLoader(blockchain, systemProperties, blockStore, repository, ethereumListener);
+        BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, blockchain, blockStore, repository, ethereumListener);
 
         blockChainLoader.loadBlockchain();
 

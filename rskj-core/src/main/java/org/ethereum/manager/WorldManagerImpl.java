@@ -19,10 +19,10 @@
 
 package org.ethereum.manager;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.net.BlockProcessor;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 /**
@@ -55,23 +54,20 @@ public class WorldManagerImpl implements WorldManager {
     private final BlockStore blockStore;
     private final PendingState pendingState;
     private final Repository repository;
-    private final NetworkStateExporter networkStateExporter;
     private final HashRateCalculator hashRateCalculator;
     private final ConfigCapabilities configCapabilities;
-    private final SystemProperties config;
-    private final ChannelManager channelManager;
     private final EthereumListener listener;
     private final BlockProcessor nodeBlockProcessor;
 
     @Autowired
-    public WorldManagerImpl(Blockchain blockchain,
+    public WorldManagerImpl(RskSystemProperties config,
+                            Blockchain blockchain,
                             BlockStore blockStore,
                             PendingState pendingState,
                             Repository repository,
                             NetworkStateExporter networkStateExporter,
                             HashRateCalculator hashRateCalculator,
                             ConfigCapabilities configCapabilities,
-                            SystemProperties config,
                             ChannelManager channelManager,
                             EthereumListener listener,
                             BlockProcessor nodeBlockProcessor) {
@@ -79,15 +75,12 @@ public class WorldManagerImpl implements WorldManager {
         this.blockStore = blockStore;
         this.pendingState = pendingState;
         this.repository = repository;
-        this.networkStateExporter = networkStateExporter;
         this.hashRateCalculator = hashRateCalculator;
         this.configCapabilities = configCapabilities;
-        this.config = config;
-        this.channelManager = channelManager;
         this.listener = listener;
         this.nodeBlockProcessor = nodeBlockProcessor;
 
-        BlockChainLoader loader = new BlockChainLoader(this.blockchain, this.config, this.blockStore, this.repository, this.listener);
+        BlockChainLoader loader = new BlockChainLoader(config, this.blockchain, this.blockStore, this.repository, this.listener);
         loader.loadBlockchain();
     }
 

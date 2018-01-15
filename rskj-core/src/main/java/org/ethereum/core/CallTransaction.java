@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonGetter;
@@ -52,24 +53,25 @@ public class CallTransaction {
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL);
 
-    public static Transaction createRawTransaction(long nonce, long gasPrice, long gasLimit, RskAddress toAddress,
+    public static Transaction createRawTransaction(RskSystemProperties config, long nonce, long gasPrice, long gasLimit, RskAddress toAddress,
                                                    long value, byte[] data) {
-        return new Transaction(longToBytesNoLeadZeroes(nonce),
+        return new Transaction(
+                longToBytesNoLeadZeroes(nonce),
                 longToBytesNoLeadZeroes(gasPrice),
                 longToBytesNoLeadZeroes(gasLimit),
                 toAddress.equals(RskAddress.nullAddress()) ? null : toAddress.getBytes(),
                 longToBytesNoLeadZeroes(value),
                 data,
-                Transaction.getConfigChainId());
+                config.getBlockchainConfig().getCommonConstants().getChainId());
     }
 
 
 
-    public static Transaction createCallTransaction(long nonce, long gasPrice, long gasLimit, RskAddress toAddress,
-                                                    long value, Function callFunc, Object ... funcArgs) {
+    public static Transaction createCallTransaction(RskSystemProperties config, long nonce, long gasPrice, long gasLimit, RskAddress toAddress,
+                                                    long value, Function callFunc, Object... funcArgs) {
 
         byte[] callData = callFunc.encode(funcArgs);
-        return createRawTransaction(nonce, gasPrice, gasLimit, toAddress, value, callData);
+        return createRawTransaction(config, nonce, gasPrice, gasLimit, toAddress, value, callData);
     }
 
     /**

@@ -43,7 +43,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
 import static org.ethereum.util.BIUtil.*;
@@ -60,23 +59,24 @@ public class TransactionExecutor {
     private static final Logger logger = LoggerFactory.getLogger("execute");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private Transaction tx;
-    private int txindex;
-    private Repository track;
-    private Repository cacheTrack;
-    private BlockStore blockStore;
-    private ReceiptStore receiptStore;
+    private final RskSystemProperties config;
+    private final Transaction tx;
+    private final int txindex;
+    private final Repository track;
+    private final Repository cacheTrack;
+    private final BlockStore blockStore;
+    private final ReceiptStore receiptStore;
     private String executionError = "";
     private final long gasUsedInTheBlock;
     private BigInteger paidFees;
     private boolean readyToExecute = false;
 
-    private ProgramInvokeFactory programInvokeFactory;
-    private byte[] coinbase;
+    private final ProgramInvokeFactory programInvokeFactory;
+    private final byte[] coinbase;
 
     private TransactionReceipt receipt;
     private ProgramResult result = new ProgramResult();
-    private Block executionBlock;
+    private final Block executionBlock;
 
     private final EthereumListener listener;
 
@@ -91,15 +91,15 @@ public class TransactionExecutor {
 
     boolean localCall = false;
 
-    public TransactionExecutor(Transaction tx, int txindex, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
+    public TransactionExecutor(RskSystemProperties config, Transaction tx, int txindex, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
-        this(tx, txindex, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0);
+        this(config, tx, txindex, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0);
     }
 
-    public TransactionExecutor(Transaction tx, int txindex, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
+    public TransactionExecutor(RskSystemProperties config, Transaction tx, int txindex, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock,
                                EthereumListener listener, long gasUsedInTheBlock) {
-
+        this.config = config;
         this.tx = tx;
         this.txindex = txindex;
         this.coinbase = coinbase;
@@ -120,7 +120,7 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     public boolean init() {
-        basicTxCost = tx.transactionCost(executionBlock);
+        basicTxCost = tx.transactionCost(config, executionBlock);
 
         if (localCall) {
             readyToExecute = true;
@@ -207,7 +207,7 @@ public class TransactionExecutor {
             return false;
         }
 
-        if (!tx.acceptTransactionSignature()) {
+        if (!tx.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId())) {
             if (logger.isWarnEnabled()) {
                 logger.warn("Transaction {} signature not accepted: {}", Hex.toHexString(tx.getHash()), tx.getSignature());
                 logger.warn("Transaction Data: {}", tx);
@@ -265,7 +265,7 @@ public class TransactionExecutor {
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
         // if targetAddress size is greater than 32 bytes.
         // But init() will detect this earlier
-        precompiledContract = PrecompiledContracts.getContractForAddress(new DataWord(targetAddress));
+        precompiledContract = PrecompiledContracts.getContractForAddress(config, new DataWord(targetAddress));
 
         if (precompiledContract != null) {
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
@@ -302,8 +302,8 @@ public class TransactionExecutor {
                 ProgramInvoke programInvoke =
                         programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
-                this.vm = new VM();
-                this.program = new Program(code, programInvoke, tx);
+                this.vm = new VM(config);
+                this.program = new Program(config, code, programInvoke, tx);
             }
         }
 
@@ -321,8 +321,8 @@ public class TransactionExecutor {
         } else {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
-            this.vm = new VM();
-            this.program = new Program(tx.getData(), programInvoke, tx);
+            this.vm = new VM(config);
+            this.program = new Program(config, tx.getData(), programInvoke, tx);
 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
@@ -357,9 +357,9 @@ public class TransactionExecutor {
         try {
 
             // Charge basic cost of the transaction
-            program.spendGas(tx.transactionCost(executionBlock), "TRANSACTION COST");
+            program.spendGas(tx.transactionCost(config, executionBlock), "TRANSACTION COST");
 
-            if (CONFIG.playVM()) {
+            if (config.playVM()) {
                 vm.play(program);
             }
 
@@ -489,7 +489,7 @@ public class TransactionExecutor {
         BigInteger summaryFee = summary.getFee();
 
         //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-        if(RskSystemProperties.CONFIG.isRemascEnabled()) {
+        if(config.isRemascEnabled()) {
             logger.info("Adding fee to remasc contract account");
             track.addBalance(PrecompiledContracts.REMASC_ADDR.getBytes(), summaryFee);
         } else {
@@ -513,11 +513,11 @@ public class TransactionExecutor {
 
         logger.info("tx listener done");
 
-        if (CONFIG.vmTrace() && program != null && result != null) {
+        if (config.vmTrace() && program != null && result != null) {
             ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException());
             String txHash = toHexString(tx.getHash());
             try {
-                saveProgramTraceFile(txHash, CONFIG.vmTraceCompressed(), trace);
+                saveProgramTraceFile(config, txHash, trace);
                 if (listener != null) {
                     listener.onVMTraceCreated(txHash, trace);
                 }

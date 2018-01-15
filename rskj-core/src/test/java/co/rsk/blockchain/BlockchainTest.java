@@ -19,20 +19,14 @@
 package co.rsk.blockchain;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
-import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
-import co.rsk.validators.ProofOfWorkRule;
-import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
-import org.ethereum.validator.DifficultyRule;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;

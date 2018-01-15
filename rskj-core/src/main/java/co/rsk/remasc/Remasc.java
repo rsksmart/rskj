@@ -48,30 +48,28 @@ import java.util.List;
 public class Remasc {
     private static final Logger logger = LoggerFactory.getLogger(Remasc.class);
 
-    private RemascConfig remascConstants;
-    private RemascStorageProvider provider;
-
+    private final RskSystemProperties config;
+    private final Repository repository;
+    private final BlockStore blockStore;
+    private final RemascConfig remascConstants;
     private final Transaction executionTx;
-    private Repository repository;
+    private final Block executionBlock;
+    private final List<LogInfo> logs;
 
+    private final RemascStorageProvider provider;
+    private final RemascFeesPayer feesPayer;
 
-    private Block executionBlock;
-    private BlockStore blockStore;
-
-    private RemascFeesPayer feesPayer;
-
-    private List<LogInfo> logs;
-
-    Remasc(Transaction executionTx, Repository repository, RskAddress contractAddress, Block executionBlock, BlockStore blockStore, RemascConfig remascConstants, List<LogInfo> logs) {
-        this.executionTx = executionTx;
+    public Remasc(RskSystemProperties config, Repository repository, BlockStore blockStore, RemascConfig remascConstants, Transaction executionTx, RskAddress contractAddress, Block executionBlock, List<LogInfo> logs) {
+        this.config = config;
         this.repository = repository;
-        this.executionBlock = executionBlock;
         this.blockStore = blockStore;
         this.remascConstants = remascConstants;
-        this.provider = new RemascStorageProvider(repository, contractAddress);
+        this.executionTx = executionTx;
+        this.executionBlock = executionBlock;
         this.logs = logs;
+
+        this.provider = new RemascStorageProvider(repository, contractAddress);
         this.feesPayer = new RemascFeesPayer(repository, contractAddress);
-        this.repository = repository;
     }
 
     public void save() {
@@ -141,11 +139,12 @@ public class Remasc {
         // the storage when getChainHead is null (specially in production)
         processingRepository = processingRepository.startTracking();
         BridgeSupport bridgeSupport = new BridgeSupport(
+                config,
                 processingRepository,
+                null,
                 PrecompiledContracts.BRIDGE_ADDR,
-                processingBlock,
-                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants(),
-                null);
+                processingBlock
+        );
         RemascFederationProvider federationProvider = new RemascFederationProvider(bridgeSupport);
 
         BigInteger payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));

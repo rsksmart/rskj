@@ -18,7 +18,7 @@
 
 package co.rsk.jsontestsuite;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import org.ethereum.jsontestsuite.GitHubJSONTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
@@ -27,8 +27,6 @@ import org.junit.runners.MethodSorters;
 
 import java.io.IOException;
 import java.util.Collections;
-
-import static co.rsk.config.RskSystemProperties.CONFIG;
 
 /**
  * @author Angel J Lopez
@@ -40,7 +38,7 @@ public class LocalBlockTest {
 
     @BeforeClass
     public static void init() {
-        RskSystemProperties.CONFIG.disableRemasc();
+        ConfigHelper.CONFIG.disableRemasc();
     }
 
     private void run(String name) throws IOException, ParseException {
@@ -51,7 +49,7 @@ public class LocalBlockTest {
     @Ignore // to fix after adding prefix to tx raw encode
     @Test
     public void runSingleTest() throws ParseException, IOException {
-        CONFIG.setGenesisInfo("frontier.json");
+        ConfigHelper.CONFIG.setGenesisInfo("frontier.json");
 
         String json = JSONReader.loadJSONFromResource("json/BlockchainTests/bcValidBlockTest.json", loader);
         GitHubJSONTestSuite.runGitHubJsonSingleBlockTest(json, "RecallSuicidedContractInOneBlock");
@@ -90,7 +88,7 @@ public class LocalBlockTest {
     @Test
     @Ignore
     public void runBCValidBlockTest() throws ParseException, IOException {
-        CONFIG.setGenesisInfo("frontier.json");
+        ConfigHelper.CONFIG.setGenesisInfo("frontier.json");
         run("bcValidBlockTest");
     }
 
@@ -150,7 +148,7 @@ public class LocalBlockTest {
 
     @AfterClass
     public static void destroy() {
-        RskSystemProperties.CONFIG.enableRemasc();
+        ConfigHelper.CONFIG.enableRemasc();
     }
 
 

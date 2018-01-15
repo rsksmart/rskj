@@ -18,8 +18,8 @@
 
 package co.rsk.mine;
 
+import co.rsk.config.ConfigHelper;
 import co.rsk.config.ConfigUtils;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
@@ -352,7 +352,7 @@ public class MinerManagerTest {
     }
 
     private static MinerClientImpl getMinerClient(RskImplForTest rsk, MinerServerImpl minerServer) {
-        return new MinerClientImpl(rsk, minerServer, RskSystemProperties.CONFIG);
+        return new MinerClientImpl(rsk, minerServer, ConfigHelper.CONFIG);
     }
 
     private static MinerServerImpl getMinerServer(Blockchain blockchain) {
@@ -361,12 +361,12 @@ public class MinerManagerTest {
         worldManager.setBlockchain(blockchain);
         ethereum.repository = (org.ethereum.facade.Repository)blockchain.getRepository();
         ethereum.worldManager = worldManager;
-        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(RskSystemProperties.CONFIG);
-        return new MinerServerImpl(ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(),
+        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(ConfigHelper.CONFIG);
+        return new MinerServerImpl(ConfigHelper.CONFIG, ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(),
                 blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
                 new BlockValidationRuleDummy(), worldManager.getNodeBlockProcessor(),
-                difficultyCalculator, new GasLimitCalculator(RskSystemProperties.CONFIG),
-                new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false));
+                difficultyCalculator, new GasLimitCalculator(ConfigHelper.CONFIG),
+                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
     }
 
     public static class BlockValidationRuleDummy implements BlockValidationRule {

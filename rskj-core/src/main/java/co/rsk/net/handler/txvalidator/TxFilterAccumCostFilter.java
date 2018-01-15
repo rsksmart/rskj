@@ -18,6 +18,7 @@
 
 package co.rsk.net.handler.txvalidator;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.handler.TxsPerAccount;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
@@ -34,6 +35,12 @@ import java.util.List;
  */
 public class TxFilterAccumCostFilter implements TxFilter {
 
+    private final RskSystemProperties config;
+
+    public TxFilterAccumCostFilter(RskSystemProperties config) {
+        this.config = config;
+    }
+
     @Override
     public List<Transaction> filter(AccountState state, TxsPerAccount tpa, Block block) {
         BigInteger accumTxCost = BigInteger.valueOf(0);
@@ -48,7 +55,7 @@ public class TxFilterAccumCostFilter implements TxFilter {
 
         for (Transaction t : tpa.getTransactions()) {
             BigInteger gasCost = BigInteger.ZERO;
-            if (block == null || t.transactionCost(block) > 0) {
+            if (block == null || t.transactionCost(config, block) > 0) {
                 gasCost = new BigInteger(1, t.getGasLimit()).multiply(new BigInteger(1, t.getGasPrice()));
             }
 

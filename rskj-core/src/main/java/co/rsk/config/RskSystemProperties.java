@@ -53,8 +53,6 @@ import java.util.List;
 public class RskSystemProperties extends SystemProperties {
     private static final Logger logger = LoggerFactory.getLogger("config");
 
-    public static final RskSystemProperties CONFIG = new RskSystemProperties();
-
     public static final int PD_DEFAULT_REFRESH_PERIOD = 60000;
     public static final int BLOCKS_FOR_PEERS_DEFAULT = 100;
     private static final String MINER_REWARD_ADDRESS_CONFIG = "miner.reward.address";

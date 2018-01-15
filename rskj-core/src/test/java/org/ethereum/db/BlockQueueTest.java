@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockWrapper;
@@ -49,7 +49,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.junit.Assert.*;
 
 /**
@@ -74,7 +73,7 @@ public class BlockQueueTest {
         File file = new File(scenario1.toURI());
         List<String> strData = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
 
-        Block genesis = Genesis.getInstance(RskSystemProperties.CONFIG);
+        Block genesis = Genesis.getInstance(ConfigHelper.CONFIG);
         blocks.add(genesis);
 
         for (String blockRLP : strData) {
@@ -95,8 +94,8 @@ public class BlockQueueTest {
 
         BigInteger bi = new BigInteger(32, new Random());
         testDb = "test_db_" + bi;
-        CONFIG.setDataBaseDir(testDb);
-        CONFIG.setDatabaseReset(false);
+        ConfigHelper.CONFIG.setDataBaseDir(testDb);
+        ConfigHelper.CONFIG.setDatabaseReset(false);
 
         MapDBFactory mapDBFactory = new MapDBFactoryImpl();
         blockQueue = new BlockQueueImpl();
@@ -117,10 +116,10 @@ public class BlockQueueTest {
     public void test1() {
         long receivedAt = System.currentTimeMillis();
         long importFailedAt = receivedAt + receivedAt / 2;
-        BlockWrapper wrapper = new BlockWrapper(blocks.get(0), true, nodeId);
+        BlockWrapper wrapper = new BlockWrapper(ConfigHelper.CONFIG, blocks.get(0), true, nodeId);
         wrapper.setReceivedAt(receivedAt);
         wrapper.setImportFailedAt(importFailedAt);
-        blockQueue.add(new BlockWrapper(blocks.get(0), nodeId));
+        blockQueue.add(new BlockWrapper(ConfigHelper.CONFIG, blocks.get(0), nodeId));
 
         // testing: peek()
         BlockWrapper block = blockQueue.peek();
@@ -140,7 +139,7 @@ public class BlockQueueTest {
         blockQueue.addOrReplaceAll(CollectionUtils.collectList(blocks, new Functional.Function<Block, BlockWrapper>() {
             @Override
             public BlockWrapper apply(Block block) {
-                BlockWrapper wrapper = new BlockWrapper(block, nodeId);
+                BlockWrapper wrapper = new BlockWrapper(ConfigHelper.CONFIG, block, nodeId);
                 wrapper.setReceivedAt(System.currentTimeMillis());
                 return wrapper;
             }
@@ -169,7 +168,7 @@ public class BlockQueueTest {
 
         // testing: add()
         for(Block b : blocks) {
-            blockQueue.add(new BlockWrapper(b, nodeId));
+            blockQueue.add(new BlockWrapper(ConfigHelper.CONFIG, b, nodeId));
         }
 
         prevNumber = -1;
@@ -186,14 +185,14 @@ public class BlockQueueTest {
         header.setNumber(b1.getNumber());
         b1_ = new Block(header, b1_.getTransactionsList(), b1_.getUncleList());
 
-        blockQueue.add(new BlockWrapper(b1, nodeId));
+        blockQueue.add(new BlockWrapper(ConfigHelper.CONFIG, b1, nodeId));
         assertTrue(b1.isEqual(blockQueue.peek().getBlock()));
 
-        blockQueue.add(new BlockWrapper(b1_, nodeId));
+        blockQueue.add(new BlockWrapper(ConfigHelper.CONFIG, b1_, nodeId));
         assertTrue(b1.isEqual(blockQueue.peek().getBlock()));
         assertTrue(blockQueue.filterExisting(Arrays.asList(b1.getHash())).isEmpty());
 
-        blockQueue.addOrReplace(new BlockWrapper(b1_, nodeId));
+        blockQueue.addOrReplace(new BlockWrapper(ConfigHelper.CONFIG, b1_, nodeId));
         assertTrue(b1_.isEqual(blockQueue.peek().getBlock()));
         assertFalse(blockQueue.filterExisting(Arrays.asList(b1.getHash())).isEmpty());
         assertTrue(blockQueue.filterExisting(Arrays.asList(b1_.getHash())).isEmpty());
@@ -218,7 +217,7 @@ public class BlockQueueTest {
         final CountDownLatch waiter = new CountDownLatch(3);
 
         for (int i = 0; i < 10; i++) {
-            BlockWrapper blockWrapper = new BlockWrapper(blocks.get(10 + i), nodeId);
+            BlockWrapper blockWrapper = new BlockWrapper(ConfigHelper.CONFIG, blocks.get(10 + i), nodeId);
             blockQueue.add(blockWrapper);
         }
 
@@ -227,7 +226,7 @@ public class BlockQueueTest {
             public void run() {
                 try {
                     for (int i = 0; i < 10; i++) {
-                        BlockWrapper blockWrapper = new BlockWrapper(blocks.get(i % blocks.size()), nodeId);
+                        BlockWrapper blockWrapper = new BlockWrapper(ConfigHelper.CONFIG, blocks.get(i % blocks.size()), nodeId);
                         blockQueue.addOrReplace(blockWrapper);
                         System.out.println("Write " + i);
 //                        Thread.sleep(100);
@@ -244,7 +243,7 @@ public class BlockQueueTest {
             public void run() {
                 try {
                     for (int i = 0; i < 10; i++) {
-                        BlockWrapper blockWrapper = new BlockWrapper(blocks.get(i % blocks.size()), nodeId);
+                        BlockWrapper blockWrapper = new BlockWrapper(ConfigHelper.CONFIG, blocks.get(i % blocks.size()), nodeId);
                         blockQueue.addOrReplace(blockWrapper);
                         System.out.println("Write " + i);
 //                        Thread.sleep(100);
@@ -290,11 +289,11 @@ public class BlockQueueTest {
         rnd.nextBytes(nodeB);
 
         // main flow
-        blockQueue.add(new BlockWrapper(blocks.get(0), nodeB));
+        blockQueue.add(new BlockWrapper(ConfigHelper.CONFIG, blocks.get(0), nodeB));
         for (int i = 1; i < 11; i++) {
-            blockQueue.add(new BlockWrapper(blocks.get(i), nodeA));
+            blockQueue.add(new BlockWrapper(ConfigHelper.CONFIG, blocks.get(i), nodeA));
         }
-        blockQueue.add(new BlockWrapper(blocks.get(11), nodeB));
+        blockQueue.add(new BlockWrapper(ConfigHelper.CONFIG, blocks.get(11), nodeB));
 
         blockQueue.drop(nodeA, 10);
 
@@ -303,8 +302,8 @@ public class BlockQueueTest {
         assertArrayEquals(nodeB, blockQueue.take().getNodeId());
 
         // close/open
-        blockQueue.add(new BlockWrapper(blocks.get(0), nodeA));
-        blockQueue.add(new BlockWrapper(blocks.get(1), nodeB));
+        blockQueue.add(new BlockWrapper(ConfigHelper.CONFIG, blocks.get(0), nodeA));
+        blockQueue.add(new BlockWrapper(ConfigHelper.CONFIG, blocks.get(1), nodeB));
         blockQueue.drop(nodeA, 10);
 
         blockQueue.close();
@@ -375,7 +374,7 @@ public class BlockQueueTest {
 //            try {
                 for(int i = 0; i < 5000; i++) {
                     Block b = blocks.get(i);
-                    blockQueue.add(new BlockWrapper(b, nodeId));
+                    blockQueue.add(new BlockWrapper(ConfigHelper.CONFIG, b, nodeId));
                     logger.info("writer {}: {}", index, b.getShortHash());
 //                    Thread.sleep(50);
                 }

@@ -19,6 +19,7 @@
 package co.rsk.net.eth;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.ConfigHelper;
 import co.rsk.net.Status;
 import co.rsk.net.messages.*;
 import org.ethereum.core.Block;
@@ -36,11 +37,11 @@ public class RskMessageTest {
     public void encodeDecodeGetBlockMessage() {
         Block block = BlockGenerator.getInstance().getBlock(1);
         GetBlockMessage message = new GetBlockMessage(block.getHash());
-        RskMessage rskmessage = new RskMessage(message);
+        RskMessage rskmessage = new RskMessage(ConfigHelper.CONFIG, message);
 
         byte[] encoded = rskmessage.getEncoded();
 
-        Eth62MessageFactory factory = new Eth62MessageFactory();
+        Eth62MessageFactory factory = new Eth62MessageFactory(ConfigHelper.CONFIG);
 
         EthMessage ethmessage = (EthMessage)factory.create((byte)0x08, encoded);
 
@@ -62,11 +63,11 @@ public class RskMessageTest {
         Block block = BlockGenerator.getInstance().getBlock(1);
         Status status = new Status(block.getNumber(), block.getHash());
         StatusMessage message = new StatusMessage(status);
-        RskMessage rskmessage = new RskMessage(message);
+        RskMessage rskmessage = new RskMessage(ConfigHelper.CONFIG, message);
 
         byte[] encoded = rskmessage.getEncoded();
 
-        Eth62MessageFactory factory = new Eth62MessageFactory();
+        Eth62MessageFactory factory = new Eth62MessageFactory(ConfigHelper.CONFIG);
 
         EthMessage ethmessage = (EthMessage)factory.create((byte)0x08, encoded);
 
@@ -88,11 +89,11 @@ public class RskMessageTest {
     public void encodeDecodeBlockMessage() {
         Block block = BlockGenerator.getInstance().getBlock(1);
         BlockMessage message = new BlockMessage(block);
-        RskMessage rskmessage = new RskMessage(message);
+        RskMessage rskmessage = new RskMessage(ConfigHelper.CONFIG, message);
 
         byte[] encoded = rskmessage.getEncoded();
 
-        Eth62MessageFactory factory = new Eth62MessageFactory();
+        Eth62MessageFactory factory = new Eth62MessageFactory(ConfigHelper.CONFIG);
 
         EthMessage ethmessage = (EthMessage)factory.create((byte)0x08, encoded);
 

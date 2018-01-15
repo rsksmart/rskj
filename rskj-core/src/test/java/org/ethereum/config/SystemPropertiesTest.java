@@ -19,7 +19,7 @@
 
 package org.ethereum.config;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,9 +29,9 @@ import org.junit.Test;
 public class SystemPropertiesTest {
     @Test
     public void punchBindIpTest() {
-        RskSystemProperties.CONFIG.overrideParams("peer.bind.ip", "");
+        ConfigHelper.CONFIG.overrideParams("peer.bind.ip", "");
         long st = System.currentTimeMillis();
-        String ip = RskSystemProperties.CONFIG.getPeerDiscoveryBindAddress();
+        String ip = ConfigHelper.CONFIG.getPeerDiscoveryBindAddress();
         long t = System.currentTimeMillis() - st;
         System.out.println(ip + " in " + t + " msec");
         Assert.assertTrue(t < 10 * 1000);
@@ -40,9 +40,9 @@ public class SystemPropertiesTest {
 
     @Test
     public void externalIpTest() {
-        RskSystemProperties.CONFIG.overrideParams("peer.discovery.external.ip", "");
+        ConfigHelper.CONFIG.overrideParams("peer.discovery.external.ip", "");
         long st = System.currentTimeMillis();
-        String ip = RskSystemProperties.CONFIG.getExternalIp();
+        String ip = ConfigHelper.CONFIG.getExternalIp();
         long t = System.currentTimeMillis() - st;
         System.out.println(ip + " in " + t + " msec");
         Assert.assertTrue(t < 10 * 1000);

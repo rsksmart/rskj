@@ -18,6 +18,7 @@
 
 package co.rsk.datasource;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.datasource.DataSourcePool;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.junit.Assert;
@@ -29,16 +30,16 @@ import org.junit.Test;
 public class DataSourcePoolTest {
     @Test
     public void openAndCloseDataSource() {
-        KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test1");
+        KeyValueDataSource dataSource = DataSourcePool.levelDbByName(ConfigHelper.CONFIG, "test1");
         dataSource.close();
     }
 
     @Test
     public void openUseAndCloseDataSource() {
-        KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test2");
+        KeyValueDataSource dataSource = DataSourcePool.levelDbByName(ConfigHelper.CONFIG, "test2");
         dataSource.put(new byte[] { 0x01 }, new byte[] { 0x02 });
         dataSource.close();
-        KeyValueDataSource dataSource2 = DataSourcePool.levelDbByName("test2");
+        KeyValueDataSource dataSource2 = DataSourcePool.levelDbByName(ConfigHelper.CONFIG, "test2");
         byte[] result = dataSource2.get(new byte[] { 0x01 });
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.length);
@@ -48,8 +49,8 @@ public class DataSourcePoolTest {
 
     @Test
     public void openUseAndCloseDataSourceTwice() {
-        KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test3");
-        KeyValueDataSource dataSource2 = DataSourcePool.levelDbByName("test3");
+        KeyValueDataSource dataSource = DataSourcePool.levelDbByName(ConfigHelper.CONFIG, "test3");
+        KeyValueDataSource dataSource2 = DataSourcePool.levelDbByName(ConfigHelper.CONFIG, "test3");
 
         Assert.assertSame(dataSource, dataSource2);
 
@@ -67,7 +68,7 @@ public class DataSourcePoolTest {
     @Test
     public void openAndCloseTenTimes() {
         for (int k = 0; k < 10; k++) {
-            KeyValueDataSource dataSource = DataSourcePool.levelDbByName("test4");
+            KeyValueDataSource dataSource = DataSourcePool.levelDbByName(ConfigHelper.CONFIG, "test4");
             dataSource.put(new byte[] { (byte) k }, new byte[] { (byte) k });
             byte[] result = dataSource.get(new byte[] { (byte) k });
 

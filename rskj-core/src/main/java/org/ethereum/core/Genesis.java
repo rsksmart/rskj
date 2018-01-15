@@ -19,7 +19,7 @@
 
 package org.ethereum.core;
 
-import org.ethereum.config.SystemProperties;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.genesis.InitialAddressState;
 import org.ethereum.db.ByteArrayWrapper;
@@ -71,8 +71,8 @@ public class Genesis extends Block {
                 bitcoinMergedMiningCoinbaseTransaction, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, null, null, minimumGasPrice);
     }
 
-    public static Block getInstance(SystemProperties config) {
-        return GenesisLoader.loadGenesis(config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), false);
+    public static Block getInstance(RskSystemProperties config) {
+        return GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), false);
     }
 
     public static byte[] getZeroHash(){

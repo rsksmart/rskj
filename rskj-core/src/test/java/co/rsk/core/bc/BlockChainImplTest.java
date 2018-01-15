@@ -20,7 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blocks.DummyBlockRecorder;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -43,7 +43,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.Arrays;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -777,7 +776,7 @@ public class BlockChainImplTest {
 
     @Test
     public void createWithoutArgumentsAndUnusedMethods() {
-        BlockChainImpl blockChain = new BlockChainImpl(null, null, null, null, null, null, new DummyBlockValidator(), RskSystemProperties.CONFIG);
+        BlockChainImpl blockChain = new BlockChainImpl(ConfigHelper.CONFIG, null, null, null, null, null, null, new DummyBlockValidator());
         blockChain.setExitOn(0);
         blockChain.close();
     }
@@ -797,9 +796,9 @@ public class BlockChainImplTest {
 
     @Test
     public void addInvalidMGPBlock() {
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
 
-        IndexedBlockStore blockStore = new IndexedBlockStore();
+        IndexedBlockStore blockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
         blockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
@@ -817,7 +816,7 @@ public class BlockChainImplTest {
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block));
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(1L), BigInteger.TEN);
+        Transaction tx = Transaction.create(ConfigHelper.CONFIG, "0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(1L), BigInteger.TEN);
         tx.sign(new byte[]{22, 11, 00});
         txs.add(tx);
 
@@ -829,9 +828,9 @@ public class BlockChainImplTest {
 
     @Test
     public void addValidMGPBlock() {
-        Repository repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
 
-        IndexedBlockStore blockStore = new IndexedBlockStore();
+        IndexedBlockStore blockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
         blockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
@@ -847,7 +846,7 @@ public class BlockChainImplTest {
         track.commit();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = Transaction.create("0000000000000000000000000000000000000100", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.valueOf(22000L));
+        Transaction tx = Transaction.create(ConfigHelper.CONFIG, "0000000000000000000000000000000000000100", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.valueOf(22000L));
         tx.sign(account.getEcKey().getPrivKeyBytes());
         txs.add(tx);
 
@@ -858,7 +857,7 @@ public class BlockChainImplTest {
         Block block = new BlockBuilder().minGasPrice(BigInteger.ZERO).transactions(txs)
                 .parent(genesis).build();
 
-        BlockExecutor executor = new BlockExecutor(repository, blockChain, null, null);
+        BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, blockChain, null, null);
         executor.executeAndFill(block, genesis);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
@@ -870,7 +869,7 @@ public class BlockChainImplTest {
     }
 
     public static BlockChainImpl createBlockChain(Repository repository) {
-        IndexedBlockStore blockStore = new IndexedBlockStore();
+        IndexedBlockStore blockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
         blockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         BlockValidatorBuilder validatorBuilder = new BlockValidatorBuilder();
@@ -891,8 +890,8 @@ public class BlockChainImplTest {
 
         EthereumListener listener = new BlockExecutorTest.SimpleEthereumListener();
 
-        BlockChainImpl blockChain = new BlockChainImpl(repository, blockStore, receiptStore, null, listener, adminInfo, blockValidator, RskSystemProperties.CONFIG);
-        PendingStateImpl pendingState = new PendingStateImpl(blockChain, repository, null, null, listener, 10, 100);
+        BlockChainImpl blockChain = new BlockChainImpl(ConfigHelper.CONFIG, repository, blockStore, receiptStore, null, listener, adminInfo, blockValidator);
+        PendingStateImpl pendingState = new PendingStateImpl(ConfigHelper.CONFIG, blockChain, repository, null, null, listener, 10, 100);
         blockChain.setPendingState(pendingState);
 
         return blockChain;
@@ -901,7 +900,7 @@ public class BlockChainImplTest {
     public static Block getGenesisBlock(BlockChainImpl blockChain) {
         Repository repository = blockChain.getRepository();
 
-        Genesis genesis = GenesisLoader.loadGenesis("rsk-unittests.json", BigInteger.ZERO, true);
+        Genesis genesis = GenesisLoader.loadGenesis(ConfigHelper.CONFIG, "rsk-unittests.json", BigInteger.ZERO, true);
 
         for (ByteArrayWrapper key : genesis.getPremine().keySet()) {
             repository.createAccount(key.getData());
@@ -915,7 +914,7 @@ public class BlockChainImplTest {
     }
 
     private static BlockExecutor createExecutor(BlockChainImpl blockChain) {
-        return new BlockExecutor(blockChain.getRepository(), blockChain, blockChain.getBlockStore(), blockChain.getListener());
+        return new BlockExecutor(ConfigHelper.CONFIG, blockChain.getRepository(), blockChain, blockChain.getBlockStore(), blockChain.getListener());
     }
 
     private static void alterBytes(byte[] bytes) {

@@ -18,7 +18,7 @@
 
 package co.rsk.peg;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.crypto.Sha3Hash;
 import org.apache.commons.lang3.tuple.Pair;
 import co.rsk.bitcoinj.core.NetworkParameters;
@@ -40,7 +40,7 @@ public class StateForFederatorTest {
     private static final String SHA3_3 = "3333333333333333333333333333333333333333333333333333333333333333";
     private static final String SHA3_4 = "4444444444444444444444444444444444444444444444444444444444444444";
 
-    private static final NetworkParameters NETWORK_PARAMETERS = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+    private static final NetworkParameters NETWORK_PARAMETERS = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
 
     @Test
     public void serialize() {

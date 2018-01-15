@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.FamilyUtils;
 import co.rsk.panic.PanicProcessor;
 import org.apache.commons.collections4.CollectionUtils;
@@ -53,16 +54,18 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     public static final String INVALIDUNCLE = "invaliduncle";
 
-    private BlockStore blockStore;
-    private int uncleListLimit;
-    private int uncleGenerationLimit;
-    private BlockValidationRule validations;
-    private BlockParentDependantValidationRule parentValidations;
-    private BlockUnclesHashValidationRule blockValidationRule;
+    private final BlockStore blockStore;
+    private final int uncleListLimit;
+    private final int uncleGenerationLimit;
+    private final BlockValidationRule validations;
+    private final BlockParentDependantValidationRule parentValidations;
+    private final BlockUnclesHashValidationRule blockValidationRule;
+    private final RskSystemProperties config;
 
-    public BlockUnclesValidationRule(BlockStore blockStore, int uncleListLimit,
+    public BlockUnclesValidationRule(RskSystemProperties config, BlockStore blockStore, int uncleListLimit,
                                      int uncleGenerationLimit, BlockValidationRule validations,
                                      BlockParentDependantValidationRule parentValidations) {
+        this.config = config;
         this.blockStore = blockStore;
         this.uncleListLimit = uncleListLimit;
         this.uncleGenerationLimit = uncleGenerationLimit;

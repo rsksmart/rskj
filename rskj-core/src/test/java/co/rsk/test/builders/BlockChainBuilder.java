@@ -19,7 +19,7 @@
 package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.RepositoryBlockStore;
@@ -91,10 +91,10 @@ public class BlockChainBuilder {
 
     public BlockChainImpl build(boolean withoutCleaner) {
         if (repository == null)
-            repository = new RepositoryImpl(new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));
+            repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));
 
         if (blockStore == null) {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
+            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
             indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
             blockStore = indexedBlockStore;
         }
@@ -119,7 +119,7 @@ public class BlockChainBuilder {
         if (this.adminInfo == null)
             this.adminInfo = new AdminInfo();
 
-        BlockChainImpl blockChain = new BlockChainImpl(this.repository, this.blockStore, receiptStore, null, listener, this.adminInfo, blockValidator, RskSystemProperties.CONFIG);
+        BlockChainImpl blockChain = new BlockChainImpl(ConfigHelper.CONFIG, this.repository, this.blockStore, receiptStore, null, listener, this.adminInfo, blockValidator);
 
         if (this.testing) {
             blockChain.setBlockValidator(new DummyBlockValidator());
@@ -128,9 +128,9 @@ public class BlockChainBuilder {
 
         PendingStateImpl pendingState;
         if (withoutCleaner) {
-            pendingState = new PendingStateImplNoCleaner(blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+            pendingState = new PendingStateImplNoCleaner(ConfigHelper.CONFIG, blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         } else {
-            pendingState = new PendingStateImpl(blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+            pendingState = new PendingStateImpl(ConfigHelper.CONFIG, blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         }
         blockChain.setPendingState(pendingState);
 
@@ -141,7 +141,7 @@ public class BlockChainBuilder {
             }
 
             Repository track = this.repository.startTracking();
-            new RepositoryBlockStore(track, PrecompiledContracts.BRIDGE_ADDR);
+            new RepositoryBlockStore(ConfigHelper.CONFIG, track, PrecompiledContracts.BRIDGE_ADDR);
             track.commit();
 
             this.genesis.setStateRoot(this.repository.getRoot());
@@ -152,7 +152,7 @@ public class BlockChainBuilder {
         }
 
         if (this.blocks != null) {
-            BlockExecutor blockExecutor = new BlockExecutor(repository, blockChain, blockStore, listener);
+            BlockExecutor blockExecutor = new BlockExecutor(ConfigHelper.CONFIG, repository, blockChain, blockStore, listener);
 
             for (Block b : this.blocks) {
                 blockExecutor.executeAndFillAll(b, blockChain.getBestBlock());

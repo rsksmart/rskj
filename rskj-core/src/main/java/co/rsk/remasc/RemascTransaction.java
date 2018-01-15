@@ -18,6 +18,7 @@
 
 package co.rsk.remasc;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -46,7 +47,7 @@ public class RemascTransaction extends Transaction {
     }
 
     @Override
-    public long transactionCost(Block block) {
+    public long transactionCost(RskSystemProperties config, Block block) {
         // RemascTransaction does not pay any fees
         return 0;
     }
@@ -58,7 +59,7 @@ public class RemascTransaction extends Transaction {
     }
 
     @Override
-    public boolean acceptTransactionSignature() {
+    public boolean acceptTransactionSignature(byte chainId) {
         // RemascTransaction is not signed and not signature validation should be done
         return true;
     }

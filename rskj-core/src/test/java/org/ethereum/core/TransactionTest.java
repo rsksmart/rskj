@@ -19,7 +19,7 @@
 
 package org.ethereum.core;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.RskAddress;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
@@ -429,14 +429,14 @@ public class TransactionTest {
                 {
                     Repository track = repository.startTracking();
 
-                    Transaction txConst = CallTransaction.createCallTransaction(0, 0, 100000000000000L,
+                    Transaction txConst = CallTransaction.createCallTransaction(ConfigHelper.CONFIG, 0, 0, 100000000000000L,
                             new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0, CallTransaction.Function.fromSignature("get"));
                     txConst.sign(new byte[32]);
 
                     Block bestBlock = block;
 
                     TransactionExecutor executor = new TransactionExecutor
-                            (txConst, 0, bestBlock.getCoinbase(), track, new BlockStoreDummy(), null,
+                            (ConfigHelper.CONFIG, txConst, 0, bestBlock.getCoinbase(), track, new BlockStoreDummy(), null,
                                     invokeFactory, bestBlock)
                             .setLocalCall(true);
 
@@ -539,11 +539,11 @@ public class TransactionTest {
         System.out.println(json.replaceAll("'", "\""));
 
         try {
-            RskSystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig());
+            ConfigHelper.CONFIG.setBlockchainConfig(new GenesisConfig());
             List<String> res = new StateTestRunner(stateTestSuite.getTestCases().get("test1")).runImpl();
             if (!res.isEmpty()) throw new RuntimeException("Test failed: " + res);
         } finally {
-            RskSystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+            ConfigHelper.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
         }
     }
 
@@ -572,8 +572,8 @@ public class TransactionTest {
 
          */
 
-        BigInteger nonce = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
-        Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
+        BigInteger nonce = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
+        Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(ConfigHelper.CONFIG, nonce,
                 getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
@@ -642,8 +642,8 @@ public class TransactionTest {
 
          */
 
-        BigInteger nonce = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
-        Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
+        BigInteger nonce = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
+        Blockchain blockchain = ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(ConfigHelper.CONFIG, nonce,
                 getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
@@ -692,7 +692,7 @@ public class TransactionTest {
 
     private TransactionExecutor executeTransaction(Blockchain blockchain, Transaction tx) {
         Repository track = blockchain.getRepository().startTracking();
-        TransactionExecutor executor = new TransactionExecutor(tx, 0, new byte[32], blockchain.getRepository(),
+        TransactionExecutor executor = new TransactionExecutor(ConfigHelper.CONFIG, tx, 0, new byte[32], blockchain.getRepository(),
                 blockchain.getBlockStore(), blockchain.getReceiptStore(), new ProgramInvokeFactoryImpl(), blockchain.getBestBlock());
 
         executor.init();

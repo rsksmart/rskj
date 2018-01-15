@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.trace;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.RepositoryTrack;
@@ -35,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 
 import static java.lang.String.format;
-import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.ethereum.util.ByteUtil.toHexString;
 import static org.ethereum.vm.trace.Serializers.serializeFieldsOnly;
 
@@ -51,12 +51,12 @@ public class ProgramTrace {
     private int storageSize;
     private String contractAddress;
 
-    public ProgramTrace() {
-        this(null);
+    public ProgramTrace(RskSystemProperties config) {
+        this(config, null);
     }
 
-    public ProgramTrace(ProgramInvoke programInvoke) {
-        if (CONFIG.vmTrace() && programInvoke != null) {
+    public ProgramTrace(RskSystemProperties config, ProgramInvoke programInvoke) {
+        if (config.vmTrace() && programInvoke != null) {
             contractAddress = Hex.toHexString(programInvoke.getOwnerAddress().getLast20Bytes());
 
             ContractDetails contractDetails = getContractDetails(programInvoke);
@@ -65,7 +65,7 @@ public class ProgramTrace {
                 fullStorage = true;
             } else {
                 storageSize = contractDetails.getStorageSize();
-                if (storageSize <= CONFIG.vmTraceInitStorageLimit()) {
+                if (storageSize <= config.vmTraceInitStorageLimit()) {
                     fullStorage = true;
 
                     String address = toHexString(programInvoke.getOwnerAddress().getLast20Bytes());

@@ -18,7 +18,7 @@
 
 package co.rsk.blockchain.utils;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.mine.MinimumGasPriceCalculator;
@@ -71,7 +71,7 @@ public class BlockGenerator {
         return INSTANCE;
     }
 
-    private final DifficultyCalculator difficultyCalculator = new DifficultyCalculator(RskSystemProperties.CONFIG);
+    private final DifficultyCalculator difficultyCalculator = new DifficultyCalculator(ConfigHelper.CONFIG);
     private int count = 0;
 
     public Genesis getGenesisBlock() {

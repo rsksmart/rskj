@@ -19,6 +19,7 @@
 
 package org.ethereum.datasource.mapdb;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockHeaderWrapper;
@@ -94,7 +95,7 @@ public class Serializers {
         @Override
         public BlockWrapper deserialize(DataInput in, int available) throws IOException {
             byte[] bytes = BYTE_ARRAY.deserialize(in, available);
-            return bytes.length > 0 ? new BlockWrapper(bytes) : null;
+            return bytes.length > 0 ? new BlockWrapper(ConfigHelper.CONFIG, bytes) : null;
         }
     };
 
@@ -112,7 +113,6 @@ public class Serializers {
             return bytes.length > 0 ? new Block(bytes) : null;
         }
     };
-
     private static byte[] getBytes(ByteArrayWrapper wrapper) {
         return wrapper == null ? EMPTY_BYTE_ARRAY : wrapper.getData();
     }

@@ -19,9 +19,9 @@
 
 package org.ethereum.net.p2p;
 
+import co.rsk.config.RskSystemProperties;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.listener.EthereumListener;
@@ -35,9 +35,6 @@ import org.ethereum.net.message.StaticMessages;
 import org.ethereum.net.server.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,14 +79,14 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
     private int ethInbound;
     private int ethOutbound;
 
+    private final RskSystemProperties config;
     private final EthereumListener ethereumListener;
     private final ConfigCapabilities configCapabilities;
-    private final SystemProperties config;
 
-    public P2pHandler(EthereumListener ethereumListener, ConfigCapabilities configCapabilities, SystemProperties config) {
+    public P2pHandler(RskSystemProperties config, EthereumListener ethereumListener, ConfigCapabilities configCapabilities) {
+        this.config = config;
         this.ethereumListener = ethereumListener;
         this.configCapabilities = configCapabilities;
-        this.config = config;
     }
 
     private Channel channel;
@@ -211,13 +208,13 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
      */
     public void sendTransaction(Transaction tx) {
 
-        TransactionsMessage msg = new TransactionsMessage(tx);
+        TransactionsMessage msg = new TransactionsMessage(config, tx);
         msgQueue.sendMessage(msg);
     }
 
     public void sendNewBlock(Block block) {
 
-        NewBlockMessage msg = new NewBlockMessage(block, block.getDifficulty());
+        NewBlockMessage msg = new NewBlockMessage(config, block, block.getDifficulty());
         msgQueue.sendMessage(msg);
     }
 

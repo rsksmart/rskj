@@ -81,6 +81,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
 
+    private final RskSystemProperties config;
     private final Repository repository;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
@@ -88,7 +89,6 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     private EthereumListener listener;
     private final AdminInfo adminInfo;
     private BlockValidator blockValidator;
-    private final RskSystemProperties config;
 
     private volatile BlockChainStatus status = new BlockChainStatus(null, BigInteger.ZERO);
     private final Object connectLock = new Object();
@@ -97,22 +97,22 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     private BlockRecorder blockRecorder;
     private boolean noValidation;
 
-    public BlockChainImpl(Repository repository,
+    public BlockChainImpl(RskSystemProperties config,
+                          Repository repository,
                           BlockStore blockStore,
                           ReceiptStore receiptStore,
                           PendingState pendingState,
                           EthereumListener listener,
                           AdminInfo adminInfo,
-                          BlockValidator blockValidator,
-                          RskSystemProperties config) {
+                          BlockValidator blockValidator) {
+        this.config = config;
         this.repository = repository;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.listener = listener;
         this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
-        this.config = config;
-        this.blockExecutor = new BlockExecutor(repository, this, blockStore, listener);
+        this.blockExecutor = new BlockExecutor(config, repository, this, blockStore, listener);
 
         setPendingState(pendingState);
     }

@@ -28,6 +28,7 @@ import co.rsk.mine.MinerServer;
 import co.rsk.mine.TxBuilder;
 import co.rsk.mine.TxBuilderEx;
 import co.rsk.net.BlockProcessResult;
+import co.rsk.net.BlockProcessor;
 import co.rsk.net.MessageHandler;
 import co.rsk.net.Metrics;
 import co.rsk.net.discovery.UDPServer;
@@ -35,11 +36,7 @@ import co.rsk.net.handler.TxHandler;
 import co.rsk.rpc.CorsConfiguration;
 import org.ethereum.cli.CLIInterface;
 import org.ethereum.config.DefaultConfig;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.ImportResult;
-import org.ethereum.core.Repository;
-import org.ethereum.manager.WorldManager;
+import org.ethereum.core.*;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.JsonRpcNettyServer;
@@ -63,7 +60,6 @@ public class Start {
     private static Logger logger = LoggerFactory.getLogger("start");
 
     private final Rsk rsk;
-    private final WorldManager worldManager;
     private final UDPServer udpServer;
     private final MinerServer minerServer;
     private final MinerClient minerClient;
@@ -77,6 +73,8 @@ public class Start {
     private final TxHandler txHandler;
 
     private Web3 web3Service;
+    private final BlockProcessor nodeBlockProcessor;
+    private final PendingState pendingState;
 
     public static void main(String[] args) throws Exception {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
@@ -87,7 +85,6 @@ public class Start {
 
     @Autowired
     public Start(Rsk rsk,
-                 WorldManager worldManager,
                  UDPServer udpServer,
                  MinerServer minerServer,
                  MinerClient minerClient,
@@ -98,9 +95,10 @@ public class Start {
                  ChannelManager channelManager,
                  SyncPool syncPool,
                  MessageHandler messageHandler,
-                 TxHandler txHandler) {
+                 TxHandler txHandler,
+                 BlockProcessor nodeBlockProcessor,
+                 PendingState pendingState) {
         this.rsk = rsk;
-        this.worldManager = worldManager;
         this.udpServer = udpServer;
         this.minerServer = minerServer;
         this.minerClient = minerClient;
@@ -112,6 +110,8 @@ public class Start {
         this.syncPool = syncPool;
         this.messageHandler = messageHandler;
         this.txHandler = txHandler;
+        this.nodeBlockProcessor = nodeBlockProcessor;
+        this.pendingState = pendingState;
     }
 
     public void startNode(String[] args) throws Exception {
@@ -143,11 +143,11 @@ public class Start {
         Metrics.registerNodeID(rskSystemProperties.nodeId());
 
         if (rskSystemProperties.simulateTxs()) {
-            enableSimulateTxs(rsk);
+            enableSimulateTxs();
         }
 
         if (rskSystemProperties.simulateTxsEx()) {
-            enableSimulateTxsEx(rsk, worldManager);
+            enableSimulateTxsEx();
         }
 
         if (rskSystemProperties.isRpcEnabled()) {
@@ -199,12 +199,12 @@ public class Start {
         ).start();
     }
 
-    private void enableSimulateTxs(Rsk rsk) {
-        new TxBuilder(rsk, worldManager.getNodeBlockProcessor(), repository).simulateTxs();
+    private void enableSimulateTxs() {
+        new TxBuilder(rskSystemProperties, rsk, nodeBlockProcessor, repository).simulateTxs();
     }
 
-    private void enableSimulateTxsEx(Rsk rsk, WorldManager worldManager) {
-        new TxBuilderEx().simulateTxs(rsk, worldManager, rskSystemProperties, repository);
+    private void enableSimulateTxsEx() {
+        new TxBuilderEx(rskSystemProperties, rsk, repository, nodeBlockProcessor, pendingState).simulateTxs();
     }
 
     private void waitRskSyncDone(Rsk rsk) throws InterruptedException {
@@ -243,7 +243,7 @@ public class Start {
 
         new Thread(() -> {
             RskImpl rskImpl = (RskImpl) rsk;
-            try (FileBlockPlayer bplayer = new FileBlockPlayer(blocksPlayerFileName)) {
+            try (FileBlockPlayer bplayer = new FileBlockPlayer(rskSystemProperties, blocksPlayerFileName)) {
                 rskImpl.setIsPlayingBlocks(true);
                 connectBlocks(bplayer, bc, cm);
             } catch (Exception e) {

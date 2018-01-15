@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite.runners;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.bc.BlockChainImpl;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -68,7 +68,7 @@ public class StateTestRunner {
         Repository track = repository.startTracking();
 
         TransactionExecutor executor =
-                new TransactionExecutor(transaction, 0, env.getCurrentCoinbase(), track, new BlockStoreDummy(), null,
+                new TransactionExecutor(ConfigHelper.CONFIG, transaction, 0, env.getCurrentCoinbase(), track, new BlockStoreDummy(), null,
                         invokeFactory, blockchain.getBestBlock());
 
         try{
@@ -93,11 +93,11 @@ public class StateTestRunner {
 
         transaction = TransactionBuilder.build(stateTestCase.getTransaction());
         logger.info("transaction: {}", transaction.toString());
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
         indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
         BlockStore blockStore = indexedBlockStore;
 
-        blockchain = new BlockChainImpl(repository, blockStore, null, null, null, null, null, RskSystemProperties.CONFIG);
+        blockchain = new BlockChainImpl(ConfigHelper.CONFIG, repository, blockStore, null, null, null, null, null);
 
         env = EnvBuilder.build(stateTestCase.getEnv());
         invokeFactory = new TestProgramInvokeFactory(env);

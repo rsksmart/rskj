@@ -1,7 +1,7 @@
 package org.ethereum.util;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.db.RepositoryImpl;
@@ -81,7 +81,7 @@ public class RskTestFactory {
 
     private TransactionExecutor executeTransaction(Transaction transaction) {
         Repository track = getRepository().startTracking();
-        TransactionExecutor executor = new TransactionExecutor(transaction, 0, new byte[32],
+        TransactionExecutor executor = new TransactionExecutor(ConfigHelper.CONFIG, transaction, 0, new byte[32],
                 getRepository(), getBlockStore(), getReceiptStore(),
                 getProgramInvokeFactory(), getBlockchain().getBestBlock());
         executor.init();
@@ -103,14 +103,13 @@ public class RskTestFactory {
     public BlockChainImpl getBlockchain() {
         if (blockchain == null) {
             blockchain = new BlockChainImpl(
-                    getRepository(),
+                    ConfigHelper.CONFIG, getRepository(),
                     getBlockStore(),
                     getReceiptStore(),
                     null, //circular dependency
                     null,
                     null,
-                    new DummyBlockValidator(),
-                    RskSystemProperties.CONFIG
+                    new DummyBlockValidator()
             );
             PendingState pendingState = getPendingState();
             blockchain.setPendingState(pendingState);
@@ -126,7 +125,7 @@ public class RskTestFactory {
 
     public BlockStore getBlockStore() {
         if (blockStore == null) {
-            blockStore = new IndexedBlockStore();
+            blockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
             HashMapDB blockStore = new HashMapDB();
             this.blockStore.init(new HashMap<>(), blockStore, null);
         }
@@ -142,7 +141,7 @@ public class RskTestFactory {
                     null,
                     getProgramInvokeFactory(),
                     getRepository(),
-                    RskSystemProperties.CONFIG
+                    ConfigHelper.CONFIG
             );
         }
 
@@ -152,7 +151,7 @@ public class RskTestFactory {
     public Repository getRepository() {
         if (repository == null) {
             HashMapDB stateStore = new HashMapDB();
-            repository = new RepositoryImpl(new TrieStoreImpl(stateStore));
+            repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(stateStore));
         }
 
         return repository;

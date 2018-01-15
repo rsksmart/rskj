@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.config.ConfigHelper;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockWrapper;
@@ -34,8 +35,6 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-
-import static co.rsk.config.RskSystemProperties.CONFIG;
 
 /**
  * @author Mikhail Kalinin
@@ -84,7 +83,7 @@ public class BlockQueueImpl implements BlockQueue {
                             .serializer(Serializers.BYTE_ARRAY_WRAPPER)
                             .makeOrGet();
 
-                    if(CONFIG.databaseReset()) {
+                    if(ConfigHelper.CONFIG.databaseReset()) {
                         blocks.clear();
                         hashes.clear();
                         db.commit();

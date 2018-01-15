@@ -19,7 +19,7 @@
 package co.rsk.core;
 
 import co.rsk.asm.EVMAssembler;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.bc.BlockChainImpl;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -41,8 +41,8 @@ public class CodeReplaceTest {
     @Test
     public void replaceCodeTest1() throws IOException, InterruptedException {
 
-        BigInteger nonce = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
-        BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
+        BigInteger nonce = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
+        BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(ConfigHelper.CONFIG, nonce,
                 getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
@@ -99,8 +99,8 @@ public class CodeReplaceTest {
     public void replaceCodeTest2() throws IOException, InterruptedException {
         // We test code replacement during initialization: this is forbitten.
 
-        BigInteger nonce = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
-        BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(nonce,
+        BigInteger nonce = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getInitialNonce();
+        BlockChainImpl blockchain = org.ethereum.core.ImportLightTest.createBlockchain(GenesisLoader.loadGenesis(ConfigHelper.CONFIG, nonce,
                 getClass().getResourceAsStream("/genesis/genesis-light.json"), false));
 
         ECKey sender = ECKey.fromPrivate(Hex.decode("3ec771c31cac8c0dba77a69e503765701d3c2bb62435888d4ffa38fed60c445c"));
@@ -137,14 +137,14 @@ public class CodeReplaceTest {
                 receiveAddress,
                 ByteUtil.longToBytesNoLeadZeroes(value),
                 data,
-                Transaction.getConfigChainId());
+                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx.sign(sender.getPrivKeyBytes());
         return tx;
     }
 
     public TransactionExecutor executeTransaction(BlockChainImpl blockchain, Transaction tx) {
         Repository track = blockchain.getRepository().startTracking();
-        TransactionExecutor executor = new TransactionExecutor(tx, 0, new byte[32], blockchain.getRepository(),
+        TransactionExecutor executor = new TransactionExecutor(ConfigHelper.CONFIG, tx, 0, new byte[32], blockchain.getRepository(),
                 blockchain.getBlockStore(), blockchain.getReceiptStore(), new ProgramInvokeFactoryImpl(), blockchain.getBestBlock());
 
         executor.init();

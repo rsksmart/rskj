@@ -19,6 +19,7 @@
 
 package org.ethereum.vm;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.util.ByteUtil;
 
 import org.ethereum.vm.program.Program;
@@ -39,7 +40,7 @@ public class ProgramMemoryTest {
 
     @Before
     public void createProgram() {
-        program = new Program(ByteUtil.EMPTY_BYTE_ARRAY, pi);
+        program = new Program(ConfigHelper.CONFIG, ByteUtil.EMPTY_BYTE_ARRAY, pi);
     }
 
     @Test

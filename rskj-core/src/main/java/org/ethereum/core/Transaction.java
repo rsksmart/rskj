@@ -29,8 +29,6 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.ECDSASignature;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.rpc.Web3;
-import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -180,13 +178,13 @@ public class Transaction implements SerializableObject {
     // There was a method called NEW_getTransactionCost that implemented this alternative solution:
     // "return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION)
     //         + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;"
-    public long transactionCost(Block block){
+    public long transactionCost(RskSystemProperties config, Block block){
         if (!parsed) {
             rlpParse();
         }
 
 		// Federators txs to the bridge are free during system setup
-        if (BridgeUtils.isFreeBridgeTx(this, block.getNumber())) {
+        if (BridgeUtils.isFreeBridgeTx(config, this, block.getNumber())) {
             return 0;
         }
 
@@ -357,7 +355,7 @@ public class Transaction implements SerializableObject {
         return signature;
     }
 
-    public boolean acceptTransactionSignature() {
+    public boolean acceptTransactionSignature(byte currentChainId) {
         ECDSASignature signature = getSignature();
         if (signature == null) {
             return false;
@@ -373,7 +371,7 @@ public class Transaction implements SerializableObject {
 
         byte chId = this.getChainId();
 
-        if (chId !=0 && chId != RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId()) {
+        if (chId !=0 && chId != currentChainId) {
             return false;
         }
 
@@ -586,34 +584,23 @@ public class Transaction implements SerializableObject {
         return Arrays.equals(this.getHash(), tx.getHash());
     }
 
-    public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit){
-        return create(to, amount, nonce, gasPrice, gasLimit, (byte[]) null);
+    public static Transaction create(RskSystemProperties config, String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit){
+        return create(config, to, amount, nonce, gasPrice, gasLimit, (byte[]) null);
     }
 
-    public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data){
+    public static Transaction create(RskSystemProperties config, String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data){
         byte[] decodedData = data == null ? null : Hex.decode(data);
-        return create(to, amount, nonce, gasPrice, gasLimit, decodedData);
+        return create(config, to, amount, nonce, gasPrice, gasLimit, decodedData);
     }
 
-    public static Transaction create(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData) {
+    public static Transaction create(RskSystemProperties config, String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData) {
         return new Transaction(BigIntegers.asUnsignedByteArray(nonce),
                 BigIntegers.asUnsignedByteArray(gasPrice),
                 BigIntegers.asUnsignedByteArray(gasLimit),
                 to != null ? Hex.decode(to) : null,
                 BigIntegers.asUnsignedByteArray(amount),
                 decodedData,
-                getConfigChainId());
-    }
-
-    public static byte getConfigChainId() {
-        return RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId();
-    }
-
-    public static Transaction create(byte[] nonce, Web3.CallArguments args){
-
-        CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
-
-        return new Transaction(nonce, hexArgs.getGasPrice(), hexArgs.getGasLimit(), hexArgs.getToAddress(), hexArgs.getValue(), hexArgs.getData());
+                config.getBlockchainConfig().getCommonConstants().getChainId());
     }
 
     public static RskAddress parseRskAddress(@Nullable byte[] bytes) {

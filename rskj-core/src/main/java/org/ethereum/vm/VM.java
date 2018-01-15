@@ -19,6 +19,7 @@
 
 package org.ethereum.vm;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.MessageCall.MsgType;
@@ -33,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static co.rsk.config.RskSystemProperties.CONFIG;
 import static org.ethereum.crypto.HashUtil.sha3;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -80,21 +80,20 @@ public class VM {
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger dumpLogger = LoggerFactory.getLogger("dump");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
-    private static String logString = "{}    Op: [{}]  Gas: [{}] Deep: [{}]  Hint: [{}]";
+    private static final String logString = "{}    Op: [{}]  Gas: [{}] Deep: [{}]  Hint: [{}]";
+    private static final boolean computeGas = true; // for performance comp
 
     /* Keeps track of the number of steps performed in this VM */
     private int vmCounter = 0;
 
     private static VMHook vmHook;
-    private static final boolean VM_TRACE = CONFIG.vmTrace();
-    private static final long DUMP_BLOCK = CONFIG.dumpBlock();
-    private boolean computeGas = true; // for performance comp
 
-    public VM() {
+    private final RskSystemProperties config;
+
+    public VM(RskSystemProperties config) {
+        this.config = config;
         isLogEnabled = logger.isInfoEnabled();
     }
-
-
 
     private void checkSizeArgument(long size) {
         if (size > Program.MAX_MEMORY)
@@ -1469,7 +1468,7 @@ public class VM {
     }
 
     private void callToAddress(DataWord codeAddress, MessageCall msg) {
-        PrecompiledContracts.PrecompiledContract contract = PrecompiledContracts.getContractForAddress(codeAddress);
+        PrecompiledContracts.PrecompiledContract contract = PrecompiledContracts.getContractForAddress(config, codeAddress);
 
         if (contract != null) {
             program.callToPrecompiledAddress(msg, contract);
@@ -1873,7 +1872,7 @@ public class VM {
                     break;
                 }
 
-                if (VM_TRACE) {
+                if (this.config.vmTrace()) {
                     program.saveOpTrace();
                 }
 
@@ -1896,14 +1895,14 @@ public class VM {
 
                 gasCost = op.getTier().asInt();
 
-                if (DUMP_BLOCK >=0) {
+                if (this.config.dumpBlock() >= 0) {
                     gasBefore = program.getRemainingGas();
                     stepBefore = program.getPC();
                     memWords = 0; // parameters for logging
                 }
 
                 // Log debugging line for VM
-                if ((DUMP_BLOCK >=0) &&  (program.getNumber().intValue() == DUMP_BLOCK)) {
+                if (this.config.dumpBlock() >= 0 && program.getNumber().intValue() == this.config.dumpBlock()) {
                     this.dumpLine(op, gasBefore, gasCost , memWords, program);
                 }
 
@@ -1983,7 +1982,7 @@ public class VM {
                     gasBefore, gasCost, memWords)
      */
     private void dumpLine(OpCode op, long gasBefore, long gasCost, long memWords, Program program) {
-        if ("standard+".equals(CONFIG.dumpStyle())) {
+        if ("standard+".equals(config.dumpStyle())) {
             switch (op) {
                 case STOP:
                 case RETURN:
@@ -2007,7 +2006,7 @@ public class VM {
             String gasString = Long.toHexString(program.getRemainingGas());
 
             dumpLogger.trace("{} {} {} {}", addressString, pcString, opString, gasString);
-        } else if ("pretty".equals(CONFIG.dumpStyle())) {
+        } else if ("pretty".equals(config.dumpStyle())) {
             dumpLogger.trace("-------------------------------------------------------------------------");
             dumpLogger.trace("    STACK");
             program.getStack().forEach(item -> dumpLogger.trace("{}", item));

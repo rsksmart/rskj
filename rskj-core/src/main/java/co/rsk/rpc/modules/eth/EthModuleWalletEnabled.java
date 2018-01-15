@@ -18,6 +18,7 @@
 
 package co.rsk.rpc.modules.eth;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import org.ethereum.core.Account;
@@ -42,11 +43,13 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
+    private final RskSystemProperties config;
     private final Ethereum eth;
     private final Wallet wallet;
     private final PendingState pendingState;
 
-    public EthModuleWalletEnabled(Ethereum eth, Wallet wallet, PendingState pendingState) {
+    public EthModuleWalletEnabled(RskSystemProperties config, Ethereum eth, Wallet wallet, PendingState pendingState) {
+        this.config = config;
         this.eth = eth;
         this.wallet = wallet;
         this.pendingState = pendingState;
@@ -73,7 +76,7 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
 
             synchronized (pendingState) {
                 BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : (pendingState.getRepository().getNonce(account.getAddress().getBytes()));
-                Transaction tx = Transaction.create(toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
+                Transaction tx = Transaction.create(config, toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
                 tx.sign(account.getEcKey().getPrivKeyBytes());
                 eth.submitTransaction(tx.toImmutableTransaction());
                 s = TypeConverter.toJsonHex(tx.getHash());

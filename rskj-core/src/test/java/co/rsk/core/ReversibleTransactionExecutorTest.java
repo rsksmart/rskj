@@ -19,6 +19,7 @@
 
 package co.rsk.core;
 
+import co.rsk.config.ConfigHelper;
 import co.rsk.util.TestContract;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
@@ -51,12 +52,7 @@ public class ReversibleTransactionExecutorTest {
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
         TransactionExecutor executor = ReversibleTransactionExecutor.executeTransaction(
-                bestBlock.getCoinbase(),
-                factory.getRepository(),
-                factory.getBlockStore(),
-                factory.getReceiptStore(),
-                new ProgramInvokeFactoryImpl(),
-                bestBlock,
+                ConfigHelper.CONFIG, factory.getRepository(), factory.getBlockStore(), factory.getReceiptStore(), new ProgramInvokeFactoryImpl(), bestBlock, bestBlock.getCoinbase(),
                 args);
 
         Assert.assertNull(executor.getResult().getException());
@@ -84,12 +80,7 @@ public class ReversibleTransactionExecutorTest {
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
         TransactionExecutor executor = ReversibleTransactionExecutor.executeTransaction(
-                bestBlock.getCoinbase(),
-                factory.getRepository(),
-                factory.getBlockStore(),
-                factory.getReceiptStore(),
-                new ProgramInvokeFactoryImpl(),
-                bestBlock,
+                ConfigHelper.CONFIG, factory.getRepository(), factory.getBlockStore(), factory.getReceiptStore(), new ProgramInvokeFactoryImpl(), bestBlock, bestBlock.getCoinbase(),
                 args);
 
         Assert.assertNull(executor.getResult().getException());
@@ -117,12 +108,7 @@ public class ReversibleTransactionExecutorTest {
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
         TransactionExecutor executor = ReversibleTransactionExecutor.executeTransaction(
-                bestBlock.getCoinbase(),
-                factory.getRepository(),
-                factory.getBlockStore(),
-                factory.getReceiptStore(),
-                new ProgramInvokeFactoryImpl(),
-                bestBlock,
+                ConfigHelper.CONFIG, factory.getRepository(), factory.getBlockStore(), factory.getReceiptStore(), new ProgramInvokeFactoryImpl(), bestBlock, bestBlock.getCoinbase(),
                 args);
 
         Assert.assertTrue(executor.getResult().isRevert());
@@ -147,12 +133,7 @@ public class ReversibleTransactionExecutorTest {
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
         TransactionExecutor executor = ReversibleTransactionExecutor.executeTransaction(
-                bestBlock.getCoinbase(),
-                factory.getRepository(),
-                factory.getBlockStore(),
-                factory.getReceiptStore(),
-                new ProgramInvokeFactoryImpl(),
-                bestBlock,
+                ConfigHelper.CONFIG, factory.getRepository(), factory.getBlockStore(), factory.getReceiptStore(), new ProgramInvokeFactoryImpl(), bestBlock, bestBlock.getCoinbase(),
                 args);
 
         Assert.assertNull(executor.getResult().getException());
@@ -161,12 +142,7 @@ public class ReversibleTransactionExecutorTest {
                 callsFn.decodeResult(executor.getResult().getHReturn()));
 
         TransactionExecutor executor2 = ReversibleTransactionExecutor.executeTransaction(
-                bestBlock.getCoinbase(),
-                factory.getRepository(),
-                factory.getBlockStore(),
-                factory.getReceiptStore(),
-                new ProgramInvokeFactoryImpl(),
-                bestBlock,
+                ConfigHelper.CONFIG, factory.getRepository(), factory.getBlockStore(), factory.getReceiptStore(), new ProgramInvokeFactoryImpl(), bestBlock, bestBlock.getCoinbase(),
                 args);
 
         Assert.assertNull(executor2.getResult().getException());

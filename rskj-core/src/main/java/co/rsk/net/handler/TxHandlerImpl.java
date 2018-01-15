@@ -18,6 +18,7 @@
 
 package co.rsk.net.handler;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
@@ -39,6 +40,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class TxHandlerImpl implements TxHandler {
 
+    private final RskSystemProperties config;
     private Repository repository;
     private Blockchain blockchain;
     private Map<String, TxTimestamp> knownTxs = new HashMap<>();
@@ -54,11 +56,13 @@ public class TxHandlerImpl implements TxHandler {
      * threads will help to keep memory low and consistency through all the
      * life of the application
      *
+     * @param config
      * @param worldManager strongly depends on the worldManager
      * @param repository
      * @param blockchain
      */
-    public TxHandlerImpl(WorldManager worldManager, org.ethereum.facade.Repository repository, Blockchain blockchain) {
+    public TxHandlerImpl(RskSystemProperties config, WorldManager worldManager, org.ethereum.facade.Repository repository, Blockchain blockchain) {
+        this.config = config;
         this.blockchain = blockchain;
         this.repository = (Repository) repository;
 
@@ -79,15 +83,16 @@ public class TxHandlerImpl implements TxHandler {
         executorService.shutdown();
     }
 
-    @VisibleForTesting TxHandlerImpl() {
+    @VisibleForTesting TxHandlerImpl(RskSystemProperties config) {
         // Only for testing
+        this.config = config;
     }
 
     @Override
     public List<Transaction> retrieveValidTxs(List<Transaction> txs) {
         try {
             knownTxsLock.lock();
-            return new TxValidator().filterTxs(repository, blockchain, txs, knownTxs, txsPerAccounts);
+            return new TxValidator(config, repository, blockchain).filterTxs(txs, knownTxs, txsPerAccounts);
         } finally {
             knownTxsLock.unlock();
         }

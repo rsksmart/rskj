@@ -19,19 +19,15 @@
 package co.rsk.mine;
 
 import co.rsk.config.RskSystemProperties;
-import org.ethereum.core.Account;
-import org.ethereum.core.AccountState;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
+import co.rsk.net.BlockProcessor;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.facade.Ethereum;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -41,19 +37,34 @@ import java.security.SecureRandom;
  * This component creates random txs and stores them to the memory pool.
  * It is used only for testing purposes.
  */
-
-@Component
 public class TxBuilderEx {
 
     private static final Logger logger = LoggerFactory.getLogger("txbuilderex");
-    private volatile boolean stop = false;
-    private SecureRandom random = new SecureRandom();
 
-    public void simulateTxs(final Ethereum ethereum,
-                            WorldManager worldManager,
-                            RskSystemProperties properties,
-                            final Repository repository) {
-        final byte[] privateKeyBytes = HashUtil.sha3(properties.simulateTxsExAccountSeed().getBytes(StandardCharsets.UTF_8));
+    private final RskSystemProperties config;
+    private final Ethereum ethereum;
+    private final Repository repository;
+    private final BlockProcessor nodeBlockProcessor;
+    private final PendingState pendingState;
+
+    private final SecureRandom random = new SecureRandom();
+
+    private volatile boolean stop = false;
+
+    public TxBuilderEx(RskSystemProperties config,
+                       Ethereum ethereum,
+                       Repository repository,
+                       BlockProcessor nodeBlockProcessor,
+                       PendingState pendingState) {
+        this.config = config;
+        this.ethereum = ethereum;
+        this.repository = repository;
+        this.nodeBlockProcessor = nodeBlockProcessor;
+        this.pendingState = pendingState;
+    }
+
+    public void simulateTxs() {
+        final byte[] privateKeyBytes = HashUtil.sha3(config.simulateTxsExAccountSeed().getBytes(StandardCharsets.UTF_8));
         final ECKey key = ECKey.fromPrivate(privateKeyBytes);
 
         final Account targetAcc = new Account(new ECKey(Utils.getRandom()));
@@ -73,7 +84,7 @@ public class TxBuilderEx {
                     logger.error("Interrupted", e);
                 }
 
-                while (worldManager.getNodeBlockProcessor() != null && worldManager.getNodeBlockProcessor().hasBetterBlockToSync()) {
+                while (nodeBlockProcessor.hasBetterBlockToSync()) {
                     try {
                         Thread.sleep(60000);
                     } catch (InterruptedException e) {
@@ -89,8 +100,8 @@ public class TxBuilderEx {
                     }
                     AccountState fromAccountState = repository.getAccountState(key.getAddress());
 
-                    Transaction tx = createNewTransaction(privateKeyBytes, targetAddress, BigInteger.valueOf(properties.simulateTxsExFounding()), fromAccountState.getNonce());
-                    sendTransaction(tx, ethereum);
+                    Transaction tx = createNewTransaction(privateKeyBytes, targetAddress, BigInteger.valueOf(config.simulateTxsExFounding()), fromAccountState.getNonce());
+                    sendTransaction(tx);
                     logger.trace("Funding tx {} nonce {}", 10000000000L, getNonce(tx));
                 }
 
@@ -107,7 +118,7 @@ public class TxBuilderEx {
 
                 while (!stop) {
                     Transaction tx = createNewTransaction(targetAcc.getEcKey().getPrivKeyBytes(), target2Address, BigInteger.valueOf(value), nonce);
-                    sendTransaction(tx, ethereum);
+                    sendTransaction(tx);
                     logger.trace("Send tx value {} nonce {}", value, getNonce(tx));
                     value += 2;
                     lastNonce = nonce;
@@ -116,7 +127,7 @@ public class TxBuilderEx {
                         SecureRandom r = new SecureRandom();
                         Thread.sleep(10000 + (long)r.nextInt(20000));
 
-                        Repository prepository = worldManager.getPendingState().getRepository();
+                        Repository prepository = pendingState.getRepository();
                         AccountState accountState;
 
                         accountState = prepository.getAccountState(targetAcc.getAddress().getBytes());
@@ -126,7 +137,7 @@ public class TxBuilderEx {
                         if (accnonce.compareTo(lastNonce) < 0) {
                             tx = createNewTransaction(targetAcc.getEcKey().getPrivKeyBytes(), target2Address, BigInteger.valueOf(accnonce.intValue() * 2 + 1), accnonce);
                             logger.trace("Resend tx value {} nonce {}", accnonce.intValue() * 2 + 1, getNonce(tx));
-                            sendTransaction(tx, ethereum);
+                            sendTransaction(tx);
                         }
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
@@ -146,15 +157,15 @@ public class TxBuilderEx {
         return new BigInteger(1, bytes).longValue();
     }
 
-    private static void sendTransaction(Transaction tx, Ethereum ethereum) {
+    private void sendTransaction(Transaction tx) {
         //Adds created transaction to the local node's memory pool
         ethereum.submitTransaction(tx);
-        logger.info("Added pending tx: " + tx.getHash());
+        logger.info("Added pending tx: {}", Hex.decode(tx.getHash()));
     }
 
     private Transaction createNewTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce) {
-        long gasLimit = 21000 + random.nextInt(100);
-        Transaction tx = Transaction.create(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(gasLimit));
+        long gasLimit = 21000L + random.nextInt(100);
+        Transaction tx = Transaction.create(config, toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(gasLimit));
         tx.sign(privateKey);
         return tx;
     }

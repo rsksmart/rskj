@@ -24,10 +24,11 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.ethereum.config.BlockchainNetConfig;
+import org.ethereum.config.SystemProperties;
+import org.ethereum.core.Transaction;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -157,8 +158,8 @@ public class BridgeUtils {
         return BtcECKey.fromPublicOnly(pubKey).toAddress(networkParameters);
     }
 
-    public static boolean isFreeBridgeTx(org.ethereum.core.Transaction rskTx, long blockNumber) {
-        BlockchainNetConfig blockchainConfig = RskSystemProperties.CONFIG.getBlockchainConfig();
+    public static boolean isFreeBridgeTx(SystemProperties config, Transaction rskTx, long blockNumber) {
+        BlockchainNetConfig blockchainConfig = config.getBlockchainConfig();
         RskAddress receiveAddress = rskTx.getReceiveAddress();
         if (receiveAddress.equals(RskAddress.nullAddress())) {
             return false;
@@ -171,7 +172,7 @@ public class BridgeUtils {
         // Once the original federation changes, txs are always paid.
         return PrecompiledContracts.BRIDGE_ADDR.equals(receiveAddress) &&
                blockchainConfig.getConfigForBlock(blockNumber).areBridgeTxsFree() &&
-               rskTx.acceptTransactionSignature() &&
+               rskTx.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId()) &&
                (
                        isFromFederateMember(rskTx, bridgeConstants.getGenesisFederation()) ||
                        isFromFederationChangeAuthorizedSender(rskTx, bridgeConstants) ||

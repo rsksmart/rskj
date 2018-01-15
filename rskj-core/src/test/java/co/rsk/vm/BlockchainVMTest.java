@@ -19,6 +19,7 @@
 package co.rsk.vm;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.ConfigHelper;
 import co.rsk.test.World;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -75,7 +76,7 @@ public class BlockchainVMTest {
                 dstAddress ,
                 transferAmount.toByteArray(),
                 null,
-                Transaction.getConfigChainId());
+                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
 
         t.sign(binfo.faucetKey.getPrivKeyBytes());
         txs.add(t);

@@ -27,7 +27,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.CoinSelector;
 import co.rsk.bitcoinj.wallet.Wallet;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.ethereum.config.BlockchainNetConfig;
@@ -274,7 +274,7 @@ public class BridgeUtilsTest {
 
     @Test
     public void getAddressFromEthTransaction() {
-        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(ConfigHelper.CONFIG, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         byte[] privKey = generatePrivKey();
         tx.sign(privKey);
 
@@ -286,7 +286,7 @@ public class BridgeUtilsTest {
 
     @Test(expected = Exception.class)
     public void getAddressFromEthNotSignTransaction() {
-        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
+        org.ethereum.core.Transaction tx = org.ethereum.core.Transaction.create(ConfigHelper.CONFIG, TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         BridgeUtils.recoverBtcAddressFromEthTransaction(tx, RegTestParams.get());
     }
 
@@ -397,13 +397,13 @@ public class BridgeUtilsTest {
 
 
     private void isFreeBridgeTx(boolean expected, RskAddress destinationAddress, BlockchainNetConfig config, byte[] privKeyBytes) {
-        BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
-        RskSystemProperties.CONFIG.setBlockchainConfig(config);
+        BlockchainNetConfig blockchainNetConfigOriginal = ConfigHelper.CONFIG.getBlockchainConfig();
+        ConfigHelper.CONFIG.setBlockchainConfig(config);
 
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR);
+        Bridge bridge = new Bridge(ConfigHelper.CONFIG, PrecompiledContracts.BRIDGE_ADDR);
 
         org.ethereum.core.Transaction rskTx = CallTransaction.createCallTransaction(
-                0,
+                ConfigHelper.CONFIG, 0,
                 1,
                 1,
                 destinationAddress,
@@ -411,10 +411,10 @@ public class BridgeUtilsTest {
                 Bridge.UPDATE_COLLECTIONS);
         rskTx.sign(privKeyBytes);
 
-        Block rskExecutionBlock = BlockGenerator.getInstance().createChildBlock(Genesis.getInstance(RskSystemProperties.CONFIG));
+        Block rskExecutionBlock = BlockGenerator.getInstance().createChildBlock(Genesis.getInstance(ConfigHelper.CONFIG));
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
-        Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(rskTx, rskExecutionBlock.getNumber()));
+        Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(ConfigHelper.CONFIG, rskTx, rskExecutionBlock.getNumber()));
 
-        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        ConfigHelper.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 }

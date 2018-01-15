@@ -20,11 +20,7 @@ package co.rsk.net.messages;
 
 import co.rsk.net.Status;
 import co.rsk.remasc.RemascTransaction;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.BlockIdentifier;
-import org.ethereum.core.ImmutableTransaction;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -126,7 +122,7 @@ public enum MessageType {
     },
     BLOCK_HEADERS_REQUEST_MESSAGE(9) {
         @Override
-        public Message createMessage (RLPList list){
+        public Message createMessage(RLPList list){
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
             byte[] rlpId = list.get(0).getRLPData();
             byte[] hash = message.get(0).getRLPData();

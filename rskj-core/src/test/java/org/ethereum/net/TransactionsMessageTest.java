@@ -19,6 +19,7 @@
 
 package org.ethereum.net;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -52,7 +53,7 @@ public class TransactionsMessageTest {
 
         byte[] payload = Hex.decode(txsPacketRaw);
 
-        TransactionsMessage transactionsMessage = new TransactionsMessage(payload);
+        TransactionsMessage transactionsMessage = new TransactionsMessage(ConfigHelper.CONFIG, payload);
         System.out.println(transactionsMessage);
 
         assertEquals(EthMessageCodes.TRANSACTIONS, transactionsMessage.getCommand());
@@ -99,7 +100,7 @@ public class TransactionsMessageTest {
 
         byte[] payload = Hex.decode(txsPacketRaw);
 
-        TransactionsMessage transactionsMessage = new TransactionsMessage(payload);
+        TransactionsMessage transactionsMessage = new TransactionsMessage(ConfigHelper.CONFIG, payload);
         System.out.println(transactionsMessage);
 
         assertEquals(EthMessageCodes.TRANSACTIONS, transactionsMessage.getCommand());
@@ -193,7 +194,7 @@ public class TransactionsMessageTest {
         tx.sign(privKey);
         tx.getEncoded();
 
-        TransactionsMessage transactionsMessage = new TransactionsMessage(Collections.singletonList(tx));
+        TransactionsMessage transactionsMessage = new TransactionsMessage(ConfigHelper.CONFIG, Collections.singletonList(tx));
 
         assertEquals(expected, Hex.toHexString(transactionsMessage.getEncoded()));
     }
@@ -201,7 +202,7 @@ public class TransactionsMessageTest {
     @Test
     public void test_4() {
         String msg = "f872f87083011a6d850ba43b740083015f9094ec210ec3715d5918b37cfa4d344a45d177ed849f881b461c1416b9d000801ba023a3035235ca0a6f80f08a1d4bd760445d5b0f8a25c32678fe18a451a88d6377a0765dde224118bdb40a67f315583d542d93d17d8637302b1da26e1013518d3ae8";
-        TransactionsMessage tmsg = new TransactionsMessage(Hex.decode(msg));
+        TransactionsMessage tmsg = new TransactionsMessage(ConfigHelper.CONFIG, Hex.decode(msg));
         assertEquals(1, tmsg.getTransactions().size());
     }
 }

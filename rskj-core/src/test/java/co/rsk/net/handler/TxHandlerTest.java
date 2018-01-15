@@ -19,6 +19,7 @@
 package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
@@ -52,7 +53,7 @@ public class TxHandlerTest {
         tpa.getTransactions().add(tx2);
         txsPerAccounts.put(tx1.getSender(), tpa);
 
-        TxHandlerImpl txHandler = new TxHandlerImpl();
+        TxHandlerImpl txHandler = new TxHandlerImpl(ConfigHelper.CONFIG);
         txHandler.setKnownTxs(knownTxs);
         txHandler.setTxsPerAccounts(txsPerAccounts);
 
@@ -79,7 +80,7 @@ public class TxHandlerTest {
         tpa.getTransactions().add(tx1);
         txsPerAccounts.put(tx1.getSender(), tpa);
 
-        TxHandlerImpl txHandler = new TxHandlerImpl();
+        TxHandlerImpl txHandler = new TxHandlerImpl(ConfigHelper.CONFIG);
         txHandler.setKnownTxs(knownTxs);
         txHandler.setTxsPerAccounts(txsPerAccounts);
 
@@ -117,7 +118,7 @@ public class TxHandlerTest {
         List<TransactionReceipt> receiptList = new LinkedList<>();
         receiptList.add(receipt);
 
-        TxHandlerImpl txHandler = new TxHandlerImpl();
+        TxHandlerImpl txHandler = new TxHandlerImpl(ConfigHelper.CONFIG);
         txHandler.setTxsPerAccounts(txsPerAccounts);
         txHandler.setKnownTxs(knownTxs);
 

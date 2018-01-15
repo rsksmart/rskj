@@ -18,6 +18,7 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
@@ -45,15 +46,16 @@ public class BlockExecutor {
     private static final Logger logger = LoggerFactory.getLogger("blockexecutor");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private Repository repository;
-    private Blockchain blockChain;
-    private BlockStore blockStore;
-    private EthereumListener listener;
+    private final RskSystemProperties config;
+    private final Repository repository;
+    private final Blockchain blockChain;
+    private final BlockStore blockStore;
+    private final EthereumListener listener;
 
-    private ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
+    private final ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
 
-
-    public BlockExecutor(Repository repository, Blockchain blockChain, BlockStore blockStore, EthereumListener listener) {
+    public BlockExecutor(RskSystemProperties config, Repository repository, Blockchain blockChain, BlockStore blockStore, EthereumListener listener) {
+        this.config = config;
         this.repository = repository;
         this.blockChain = blockChain;
         this.blockStore = blockStore;
@@ -212,7 +214,7 @@ public class BlockExecutor {
         for (Transaction tx : block.getTransactionsList()) {
             logger.info("apply block: [{}] tx: [{}] ", block.getNumber(), i);
 
-            TransactionExecutor txExecutor = new TransactionExecutor(tx, txindex++, block.getCoinbase(), track, blockStore, blockChain.getReceiptStore(), programInvokeFactory, block, listener, totalGasUsed);
+            TransactionExecutor txExecutor = new TransactionExecutor(config, tx, txindex++, block.getCoinbase(), track, blockStore, blockChain.getReceiptStore(), programInvokeFactory, block, listener, totalGasUsed);
 
             boolean readyToExecute = txExecutor.init();
             if (!ignoreReadyToExecute && !readyToExecute) {

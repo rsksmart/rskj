@@ -18,6 +18,7 @@
 
 package co.rsk.db;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.core.AccountState;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
@@ -26,6 +27,10 @@ import org.ethereum.vm.DataWord;
  * Created by ajlopez on 08/04/2017.
  */
 public class RepositoryImplForTesting extends RepositoryImpl {
+    public RepositoryImplForTesting() {
+        super(ConfigHelper.CONFIG);
+    }
+
     @Override
     public synchronized void addStorageRow(byte[] addr, DataWord key, DataWord value) {
         super.addStorageRow(addr, key, value);

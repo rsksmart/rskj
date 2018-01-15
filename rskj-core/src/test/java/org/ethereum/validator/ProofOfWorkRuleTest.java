@@ -21,8 +21,8 @@ package org.ethereum.validator;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blockchain.utils.BlockMiner;
+import co.rsk.config.ConfigHelper;
 import co.rsk.config.RskMiningConstants;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.mine.MinerUtils;
 import co.rsk.util.DifficultyUtils;
@@ -48,7 +48,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class ProofOfWorkRuleTest {
 
-    private ProofOfWorkRule rule = new ProofOfWorkRule(RskSystemProperties.CONFIG).setFallbackMiningEnabled(false);
+    private ProofOfWorkRule rule = new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false);
 
     @Test
     public void test_1() {

@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.db.ContractDetailsImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +41,11 @@ public class DetailsDataStore {
     private DatabaseImpl db = null;
     private Map<ByteArrayWrapper, ContractDetails> cache = new ConcurrentHashMap<>();
     private Set<ByteArrayWrapper> removes = new HashSet<>();
+    private final RskSystemProperties config;
+
+    public DetailsDataStore(RskSystemProperties config) {
+        this.config = config;
+    }
 
     public synchronized void setDB(DatabaseImpl db) {
         this.db = db;
@@ -73,7 +79,7 @@ public class DetailsDataStore {
     }
 
     protected ContractDetails createContractDetails(byte[] data) {
-        return new ContractDetailsImpl(data);
+        return new ContractDetailsImpl(config, data);
     }
 
     public synchronized void update(byte[] key, ContractDetails contractDetails) {

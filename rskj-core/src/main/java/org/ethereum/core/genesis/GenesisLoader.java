@@ -19,6 +19,7 @@
 
 package org.ethereum.core.genesis;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.trie.TrieImpl;
 import com.google.common.io.ByteStreams;
 import org.apache.commons.lang3.StringUtils;
@@ -44,12 +45,12 @@ import static org.ethereum.util.ByteUtil.wrap;
 public class GenesisLoader {
     private static final Logger logger = LoggerFactory.getLogger("genesisloader");
 
-    public static Genesis loadGenesis(String genesisFile, BigInteger initialNonce, boolean isRsk)  {
+    public static Genesis loadGenesis(RskSystemProperties config, String genesisFile, BigInteger initialNonce, boolean isRsk)  {
         InputStream is = GenesisLoader.class.getResourceAsStream("/genesis/" + genesisFile);
-        return loadGenesis(initialNonce, is, isRsk);
+        return loadGenesis(config, initialNonce, is, isRsk);
     }
 
-    public static Genesis loadGenesis(BigInteger initialNonce, InputStream genesisJsonIS, boolean isRsk)  {
+    public static Genesis loadGenesis(RskSystemProperties config, BigInteger initialNonce, InputStream genesisJsonIS, boolean isRsk)  {
         try {
 
             String json = new String(ByteStreams.toByteArray(genesisJsonIS));
@@ -61,7 +62,7 @@ public class GenesisLoader {
 
             Genesis genesis = new GenesisMapper().mapFromJson(genesisJson, isRsk);
 
-            Map<ByteArrayWrapper, InitialAddressState> premine = generatePreMine(initialNonce, genesisJson.getAlloc());
+            Map<ByteArrayWrapper, InitialAddressState> premine = generatePreMine(config, initialNonce, genesisJson.getAlloc());
             genesis.setPremine(premine);
 
             byte[] rootHash = generateRootHash(premine);
@@ -78,9 +79,9 @@ public class GenesisLoader {
         }
     }
 
-    private static Map<ByteArrayWrapper, InitialAddressState> generatePreMine(BigInteger initialNonce, Map<String, AllocatedAccount> alloc){
+    private static Map<ByteArrayWrapper, InitialAddressState> generatePreMine(RskSystemProperties config, BigInteger initialNonce, Map<String, AllocatedAccount> alloc){
         Map<ByteArrayWrapper, InitialAddressState> premine = new HashMap<>();
-        ContractDetailsMapper detailsMapper = new ContractDetailsMapper();
+        ContractDetailsMapper detailsMapper = new ContractDetailsMapper(config);
         for (Map.Entry<String, AllocatedAccount> accountEntry : alloc.entrySet()) {
             if(!StringUtils.equals("00", accountEntry.getKey())) {
                 BigInteger balance = new BigInteger(accountEntry.getValue().getBalance());

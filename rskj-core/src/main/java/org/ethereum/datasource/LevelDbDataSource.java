@@ -21,7 +21,6 @@ package org.ethereum.datasource;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.panic.PanicProcessor;
-import org.ethereum.config.SystemProperties;
 import org.iq80.leveldb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,11 +48,11 @@ public class LevelDbDataSource implements KeyValueDataSource {
 
     private static final Logger logger = LoggerFactory.getLogger("db");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
-    private static final SystemProperties config = RskSystemProperties.CONFIG;
 
-    String name;
-    DB db;
-    boolean alive;
+    private final RskSystemProperties config;
+    private String name;
+    private DB db;
+    private boolean alive;
 
     // The native LevelDB insert/update/delete are normally thread-safe
     // However close operation is not thread-safe and may lead to a native crash when
@@ -63,7 +62,8 @@ public class LevelDbDataSource implements KeyValueDataSource {
     // however blocks them on init/close/delete operations
     private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
-    public LevelDbDataSource(String name) {
+    public LevelDbDataSource(RskSystemProperties config, String name) {
+        this.config = config;
         this.name = name;
         logger.info("New LevelDbDataSource: {}", name);
     }

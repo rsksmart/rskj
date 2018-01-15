@@ -19,6 +19,7 @@
 
 package org.ethereum.vm;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
@@ -40,7 +41,7 @@ public class PrecompiledContractTest {
     public void identityTest1() {
 
         DataWord addr = new DataWord("0000000000000000000000000000000000000000000000000000000000000004");
-        PrecompiledContract contract = PrecompiledContracts.getContractForAddress(addr);
+        PrecompiledContract contract = PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, addr);
         byte[] data = Hex.decode("112233445566");
         byte[] expected = Hex.decode("112233445566");
 
@@ -54,7 +55,7 @@ public class PrecompiledContractTest {
     public void sha256Test1() {
 
         DataWord addr = new DataWord("0000000000000000000000000000000000000000000000000000000000000002");
-        PrecompiledContract contract = PrecompiledContracts.getContractForAddress(addr);
+        PrecompiledContract contract = PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, addr);
         byte[] data = null;
         String expected = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
@@ -67,7 +68,7 @@ public class PrecompiledContractTest {
     public void sha256Test2() {
 
         DataWord addr = new DataWord("0000000000000000000000000000000000000000000000000000000000000002");
-        PrecompiledContract contract = PrecompiledContracts.getContractForAddress(addr);
+        PrecompiledContract contract = PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, addr);
         byte[] data = ByteUtil.EMPTY_BYTE_ARRAY;
         String expected = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
@@ -80,7 +81,7 @@ public class PrecompiledContractTest {
     public void sha256Test3() {
 
         DataWord addr = new DataWord("0000000000000000000000000000000000000000000000000000000000000002");
-        PrecompiledContract contract = PrecompiledContracts.getContractForAddress(addr);
+        PrecompiledContract contract = PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, addr);
         byte[] data = Hex.decode("112233");
         String expected = "49ee2bf93aac3b1fb4117e59095e07abe555c3383b38d608da37680a406096e8";
 
@@ -94,7 +95,7 @@ public class PrecompiledContractTest {
     public void Ripempd160Test1() {
 
         DataWord addr = new DataWord("0000000000000000000000000000000000000000000000000000000000000003");
-        PrecompiledContract contract = PrecompiledContracts.getContractForAddress(addr);
+        PrecompiledContract contract = PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, addr);
         byte[] data = Hex.decode("0000000000000000000000000000000000000000000000000000000000000001");
         String expected = "000000000000000000000000ae387fcfeb723c3f5964509af111cf5a67f30661";
 
@@ -108,7 +109,7 @@ public class PrecompiledContractTest {
 
         byte[] data = Hex.decode("18c547e4f7b0f325ad1e56f57e26c745b09a3e503d86e00e5255ff7f715d3d1c000000000000000000000000000000000000000000000000000000000000001c73b1693892219d736caba55bdb67216e485557ea6b6af75f37096c9aa6a5a75feeb940b1d03b21e36b0e47e79769f095fe2ab855bd91e3a38756b7d75a9c4549");
         DataWord addr = new DataWord("0000000000000000000000000000000000000000000000000000000000000001");
-        PrecompiledContract contract = PrecompiledContracts.getContractForAddress(addr);
+        PrecompiledContract contract = PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, addr);
         String expected = "000000000000000000000000ae387fcfeb723c3f5964509af111cf5a67f30661";
 
         byte[] result = contract.execute(data);
@@ -121,7 +122,7 @@ public class PrecompiledContractTest {
 
         DataWord addr = new DataWord("0000000000000000000000000000000000000000000000000000000000000005");
 
-        PrecompiledContract contract = PrecompiledContracts.getContractForAddress(addr);
+        PrecompiledContract contract = PrecompiledContracts.getContractForAddress(ConfigHelper.CONFIG, addr);
         assertNotNull(contract);
 
         byte[] data1 = Hex.decode(

@@ -18,7 +18,6 @@
 
 package co.rsk.remasc;
 
-import org.ethereum.core.ImmutableTransaction;
 import org.junit.Assert;
 import org.junit.Test;
 

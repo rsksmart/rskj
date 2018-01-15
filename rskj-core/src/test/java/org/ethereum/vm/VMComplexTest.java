@@ -19,6 +19,7 @@
 
 package org.ethereum.vm;
 
+import co.rsk.config.ConfigHelper;
 import org.ethereum.core.AccountState;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.core.Repository;
@@ -81,7 +82,7 @@ public class VMComplexTest {
         byte[] codeB = Hex.decode(code);
 
         byte[] codeKey = HashUtil.sha3(codeB);
-        AccountState accountState = new AccountState();
+        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
@@ -96,8 +97,8 @@ public class VMComplexTest {
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM();
-        Program program = new Program(codeB, pi);
+        VM vm = new VM(ConfigHelper.CONFIG);
+        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -180,8 +181,8 @@ public class VMComplexTest {
         // ****************** //
         //  Play the program  //
         // ****************** //
-        VM vm = new VM();
-        Program program = new Program(codeB, pi);
+        VM vm = new VM(ConfigHelper.CONFIG);
+        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -268,8 +269,8 @@ public class VMComplexTest {
         // ****************** //
         //  Play the program  //
         // ****************** //
-        VM vm = new VM();
-        Program program = new Program(codeB, pi);
+        VM vm = new VM(ConfigHelper.CONFIG);
+        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -346,8 +347,8 @@ public class VMComplexTest {
         // ****************** //
         //  Play the program  //
         // ****************** //
-        VM vm = new VM();
-        Program program = new Program(codeA, pi);
+        VM vm = new VM(ConfigHelper.CONFIG);
+        Program program = new Program(ConfigHelper.CONFIG, codeA, pi);
 
         try {
             while (!program.isStopped())
@@ -418,8 +419,8 @@ public class VMComplexTest {
         // ****************** //
         //  Play the program  //
         // ****************** //
-        VM vm = new VM();
-        Program program = new Program(codeB, pi);
+        VM vm = new VM(ConfigHelper.CONFIG);
+        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -467,7 +468,7 @@ public class VMComplexTest {
         byte[] codeB = Hex.decode(code);
 
         byte[] codeKey = HashUtil.sha3(codeB);
-        AccountState accountState = new AccountState();
+        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
@@ -482,8 +483,8 @@ public class VMComplexTest {
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM();
-        Program program = new Program(codeB, pi);
+        VM vm = new VM(ConfigHelper.CONFIG);
+        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -526,7 +527,7 @@ public class VMComplexTest {
         byte[] codeB = Hex.decode(code);
 
         byte[] codeKey = HashUtil.sha3(codeB);
-        AccountState accountState = new AccountState();
+        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
@@ -541,8 +542,8 @@ public class VMComplexTest {
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM();
-        Program program = new Program(codeB, pi);
+        VM vm = new VM(ConfigHelper.CONFIG);
+        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -585,7 +586,7 @@ public class VMComplexTest {
         byte[] codeB = Hex.decode(code);
 
         byte[] codeKey = HashUtil.sha3(codeB);
-        AccountState accountState = new AccountState();
+        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
@@ -600,8 +601,8 @@ public class VMComplexTest {
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM();
-        Program program = new Program(codeB, pi);
+        VM vm = new VM(ConfigHelper.CONFIG);
+        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -644,7 +645,7 @@ public class VMComplexTest {
         byte[] codeB = Hex.decode(code);
 
         byte[] codeKey = HashUtil.sha3(codeB);
-        AccountState accountState = new AccountState();
+        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
@@ -659,8 +660,8 @@ public class VMComplexTest {
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM();
-        Program program = new Program(codeB, pi);
+        VM vm = new VM(ConfigHelper.CONFIG);
+        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
 
         try {
             while (!program.isStopped())

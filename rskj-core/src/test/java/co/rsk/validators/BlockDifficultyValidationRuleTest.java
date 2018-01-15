@@ -20,7 +20,7 @@ package co.rsk.validators;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.DifficultyCalculator;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
@@ -45,15 +45,15 @@ public class BlockDifficultyValidationRuleTest {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
-        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
-        bridgeConstants = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        blockchainNetConfigOriginal = ConfigHelper.CONFIG.getBlockchainConfig();
+        ConfigHelper.CONFIG.setBlockchainConfig(new RegTestConfig());
+        bridgeConstants = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         btcParams = bridgeConstants.getBtcParams();
     }
 
     @AfterClass
     public static void tearDownAfterClass() throws Exception {
-        RskSystemProperties.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        ConfigHelper.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     private BlockHeader getEmptyHeader(BigInteger difficulty,long blockTimestamp,int uCount) {
@@ -66,7 +66,7 @@ public class BlockDifficultyValidationRuleTest {
 
     @Test
     public void testDifficulty() {
-        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(RskSystemProperties.CONFIG);
+        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(ConfigHelper.CONFIG);
         BlockDifficultyRule validationRule = new BlockDifficultyRule(difficultyCalculator);
 
         Block block = Mockito.mock(Block.class);

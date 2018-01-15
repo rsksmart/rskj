@@ -19,7 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import org.spongycastle.util.encoders.Hex;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
@@ -40,13 +40,13 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
 
     @Before
     public void setUp() {
-        originalConfig = RskSystemProperties.CONFIG.getBlockchainConfig();
-        RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());
+        originalConfig = ConfigHelper.CONFIG.getBlockchainConfig();
+        ConfigHelper.CONFIG.setBlockchainConfig(new RegTestConfig());
     }
 
     @After
     public void tearDown() {
-        RskSystemProperties.CONFIG.setBlockchainConfig(originalConfig);
+        ConfigHelper.CONFIG.setBlockchainConfig(originalConfig);
     }
 
     @Test
@@ -57,7 +57,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                             new ECKey().getAddress(),
                             BigInteger.ZERO.toByteArray(),
                             null,
-                            RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                            ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx1.sign(new ECKey().getPrivKeyBytes());
 
         Transaction tx2 = new Transaction(BigInteger.ZERO.toByteArray(),
@@ -66,7 +66,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 new ECKey().getAddress(),
                 BigInteger.ZERO.toByteArray(),
                 Hex.decode("0001"),
-                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx2.sign(new ECKey().getPrivKeyBytes());
 
         Transaction tx3 = new Transaction(BigInteger.ZERO.toByteArray(),
@@ -75,7 +75,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 new ECKey().getAddress(),
                 BigInteger.ZERO.toByteArray(),
                 Hex.decode("0001"),
-                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx3.sign(new ECKey().getPrivKeyBytes());
 
         Transaction tx4 = new Transaction(BigInteger.ZERO.toByteArray(),
@@ -84,11 +84,11 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 PrecompiledContracts.BRIDGE_ADDR.getBytes(),
                 BigInteger.ZERO.toByteArray(),
                 null,
-                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         BridgeRegTestConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
         tx4.sign(bridgeRegTestConstants.getFederatorPrivateKeys().get(0).getPrivKeyBytes());
 
-        TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator();
+        TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator(ConfigHelper.CONFIG);
 
         Assert.assertTrue(tvigpv.validate(tx1, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
         Assert.assertTrue(tvigpv.validate(tx2, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
@@ -106,7 +106,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 new ECKey().getAddress(),
                 BigInteger.ZERO.toByteArray(),
                 Hex.decode("0001"),
-                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx1.sign(new ECKey().getPrivKeyBytes());
 
         Transaction tx2 = new Transaction(BigInteger.ZERO.toByteArray(),
@@ -115,7 +115,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 new ECKey().getAddress(),
                 BigInteger.ZERO.toByteArray(),
                 null,
-                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx2.sign(new ECKey().getPrivKeyBytes());
 
         Transaction tx3 = new Transaction(BigInteger.ZERO.toByteArray(),
@@ -124,7 +124,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 new ECKey().getAddress(),
                 BigInteger.ZERO.toByteArray(),
                 Hex.decode("0001"),
-                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx3.sign(new ECKey().getPrivKeyBytes());
 
         Transaction tx4 = new Transaction(BigInteger.ZERO.toByteArray(),
@@ -133,10 +133,10 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 new ECKey().getAddress(),
                 BigInteger.ZERO.toByteArray(),
                 null,
-                RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
         tx4.sign(new ECKey().getPrivKeyBytes());
 
-        TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator();
+        TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator(ConfigHelper.CONFIG);
 
         Assert.assertFalse(tvigpv.validate(tx1, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
         Assert.assertFalse(tvigpv.validate(tx2, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));

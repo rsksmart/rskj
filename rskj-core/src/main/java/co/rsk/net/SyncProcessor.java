@@ -1,5 +1,6 @@
 package co.rsk.net;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.messages.*;
@@ -31,31 +32,32 @@ import java.util.*;
 public class SyncProcessor implements SyncEventsHandler {
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
+    private final RskSystemProperties config;
     private final Blockchain blockchain;
     private final BlockSyncService blockSyncService;
     private final PeerScoringManager peerScoringManager;
     private final SyncConfiguration syncConfiguration;
     private final PeersInformation peerStatuses;
-    private final DifficultyCalculator difficultyCalculator;
 
     private final PendingMessages pendingMessages;
     private final SyncInformationImpl syncInformation;
     private SyncState syncState;
     private NodeID selectedPeerId;
 
-    public SyncProcessor(Blockchain blockchain,
+    public SyncProcessor(RskSystemProperties config,
+                         Blockchain blockchain,
                          BlockSyncService blockSyncService,
                          PeerScoringManager peerScoringManager,
                          SyncConfiguration syncConfiguration,
                          BlockHeaderValidationRule blockHeaderValidationRule,
                          DifficultyCalculator difficultyCalculator) {
+        this.config = config;
         this.blockchain = blockchain;
         this.blockSyncService = blockSyncService;
         this.peerScoringManager = peerScoringManager;
         this.syncConfiguration = syncConfiguration;
         this.syncInformation = new SyncInformationImpl(blockHeaderValidationRule, difficultyCalculator);
         this.peerStatuses = new PeersInformation(syncConfiguration, syncInformation);
-        this.difficultyCalculator = difficultyCalculator;
         this.pendingMessages = new PendingMessages();
         setSyncState(new DecidingSyncState(this.syncConfiguration, this, syncInformation, peerStatuses));
     }
@@ -197,7 +199,7 @@ public class SyncProcessor implements SyncEventsHandler {
             blockSyncService.setLastKnownBlockNumber(peerBestBlockNumber);
         }
 
-        setSyncState(new DownloadingBodiesSyncState(this.syncConfiguration, this, syncInformation, pendingHeaders, skeletons));
+        setSyncState(new DownloadingBodiesSyncState(config, this.syncConfiguration, this, syncInformation, pendingHeaders, skeletons));
     }
 
     @Override

@@ -18,6 +18,7 @@
 
 package co.rsk.net.eth;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.Message;
@@ -32,6 +33,7 @@ import java.net.InetAddress;
  * Created by ajlopez on 5/16/2016.
  */
 public class EthMessageSender implements MessageChannel {
+    private final RskSystemProperties config;
     private final Eth eth;
     private NodeID nodeID;
     private InetAddress address;
@@ -39,9 +41,11 @@ public class EthMessageSender implements MessageChannel {
     /**
      * EthMessageSender creates a new message sender.
      *
+     * @param config
      * @param eth the underlying ethereum peer interface
      */
-    public EthMessageSender(@Nonnull final Eth eth) {
+    public EthMessageSender(RskSystemProperties config, @Nonnull final Eth eth) {
+        this.config = config;
         this.eth = eth;
     }
 
@@ -52,7 +56,7 @@ public class EthMessageSender implements MessageChannel {
      * @param message the message to be sent.
      */
     public void sendMessage(@Nonnull final Message message) {
-        this.eth.sendMessage(new RskMessage(message));
+        this.eth.sendMessage(new RskMessage(config, message));
     }
 
     /**

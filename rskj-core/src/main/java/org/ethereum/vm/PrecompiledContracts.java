@@ -70,7 +70,7 @@ public class PrecompiledContracts {
     private static SamplePrecompiledContract sample = new SamplePrecompiledContract(SAMPLE_ADDR);
     private static BigIntegerModexp bigIntegerModexp = new BigIntegerModexp();
 
-    public static PrecompiledContract getContractForAddress(DataWord address) {
+    public static PrecompiledContract getContractForAddress(RskSystemProperties config, DataWord address) {
 
         if (address == null) {
             return identity;
@@ -91,13 +91,13 @@ public class PrecompiledContracts {
             return sample;
         }
         if (address.isHex(BRIDGE_ADDR_STR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + BRIDGE_ADDR_STR)) {
-            return new Bridge(BRIDGE_ADDR);
+            return new Bridge(config, BRIDGE_ADDR);
         }
         if (address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + BIG_INT_MODEXP_ADDR)) {
             return bigIntegerModexp;
         }
         if (address.isHex(REMASC_ADDR_STR) || address.isHex(RSK_NATIVECONTRACT_REQUIREDPREFIX + REMASC_ADDR_STR)) {
-            return new RemascContract(REMASC_ADDR, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(RskSystemProperties.CONFIG.netName()));
+            return new RemascContract(config, new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig(config.netName()), REMASC_ADDR);
         }
 
         return null;

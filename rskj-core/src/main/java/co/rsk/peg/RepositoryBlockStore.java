@@ -21,8 +21,8 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 
@@ -42,13 +42,13 @@ public class RepositoryBlockStore implements BtcBlockStore{
 
     private final NetworkParameters params;
 
-    public RepositoryBlockStore(Repository repository, RskAddress contractAddress) {
+    public RepositoryBlockStore(SystemProperties config, Repository repository, RskAddress contractAddress) {
         this.repository = repository;
         this.contractAddress = contractAddress;
 
         // Insert the genesis block.
         try {
-            this.params = RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
+            this.params = config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
             if (getChainHead()==null) {
                 BtcBlock genesisHeader = params.getGenesisBlock().cloneAsHeader();
                 StoredBlock storedGenesis = new StoredBlock(genesisHeader, genesisHeader.getWork(), 0);

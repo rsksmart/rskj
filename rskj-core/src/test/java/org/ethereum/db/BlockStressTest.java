@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockWrapper;
 import org.ethereum.datasource.mapdb.MapDBFactory;
@@ -62,7 +62,7 @@ public class BlockStressTest {
 
     @Before
     public void setup() {
-        RskSystemProperties.CONFIG.setDataBaseDir(TEST_DB_DIR);
+        ConfigHelper.CONFIG.setDataBaseDir(TEST_DB_DIR);
 
         mapDBFactory = new MapDBFactoryImpl();
         blockSourceDB = mapDBFactory.createDB(BLOCK_SOURCE);
@@ -145,7 +145,7 @@ public class BlockStressTest {
         int counter = 0;
         for(byte[] hash : hashes) {
             Block block = blockSource.get(hash);
-            blockQueue.add(new BlockWrapper(block, nodeId));
+            blockQueue.add(new BlockWrapper(ConfigHelper.CONFIG, block, nodeId));
             if(++counter % 10000 == 0) {
                 logger.info("writing: {} done from {}", counter, hashes.size());
             }
@@ -263,7 +263,7 @@ public class BlockStressTest {
             int counter = 0;
             for(byte[] hash : hashes) {
                 Block block = blockSource.get(hash);
-                blockQueue.add(new BlockWrapper(block, nodeId));
+                blockQueue.add(new BlockWrapper(ConfigHelper.CONFIG, block, nodeId));
                 if(++counter % 10000 == 0) {
                     logger.info("writer {}: {} done from {}", threadNumber, counter, hashes.size());
                 }

@@ -20,15 +20,12 @@ package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
 import co.rsk.remasc.RemascTransaction;
-import org.ethereum.core.*;
-import org.ethereum.manager.WorldManager;
+import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
-import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Random;
 
 public class TxPendingValidatorTest {
 

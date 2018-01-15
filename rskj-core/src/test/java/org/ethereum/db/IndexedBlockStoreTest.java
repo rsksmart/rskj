@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import org.ethereum.core.Block;
 import org.ethereum.core.Genesis;
 import org.ethereum.datasource.HashMapDB;
@@ -66,7 +66,7 @@ public class IndexedBlockStoreTest {
         File file = new File(scenario1.toURI());
         List<String> strData = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
 
-        Block genesis = Genesis.getInstance(RskSystemProperties.CONFIG);
+        Block genesis = Genesis.getInstance(ConfigHelper.CONFIG);
         blocks.add(genesis);
         cumDifficulty = cumDifficulty.add(genesis.getCumulativeDifficulty());
 
@@ -93,7 +93,7 @@ public class IndexedBlockStoreTest {
     @Ignore
     public void test1(){
 
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
         indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         BigInteger cummDiff = BigInteger.ZERO;
@@ -200,7 +200,7 @@ public class IndexedBlockStoreTest {
     @Test // save some load, and check it exist
     @Ignore
     public void test2(){
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
         indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         BigInteger cummDiff = BigInteger.ZERO;
@@ -309,7 +309,7 @@ public class IndexedBlockStoreTest {
     @Test
     @Ignore
     public void test3(){
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
         indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         BigInteger cummDiff = BigInteger.ZERO;
@@ -421,15 +421,15 @@ public class IndexedBlockStoreTest {
     public void test4() throws IOException {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
-        RskSystemProperties.CONFIG.setDataBaseDir(testDir);
+        ConfigHelper.CONFIG.setDataBaseDir(testDir);
 
         DB indexDB = createMapDB(testDir);
         Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = createIndexMap(indexDB);
 
-        KeyValueDataSource blocksDB = new LevelDbDataSource("blocks");
+        KeyValueDataSource blocksDB = new LevelDbDataSource(ConfigHelper.CONFIG, "blocks");
         blocksDB.init();
 
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
         indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
         BigInteger cummDiff = BigInteger.ZERO;
@@ -542,10 +542,10 @@ public class IndexedBlockStoreTest {
         indexDB = createMapDB(testDir);
         indexMap = createIndexMap(indexDB);
 
-        blocksDB = new LevelDbDataSource("blocks");
+        blocksDB = new LevelDbDataSource(ConfigHelper.CONFIG, "blocks");
         blocksDB.init();
 
-        indexedBlockStore = new IndexedBlockStore();
+        indexedBlockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
         indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
         //  testing: getListHashesStartWith(long, long)
@@ -569,16 +569,16 @@ public class IndexedBlockStoreTest {
     public void test5() throws IOException {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
-        RskSystemProperties.CONFIG.setDataBaseDir(testDir);
+        ConfigHelper.CONFIG.setDataBaseDir(testDir);
 
         DB indexDB = createMapDB(testDir);
         Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = createIndexMap(indexDB);
 
-        KeyValueDataSource blocksDB = new LevelDbDataSource("blocks");
+        KeyValueDataSource blocksDB = new LevelDbDataSource(ConfigHelper.CONFIG, "blocks");
         blocksDB.init();
 
         try {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
+            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
             indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
             BigInteger cummDiff = BigInteger.ZERO;
@@ -703,10 +703,10 @@ public class IndexedBlockStoreTest {
             indexDB = createMapDB(testDir);
             indexMap = createIndexMap(indexDB);
 
-            blocksDB = new LevelDbDataSource("blocks");
+            blocksDB = new LevelDbDataSource(ConfigHelper.CONFIG, "blocks");
             blocksDB.init();
 
-            indexedBlockStore = new IndexedBlockStore();
+            indexedBlockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
             indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
             //  testing: getListHashesStartWith(long, long)
@@ -731,19 +731,19 @@ public class IndexedBlockStoreTest {
     public void test6() throws IOException {
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
-        RskSystemProperties.CONFIG.setDataBaseDir(testDir);
+        ConfigHelper.CONFIG.setDataBaseDir(testDir);
 
         DB indexDB = createMapDB(testDir);
         Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = createIndexMap(indexDB);
 
-        KeyValueDataSource blocksDB = new LevelDbDataSource("blocks");
+        KeyValueDataSource blocksDB = new LevelDbDataSource(ConfigHelper.CONFIG, "blocks");
         blocksDB.init();
 
         try {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
+            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
             indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
-            Block genesis = Genesis.getInstance(RskSystemProperties.CONFIG);
+            Block genesis = Genesis.getInstance(ConfigHelper.CONFIG);
             List<Block> bestLine = getRandomChain(genesis.getHash(), 1, 100);
 
             indexedBlockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
@@ -772,7 +772,7 @@ public class IndexedBlockStoreTest {
 
             // calc all TDs
             Map<ByteArrayWrapper, BigInteger> tDiffs = new HashMap<>();
-            td = Genesis.getInstance(RskSystemProperties.CONFIG).getCumulativeDifficulty();
+            td = Genesis.getInstance(ConfigHelper.CONFIG).getCumulativeDifficulty();
             for (Block block : bestLine){
                 td = td.add(block.getCumulativeDifficulty());
                 tDiffs.put(wrap(block.getHash()), td);
@@ -836,19 +836,19 @@ public class IndexedBlockStoreTest {
 
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
-        RskSystemProperties.CONFIG.setDataBaseDir(testDir);
+        ConfigHelper.CONFIG.setDataBaseDir(testDir);
 
         DB indexDB = createMapDB(testDir);
         Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = createIndexMap(indexDB);
 
-        KeyValueDataSource blocksDB = new LevelDbDataSource("blocks");
+        KeyValueDataSource blocksDB = new LevelDbDataSource(ConfigHelper.CONFIG, "blocks");
         blocksDB.init();
 
         try {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
+            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
             indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
-            Block genesis = Genesis.getInstance(RskSystemProperties.CONFIG);
+            Block genesis = Genesis.getInstance(ConfigHelper.CONFIG);
             List<Block> bestLine = getRandomChain(genesis.getHash(), 1, 100);
 
             indexedBlockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
@@ -891,19 +891,19 @@ public class IndexedBlockStoreTest {
 
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
-        RskSystemProperties.CONFIG.setDataBaseDir(testDir);
+        ConfigHelper.CONFIG.setDataBaseDir(testDir);
 
         DB indexDB = createMapDB(testDir);
         Map<Long, List<IndexedBlockStore.BlockInfo>> indexMap = createIndexMap(indexDB);
 
-        KeyValueDataSource blocksDB = new LevelDbDataSource("blocks");
+        KeyValueDataSource blocksDB = new LevelDbDataSource(ConfigHelper.CONFIG, "blocks");
         blocksDB.init();
 
         try {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
+            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
             indexedBlockStore.init(indexMap, blocksDB, indexDB);
 
-            Block genesis = Genesis.getInstance(RskSystemProperties.CONFIG);
+            Block genesis = Genesis.getInstance(ConfigHelper.CONFIG);
             List<Block> bestLine = getRandomChain(genesis.getHash(), 1, 100);
 
             indexedBlockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
@@ -965,7 +965,7 @@ public class IndexedBlockStoreTest {
 
     @Test // test index merging during the flush
     public void test9() {
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore();
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
         indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         // blocks with the same block number

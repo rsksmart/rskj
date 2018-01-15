@@ -19,6 +19,7 @@
 
 package co.rsk.core;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -31,17 +32,18 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
 public final class ReversibleTransactionExecutor extends TransactionExecutor {
 
-    private ReversibleTransactionExecutor(Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore, ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
-        super(tx, 0, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock);
+    private ReversibleTransactionExecutor(RskSystemProperties config, Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore, ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
+        super(config, tx, 0, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock);
         setLocalCall(true);
     }
 
-    public static TransactionExecutor executeTransaction(byte[] coinbase,
+    public static TransactionExecutor executeTransaction(RskSystemProperties config,
                                                          Repository track,
                                                          BlockStore blockStore,
                                                          ReceiptStore receiptStore,
                                                          ProgramInvokeFactory programInvokeFactory,
                                                          Block executionBlock,
+                                                         byte[] coinbase,
                                                          byte[] gasPrice,
                                                          byte[] gasLimit,
                                                          byte[] toAddress,
@@ -53,20 +55,21 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
         byte[] nonce = repository.getNonce(fromAddress).toByteArray();
         UnsignedTransaction tx = new UnsignedTransaction(nonce, gasPrice, gasLimit, toAddress, value, data, fromAddress);
 
-        ReversibleTransactionExecutor executor = new ReversibleTransactionExecutor(tx, coinbase, repository, blockStore, receiptStore, programInvokeFactory, executionBlock);
+        ReversibleTransactionExecutor executor = new ReversibleTransactionExecutor(config, tx, coinbase, repository, blockStore, receiptStore, programInvokeFactory, executionBlock);
         return executor.executeTransaction();
     }
 
-    public static TransactionExecutor executeTransaction(byte[] coinbase,
+    public static TransactionExecutor executeTransaction(RskSystemProperties config,
                                                          Repository track,
                                                          BlockStore blockStore,
                                                          ReceiptStore receiptStore,
                                                          ProgramInvokeFactory programInvokeFactory,
                                                          Block executionBlock,
+                                                         byte[] coinbase,
                                                          Web3.CallArguments args) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
 
-        return executeTransaction(coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock,
+        return executeTransaction(config, track, blockStore, receiptStore, programInvokeFactory, executionBlock, coinbase,
                 hexArgs.getGasPrice(), hexArgs.getGasLimit(), hexArgs.getToAddress(), hexArgs.getValue(), hexArgs.getData(),
                 hexArgs.getFromAddress());
     }
@@ -87,7 +90,7 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
         }
 
         @Override
-        public boolean acceptTransactionSignature() {
+        public boolean acceptTransactionSignature(byte chainId) {
             // We only allow executing unsigned transactions
             // in the context of a reversible transaction execution.
             return true;

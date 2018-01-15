@@ -75,8 +75,7 @@ public class Block {
     private volatile boolean sealed;
 
     public Block(byte[] rawData) {
-        this.rlpEncoded = rawData;
-        this.sealed = true;
+        this(rawData, true);
     }
 
     protected Block(byte[] rawData, boolean sealed) {
@@ -91,7 +90,8 @@ public class Block {
 
     public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList) {
 
-        this(header.getParentHash(),
+        this(
+                header.getParentHash(),
                 header.getUnclesHash(),
                 header.getCoinbase(),
                 header.getLogsBloom(),
@@ -202,9 +202,7 @@ public class Block {
 
     // Clone this block allowing modifications
     public Block cloneBlock() {
-        Block clone = new Block(this.getEncoded(), false);
-
-        return clone;
+        return new Block(this.getEncoded(), false);
     }
 
     private void parseRLP() {
@@ -480,7 +478,7 @@ public class Block {
         return toStringBuff.toString();
     }
 
-    private static List<Transaction> parseTxs(RLPList txTransactions) {
+    private List<Transaction> parseTxs(RLPList txTransactions) {
         List<Transaction> parsedTxs = new ArrayList<>();
 
         for (int i = 0; i < txTransactions.size(); i++) {

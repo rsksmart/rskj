@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.RskAddress;
 import org.ethereum.crypto.SHA3Helper;
 import org.junit.Assert;
@@ -38,8 +39,8 @@ public class ABITest {
     public void testTransactionCreate() {
         // demo only
         CallTransaction.Function function = CallTransaction.Function.fromJsonInterface(funcJson1);
-        Transaction ctx = CallTransaction.createCallTransaction(1, 1_000_000_000, 1_000_000_000,
-                new RskAddress("86e0497e32a8e1d79fe38ab87dc80140df5470d9"), 0, function, "1234567890abcdef1234567890abcdef12345678");
+        Transaction ctx = CallTransaction.createCallTransaction(ConfigHelper.CONFIG, 1, 1_000_000_000,
+                1_000_000_000, new RskAddress("86e0497e32a8e1d79fe38ab87dc80140df5470d9"), 0, function, "1234567890abcdef1234567890abcdef12345678");
         ctx.sign(SHA3Helper.sha3("974f963ee4571e86e5f9bc3b493e453db9c15e5bd19829a4ef9a790de0da0015".getBytes()));
     }
 
@@ -89,7 +90,7 @@ public class ABITest {
         logger.info("\n{}", funcJson2);
 
         CallTransaction.Function function = CallTransaction.Function.fromJsonInterface(funcJson2);
-        Transaction ctx = CallTransaction.createCallTransaction(1, 1_000_000_000, 1_000_000_000,
+        Transaction ctx = CallTransaction.createCallTransaction(ConfigHelper.CONFIG, 1, 1_000_000_000, 1_000_000_000,
                 new RskAddress("86e0497e32a8e1d79fe38ab87dc80140df5470d9"), 0, function);
         ctx.sign(SHA3Helper.sha3("974f963ee4571e86e5f9bc3b493e453db9c15e5bd19829a4ef9a790de0da0015".getBytes()));
 

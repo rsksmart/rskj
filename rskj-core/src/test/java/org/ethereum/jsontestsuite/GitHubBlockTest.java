@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.json.simple.parser.ParseException;
@@ -31,8 +31,6 @@ import org.junit.runners.MethodSorters;
 import java.io.IOException;
 import java.util.Collections;
 
-import static co.rsk.config.RskSystemProperties.CONFIG;
-
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @Ignore
 public class GitHubBlockTest {
@@ -43,8 +41,8 @@ public class GitHubBlockTest {
     @Ignore // test for conveniently running a single test
     @Test
     public void runSingleTest() throws ParseException, IOException {
-        CONFIG.setGenesisInfo("frontier.json");
-        RskSystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig());
+        ConfigHelper.CONFIG.setGenesisInfo("frontier.json");
+        ConfigHelper.CONFIG.setBlockchainConfig(new GenesisConfig());
 
         String json = JSONReader.loadJSONFromCommit("BlockchainTests/Homestead/bcTotalDifficultyTest.json", shacommit);
         GitHubJSONTestSuite.runGitHubJsonSingleBlockTest(json, "sideChainWithNewMaxDifficultyStartingFromBlock3AfterBlock4");
@@ -57,11 +55,11 @@ public class GitHubBlockTest {
 
     private void runHomestead(String name) throws IOException, ParseException {
         String json = JSONReader.loadJSONFromCommit("BlockchainTests/Homestead/" + name + ".json", shacommit);
-        RskSystemProperties.CONFIG.setBlockchainConfig(new GenesisConfig());
+        ConfigHelper.CONFIG.setBlockchainConfig(new GenesisConfig());
         try {
             GitHubJSONTestSuite.runGitHubJsonBlockTest(json, Collections.EMPTY_SET);
         } finally {
-            RskSystemProperties.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+            ConfigHelper.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
         }
     }
 
@@ -100,7 +98,7 @@ public class GitHubBlockTest {
     @Ignore
     @Test
     public void runBCValidBlockTest() throws ParseException, IOException {
-        CONFIG.setGenesisInfo("frontier.json");
+        ConfigHelper.CONFIG.setGenesisInfo("frontier.json");
         run("bcValidBlockTest", true, true);
     }
 

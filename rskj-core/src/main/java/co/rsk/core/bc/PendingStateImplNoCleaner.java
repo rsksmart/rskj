@@ -18,6 +18,7 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
@@ -25,14 +26,15 @@ import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
 public class PendingStateImplNoCleaner extends PendingStateImpl {
-    public PendingStateImplNoCleaner(Blockchain blockChain,
+    public PendingStateImplNoCleaner(RskSystemProperties config,
+                                     Blockchain blockChain,
                                      Repository repository,
                                      BlockStore blockStore,
                                      ProgramInvokeFactory programInvokeFactory,
                                      EthereumListener listener,
                                      int outdatedThreshold,
                                      int outdatedTimeout) {
-        super(blockChain, repository, blockStore, programInvokeFactory, listener, outdatedThreshold, outdatedTimeout);
+        super(config, blockChain, repository, blockStore, programInvokeFactory, listener, outdatedThreshold, outdatedTimeout);
     }
 
     @Override

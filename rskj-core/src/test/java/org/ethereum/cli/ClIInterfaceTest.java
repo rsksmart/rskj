@@ -19,7 +19,7 @@
 
 package org.ethereum.cli;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.rpc.CorsConfigurationTest;
 import org.ethereum.config.SystemProperties;
 import org.junit.Assert;
@@ -41,7 +41,7 @@ public class ClIInterfaceTest {
     public void callTestWithCorrectInputParams() {
 
         String[] inputParams = { "-listen", "3332", "-db", "java", "-reset", "on", "-rpc", "4444" };
-        Map<String, String> result = CLIInterface.call(RskSystemProperties.CONFIG, inputParams);
+        Map<String, String> result = CLIInterface.call(ConfigHelper.CONFIG, inputParams);
 
         Assert.assertEquals(result.get(SystemProperties.PROPERTY_DB_DIR), "java");
         Assert.assertEquals(result.get(SystemProperties.PROPERTY_LISTEN_PORT), "3332");
@@ -53,10 +53,10 @@ public class ClIInterfaceTest {
     @Test
     public void changeAndRestoreRpcCorsConfig() {
         String[] inputParams = { "-rpccors", "*.ethereum.io" };
-        Map<String, String> result = CLIInterface.call(RskSystemProperties.CONFIG, inputParams);
+        Map<String, String> result = CLIInterface.call(ConfigHelper.CONFIG, inputParams);
         Assert.assertEquals(result.get(SystemProperties.PROPERTY_RPC_CORS), "*.ethereum.io");
         String[] restoreParams = { "-rpccors", CorsConfigurationTest.EXPECTED_CORS_CONFIG };
-        result = CLIInterface.call(RskSystemProperties.CONFIG, restoreParams);
+        result = CLIInterface.call(ConfigHelper.CONFIG, restoreParams);
         Assert.assertEquals(result.get(SystemProperties.PROPERTY_RPC_CORS), CorsConfigurationTest.EXPECTED_CORS_CONFIG  );
     }
 
@@ -64,7 +64,7 @@ public class ClIInterfaceTest {
     public void callTestWrongPortFormat() {
 
         String[] inputParams = { "-rpc", "-4444" };
-        Map<String, String> result = CLIInterface.call(RskSystemProperties.CONFIG, inputParams);
+        Map<String, String> result = CLIInterface.call(ConfigHelper.CONFIG, inputParams);
 
         Assert.assertEquals(result.get(SystemProperties.PROPERTY_RPC_ENABLED), "true");
     }
@@ -73,7 +73,7 @@ public class ClIInterfaceTest {
     public void callTestResetOff() {
 
         String[] inputParams = { "-reset", "off" };
-        Map<String, String> result = CLIInterface.call(RskSystemProperties.CONFIG, inputParams);
+        Map<String, String> result = CLIInterface.call(ConfigHelper.CONFIG, inputParams);
 
         Assert.assertEquals(result.get(SystemProperties.PROPERTY_DB_RESET), "false");
     }
@@ -82,7 +82,7 @@ public class ClIInterfaceTest {
     public void callTestResetFalse() {
 
         String[] inputParams = { "-reset", "false" };
-        Map<String, String> result = CLIInterface.call(RskSystemProperties.CONFIG, inputParams);
+        Map<String, String> result = CLIInterface.call(ConfigHelper.CONFIG, inputParams);
 
         Assert.assertEquals(result.get(SystemProperties.PROPERTY_DB_RESET), "false");
     }
@@ -91,7 +91,7 @@ public class ClIInterfaceTest {
     public void callTestTestResetNo() {
 
         String[] inputParams = { "-reset", "no" };
-        Map<String, String> result = CLIInterface.call(RskSystemProperties.CONFIG, inputParams);
+        Map<String, String> result = CLIInterface.call(ConfigHelper.CONFIG, inputParams);
 
         Assert.assertEquals(result.get(SystemProperties.PROPERTY_DB_RESET), "false");
     }
@@ -100,7 +100,7 @@ public class ClIInterfaceTest {
     public void callTestTestResetYes() {
 
         String[] inputParams = { "-reset", "yes" };
-        Map<String, String> result = CLIInterface.call(RskSystemProperties.CONFIG, inputParams);
+        Map<String, String> result = CLIInterface.call(ConfigHelper.CONFIG, inputParams);
 
         Assert.assertEquals(result.get(SystemProperties.PROPERTY_DB_RESET), "true");
     }
@@ -109,7 +109,7 @@ public class ClIInterfaceTest {
     public void callTestTestResetTrue(){
 
         String[] inputParams = { "-reset", "true" };
-        Map<String, String> result = CLIInterface.call(RskSystemProperties.CONFIG, inputParams);
+        Map<String, String> result = CLIInterface.call(ConfigHelper.CONFIG, inputParams);
 
         Assert.assertEquals(result.get(SystemProperties.PROPERTY_DB_RESET), "true");
     }

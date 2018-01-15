@@ -18,7 +18,7 @@
 
 package org.ethereum.rpc;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.PendingStateImpl;
@@ -113,7 +113,7 @@ public class Web3ImplLogsTest {
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
         worldManager.setBlockStore(world.getBlockChain().getBlockStore());
-        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(ConfigHelper.CONFIG, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
         worldManager.setPendingState(pendingState);
 
         SimpleEthereum eth = new SimpleEthereum();
@@ -320,7 +320,7 @@ public class Web3ImplLogsTest {
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
         worldManager.setBlockStore(world.getBlockChain().getBlockStore());
-        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(ConfigHelper.CONFIG, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
         worldManager.setPendingState(pendingState);
 
         SimpleEthereum eth = new SimpleEthereum();
@@ -361,7 +361,7 @@ public class Web3ImplLogsTest {
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
         worldManager.setBlockStore(world.getBlockChain().getBlockStore());
-        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(ConfigHelper.CONFIG, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
         worldManager.setPendingState(pendingState);
 
         SimpleEthereum eth = new SimpleEthereum();
@@ -416,7 +416,7 @@ public class Web3ImplLogsTest {
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
         worldManager.setBlockStore(world.getBlockChain().getBlockStore());
-        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(ConfigHelper.CONFIG, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
         worldManager.setPendingState(pendingState);
 
         SimpleEthereum eth = new SimpleEthereum();
@@ -477,9 +477,9 @@ public class Web3ImplLogsTest {
     }
 
     private Web3Impl createWeb3(Ethereum eth, WorldManager worldManager, Wallet wallet) {
-        PersonalModule personalModule = new PersonalModuleWalletEnabled(eth, wallet, null);
-        EthModule ethModule = new EthModule(eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(eth, wallet, null));
-        return new Web3RskImpl(eth, worldManager, RskSystemProperties.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), personalModule, ethModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, null, null);
+        PersonalModule personalModule = new PersonalModuleWalletEnabled(ConfigHelper.CONFIG, eth, wallet, null);
+        EthModule ethModule = new EthModule(ConfigHelper.CONFIG, eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(ConfigHelper.CONFIG, eth, wallet, null));
+        return new Web3RskImpl(eth, worldManager, ConfigHelper.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), personalModule, ethModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, null, null);
     }
 
     private Web3Impl getWeb3() {
@@ -544,7 +544,7 @@ public class Web3ImplLogsTest {
 
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
-        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(ConfigHelper.CONFIG, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
         worldManager.setPendingState(pendingState);
 
         Web3Impl web3 = createWeb3(worldManager);
@@ -569,7 +569,7 @@ public class Web3ImplLogsTest {
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
         worldManager.setBlockStore(world.getBlockChain().getBlockStore());
-        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(ConfigHelper.CONFIG, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
         worldManager.setPendingState(pendingState);
 
         Web3Impl web3 = createWeb3(worldManager);
@@ -601,7 +601,7 @@ public class Web3ImplLogsTest {
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
         worldManager.setBlockStore(world.getBlockChain().getBlockStore());
-        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(ConfigHelper.CONFIG, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
         worldManager.setPendingState(pendingState);
 
         Web3Impl web3 = createWeb3(worldManager);
@@ -642,7 +642,7 @@ public class Web3ImplLogsTest {
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(world.getBlockChain());
         worldManager.setBlockStore(world.getBlockChain().getBlockStore());
-        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(ConfigHelper.CONFIG, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
         worldManager.setPendingState(pendingState);
 
         Web3Impl web3 = createWeb3(worldManager);

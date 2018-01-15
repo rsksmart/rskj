@@ -2,13 +2,13 @@ package co.rsk.remasc;
 
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.ConfigHelper;
+import co.rsk.peg.BridgeSupport;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Genesis;
-import org.junit.Assert;
-import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.peg.BridgeSupport;
 import org.ethereum.vm.PrecompiledContracts;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -38,10 +38,9 @@ public class RemascFederationProviderTest {
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock);
         Blockchain blockchain = builder.build();
 
-        BridgeSupport bridgeSupport = new BridgeSupport(blockchain.getRepository(),
-                PrecompiledContracts.BRIDGE_ADDR,
+        BridgeSupport bridgeSupport = new BridgeSupport(ConfigHelper.CONFIG, blockchain.getRepository(),
                 null,
-                BridgeRegTestConstants.getInstance(),
+                PrecompiledContracts.BRIDGE_ADDR,
                 null);
         RemascFederationProvider provider = null;
 

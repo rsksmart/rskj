@@ -18,7 +18,7 @@
 
 package co.rsk.rpc;
 
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.ConfigHelper;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -181,7 +181,7 @@ public class ModuleDescriptionTest {
 
     @Test
     public void getModulesFromTestNewRskSystemProperties() {
-        List<ModuleDescription> modules = RskSystemProperties.CONFIG.getRpcModules();
+        List<ModuleDescription> modules = ConfigHelper.CONFIG.getRpcModules();
 
         Assert.assertNotNull(modules);
         Assert.assertFalse(modules.isEmpty());

@@ -18,6 +18,7 @@
 
 package co.rsk.net.handler.txvalidator;
 
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.*;
 
 import java.math.BigInteger;
@@ -27,6 +28,12 @@ import java.math.BigInteger;
  * the gas limit of the transaction
  */
 public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
+
+    private final RskSystemProperties config;
+
+    public TxValidatorIntrinsicGasLimitValidator(RskSystemProperties config) {
+        this.config = config;
+    }
 
     @Override
     public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
@@ -47,6 +54,6 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
                 0
         );
         Block block = new Block(blockHeader);
-        return BigInteger.valueOf(tx.transactionCost(block)).compareTo(tx.getGasLimitAsInteger()) <= 0;
+        return BigInteger.valueOf(tx.transactionCost(config, block)).compareTo(tx.getGasLimitAsInteger()) <= 0;
     }
 }
