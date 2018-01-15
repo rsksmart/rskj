@@ -93,6 +93,106 @@ public class Web3ImplLogsTest {
     }
 
     @Test
+    public void newFilterGetLogsInEmptyBlockchain() throws Exception {
+        Web3Impl web3 = getWeb3();
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        String id = web3.eth_newFilter(fr);
+        Object[] logs = web3.eth_getFilterLogs(id);
+
+        Assert.assertNotNull(id);
+        Assert.assertNotNull(logs);
+        Assert.assertEquals(0, logs.length);
+    }
+
+    @Test
+    public void newFilterGetLogsAfterBlock() throws Exception {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+
+        SimpleWorldManager worldManager = new SimpleWorldManager();
+        worldManager.setBlockchain(world.getBlockChain());
+        worldManager.setBlockStore(world.getBlockChain().getBlockStore());
+        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        worldManager.setPendingState(pendingState);
+
+        SimpleEthereum eth = new SimpleEthereum();
+        eth.repository = (Repository) world.getBlockChain().getRepository();
+        eth.worldManager = worldManager;
+        Web3Impl web3 = createWeb3(eth, worldManager, WalletFactory.createPersistentWallet("wallet0"));
+
+        // TODO tricky link to listener
+        world.getBlockChain().setListener(web3.setupListener());
+
+        web3.personal_newAccountWithSeed("notDefault");
+
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        String id = web3.eth_newFilter(fr);
+
+        Block genesis = world.getBlockByName("g00");
+        Transaction tx;
+        tx = getContractTransaction(acc1);
+
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
+        world.getBlockChain().tryToConnect(block1);
+
+        Object[] logs = web3.eth_getFilterLogs(id);
+
+        Assert.assertNotNull(id);
+        Assert.assertNotNull(logs);
+        Assert.assertEquals(1, logs.length);
+
+        Assert.assertEquals("0x" + tx.getContractAddress().toString(),((LogFilterElement)logs[0]).address);
+    }
+
+    @Test
+    public void newFilterGetLogsTwiceAfterBlock() throws Exception {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+
+        SimpleWorldManager worldManager = new SimpleWorldManager();
+        worldManager.setBlockchain(world.getBlockChain());
+        worldManager.setBlockStore(world.getBlockChain().getBlockStore());
+        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        worldManager.setPendingState(pendingState);
+
+        SimpleEthereum eth = new SimpleEthereum();
+        eth.repository = (Repository) world.getBlockChain().getRepository();
+        eth.worldManager = worldManager;
+        Web3Impl web3 = createWeb3(eth, worldManager, WalletFactory.createPersistentWallet("wallet1"));
+
+        // TODO tricky link to listener
+        world.getBlockChain().setListener(web3.setupListener());
+
+        web3.personal_newAccountWithSeed("notDefault");
+
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.fromBlock = "earliest";
+        String id = web3.eth_newFilter(fr);
+
+        Block genesis = world.getBlockByName("g00");
+        Transaction tx;
+        tx = getContractTransaction(acc1);
+
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
+        world.getBlockChain().tryToConnect(block1);
+
+        web3.eth_getFilterLogs(id);
+        Object[] logs = web3.eth_getFilterLogs(id);
+
+        Assert.assertNotNull(id);
+        Assert.assertNotNull(logs);
+        Assert.assertEquals(1, logs.length);
+
+        Assert.assertEquals("0x" + tx.getContractAddress().toString(),((LogFilterElement)logs[0]).address);
+    }
+
+    @Test
     public void newFilterGetChangesInEmptyBlockchain() throws Exception {
         Web3Impl web3 = getWeb3();
         Web3.FilterRequest fr = new Web3.FilterRequest();
