@@ -46,7 +46,7 @@ public class Storage implements Repository, ProgramListenerAware {
     private ProgramListener traceListener;
 
     public Storage(ProgramInvoke programInvoke) {
-        this.address = new RskAddress(programInvoke.getOwnerAddress().getLast20Bytes());
+        this.address = new RskAddress(programInvoke.getOwnerAddress());
         this.repository = programInvoke.getRepository();
     }
 

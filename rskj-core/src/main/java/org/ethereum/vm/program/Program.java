@@ -236,13 +236,13 @@ public class Program {
 
 
 
-    private InternalTransaction addInternalTx(byte[] nonce, DataWord gasLimit, byte[] senderAddress, byte[] receiveAddress,
+    private InternalTransaction addInternalTx(byte[] nonce, DataWord gasLimit, RskAddress senderAddress, RskAddress receiveAddress,
                                               BigInteger value, byte[] data, String note) {
         if (transaction == null) {
             return null;
         }
 
-        byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(new RskAddress(senderAddress)).toByteArray() : nonce;
+        byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(senderAddress).toByteArray() : nonce;
 
         return getResult().addInternalTransaction(
                 transaction.getHash(),
@@ -250,8 +250,8 @@ public class Program {
                 senderNonce,
                 getGasPrice(),
                 gasLimit,
-                senderAddress,
-                receiveAddress,
+                senderAddress.getBytes(),
+                receiveAddress.getBytes(),
                 value.toByteArray(),
                 data,
                 note);
@@ -529,20 +529,13 @@ public class Program {
         memory.extend(offset, size);
     }
 
-    public byte[] getOwnerAddressLast20Bytes() {
-        // An opportunity to cache
-        return getOwnerAddress().getLast20Bytes();
-    }
-
     public void suicide(DataWord obtainerAddress) {
 
-        byte[] ownerBytes = getOwnerAddressLast20Bytes();
-        RskAddress owner = new RskAddress(ownerBytes);
+        RskAddress owner = new RskAddress(getOwnerAddress());
         BigInteger balance = getStorage().getBalance(owner);
 
         if (!balance.equals(ZERO)) {
-            byte[] obtainerBytes = obtainerAddress.getLast20Bytes();
-            RskAddress obtainer = new RskAddress(obtainerBytes);
+            RskAddress obtainer = new RskAddress(obtainerAddress);
 
             if (isLogEnabled) {
                 logger.info("Transfer to: [{}] heritage: [{}]",
@@ -550,9 +543,9 @@ public class Program {
                         balance);
             }
 
-            addInternalTx(null, null, ownerBytes, obtainerBytes, balance, null, "suicide");
+            addInternalTx(null, null, owner, obtainer, balance, null, "suicide");
 
-            if (FastByteComparisons.compareTo(ownerBytes, 0, 20, obtainerBytes, 0, 20) == 0) {
+            if (FastByteComparisons.compareTo(owner.getBytes(), 0, 20, obtainer.getBytes(), 0, 20) == 0) {
                 // if owner == obtainer just zeroing account according to Yellow Paper
                 getStorage().addBalance(owner, balance.negate());
             } else {
@@ -566,10 +559,8 @@ public class Program {
 
     public void send(DataWord destAddress,BigInteger amount) {
 
-        byte[] ownerBytes = getOwnerAddressLast20Bytes();
-        RskAddress owner = new RskAddress(ownerBytes);
-        byte[] destBytes = destAddress.getLast20Bytes();
-        RskAddress dest = new RskAddress(destBytes);
+        RskAddress owner = new RskAddress(getOwnerAddress());
+        RskAddress dest = new RskAddress(destAddress);
         BigInteger balance = getStorage().getBalance(owner);
 
         if (isNotCovers(balance, amount)) {
@@ -578,11 +569,11 @@ public class Program {
 
         if (isLogEnabled) {
             logger.info("Transfer to: [{}] amount: [{}]",
-                    destBytes,
+                    dest,
                     amount);
         }
 
-        addInternalTx(null, null, ownerBytes, destBytes, amount, null, "send");
+        addInternalTx(null, null, owner, dest, amount, null, "send");
 
         transfer(getStorage(), owner, dest, amount);
     }
@@ -599,8 +590,7 @@ public class Program {
             return;
         }
 
-        byte[] senderAddressBytes = this.getOwnerAddressLast20Bytes();
-        RskAddress senderAddress = new RskAddress(senderAddressBytes);
+        RskAddress senderAddress = new RskAddress(getOwnerAddress());
         BigInteger endowment = value.value();
         if (isNotCovers(getStorage().getBalance(senderAddress), endowment)) {
             stackPushZero();
@@ -620,7 +610,7 @@ public class Program {
 
         // [2] CREATE THE CONTRACT ADDRESS
         byte[] nonce = getStorage().getNonce(senderAddress).toByteArray();
-        byte[] newAddressBytes = HashUtil.calcNewAddr(getOwnerAddressLast20Bytes(), nonce);
+        byte[] newAddressBytes = HashUtil.calcNewAddr(getOwnerAddress().getLast20Bytes(), nonce);
         RskAddress newAddress = new RskAddress(newAddressBytes);
 
         if (byTestingSuite()) {
@@ -656,7 +646,7 @@ public class Program {
 
 
         // [5] COOK THE INVOKE AND EXECUTE
-        InternalTransaction internalTx = addInternalTx(nonce, getGasLimit(), senderAddressBytes, null, endowment, programCode, "create");
+        InternalTransaction internalTx = addInternalTx(nonce, getGasLimit(), senderAddress, RskAddress.nullAddress(), endowment, programCode, "create");
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
                 this, new DataWord(newAddressBytes), getOwnerAddress(), value, gasLimit,
                 newBalance, null, track, this.invoke.getBlockStore(), byTestingSuite());
@@ -730,7 +720,7 @@ public class Program {
             refundGas(refundGas, "remain gas from the internal call");
             if (isGasLogEnabled) {
                 gasLogger.info("The remaining gas is refunded, account: [{}], gas: [{}] ",
-                        Hex.toHexString(getOwnerAddressLast20Bytes()),
+                        Hex.toHexString(getOwnerAddress().getLast20Bytes()),
                         refundGas);
             }
         }
@@ -811,9 +801,8 @@ public class Program {
         byte[] data = memoryChunk(msg.getInDataOffs().intValue(), msg.getInDataSize().intValue());
 
         // FETCH THE SAVED STORAGE
-        RskAddress codeAddress = new RskAddress(msg.getCodeAddress().getLast20Bytes());
-        byte[] senderAddressBytes = getOwnerAddressLast20Bytes();
-        RskAddress senderAddress = new RskAddress(senderAddressBytes);
+        RskAddress codeAddress = new RskAddress(msg.getCodeAddress());
+        RskAddress senderAddress = new RskAddress(getOwnerAddress());
         RskAddress contextAddress = msg.getType().isStateless() ? senderAddress : codeAddress;
 
         if (isLogEnabled) {
@@ -851,12 +840,12 @@ public class Program {
         contextBalance = track.addBalance(contextAddress, endowment);
 
         // CREATE CALL INTERNAL TRANSACTION
-        InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddressBytes, contextAddress.getBytes(), endowment, programCode, "call");
+        InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, programCode, "call");
 
         boolean callResult;
 
         if (isNotEmpty(programCode)) {
-            callResult = executeCode(msg,contextAddress.getBytes(), contextBalance,internalTx,track,programCode,senderAddressBytes,data);
+            callResult = executeCode(msg, contextAddress, contextBalance, internalTx, track, programCode, senderAddress, data);
         }
         else {
             track.commit();
@@ -875,18 +864,18 @@ public class Program {
 
     public boolean executeCode(
             MessageCall msg,
-            byte[] contextAddress,
+            RskAddress contextAddress,
             BigInteger contextBalance,
             InternalTransaction internalTx,
             Repository track,
             byte[] programCode,
-            byte[] senderAddress,
+            RskAddress senderAddress,
             byte[] data ) {
 
         returnDataBuffer = null; // reset return buffer right before the call
         ProgramResult childResult = null;
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
-                this, new DataWord(contextAddress),
+                this, new DataWord(contextAddress.getBytes()),
                 msg.getType() == MsgType.DELEGATECALL ? getCallerAddress() : getOwnerAddress(),
                 msg.getType() == MsgType.DELEGATECALL ? getCallValue() : msg.getEndowment(),
                 limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(), byTestingSuite());
@@ -903,7 +892,7 @@ public class Program {
         if (childResult.getException() != null || childResult.isRevert()) {
             if (isGasLogEnabled) {
                 gasLogger.debug("contract run halted by Exception: contract: [{}], exception: [{}]",
-                    Hex.toHexString(contextAddress),
+                    contextAddress,
                     childResult .getException());
             }
 
@@ -946,7 +935,7 @@ public class Program {
             refundGas(refundGas.longValue(), "remaining gas from the internal call");
             if (isGasLogEnabled) {
                 gasLogger.info("The remaining gas refunded, account: [{}], gas: [{}] ",
-                        Hex.toHexString(senderAddress),
+                        senderAddress,
                         refundGas.toString());
             }
         }
@@ -1021,7 +1010,7 @@ public class Program {
             valWord = valWord.clone();
         }
 
-        getStorage().addStorageRow(new RskAddress(getOwnerAddressLast20Bytes()), keyWord, valWord);
+        getStorage().addStorageRow(new RskAddress(getOwnerAddress()), keyWord, valWord);
     }
 
     public byte[] getCode() {
@@ -1029,11 +1018,11 @@ public class Program {
     }
 
     public byte[] getCodeAt(DataWord address) {
-        return getCodeAt(address.getLast20Bytes());
+        return getCodeAt(new RskAddress(address));
     }
 
-    public byte[] getCodeAt(byte[] address20) {
-        byte[] code = invoke.getRepository().getCode(new RskAddress(address20));
+    private byte[] getCodeAt(RskAddress addr) {
+        byte[] code = invoke.getRepository().getCode(addr);
         return nullToEmpty(code);
     }
 
@@ -1059,7 +1048,7 @@ public class Program {
     }
 
     public DataWord getBalance(DataWord address) {
-        BigInteger balance = getStorage().getBalance(new RskAddress(address.getLast20Bytes()));
+        BigInteger balance = getStorage().getBalance(new RskAddress(address));
         return new DataWord(balance.toByteArray());
     }
 
@@ -1096,7 +1085,7 @@ public class Program {
     }
 
     public DataWord storageLoad(DataWord key) {
-        return getStorage().getStorageValue(new RskAddress(getOwnerAddressLast20Bytes()), key);
+        return getStorage().getStorageValue(new RskAddress(getOwnerAddress()), key);
     }
 
     public DataWord getPrevHash() {
@@ -1160,7 +1149,7 @@ public class Program {
             }
 
             ContractDetails contractDetails = getStorage().
-                    getContractDetails(new RskAddress(getOwnerAddressLast20Bytes()));
+                    getContractDetails(new RskAddress(getOwnerAddress()));
             StringBuilder storageData = new StringBuilder();
             if (contractDetails != null) {
                 List<DataWord> storageKeys = new ArrayList<>(contractDetails.getStorage().keySet());
@@ -1534,9 +1523,8 @@ public class Program {
 
         Repository track = getStorage().startTracking();
 
-        byte[] senderAddressBytes = this.getOwnerAddressLast20Bytes();
-        RskAddress senderAddress = new RskAddress(senderAddressBytes);
-        RskAddress codeAddress = new RskAddress(msg.getCodeAddress().getLast20Bytes());
+        RskAddress senderAddress = new RskAddress(getOwnerAddress());
+        RskAddress codeAddress = new RskAddress(msg.getCodeAddress());
         RskAddress contextAddress = msg.getType().isStateless() ? senderAddress : codeAddress;
 
         BigInteger endowment = msg.getEndowment().value();
@@ -1556,7 +1544,7 @@ public class Program {
         if (byTestingSuite()) {
             // This keeps track of the calls created for a test
             this.getResult().addCallCreate(data,
-                    msg.getCodeAddress().getLast20Bytes(),
+                    codeAddress.getBytes(),
                     msg.getGas().longValueSafe(),
                     msg.getEndowment().getNoLeadZeroesData());
 
@@ -1577,7 +1565,7 @@ public class Program {
 
             if (contract instanceof Bridge || contract instanceof RemascContract) {
                 // CREATE CALL INTERNAL TRANSACTION
-                InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddressBytes, contextAddress.getBytes(), endowment, EMPTY_BYTE_ARRAY, "call");
+                InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, EMPTY_BYTE_ARRAY, "call");
 
                 Block executionBlock = new Block(getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getData(), EMPTY_BYTE_ARRAY,
                         getDifficulty().getData(), getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),

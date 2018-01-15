@@ -503,9 +503,9 @@ public class TransactionExecutor {
             logger.info("Processing result");
             logs = notRejectedLogInfos;
 
-            result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key.getLast20Bytes()), value));
+            result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key), value));
             // Traverse list of suicides
-            result.getDeleteAccounts().forEach(address -> track.delete(new RskAddress(address.getLast20Bytes())));
+            result.getDeleteAccounts().forEach(address -> track.delete(new RskAddress(address)));
         }
 
         if (listener != null) {

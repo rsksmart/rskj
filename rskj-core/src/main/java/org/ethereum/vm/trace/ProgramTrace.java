@@ -96,7 +96,7 @@ public class ProgramTrace {
             repository = ((RepositoryTrack) repository).getOriginRepository();
         }
 
-        RskAddress address = new RskAddress(programInvoke.getOwnerAddress().getLast20Bytes());
+        RskAddress address = new RskAddress(programInvoke.getOwnerAddress());
         return repository.getContractDetails(address);
     }
 

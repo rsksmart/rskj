@@ -20,6 +20,7 @@ package co.rsk.core;
 
 import com.google.common.primitives.UnsignedBytes;
 import org.ethereum.rpc.TypeConverter;
+import org.ethereum.vm.DataWord;
 import org.spongycastle.util.encoders.Hex;
 
 import java.util.Arrays;
@@ -48,6 +49,13 @@ public final class RskAddress {
             UnsignedBytes.lexicographicalComparator());
 
     private final byte[] bytes;
+
+    /**
+     * @param address a data word containing an address in the last 20 bytes.
+     */
+    public RskAddress(DataWord address) {
+        this(address.getLast20Bytes());
+    }
 
     /**
      * @param address the hex-encoded 20 bytes long address, with or without 0x prefix.

@@ -1487,7 +1487,7 @@ public class VM {
         long callGas = GasCost.CALL;
 
         //check to see if account does not exist and is not a precompiled contract
-        if (op == OpCode.CALL && !program.getStorage().isExist(new RskAddress(codeAddress.getLast20Bytes()))) {
+        if (op == OpCode.CALL && !program.getStorage().isExist(new RskAddress(codeAddress))) {
             callGas += GasCost.NEW_ACCT_CALL;
         }
 
@@ -1549,7 +1549,7 @@ public class VM {
         if (computeGas) {
             gasCost = GasCost.SUICIDE;
             DataWord suicideAddressWord = stack.get(stack.size() - 1);
-            if (!program.getStorage().isExist(new RskAddress(suicideAddressWord.getLast20Bytes()))) {
+            if (!program.getStorage().isExist(new RskAddress(suicideAddressWord))) {
                 gasCost += GasCost.NEW_ACCT_SUICIDE;
             }
             spendOpCodeGas();
@@ -1582,7 +1582,7 @@ public class VM {
 
             // If the contract is been created (initialization code is been executed)
             // then the meaning of codereplace is less clear. It's better to disallow it.
-            long storedLength = program.getCodeAt(program.getOwnerAddressLast20Bytes()).length;
+            long storedLength = program.getCodeAt(program.getOwnerAddress()).length;
             if (storedLength == 0) { // rise OOG, but a specific exception would be better
                 throw Program.ExceptionHelper.notEnoughOpGas(op, Long.MAX_VALUE, program.getRemainingGas());
             }
@@ -1990,7 +1990,7 @@ public class VM {
                 case SUICIDE:
 
                     ContractDetails details = program.getStorage()
-                            .getContractDetails(new RskAddress(program.getOwnerAddress().getLast20Bytes()));
+                            .getContractDetails(new RskAddress(program.getOwnerAddress()));
                     List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
                     Collections.sort(storageKeys);
 
@@ -2019,7 +2019,7 @@ public class VM {
 
             dumpLogger.trace("    STORAGE");
             ContractDetails details = program.getStorage()
-                    .getContractDetails(new RskAddress(program.getOwnerAddress().getLast20Bytes()));
+                    .getContractDetails(new RskAddress(program.getOwnerAddress()));
             List<DataWord> storageKeys = new ArrayList<>(details.getStorage().keySet());
             Collections.sort(storageKeys);
 
