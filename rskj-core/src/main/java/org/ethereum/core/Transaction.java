@@ -248,6 +248,8 @@ public class Transaction implements SerializableObject {
             byte[] r = transaction.get(7).getRLPData();
             byte[] s = transaction.get(8).getRLPData();
             this.signature = ECDSASignature.fromComponents(r, s, getRealV(v));
+        } else {
+            logger.trace("RLP encoded tx is not signed!");
         }
         this.parsed = true;
         this.hash = getHash();

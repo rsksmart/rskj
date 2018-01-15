@@ -39,8 +39,8 @@ public class FrameCodecHandler extends ByteToMessageCodec<FrameCodec.Frame> {
     private static final Logger loggerWire = LoggerFactory.getLogger("wire");
     private static final Logger loggerNet = LoggerFactory.getLogger("net");
 
-    public FrameCodec frameCodec;
-    public Channel channel;
+    protected final FrameCodec frameCodec;
+    protected final Channel channel;
 
     public FrameCodecHandler(FrameCodec frameCodec, Channel channel) {
         this.frameCodec = frameCodec;
@@ -63,8 +63,7 @@ public class FrameCodecHandler extends ByteToMessageCodec<FrameCodec.Frame> {
         }
 
         for (int i = 0; i < frames.size(); i++) {
-            FrameCodec.Frame frame = frames.get(i);
-
+            frames.get(i);
             channel.getNodeStatistics().rlpxInMessages.add();
         }
 
@@ -85,7 +84,7 @@ public class FrameCodecHandler extends ByteToMessageCodec<FrameCodec.Frame> {
             loggerNet.debug("FrameCodec failed: ", cause);
         } else {
             if (cause instanceof IOException) {
-                loggerNet.info("FrameCodec failed: {} ({})", ctx.channel().remoteAddress(), cause);
+                loggerNet.info(String.format("FrameCodec failed: %s", ctx.channel().remoteAddress()), cause);
             } else {
                 loggerNet.error("FrameCodec failed: ", cause);
             }

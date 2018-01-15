@@ -78,7 +78,6 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, Frame frame, List<Object> out) throws Exception {
-        Frame completeFrame = null;
         if (frame.isChunked()) {
             if (!supportChunkedFrames && frame.totalFrameSize > 0) {
                 throw new RuntimeException("Faming is not supported in this configuration.");
@@ -88,7 +87,7 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
             if (frameParts == null) {
                 if (frame.totalFrameSize < 0) {
                     // TODO: refactor this logic (Cpp sends non-chunked frames with context-id)
-                    Message message = decodeMessage(ctx, Collections.singletonList(frame));
+                    Message message = decodeMessage(Collections.singletonList(frame));
                     out.add(message);
                     return;
                 } else {
@@ -116,17 +115,17 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
                 return;
             }
             if (curSize == frameParts.getLeft().get(0).totalFrameSize) {
-                Message message = decodeMessage(ctx, frameParts.getLeft());
+                Message message = decodeMessage(frameParts.getLeft());
                 incompleteFrames.remove(frame.contextId);
                 out.add(message);
             }
         } else {
-            Message message = decodeMessage(ctx, Collections.singletonList(frame));
+            Message message = decodeMessage(Collections.singletonList(frame));
             out.add(message);
         }
     }
 
-    private Message decodeMessage(ChannelHandlerContext ctx, List<Frame> frames) throws IOException {
+    private Message decodeMessage(List<Frame> frames) throws IOException {
         long frameType = frames.get(0).getType();
 
         byte[] payload = new byte[frames.size() == 1 ? frames.get(0).getSize() : frames.get(0).totalFrameSize];
@@ -141,7 +140,7 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
 
         Message msg = createMessage((byte) frameType, payload);
 
-        loggerNet.trace("From: \t{} \tRecv: \t{}", channel, msg.toString());
+        loggerNet.trace("From: \t{} \tRecv: \t{}", channel, msg);
 
         ethereumListener.onRecvMessage(channel, msg);
 

@@ -191,9 +191,9 @@ public class TransactionExecutor {
         }
 
         if (!tx.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId())) {
-                logger.warn("Transaction {} signature not accepted: {}", Hex.toHexString(tx.getHash()), tx.getSignature());
-                logger.warn("Transaction Data: {}", tx);
-                logger.warn("Tx Included in the following block: {}", this.executionBlock);
+            logger.warn("Transaction {} signature not accepted: {}", Hex.toHexString(tx.getHash()), tx.getSignature());
+            logger.warn("Transaction Data: {}", tx);
+            logger.warn("Tx Included in the following block: {}", this.executionBlock);
 
             panicProcessor.panic("invalidsignature", String.format("Transaction %s signature not accepted: %s", Hex.toHexString(tx.getHash()), tx.getSignature().toString()));
             execError(String.format("Transaction signature not accepted: %s", tx.getSignature().toString()));
@@ -221,7 +221,9 @@ public class TransactionExecutor {
             BigInteger txGasCost = toBI(tx.getGasPrice()).multiply(txGasLimit);
             track.addBalance(tx.getSender(), txGasCost.negate());
 
-            logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, toBI(tx.getGasPrice()), txGasLimit);
+            if (logger.isTraceEnabled()){
+                logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, toBI(tx.getGasPrice()), txGasLimit);
+            }
         }
 
         if (tx.isContractCreation()) {
@@ -315,6 +317,11 @@ public class TransactionExecutor {
         transfer(cacheTrack, tx.getSender(), newContractAddress, endowment);
     }
 
+    private void execError(Throwable err) {
+        logger.warn("execError: ", err);
+        executionError = err.getMessage();
+    }
+
     private void execError(String err) {
         logger.warn(err);
         executionError = err;
@@ -389,7 +396,7 @@ public class TransactionExecutor {
 //            https://github.com/ethereum/cpp-ethereum/blob/develop/libethereum/Executive.cpp#L241
             cacheTrack.rollback();
             mEndGas = BigInteger.ZERO;
-            execError(e.getMessage());
+            execError(e);
 
         }
     }
