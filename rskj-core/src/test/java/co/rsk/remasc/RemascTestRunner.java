@@ -25,6 +25,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
+import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -122,7 +123,7 @@ class RemascTestRunner {
             }
 
             for(SiblingElement sibling : siblingsForCurrentHeight) {
-                Sha3Hash siblingCoinbase = PegTestUtils.createHash3();
+                RskAddress siblingCoinbase = TestUtils.randomAddress();
                 Block mainchainSiblingParent = mainChainBlocks.get(sibling.getHeight() - 1);
                 Block siblingBlock = createBlock(this.genesis, mainchainSiblingParent, PegTestUtils.createHash3(),
                         siblingCoinbase, null, minerFee, Long.valueOf(i), this.txValue,
@@ -135,7 +136,7 @@ class RemascTestRunner {
             }
 
             long txNonce = i;
-            Sha3Hash coinbase = PegTestUtils.createHash3();
+            RskAddress coinbase = TestUtils.randomAddress();
             Block block = createBlock(this.genesis, this.blockchain.getBestBlock(), PegTestUtils.createHash3(),
                     coinbase, blockSiblings, minerFee, txNonce, this.txValue, this.txSigningKey, null);
             mainChainBlocks.add(block);
@@ -163,13 +164,13 @@ class RemascTestRunner {
         return accountState == null ? null : repository.getAccountState(new RskAddress(address)).getBalance();
     }
 
-    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, Sha3Hash coinbase,
+    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, RskAddress coinbase,
                                     List<BlockHeader> uncles, long minerFee, long txNonce, long txValue,
                                     ECKey txSigningKey) {
         return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, minerFee, txNonce,
                 txValue, txSigningKey, null);
     }
-    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, Sha3Hash coinbase,
+    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, RskAddress coinbase,
                                     List<BlockHeader> uncles, long minerFee, long txNonce, long txValue,
                                     ECKey txSigningKey, Long difficulty) {
         if (minerFee == 0) throw new IllegalArgumentException();
@@ -187,7 +188,7 @@ class RemascTestRunner {
         return createBlock(genesis, parentBlock, blockHash, coinbase, uncles, difficulty, tx);
     }
 
-    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, Sha3Hash coinbase,
+    public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, RskAddress coinbase,
                                     List<BlockHeader> uncles, Long difficulty, Transaction... txsToInlcude) {
         List<Transaction> txs = new ArrayList<>();
         if (txsToInlcude != null) {

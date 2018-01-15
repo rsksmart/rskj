@@ -43,7 +43,7 @@ public class DetailsDataStoreTest {
         byte[] value =  Hex.decode("aa");
 
         ContractDetails contractDetails = new ContractDetailsImpl(ConfigHelper.CONFIG);
-        contractDetails.setAddress(randomAddress());
+        contractDetails.setAddress(randomAddress().getBytes());
         contractDetails.setCode(code);
         contractDetails.put(new DataWord(key), new DataWord(value));
 
@@ -76,7 +76,7 @@ public class DetailsDataStoreTest {
 
         ContractDetails contractDetails = new ContractDetailsImpl(ConfigHelper.CONFIG);
         contractDetails.setCode(code);
-        contractDetails.setAddress(randomAddress());
+        contractDetails.setAddress(randomAddress().getBytes());
         contractDetails.put(new DataWord(key), new DataWord(value));
 
         dds.update(c_key, contractDetails);
