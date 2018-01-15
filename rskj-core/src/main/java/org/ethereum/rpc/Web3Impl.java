@@ -923,17 +923,31 @@ public class Web3Impl implements Web3 {
         }
 
         List<FilterEvent> events = new ArrayList<>();
+        int polledevents = 0;
 
         public synchronized boolean hasNew() {
             return !events.isEmpty();
         }
 
         public synchronized Object[] poll() {
+            Object[] ret = new Object[events.size() - polledevents];
+
+            for (int i = 0; i < ret.length; i++) {
+                ret[i] = events.get(i + polledevents).getJsonEventObject();
+            }
+
+            polledevents = events.size();
+
+            return ret;
+        }
+
+        public synchronized Object[] getEvents() {
             Object[] ret = new Object[events.size()];
+
             for (int i = 0; i < ret.length; i++) {
                 ret[i] = events.get(i).getJsonEventObject();
             }
-            this.events.clear();
+
             return ret;
         }
 
@@ -1211,14 +1225,28 @@ public class Web3Impl implements Web3 {
     @Override
     public Object[] eth_getFilterLogs(String id) {
         logger.debug("eth_getFilterLogs ...");
-        return eth_getFilterChanges(id);
+
+        Object[] s = null;
+        try {
+            synchronized (filterLock) {
+                Filter filter = installedFilters.get(stringHexToBigInteger(id).intValue());
+                if (filter == null) {
+                    return null;
+                }
+                return s = filter.getEvents();
+            }
+        } finally {
+            if (logger.isDebugEnabled()) {
+                logger.debug("eth_getFilterChanges(" + id + "): " + Arrays.toString(s));
+            }
+        }
     }
 
     @Override
     public Object[] eth_getLogs(FilterRequest fr) throws Exception {
         logger.debug("eth_getLogs ...");
         String id = eth_newFilter(fr);
-        Object[] ret = eth_getFilterChanges(id);
+        Object[] ret = eth_getFilterLogs(id);
         eth_uninstallFilter(id);
         return ret;
     }
