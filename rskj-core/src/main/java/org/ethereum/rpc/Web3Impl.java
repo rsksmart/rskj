@@ -920,11 +920,7 @@ public class Web3Impl implements Web3 {
         List<FilterEvent> events = new ArrayList<>();
         int polledevents = 0;
 
-        public synchronized boolean hasNew() {
-            return !events.isEmpty();
-        }
-
-        public synchronized Object[] poll() {
+        public synchronized Object[] getNewEvents() {
             Object[] ret = new Object[events.size() - polledevents];
 
             for (int i = 0; i < ret.length; i++) {
@@ -1184,6 +1180,7 @@ public class Web3Impl implements Web3 {
     @Override
     public boolean eth_uninstallFilter(String id) {
         Boolean s = null;
+
         try {
             if (id == null) {
                 return false;
@@ -1201,20 +1198,19 @@ public class Web3Impl implements Web3 {
 
     @Override
     public Object[] eth_getFilterChanges(String id) {
+        logger.debug("eth_getFilterChanges ...");
+
         Object[] s = null;
+
         try {
-            synchronized (filterLock) {
-                Filter filter = installedFilters.get(stringHexToBigInteger(id).intValue());
-                if (filter == null) {
-                    return null;
-                }
-                return s = filter.poll();
-            }
+            s = getFilterEvents(id, true);
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getFilterChanges(" + id + "): " + Arrays.toString(s));
             }
         }
+
+        return s;
     }
 
     @Override
@@ -1222,17 +1218,31 @@ public class Web3Impl implements Web3 {
         logger.debug("eth_getFilterLogs ...");
 
         Object[] s = null;
+
         try {
-            synchronized (filterLock) {
-                Filter filter = installedFilters.get(stringHexToBigInteger(id).intValue());
-                if (filter == null) {
-                    return null;
-                }
-                return s = filter.getEvents();
-            }
+            s = getFilterEvents(id, false);
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getFilterChanges(" + id + "): " + Arrays.toString(s));
+                logger.debug("eth_getFilterLogs(" + id + "): " + Arrays.toString(s));
+            }
+        }
+
+        return s;
+    }
+
+    private Object[] getFilterEvents(String id, boolean newevents) {
+        synchronized (filterLock) {
+            Filter filter = installedFilters.get(stringHexToBigInteger(id).intValue());
+
+            if (filter == null) {
+                return null;
+            }
+
+            if (newevents) {
+                return filter.getNewEvents();
+            }
+            else {
+                return filter.getEvents();
             }
         }
     }
