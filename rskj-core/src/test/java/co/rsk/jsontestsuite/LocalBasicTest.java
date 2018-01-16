@@ -60,7 +60,7 @@ public class LocalBasicTest {
             BlockHeader current = testCase.getCurrent();
             BlockHeader parent = testCase.getParent();
             BigInteger calc = new DifficultyCalculator(config).calcDifficulty(current, parent);
-            int c = calc.compareTo(parent.getDifficultyBI());
+            int c = calc.compareTo(parent.getDifficulty().asBigInteger());
             if (c>0)
                 logger.info(" Difficulty increase test\n");
             else

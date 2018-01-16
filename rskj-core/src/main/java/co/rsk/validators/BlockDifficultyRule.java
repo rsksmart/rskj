@@ -53,7 +53,7 @@ public class BlockDifficultyRule implements BlockParentDependantValidationRule {
         }
         BlockHeader header = block.getHeader();
         BigInteger calcDifficulty = difficultyCalculator.calcDifficulty(header, parent.getHeader());
-        BigInteger difficulty = header.getDifficultyBI();
+        BigInteger difficulty = header.getDifficulty().asBigInteger();
 
         if (!isEqual(difficulty, calcDifficulty)) {
             logger.warn(String.format("#%d: difficulty != calcDifficulty", header.getNumber()));

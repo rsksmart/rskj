@@ -80,7 +80,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        if (header.getDifficultyBI().compareTo(constants.getFallbackMiningDifficulty()) > 0) {
+        if (header.getDifficulty().asBigInteger().compareTo(constants.getFallbackMiningDifficulty()) > 0) {
             return false;
         }
 
@@ -136,7 +136,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         BtcBlock bitcoinMergedMiningBlock = bitcoinNetworkParameters.getDefaultSerializer().makeBlock(header.getBitcoinMergedMiningHeader());
         PartialMerkleTree bitcoinMergedMiningMerkleBranch  = new PartialMerkleTree(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof(), 0);
 
-        BigInteger target = DifficultyUtils.difficultyToTarget(header.getDifficultyBI());
+        BigInteger target = DifficultyUtils.difficultyToTarget(header.getDifficulty().asBigInteger());
 
         BigInteger bitcoinMergedMiningBlockHashBI = bitcoinMergedMiningBlock.getHash().toBigInteger();
 

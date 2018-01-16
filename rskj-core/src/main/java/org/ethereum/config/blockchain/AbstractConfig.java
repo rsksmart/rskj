@@ -63,7 +63,7 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
 
     @Override
     public BigInteger calcDifficulty(BlockHeader curBlockHeader, BlockHeader parent) {
-        BigInteger pd = parent.getDifficultyBI();
+        BigInteger pd = parent.getDifficulty().asBigInteger();
         int uncleCount = curBlockHeader.getUncleCount();
         long curBlockTS = curBlockHeader.getTimestamp();
         long parentBlockTS =parent.getTimestamp();

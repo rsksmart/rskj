@@ -324,7 +324,7 @@ public class RLPTest {
     /** encode null value */
     public void testEncodeElementNull() {
 
-        byte[] actuals = encodeElement(null);
+        byte[] actuals = encodeElement((byte[]) null);
         assertArrayEquals(new byte[]{(byte) 0x80}, actuals);
     }
 

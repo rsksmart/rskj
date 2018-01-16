@@ -98,7 +98,7 @@ public class Block {
                 header.getUnclesHash(),
                 header.getCoinbase().getBytes(),
                 header.getLogsBloom(),
-                header.getDifficulty(),
+                header.getDifficulty().getBytes(),
                 header.getNumber(),
                 header.getGasLimit(),
                 header.getGasUsed(),
@@ -332,14 +332,14 @@ public class Block {
         if (!parsed) {
             parseRLP();
         }
-        return this.header.getDifficulty();
+        return this.header.getDifficulty().getBytes();
     }
 
     public BigInteger getDifficultyBI() {
         if (!parsed) {
             parseRLP();
         }
-        return this.header.getDifficultyBI();
+        return this.header.getDifficulty().asBigInteger();
     }
 
     public BigInteger getFeesPaidToMiner() {
@@ -353,9 +353,9 @@ public class Block {
         if (!parsed) {
             parseRLP();
         }
-        BigInteger calcDifficulty = new BigInteger(1, this.header.getDifficulty());
+        BigInteger calcDifficulty = this.header.getDifficulty().asBigInteger();
         for (BlockHeader uncle : uncleList) {
-            calcDifficulty = calcDifficulty.add(new BigInteger(1, uncle.getDifficulty()));
+            calcDifficulty = calcDifficulty.add(uncle.getDifficulty().asBigInteger());
         }
         return calcDifficulty;
     }

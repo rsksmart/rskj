@@ -20,6 +20,7 @@
 package org.ethereum.util;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.util.ByteBufferUtil;
 import co.rsk.util.RLPElementType;
 import co.rsk.util.RLPElementView;
@@ -561,6 +562,10 @@ public class RLP {
         }
 
         return encodeElement(addr.getBytes());
+    }
+
+    public static byte[] encodeBlockDifficulty(BlockDifficulty difficulty) {
+        return encodeElement(difficulty.getBytes());
     }
 
     public static byte[] encodeElement(byte[] srcData) {

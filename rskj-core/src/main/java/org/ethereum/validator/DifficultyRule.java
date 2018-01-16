@@ -47,7 +47,7 @@ public class DifficultyRule extends DependentBlockHeaderRule {
     @Override
     public boolean validate(BlockHeader header, BlockHeader parent) {
         BigInteger calcDifficulty = difficultyCalculator.calcDifficulty(header, parent);
-        BigInteger difficulty = header.getDifficultyBI();
+        BigInteger difficulty = header.getDifficulty().asBigInteger();
 
         if (!isEqual(difficulty, calcDifficulty)) {
             logger.error(String.format("#%d: difficulty != calcDifficulty", header.getNumber()));
