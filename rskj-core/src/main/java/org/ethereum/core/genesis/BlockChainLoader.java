@@ -20,6 +20,7 @@
 package org.ethereum.core.genesis;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.*;
@@ -100,7 +101,7 @@ public class BlockChainLoader {
 
             logger.info("Genesis block loaded");
         } else {
-            BigInteger totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash());
+            BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestBlock.getHash());
 
             blockchain.setBestBlock(bestBlock);
             blockchain.setTotalDifficulty(totalDifficulty);

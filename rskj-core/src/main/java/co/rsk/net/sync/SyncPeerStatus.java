@@ -1,9 +1,9 @@
 package co.rsk.net.sync;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.Status;
 
-import java.math.BigInteger;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -25,8 +25,8 @@ public class SyncPeerStatus {
     }
 
     public int peerTotalDifficultyComparator(SyncPeerStatus other) {
-        BigInteger ttd = this.status.getTotalDifficulty();
-        BigInteger otd = other.status.getTotalDifficulty();
+        BlockDifficulty ttd = this.status.getTotalDifficulty();
+        BlockDifficulty otd = other.status.getTotalDifficulty();
 
         if (ttd == null && otd == null) {
             return 0;

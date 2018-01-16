@@ -59,7 +59,7 @@ public class BlockBuilderTest {
 
         Assert.assertNotNull(block);
         Assert.assertEquals(1, block.getNumber());
-        Assert.assertEquals(BigInteger.ONE, block.getDifficultyBI());
+        Assert.assertEquals(BigInteger.ONE, block.getDifficulty().asBigInteger());
         Assert.assertArrayEquals(genesis.getHash(), block.getParentHash());
     }
 }

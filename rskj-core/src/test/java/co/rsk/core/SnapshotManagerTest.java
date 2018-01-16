@@ -195,7 +195,7 @@ public class SnapshotManagerTest {
     public void resetSnapshotClearingPendingState() {
         Blockchain blockchain = createBlockchain();
         Block genesis = blockchain.getBestBlock();
-        BigInteger genesisDifficulty = blockchain.getStatus().getTotalDifficulty();
+        BlockDifficulty genesisDifficulty = blockchain.getStatus().getTotalDifficulty();
 
         addBlocks(blockchain, 10);
 

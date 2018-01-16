@@ -20,6 +20,7 @@
 package org.ethereum.db;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.net.BlockCache;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
@@ -33,10 +34,9 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 
 import java.io.*;
-import java.math.BigInteger;
 import java.util.*;
 
-import static java.math.BigInteger.ZERO;
+import static co.rsk.core.BlockDifficulty.ZERO;
 import static org.ethereum.crypto.HashUtil.shortHash;
 import static org.spongycastle.util.Arrays.areEqual;
 
@@ -135,7 +135,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized void saveBlock(Block block, BigInteger cummDifficulty, boolean mainChain) {
+    public synchronized void saveBlock(Block block, BlockDifficulty cummDifficulty, boolean mainChain) {
         List<BlockInfo> blockInfos = index.get(block.getNumber());
         if (blockInfos == null) {
             blockInfos = new ArrayList<>();
@@ -177,7 +177,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
         for (BlockInfo blockInfo : blockInfos) {
             byte[] hash = ByteUtils.clone(blockInfo.getHash());
-            BigInteger totalDifficulty = blockInfo.getCummDifficulty();
+            BlockDifficulty totalDifficulty = blockInfo.getCummDifficulty();
             boolean isInBlockChain = blockInfo.isMainChain();
 
             result.add(new BlockInformation(hash, totalDifficulty, isInBlockChain));
@@ -229,7 +229,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized BigInteger getTotalDifficultyForHash(byte[] hash){
+    public synchronized BlockDifficulty getTotalDifficultyForHash(byte[] hash){
         Block block = this.getBlockByHash(hash);
         if (block == null) {
             return ZERO;
@@ -401,7 +401,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     public static class BlockInfo implements Serializable {
         byte[] hash;
-        BigInteger cummDifficulty;
+        BlockDifficulty cummDifficulty;
         boolean mainChain;
 
         public byte[] getHash() {
@@ -412,11 +412,11 @@ public class IndexedBlockStore extends AbstractBlockstore {
             this.hash = hash;
         }
 
-        public BigInteger getCummDifficulty() {
+        public BlockDifficulty getCummDifficulty() {
             return cummDifficulty;
         }
 
-        public void setCummDifficulty(BigInteger cummDifficulty) {
+        public void setCummDifficulty(BlockDifficulty cummDifficulty) {
             this.cummDifficulty = cummDifficulty;
         }
 

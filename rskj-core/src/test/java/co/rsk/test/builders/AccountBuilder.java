@@ -18,6 +18,7 @@
 
 package co.rsk.test.builders;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
@@ -71,7 +72,7 @@ public class AccountBuilder {
 
         if (blockChain != null) {
             Block best = blockChain.getStatus().getBestBlock();
-            BigInteger td = blockChain.getStatus().getTotalDifficulty();
+            BlockDifficulty td = blockChain.getStatus().getTotalDifficulty();
             Repository repository = blockChain.getRepository();
 
             Repository track = repository.startTracking();

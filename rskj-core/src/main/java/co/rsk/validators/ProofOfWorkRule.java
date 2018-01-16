@@ -136,7 +136,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         BtcBlock bitcoinMergedMiningBlock = bitcoinNetworkParameters.getDefaultSerializer().makeBlock(header.getBitcoinMergedMiningHeader());
         PartialMerkleTree bitcoinMergedMiningMerkleBranch  = new PartialMerkleTree(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof(), 0);
 
-        BigInteger target = DifficultyUtils.difficultyToTarget(header.getDifficulty().asBigInteger());
+        BigInteger target = DifficultyUtils.difficultyToTarget(header.getDifficulty());
 
         BigInteger bitcoinMergedMiningBlockHashBI = bitcoinMergedMiningBlock.getHash().toBigInteger();
 

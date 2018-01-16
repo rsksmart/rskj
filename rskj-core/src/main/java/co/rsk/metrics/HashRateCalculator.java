@@ -68,7 +68,7 @@ public abstract class HashRateCalculator {
 
         while (element != null && cutCondition.test(element)) {
             if (countCondition.test(element)) {
-                hashRate = hashRate.add(element.getDifficulty());
+                hashRate = hashRate.add(element.getDifficulty().asBigInteger());
             }
 
             byte[] parentHash = element.getBlockHeader().getParentHash();

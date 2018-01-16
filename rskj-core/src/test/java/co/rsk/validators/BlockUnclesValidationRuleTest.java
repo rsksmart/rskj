@@ -2,6 +2,7 @@ package co.rsk.validators;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import org.ethereum.core.Block;
@@ -36,8 +37,8 @@ public class BlockUnclesValidationRuleTest {
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
         BlockStore store = blockChain.getBlockStore();
 
-        store.saveBlock(genesis, BigInteger.valueOf(1), true);
-        store.saveBlock(block1, BigInteger.valueOf(2), true);
+        store.saveBlock(genesis, new BlockDifficulty(BigInteger.valueOf(1)), true);
+        store.saveBlock(block1, new BlockDifficulty(BigInteger.valueOf(2)), true);
 
         BlockUnclesValidationRule rule = new BlockUnclesValidationRule(config, store, 10, 10, new BlockCompositeRule(), new BlockParentCompositeRule());
 
@@ -60,8 +61,8 @@ public class BlockUnclesValidationRuleTest {
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
         BlockStore store = blockChain.getBlockStore();
 
-        store.saveBlock(genesis, BigInteger.valueOf(1), true);
-        store.saveBlock(block1, BigInteger.valueOf(2), true);
+        store.saveBlock(genesis, new BlockDifficulty(BigInteger.valueOf(1)), true);
+        store.saveBlock(block1, new BlockDifficulty(BigInteger.valueOf(2)), true);
 
         BlockUnclesValidationRule rule = new BlockUnclesValidationRule(config, store, 10, 10, new BlockCompositeRule(), new BlockParentCompositeRule());
 

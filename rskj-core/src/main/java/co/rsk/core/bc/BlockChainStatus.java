@@ -18,22 +18,19 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Status;
 import org.ethereum.core.Block;
-import org.ethereum.util.BIUtil;
-
-import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 29/07/2016.
  */
 
 public class BlockChainStatus {
-    private Block bestBlock;
-    private BigInteger totalDifficulty;
+    private final Block bestBlock;
+    private final BlockDifficulty totalDifficulty;
 
-    public BlockChainStatus(Block bestBlock, BigInteger totalDifficulty)
-    {
+    public BlockChainStatus(Block bestBlock, BlockDifficulty totalDifficulty) {
         this.bestBlock = bestBlock;
         this.totalDifficulty = totalDifficulty;
     }
@@ -46,11 +43,11 @@ public class BlockChainStatus {
         return bestBlock.getNumber();
     }
 
-    public BigInteger getTotalDifficulty() {
+    public BlockDifficulty getTotalDifficulty() {
         return totalDifficulty;
     }
 
     public boolean hasLowerTotalDifficultyThan(Status status) {
-        return BIUtil.isLessThan(this.totalDifficulty, status.getTotalDifficulty());
+        return this.totalDifficulty.compareTo(status.getTotalDifficulty()) < 0;
     }
 }

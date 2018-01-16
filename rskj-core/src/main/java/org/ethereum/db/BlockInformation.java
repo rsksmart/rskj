@@ -1,16 +1,16 @@
 package org.ethereum.db;
 
-import java.math.BigInteger;
+import co.rsk.core.BlockDifficulty;
 
 /**
  * Created by usuario on 07/06/2017.
  */
 public class BlockInformation {
     private byte[] hash;
-    private BigInteger totalDifficulty;
+    private BlockDifficulty totalDifficulty;
     private boolean inMainChain;
 
-    public BlockInformation(byte[] hash, BigInteger totalDifficulty, boolean inMainChain) {
+    public BlockInformation(byte[] hash, BlockDifficulty totalDifficulty, boolean inMainChain) {
         this.hash = hash;
         this.totalDifficulty = totalDifficulty;
         this.inMainChain = inMainChain;
@@ -20,7 +20,7 @@ public class BlockInformation {
         return this.hash;
     }
 
-    public BigInteger getTotalDifficulty() {
+    public BlockDifficulty getTotalDifficulty() {
         return this.totalDifficulty;
     }
 

@@ -18,19 +18,24 @@
 
 package co.rsk.core;
 
+import javax.annotation.Nonnull;
+import java.io.Serializable;
 import java.math.BigInteger;
 
 /**
  * A block's difficulty, stored internally as a {@link java.math.BigInteger}.
  */
-public class BlockDifficulty {
+public class BlockDifficulty implements Comparable<BlockDifficulty>, Serializable {
+    public static final BlockDifficulty ZERO = new BlockDifficulty(BigInteger.ZERO);
+
     private final BigInteger value;
 
     /**
      * @param bytes the difficulty bytes, as expected by {@link java.math.BigInteger#BigInteger(byte[])}.
+     *              Since we previously converted an empty array to ZERO, we'll do that here too.
      */
     public BlockDifficulty(byte[] bytes) {
-        this(new BigInteger(bytes));
+        this(bytes.length == 0 ? BigInteger.ZERO : new BigInteger(bytes));
     }
 
     /**
@@ -38,7 +43,7 @@ public class BlockDifficulty {
      */
     public BlockDifficulty(BigInteger value) {
         if (value.signum() < 0) {
-            throw new RuntimeException("A block difficulty be positive");
+            throw new RuntimeException("A block difficulty must be positive or zero");
         }
 
         this.value = value;
@@ -77,5 +82,14 @@ public class BlockDifficulty {
     @Override
     public String toString() {
         return value.toString();
+    }
+
+    public BlockDifficulty add(BlockDifficulty other) {
+        return new BlockDifficulty(value.add(other.value));
+    }
+
+    @Override
+    public int compareTo(@Nonnull BlockDifficulty other) {
+        return value.compareTo(other.value);
     }
 }

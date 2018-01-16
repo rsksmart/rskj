@@ -1,5 +1,6 @@
 package co.rsk.core.bc;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.remasc.Sibling;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -16,8 +17,8 @@ public class SelectionRule {
     private static final BigInteger PAID_FEES_MULTIPLIER_CRITERIA = BigInteger.valueOf(2);
 
     public static boolean shouldWeAddThisBlock(
-            BigInteger blockDifficulty,
-            BigInteger currentDifficulty,
+            BlockDifficulty blockDifficulty,
+            BlockDifficulty currentDifficulty,
             Block block,
             Block currentBlock) {
 

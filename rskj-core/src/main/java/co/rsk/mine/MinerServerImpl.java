@@ -577,7 +577,7 @@ public class MinerServerImpl implements MinerServer {
     public MinerWork updateGetWork(@Nonnull final Block block, @Nonnull final boolean notify) {
         Sha3Hash blockMergedMiningHash = new Sha3Hash(block.getHashForMergedMining());
 
-        BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficultyBI());
+        BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficulty());
         byte[] targetUnknownLengthArray = targetBI.toByteArray();
         byte[] targetArray = new byte[32];
         System.arraycopy(targetUnknownLengthArray, 0, targetArray, 32 - targetUnknownLengthArray.length, targetUnknownLengthArray.length);

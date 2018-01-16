@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.datasource.HashMapDB;
@@ -39,6 +40,9 @@ import java.util.Set;
  * Created by ajlopez on 12/08/2016.
  */
 public class FamilyUtilsTest {
+
+    public static final BlockDifficulty TEST_DIFFICULTY = new BlockDifficulty(BigInteger.ONE);
+
     @Test
     public void getFamilyGetParent() {
         BlockStore store = createBlockStore();
@@ -47,8 +51,8 @@ public class FamilyUtilsTest {
         Block genesis = blockGenerator.getGenesisBlock();
         Block block1 = blockGenerator.createChildBlock(genesis);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(block1, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
 
         Set<ByteArrayWrapper> family = FamilyUtils.getFamily(store, block1, 6);
 
@@ -65,7 +69,7 @@ public class FamilyUtilsTest {
 
         Block genesis = new BlockGenerator().getGenesisBlock();
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
 
         Set<ByteArrayWrapper> family = FamilyUtils.getFamily(store, genesis, 6);
 
@@ -83,10 +87,10 @@ public class FamilyUtilsTest {
         Block block2 = blockGenerator.createChildBlock(block1);
         Block block3 = blockGenerator.createChildBlock(block2);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(block1, BigInteger.ONE, true);
-        store.saveBlock(block2, BigInteger.ONE, true);
-        store.saveBlock(block3, BigInteger.ONE, true);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
+        store.saveBlock(block2, TEST_DIFFICULTY, true);
+        store.saveBlock(block3, TEST_DIFFICULTY, true);
 
         Set<ByteArrayWrapper> family = FamilyUtils.getFamily(store, block3, 2);
 
@@ -116,16 +120,16 @@ public class FamilyUtilsTest {
         Block uncle31 = blockGenerator.createChildBlock(block2);
         Block uncle32 = blockGenerator.createChildBlock(block2);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(block1, BigInteger.ONE, true);
-        store.saveBlock(uncle11, BigInteger.ONE, false);
-        store.saveBlock(uncle12, BigInteger.ONE, false);
-        store.saveBlock(block2, BigInteger.ONE, true);
-        store.saveBlock(uncle21, BigInteger.ONE, false);
-        store.saveBlock(uncle22, BigInteger.ONE, false);
-        store.saveBlock(block3, BigInteger.ONE, true);
-        store.saveBlock(uncle31, BigInteger.ONE, false);
-        store.saveBlock(uncle32, BigInteger.ONE, false);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle11, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle12, TEST_DIFFICULTY, false);
+        store.saveBlock(block2, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle21, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle22, TEST_DIFFICULTY, false);
+        store.saveBlock(block3, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle31, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle32, TEST_DIFFICULTY, false);
 
         Set<ByteArrayWrapper> family = FamilyUtils.getFamily(store, block3, 2);
 
@@ -180,18 +184,18 @@ public class FamilyUtilsTest {
         Block uncle31 = blockGenerator.createChildBlock(block2);
         Block uncle32 = blockGenerator.createChildBlock(block2);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(block1, BigInteger.ONE, true);
-        store.saveBlock(uncle11, BigInteger.ONE, false);
-        store.saveBlock(uncle12, BigInteger.ONE, false);
-        store.saveBlock(uncle111, BigInteger.ONE, false);
-        store.saveBlock(uncle121, BigInteger.ONE, false);
-        store.saveBlock(block2, BigInteger.ONE, true);
-        store.saveBlock(uncle21, BigInteger.ONE, false);
-        store.saveBlock(uncle22, BigInteger.ONE, false);
-        store.saveBlock(block3, BigInteger.ONE, true);
-        store.saveBlock(uncle31, BigInteger.ONE, false);
-        store.saveBlock(uncle32, BigInteger.ONE, false);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle11, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle12, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle111, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle121, TEST_DIFFICULTY, false);
+        store.saveBlock(block2, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle21, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle22, TEST_DIFFICULTY, false);
+        store.saveBlock(block3, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle31, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle32, TEST_DIFFICULTY, false);
 
         List<BlockHeader> list = FamilyUtils.getUnclesHeaders(store, block3, 3);
 
@@ -221,16 +225,16 @@ public class FamilyUtilsTest {
         Block uncle31 = blockGenerator.createChildBlock(block2);
         Block uncle32 = blockGenerator.createChildBlock(block2);
 
-        store.saveBlock(genesis, BigInteger.ONE, true);
-        store.saveBlock(block1, BigInteger.ONE, true);
-        store.saveBlock(uncle11, BigInteger.ONE, false);
-        store.saveBlock(uncle12, BigInteger.ONE, false);
-        store.saveBlock(block2, BigInteger.ONE, true);
-        store.saveBlock(uncle21, BigInteger.ONE, false);
-        store.saveBlock(uncle22, BigInteger.ONE, false);
-        store.saveBlock(block3, BigInteger.ONE, true);
-        store.saveBlock(uncle31, BigInteger.ONE, false);
-        store.saveBlock(uncle32, BigInteger.ONE, false);
+        store.saveBlock(genesis, TEST_DIFFICULTY, true);
+        store.saveBlock(block1, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle11, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle12, TEST_DIFFICULTY, false);
+        store.saveBlock(block2, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle21, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle22, TEST_DIFFICULTY, false);
+        store.saveBlock(block3, TEST_DIFFICULTY, true);
+        store.saveBlock(uncle31, TEST_DIFFICULTY, false);
+        store.saveBlock(uncle32, TEST_DIFFICULTY, false);
 
         Set<ByteArrayWrapper> family = FamilyUtils.getUncles(store, block3, 3);
 

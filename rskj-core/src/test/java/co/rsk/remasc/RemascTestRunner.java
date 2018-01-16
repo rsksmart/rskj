@@ -19,6 +19,7 @@
 package co.rsk.remasc;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -117,7 +118,7 @@ class RemascTestRunner {
             List<BlockHeader> blockSiblings = new ArrayList<>();
 
             // Going to add siblings
-            BigInteger cummDifficulty = BigInteger.ZERO;
+            BlockDifficulty cummDifficulty = BlockDifficulty.ZERO;
             if (siblingsForCurrentHeight.size() > 0){
                 cummDifficulty = blockchain.getTotalDifficulty();
             }

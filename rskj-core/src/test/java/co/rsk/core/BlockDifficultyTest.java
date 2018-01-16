@@ -51,14 +51,54 @@ public class BlockDifficultyTest {
         assertThat(difficulty.toString(), is(largeValue.toString()));
     }
 
-    @Test(expected = NumberFormatException.class)
-    public void bytesEmptyDifficultyFails() {
-        new BlockDifficulty(new byte[0]);
+    @Test
+    public void bytesEmptyIsZero() {
+        BlockDifficulty difficulty = new BlockDifficulty(new byte[0]);
+        assertThat(difficulty.asBigInteger(), is(BigInteger.ZERO));
+        assertThat(difficulty, is(new BlockDifficulty(BigInteger.ZERO)));
+        assertThat(difficulty.toString(), is(BigInteger.ZERO.toString()));
     }
 
     @Test(expected = RuntimeException.class)
     public void bytesNegativeDifficultyFails() {
         BigInteger negativeValue = BigInteger.valueOf(-1532098739382974L);
         new BlockDifficulty(negativeValue.toByteArray());
+    }
+
+    @Test
+    public void addOneToZero() {
+        BlockDifficulty d1 = new BlockDifficulty(BigInteger.ZERO);
+        BlockDifficulty d2 = new BlockDifficulty(BigInteger.ONE);
+        assertThat(d1.add(d2), is(d2));
+    }
+
+    @Test
+    public void addOneToOne() {
+        BlockDifficulty d1 = new BlockDifficulty(BigInteger.ONE);
+        BlockDifficulty d2 = new BlockDifficulty(BigInteger.ONE);
+        assertThat(d1.add(d2), is(new BlockDifficulty(BigInteger.valueOf(2))));
+    }
+
+    @Test
+    public void addLargeValues() {
+        BlockDifficulty d1 = new BlockDifficulty(BigInteger.valueOf(Long.MAX_VALUE));
+        BlockDifficulty d2 = new BlockDifficulty(BigInteger.valueOf(Integer.MAX_VALUE));
+        assertThat(d1.add(d2), is(new BlockDifficulty(new BigInteger("9223372039002259454"))));
+    }
+
+    @Test
+    public void testComparable() {
+        BlockDifficulty zero = BlockDifficulty.ZERO;
+        BlockDifficulty d1 = new BlockDifficulty(BigInteger.valueOf(Long.MAX_VALUE));
+        BlockDifficulty d2 = new BlockDifficulty(BigInteger.valueOf(Integer.MAX_VALUE));
+        assertThat(zero.compareTo(zero), is(0));
+        assertThat(d1.compareTo(d1), is(0));
+        assertThat(d2.compareTo(d2), is(0));
+        assertThat(zero.compareTo(d1), is(-1));
+        assertThat(zero.compareTo(d2), is(-1));
+        assertThat(d1.compareTo(zero), is(1));
+        assertThat(d2.compareTo(zero), is(1));
+        assertThat(d1.compareTo(d2), is(1));
+        assertThat(d2.compareTo(d1), is(-1));
     }
 }

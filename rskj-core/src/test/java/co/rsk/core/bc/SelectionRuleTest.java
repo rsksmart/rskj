@@ -33,13 +33,13 @@ public class SelectionRuleTest {
         Block highDifficultyBlockWithMoreFees = blockGenerator.createChildBlock(lowDifficultyBlock, 10L, new ArrayList<>(), highDifficultyBlock.getDifficulty().getBytes());
 
         //diff test
-        assertFalse(SelectionRule.shouldWeAddThisBlock(lowDifficultyBlock.getDifficultyBI(),
-                highDifficultyBlock.getDifficultyBI(), lowDifficultyBlock, highDifficultyBlock));
-        assertTrue(SelectionRule.shouldWeAddThisBlock(highDifficultyBlock.getDifficultyBI(),
-                lowDifficultyBlock.getDifficultyBI(), highDifficultyBlock, lowDifficultyBlock));
+        assertFalse(SelectionRule.shouldWeAddThisBlock(lowDifficultyBlock.getDifficulty(),
+                highDifficultyBlock.getDifficulty(), lowDifficultyBlock, highDifficultyBlock));
+        assertTrue(SelectionRule.shouldWeAddThisBlock(highDifficultyBlock.getDifficulty(),
+                lowDifficultyBlock.getDifficulty(), highDifficultyBlock, lowDifficultyBlock));
         // At same difficulty, more fees
-        assertTrue(SelectionRule.shouldWeAddThisBlock(highDifficultyBlockWithMoreFees.getDifficultyBI(),
-                highDifficultyBlock.getDifficultyBI(), highDifficultyBlockWithMoreFees, highDifficultyBlock));
+        assertTrue(SelectionRule.shouldWeAddThisBlock(highDifficultyBlockWithMoreFees.getDifficulty(),
+                highDifficultyBlock.getDifficulty(), highDifficultyBlockWithMoreFees, highDifficultyBlock));
         //Low hash is proved in smallerBlockHashTest
     }
 

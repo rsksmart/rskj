@@ -336,13 +336,6 @@ public class Block {
         return this.header.getDifficulty();
     }
 
-    public BigInteger getDifficultyBI() {
-        if (!parsed) {
-            parseRLP();
-        }
-        return this.header.getDifficulty().asBigInteger();
-    }
-
     public BigInteger getFeesPaidToMiner() {
         if (!parsed) {
             parseRLP();
@@ -350,13 +343,13 @@ public class Block {
         return this.header.getPaidFees();
     }
 
-    public BigInteger getCumulativeDifficulty() {
+    public BlockDifficulty getCumulativeDifficulty() {
         if (!parsed) {
             parseRLP();
         }
-        BigInteger calcDifficulty = this.header.getDifficulty().asBigInteger();
+        BlockDifficulty calcDifficulty = this.header.getDifficulty();
         for (BlockHeader uncle : uncleList) {
-            calcDifficulty = calcDifficulty.add(uncle.getDifficulty().asBigInteger());
+            calcDifficulty = calcDifficulty.add(uncle.getDifficulty());
         }
         return calcDifficulty;
     }

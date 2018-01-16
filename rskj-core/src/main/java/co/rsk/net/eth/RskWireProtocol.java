@@ -19,6 +19,7 @@
 package co.rsk.net.eth;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.*;
 import co.rsk.net.messages.BlockMessage;
@@ -44,7 +45,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -235,12 +235,12 @@ public class RskWireProtocol extends EthHandler {
 
         BlockChainStatus blockChainStatus = this.blockchain.getStatus();
         Block bestBlock = blockChainStatus.getBestBlock();
-        BigInteger totalDifficulty = blockChainStatus.getTotalDifficulty();
+        BlockDifficulty totalDifficulty = blockChainStatus.getTotalDifficulty();
 
         // Original status
         Genesis genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), config.getBlockchainConfig().getCommonConstants().getInitialNonce(), true);
         org.ethereum.net.eth.message.StatusMessage msg = new org.ethereum.net.eth.message.StatusMessage(protocolVersion, networkId,
-                ByteUtil.bigIntegerToBytes(totalDifficulty), bestBlock.getHash(), genesis.getHash());
+                ByteUtil.bigIntegerToBytes(totalDifficulty.asBigInteger()), bestBlock.getHash(), genesis.getHash());
         sendMessage(msg);
 
         // RSK new protocol send status

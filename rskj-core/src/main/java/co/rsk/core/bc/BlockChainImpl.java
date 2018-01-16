@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blocks.BlockRecorder;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Metrics;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.Trie;
@@ -40,7 +41,6 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
-import java.math.BigInteger;
 import java.util.List;
 
 /**
@@ -90,7 +90,7 @@ public class BlockChainImpl implements Blockchain {
     private final AdminInfo adminInfo;
     private BlockValidator blockValidator;
 
-    private volatile BlockChainStatus status = new BlockChainStatus(null, BigInteger.ZERO);
+    private volatile BlockChainStatus status = new BlockChainStatus(null, BlockDifficulty.ZERO);
     private final Object connectLock = new Object();
     private final Object accessLock = new Object();
     private final BlockExecutor blockExecutor;
@@ -196,7 +196,7 @@ public class BlockChainImpl implements Blockchain {
 
     private ImportResult internalTryToConnect(Block block) {
         if (blockStore.getBlockByHash(block.getHash()) != null &&
-                !BigInteger.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash()))) {
+                !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash()))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
                          block.getShortHash(),
                          block.getNumber());
@@ -205,7 +205,7 @@ public class BlockChainImpl implements Blockchain {
         }
 
         Block bestBlock;
-        BigInteger bestTotalDifficulty;
+        BlockDifficulty bestTotalDifficulty;
 
         logger.trace("get current state");
 
@@ -216,7 +216,7 @@ public class BlockChainImpl implements Blockchain {
         }
 
         Block parent;
-        BigInteger parentTotalDifficulty;
+        BlockDifficulty parentTotalDifficulty;
 
         // Incoming block is child of current best block
         if (bestBlock == null || bestBlock.isParentOf(block)) {
@@ -234,7 +234,7 @@ public class BlockChainImpl implements Blockchain {
 
             parentTotalDifficulty = blockStore.getTotalDifficultyForHash(parent.getHash());
 
-            if (parentTotalDifficulty == null || parentTotalDifficulty.equals(BigInteger.ZERO)) {
+            if (parentTotalDifficulty == null || parentTotalDifficulty.equals(BlockDifficulty.ZERO)) {
                 return ImportResult.NO_PARENT;
             }
         }
@@ -279,7 +279,7 @@ public class BlockChainImpl implements Blockchain {
         }
 
         // the new accumulated difficulty
-        BigInteger totalDifficulty = parentTotalDifficulty.add(block.getCumulativeDifficulty());
+        BlockDifficulty totalDifficulty = parentTotalDifficulty.add(block.getCumulativeDifficulty());
         logger.trace("TD: updated to {}", totalDifficulty);
 
         // It is the new best block
@@ -353,7 +353,7 @@ public class BlockChainImpl implements Blockchain {
      * @param totalDifficulty   The total difficulty of the new blockchain
      */
     @Override
-    public void setStatus(Block block, BigInteger totalDifficulty) {
+    public void setStatus(Block block, BlockDifficulty totalDifficulty) {
         synchronized (accessLock) {
             status = new BlockChainStatus(block, totalDifficulty);
             blockStore.saveBlock(block, totalDifficulty, true);
@@ -469,12 +469,12 @@ public class BlockChainImpl implements Blockchain {
     }
 
     @Override
-    public BigInteger getTotalDifficulty() {
+    public BlockDifficulty getTotalDifficulty() {
         return status.getTotalDifficulty();
     }
 
     @Override
-    public void setTotalDifficulty(BigInteger totalDifficulty) {
+    public void setTotalDifficulty(BlockDifficulty totalDifficulty) {
         setStatus(status.getBestBlock(), totalDifficulty);
     }
 
@@ -491,7 +491,7 @@ public class BlockChainImpl implements Blockchain {
     @Override
     public ReceiptStore getReceiptStore() { return receiptStore; }
 
-    private void switchToBlockChain(Block block, BigInteger totalDifficulty) {
+    private void switchToBlockChain(Block block, BlockDifficulty totalDifficulty) {
         synchronized (accessLock) {
             storeBlock(block, totalDifficulty, true);
             status = new BlockChainStatus(block, totalDifficulty);
@@ -499,11 +499,11 @@ public class BlockChainImpl implements Blockchain {
         }
     }
 
-    private void extendAlternativeBlockChain(Block block, BigInteger totalDifficulty) {
+    private void extendAlternativeBlockChain(Block block, BlockDifficulty totalDifficulty) {
         storeBlock(block, totalDifficulty, false);
     }
 
-    private void storeBlock(Block block, BigInteger totalDifficulty, boolean inBlockChain) {
+    private void storeBlock(Block block, BlockDifficulty totalDifficulty, boolean inBlockChain) {
         blockStore.saveBlock(block, totalDifficulty, inBlockChain);
         logger.trace("Block saved: number: {}, hash: {}, TD: {}",
                 block.getNumber(), block.getShortHash(), totalDifficulty);

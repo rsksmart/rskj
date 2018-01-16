@@ -19,6 +19,7 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.net.Status;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.test.builders.AccountBuilder;
@@ -33,8 +34,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Created by ajlopez on 5/11/2016.
@@ -135,7 +134,7 @@ public class MessageTest {
     @Test
     public void encodeDecodeStatusMessageWithCompleteArguments() {
         Block block = new BlockGenerator().getBlock(1);
-        Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), BigInteger.TEN);
+        Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), new BlockDifficulty(BigInteger.TEN));
         StatusMessage message = new StatusMessage(status);
 
         byte[] encoded = message.getEncoded();
