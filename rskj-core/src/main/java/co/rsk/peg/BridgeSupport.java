@@ -840,7 +840,6 @@ public class BridgeSupport {
                 }
             } else {
                 logger.warn("Input {} of tx {} already signed by this federator.", i, new Sha3Hash(rskTxHash));
-                panicProcessor.panic("Federate-signing", String.format("Input {} of tx {} already signed by this federator.", i, new Sha3Hash(rskTxHash)));
                 break;
             }
         }

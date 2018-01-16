@@ -122,19 +122,16 @@ public class BlockExecutor {
     public boolean validate(Block block, BlockResult result) {
         if (result == BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
             logger.error("Block's execution was interrupted because of an invalid transaction: {} {}.", block.getNumber(), block.getShortHash());
-            panicProcessor.panic("interruptedblock", "Block's execution was interrupted because of an invalid transaction");
             return false;
         }
 
         if (!Arrays.equals(result.getStateRoot(), block.getStateRoot()))  {
             logger.error("Block's given State Root doesn't match: {} {} {} != {}", block.getNumber(), block.getShortHash(), Hex.toHexString(block.getStateRoot()), Hex.toHexString(result.getStateRoot()));
-            panicProcessor.panic("invalidstateroot", String.format("Block's given State Root Hash doesn't match: %s != %s", Hex.toHexString(block.getStateRoot()), Hex.toHexString(result.getStateRoot())));
             return false;
         }
 
         if (!Arrays.equals(result.getReceiptsRoot(), block.getReceiptsRoot())) {
             logger.error("Block's given Receipt Hash doesn't match: {} {} != {}", block.getNumber(), block.getShortHash(), Hex.toHexString(result.getReceiptsRoot()));
-            panicProcessor.panic("invalidreceipt", String.format("Block's given Receipt Hash doesn't match: %s != %s", Hex.toHexString(block.getReceiptsRoot()), Hex.toHexString(result.getReceiptsRoot())));
             return false;
         }
 
@@ -146,13 +143,11 @@ public class BlockExecutor {
             String blockLogsBloomString = Hex.toHexString(blockLogsBloom);
 
             logger.error("Block's given logBloom Hash doesn't match: {} != {} Block {} {}", resultLogsBloomString, blockLogsBloomString, block.getNumber(), block.getShortHash());
-            panicProcessor.panic("invalidbloom", String.format("Block's given logBloom Hash doesn't match: %s != %s", blockLogsBloomString, resultLogsBloomString));
             return false;
         }
 
         if (result.getGasUsed() != block.getGasUsed()) {
             logger.error("Block's given gasUsed doesn't match: {} != {} Block {} {}", block.getGasUsed(), result.getGasUsed(), block.getNumber(), block.getShortHash());
-            panicProcessor.panic("invalidgasused", String.format("Block's given gasUsed doesn't match: %s != %s", block.getGasUsed(), result.getGasUsed()));
             return false;
         }
 
@@ -161,10 +156,6 @@ public class BlockExecutor {
 
         if (!paidFees.equals(feesPaidToMiner))  {
             logger.error("Block's given paidFees doesn't match: {} != {} Block {} {}", feesPaidToMiner, paidFees, block.getNumber(), block.getShortHash());
-            panicProcessor.panic("invalidpaidfees",
-                    String.format("Block's given logBloom Hash doesn't match: %s != %s",
-                            feesPaidToMiner, paidFees));
-            //ERROR [panic]  invalidpaidfees: Block's given logBloom Hash doesn't match: 10 != 0
             return false;
         }
 
@@ -173,7 +164,6 @@ public class BlockExecutor {
 
         if (!executedTransactions.equals(transactionsList))  {
             logger.error("Block's given txs doesn't match: {} != {} Block {} {}", transactionsList, executedTransactions, block.getNumber(), block.getShortHash());
-            panicProcessor.panic("invalidtxs", String.format("Block's given txs doesn't match: %s != %s", transactionsList, executedTransactions));
             return false;
         }
 

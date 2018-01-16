@@ -1916,8 +1916,7 @@ public class VM {
                 vmCounter++;
             } // for
         } catch (RuntimeException e) {
-                logger.warn("VM halted: [{}]", e);
-                panicProcessor.panic("vm", String.format("VM halted: [%s]", e.getMessage()));
+                logger.error("VM halted: [{}]", e);
                 program.spendAllGas();
                 program.resetFutureRefund();
                 program.stop();

@@ -194,7 +194,6 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
             }
         } catch (Throwable t) {
             logger.error("Unexpected error: ", t);
-            panicProcessor.panic("bcerror", t.toString());
             return ImportResult.INVALID_BLOCK;
         }
     }
