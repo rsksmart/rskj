@@ -116,7 +116,7 @@ public class BlockValidatorTest {
     public void invalidChildBlockBadDifficulty() {
         Block genesis = new BlockGenerator().getGenesisBlock();
         Block block = new BlockGenerator().createChildBlock(genesis);
-        block.getHeader().setDifficulty(new byte[]{0x00});
+        block.getHeader().setDifficulty(new BlockDifficulty(new byte[]{0x00}));
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addDifficultyRule()

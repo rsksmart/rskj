@@ -19,6 +19,7 @@
 
 package org.ethereum.config.blockchain;
 
+import co.rsk.core.BlockDifficulty;
 import org.ethereum.config.BlockchainConfig;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
@@ -62,8 +63,8 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
 
 
     @Override
-    public BigInteger calcDifficulty(BlockHeader curBlockHeader, BlockHeader parent) {
-        BigInteger pd = parent.getDifficulty().asBigInteger();
+    public BlockDifficulty calcDifficulty(BlockHeader curBlockHeader, BlockHeader parent) {
+        BlockDifficulty pd = parent.getDifficulty();
         int uncleCount = curBlockHeader.getUncleCount();
         long curBlockTS = curBlockHeader.getTimestamp();
         long parentBlockTS =parent.getTimestamp();
@@ -71,21 +72,21 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
         return calcDifficultyFortConstants(getConstants(),curBlockTS, parentBlockTS,pd,uncleCount);
     }
 
-    public static BigInteger calcDifficultyFortConstants(Constants constants,
+    public static BlockDifficulty calcDifficultyFortConstants(Constants constants,
                                                          long curBlockTS,
                                                          long parentBlockTS,
-                                                         BigInteger pd ,
+                                                         BlockDifficulty pd ,
                                                          int uncleCount) {
         int duration =constants.getDurationLimit();
         BigInteger difDivisor = constants.getDifficultyBoundDivisor();
-        BigInteger minDif = constants.getMinimumDifficulty();
+        BlockDifficulty minDif = constants.getMinimumDifficulty();
         return calcDifficultyWithTimeStamps(curBlockTS, parentBlockTS,pd,uncleCount,duration,difDivisor,minDif );
     }
 
-    public static BigInteger calcDifficultyWithTimeStamps(long curBlockTS, long parentBlockTS,
-                                                           BigInteger pd,int uncleCount,int duration,
-                                                           BigInteger difDivisor,
-                                                           BigInteger minDif ) {
+    public static BlockDifficulty calcDifficultyWithTimeStamps(long curBlockTS, long parentBlockTS,
+                                                               BlockDifficulty pd, int uncleCount, int duration,
+                                                               BigInteger difDivisor,
+                                                               BlockDifficulty minDif ) {
 
         long delta = curBlockTS-parentBlockTS;
         if (delta<0) {
@@ -105,22 +106,21 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
             return pd;
         }
 
-        BigInteger quotient = pd.divide(difDivisor);
-        BigInteger difficulty;
+        BigInteger pdValue = pd.asBigInteger();
+        BigInteger quotient = pdValue.divide(difDivisor);
 
         BigInteger fromParent;
         if (sign==1) {
-            fromParent =pd.add(quotient);
+            fromParent =pdValue.add(quotient);
         } else {
-            fromParent =pd.subtract(quotient);
+            fromParent =pdValue.subtract(quotient);
         }
 
         // If parent difficulty is zero (maybe a genesis block), then the first child difficulty MUST
         // be greater or equal getMinimumDifficulty(). That's why the max() is applied in both the add and the sub
-        // cases
-        difficulty = max(minDif, fromParent);
-
-        return difficulty;
+        // cases.
+        // Note that we have to apply max() first in case fromParent ended up being negative.
+        return new BlockDifficulty(max(minDif.asBigInteger(), fromParent));
     }
 
     protected abstract BigInteger getCalcDifficultyMultiplier(BlockHeader curBlock, BlockHeader parent);

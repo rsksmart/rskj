@@ -293,14 +293,14 @@ public class BlockHeader {
         return difficulty;
     }
 
-    public void setDifficulty(byte[] difficulty) {
+    public void setDifficulty(BlockDifficulty difficulty) {
         /* A sealed block header is immutable, cannot be changed */
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter difficulty");
         }
 
-        this.difficultyRaw = difficulty;
-        this.difficulty = new BlockDifficulty(difficultyRaw);
+        this.difficultyRaw = difficulty.getBytes();
+        this.difficulty = difficulty;
     }
 
     public long getTimestamp() {

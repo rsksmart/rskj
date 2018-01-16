@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
@@ -48,8 +49,8 @@ public class ImportLightTest {
         RskSystemProperties config = new RskSystemProperties();
         config.setBlockchainConfig(new GenesisConfig(new GenesisConfig.GenesisConstants() {
             @Override
-            public BigInteger getMinimumDifficulty() {
-                return BigInteger.ONE;
+            public BlockDifficulty getMinimumDifficulty() {
+                return new BlockDifficulty(BigInteger.ONE);
             }
         }));
         IndexedBlockStore blockStore = new IndexedBlockStore(config);

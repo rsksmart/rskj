@@ -370,7 +370,7 @@ public class MinerServerImpl implements MinerServer {
         newHeader.setTimestamp(this.getCurrentTimeInSeconds());
         Block parentBlock =blockchain.getBlockByHash(newHeader.getParentHash());
         newHeader.setDifficulty(
-                difficultyCalculator.calcDifficulty(newHeader, parentBlock.getHeader()).toByteArray());
+                difficultyCalculator.calcDifficulty(newHeader, parentBlock.getHeader()));
 
         // fallback mining marker
         newBlock.setExtraData(new byte[]{42});
@@ -798,7 +798,7 @@ public class MinerServerImpl implements MinerServer {
                 minimumGasPrice.toByteArray(),
                 CollectionUtils.size(uncles)
         );
-        newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()).toByteArray());
+        newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()));
         newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash());
         return newHeader;
     }

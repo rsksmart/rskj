@@ -19,14 +19,11 @@
 
 package org.ethereum.validator;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.math.BigInteger;
-
-import static org.ethereum.util.BIUtil.isEqual;
 
 /**
  * Checks block's difficulty against calculated difficulty value
@@ -46,11 +43,11 @@ public class DifficultyRule extends DependentBlockHeaderRule {
 
     @Override
     public boolean validate(BlockHeader header, BlockHeader parent) {
-        BigInteger calcDifficulty = difficultyCalculator.calcDifficulty(header, parent);
-        BigInteger difficulty = header.getDifficulty().asBigInteger();
+        BlockDifficulty calcDifficulty = difficultyCalculator.calcDifficulty(header, parent);
+        BlockDifficulty difficulty = header.getDifficulty();
 
-        if (!isEqual(difficulty, calcDifficulty)) {
-            logger.error(String.format("#%d: difficulty != calcDifficulty", header.getNumber()));
+        if (!difficulty.equals(calcDifficulty)) {
+            logger.error("#{}: difficulty != calcDifficulty", header.getNumber());
             return false;
         }
         return true;

@@ -21,6 +21,7 @@ package org.ethereum.config.blockchain;
 
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeTestNetConstants;
+import co.rsk.core.BlockDifficulty;
 import org.ethereum.config.Constants;
 import org.ethereum.core.BlockHeader;
 
@@ -34,7 +35,7 @@ public class TestNetAfterBridgeSyncConfig extends GenesisConfig {
 
         private static final BigInteger DIFFICULTY_BOUND_DIVISOR = BigInteger.valueOf(50);
         private static final byte CHAIN_ID = 31;
-        private BigInteger minimumDifficulty = BigInteger.valueOf(131072);
+        private final BlockDifficulty minimumDifficulty = new BlockDifficulty(BigInteger.valueOf(131072));
 
         @Override
         public BridgeConstants getBridgeConstants() {
@@ -42,7 +43,7 @@ public class TestNetAfterBridgeSyncConfig extends GenesisConfig {
         }
 
         @Override
-        public BigInteger getMinimumDifficulty() {
+        public BlockDifficulty getMinimumDifficulty() {
             return minimumDifficulty;
         }
 
@@ -78,7 +79,7 @@ public class TestNetAfterBridgeSyncConfig extends GenesisConfig {
 
 
     @Override
-    public BigInteger calcDifficulty(BlockHeader curBlock, BlockHeader parent) {
+    public BlockDifficulty calcDifficulty(BlockHeader curBlock, BlockHeader parent) {
         // If more than 10 minutes, reset to original difficulty 0x00100000
         if (curBlock.getTimestamp() >= parent.getTimestamp() + 600) {
             return getConstants().getMinimumDifficulty();

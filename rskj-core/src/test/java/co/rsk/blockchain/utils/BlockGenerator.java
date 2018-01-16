@@ -19,6 +19,7 @@
 package co.rsk.blockchain.utils;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
@@ -33,7 +34,6 @@ import org.ethereum.core.*;
 import org.ethereum.core.genesis.InitialAddressState;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.BIUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -41,8 +41,10 @@ import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
-import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.ethereum.core.Genesis.getZeroHash;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
@@ -269,10 +271,10 @@ public class BlockGenerator {
         );
 
         if (difficulty == 0) {
-            newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader()).toByteArray());
+            newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader()));
         }
         else {
-            newHeader.setDifficulty(BigInteger.valueOf(difficulty).toByteArray());
+            newHeader.setDifficulty(new BlockDifficulty(BigInteger.valueOf(difficulty)));
         }
 
         newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash());

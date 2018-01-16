@@ -19,15 +19,12 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.math.BigInteger;
-
-import static org.ethereum.util.BIUtil.isEqual;
 
 /**
  * Checks block's difficulty against calculated difficulty value
@@ -52,11 +49,11 @@ public class BlockDifficultyRule implements BlockParentDependantValidationRule {
             return false;
         }
         BlockHeader header = block.getHeader();
-        BigInteger calcDifficulty = difficultyCalculator.calcDifficulty(header, parent.getHeader());
-        BigInteger difficulty = header.getDifficulty().asBigInteger();
+        BlockDifficulty calcDifficulty = difficultyCalculator.calcDifficulty(header, parent.getHeader());
+        BlockDifficulty difficulty = header.getDifficulty();
 
-        if (!isEqual(difficulty, calcDifficulty)) {
-            logger.warn(String.format("#%d: difficulty != calcDifficulty", header.getNumber()));
+        if (!difficulty.equals(calcDifficulty)) {
+            logger.warn("#{}: difficulty != calcDifficulty", header.getNumber());
             return false;
         }
         return true;

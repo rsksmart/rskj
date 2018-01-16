@@ -4,6 +4,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
@@ -64,7 +65,7 @@ public class MainNetMinerTest {
         /* We need a low target */
         BlockChainImpl bc = new BlockChainBuilder().build();
         Genesis gen = (Genesis) BlockChainImplTest.getGenesisBlock(bc);
-        gen.getHeader().setDifficulty(BigInteger.valueOf(Long.MAX_VALUE).toByteArray());
+        gen.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(Long.MAX_VALUE)));
         bc.setStatus(gen, gen.getCumulativeDifficulty());
         World world = new World(bc, gen);
         blockchain = world.getBlockChain();
@@ -225,7 +226,7 @@ public class MainNetMinerTest {
         /* We need a low, but not too low, target */
         BlockChainImpl bc = new BlockChainBuilder().build();
         Genesis gen = (Genesis) BlockChainImplTest.getGenesisBlock(bc);
-        gen.getHeader().setDifficulty(BigInteger.valueOf(300000).toByteArray());
+        gen.getHeader().setDifficulty(new BlockDifficulty(BigInteger.valueOf(300000)));
         bc.setStatus(gen, gen.getCumulativeDifficulty());
         World world = new World(bc, gen);
         blockchain = world.getBlockChain();

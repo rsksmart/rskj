@@ -19,6 +19,7 @@
 
 package org.ethereum.config.blockchain;
 
+import co.rsk.core.BlockDifficulty;
 import org.ethereum.config.Constants;
 import org.ethereum.core.BlockHeader;
 
@@ -55,7 +56,7 @@ public class GenesisConfig extends AbstractConfig {
     }
 
     @Override
-    public BigInteger calcDifficulty(BlockHeader curBlock, BlockHeader parent) {
+    public BlockDifficulty calcDifficulty(BlockHeader curBlock, BlockHeader parent) {
         // If more than 10 minutes, reset to minimum difficulty to allow private mining
         if (curBlock.getTimestamp() >= parent.getTimestamp() + 600) {
             return getConstants().getMinimumDifficulty();
