@@ -19,14 +19,10 @@
 
 package org.ethereum.net.eth.message;
 
-import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-
 import org.spongycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
 
 /**
  * Wrapper around an Ethereum Blocks message on the network
@@ -37,26 +33,9 @@ public class NewBlockMessage extends EthMessage {
 
     private Block block;
     private byte[] difficulty;
-    private final RskSystemProperties config;
 
-    public NewBlockMessage(RskSystemProperties config, byte[] encoded) {
+    public NewBlockMessage(byte[] encoded) {
         super(encoded);
-        this.config = config;
-    }
-
-    public NewBlockMessage(RskSystemProperties config, Block block, byte[] difficulty) {
-        this.config = config;
-        this.block = block;
-        this.difficulty = difficulty;
-        encode();
-    }
-
-    private void encode() {
-        byte[] block = this.block.getEncoded();
-        byte[] diff = RLP.encodeElement(this.difficulty);
-
-        this.encoded = RLP.encodeList(block, diff);
-        parsed = true;
     }
 
     private void parse() {
@@ -69,22 +48,11 @@ public class NewBlockMessage extends EthMessage {
         parsed = true;
     }
 
-    public Block getBlock() {
+    private Block getBlock() {
         if (!parsed) {
             parse();
         }
         return block;
-    }
-
-    public byte[] getDifficulty() {
-        if (!parsed) {
-            parse();
-        }
-        return difficulty;
-    }
-
-    public BigInteger getDifficultyAsBigInt() {
-        return new BigInteger(1, difficulty);
     }
 
     @Override

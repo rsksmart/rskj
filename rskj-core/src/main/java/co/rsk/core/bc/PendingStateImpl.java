@@ -409,7 +409,7 @@ public class PendingStateImpl implements PendingState {
                             emptyUncleHashList, // uncleHash
                             RskAddress.nullAddress().getBytes(), //coinbase
                             new byte[32], // log bloom - from tx receipts
-                            best.getDifficulty(), // difficulty
+                            best.getDifficulty().getBytes(), // difficulty
                             best.getNumber() + 1, //number
                             ByteUtil.longToBytesNoLeadZeroes(Long.MAX_VALUE), // max Gas Limit
                             0,  // gas used

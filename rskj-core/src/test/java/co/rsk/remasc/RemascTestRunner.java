@@ -208,7 +208,7 @@ class RemascTestRunner {
         Transaction remascTx = new RemascTransaction(parentBlock.getNumber() + 1);
         txs.add(remascTx);
 
-        long difficultyAsLong = difficulty == null?BigIntegers.fromUnsignedByteArray(parentBlock.getDifficulty()).longValue():difficulty;
+        long difficultyAsLong = difficulty == null ? parentBlock.getDifficulty().asBigInteger().longValue() : difficulty;
 
         if (difficultyAsLong == 0)
             difficultyAsLong = 1;

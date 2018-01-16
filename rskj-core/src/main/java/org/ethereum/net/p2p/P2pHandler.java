@@ -22,13 +22,11 @@ package org.ethereum.net.p2p;
 import co.rsk.config.RskSystemProperties;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.client.ConfigCapabilities;
-import org.ethereum.net.eth.message.NewBlockMessage;
 import org.ethereum.net.eth.message.TransactionsMessage;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.message.StaticMessages;
@@ -209,12 +207,6 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
     public void sendTransaction(Transaction tx) {
 
         TransactionsMessage msg = new TransactionsMessage(config, tx);
-        msgQueue.sendMessage(msg);
-    }
-
-    public void sendNewBlock(Block block) {
-
-        NewBlockMessage msg = new NewBlockMessage(config, block, block.getDifficulty());
         msgQueue.sendMessage(msg);
     }
 

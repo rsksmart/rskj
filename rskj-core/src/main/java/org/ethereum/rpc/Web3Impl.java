@@ -667,7 +667,7 @@ public class Web3Impl implements Web3 {
         br.stateRoot = TypeConverter.toJsonHex(b.getStateRoot());
         br.receiptsRoot = TypeConverter.toJsonHex(b.getReceiptsRoot());
         br.miner = isPending ? null : TypeConverter.toJsonHex(b.getCoinbase().getBytes());
-        br.difficulty = TypeConverter.toJsonHex(b.getDifficulty());
+        br.difficulty = TypeConverter.toJsonHex(b.getDifficulty().getBytes());
         br.totalDifficulty = TypeConverter.toJsonHex(this.blockchain.getBlockStore().getTotalDifficultyForHash(b.getHash()));
         br.extraData = TypeConverter.toJsonHex(b.getExtraData());
         br.size = TypeConverter.toJsonHex(b.getEncoded().length);

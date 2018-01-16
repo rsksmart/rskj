@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.trie.Trie;
@@ -328,11 +329,11 @@ public class Block {
         return this.header.getLogsBloom();
     }
 
-    public byte[] getDifficulty() {
+    public BlockDifficulty getDifficulty() {
         if (!parsed) {
             parseRLP();
         }
-        return this.header.getDifficulty().getBytes();
+        return this.header.getDifficulty();
     }
 
     public BigInteger getDifficultyBI() {
