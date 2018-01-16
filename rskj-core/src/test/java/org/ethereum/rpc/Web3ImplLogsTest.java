@@ -593,8 +593,67 @@ public class Web3ImplLogsTest {
         Assert.assertEquals("0x" + mainAddress, ((LogFilterElement)logs[2]).address);
     }
 
+    @Test
+    public void createCallerContractWithEventsOnInvokeUsingGetFilterLogs() throws Exception {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+
+        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+
+        SimpleEthereum eth = new SimpleEthereum();
+        eth.repository = world.getBlockChain().getRepository();
+        eth.blockchain = world.getBlockChain();
+        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createPersistentWallet("testwallet3b"));
+
+        // TODO tricky link to listener
+        world.getBlockChain().setListener(web3.setupListener());
+
+        web3.personal_newAccountWithSeed("notDefault");
+
+        Block genesis = world.getBlockByName("g00");
+        Transaction tx;
+        tx = getMainContractTransaction(acc1);
+
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
+        world.getBlockChain().tryToConnect(block1);
+
+        String mainAddress = tx.getContractAddress().toString();
+
+        Transaction tx2;
+        tx2 = getCallerContractTransaction(acc1, mainAddress);
+        String callerAddress = Hex.toHexString(tx2.getContractAddress().getBytes());
+
+        List<Transaction> txs2 = new ArrayList<>();
+        txs2.add(tx2);
+        Block block2 = new BlockBuilder(world).parent(block1).transactions(txs2).build();
+        world.getBlockChain().tryToConnect(block2);
+
+        Transaction tx3;
+        tx3 = getCallerContractTransactionWithInvoke(acc1, tx2.getContractAddress().getBytes(), mainAddress);
+
+        List<Transaction> txs3 = new ArrayList<>();
+        txs3.add(tx3);
+        Block block3 = new BlockBuilder(world).parent(block2).transactions(txs3).build();
+        world.getBlockChain().tryToConnect(block3);
+
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.address = "0x" + mainAddress;
+        String id = web3.eth_newFilter(fr);
+
+        Object[] logs = web3.eth_getFilterLogs(id);
+
+        Assert.assertNotNull(id);
+        Assert.assertNotNull(logs);
+        Assert.assertEquals(1, logs.length);
+
+        Assert.assertEquals("0x" + mainAddress, ((LogFilterElement)logs[0]).address);
+    }
+
     private Web3Impl createWeb3(Blockchain blockchain, PendingState pendingState) {
-        return createWeb3(Web3Mocks.getMockEthereum(), blockchain, pendingState, WalletFactory.createWallet());
+        PersonalModule personalModule = new PersonalModuleWalletEnabled(config, Web3Mocks.getMockEthereum(), null, pendingState);
+        return new Web3RskImpl(Web3Mocks.getMockEthereum(), blockchain, pendingState, config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), personalModule, null, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, blockchain.getBlockStore(), null, null, null, new SimpleConfigCapabilities());
     }
 
     private Web3Impl createWeb3(Ethereum eth, Blockchain blockchain, PendingState pendingState, Wallet wallet) {
@@ -858,7 +917,7 @@ contract caller {
 }
 } */
 
-    String compiledCaller = "606060405234610000576040516020806101f8833981016040528080519060200190919050505b8073ffffffffffffffffffffffffffffffffffffffff1663195977a66130396040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b156100005760325a03f115610000575050507f2012ef02e82e91abf55727cc31c3b6e3375003aa9e879f855db72d9e78822c40607b6040518082815260200191505060405180910390a15b505b610111806100e76000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063e60c2d4414603c575b6000565b34600057606a600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050606c565b005b8073ffffffffffffffffffffffffffffffffffffffff1663195977a661303a6040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b1560005760325a03f1156000575050505b505600a165627a7a72305820f8bc730651ba568de3f84a81088f94a8701c5c41f732d5c7a447077ee40f97a80029";
+        String compiledCaller = "606060405234610000576040516020806101f8833981016040528080519060200190919050505b8073ffffffffffffffffffffffffffffffffffffffff1663195977a66130396040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b156100005760325a03f115610000575050507f2012ef02e82e91abf55727cc31c3b6e3375003aa9e879f855db72d9e78822c40607b6040518082815260200191505060405180910390a15b505b610111806100e76000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063e60c2d4414603c575b6000565b34600057606a600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050606c565b005b8073ffffffffffffffffffffffffffffffffffffffff1663195977a661303a6040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b1560005760325a03f1156000575050505b505600a165627a7a72305820f8bc730651ba568de3f84a81088f94a8701c5c41f732d5c7a447077ee40f97a80029";
         return new TransactionBuilder()
                 .sender(acc1)
                 .gasLimit(BigInteger.valueOf(1000000))
