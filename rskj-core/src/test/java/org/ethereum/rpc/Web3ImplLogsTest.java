@@ -34,6 +34,7 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
+import org.ethereum.db.TransactionInfo;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
 import org.ethereum.rpc.Simples.SimpleEthereum;
@@ -110,16 +111,12 @@ public class Web3ImplLogsTest {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
 
-        SimpleWorldManager worldManager = new SimpleWorldManager();
-        worldManager.setBlockchain(world.getBlockChain());
-        worldManager.setBlockStore(world.getBlockChain().getBlockStore());
-        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
-        worldManager.setPendingState(pendingState);
+        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
 
         SimpleEthereum eth = new SimpleEthereum();
-        eth.repository = (Repository) world.getBlockChain().getRepository();
-        eth.worldManager = worldManager;
-        Web3Impl web3 = createWeb3(eth, worldManager, WalletFactory.createPersistentWallet("wallet0"));
+        eth.repository = world.getBlockChain().getRepository();
+        eth.blockchain = world.getBlockChain();
+        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState , WalletFactory.createPersistentWallet("wallet0"));
 
         // TODO tricky link to listener
         world.getBlockChain().setListener(web3.setupListener());
@@ -127,7 +124,7 @@ public class Web3ImplLogsTest {
         web3.personal_newAccountWithSeed("notDefault");
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        fr.fromBlock = "latest";
         String id = web3.eth_newFilter(fr);
 
         Block genesis = world.getBlockByName("g00");
@@ -149,20 +146,56 @@ public class Web3ImplLogsTest {
     }
 
     @Test
+    public void newFilterWithAccountAndTopicsCreatedAfterBlockAndGetLogs() throws Exception {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+
+        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+
+        SimpleEthereum eth = new SimpleEthereum();
+        eth.repository = world.getBlockChain().getRepository();
+        eth.blockchain = world.getBlockChain();
+        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createPersistentWallet("wallet1"));
+
+        // TODO tricky link to listener
+        world.getBlockChain().setListener(web3.setupListener());
+
+        web3.personal_newAccountWithSeed("notDefault");
+
+        Block genesis = world.getBlockByName("g00");
+        Transaction tx;
+        tx = getContractTransaction(acc1);
+
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+        Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
+        world.getBlockChain().tryToConnect(block1);
+
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.address = Hex.toHexString(tx.getContractAddress().getBytes());
+        fr.topics = new Object[] { "06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad1" };
+        String id = web3.eth_newFilter(fr);
+
+        Object[] logs = web3.eth_getFilterLogs(id);
+
+        Assert.assertNotNull(id);
+        Assert.assertNotNull(logs);
+        Assert.assertEquals(1, logs.length);
+
+        Assert.assertEquals("0x" + tx.getContractAddress().toString(),((LogFilterElement)logs[0]).address);
+    }
+
+    @Test
     public void newFilterGetLogsTwiceAfterBlock() throws Exception {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
 
-        SimpleWorldManager worldManager = new SimpleWorldManager();
-        worldManager.setBlockchain(world.getBlockChain());
-        worldManager.setBlockStore(world.getBlockChain().getBlockStore());
-        PendingState pendingState = new PendingStateImpl(world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
-        worldManager.setPendingState(pendingState);
+        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
 
         SimpleEthereum eth = new SimpleEthereum();
-        eth.repository = (Repository) world.getBlockChain().getRepository();
-        eth.worldManager = worldManager;
-        Web3Impl web3 = createWeb3(eth, worldManager, WalletFactory.createPersistentWallet("wallet1"));
+        eth.repository = world.getBlockChain().getRepository();
+        eth.blockchain = world.getBlockChain();
+        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createPersistentWallet("wallet2"));
 
         // TODO tricky link to listener
         world.getBlockChain().setListener(web3.setupListener());

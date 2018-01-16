@@ -1106,7 +1106,7 @@ public class Web3Impl implements Web3 {
                 installedFilters.put(id, filter);
             }
 
-            Block blockFrom = fr.fromBlock == null ? null : getBlockByNumberOrStr(fr.fromBlock);
+            Block blockFrom = fr.fromBlock == null ? this.blockchain.getBestBlock() : getBlockByNumberOrStr(fr.fromBlock);
             Block blockTo = fr.toBlock == null ? null : getBlockByNumberOrStr(fr.toBlock);
 
             if (blockFrom != null) {
