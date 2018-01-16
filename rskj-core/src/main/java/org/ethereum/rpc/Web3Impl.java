@@ -925,6 +925,7 @@ public class Web3Impl implements Web3 {
 
         List<FilterEvent> events = new ArrayList<>();
         int processedEvents = 0;
+        long timeinit = System.currentTimeMillis();
 
         public synchronized Object[] getNewEvents() {
             Object[] ret = events.stream().skip(processedEvents).map(fe -> fe.getJsonEventObject()).collect(Collectors.toList()).toArray();
