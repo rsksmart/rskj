@@ -67,6 +67,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static java.lang.Math.max;
 import static org.ethereum.rpc.TypeConverter.*;
@@ -923,28 +924,18 @@ public class Web3Impl implements Web3 {
         }
 
         List<FilterEvent> events = new ArrayList<>();
-        int polledevents = 0;
+        int processedEvents = 0;
 
         public synchronized Object[] getNewEvents() {
-            Object[] ret = new Object[events.size() - polledevents];
+            Object[] ret = events.stream().skip(processedEvents).map(fe -> fe.getJsonEventObject()).collect(Collectors.toList()).toArray();
 
-            for (int i = 0; i < ret.length; i++) {
-                ret[i] = events.get(i + polledevents).getJsonEventObject();
-            }
-
-            polledevents = events.size();
+            processedEvents = events.size();
 
             return ret;
         }
 
         public synchronized Object[] getEvents() {
-            Object[] ret = new Object[events.size()];
-
-            for (int i = 0; i < ret.length; i++) {
-                ret[i] = events.get(i).getJsonEventObject();
-            }
-
-            return ret;
+            return events.stream().map(fe -> fe.getJsonEventObject()).collect(Collectors.toList()).toArray();
         }
 
         protected synchronized void add(FilterEvent evt) {
