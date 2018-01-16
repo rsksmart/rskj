@@ -80,7 +80,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        if (header.getDifficulty().asBigInteger().compareTo(constants.getFallbackMiningDifficulty()) > 0) {
+        if (header.getDifficulty().compareTo(constants.getFallbackMiningDifficulty()) > 0) {
             return false;
         }
 

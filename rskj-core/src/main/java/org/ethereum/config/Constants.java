@@ -44,7 +44,7 @@ public class Constants {
     private int gasLimitBoundDivisor = 1024;
 
     // Private mining is allowed if difficulty is lower or equal than this value
-    private BigInteger fallbackMiningDifficulty = BigInteger.valueOf((long) 14E15); // 14 peta evert 14 secs = 1 peta/s.
+    private final BlockDifficulty fallbackMiningDifficulty = new BlockDifficulty(BigInteger.valueOf((long) 14E15)); // 14 peta evert 14 secs = 1 peta/s.
 
     private static long blockPerDay = 24*3600 / 14;
 
@@ -122,7 +122,7 @@ public class Constants {
         return minimumDifficulty;
     }
 
-    public BigInteger getFallbackMiningDifficulty() { return fallbackMiningDifficulty; }
+    public BlockDifficulty getFallbackMiningDifficulty() { return fallbackMiningDifficulty; }
 
     public long getEndOfFallbackMiningBlockNumber() { return endOfFallbackMiningBlockNumber; }
 
