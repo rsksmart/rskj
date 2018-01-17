@@ -975,9 +975,9 @@ public class Web3Impl implements Web3 {
                 topics = null;
             }
 
-            LogFilter logFilter = new LogFilter(addresses, topics);
+            AddressesTopicsFilter addressesTopicsFilter = new AddressesTopicsFilter(addresses, topics);
 
-            JsonLogFilter filter = new JsonLogFilter(logFilter, blockchain);
+            LogFilter filter = new LogFilter(addressesTopicsFilter, blockchain);
 
             int id = filterManager.registerFilter(filter);
 

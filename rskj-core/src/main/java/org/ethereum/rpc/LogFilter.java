@@ -1,7 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ * Copyright (C) 2018 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,125 +18,75 @@
 
 package org.ethereum.rpc;
 
-import org.ethereum.core.Bloom;
-import org.ethereum.crypto.SHA3Helper;
-import org.ethereum.vm.DataWord;
+import org.ethereum.core.*;
+import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.LogInfo;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 /**
- * Created by Anton Nashatyrev on 12.04.2016.
+ * Created by ajlopez on 17/01/2018.
  */
+public class LogFilter extends Filter {
+    class LogFilterEvent extends FilterEvent {
+        private final LogFilterElement el;
 
-public class LogFilter {
-    private List<byte[][]> topics = new ArrayList<>();  //  [[addr1, addr2], null, [A, B], [C]]
-    private byte[][] contractAddresses = new byte[0][];
-    private Bloom[][] filterBlooms;
-
-    public LogFilter(byte[][] addresses, byte[][] topics) {
-        if (topics != null) {
-            this.topics.add(topics);
+        LogFilterEvent(LogFilterElement el) {
+            this.el = el;
         }
 
-        this.contractAddresses = addresses;
-
-        initBlooms();
-    }
-
-    private void initBlooms() {
-        if (filterBlooms != null) {
-            return;
-        }
-
-        List<byte[][]> addrAndTopics = new ArrayList<>(topics);
-
-        addrAndTopics.add(contractAddresses);
-
-        filterBlooms = new Bloom[addrAndTopics.size()][];
-
-        for (int i = 0; i < addrAndTopics.size(); i++) {
-            byte[][] orTopics = addrAndTopics.get(i);
-
-            if (orTopics == null || orTopics.length == 0) {
-                filterBlooms[i] = new Bloom[] {new Bloom()}; // always matches
-            } else {
-                filterBlooms[i] = new Bloom[orTopics.length];
-                for (int j = 0; j < orTopics.length; j++) {
-                    filterBlooms[i][j] = Bloom.create(SHA3Helper.sha3(orTopics[j]));
-                }
-            }
+        @Override
+        public LogFilterElement getJsonEventObject() {
+            return el;
         }
     }
 
-    public boolean matchBloom(Bloom blockBloom) {
-        initBlooms();
+    private AddressesTopicsFilter addressesTopicsFilter;
+    boolean onNewBlock;
+    boolean onPendingTx;
+    private final Blockchain blockchain;
 
-        for (Bloom[] andBloom : filterBlooms) {
-            boolean orMatches = false;
-
-            for (Bloom orBloom : andBloom) {
-                if (blockBloom.matches(orBloom)) {
-                    orMatches = true;
-                    break;
-                }
-            }
-
-            if (!orMatches) {
-                return false;
-            }
-        }
-
-        return true;
+    public LogFilter(AddressesTopicsFilter addressesTopicsFilter, Blockchain blockchain) {
+        this.addressesTopicsFilter = addressesTopicsFilter;
+        this.blockchain = blockchain;
     }
 
-    boolean matchesContractAddress(byte[] toAddr) {
-        initBlooms();
-
-        for (byte[] address : contractAddresses) {
-            if (Arrays.equals(address, toAddr)) {
-                return true;
-            }
-        }
-
-        return contractAddresses.length == 0;
+    void onLogMatch(LogInfo logInfo, Block b, int txIndex, Transaction tx, int logIdx) {
+        add(new LogFilterEvent(new LogFilterElement(logInfo, b, txIndex, tx, logIdx)));
     }
 
-    public boolean matchesExactly(LogInfo logInfo) {
-        initBlooms();
+    void onTransaction(Transaction tx, Block b, int txIndex) {
+        TransactionInfo txInfo = blockchain.getTransactionInfo(tx.getHash());
+        TransactionReceipt receipt = txInfo.getReceipt();
 
-        if (!matchesContractAddress(logInfo.getAddress())) {
-            return false;
-        }
+        LogFilterElement[] logs = new LogFilterElement[receipt.getLogInfoList().size()];
 
-        List<DataWord> logTopics = logInfo.getTopics();
-
-        for (int i = 0; i < this.topics.size(); i++) {
-            if (i >= logTopics.size()) {
-                return false;
-            }
-
-            byte[][] orTopics = topics.get(i);
-
-            if (orTopics != null && orTopics.length > 0) {
-                boolean orMatches = false;
-                DataWord logTopic = logTopics.get(i);
-
-                for (byte[] orTopic : orTopics) {
-                    if (new DataWord(orTopic).equals(logTopic)) {
-                        orMatches = true;
-                        break;
-                    }
-                }
-
-                if (!orMatches) {
-                    return false;
-                }
+        for (int i = 0; i < logs.length; i++) {
+            LogInfo logInfo = receipt.getLogInfoList().get(i);
+            if (addressesTopicsFilter.matchesContractAddress(logInfo.getAddress())) {
+                onLogMatch(logInfo, b, txIndex, receipt.getTransaction(), i);
             }
         }
+    }
 
-        return true;
+    void onBlock(Block b) {
+        if (addressesTopicsFilter.matchBloom(new Bloom(b.getLogBloom()))) {
+            int txIdx = 0;
+
+            for (Transaction tx : b.getTransactionsList()) {
+                onTransaction(tx, b, txIdx);
+                txIdx++;
+            }
+        }
+    }
+
+    @Override
+    public void newBlockReceived(Block b) {
+        if (onNewBlock) {
+            onBlock(b);
+        }
+    }
+
+    @Override
+    public void newPendingTx(Transaction tx) {
+        //empty method
     }
 }
