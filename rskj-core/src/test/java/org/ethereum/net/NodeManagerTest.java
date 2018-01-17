@@ -25,10 +25,7 @@ import org.ethereum.net.rlpx.Node;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.spongycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
@@ -45,22 +42,15 @@ public class NodeManagerTest {
     private static final String NODE_ID_2 = "3c7931f323989425a1e56164043af0dff567f33df8c67d4c6918647535f88798d54bc864b936d8c77d4096e8b8485b6061b0d0d2b708cd9154e6dcf981533261";
     private static final String NODE_ID_3 = "e229918d45c131e130c91c4ea51c97ab4f66cfbd0437b35c92392b5c2b3d44b28ea15b84a262459437c955f6cc7f10ad1290132d3fc866bfaf4115eac0e8e860";
 
-
-    @InjectMocks
     private NodeManager nodeManager;
-
-    @Mock
     private PeerExplorer peerExplorer;
-
-    @Mock
     private SystemProperties config;
 
     @Before
     public void initMocks(){
-        nodeManager = new NodeManager();
         peerExplorer = Mockito.mock(PeerExplorer.class);
         config = Mockito.mock(SystemProperties.class);
-        MockitoAnnotations.initMocks(this);
+        nodeManager = new NodeManager(peerExplorer, config);
 
         Mockito.when(config.nodeId()).thenReturn(Hex.decode(NODE_ID_1));
         Mockito.when(config.getExternalIp()).thenReturn("127.0.0.1");
