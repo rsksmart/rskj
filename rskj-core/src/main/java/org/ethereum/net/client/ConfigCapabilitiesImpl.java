@@ -24,7 +24,6 @@ import org.ethereum.net.eth.EthVersion;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedSet;
@@ -38,13 +37,13 @@ import static org.ethereum.net.eth.EthVersion.fromCode;
  */
 @Component("configCapabilities")
 public class ConfigCapabilitiesImpl implements ConfigCapabilities{
-    @Autowired
-    SystemProperties config;
+
+    private final SystemProperties config;
 
     private SortedSet<Capability> allCaps = new TreeSet<>();
 
-    @PostConstruct
-    private void init() {
+    @Autowired
+    public ConfigCapabilitiesImpl(SystemProperties config) {
         if (config.syncVersion() != null) {
             EthVersion eth = fromCode(config.syncVersion());
             if (eth != null) {
@@ -55,6 +54,7 @@ public class ConfigCapabilitiesImpl implements ConfigCapabilities{
                 allCaps.add(new Capability(RSK, v.getCode()));
             }
         }
+        this.config = config;
     }
 
     /**
