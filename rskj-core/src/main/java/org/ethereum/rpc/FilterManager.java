@@ -47,6 +47,7 @@ public class FilterManager {
 
             int id = filterCounter.getAndIncrement();
             installedFilters.put(id, filter);
+
             return id;
         }
     }

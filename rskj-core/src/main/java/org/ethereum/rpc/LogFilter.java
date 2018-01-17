@@ -37,16 +37,14 @@ public class LogFilter {
     private byte[][] contractAddresses = new byte[0][];
     private Bloom[][] filterBlooms;
 
-    public LogFilter withContractAddress(byte[] ... orAddress) {
-        contractAddresses = orAddress;
+    public LogFilter(byte[][] addresses, byte[][] topics) {
+        if (topics != null) {
+            this.topics.add(topics);
+        }
 
-        return this;
-    }
+        this.contractAddresses = addresses;
 
-    public LogFilter withTopic(byte[] ... orTopic) {
-        topics.add(orTopic);
-
-        return this;
+        initBlooms();
     }
 
     private void initBlooms() {

@@ -932,44 +932,50 @@ public class Web3Impl implements Web3 {
     @Override
     public String eth_newFilter(FilterRequest fr) throws Exception {
         String str = null;
+
         try {
-            LogFilter logFilter = new LogFilter();
+            byte[][] addresses = null;
+            byte[][] topics = null;
 
             if (fr.address instanceof String) {
-                logFilter.withContractAddress(stringHexToByteArray((String) fr.address));
+                addresses = new byte[][] { stringHexToByteArray((String) fr.address) };
             } else if (fr.address instanceof Collection<?>) {
                 Collection<?> iterable = (Collection<?>)fr.address;
 
-                byte[][] addresses = iterable.stream()
+                addresses = iterable.stream()
                         .filter(String.class::isInstance)
                         .map(String.class::cast)
                         .map(TypeConverter::stringHexToByteArray)
                         .toArray(byte[][]::new);
-
-                logFilter.withContractAddress(addresses);
+            }
+            else {
+                addresses = new byte[0][];
             }
 
             if (fr.topics != null) {
                 for (Object topic : fr.topics) {
                     if (topic == null) {
-                        logFilter.withTopic(null);
+                        topics = null;
                     } else if (topic instanceof String) {
-                        logFilter.withTopic(new DataWord(stringHexToByteArray((String) topic)).getData());
+                        topics = new byte[][] { new DataWord(stringHexToByteArray((String) topic)).getData() };
                     } else if (topic instanceof Collection<?>) {
                         Collection<?> iterable = (Collection<?>)topic;
 
-                        byte[][] topics = iterable.stream()
+                        topics = iterable.stream()
                                 .filter(String.class::isInstance)
                                 .map(String.class::cast)
                                 .map(TypeConverter::stringHexToByteArray)
                                 .map(DataWord::new)
                                 .map(DataWord::getData)
                                 .toArray(byte[][]::new);
-
-                        logFilter.withTopic(topics);
                     }
                 }
             }
+            else {
+                topics = null;
+            }
+
+            LogFilter logFilter = new LogFilter(addresses, topics);
 
             JsonLogFilter filter = new JsonLogFilter(logFilter, blockchain);
 
