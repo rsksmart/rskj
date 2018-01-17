@@ -74,10 +74,6 @@ import static org.ethereum.rpc.TypeConverter.*;
 
 public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
-    private static final long filterTimeout = 5 * 60 * 1000; // 5 minutes in milliseconds
-    private static final long filterCleanupPeriod = 1 * 60 * 1000; // 1 minute in milliseconds
-
-    private long latestFilterCleanup = System.currentTimeMillis();
 
     private final SnapshotManager snapshotManager = new SnapshotManager();
     private final MinerManager minerManager = new MinerManager();
@@ -91,8 +87,6 @@ public class Web3Impl implements Web3 {
     CompositeEthereumListener compositeEthereumListener;
 
     long initialBlockNumber;
-
-    private final Object filterLock = new Object();
 
     private final MinerClient minerClient;
     protected MinerServer minerServer;
@@ -110,6 +104,8 @@ public class Web3Impl implements Web3 {
 
     private final PersonalModule personalModule;
     private final EthModule ethModule;
+
+    private FilterManager filterManager = new FilterManager();
 
     protected Web3Impl(Ethereum eth,
                        Blockchain blockchain,
@@ -159,24 +155,14 @@ public class Web3Impl implements Web3 {
             public void onBlock(Block block, List<TransactionReceipt> receipts) {
                 logger.trace("Start onBlock");
 
-                synchronized (filterLock) {
-                    for (Filter filter : installedFilters.values()) {
-                        filter.newBlockReceived(block);
-                    }
-                }
+                filterManager.newBlockReceived(block);
 
                 logger.trace("End onBlock");
             }
 
             @Override
             public void onPendingTransactionsReceived(List<Transaction> transactions) {
-                synchronized (filterLock) {
-                    for (Filter filter : installedFilters.values()) {
-                        for (Transaction tx : transactions) {
-                            filter.newPendingTx(tx);
-                        }
-                    }
-                }
+                filterManager.newPendingTx(transactions);
             }
         };
     }
@@ -946,9 +932,6 @@ public class Web3Impl implements Web3 {
         throw new UnsupportedOperationException("Serpent compiler not supported");
     }
 
-    AtomicInteger filterCounter = new AtomicInteger(1);
-    Map<Integer, Filter> installedFilters = new Hashtable<>();
-
     @Override
     public String eth_newFilter(FilterRequest fr) throws Exception {
         String str = null;
@@ -993,12 +976,7 @@ public class Web3Impl implements Web3 {
 
             JsonLogFilter filter = new JsonLogFilter(logFilter, blockchain);
 
-            int id;
-
-            synchronized (filterLock) {
-                id = filterCounter.getAndIncrement();
-                installedFilters.put(id, filter);
-            }
+            int id = filterManager.registerFilter(filter);
 
             Block blockFrom = fr.fromBlock == null ? this.blockchain.getBestBlock() : getBlockByNumberOrStr(fr.fromBlock);
             Block blockTo = fr.toBlock == null ? null : getBlockByNumberOrStr(fr.toBlock);
@@ -1033,12 +1011,7 @@ public class Web3Impl implements Web3 {
     public String eth_newBlockFilter() {
         String s = null;
         try {
-            int id;
-
-            synchronized (filterLock) {
-                id = filterCounter.getAndIncrement();
-                installedFilters.put(id, new NewBlockFilter());
-            }
+            int id = filterManager.registerFilter(new NewBlockFilter());
 
             return s = toJsonHex(id);
         } finally {
@@ -1052,12 +1025,7 @@ public class Web3Impl implements Web3 {
     public String eth_newPendingTransactionFilter() {
         String s = null;
         try {
-            int id;
-
-            synchronized (filterLock) {
-                id = filterCounter.getAndIncrement();
-                installedFilters.put(id, new PendingTransactionFilter());
-            }
+            int id = filterManager.registerFilter(new PendingTransactionFilter());
 
             return s = toJsonHex(id);
         } finally {
@@ -1076,9 +1044,7 @@ public class Web3Impl implements Web3 {
                 return false;
             }
 
-            synchronized (filterLock) {
-                return s = installedFilters.remove(stringHexToBigInteger(id).intValue()) != null;
-            }
+            return filterManager.removeFilter(stringHexToBigInteger(id).intValue());
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_uninstallFilter(" + id + "): " + s);
@@ -1121,43 +1087,7 @@ public class Web3Impl implements Web3 {
     }
 
     private Object[] getFilterEvents(String id, boolean newevents) {
-        synchronized (filterLock) {
-            filtersCleanup();
-
-            Filter filter = installedFilters.get(stringHexToBigInteger(id).intValue());
-
-            if (filter == null) {
-                return null;
-            }
-
-            if (newevents) {
-                return filter.getNewEvents();
-            }
-            else {
-                return filter.getEvents();
-            }
-        }
-    }
-
-    private void filtersCleanup() {
-        long now = System.currentTimeMillis();
-
-        if (latestFilterCleanup + filterCleanupPeriod > now)
-            return;
-
-        List<Integer> toremove = new ArrayList<>();
-
-        for (Integer id : installedFilters.keySet()) {
-            Filter f = installedFilters.get(id);
-
-            if (f.hasExpired(filterTimeout))
-                toremove.add(id);
-        }
-
-        for (Integer id : toremove)
-            installedFilters.remove(id);
-
-        latestFilterCleanup = now;
+        return this.filterManager.getFilterEvents(stringHexToBigInteger(id).intValue(), newevents);
     }
 
     @Override
