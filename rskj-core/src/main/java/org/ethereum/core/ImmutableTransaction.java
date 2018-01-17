@@ -1,5 +1,7 @@
 package org.ethereum.core;
 
+import org.spongycastle.util.encoders.Hex;
+
 /**
  * Created by ajlopez on 02/08/2017.
  */
@@ -10,12 +12,12 @@ public class ImmutableTransaction extends Transaction {
 
     @Override
     public void sign(byte[] privKeyBytes) {
-        throw new ImmutableTransactionException("trying to sign");
+        throw new ImmutableTransactionException(String.format("trying to sign tx=%s", Hex.toHexString(this.getHash())));
     }
 
     @Override
     public void setGasLimit(byte[] gasLimit) {
-        throw new ImmutableTransactionException("trying to set gas limit");
+        throw new ImmutableTransactionException(String.format("trying to set gas limit tx=%s", Hex.toHexString(this.getHash())));
     }
 
     public static class ImmutableTransactionException extends RuntimeException {

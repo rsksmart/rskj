@@ -72,7 +72,7 @@ class TxValidator {
     List<Transaction> filterTxs(List<Transaction> txs,
                                 Map<String, TxTimestamp> knownTxs,
                                 Map<RskAddress, TxsPerAccount> txsPerAccounts) {
-        //FIXME(mmarquez): this method is quite coupled with TxHandlerImpl
+        //TODO(mmarquez): this method is quite coupled with TxHandlerImpl
         // but it should be fixed when NodeMessageHandler stops managing the wire txs
         // and related stuff
         List<Transaction> acceptedTxs = new LinkedList<>();
@@ -100,7 +100,7 @@ class TxValidator {
 
             for (TxValidatorStep step : validatorSteps) {
                 if (!step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0)) {
-                    logger.info("Tx validation failed: validator {} tx {}", step.getClass().getName(), Hex.toHexString(tx.getHash()));
+                    logger.info("Tx validation failed: validator {} tx={}", step.getClass().getName(), Hex.toHexString(tx.getHash()));
                     valid = false;
                     break;
                 }
