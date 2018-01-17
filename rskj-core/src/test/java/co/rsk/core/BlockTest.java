@@ -22,6 +22,7 @@ package co.rsk.core;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.peg.PegTestUtils;
+import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.spongycastle.util.encoders.Hex;
 import co.rsk.remasc.RemascTransaction;
@@ -70,7 +71,7 @@ public class BlockTest {
         Block block =  new Block(
                 PegTestUtils.createHash3().getBytes(),          // parent hash
                 EMPTY_LIST_HASH,       // uncle hash
-                PegTestUtils.createHash3().getBytes(),            // coinbase
+                TestUtils.randomAddress().getBytes(),            // coinbase
                 new Bloom().getData(),          // logs bloom
                 BigInteger.ONE.toByteArray(),    // difficulty
                 1,
