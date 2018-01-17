@@ -238,15 +238,6 @@ public class BlockHeader implements SerializableObject {
         return coinbase;
     }
 
-    public void setCoinbase(byte[] coinbase) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter coinbase");
-        }
-
-        this.coinbase = coinbase;
-    }
-
     public byte[] getStateRoot() {
         return stateRoot;
     }

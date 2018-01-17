@@ -211,21 +211,6 @@ public class BlockTest {
     }
 
     @Test
-    public void sealedBlockHeaderSetCoinbase() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setCoinbase(new byte[32]);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter coinbase", ex.getMessage());
-        }
-    }
-
-    @Test
     public void sealedBlockHeaderSetStateRoot() {
         Block block = BlockGenerator.getInstance().createBlock(10, 0);
 
