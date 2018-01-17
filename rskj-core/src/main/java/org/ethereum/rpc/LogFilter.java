@@ -20,7 +20,12 @@ package org.ethereum.rpc;
 
 import org.ethereum.core.*;
 import org.ethereum.db.TransactionInfo;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
+
+import java.util.Collection;
+
+import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
 /**
  * Created by ajlopez on 17/01/2018.
@@ -88,5 +93,76 @@ public class LogFilter extends Filter {
     @Override
     public void newPendingTx(Transaction tx) {
         //empty method
+    }
+
+    public static LogFilter fromFilterRequest(Web3.FilterRequest fr, Blockchain blockchain) throws Exception {
+        byte[][] addresses;
+        byte[][] topics = null;
+
+        if (fr.address instanceof String) {
+            addresses = new byte[][] { stringHexToByteArray((String) fr.address) };
+        } else if (fr.address instanceof Collection<?>) {
+            Collection<?> iterable = (Collection<?>)fr.address;
+
+            addresses = iterable.stream()
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .map(TypeConverter::stringHexToByteArray)
+                    .toArray(byte[][]::new);
+        }
+        else {
+            addresses = new byte[0][];
+        }
+
+        if (fr.topics != null) {
+            for (Object topic : fr.topics) {
+                if (topic == null) {
+                    topics = null;
+                } else if (topic instanceof String) {
+                    topics = new byte[][] { new DataWord(stringHexToByteArray((String) topic)).getData() };
+                } else if (topic instanceof Collection<?>) {
+                    Collection<?> iterable = (Collection<?>)topic;
+
+                    topics = iterable.stream()
+                            .filter(String.class::isInstance)
+                            .map(String.class::cast)
+                            .map(TypeConverter::stringHexToByteArray)
+                            .map(DataWord::new)
+                            .map(DataWord::getData)
+                            .toArray(byte[][]::new);
+                }
+            }
+        }
+        else {
+            topics = null;
+        }
+
+        AddressesTopicsFilter addressesTopicsFilter = new AddressesTopicsFilter(addresses, topics);
+
+        LogFilter filter = new LogFilter(addressesTopicsFilter, blockchain);
+
+        Block blockFrom = fr.fromBlock == null ? blockchain.getBestBlock() : Web3Impl.getBlockByNumberOrStr(fr.fromBlock, blockchain);
+        Block blockTo = fr.toBlock == null ? null : Web3Impl.getBlockByNumberOrStr(fr.toBlock, blockchain);
+
+        if (blockFrom != null) {
+            // need to add historical data
+            blockTo = blockTo == null ? blockchain.getBestBlock() : blockTo;
+
+            for (long blockNum = blockFrom.getNumber(); blockNum <= blockTo.getNumber(); blockNum++) {
+                filter.onBlock(blockchain.getBlockByNumber(blockNum));
+            }
+        }
+
+        // the following is not precisely documented
+        if ("pending".equalsIgnoreCase(fr.fromBlock) || "pending".equalsIgnoreCase(fr.toBlock)) {
+            filter.onPendingTx = true;
+        } else if ("latest".equalsIgnoreCase(fr.fromBlock) || "latest".equalsIgnoreCase(fr.toBlock)) {
+            filter.onNewBlock = true;
+        }
+
+        // RSK brute force
+        filter.onNewBlock = true;
+
+        return filter;
     }
 }

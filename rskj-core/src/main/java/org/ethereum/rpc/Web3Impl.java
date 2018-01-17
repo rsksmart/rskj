@@ -174,7 +174,7 @@ public class Web3Impl implements Web3 {
         hashRateCalculator.stop();
     }
 
-    public long JSonHexToLong(String x) throws Exception {
+    public static long JSonHexToLong(String x) throws Exception {
         if (!x.startsWith("0x")) {
             throw new Exception("Incorrect hex syntax");
         }
@@ -500,19 +500,19 @@ public class Web3Impl implements Web3 {
         }
     }
 
-    public Block getBlockByNumberOrStr(String bnOrId) throws Exception {
-        synchronized (this.blockchain) {
+    public static Block getBlockByNumberOrStr(String bnOrId, Blockchain blockchain) throws Exception {
+        synchronized (blockchain) {
             Block b;
 
             if (bnOrId.equals("latest")) {
-                b = this.blockchain.getBestBlock();
+                b = blockchain.getBestBlock();
             } else if (bnOrId.equals("earliest")) {
-                b = this.blockchain.getBlockByNumber(0);
+                b = blockchain.getBlockByNumber(0);
             } else if (bnOrId.equals("pending")) {
                 throw new JsonRpcUnimplementedMethodException("The method don't support 'pending' as a parameter yet");
             } else {
                 long bn = JSonHexToLong(bnOrId);
-                b = this.blockchain.getBlockByNumber(bn);
+                b = blockchain.getBlockByNumber(bn);
             }
 
             return b;
@@ -549,7 +549,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getUncleCountByBlockNumber(String bnOrId) throws Exception {
-        Block b = getBlockByNumberOrStr(bnOrId);
+        Block b = getBlockByNumberOrStr(bnOrId, blockchain);
         long n = b.getUncleList().size();
 
         return toJsonHex(n);
@@ -701,7 +701,6 @@ public class Web3Impl implements Web3 {
         }
 
         List<BlockInformationResult> result = new ArrayList<>();
-        Blockchain blockchain = this.blockchain;
 
         List<BlockInformation> binfos = blockchain.getBlocksInformationByNumber(blockNumber);
 
@@ -934,73 +933,8 @@ public class Web3Impl implements Web3 {
         String str = null;
 
         try {
-            byte[][] addresses = null;
-            byte[][] topics = null;
-
-            if (fr.address instanceof String) {
-                addresses = new byte[][] { stringHexToByteArray((String) fr.address) };
-            } else if (fr.address instanceof Collection<?>) {
-                Collection<?> iterable = (Collection<?>)fr.address;
-
-                addresses = iterable.stream()
-                        .filter(String.class::isInstance)
-                        .map(String.class::cast)
-                        .map(TypeConverter::stringHexToByteArray)
-                        .toArray(byte[][]::new);
-            }
-            else {
-                addresses = new byte[0][];
-            }
-
-            if (fr.topics != null) {
-                for (Object topic : fr.topics) {
-                    if (topic == null) {
-                        topics = null;
-                    } else if (topic instanceof String) {
-                        topics = new byte[][] { new DataWord(stringHexToByteArray((String) topic)).getData() };
-                    } else if (topic instanceof Collection<?>) {
-                        Collection<?> iterable = (Collection<?>)topic;
-
-                        topics = iterable.stream()
-                                .filter(String.class::isInstance)
-                                .map(String.class::cast)
-                                .map(TypeConverter::stringHexToByteArray)
-                                .map(DataWord::new)
-                                .map(DataWord::getData)
-                                .toArray(byte[][]::new);
-                    }
-                }
-            }
-            else {
-                topics = null;
-            }
-
-            AddressesTopicsFilter addressesTopicsFilter = new AddressesTopicsFilter(addresses, topics);
-
-            LogFilter filter = new LogFilter(addressesTopicsFilter, blockchain);
-
+            Filter filter = LogFilter.fromFilterRequest(fr, blockchain);
             int id = filterManager.registerFilter(filter);
-
-            Block blockFrom = fr.fromBlock == null ? this.blockchain.getBestBlock() : getBlockByNumberOrStr(fr.fromBlock);
-            Block blockTo = fr.toBlock == null ? null : getBlockByNumberOrStr(fr.toBlock);
-
-            if (blockFrom != null) {
-                // need to add historical data
-                blockTo = blockTo == null ? this.blockchain.getBestBlock() : blockTo;
-                for (long blockNum = blockFrom.getNumber(); blockNum <= blockTo.getNumber(); blockNum++) {
-                    filter.onBlock(this.blockchain.getBlockByNumber(blockNum));
-                }
-            }
-
-            // the following is not precisely documented
-            if ("pending".equalsIgnoreCase(fr.fromBlock) || "pending".equalsIgnoreCase(fr.toBlock)) {
-                filter.onPendingTx = true;
-            } else if ("latest".equalsIgnoreCase(fr.fromBlock) || "latest".equalsIgnoreCase(fr.toBlock)) {
-                filter.onNewBlock = true;
-            }
-
-            // RSK brute force
-            filter.onNewBlock = true;
 
             return str = toJsonHex(id);
         } finally {
