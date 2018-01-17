@@ -124,9 +124,8 @@ public class RskFactory {
     public SyncPool getSyncPool(@Qualifier("compositeEthereumListener") EthereumListener ethereumListener,
                                 Blockchain blockchain,
                                 RskSystemProperties config,
-                                NodeManager nodeManager,
-                                SyncPool.PeerClientFactory peerClientFactory) {
-        return new SyncPool(ethereumListener, blockchain, config, nodeManager, peerClientFactory);
+                                NodeManager nodeManager) {
+        return new SyncPool(ethereumListener, blockchain, config, nodeManager);
     }
 
     @Bean

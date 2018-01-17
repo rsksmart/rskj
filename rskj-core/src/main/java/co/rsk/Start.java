@@ -77,6 +77,7 @@ public class Start {
     private Web3 web3Service;
     private final BlockProcessor nodeBlockProcessor;
     private final PendingState pendingState;
+    private final SyncPool.PeerClientFactory peerClientFactory;
 
     public static void main(String[] args) throws Exception {
         ApplicationContext ctx = new AnnotationConfigApplicationContext(DefaultConfig.class);
@@ -100,7 +101,8 @@ public class Start {
                  MessageHandler messageHandler,
                  TxHandler txHandler,
                  BlockProcessor nodeBlockProcessor,
-                 PendingState pendingState) {
+                 PendingState pendingState,
+                 SyncPool.PeerClientFactory peerClientFactory) {
         this.rsk = rsk;
         this.udpServer = udpServer;
         this.minerServer = minerServer;
@@ -116,6 +118,7 @@ public class Start {
         this.txHandler = txHandler;
         this.nodeBlockProcessor = nodeBlockProcessor;
         this.pendingState = pendingState;
+        this.peerClientFactory = peerClientFactory;
     }
 
     public void startNode(String[] args) throws Exception {
@@ -167,7 +170,7 @@ public class Start {
 
         if (rskSystemProperties.isSyncEnabled()) {
             syncPool.updateLowerUsefulDifficulty();
-            syncPool.start();
+            syncPool.start(peerClientFactory);
             if (rskSystemProperties.waitForSync()) {
                 waitRskSyncDone(rsk);
             }

@@ -65,10 +65,9 @@ public class ChannelManagerImpl implements ChannelManager {
     // too active peers
     private static final int INBOUND_CONNECTION_BAN_TIMEOUT = 10 * 1000;
     private final Map<ByteArrayWrapper, Channel> activePeers = Collections.synchronizedMap(new HashMap<>());
-    @Autowired
-    RskSystemProperties config;
-    @Autowired
-    SyncPool syncPool;
+
+    private final RskSystemProperties config;
+    private final SyncPool syncPool;
 
     // Using a concurrent list
     // (the add and remove methods copy an internal array,
@@ -79,6 +78,12 @@ public class ChannelManagerImpl implements ChannelManager {
     private int maxActivePeers;
     private Map<InetAddress, Date> recentlyDisconnected = Collections.synchronizedMap(new LRUMap<InetAddress, Date>(500));
     private NodeFilter trustedPeers;
+
+    @Autowired
+    public ChannelManagerImpl(RskSystemProperties config, SyncPool syncPool) {
+        this.config = config;
+        this.syncPool = syncPool;
+    }
 
     @Override
     public void start() {
