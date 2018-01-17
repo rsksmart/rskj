@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc.dto;
 
+import co.rsk.core.Coin;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.rpc.TypeConverter;
@@ -61,10 +62,10 @@ public class TransactionResultDTO {
 
         gasPrice = TypeConverter.toJsonHex(tx.getGasPrice());
 
-        if (Arrays.equals(tx.getValue(), ByteUtil.EMPTY_BYTE_ARRAY)) {
+        if (Coin.ZERO.equals(tx.getValue())) {
             value = "0";
         } else {
-            value = TypeConverter.toJsonHex(tx.getValue());
+            value = TypeConverter.toJsonHex(tx.getValue().getBytes());
         }
 
         input = TypeConverter.toJsonHex(tx.getData());

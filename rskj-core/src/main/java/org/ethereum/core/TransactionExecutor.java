@@ -164,7 +164,7 @@ public class TransactionExecutor {
         if (basicTxCost > 0 ) {
             // Estimate transaction cost only if is not a free trx
             BigInteger txGasCost = toBI(tx.getGasPrice()).multiply(txGasLimit);
-            totalCost = toBI(tx.getValue()).add(txGasCost);
+            totalCost = tx.getValue().asBigInteger().add(txGasCost);
         }
 
         BigInteger senderBalance = track.getBalance(tx.getSender());
@@ -289,7 +289,7 @@ public class TransactionExecutor {
         }
 
         if (result.getException() == null) {
-            BigInteger endowment = toBI(tx.getValue());
+            BigInteger endowment = tx.getValue().asBigInteger();
             transfer(cacheTrack, tx.getSender(), targetAddress, endowment);
         }
     }
@@ -313,7 +313,7 @@ public class TransactionExecutor {
             }
         }
 
-        BigInteger endowment = toBI(tx.getValue());
+        BigInteger endowment = tx.getValue().asBigInteger();
         transfer(cacheTrack, tx.getSender(), newContractAddress, endowment);
     }
 

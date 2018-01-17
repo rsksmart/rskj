@@ -63,7 +63,7 @@ public class TxFilterAccumCostFilter implements TxFilter {
                 break;
             }
             accumTxCost = accumTxCost.add(gasCost);
-            accumTxCost = accumTxCost.add(new BigInteger(1, t.getValue()));
+            accumTxCost = accumTxCost.add(t.getValue().asBigInteger());
             newTxs.add(t);
         }
         return newTxs;

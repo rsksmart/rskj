@@ -19,6 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -83,7 +84,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
         byte[] gas = tx.getGasLimit();
 
         /***        CALLVALUE op      ***/
-        byte[] callValue = tx.getValue() == null ? new byte[]{0} : tx.getValue();
+        byte[] callValue = tx.getValue() == null ? Coin.ZERO.getBytes() : tx.getValue().getBytes();
 
         /***     CALLDATALOAD  op   ***/
         /***     CALLDATACOPY  op   ***/

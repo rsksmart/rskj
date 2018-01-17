@@ -19,6 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.net.handler.TxsPerAccount;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
@@ -49,8 +50,8 @@ public class TxFilterAccumCostFilterTest {
         Mockito.when(tx2.getGasLimit()).thenReturn(BigInteger.valueOf(1).toByteArray());
         Mockito.when(tx1.getGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
         Mockito.when(tx2.getGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx1.getValue()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx2.getValue()).thenReturn(BigInteger.valueOf(1).toByteArray());
+        Mockito.when(tx1.getValue()).thenReturn(new Coin(BigInteger.valueOf(1)));
+        Mockito.when(tx2.getValue()).thenReturn(new Coin(BigInteger.valueOf(1)));
         Mockito.when(tx1.getNonce()).thenReturn(BigInteger.valueOf(0).toByteArray());
         Mockito.when(tx2.getNonce()).thenReturn(BigInteger.valueOf(1).toByteArray());
 
@@ -105,8 +106,8 @@ public class TxFilterAccumCostFilterTest {
         Mockito.when(tx2.getGasLimit()).thenReturn(BigInteger.valueOf(1).toByteArray());
         Mockito.when(tx1.getGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
         Mockito.when(tx2.getGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx1.getValue()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx2.getValue()).thenReturn(BigInteger.valueOf(1).toByteArray());
+        Mockito.when(tx1.getValue()).thenReturn(new Coin(BigInteger.valueOf(1)));
+        Mockito.when(tx2.getValue()).thenReturn(new Coin(BigInteger.valueOf(1)));
         Mockito.when(tx1.getNonce()).thenReturn(BigInteger.valueOf(0).toByteArray());
         Mockito.when(tx2.getNonce()).thenReturn(BigInteger.valueOf(1).toByteArray());
 

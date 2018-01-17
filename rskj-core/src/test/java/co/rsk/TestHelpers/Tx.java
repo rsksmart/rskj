@@ -19,6 +19,7 @@
 package co.rsk.TestHelpers;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -37,7 +38,7 @@ public class Tx {
     public static Transaction create(RskSystemProperties config, long value, long gaslimit, long gasprice, long nonce, long data, long sender, Random hashes) {
         Random r = new Random(sender);
         Transaction transaction = Mockito.mock(Transaction.class);
-        Mockito.when(transaction.getValue()).thenReturn(BigInteger.valueOf(value).toByteArray());
+        Mockito.when(transaction.getValue()).thenReturn(new Coin(BigInteger.valueOf(value)));
         Mockito.when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(gaslimit).toByteArray());
         Mockito.when(transaction.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(gaslimit));
         Mockito.when(transaction.getGasPrice()).thenReturn(BigInteger.valueOf(gasprice).toByteArray());

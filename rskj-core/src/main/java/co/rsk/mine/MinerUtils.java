@@ -21,6 +21,7 @@ package co.rsk.mine;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.RskMiningConstants;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.remasc.RemascTransaction;
@@ -152,10 +153,10 @@ public class MinerUtils {
         for (org.ethereum.core.Transaction tx : txs) {
             try {
                 String hexHash = Hex.toHexString(tx.getHash());
-                String hexValue = Hex.toHexString(tx.getValue());
+                Coin txValue = tx.getValue();
                 BigInteger txNonce = new BigInteger(1, tx.getNonce());
                 RskAddress txSender = tx.getSender();
-                logger.debug("Examining tx={} sender: {} value: {} nonce: {}", hexHash, txSender, hexValue, txNonce);
+                logger.debug("Examining tx={} sender: {} value: {} nonce: {}", hexHash, txSender, txValue, txNonce);
 
 
                 BigInteger expectedNonce;
@@ -180,7 +181,7 @@ public class MinerUtils {
 
                 accountNonces.put(txSender, txNonce);
 
-                logger.debug("Accepted tx={} sender: {} value: {} nonce: {}", hexHash, txSender, hexValue, txNonce);
+                logger.debug("Accepted tx={} sender: {} value: {} nonce: {}", hexHash, txSender, txValue, txNonce);
             } catch (Exception e) {
                 // Txs that can't be selected by any reason should be removed from pending state
                 String hash = null == tx.getHash() ? "" : Hex.toHexString(tx.getHash());

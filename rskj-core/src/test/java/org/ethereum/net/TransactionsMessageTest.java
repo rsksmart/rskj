@@ -63,7 +63,7 @@ public class TransactionsMessageTest {
 
         assertEquals("5d2aee0490a9228024158433d650335116b4af5a30b8abb10e9b7f9f7e090fd8", Hex.toHexString(tx.getHash()));
         assertEquals("04", Hex.toHexString(tx.getNonce()));
-        assertEquals("1bc16d674ec80000", Hex.toHexString(tx.getValue()));
+        assertEquals("1bc16d674ec80000", Hex.toHexString(tx.getValue().getBytes()));
         assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", tx.getReceiveAddress().toString());
         assertEquals("64", Hex.toHexString(tx.getGasPrice()));
         assertEquals("09184e72a000", Hex.toHexString(tx.getGasLimit()));
@@ -119,7 +119,7 @@ public class TransactionsMessageTest {
                 Hex.toHexString(tx3.getNonce()));
 
         assertEquals("2710",
-                Hex.toHexString(tx3.getValue()));
+                Hex.toHexString(tx3.getValue().getBytes()));
 
         assertEquals("09184e72a000",
                 Hex.toHexString(tx3.getReceiveAddress().getBytes()));
@@ -150,7 +150,7 @@ public class TransactionsMessageTest {
                 Hex.toHexString(tx1.getNonce()));
 
         assertEquals("2710",
-                Hex.toHexString(tx1.getValue()));
+                Hex.toHexString(tx1.getValue().getBytes()));
 
         assertEquals("09184e72a000",
                 Hex.toHexString(tx1.getReceiveAddress().getBytes()));

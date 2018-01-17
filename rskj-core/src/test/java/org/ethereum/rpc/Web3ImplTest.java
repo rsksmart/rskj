@@ -286,7 +286,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertNotNull(eth.tx);
         org.junit.Assert.assertArrayEquals(acc1.getAddress().getBytes(), eth.tx.getSender().getBytes());
         org.junit.Assert.assertArrayEquals(acc2.getAddress().getBytes(), eth.tx.getReceiveAddress().getBytes());
-        org.junit.Assert.assertEquals(BigInteger.valueOf(1000000), new BigInteger(1, eth.tx.getValue()));
+        org.junit.Assert.assertEquals(BigInteger.valueOf(1000000), eth.tx.getValue().asBigInteger());
     }
 
     @Test

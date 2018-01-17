@@ -151,7 +151,7 @@ public class TransactionExecutionSummary {
             summary.tx = transaction;
             summary.gasLimit = toBI(transaction.getGasLimit());
             summary.gasPrice = toBI(transaction.getGasPrice());
-            summary.value = toBI(transaction.getValue());
+            summary.value = transaction.getValue().asBigInteger();
         }
 
         public Builder gasUsed(BigInteger gasUsed) {

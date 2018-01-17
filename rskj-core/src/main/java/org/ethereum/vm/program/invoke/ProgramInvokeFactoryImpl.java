@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program.invoke;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -72,7 +73,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         byte[] gas = tx.getGasLimit();
 
         /***        CALLVALUE op      ***/
-        byte[] callValue = nullToEmpty(tx.getValue());
+        Coin callValue = tx.getValue();
 
         /***     CALLDATALOAD  op   ***/
         /***     CALLDATACOPY  op   ***/
@@ -121,7 +122,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     new BigInteger(1, balance).longValue(),
                     new BigInteger(1, gasPrice).longValue(),
                     new BigInteger(1, gas).longValue(),
-                    new BigInteger(1, callValue).longValue(),
+                    callValue,
                     Hex.toHexString(data),
                     Hex.toHexString(lastHash),
                     Hex.toHexString(coinbase),
@@ -132,7 +133,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     gaslimit);
         }
 
-        return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance, gasPrice, gas, callValue, data,
+        return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance, gasPrice, gas, callValue.getBytes(), data,
                 lastHash, coinbase, timestamp, number, txindex,difficulty, gaslimit,
                 repository, blockStore);
     }

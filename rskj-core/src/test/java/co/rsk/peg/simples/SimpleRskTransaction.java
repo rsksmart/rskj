@@ -18,6 +18,7 @@
 
 package co.rsk.peg.simples;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
@@ -41,7 +42,7 @@ public class SimpleRskTransaction extends Transaction {
     public byte[] getHash() { return hash; }
 
     @Override
-    public byte[] getValue() { return BigInteger.valueOf(10000000).toByteArray(); }
+    public Coin getValue() { return new Coin(BigInteger.valueOf(10000000)); }
 
     @Override
     public String toString() { return "Tx " + this.getHash().toString(); }

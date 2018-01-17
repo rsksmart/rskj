@@ -435,7 +435,7 @@ public class BridgeSupport {
         Context.propagate(btcContext);
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
-        BigInteger valueInWeis = toBI(rskTx.getValue());
+        BigInteger valueInWeis = rskTx.getValue().asBigInteger();
         Coin value = Coin.valueOf(Denomination.weisToSatoshis(valueInWeis).longValue());
         boolean addResult = requestRelease(btcDestinationAddress, value);
 

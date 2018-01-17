@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.panic.PanicProcessor;
@@ -518,7 +519,7 @@ public class Block {
             return false;
         }
 
-        return BigInteger.ZERO.equals(new BigInteger(1, tx.getValue())) &&
+        return Coin.ZERO.equals(tx.getValue()) &&
                 BigInteger.ZERO.equals(new BigInteger(1, tx.getGasLimit())) &&
                 BigInteger.ZERO.equals(new BigInteger(1, tx.getGasPrice()));
 

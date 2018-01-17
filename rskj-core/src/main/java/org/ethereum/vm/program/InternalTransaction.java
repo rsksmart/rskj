@@ -90,7 +90,7 @@ public class InternalTransaction extends Transaction {
         }
         byte[] senderAddress = RLP.encodeElement(getSender().getBytes());
         byte[] receiveAddress = RLP.encodeElement(getReceiveAddress().getBytes());
-        byte[] value = RLP.encodeElement(getValue());
+        byte[] value = RLP.encodeCoin(getValue());
         byte[] gasPrice = RLP.encodeElement(getGasPrice());
         byte[] gasLimit = RLP.encodeElement(getGasLimit());
         byte[] data = RLP.encodeElement(getData());
