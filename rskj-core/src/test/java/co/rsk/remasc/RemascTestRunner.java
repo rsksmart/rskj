@@ -159,9 +159,13 @@ class RemascTestRunner {
     }
 
     public static BigInteger getAccountBalance(Repository repository, byte[] address) {
-        AccountState accountState = repository.getAccountState(new RskAddress(address));
+        return getAccountBalance(repository, new RskAddress(address));
+    }
 
-        return accountState == null ? null : repository.getAccountState(new RskAddress(address)).getBalance();
+    public static BigInteger getAccountBalance(Repository repository, RskAddress addr) {
+        AccountState accountState = repository.getAccountState(addr);
+
+        return accountState == null ? null : repository.getAccountState(addr).getBalance();
     }
 
     public static Block createBlock(Block genesis, Block parentBlock, Sha3Hash blockHash, RskAddress coinbase,

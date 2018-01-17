@@ -18,7 +18,7 @@
 
 package co.rsk.config;
 
-import org.spongycastle.util.encoders.Hex;
+import co.rsk.core.RskAddress;
 
 /**
  * Created by mario on 12/12/16.
@@ -30,7 +30,9 @@ public class RemascConfig {
     // Number of blocks block reward is split into
     private long syntheticSpan;
 
-    // RSK labs address
+    // RSK labs address.
+    // Note that his has to be a basic type (such as String) because RemascConfig
+    // is deserialized automatically from JSON.
     private String rskLabsAddress;
 
     // RSK labs cut. Available reward / rskLabsDivisor is what RSK gets.
@@ -63,8 +65,8 @@ public class RemascConfig {
         return syntheticSpan;
     }
 
-    public byte[] getRskLabsAddress() {
-        return Hex.decode(this.rskLabsAddress);
+    public RskAddress getRskLabsAddress() {
+        return new RskAddress(this.rskLabsAddress);
     }
 
     public long getRskLabsDivisor() {
