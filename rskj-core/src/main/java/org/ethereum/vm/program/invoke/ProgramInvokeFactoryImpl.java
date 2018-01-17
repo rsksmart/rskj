@@ -83,7 +83,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         byte[] lastHash = block.getParentHash();
 
         /***   COINBASE  op ***/
-        byte[] coinbase = block.getCoinbase();
+        byte[] coinbase = block.getCoinbase().getBytes();
 
         /*** TIMESTAMP  op  ***/
         long timestamp = block.getTimestamp();

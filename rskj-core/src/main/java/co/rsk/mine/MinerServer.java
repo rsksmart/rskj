@@ -18,6 +18,7 @@
 
 package co.rsk.mine;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 
 import javax.annotation.Nonnull;
@@ -41,7 +42,7 @@ public interface MinerServer {
 
     boolean isFallbackMining();
 
-    byte[] getCoinbaseAddress();
+    RskAddress getCoinbaseAddress();
 
     MinerWork getWork();
 

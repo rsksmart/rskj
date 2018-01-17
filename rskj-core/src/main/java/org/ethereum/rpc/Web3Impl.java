@@ -333,7 +333,7 @@ public class Web3Impl implements Web3 {
     public String eth_coinbase() {
         String s = null;
         try {
-            return s = toJsonHex(minerServer.getCoinbaseAddress());
+            return s = toJsonHex(minerServer.getCoinbaseAddress().getBytes());
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_coinbase(): " + s);
@@ -662,7 +662,7 @@ public class Web3Impl implements Web3 {
         br.transactionsRoot = TypeConverter.toJsonHex(b.getTxTrieRoot());
         br.stateRoot = TypeConverter.toJsonHex(b.getStateRoot());
         br.receiptsRoot = TypeConverter.toJsonHex(b.getReceiptsRoot());
-        br.miner = isPending ? null : TypeConverter.toJsonHex(b.getCoinbase());
+        br.miner = isPending ? null : TypeConverter.toJsonHex(b.getCoinbase().getBytes());
         br.difficulty = TypeConverter.toJsonHex(b.getDifficulty());
         br.totalDifficulty = TypeConverter.toJsonHex(this.blockchain.getBlockStore().getTotalDifficultyForHash(b.getHash()));
         br.extraData = TypeConverter.toJsonHex(b.getExtraData());

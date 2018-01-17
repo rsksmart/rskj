@@ -114,7 +114,7 @@ public class MinerServerImpl implements MinerServer {
     private volatile MinerWork currentWork; // This variable can be read at anytime without the lock.
     private final Object lock = new Object();
 
-    private final byte[] coinbaseAddress;
+    private final RskAddress coinbaseAddress;
 
     private final BigInteger minerMinGasPriceTarget;
     private final BigDecimal minFeesNotifyInDollars;
@@ -536,7 +536,7 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @Override
-    public byte[] getCoinbaseAddress() {
+    public RskAddress getCoinbaseAddress() {
         return coinbaseAddress;
     }
 
@@ -787,7 +787,7 @@ public class MinerServerImpl implements MinerServer {
 
         final BlockHeader newHeader = new BlockHeader(newBlockParent.getHash(),
                 unclesListHash,
-                coinbaseAddress,
+                coinbaseAddress.getBytes(),
                 new Bloom().getData(),
                 new byte[]{1},
                 newBlockParent.getNumber() + 1,

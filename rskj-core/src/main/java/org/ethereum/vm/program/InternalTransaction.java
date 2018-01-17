@@ -43,7 +43,7 @@ public class InternalTransaction extends Transaction {
         this.parentHash = parentHash;
         this.deep = deep;
         this.index = index;
-        this.sender = Transaction.parseRskAddress(sendAddress);
+        this.sender = RLP.parseRskAddress(sendAddress);
         this.note = note;
     }
 

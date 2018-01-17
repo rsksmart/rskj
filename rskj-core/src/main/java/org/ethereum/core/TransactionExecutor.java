@@ -73,7 +73,7 @@ public class TransactionExecutor {
     private boolean readyToExecute = false;
 
     private final ProgramInvokeFactory programInvokeFactory;
-    private final byte[] coinbase;
+    private final RskAddress coinbase;
 
     private TransactionReceipt receipt;
     private ProgramResult result = new ProgramResult();
@@ -92,12 +92,12 @@ public class TransactionExecutor {
 
     boolean localCall = false;
 
-    public TransactionExecutor(RskSystemProperties config, Transaction tx, int txindex, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
+    public TransactionExecutor(RskSystemProperties config, Transaction tx, int txindex, RskAddress coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
         this(config, tx, txindex, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock, new EthereumListenerAdapter(), 0);
     }
 
-    public TransactionExecutor(RskSystemProperties config, Transaction tx, int txindex, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
+    public TransactionExecutor(RskSystemProperties config, Transaction tx, int txindex, RskAddress coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore,
                                ProgramInvokeFactory programInvokeFactory, Block executionBlock,
                                EthereumListener listener, long gasUsedInTheBlock) {
         this.config = config;
@@ -494,7 +494,7 @@ public class TransactionExecutor {
             logger.info("Adding fee to remasc contract account");
             track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
         } else {
-            track.addBalance(new RskAddress(coinbase), summaryFee);
+            track.addBalance(coinbase, summaryFee);
         }
 
         this.paidFees = summaryFee;

@@ -18,6 +18,7 @@
 
 package co.rsk.remasc;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -35,20 +36,20 @@ import java.util.ArrayList;
 public class Sibling {
 
     // Hash of the sibling block
-    private byte[] hash;
+    private final byte[] hash;
     // Coinbase address of the sibling block
-    private byte[] coinbase;
+    private final RskAddress coinbase;
     // Fees paid by the sibling block
-    private BigInteger  paidFees;
+    private final BigInteger  paidFees;
     // Coinbase address of the block that included the sibling block as uncle
-    private byte[] includedBlockCoinbase;
+    private final RskAddress includedBlockCoinbase;
     // Height of the block that included the sibling block as uncle
-    private long includedHeight;
+    private final long includedHeight;
     // Number of uncles
-    private int uncleCount;
+    private final int uncleCount;
 
 
-    public Sibling(BlockHeader blockHeader, byte[]  includedBlockCoinbase, long includedHeight){
+    public Sibling(BlockHeader blockHeader, RskAddress includedBlockCoinbase, long includedHeight){
         this(blockHeader.getHash(),
                 blockHeader.getCoinbase(),
                 includedBlockCoinbase,
@@ -57,7 +58,7 @@ public class Sibling {
                 blockHeader.getUncleCount());
     }
 
-    private Sibling(byte[] hash, byte[] coinbase, byte[] includedBlockCoinbase, BigInteger  paidFees, long includedHeight, int uncleCount) {
+    private Sibling(byte[] hash, RskAddress coinbase, RskAddress includedBlockCoinbase, BigInteger paidFees, long includedHeight, int uncleCount) {
         this.hash = hash;
         this.coinbase = coinbase;
         this.paidFees = paidFees;
@@ -70,7 +71,7 @@ public class Sibling {
         return hash;
     }
 
-    public byte[] getCoinbase() {
+    public RskAddress getCoinbase() {
         return coinbase;
     }
 
@@ -78,7 +79,7 @@ public class Sibling {
         return paidFees;
     }
 
-    public byte[] getIncludedBlockCoinbase() {
+    public RskAddress getIncludedBlockCoinbase() {
         return includedBlockCoinbase;
     }
 
@@ -90,8 +91,8 @@ public class Sibling {
 
     public byte[] getEncoded() {
         byte[] rlpHash = RLP.encodeElement(this.hash);
-        byte[] rlpCoinbase = RLP.encodeElement(this.coinbase);
-        byte[] rlpIncludedBlockCoinbase = RLP.encodeElement(this.includedBlockCoinbase);
+        byte[] rlpCoinbase = RLP.encodeRskAddress(this.coinbase);
+        byte[] rlpIncludedBlockCoinbase = RLP.encodeRskAddress(this.includedBlockCoinbase);
 
         byte[] rlpPaidFees = RLP.encodeBigInteger(this.paidFees);
         byte[] rlpIncludedHeight = RLP.encodeBigInteger(BigInteger.valueOf(this.includedHeight));
@@ -105,8 +106,8 @@ public class Sibling {
         RLPList sibling = (RLPList) params.get(0);
 
         byte[] hash = sibling.get(0).getRLPData();
-        byte[] coinbase = sibling.get(1).getRLPData();
-        byte[] includedBlockCoinbase = sibling.get(2).getRLPData();
+        RskAddress coinbase = RLP.parseRskAddress(sibling.get(1).getRLPData());
+        RskAddress includedBlockCoinbase = RLP.parseRskAddress(sibling.get(2).getRLPData());
 
         byte[] bytesPaidFees = sibling.get(3).getRLPData();
         byte[] bytesIncludedHeight = sibling.get(4).getRLPData();

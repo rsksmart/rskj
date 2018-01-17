@@ -32,7 +32,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
 public final class ReversibleTransactionExecutor extends TransactionExecutor {
 
-    private ReversibleTransactionExecutor(RskSystemProperties config, Transaction tx, byte[] coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore, ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
+    private ReversibleTransactionExecutor(RskSystemProperties config, Transaction tx, RskAddress coinbase, Repository track, BlockStore blockStore, ReceiptStore receiptStore, ProgramInvokeFactory programInvokeFactory, Block executionBlock) {
         super(config, tx, 0, coinbase, track, blockStore, receiptStore, programInvokeFactory, executionBlock);
         setLocalCall(true);
     }
@@ -43,7 +43,7 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
                                                          ReceiptStore receiptStore,
                                                          ProgramInvokeFactory programInvokeFactory,
                                                          Block executionBlock,
-                                                         byte[] coinbase,
+                                                         RskAddress coinbase,
                                                          byte[] gasPrice,
                                                          byte[] gasLimit,
                                                          byte[] toAddress,
@@ -65,7 +65,7 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
                                                          ReceiptStore receiptStore,
                                                          ProgramInvokeFactory programInvokeFactory,
                                                          Block executionBlock,
-                                                         byte[] coinbase,
+                                                         RskAddress coinbase,
                                                          Web3.CallArguments args) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
 

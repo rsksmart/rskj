@@ -18,7 +18,9 @@
 
 package co.rsk.metrics;
 
+import co.rsk.core.RskAddress;
 import co.rsk.util.RskCustomCache;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
@@ -37,8 +39,8 @@ public class HashRateCalculatorTest {
 
     private final byte[] FAKE_GENERIC_HASH = {12,31,43,12};
     private final byte[] OHTER_FAKE_GENERIC_HASH = {14,34,44,14};
-    private final byte[] FAKE_COINBASE = {34,12,98,13};
-    private final byte[] NOT_MY_COINBASE = {1,2,3,4};
+    private final RskAddress FAKE_COINBASE = TestUtils.randomAddress();
+    private final RskAddress NOT_MY_COINBASE = TestUtils.randomAddress();
 
 
 

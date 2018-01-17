@@ -18,6 +18,7 @@
  */
 package org.ethereum.core;
 
+import co.rsk.core.RskAddress;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.HashUtil;
@@ -48,7 +49,7 @@ public class BlockHeader implements SerializableObject {
     private byte[] unclesHash;
     /* The 160-bit address to which all fees collected from the
      * successful mining of this block be transferred; formally */
-    private byte[] coinbase;
+    private RskAddress coinbase;
     /* The SHA3 256-bit hash of the root node of the state trie,
      * after all transactions are executed and finalisations applied */
     private byte[] stateRoot;
@@ -105,7 +106,7 @@ public class BlockHeader implements SerializableObject {
     public BlockHeader(RLPList rlpHeader, boolean sealed) {
         this.parentHash = rlpHeader.get(0).getRLPData();
         this.unclesHash = rlpHeader.get(1).getRLPData();
-        this.coinbase = rlpHeader.get(2).getRLPData();
+        this.coinbase = RLP.parseRskAddress(rlpHeader.get(2).getRLPData());
         this.stateRoot = rlpHeader.get(3).getRLPData();
         if (this.stateRoot == null) {
             this.stateRoot = EMPTY_TRIE_HASH;
@@ -178,7 +179,7 @@ public class BlockHeader implements SerializableObject {
                        int uncleCount) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
-        this.coinbase = coinbase;
+        this.coinbase = new RskAddress(coinbase);
         this.logsBloom = logsBloom;
         this.difficulty = difficulty;
         this.number = number;
@@ -234,8 +235,8 @@ public class BlockHeader implements SerializableObject {
         this.unclesHash = unclesHash;
     }
 
-    public byte[] getCoinbase() {
-        return coinbase;
+    public RskAddress getCoinbase() {
+        return this.coinbase;
     }
 
     public byte[] getStateRoot() {
@@ -415,7 +416,7 @@ public class BlockHeader implements SerializableObject {
         byte[] parentHash = RLP.encodeElement(this.parentHash);
 
         byte[] unclesHash = RLP.encodeElement(this.unclesHash);
-        byte[] coinbase = RLP.encodeElement(this.coinbase);
+        byte[] coinbase = RLP.encodeRskAddress(this.coinbase);
 
         byte[] stateRoot = RLP.encodeElement(this.stateRoot);
 
@@ -510,7 +511,7 @@ public class BlockHeader implements SerializableObject {
         StringBuilder toStringBuff = new StringBuilder();
         toStringBuff.append("  parentHash=").append(toHexString(parentHash)).append(suffix);
         toStringBuff.append("  unclesHash=").append(toHexString(unclesHash)).append(suffix);
-        toStringBuff.append("  coinbase=").append(toHexString(coinbase)).append(suffix);
+        toStringBuff.append("  coinbase=").append(coinbase).append(suffix);
         toStringBuff.append("  stateRoot=").append(toHexString(stateRoot)).append(suffix);
         toStringBuff.append("  txTrieHash=").append(toHexString(txTrieRoot)).append(suffix);
         toStringBuff.append("  receiptsTrieHash=").append(toHexString(receiptTrieRoot)).append(suffix);
