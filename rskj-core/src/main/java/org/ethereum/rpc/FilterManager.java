@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
-
 /**
  * Created by ajlopez on 17/01/2018.
  */
