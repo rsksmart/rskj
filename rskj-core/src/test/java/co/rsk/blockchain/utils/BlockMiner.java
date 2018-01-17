@@ -18,7 +18,7 @@ public class BlockMiner {
     private static long nextNonceToUse = 0L;
 
     public static Block mineBlock(Block block) {
-        Sha3Hash blockMergedMiningHash = new Sha3Hash(block.getHashForMergedMining());
+        Sha3Hash blockMergedMiningHash = block.getHashForMergedMining();
 
         co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, blockMergedMiningHash.getBytes());

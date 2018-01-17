@@ -85,7 +85,7 @@ public class BlockWrapper {
     }
 
     public byte[] getHash() {
-        return block.getHash();
+        return block.getHash().getBytes();
     }
 
     public long getNumber() {
@@ -101,7 +101,7 @@ public class BlockWrapper {
     }
 
     public byte[] getParentHash() {
-        return block.getParentHash();
+        return block.getParentHash().getBytes();
     }
 
     public long getReceivedAt() {

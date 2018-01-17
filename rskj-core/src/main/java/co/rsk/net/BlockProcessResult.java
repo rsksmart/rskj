@@ -48,7 +48,7 @@ public class BlockProcessResult {
     }
 
     public boolean wasBlockAdded(Block block) {
-        return additionalValidationsOk && !result.isEmpty() && importOk(result.get(new ByteArrayWrapper(block.getHash())));
+        return additionalValidationsOk && !result.isEmpty() && importOk(result.get(new ByteArrayWrapper(block.getHash().getBytes())));
     }
 
     public static boolean importOk(ImportResult blockResult) {

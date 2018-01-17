@@ -1,5 +1,6 @@
 package co.rsk.net.messages;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.util.RLP;
 
 /**
@@ -7,9 +8,9 @@ import org.ethereum.util.RLP;
  */
 public class BodyRequestMessage extends MessageWithId {
     private long id;
-    private byte[] hash;
+    private Sha3Hash hash;
 
-    public BodyRequestMessage(long id, byte[] hash) {
+    public BodyRequestMessage(long id, Sha3Hash hash) {
         this.id = id;
         this.hash = hash;
     }
@@ -18,7 +19,7 @@ public class BodyRequestMessage extends MessageWithId {
         return this.id;
     }
 
-    public byte[] getBlockHash() {
+    public Sha3Hash getBlockHash() {
         return this.hash;
     }
 
@@ -34,7 +35,7 @@ public class BodyRequestMessage extends MessageWithId {
 
     @Override
     public byte[] getEncodedMessageWithoutId() {
-        byte[] rlpHash = RLP.encodeElement(this.hash);
+        byte[] rlpHash = RLP.encodeElement(this.hash.getBytes());
         return RLP.encodeList(rlpHash);
     }
 }

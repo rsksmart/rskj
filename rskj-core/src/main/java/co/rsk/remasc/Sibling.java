@@ -18,6 +18,7 @@
 
 package co.rsk.remasc;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -35,7 +36,7 @@ import java.util.ArrayList;
 public class Sibling {
 
     // Hash of the sibling block
-    private byte[] hash;
+    private Sha3Hash hash;
     // Coinbase address of the sibling block
     private byte[] coinbase;
     // Fees paid by the sibling block
@@ -57,7 +58,7 @@ public class Sibling {
                 blockHeader.getUncleCount());
     }
 
-    private Sibling(byte[] hash, byte[] coinbase, byte[] includedBlockCoinbase, BigInteger  paidFees, long includedHeight, int uncleCount) {
+    private Sibling(Sha3Hash hash, byte[] coinbase, byte[] includedBlockCoinbase, BigInteger  paidFees, long includedHeight, int uncleCount) {
         this.hash = hash;
         this.coinbase = coinbase;
         this.paidFees = paidFees;
@@ -66,7 +67,7 @@ public class Sibling {
         this.uncleCount = uncleCount;
     }
 
-    public byte[] getHash() {
+    public Sha3Hash getHash() {
         return hash;
     }
 
@@ -89,7 +90,7 @@ public class Sibling {
     public int getUncleCount() { return uncleCount; }
 
     public byte[] getEncoded() {
-        byte[] rlpHash = RLP.encodeElement(this.hash);
+        byte[] rlpHash = RLP.encodeElement(this.hash.getBytes());
         byte[] rlpCoinbase = RLP.encodeElement(this.coinbase);
         byte[] rlpIncludedBlockCoinbase = RLP.encodeElement(this.includedBlockCoinbase);
 
@@ -104,7 +105,7 @@ public class Sibling {
         ArrayList<RLPElement> params = RLP.decode2(data);
         RLPList sibling = (RLPList) params.get(0);
 
-        byte[] hash = sibling.get(0).getRLPData();
+        Sha3Hash hash = new Sha3Hash(sibling.get(0).getRLPData());
         byte[] coinbase = sibling.get(1).getRLPData();
         byte[] includedBlockCoinbase = sibling.get(2).getRLPData();
 

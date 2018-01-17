@@ -1,5 +1,6 @@
 package co.rsk.net.sync;
 
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.net.NodeID;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockIdentifier;
@@ -40,7 +41,7 @@ public class ChunksDownloadHelper {
     }
 
     private ChunkDescriptor getChunk(int linkIndex) {
-        byte[] hash = skeleton.get(linkIndex).getHash();
+        Sha3Hash hash = skeleton.get(linkIndex).getHash();
         long height = skeleton.get(linkIndex).getNumber();
 
         long lastHeight = skeleton.get(linkIndex - 1).getNumber();

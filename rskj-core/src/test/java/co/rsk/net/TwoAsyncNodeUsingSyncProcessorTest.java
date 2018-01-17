@@ -60,7 +60,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         Assert.assertEquals(100, node1.getBestBlock().getNumber());
         Assert.assertEquals(100, node2.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash().getBytes(), node2.getBestBlock().getHash().getBytes());
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
@@ -85,7 +85,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         Assert.assertEquals(400, node1.getBestBlock().getNumber());
         Assert.assertEquals(400, node2.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash().getBytes(), node2.getBestBlock().getHash().getBytes());
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
@@ -112,7 +112,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         Assert.assertEquals(10, node1.getBestBlock().getNumber());
         Assert.assertEquals(10, node2.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash().getBytes(), node2.getBestBlock().getHash().getBytes());
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
@@ -159,7 +159,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         Assert.assertEquals(10, node1.getBestBlock().getNumber());
         Assert.assertEquals(10, node2.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash().getBytes(), node2.getBestBlock().getHash().getBytes());
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
@@ -187,7 +187,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
 
         Assert.assertEquals(1, node1.getBestBlock().getNumber());
         Assert.assertEquals(1, node2.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash().getBytes(), node2.getBestBlock().getHash().getBytes());
 
         Assert.assertFalse(node1.getSyncProcessor().isPeerSyncing(node2.getNodeID()));
         Assert.assertFalse(node2.getSyncProcessor().isPeerSyncing(node1.getNodeID()));

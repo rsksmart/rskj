@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.HashUtil;
@@ -36,14 +37,13 @@ import java.util.List;
 public class BlockStoreDummy implements BlockStore {
 
     @Override
-    public byte[] getBlockHashByNumber(long blockNumber) {
-
+    public Sha3Hash getBlockHashByNumber(long blockNumber) {
         byte[] data = String.valueOf(blockNumber).getBytes(StandardCharsets.UTF_8);
-        return HashUtil.sha3(data);
+        return new Sha3Hash(HashUtil.sha3(data));
     }
 
     @Override
-    public byte[] getBlockHashByNumber(long blockNumber, byte[] branchBlockHash) {
+    public Sha3Hash getBlockHashByNumber(long blockNumber, Sha3Hash branchBlockHash) {
         return getBlockHashByNumber(blockNumber);
     }
 
@@ -53,32 +53,32 @@ public class BlockStoreDummy implements BlockStore {
     }
 
     @Override
-    public Block getBlockByHash(byte[] hash) {
+    public Block getBlockByHash(Sha3Hash hash) {
         return null;
     }
 
     @Override
-    public Block getBlockByHashAndDepth(byte[] hash, long depth) {
+    public Block getBlockByHashAndDepth(Sha3Hash hash, long depth) {
         return null;
     }
 
     @Override
-    public boolean isBlockExist(byte[] hash) {
+    public boolean isBlockExist(Sha3Hash hash) {
         return false;
     }
 
     @Override
-    public List<byte[]> getListHashesEndWith(byte[] hash, long qty) {
+    public List<Sha3Hash> getListHashesEndWith(Sha3Hash hash, long qty) {
         return null;
     }
 
     @Override
-    public List<BlockHeader> getListHeadersEndWith(byte[] hash, long qty) {
+    public List<BlockHeader> getListHeadersEndWith(Sha3Hash hash, long qty) {
         return null;
     }
 
     @Override
-    public List<Block> getListBlocksEndWith(byte[] hash, long qty) {
+    public List<Block> getListBlocksEndWith(Sha3Hash hash, long qty) {
         return null;
     }
 
@@ -117,7 +117,7 @@ public class BlockStoreDummy implements BlockStore {
     }
 
     @Override
-    public BigInteger getTotalDifficultyForHash(byte[] hash) {
+    public BigInteger getTotalDifficultyForHash(Sha3Hash hash) {
         return null;
     }
 

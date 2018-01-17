@@ -21,6 +21,7 @@ package org.ethereum.db;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.db.ContractDetailsImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
@@ -363,7 +364,7 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public void syncToRoot(byte[] root) {
+    public void syncToRoot(Sha3Hash root) {
         throw new UnsupportedOperationException();
     }
 
@@ -417,7 +418,7 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override // that's the idea track is here not for root calculations
-    public byte[] getRoot() {
+    public Sha3Hash getRoot() {
         throw new UnsupportedOperationException();
     }
 
@@ -437,7 +438,7 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public Repository getSnapshotTo(byte[] root) {
+    public Repository getSnapshotTo(Sha3Hash root) {
         throw new UnsupportedOperationException();
     }
 

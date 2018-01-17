@@ -368,7 +368,7 @@ public class MinerServerImpl implements MinerServer {
         BlockHeader newHeader = newBlock.getHeader();
 
         newHeader.setTimestamp(this.getCurrentTimeInSeconds());
-        Block parentBlock =blockchain.getBlockByHash(newHeader.getParentHash());
+        Block parentBlock = blockchain.getBlockByHash(newHeader.getParentHash());
         newHeader.setDifficulty(
                 difficultyCalculator.calcDifficulty(newHeader, parentBlock.getHeader()).toByteArray());
 
@@ -394,8 +394,8 @@ public class MinerServerImpl implements MinerServer {
 
     }
 
-    private byte[] fallbackSign(byte[] hash, ECKey privKey) {
-        ECKey.ECDSASignature signature = privKey.sign(hash);
+    private byte[] fallbackSign(Sha3Hash hash, ECKey privKey) {
+        ECKey.ECDSASignature signature = privKey.sign(hash.getBytes());
 
         byte vdata = signature.v;
         byte[] rdata = signature.r.toByteArray();
@@ -445,7 +445,7 @@ public class MinerServerImpl implements MinerServer {
             logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
         }
 
-        logger.info("Received block {} {}", newBlock.getNumber(), Hex.toHexString(newBlock.getHash()));
+        logger.info("Received block {} {}", newBlock.getNumber(), newBlock.getHash());
 
         newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
         newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(bitcoinMergedMiningCoinbaseTransaction.bitcoinSerialize(), lastTag));
@@ -578,7 +578,7 @@ public class MinerServerImpl implements MinerServer {
     }
 
     public MinerWork updateGetWork(@Nonnull final Block block, @Nonnull final boolean notify) {
-        Sha3Hash blockMergedMiningHash = new Sha3Hash(block.getHashForMergedMining());
+        Sha3Hash blockMergedMiningHash = block.getHashForMergedMining();
 
         BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficultyBI());
         byte[] targetUnknownLengthArray = targetBI.toByteArray();
@@ -586,7 +586,7 @@ public class MinerServerImpl implements MinerServer {
         System.arraycopy(targetUnknownLengthArray, 0, targetArray, 32 - targetUnknownLengthArray.length, targetUnknownLengthArray.length);
 
         logger.debug("Sending work for merged mining. Hash: {}", block.getShortHashForMergedMining());
-        return new MinerWork(TypeConverter.toJsonHex(blockMergedMiningHash.getBytes()), TypeConverter.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, TypeConverter.toJsonHex(block.getParentHash()));
+        return new MinerWork(TypeConverter.toJsonHex(blockMergedMiningHash.getBytes()), TypeConverter.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, TypeConverter.toJsonHex(block.getParentHash().getBytes()));
     }
 
     public void setExtraData(byte[] extraData) {
@@ -607,7 +607,7 @@ public class MinerServerImpl implements MinerServer {
             newBlockParent = blockchain.getBlockByHash(newBlockParent.getParentHash());
         }
 
-        logger.info("Starting block to mine from parent {}", newBlockParent.getNumber() + " " + Hex.toHexString(newBlockParent.getHash()));
+        logger.info("Starting block to mine from parent {}", newBlockParent.getNumber() + " " + Hex.toHexString(newBlockParent.getHash().getBytes()));
 
         List<BlockHeader> uncles;
         if (blockStore != null) {
@@ -644,7 +644,7 @@ public class MinerServerImpl implements MinerServer {
         executor.executeAndFill(newBlock, newBlockParent);
 
         synchronized (lock) {
-            Sha3Hash parentHash = new Sha3Hash(newBlockParent.getHash());
+            Sha3Hash parentHash = newBlockParent.getHash();
             boolean notify = this.getNotify(newBlock, parentHash);
 
             if (notify) {
@@ -656,7 +656,7 @@ public class MinerServerImpl implements MinerServer {
 
 
             currentWork = updateGetWork(newBlock, notify);
-            latestblockHashWaitingforPoW = new Sha3Hash(newBlock.getHashForMergedMining());
+            latestblockHashWaitingforPoW = newBlock.getHashForMergedMining();
 
             blocksWaitingforPoW.put(latestblockHashWaitingforPoW, latestBlock);
             logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
@@ -754,7 +754,7 @@ public class MinerServerImpl implements MinerServer {
             logger.trace("Start onBlock");
             Block bestBlock = blockchain.getBestBlock();
             MinerWork work = currentWork;
-            String bestBlockHash = TypeConverter.toJsonHex(bestBlock.getHash());
+            String bestBlockHash = TypeConverter.toJsonHex(bestBlock.getHash().getBytes());
 
             if (work == null || !work.getParentBlockHash().equals(bestBlockHash)) {
                 logger.debug("There is a new best block: {}, number: {}", bestBlock.getShortHashForMergedMining(), bestBlock.getNumber());
@@ -786,7 +786,7 @@ public class MinerServerImpl implements MinerServer {
                 gasUsed, minGasLimit, targetGasLimit, forceLimit);
 
         final BlockHeader newHeader = new BlockHeader(newBlockParent.getHash(),
-                unclesListHash,
+                new Sha3Hash(unclesListHash),
                 coinbaseAddress,
                 new Bloom().getData(),
                 new byte[]{1},

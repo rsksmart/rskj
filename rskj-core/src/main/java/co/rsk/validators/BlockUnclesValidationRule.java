@@ -20,6 +20,7 @@ package co.rsk.validators;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.FamilyUtils;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
@@ -107,17 +108,17 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
      * @param used        used uncles
      * @return true if the uncles in the list are valid, false if not
      */
-    public boolean validateUncleList(long blockNumber, List<BlockHeader> uncles, Set<ByteArrayWrapper> ancestors, Set<ByteArrayWrapper> used) {
+    public boolean validateUncleList(long blockNumber, List<BlockHeader> uncles, Set<Sha3Hash> ancestors, Set<Sha3Hash> used) {
         if (uncles.size() > uncleListLimit) {
             logger.error("Uncle list to big: block.getUncleList().size() > UNCLE_LIST_LIMIT");
             panicProcessor.panic(INVALIDUNCLE, "Uncle list to big: block.getUncleList().size() > UNCLE_LIST_LIMIT");
             return false;
         }
 
-        Set<ByteArrayWrapper> hashes = new HashSet<>();
+        Set<Sha3Hash> hashes = new HashSet<>();
 
         for (BlockHeader uncle : uncles) {
-            byte[] uhash = uncle.getHash();
+            Sha3Hash uncleHash = uncle.getHash();
 
             Block blockForUncleHeader = new Block(uncle);
 
@@ -125,8 +126,6 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
                     || !validateParentNumber(uncle, blockNumber)) {
                 return false;
             }
-
-            ByteArrayWrapper uncleHash = new ByteArrayWrapper(uhash);
 
             /* Just checking that the uncle is not added twice */
             if (hashes.contains(uncleHash)) {
@@ -163,7 +162,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         return true;
     }
 
-    private boolean validateUnclesAncestors(Set<ByteArrayWrapper> ancestors, ByteArrayWrapper uncleHash) {
+    private boolean validateUnclesAncestors(Set<Sha3Hash> ancestors, Sha3Hash uncleHash) {
         if (ancestors != null && ancestors.contains(uncleHash)) {
             String uHashStr = uncleHash.toString();
             logger.error("Uncle is direct ancestor: {}", uHashStr);
@@ -173,7 +172,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         return true;
     }
 
-    private boolean validateIfUncleWasNeverUsed(Set<ByteArrayWrapper> used, ByteArrayWrapper uncleHash) {
+    private boolean validateIfUncleWasNeverUsed(Set<Sha3Hash> used, Sha3Hash uncleHash) {
         String uhashString = uncleHash.toString();
         if (used != null && used.contains(uncleHash)) {
             logger.error("Uncle is not unique: {}", uhashString);
@@ -183,11 +182,11 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         return true;
     }
 
-    private boolean validateUncleParent(Set<ByteArrayWrapper> ancestors, Block uncle) {
-        String uhashString = Hex.toHexString(uncle.getHash());
+    private boolean validateUncleParent(Set<Sha3Hash> ancestors, Block uncle) {
+        String uhashString = uncle.getHash().toString();
         Block parent = blockStore.getBlockByHash(uncle.getParentHash());
 
-        if (ancestors != null && (parent == null || !ancestors.contains(new ByteArrayWrapper(parent.getHash())))) {
+        if (ancestors != null && (parent == null || !ancestors.contains(parent.getHash()))) {
             logger.error("Uncle has no common parent: {}", uhashString);
             panicProcessor.panic(INVALIDUNCLE, String.format("Uncle has no common parent: %s", uhashString));
             return false;

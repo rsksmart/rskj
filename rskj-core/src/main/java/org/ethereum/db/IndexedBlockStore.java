@@ -20,6 +20,7 @@
 package org.ethereum.db;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.net.BlockCache;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
@@ -38,7 +39,6 @@ import java.util.*;
 
 import static java.math.BigInteger.ZERO;
 import static org.ethereum.crypto.HashUtil.shortHash;
-import static org.spongycastle.util.Arrays.areEqual;
 
 public class IndexedBlockStore extends AbstractBlockstore {
 
@@ -65,7 +65,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     public synchronized void removeBlock(Block block) {
         this.blockCache.removeBlock(block);
 
-        this.blocks.delete(block.getHash());
+        this.blocks.delete(block.getHash().getBytes());
 
         List<BlockInfo> binfos = this.index.get(block.getNumber());
 
@@ -76,7 +76,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         List<BlockInfo> toremove = new ArrayList<>();
 
         for (BlockInfo binfo : binfos) {
-            if (Arrays.equals(binfo.getHash(), block.getHash())) {
+            if (binfo.getHash().equals(block.getHash())) {
                 toremove.add(binfo);
             }
         }
@@ -109,7 +109,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized byte[] getBlockHashByNumber(long blockNumber){
+    public synchronized Sha3Hash getBlockHashByNumber(long blockNumber){
         List<BlockInfo> infos = this.index.get(blockNumber);
         if (infos != null) {
             Optional<BlockInfo> info =  infos.stream().filter(BlockInfo::isMainChain).findAny();
@@ -143,7 +143,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
         BlockInfo blockInfo = null;
         for (BlockInfo bi : blockInfos) {
-            if (areEqual(bi.getHash(), block.getHash())) {
+            if (bi.getHash().equals(block.getHash())) {
                 blockInfo = bi;
             } else if (mainChain) {
                 bi.setMainChain(false);
@@ -158,8 +158,8 @@ public class IndexedBlockStore extends AbstractBlockstore {
         blockInfo.setHash(block.getHash());
         blockInfo.setMainChain(mainChain);
 
-        if (blocks.get(block.getHash()) == null) {
-            blocks.put(block.getHash(), block.getEncoded());
+        if (blocks.get(block.getHash().getBytes()) == null) {
+            blocks.put(block.getHash().getBytes(), block.getEncoded());
         }
         index.put(block.getNumber(), blockInfos);
         blockCache.addBlock(block);
@@ -176,7 +176,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         }
 
         for (BlockInfo blockInfo : blockInfos) {
-            byte[] hash = ByteUtils.clone(blockInfo.getHash());
+            Sha3Hash hash = blockInfo.getHash();
             BigInteger totalDifficulty = blockInfo.getCummDifficulty();
             boolean isInBlockChain = blockInfo.isMainChain();
 
@@ -197,7 +197,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
             if (blockInfo.isMainChain()) {
 
-                byte[] hash = blockInfo.getHash();
+                Sha3Hash hash = blockInfo.getHash();
                 return getBlockByHash(hash);
             }
         }
@@ -206,30 +206,30 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized Block getBlockByHash(byte[] hash) {
+    public synchronized Block getBlockByHash(Sha3Hash hash) {
         Block block = this.blockCache.getBlockByHash(hash);
 
         if (block != null) {
             return block;
         }
 
-        byte[] blockRlp = blocks.get(hash);
+        byte[] blockRlp = blocks.get(hash.getBytes());
         if (blockRlp == null) {
             return null;
         }
 
         block = new Block(blockRlp);
-        this.blockCache.put(new ByteArrayWrapper(hash), block);
+        this.blockCache.put(hash, block);
         return block;
     }
 
     @Override
-    public synchronized boolean isBlockExist(byte[] hash) {
+    public synchronized boolean isBlockExist(Sha3Hash hash) {
         return getBlockByHash(hash) != null;
     }
 
     @Override
-    public synchronized BigInteger getTotalDifficultyForHash(byte[] hash){
+    public synchronized BigInteger getTotalDifficultyForHash(Sha3Hash hash){
         Block block = this.getBlockByHash(hash);
         if (block == null) {
             return ZERO;
@@ -243,7 +243,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         }
 
         for (BlockInfo blockInfo : blockInfos) {
-            if (areEqual(blockInfo.getHash(), hash)) {
+            if (blockInfo.getHash().equals(hash)) {
                 return blockInfo.cummDifficulty;
             }
         }
@@ -257,10 +257,10 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized List<byte[]> getListHashesEndWith(byte[] hash, long number){
+    public synchronized List<Sha3Hash> getListHashesEndWith(Sha3Hash hash, long number){
 
         List<Block> blocks = getListBlocksEndWith(hash, number);
-        List<byte[]> hashes = new ArrayList<>(blocks.size());
+        List<Sha3Hash> hashes = new ArrayList<>(blocks.size());
 
         for (Block b : blocks) {
             hashes.add(b.getHash());
@@ -270,7 +270,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized List<BlockHeader> getListHeadersEndWith(byte[] hash, long qty) {
+    public synchronized List<BlockHeader> getListHeadersEndWith(Sha3Hash hash, long qty) {
 
         List<Block> blocks = getListBlocksEndWith(hash, qty);
         List<BlockHeader> headers = new ArrayList<>(blocks.size());
@@ -283,7 +283,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized List<Block> getListBlocksEndWith(byte[] hash, long qty) {
+    public synchronized List<Block> getListBlocksEndWith(Sha3Hash hash, long qty) {
         Block block = getBlockByHash(hash);
 
         if (block == null) {
@@ -375,9 +375,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @VisibleForTesting
-    public synchronized List<byte[]> getListHashesStartWith(long number, long maxBlocks) {
+    public synchronized List<Sha3Hash> getListHashesStartWith(long number, long maxBlocks) {
 
-        List<byte[]> result = new ArrayList<>();
+        List<Sha3Hash> result = new ArrayList<>();
 
         int i;
         for (i = 0; i < maxBlocks; ++i) {
@@ -400,15 +400,15 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     public static class BlockInfo implements Serializable {
-        byte[] hash;
+        Sha3Hash hash;
         BigInteger cummDifficulty;
         boolean mainChain;
 
-        public byte[] getHash() {
+        public Sha3Hash getHash() {
             return hash;
         }
 
-        public void setHash(byte[] hash) {
+        public void setHash(Sha3Hash hash) {
             this.hash = hash;
         }
 
@@ -484,13 +484,13 @@ public class IndexedBlockStore extends AbstractBlockstore {
         }
     }
 
-    private static BlockInfo getBlockInfoForHash(List<BlockInfo> blocks, byte[] hash){
+    private static BlockInfo getBlockInfoForHash(List<BlockInfo> blocks, Sha3Hash hash){
         if (blocks == null) {
             return null;
         }
 
         for (BlockInfo blockInfo : blocks) {
-            if (areEqual(hash, blockInfo.getHash())) {
+            if (hash.equals(blockInfo.getHash())) {
                 return blockInfo;
             }
         }
@@ -514,7 +514,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
         for (BlockInfo blockInfo : blockInfos){
 
-            byte[] hash = blockInfo.getHash();
+            Sha3Hash hash = blockInfo.getHash();
             Block block = getBlockByHash(hash);
 
             result.add(block);

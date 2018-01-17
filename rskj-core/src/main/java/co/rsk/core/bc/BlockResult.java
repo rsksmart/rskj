@@ -18,6 +18,7 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
@@ -38,14 +39,14 @@ public class BlockResult {
 
     private final List<Transaction> executedTransactions;
     private final List<TransactionReceipt> transactionReceipts;
-    private final byte[] stateRoot;
+    private final Sha3Hash stateRoot;
     private final byte[] receiptsRoot;
     private final long gasUsed;
     private final BigInteger paidFees;
     private final byte[] logsBloom;
 
     public BlockResult(List<Transaction> executedTransactions, List<TransactionReceipt> transactionReceipts,
-                       byte[] stateRoot, long gasUsed, BigInteger paidFees) {
+                       Sha3Hash stateRoot, long gasUsed, BigInteger paidFees) {
         this.executedTransactions = executedTransactions;
         this.transactionReceipts = transactionReceipts;
         this.stateRoot = stateRoot;
@@ -62,7 +63,7 @@ public class BlockResult {
         return this.transactionReceipts;
     }
 
-    public byte[] getStateRoot() {
+    public Sha3Hash getStateRoot() {
         return this.stateRoot;
     }
 

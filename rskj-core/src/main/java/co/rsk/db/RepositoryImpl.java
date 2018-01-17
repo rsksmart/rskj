@@ -20,6 +20,7 @@ package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
@@ -141,7 +142,7 @@ public class RepositoryImpl implements Repository {
         // to sync details storage according the trie root
         // saved in the account
         AccountState accountState = getAccountState(addr);
-        byte[] storageRoot = EMPTY_TRIE_HASH;
+        Sha3Hash storageRoot = new Sha3Hash(EMPTY_TRIE_HASH);
         if (accountState != null) {
             storageRoot = getAccountState(addr).getStateRoot();
         }
@@ -298,8 +299,8 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
-    public synchronized void syncToRoot(byte[] root) {
-        this.trie = this.trie.getSnapshotTo(root);
+    public synchronized void syncToRoot(Sha3Hash root) {
+        this.trie = this.trie.getSnapshotTo(root.getBytes());
     }
 
     @Override
@@ -364,7 +365,7 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
-    public synchronized byte[] getRoot() {
+    public synchronized Sha3Hash getRoot() {
         if (this.trie.hasStore()) {
             this.trie.save();
         }
@@ -373,7 +374,7 @@ public class RepositoryImpl implements Repository {
 
         logger.trace("getting repository root hash {}", Hex.toHexString(rootHash));
 
-        return rootHash;
+        return new Sha3Hash(rootHash);
     }
 
     @Override
@@ -391,7 +392,7 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
-    public synchronized Repository getSnapshotTo(byte[] root) {
+    public synchronized Repository getSnapshotTo(Sha3Hash root) {
         RepositoryImpl snapshotRepository = new RepositoryImpl(this.config, this.store, this.detailsDataStore);
         snapshotRepository.syncToRoot(root);
         return snapshotRepository;

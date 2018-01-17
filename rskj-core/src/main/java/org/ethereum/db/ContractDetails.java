@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.vm.DataWord;
 
 import javax.annotation.Nullable;
@@ -41,7 +42,7 @@ public interface ContractDetails {
 
     void setCode(byte[] code);
 
-    byte[] getStorageHash();
+    Sha3Hash getStorageHash();
 
     void decode(byte[] rlpCode);
 
@@ -75,7 +76,7 @@ public interface ContractDetails {
 
     void syncStorage();
 
-    ContractDetails getSnapshotTo(byte[] hash);
+    ContractDetails getSnapshotTo(Sha3Hash hash);
 
     boolean isNullObject();
 }

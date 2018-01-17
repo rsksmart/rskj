@@ -21,6 +21,7 @@ package co.rsk.db;
 
 import co.rsk.config.ConfigHelper;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Genesis;
@@ -707,7 +708,7 @@ public class RepositoryImplOriginalTest {
         track1.commit();
         // leaving level_1
 
-        Assert.assertEquals(Hex.toHexString(HashUtil.EMPTY_TRIE_HASH), Hex.toHexString(repository.getRoot()));
+        Assert.assertEquals(Hex.toHexString(HashUtil.EMPTY_TRIE_HASH), repository.getRoot().toString());
         repository.close();
     }
 
@@ -778,7 +779,7 @@ public class RepositoryImplOriginalTest {
     public void test20() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
         Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, store);
-        byte[] root = repository.getRoot();
+        Sha3Hash root = repository.getRoot();
 
         DataWord cowKey1 = new DataWord("c1");
         DataWord cowKey2 = new DataWord("c2");
@@ -795,14 +796,14 @@ public class RepositoryImplOriginalTest {
         track2.addStorageRow(HORSE, horseKey1, horseVal1);
         track2.commit();
 
-        byte[] root2 = repository.getRoot();
+        Sha3Hash root2 = repository.getRoot();
 
         track2 = repository.startTracking(); //track
         track2.addStorageRow(COW, cowKey2, cowVal0);
         track2.addStorageRow(HORSE, horseKey2, horseVal0);
         track2.commit();
 
-        byte[] root3 = repository.getRoot();
+        Sha3Hash root3 = repository.getRoot();
 
         Repository snapshot = repository.getSnapshotTo(root);
         ContractDetails cowDetails = snapshot.getContractDetails(COW);

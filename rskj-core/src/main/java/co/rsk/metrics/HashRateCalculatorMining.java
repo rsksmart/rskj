@@ -18,6 +18,7 @@
 
 package co.rsk.metrics;
 
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.util.RskCustomCache;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
@@ -30,7 +31,7 @@ public class HashRateCalculatorMining extends HashRateCalculator {
 
     private byte[] coinbaseAddress;
 
-    public HashRateCalculatorMining(BlockStore blockStore, RskCustomCache<ByteArrayWrapper, BlockHeaderElement> headerCache, byte[] coinbaseAddress) {
+    public HashRateCalculatorMining(BlockStore blockStore, RskCustomCache<Sha3Hash, BlockHeaderElement> headerCache, byte[] coinbaseAddress) {
         super(blockStore, headerCache);
         this.coinbaseAddress = coinbaseAddress;
     }

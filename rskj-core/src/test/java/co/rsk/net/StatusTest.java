@@ -1,5 +1,6 @@
 package co.rsk.net;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.HashUtilTest;
 import org.junit.Assert;
@@ -14,29 +15,29 @@ import java.util.Random;
 public class StatusTest {
     @Test
     public void createWithOriginalArguments() {
-        byte[] hash = HashUtil.randomHash();
+        Sha3Hash hash = HashUtil.randomSha3Hash();
 
         Status status = new Status(42, hash);
 
         Assert.assertEquals(42, status.getBestBlockNumber());
         Assert.assertNotNull(status.getBestBlockHash());
-        Assert.assertArrayEquals(hash, status.getBestBlockHash());
+        Assert.assertEquals(hash, status.getBestBlockHash());
         Assert.assertNull(status.getBestBlockParentHash());
         Assert.assertNull(status.getTotalDifficulty());
     }
 
     @Test
     public void createWithCompleteArguments() {
-        byte[] hash = HashUtil.randomHash();
-        byte[] parentHash = HashUtil.randomHash();
+        Sha3Hash hash = HashUtil.randomSha3Hash();
+        Sha3Hash parentHash = HashUtil.randomSha3Hash();
 
         Status status = new Status(42, hash, parentHash, BigInteger.TEN);
 
         Assert.assertEquals(42, status.getBestBlockNumber());
         Assert.assertNotNull(status.getBestBlockHash());
-        Assert.assertArrayEquals(hash, status.getBestBlockHash());
+        Assert.assertEquals(hash, status.getBestBlockHash());
         Assert.assertNotNull(status.getBestBlockParentHash());
-        Assert.assertArrayEquals(parentHash, status.getBestBlockParentHash());
+        Assert.assertEquals(parentHash, status.getBestBlockParentHash());
         Assert.assertNotNull(status.getTotalDifficulty());
         Assert.assertEquals(BigInteger.TEN, status.getTotalDifficulty());
     }

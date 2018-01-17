@@ -20,6 +20,7 @@
 package org.ethereum.vm.program.invoke;
 
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.db.RepositoryImplForTesting;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -173,9 +174,9 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     @Override
-    public DataWord getPrevHash() {
+    public Sha3Hash getPrevHash() {
         byte[] prevHash = Hex.decode("961CB117ABA86D1E596854015A1483323F18883C2D745B0BC03E87F146D2BB1C");
-        return new DataWord(prevHash);
+        return new Sha3Hash(prevHash);
     }
 
     @Override

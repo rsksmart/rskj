@@ -216,7 +216,7 @@ class RemascTestRunner {
 
         Block block =  new Block(
                 parentBlock.getHash(),          // parent hash
-                EMPTY_LIST_HASH,       // uncle hash
+                new Sha3Hash(EMPTY_LIST_HASH),       // uncle hash
                 coinbase.getBytes(),            // coinbase
                 new Bloom().getData(),          // logs bloom
                 diffBytes,    // difficulty
@@ -242,8 +242,8 @@ class RemascTestRunner {
                 if (harcodedHashHeader==null) {
                     harcodedHashHeader = new BlockHeader(super.getHeader().getEncoded(), false) {
                         @Override
-                        public byte[] getHash() {
-                            return blockHash.getBytes();
+                        public Sha3Hash getHash() {
+                            return blockHash;
                         }
                     };
                 }
@@ -251,8 +251,8 @@ class RemascTestRunner {
             }
 
             @Override
-            public byte[] getHash() {
-                return blockHash.getBytes();
+            public Sha3Hash getHash() {
+                return blockHash;
             }
 
             @Override

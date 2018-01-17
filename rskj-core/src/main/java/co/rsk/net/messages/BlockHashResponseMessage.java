@@ -18,6 +18,7 @@
 
 package co.rsk.net.messages;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.util.RLP;
 
 /**
@@ -25,9 +26,9 @@ import org.ethereum.util.RLP;
  */
 public class BlockHashResponseMessage extends MessageWithId {
     private final long id;
-    private final byte[] hash;
+    private final Sha3Hash hash;
 
-    public BlockHashResponseMessage(long id, byte[] hash) {
+    public BlockHashResponseMessage(long id, Sha3Hash hash) {
         this.id = id;
         this.hash = hash;
     }
@@ -39,12 +40,12 @@ public class BlockHashResponseMessage extends MessageWithId {
 
     @Override
     public byte[] getEncodedMessageWithoutId() {
-        byte[] rlpHash = RLP.encodeElement(this.hash);
+        byte[] rlpHash = RLP.encodeElement(this.hash.getBytes());
 
         return RLP.encodeList(rlpHash);
     }
 
     public long getId() { return this.id; }
 
-    public byte[] getHash() { return this.hash; }
+    public Sha3Hash getHash() { return this.hash; }
 }

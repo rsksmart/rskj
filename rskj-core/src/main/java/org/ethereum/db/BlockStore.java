@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
@@ -32,14 +33,14 @@ import java.util.List;
  */
 public interface BlockStore {
 
-    byte[] getBlockHashByNumber(long blockNumber);
+    Sha3Hash getBlockHashByNumber(long blockNumber);
 
     /**
      * Gets the block hash by its index.
      * When more than one block with the specified index exists (forks)
      * the select the block which is ancestor of the branchBlockHash
      */
-    byte[] getBlockHashByNumber(long blockNumber, byte[] branchBlockHash);
+    Sha3Hash getBlockHashByNumber(long blockNumber, Sha3Hash branchBlockHash);
 
     Block getChainBlockByNumber(long blockNumber);
 
@@ -48,21 +49,21 @@ public interface BlockStore {
 
     void removeBlock(Block block);
 
-    Block getBlockByHash(byte[] hash);
+    Block getBlockByHash(Sha3Hash hash);
 
-    Block getBlockByHashAndDepth(byte[] hash, long depth);
+    Block getBlockByHashAndDepth(Sha3Hash hash, long depth);
 
-    boolean isBlockExist(byte[] hash);
+    boolean isBlockExist(Sha3Hash hash);
 
-    List<byte[]> getListHashesEndWith(byte[] hash, long qty);
+    List<Sha3Hash> getListHashesEndWith(Sha3Hash hash, long qty);
 
-    List<BlockHeader> getListHeadersEndWith(byte[] hash, long qty);
+    List<BlockHeader> getListHeadersEndWith(Sha3Hash hash, long qty);
 
-    List<Block> getListBlocksEndWith(byte[] hash, long qty);
+    List<Block> getListBlocksEndWith(Sha3Hash hash, long qty);
 
     void saveBlock(Block block, BigInteger cummDifficulty, boolean mainChain);
 
-    BigInteger getTotalDifficultyForHash(byte[] hash);
+    BigInteger getTotalDifficultyForHash(Sha3Hash hash);
 
     Block getBestBlock();
 

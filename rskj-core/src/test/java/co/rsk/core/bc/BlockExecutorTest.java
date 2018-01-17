@@ -21,6 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.ConfigHelper;
 import co.rsk.core.BlockchainDummy;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieStoreImpl;
@@ -68,7 +69,7 @@ public class BlockExecutorTest {
         Assert.assertTrue(account.getEcKey().hasPrivKey());
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assert.assertFalse(new Sha3Hash(EMPTY_TRIE_HASH).equals(repository.getRoot()));
 
         BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, null, null, null);
 
@@ -78,7 +79,7 @@ public class BlockExecutorTest {
 
         Assert.assertNotNull(result.getTransactionReceipts());
         Assert.assertTrue(result.getTransactionReceipts().isEmpty());
-        Assert.assertArrayEquals(repository.getRoot(), result.getStateRoot());
+        Assert.assertEquals(repository.getRoot(), result.getStateRoot());
 
         AccountState accountState = repository.getAccountState(account.getAddress());
 
@@ -118,7 +119,7 @@ public class BlockExecutorTest {
         Assert.assertNotNull(result.getReceiptsRoot());
         Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
 
-        Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getStateRoot()));
+        Assert.assertFalse(repository.getRoot().equals(result.getStateRoot()));
 
         Assert.assertNotNull(result.getLogsBloom());
         Assert.assertEquals(256, result.getLogsBloom().length);
@@ -150,7 +151,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assert.assertFalse(repository.getRoot().equals(new Sha3Hash(EMPTY_TRIE_HASH)));
 
         BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, new BlockchainDummy(), null, null);
 
@@ -189,7 +190,7 @@ public class BlockExecutorTest {
 
         Assert.assertNotNull(result.getReceiptsRoot());
         Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
-        Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getStateRoot()));
+        Assert.assertFalse(repository.getRoot().equals(result.getStateRoot()));
 
         Assert.assertNotNull(result.getLogsBloom());
         Assert.assertEquals(256, result.getLogsBloom().length);
@@ -220,7 +221,7 @@ public class BlockExecutorTest {
         executor.executeAndFill(block, parent);
 
         Assert.assertArrayEquals(result.getReceiptsRoot(), block.getReceiptsRoot());
-        Assert.assertArrayEquals(result.getStateRoot(), block.getStateRoot());
+        Assert.assertEquals(result.getStateRoot(), block.getStateRoot());
         Assert.assertEquals(result.getGasUsed(), block.getGasUsed());
         Assert.assertEquals(result.getPaidFees(), block.getFeesPaidToMiner());
         Assert.assertArrayEquals(result.getLogsBloom(), block.getLogBloom());
@@ -240,7 +241,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assert.assertFalse(repository.getRoot().equals(new Sha3Hash(EMPTY_TRIE_HASH)));
 
         BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, new BlockchainDummy(), null, null);
 
@@ -278,7 +279,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assert.assertFalse(repository.getRoot().equals(new Sha3Hash(EMPTY_TRIE_HASH)));
 
         BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, new BlockchainDummy(), null, null);
 
@@ -316,7 +317,7 @@ public class BlockExecutorTest {
         Block block = objects.getBlock();
         BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, objects.getRepository(), new BlockchainDummy(), null, null);
 
-        byte[] stateRoot = block.getStateRoot();
+        byte[] stateRoot = block.getStateRoot().getBytes();
         stateRoot[0] = (byte)((stateRoot[0] + 1) % 256);
 
         Assert.assertFalse(executor.executeAndValidate(block, parent));
@@ -383,7 +384,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assert.assertFalse( repository.getRoot().equals(new Sha3Hash(EMPTY_TRIE_HASH)));
 
         BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, new BlockchainDummy(), null, null);
 
@@ -481,7 +482,7 @@ public class BlockExecutorTest {
         Assert.assertEquals(tx, receipt.getTransaction());
         Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
         Assert.assertEquals(21000, new BigInteger(1, receipt.getCumulativeGas()).longValue());
-        Assert.assertArrayEquals(result.getStateRoot(), receipt.getPostTxState());
+        Assert.assertEquals(result.getStateRoot(), receipt.getPostTxState());
 
         Assert.assertEquals(21000, result.getGasUsed());
         Assert.assertEquals(21000, result.getPaidFees());
@@ -489,7 +490,7 @@ public class BlockExecutorTest {
         Assert.assertNotNull(result.getReceiptsRoot());
         Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
 
-        Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getStateRoot()));
+        Assert.assertFalse(repository.getRoot().equals(result.getStateRoot()));
 
         Assert.assertNotNull(result.getLogsBloom());
         Assert.assertEquals(256, result.getLogsBloom().length);
@@ -521,7 +522,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assert.assertFalse(repository.getRoot().equals(new Sha3Hash(EMPTY_TRIE_HASH)));
 
         BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, repository, new BlockchainDummy(), null, null);
 

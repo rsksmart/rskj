@@ -53,7 +53,7 @@ public class TransactionReceiptDTO {
         TransactionReceipt receipt = txInfo.getReceipt();
 
         status = toJsonHex(txInfo.getReceipt().getStatus());
-        blockHash = toJsonHex(txInfo.getBlockHash());
+        blockHash = toJsonHex(txInfo.getBlockHash().getBytes());
         blockNumber = toJsonHex(block.getNumber());
 
         RskAddress contractAddress = receipt.getTransaction().getContractAddress();

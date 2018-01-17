@@ -19,6 +19,7 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.crypto.Sha3Hash;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,15 +29,15 @@ import org.junit.Test;
 public class GetBlockHeaderMessageTest {
     @Test
     public void createWithBlockHeaderHash() {
-        final byte[] hash = BlockGenerator.getInstance().getGenesisBlock().getHash();
+        final Sha3Hash hash = BlockGenerator.getInstance().getGenesisBlock().getHash();
         GetBlockHeadersMessage message = new GetBlockHeadersMessage(0, hash, 1, 0, false);
 
-        Assert.assertArrayEquals(hash, message.getBlockHash());
+        Assert.assertEquals(hash, message.getBlockHash());
         Assert.assertEquals(MessageType.GET_BLOCK_HEADERS_MESSAGE, message.getMessageType());
 
         message = new GetBlockHeadersMessage(hash, 1);
 
-        Assert.assertArrayEquals(hash, message.getBlockHash());
+        Assert.assertEquals(hash, message.getBlockHash());
         Assert.assertEquals(MessageType.GET_BLOCK_HEADERS_MESSAGE, message.getMessageType());
     }
 }

@@ -69,8 +69,8 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node3.getSyncProcessor().getExpectedResponses().isEmpty());
 
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
-        Assert.assertArrayEquals(node2.getBestBlock().getHash(), node3.getBestBlock().getHash());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash().getBytes(), node2.getBestBlock().getHash().getBytes());
+        Assert.assertArrayEquals(node2.getBestBlock().getHash().getBytes(), node3.getBestBlock().getHash().getBytes());
 
         node1.joinWithTimeout();
         node2.joinWithTimeout();
@@ -106,7 +106,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
         Assert.assertEquals(50, node2.getBestBlock().getNumber());
         Assert.assertEquals(30, node3.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node3.getBestBlock().getHash());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash().getBytes(), node3.getBestBlock().getHash().getBytes());
 
         node2.sendFullStatusTo(node3);
         // sync setup
@@ -118,7 +118,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(50, node2.getBestBlock().getNumber());
         Assert.assertEquals(50, node3.getBestBlock().getNumber());
 
-        Assert.assertArrayEquals(node2.getBestBlock().getHash(), node3.getBestBlock().getHash());
+        Assert.assertArrayEquals(node2.getBestBlock().getHash().getBytes(), node3.getBestBlock().getHash().getBytes());
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
@@ -161,7 +161,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
         Assert.assertEquals(73, node2.getBestBlock().getNumber());
         Assert.assertEquals(30, node3.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node3.getBestBlock().getHash());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash().getBytes(), node3.getBestBlock().getHash().getBytes());
 
         node2.sendFullStatusTo(node3);
         // sync setup
@@ -169,7 +169,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         // synchronize 43 new blocks from node 2
         node3.waitExactlyNTasksWithTimeout(43);
 
-        Assert.assertArrayEquals(node2.getBestBlock().getHash(), node3.getBestBlock().getHash());
+        Assert.assertArrayEquals(node2.getBestBlock().getHash().getBytes(), node3.getBestBlock().getHash().getBytes());
 
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
         Assert.assertEquals(73, node2.getBestBlock().getNumber());
@@ -217,7 +217,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertTrue(node3.getSyncProcessor().getExpectedResponses().isEmpty());
 
         Assert.assertEquals(50, node3.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node3.getBestBlock().getHash());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash().getBytes(), node3.getBestBlock().getHash().getBytes());
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
@@ -261,7 +261,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertTrue(node3.getSyncProcessor().getExpectedResponses().isEmpty());
 
         Assert.assertEquals(200, node3.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node3.getBestBlock().getHash());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash().getBytes(), node3.getBestBlock().getHash().getBytes());
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
@@ -310,7 +310,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertTrue(node3.getSyncProcessor().getExpectedResponses().isEmpty());
 
         Assert.assertEquals(200, node3.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node3.getBestBlock().getHash());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash().getBytes(), node3.getBestBlock().getHash().getBytes());
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
@@ -356,7 +356,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertTrue(node3.getSyncProcessor().getExpectedResponses().isEmpty());
 
         Assert.assertEquals(200, node3.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node2.getBestBlock().getHash(), node3.getBestBlock().getHash());
+        Assert.assertArrayEquals(node2.getBestBlock().getHash().getBytes(), node3.getBestBlock().getHash().getBytes());
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
@@ -405,7 +405,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertTrue(node4.getSyncProcessor().getExpectedResponses().isEmpty());
 
         Assert.assertEquals(400, node4.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node4.getBestBlock().getHash(), node3.getBestBlock().getHash());
+        Assert.assertArrayEquals(node4.getBestBlock().getHash().getBytes(), node3.getBestBlock().getHash().getBytes());
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());
@@ -444,7 +444,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(50, node1.getBestBlock().getNumber());
         Assert.assertEquals(30, node2.getBestBlock().getNumber());
         Assert.assertEquals(50, node3.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node3.getBestBlock().getHash());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash().getBytes(), node3.getBestBlock().getHash().getBytes());
 
         node2.sendFullStatusTo(node3);
         // receive status, do nothing
@@ -504,7 +504,7 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         Assert.assertEquals(30, node1.getBestBlock().getNumber());
         Assert.assertEquals(80, node2.getBestBlock().getNumber());
         Assert.assertEquals(80, node3.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node2.getBestBlock().getHash(), node3.getBestBlock().getHash());
+        Assert.assertArrayEquals(node2.getBestBlock().getHash().getBytes(), node3.getBestBlock().getHash().getBytes());
 
         Assert.assertTrue(node1.getSyncProcessor().getExpectedResponses().isEmpty());
         Assert.assertTrue(node2.getSyncProcessor().getExpectedResponses().isEmpty());

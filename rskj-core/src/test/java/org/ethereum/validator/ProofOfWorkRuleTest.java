@@ -126,7 +126,7 @@ public class ProofOfWorkRuleTest {
     }
 
     private static Block mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(Block block, byte[] compressed) {
-        Sha3Hash blockMergedMiningHash = new Sha3Hash(block.getHashForMergedMining());
+        Sha3Hash blockMergedMiningHash = block.getHashForMergedMining();
 
         co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, blockMergedMiningHash.getBytes());

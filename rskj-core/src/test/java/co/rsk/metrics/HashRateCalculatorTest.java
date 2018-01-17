@@ -53,13 +53,13 @@ public class HashRateCalculatorTest {
         blockHeader = Mockito.mock(BlockHeader.class);
 
         Mockito.when(block.getHeader()).thenReturn(blockHeader);
-        Mockito.when(block.getHash()).thenReturn(FAKE_GENERIC_HASH);
-        Mockito.when(blockHeader.getParentHash()).thenReturn(FAKE_GENERIC_HASH)
+        Mockito.when(block.getHash().getBytes()).thenReturn(FAKE_GENERIC_HASH);
+        Mockito.when(blockHeader.getParentHash().getBytes()).thenReturn(FAKE_GENERIC_HASH)
                 .thenReturn(OHTER_FAKE_GENERIC_HASH)
                 .thenReturn(FAKE_GENERIC_HASH)
                 .thenReturn(null);
 
-        Mockito.when(blockHeader.getHash()).thenReturn(FAKE_GENERIC_HASH);
+        Mockito.when(blockHeader.getHash().getBytes()).thenReturn(FAKE_GENERIC_HASH);
 
         Mockito.when(blockStore.getBlockByHash(Mockito.any())).thenReturn(block)
                 .thenReturn(block).thenReturn(block).thenReturn(null);

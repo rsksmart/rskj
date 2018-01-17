@@ -93,7 +93,7 @@ public class NodeBlockProcessorTest {
         Block block = BlockGenerator.getInstance().createChildBlock(blockchain.getBlockByNumber(10));
 
         Assert.assertEquals(11, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
+        Assert.assertEquals(blockchain.getBestBlockHash(), block.getParentHash());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -104,7 +104,7 @@ public class NodeBlockProcessorTest {
 
         Assert.assertFalse(store.hasBlock(block));
         Assert.assertEquals(11, blockchain.getBestBlock().getNumber());
-        Assert.assertArrayEquals(block.getHash(), blockchain.getBestBlockHash());
+        Assert.assertEquals(block.getHash(), blockchain.getBestBlockHash());
         Assert.assertEquals(1, store.size());
     }
 
@@ -342,7 +342,7 @@ public class NodeBlockProcessorTest {
 
         Assert.assertEquals(11, parent.getNumber());
         Assert.assertEquals(12, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlockHash(), parent.getParentHash());
+        Assert.assertEquals(blockchain.getBestBlockHash(), parent.getParentHash());
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -360,7 +360,7 @@ public class NodeBlockProcessorTest {
         Assert.assertFalse(store.hasBlock(parent));
 
         Assert.assertEquals(12, blockchain.getBestBlock().getNumber());
-        Assert.assertArrayEquals(block.getHash(), blockchain.getBestBlockHash());
+        Assert.assertEquals(block.getHash(), blockchain.getBestBlockHash());
         Assert.assertEquals(1, store.size());
     }
 
@@ -393,7 +393,7 @@ public class NodeBlockProcessorTest {
 
         final GetBlockMessage gbMessage = (GetBlockMessage) message;
 
-        Assert.assertArrayEquals(block.getParentHash(), gbMessage.getBlockHash());
+        Assert.assertEquals(block.getParentHash(), gbMessage.getBlockHash());
     }
 
     @Test @Ignore("Ignored when Process status deleted on block processor")
@@ -423,7 +423,7 @@ public class NodeBlockProcessorTest {
 
         final GetBlockMessage gbMessage = (GetBlockMessage) message;
 
-        Assert.assertArrayEquals(block.getHash(), gbMessage.getBlockHash());
+        Assert.assertEquals(block.getHash(), gbMessage.getBlockHash());
         Assert.assertEquals(0, store.size());
     }
 
@@ -460,13 +460,9 @@ public class NodeBlockProcessorTest {
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         final Block block = blockchain.getBestBlock();
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
 
-//        final Status status = new Status(block.getNumber(), block.getHash());
-
-//        processor.processStatus(sender, status);
         Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(block.getHash()).size() == 1);
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(block.getHash()));
 
         Assert.assertEquals(0, sender.getGetBlockMessages().size());
         Assert.assertEquals(0, store.size());
@@ -484,15 +480,12 @@ public class NodeBlockProcessorTest {
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         final Block block = blockchain.getBlockByNumber(1);
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
 
         store.saveBlock(block);
-//        final Status status = new Status(block.getNumber(), block.getHash());
 
         Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
 
-//        processor.processStatus(sender, status);
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(block.getHash()));
 
         Assert.assertEquals(0, sender.getGetBlockMessages().size());
     }
@@ -523,7 +516,7 @@ public class NodeBlockProcessorTest {
 
         final BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
-        Assert.assertArrayEquals(block.getHeader().getHash(), bMessage.getBlockHeaders().get(0).getHash());
+        Assert.assertEquals(block.getHeader().getHash(), bMessage.getBlockHeaders().get(0).getHash());
     }
 
     @Test
@@ -572,13 +565,12 @@ public class NodeBlockProcessorTest {
 
         final BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
-        Assert.assertArrayEquals(block.getHeader().getHash(), bMessage.getBlockHeaders().get(0).getHash());
+        Assert.assertEquals(block.getHeader().getHash(), bMessage.getBlockHeaders().get(0).getHash());
     }
 
     @Test
     public void processGetBlockMessageUsingBlockInStore() throws UnknownHostException {
         final Block block = BlockGenerator.getInstance().getBlock(3);
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
 
         final BlockStore store = new BlockStore();
         store.saveBlock(block);
@@ -595,7 +587,7 @@ public class NodeBlockProcessorTest {
 
         processor.processGetBlock(sender, block.getHash());
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(block.getHash()));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -606,7 +598,7 @@ public class NodeBlockProcessorTest {
 
         final BlockMessage bMessage = (BlockMessage) message;
 
-        Assert.assertArrayEquals(block.getHash(), bMessage.getBlock().getHash());
+        Assert.assertEquals(block.getHash(), bMessage.getBlock().getHash());
     }
 
     @Test
@@ -635,7 +627,6 @@ public class NodeBlockProcessorTest {
     public void processGetBlockMessageUsingBlockInBlockchain() throws UnknownHostException {
         final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -649,7 +640,7 @@ public class NodeBlockProcessorTest {
 
         processor.processGetBlock(sender, block.getHash());
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(block.getHash()));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -660,13 +651,12 @@ public class NodeBlockProcessorTest {
 
         final BlockMessage bMessage = (BlockMessage) message;
 
-        Assert.assertArrayEquals(block.getHash(), bMessage.getBlock().getHash());
+        Assert.assertEquals(block.getHash(), bMessage.getBlock().getHash());
     }
 
     @Test
     public void processBlockRequestMessageUsingBlockInStore() throws UnknownHostException {
         final Block block = BlockGenerator.getInstance().getBlock(3);
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
 
         final BlockStore store = new BlockStore();
         store.saveBlock(block);
@@ -683,7 +673,7 @@ public class NodeBlockProcessorTest {
 
         processor.processBlockRequest(sender, 100, block.getHash());
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(block.getHash()));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -695,7 +685,7 @@ public class NodeBlockProcessorTest {
         final BlockResponseMessage bMessage = (BlockResponseMessage) message;
 
         Assert.assertEquals(100, bMessage.getId());
-        Assert.assertArrayEquals(block.getHash(), bMessage.getBlock().getHash());
+        Assert.assertEquals(block.getHash(), bMessage.getBlock().getHash());
     }
 
     @Test
@@ -729,7 +719,6 @@ public class NodeBlockProcessorTest {
     @Test
     public void processBlockHashRequestMessageUsingEmptyStore() throws UnknownHostException {
         final Block block = BlockGenerator.getInstance().getBlock(3);
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
@@ -744,7 +733,7 @@ public class NodeBlockProcessorTest {
 
         processor.processBlockRequest(sender, 100, block.getHash());
 
-        Assert.assertFalse(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertFalse(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(block.getHash()));
 
         Assert.assertTrue(sender.getMessages().isEmpty());
     }
@@ -753,7 +742,6 @@ public class NodeBlockProcessorTest {
     public void processBlockHashRequestMessageUsingBlockInBlockchain() throws UnknownHostException {
         final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -767,7 +755,7 @@ public class NodeBlockProcessorTest {
 
         processor.processBlockRequest(sender, 100, block.getHash());
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(block.getHash()));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -779,7 +767,7 @@ public class NodeBlockProcessorTest {
         final BlockResponseMessage bMessage = (BlockResponseMessage) message;
 
         Assert.assertEquals(100, bMessage.getId());
-        Assert.assertArrayEquals(block.getHash(), bMessage.getBlock().getHash());
+        Assert.assertEquals(block.getHash(), bMessage.getBlock().getHash());
     }
 
     @Test
@@ -827,7 +815,7 @@ public class NodeBlockProcessorTest {
         Assert.assertEquals(20, response.getBlockHeaders().size());
 
         for (int k = 0; k < 20; k++)
-            Assert.assertArrayEquals(blockchain.getBlockByNumber(60 - k).getHash(), response.getBlockHeaders().get(k).getHash());
+            Assert.assertEquals(blockchain.getBlockByNumber(60 - k).getHash(), response.getBlockHeaders().get(k).getHash());
     }
 
     @Test
@@ -842,7 +830,7 @@ public class NodeBlockProcessorTest {
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        processor.processBlockHeadersRequest(sender, 100, HashUtil.randomHash(), 20);
+        processor.processBlockHeadersRequest(sender, 100, HashUtil.randomSha3Hash(), 20);
 
         Assert.assertTrue(sender.getMessages().isEmpty());
     }
@@ -963,7 +951,7 @@ public class NodeBlockProcessorTest {
 
         for (int i = 0; i < expected.length; i++) {
             Assert.assertEquals(expected[i].getNumber(), actual.get(i).getNumber());
-            Assert.assertArrayEquals(expected[i].getHash(), actual.get(i).getHash());
+            Assert.assertEquals(expected[i].getHash(), actual.get(i).getHash());
         }
     }
 }

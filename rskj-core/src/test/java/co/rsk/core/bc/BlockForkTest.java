@@ -72,17 +72,17 @@ public class BlockForkTest {
 
         fork.calculate(oldBranch.get(1), newBranch.get(1) , store);
 
-        Assert.assertArrayEquals(parent.getHash(), fork.getCommonAncestor().getHash());
+        Assert.assertArrayEquals(parent.getHash().getBytes(), fork.getCommonAncestor().getHash().getBytes());
 
         Assert.assertFalse(fork.getOldBlocks().isEmpty());
         Assert.assertEquals(2, fork.getOldBlocks().size());
-        Assert.assertArrayEquals(oldBranch.get(0).getHash(), fork.getOldBlocks().get(0).getHash());
-        Assert.assertArrayEquals(oldBranch.get(1).getHash(), fork.getOldBlocks().get(1).getHash());
+        Assert.assertArrayEquals(oldBranch.get(0).getHash().getBytes(), fork.getOldBlocks().get(0).getHash().getBytes());
+        Assert.assertArrayEquals(oldBranch.get(1).getHash().getBytes(), fork.getOldBlocks().get(1).getHash().getBytes());
 
         Assert.assertFalse(fork.getNewBlocks().isEmpty());
         Assert.assertEquals(2, fork.getNewBlocks().size());
-        Assert.assertArrayEquals(newBranch.get(0).getHash(), fork.getNewBlocks().get(0).getHash());
-        Assert.assertArrayEquals(newBranch.get(1).getHash(), fork.getNewBlocks().get(1).getHash());
+        Assert.assertArrayEquals(newBranch.get(0).getHash().getBytes(), fork.getNewBlocks().get(0).getHash().getBytes());
+        Assert.assertArrayEquals(newBranch.get(1).getHash().getBytes(), fork.getNewBlocks().get(1).getHash().getBytes());
     }
 
     @Test
@@ -101,18 +101,18 @@ public class BlockForkTest {
 
         fork.calculate(oldBranch.get(1), newBranch.get(2) , store);
 
-        Assert.assertArrayEquals(parent.getHash(), fork.getCommonAncestor().getHash());
+        Assert.assertArrayEquals(parent.getHash().getBytes(), fork.getCommonAncestor().getHash().getBytes());
 
         Assert.assertFalse(fork.getOldBlocks().isEmpty());
         Assert.assertEquals(2, fork.getOldBlocks().size());
-        Assert.assertArrayEquals(oldBranch.get(0).getHash(), fork.getOldBlocks().get(0).getHash());
-        Assert.assertArrayEquals(oldBranch.get(1).getHash(), fork.getOldBlocks().get(1).getHash());
+        Assert.assertArrayEquals(oldBranch.get(0).getHash().getBytes(), fork.getOldBlocks().get(0).getHash().getBytes());
+        Assert.assertArrayEquals(oldBranch.get(1).getHash().getBytes(), fork.getOldBlocks().get(1).getHash().getBytes());
 
         Assert.assertFalse(fork.getNewBlocks().isEmpty());
         Assert.assertEquals(3, fork.getNewBlocks().size());
-        Assert.assertArrayEquals(newBranch.get(0).getHash(), fork.getNewBlocks().get(0).getHash());
-        Assert.assertArrayEquals(newBranch.get(1).getHash(), fork.getNewBlocks().get(1).getHash());
-        Assert.assertArrayEquals(newBranch.get(2).getHash(), fork.getNewBlocks().get(2).getHash());
+        Assert.assertArrayEquals(newBranch.get(0).getHash().getBytes(), fork.getNewBlocks().get(0).getHash().getBytes());
+        Assert.assertArrayEquals(newBranch.get(1).getHash().getBytes(), fork.getNewBlocks().get(1).getHash().getBytes());
+        Assert.assertArrayEquals(newBranch.get(2).getHash().getBytes(), fork.getNewBlocks().get(2).getHash().getBytes());
     }
 
     @Test
@@ -131,18 +131,18 @@ public class BlockForkTest {
 
         fork.calculate(oldBranch.get(2), newBranch.get(1) , store);
 
-        Assert.assertArrayEquals(parent.getHash(), fork.getCommonAncestor().getHash());
+        Assert.assertArrayEquals(parent.getHash().getBytes(), fork.getCommonAncestor().getHash().getBytes());
 
         Assert.assertFalse(fork.getOldBlocks().isEmpty());
         Assert.assertEquals(3, fork.getOldBlocks().size());
-        Assert.assertArrayEquals(oldBranch.get(0).getHash(), fork.getOldBlocks().get(0).getHash());
-        Assert.assertArrayEquals(oldBranch.get(1).getHash(), fork.getOldBlocks().get(1).getHash());
-        Assert.assertArrayEquals(oldBranch.get(2).getHash(), fork.getOldBlocks().get(2).getHash());
+        Assert.assertArrayEquals(oldBranch.get(0).getHash().getBytes(), fork.getOldBlocks().get(0).getHash().getBytes());
+        Assert.assertArrayEquals(oldBranch.get(1).getHash().getBytes(), fork.getOldBlocks().get(1).getHash().getBytes());
+        Assert.assertArrayEquals(oldBranch.get(2).getHash().getBytes(), fork.getOldBlocks().get(2).getHash().getBytes());
 
         Assert.assertFalse(fork.getNewBlocks().isEmpty());
         Assert.assertEquals(2, fork.getNewBlocks().size());
-        Assert.assertArrayEquals(newBranch.get(0).getHash(), fork.getNewBlocks().get(0).getHash());
-        Assert.assertArrayEquals(newBranch.get(1).getHash(), fork.getNewBlocks().get(1).getHash());
+        Assert.assertArrayEquals(newBranch.get(0).getHash().getBytes(), fork.getNewBlocks().get(0).getHash().getBytes());
+        Assert.assertArrayEquals(newBranch.get(1).getHash().getBytes(), fork.getNewBlocks().get(1).getHash().getBytes());
     }
 
     private static List<Block> makeChain(Block parent, int length, BlockStore store) {

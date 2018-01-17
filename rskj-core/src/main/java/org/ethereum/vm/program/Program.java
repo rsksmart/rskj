@@ -21,6 +21,7 @@ package org.ethereum.vm.program;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
@@ -1041,7 +1042,7 @@ public class Program {
     public DataWord getBlockHash(long index) {
        long bn = this.getNumber().longValue();
         if ((index <  bn) && (index >= Math.max(0, bn - 256))) {
-            return new DataWord(this.invoke.getBlockStore().getBlockHashByNumber(index, getPrevHash().getData()));
+            return new DataWord(this.invoke.getBlockStore().getBlockHashByNumber(index, getPrevHash()).getBytes());
         } else {
             return DataWord.ZERO.clone();
         }
@@ -1088,8 +1089,8 @@ public class Program {
         return getStorage().getStorageValue(new RskAddress(getOwnerAddress()), key);
     }
 
-    public DataWord getPrevHash() {
-        return invoke.getPrevHash().clone();
+    public Sha3Hash getPrevHash() {
+        return invoke.getPrevHash();
     }
 
     public DataWord getCoinbase() {
@@ -1567,7 +1568,7 @@ public class Program {
                 // CREATE CALL INTERNAL TRANSACTION
                 InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, EMPTY_BYTE_ARRAY, "call");
 
-                Block executionBlock = new Block(getPrevHash().getData(), EMPTY_BYTE_ARRAY, getCoinbase().getData(), EMPTY_BYTE_ARRAY,
+                Block executionBlock = new Block(getPrevHash(), new Sha3Hash(EMPTY_BYTE_ARRAY), getCoinbase().getData(), EMPTY_BYTE_ARRAY,
                         getDifficulty().getData(), getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
                         EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, new ArrayList<>(), new ArrayList<>(), null);
 

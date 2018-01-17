@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -40,7 +41,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public void add(byte[] blockHash, int transactionIndex, TransactionReceipt receipt){
+    public void add(Sha3Hash blockHash, int transactionIndex, TransactionReceipt receipt){
         byte[] txHash = receipt.getTransaction().getHash();
 
         TransactionInfo newTxInfo = new TransactionInfo(receipt, blockHash, transactionIndex);
@@ -72,7 +73,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public TransactionInfo get(byte[] transactionHash, byte[] blockHash, BlockStore store) {
+    public TransactionInfo get(byte[] transactionHash, Sha3Hash blockHash, BlockStore store) {
         List<TransactionInfo> txsInfo = getAll(transactionHash);
 
         if (txsInfo.isEmpty()) {
@@ -80,15 +81,14 @@ public class ReceiptStoreImpl implements ReceiptStore {
         }
 
         Block block = null;
-        Map<ByteArrayWrapper, Block> tiblocks = new HashMap();
+        Map<Sha3Hash, Block> tiblocks = new HashMap();
 
         if (store != null) {
             block = store.getBlockByHash(blockHash);
 
             for (TransactionInfo ti : txsInfo) {
-                byte[] bhash = ti.getBlockHash();
-                ByteArrayWrapper key = new ByteArrayWrapper(bhash);
-                tiblocks.put(key, store.getBlockByHash(bhash));
+                Sha3Hash sha3Hash = ti.getBlockHash();
+                tiblocks.put(sha3Hash , store.getBlockByHash(sha3Hash));
             }
         }
 
@@ -96,9 +96,8 @@ public class ReceiptStoreImpl implements ReceiptStore {
             int nless = 0;
 
             for (TransactionInfo ti : txsInfo) {
-                byte[] hash = ti.getBlockHash();
-                ByteArrayWrapper key = new ByteArrayWrapper(hash);
-                Block tiblock = tiblocks.get(key);
+                Sha3Hash hash = ti.getBlockHash();
+                Block tiblock = tiblocks.get(hash);
 
                 if (tiblock != null && block != null) {
                     if (tiblock.getNumber() > block.getNumber()) {
@@ -111,7 +110,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
                     }
                 }
 
-                if (Arrays.equals(ti.getBlockHash(), blockHash)) {
+                if (ti.getBlockHash().equals(blockHash)) {
                     return ti;
                 }
             }
@@ -155,7 +154,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
         }
 
         for (TransactionInfo ti : tis) {
-            byte[] bhash = ti.getBlockHash();
+            Sha3Hash bhash = ti.getBlockHash();
 
             Block block = store.getBlockByHash(bhash);
 
@@ -169,7 +168,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
                 continue;
             }
 
-            if (new ByteArrayWrapper(bhash).equals(new ByteArrayWrapper(mblock.getHash()))) {
+            if (bhash.equals(mblock.getHash())) {
                 return ti;
             }
         }
@@ -197,7 +196,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public void saveMultiple(byte[] blockHash, List<TransactionReceipt> receipts) {
+    public void saveMultiple(Sha3Hash blockHash, List<TransactionReceipt> receipts) {
         int i = 0;
         for (TransactionReceipt receipt : receipts) {
             this.add(blockHash, i++, receipt);

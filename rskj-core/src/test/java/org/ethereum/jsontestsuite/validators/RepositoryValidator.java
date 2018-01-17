@@ -67,8 +67,8 @@ public class RepositoryValidator {
         }
 
         // Compare roots
-        String postRoot = Hex.toHexString(postRepository.getRoot());
-        String currRoot = Hex.toHexString(currentRepository.getRoot());
+        String postRoot = postRepository.getRoot().toString();
+        String currRoot = currentRepository.getRoot().toString();
 
         if (validateRootHash && !postRoot.equals(currRoot)) {
             String formattedString = String.format("Root hash doesn't match: expected: %s current: %s",

@@ -19,6 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.config.ConfigHelper;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.trie.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.ContractDetails;
@@ -195,7 +196,7 @@ public class ContractDetailsImplTest {
 
         Assert.assertNotNull(trie.getHash());
 
-        Assert.assertArrayEquals(trie.getHash(), details.getStorageHash());
+        Assert.assertArrayEquals(trie.getHash(), details.getStorageHash().getBytes());
     }
 
     @Test
@@ -423,7 +424,7 @@ public class ContractDetailsImplTest {
     public void getSnapshot() {
         ContractDetailsImpl details = new ContractDetailsImpl(ConfigHelper.CONFIG);
 
-        byte[] initialRoot = details.getStorageHash();
+        Sha3Hash initialRoot = details.getStorageHash();
 
         List<DataWord> keys = new ArrayList<>();
 
@@ -437,7 +438,7 @@ public class ContractDetailsImplTest {
 
         details.setStorage(keys, values);
 
-        byte[] root = details.getStorageHash();
+        Sha3Hash root = details.getStorageHash();
 
         List<DataWord> keys2 = new ArrayList<>();
 
@@ -482,7 +483,7 @@ public class ContractDetailsImplTest {
 
         details.setStorage(keys, values);
 
-        byte[] root = details.getStorageHash();
+        Sha3Hash root = details.getStorageHash();
 
         byte[] encoded = details.getEncoded();
 

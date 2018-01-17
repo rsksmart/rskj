@@ -32,7 +32,6 @@ import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -144,7 +143,7 @@ public class WorldDslProcessor {
 
         Block best = world.getBlockChain().getStatus().getBestBlock();
 
-        if (Arrays.equals(best.getHash(), block.getHash()))
+        if (Arrays.equals(best.getHash().getBytes(), block.getHash().getBytes()))
             return;
 
         throw new DslProcessorException(String.format("Expected best block '%s'", name));

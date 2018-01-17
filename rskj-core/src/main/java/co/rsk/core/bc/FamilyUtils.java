@@ -18,10 +18,10 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -42,12 +42,12 @@ public class FamilyUtils {
      *
      * @return set of ancestors block hashes
      */
-    public static Set<ByteArrayWrapper> getAncestors(BlockStore blockStore, Block block, int limitNum) {
+    public static Set<Sha3Hash> getAncestors(BlockStore blockStore, Block block, int limitNum) {
         return getAncestors(blockStore, block.getNumber(), block.getParentHash(), limitNum);
     }
 
-    public static Set<ByteArrayWrapper> getAncestors(BlockStore blockStore, long blockNumber, byte[] parentHash, int limitNum) {
-        Set<ByteArrayWrapper> ret = new HashSet<>();
+    public static Set<Sha3Hash> getAncestors(BlockStore blockStore, long blockNumber, Sha3Hash parentHash, int limitNum) {
+        Set<Sha3Hash> ret = new HashSet<>();
 
         if (blockStore == null) {
             return ret;
@@ -57,7 +57,7 @@ public class FamilyUtils {
         Block it = blockStore.getBlockByHash(parentHash);
 
         while(it != null && it.getNumber() >= limit) {
-            ret.add(new ByteArrayWrapper(it.getHash()));
+            ret.add(it.getHash());
             it = blockStore.getBlockByHash(it.getParentHash());
         }
 
@@ -73,12 +73,12 @@ public class FamilyUtils {
      *
      * @return set of already used uncles block hashes
      */
-    public static Set<ByteArrayWrapper> getUsedUncles(BlockStore blockStore, Block block, int limitNum) {
+    public static Set<Sha3Hash> getUsedUncles(BlockStore blockStore, Block block, int limitNum) {
         return getUsedUncles(blockStore, block.getNumber(), block.getParentHash(), limitNum);
     }
 
-    public static Set<ByteArrayWrapper> getUsedUncles(BlockStore blockStore, long blockNumber, byte[] parentHash, int limitNum) {
-        Set<ByteArrayWrapper> ret = new HashSet<>();
+    public static Set<Sha3Hash> getUsedUncles(BlockStore blockStore, long blockNumber, Sha3Hash parentHash, int limitNum) {
+        Set<Sha3Hash> ret = new HashSet<>();
 
         if (blockStore == null) {
             return ret;
@@ -89,7 +89,7 @@ public class FamilyUtils {
 
         while(it != null && it.getNumber() >= minNumber) {
             for (BlockHeader uncle : it.getUncleList()) {
-                ret.add(new ByteArrayWrapper(uncle.getHash()));
+                ret.add(uncle.getHash());
             }
             it = blockStore.getBlockByHash(it.getParentHash());
         }
@@ -101,12 +101,12 @@ public class FamilyUtils {
         return getUnclesHeaders(store, block.getNumber(), block.getParentHash(), levels);
     }
 
-    public static List<BlockHeader> getUnclesHeaders(@Nonnull  BlockStore store, long blockNumber, byte[] parentHash, int levels) {
+    public static List<BlockHeader> getUnclesHeaders(@Nonnull  BlockStore store, long blockNumber, Sha3Hash parentHash, int levels) {
         List<BlockHeader> uncles = new ArrayList<>();
-        Set<ByteArrayWrapper> unclesHeaders = getUncles(store, blockNumber, parentHash, levels);
+        Set<Sha3Hash> unclesHeaders = getUncles(store, blockNumber, parentHash, levels);
 
-        for (ByteArrayWrapper uncleHash : unclesHeaders) {
-            Block uncle = store.getBlockByHash(uncleHash.getData());
+        for (Sha3Hash uncleHash : unclesHeaders) {
+            Block uncle = store.getBlockByHash(uncleHash);
 
             if (uncle != null) {
                 uncles.add(uncle.getHeader());
@@ -116,27 +116,27 @@ public class FamilyUtils {
         return uncles;
     }
 
-    public static Set<ByteArrayWrapper> getUncles(BlockStore store, Block block, int levels) {
+    public static Set<Sha3Hash> getUncles(BlockStore store, Block block, int levels) {
         return getUncles(store, block.getNumber(), block.getParentHash(), levels);
     }
 
-    public static Set<ByteArrayWrapper> getUncles(BlockStore store, long blockNumber, byte[] parentHash, int levels) {
-        Set<ByteArrayWrapper> family = getFamily(store, blockNumber, parentHash, levels);
-        Set<ByteArrayWrapper> ancestors = getAncestors(store, blockNumber, parentHash, levels);
+    public static Set<Sha3Hash> getUncles(BlockStore store, long blockNumber, Sha3Hash parentHash, int levels) {
+        Set<Sha3Hash> family = getFamily(store, blockNumber, parentHash, levels);
+        Set<Sha3Hash> ancestors = getAncestors(store, blockNumber, parentHash, levels);
         family.removeAll(ancestors);
         family.removeAll(getUsedUncles(store, blockNumber, parentHash, levels));
 
         return family;
     }
 
-    public static Set<ByteArrayWrapper> getFamily(BlockStore store, Block block, int levels) {
+    public static Set<Sha3Hash> getFamily(BlockStore store, Block block, int levels) {
         return getFamily(store, block.getNumber(), block.getParentHash(), levels);
     }
 
-    public static Set<ByteArrayWrapper> getFamily(BlockStore store, long blockNumber, byte[] parentHash, int levels) {
+    public static Set<Sha3Hash> getFamily(BlockStore store, long blockNumber, Sha3Hash parentHash, int levels) {
         long minNumber = max(0, blockNumber - levels);
 
-        Set<ByteArrayWrapper> family = new HashSet<>();
+        Set<Sha3Hash> family = new HashSet<>();
         List<Block> ancestors = new ArrayList<>();
 
         Block parent = store.getBlockByHash(parentHash);
@@ -147,7 +147,7 @@ public class FamilyUtils {
         }
 
         for (Block b : ancestors) {
-            family.add(new ByteArrayWrapper(b.getHash()));
+            family.add(b.getHash());
         }
 
         for (int k = 1; k < ancestors.size(); k++) {
@@ -161,15 +161,15 @@ public class FamilyUtils {
                     continue;
                 }
 
-                if (!Arrays.equals(ancestorParent.getHash(), uncle.getParentHash())) {
+                if (!Arrays.equals(ancestorParent.getHash().getBytes(), uncle.getParentHash().getBytes())) {
                     continue;
                 }
 
-                if (Arrays.equals(ancestor.getHash(), uncle.getHash())) {
+                if (Arrays.equals(ancestor.getHash().getBytes(), uncle.getHash().getBytes())) {
                     continue;
                 }
 
-                family.add(new ByteArrayWrapper(uncle.getHash()));
+                family.add(uncle.getHash());
             }
         }
 

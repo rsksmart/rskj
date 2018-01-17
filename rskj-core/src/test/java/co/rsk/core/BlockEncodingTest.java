@@ -19,6 +19,7 @@
 package co.rsk.core;
 
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Bloom;
@@ -59,8 +60,8 @@ public class BlockEncodingTest {
         Arrays.fill(bigBadByteArray , (byte) -1);
 
         FreeBlock fblock = new FreeBlock(
-                PegTestUtils.createHash3().getBytes(),          // parent hash
-                EMPTY_LIST_HASH,       // uncle hash
+                PegTestUtils.createHash3(),          // parent hash
+                new Sha3Hash(EMPTY_LIST_HASH),       // uncle hash
                 PegTestUtils.createHash3().getBytes(),            // coinbase
                 new Bloom().getData(),          // logs bloom
                 BigInteger.ONE.toByteArray(),    // difficulty

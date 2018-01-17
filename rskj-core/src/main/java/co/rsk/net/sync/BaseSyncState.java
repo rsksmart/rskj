@@ -1,5 +1,6 @@
 package co.rsk.net.sync;
 
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
@@ -48,7 +49,7 @@ public abstract class BaseSyncState implements SyncState {
     }
 
     @Override
-    public void newConnectionPointData(byte[] hash) {
+    public void newConnectionPointData(Sha3Hash hash) {
     }
 
     @Override

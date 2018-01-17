@@ -20,6 +20,7 @@ package co.rsk.net;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
@@ -243,9 +244,10 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         BlockChainStatus blockChainStatus = this.blockProcessor.getBlockchain().getStatus();
         Block block = blockChainStatus.getBestBlock();
         BigInteger totalDifficulty = blockChainStatus.getTotalDifficulty();
-
         Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), totalDifficulty);
-        logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(), Hex.toHexString(status.getBestBlockHash()).substring(0, 8));
+        String hashString = status.getBestBlockHash().toString();
+        logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(),
+                hashString.substring(0, Math.min(hashString.length(), 8)));
         this.channelManager.broadcastStatus(status);
     }
 
@@ -317,7 +319,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private void relayBlock(@Nonnull MessageChannel sender, Block block) {
         final BlockNodeInformation nodeInformation = this.blockProcessor.getNodeInformation();
-        final Set<NodeID> nodesWithBlock = nodeInformation.getNodesByBlock(block.getHash());
+        final Set<NodeID> nodesWithBlock = nodeInformation.getNodesByBlock(block.getHash().getBytes());
         final Set<NodeID> newNodes = this.syncProcessor.getKnownPeersNodeIDs().stream()
                 .filter(p -> !nodesWithBlock.contains(p))
                 .collect(Collectors.toSet());
@@ -337,13 +339,13 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private void processGetBlockMessage(@Nonnull final MessageChannel sender, @Nonnull final GetBlockMessage message) {
-        final byte[] hash = message.getBlockHash();
+        final Sha3Hash hash = message.getBlockHash();
         this.blockProcessor.processGetBlock(sender, hash);
     }
 
     private void processBlockRequestMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockRequestMessage message) {
         final long requestId = message.getId();
-        final byte[] hash = message.getBlockHash();
+        final Sha3Hash hash = message.getBlockHash();
         this.blockProcessor.processBlockRequest(sender, requestId, hash);
     }
 
@@ -359,7 +361,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private void processBlockHeadersRequestMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockHeadersRequestMessage message) {
         final long requestId = message.getId();
-        final byte[] hash = message.getHash();
+        final Sha3Hash hash = message.getHash();
         final int count = message.getCount();
         this.blockProcessor.processBlockHeadersRequest(sender, requestId, hash, count);
     }
@@ -388,7 +390,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private void processBodyRequestMessage(@Nonnull final MessageChannel sender, @Nonnull final BodyRequestMessage message) {
         final long requestId = message.getId();
-        final byte[] hash = message.getBlockHash();
+        final Sha3Hash hash = message.getBlockHash();
         this.blockProcessor.processBodyRequest(sender, requestId, hash);
     }
 

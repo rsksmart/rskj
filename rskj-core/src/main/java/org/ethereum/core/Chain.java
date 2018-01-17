@@ -64,7 +64,7 @@ public class Chain {
         totalDifficulty = totalDifficulty.add(block.getCumulativeDifficulty());
         logger.info("total difficulty on alt chain is: [{}] ", totalDifficulty);
         chain.add(block);
-        index.put(new ByteArrayWrapper(block.getHash()), block);
+        index.put(new ByteArrayWrapper(block.getHash().getBytes()), block);
     }
 
     public Block get(int i) {
@@ -84,7 +84,7 @@ public class Chain {
     }
 
     public boolean isParentOnTheChain(Block block) {
-        return (index.get(new ByteArrayWrapper(block.getParentHash())) != null);
+        return (index.get(new ByteArrayWrapper(block.getParentHash().getBytes())) != null);
     }
 
     public long getSize() {

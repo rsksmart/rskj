@@ -20,6 +20,7 @@
 package org.ethereum.vm.program;
 
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -185,7 +186,7 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void syncToRoot(byte[] root) {
+    public void syncToRoot(Sha3Hash root) {
         repository.syncToRoot(root);
     }
 
@@ -224,7 +225,7 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public byte[] getRoot() {
+    public Sha3Hash getRoot() {
         return repository.getRoot();
     }
 
@@ -234,7 +235,7 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public Repository getSnapshotTo(byte[] root) {
+    public Repository getSnapshotTo(Sha3Hash root) {
         throw new UnsupportedOperationException();
     }
 

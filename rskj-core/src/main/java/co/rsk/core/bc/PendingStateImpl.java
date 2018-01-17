@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.net.handler.TxPendingValidator;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
@@ -419,7 +420,7 @@ public class PendingStateImpl implements PendingState {
 
         // creating fake lightweight calculated block with no hashes calculations
         return new Block(best.getHash(),
-                            emptyUncleHashList, // uncleHash
+                            new Sha3Hash(emptyUncleHashList), // uncleHash
                             new byte[32], //coinbase
                             new byte[32], // log bloom - from tx receipts
                             best.getDifficulty(), // difficulty
@@ -435,7 +436,7 @@ public class PendingStateImpl implements PendingState {
                             new byte[0],
                             new byte[32],  // receiptsRoot
                             txsTrie.getHash(),  // TransactionsRoot-
-                            new byte[32],  // stateRoot
+                            new Sha3Hash(new byte[32]),  // stateRoot
                             Collections.<Transaction>emptyList(), // tx list
                             Collections.<BlockHeader>emptyList(), // uncle list
                             ByteUtil.bigIntegerToBytes(BigInteger.ZERO)); //minimum gas price

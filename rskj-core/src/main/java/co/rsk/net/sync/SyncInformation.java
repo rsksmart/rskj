@@ -1,5 +1,6 @@
 package co.rsk.net.sync;
 
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.net.BlockProcessResult;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
@@ -9,7 +10,7 @@ import org.ethereum.core.BlockHeader;
 import javax.annotation.Nonnull;
 
 public interface SyncInformation {
-    boolean isKnownBlock(byte[] hash);
+    boolean isKnownBlock(Sha3Hash hash);
 
     boolean hasLowerDifficulty(NodeID nodeID);
 

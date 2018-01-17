@@ -21,6 +21,7 @@ package org.ethereum.rpc.Simples;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
@@ -98,12 +99,12 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     }
 
     @Override
-    public byte[] getBestBlockHash() {
-        return new byte[0];
+    public Sha3Hash getBestBlockHash() {
+        return new Sha3Hash(new byte[0]);
     }
 
     @Override
-    public Block getBlockByHash(byte[] hash) {
+    public Block getBlockByHash(Sha3Hash hash) {
         return null;
     }
 
@@ -113,7 +114,7 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     }
 
     @Override
-    public boolean isBlockExist(byte[] hash) {
+    public boolean isBlockExist(Sha3Hash hash) {
         return false;
     }
 
@@ -123,7 +124,7 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     }
 
     @Override
-    public List<byte[]> getListOfBodiesByHashes(List<byte[]> hashes) {
+    public List<byte[]> getListOfBodiesByHashes(List<Sha3Hash> hashes) {
         return null;
     }
 
@@ -152,7 +153,7 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     }
 
     @Override
-    public boolean hasBlockInSomeBlockchain(byte[] hash) {
+    public boolean hasBlockInSomeBlockchain(Sha3Hash hash) {
         return false;
     }
 

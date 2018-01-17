@@ -19,6 +19,7 @@
 
 package org.ethereum.net.eth.message;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -49,7 +50,7 @@ public class GetBlockHeadersMessage extends EthMessage {
      * Block hash from which to start sending block headers <br>
      * Initial block can be addressed by either {@code blockNumber} or {@code blockHash}
      */
-    private byte[] blockHash;
+    private Sha3Hash blockHash;
 
     /**
      * The maximum number of headers to be returned. <br>
@@ -78,7 +79,7 @@ public class GetBlockHeadersMessage extends EthMessage {
         this(blockNumber, null, maxHeaders, 0, false);
     }
 
-    public GetBlockHeadersMessage(long blockNumber, byte[] blockHash, int maxHeaders, int skipBlocks, boolean reverse) {
+    public GetBlockHeadersMessage(long blockNumber, Sha3Hash blockHash, int maxHeaders, int skipBlocks, boolean reverse) {
         this.blockNumber = blockNumber;
         this.blockHash = blockHash;
         this.maxHeaders = maxHeaders;
@@ -95,7 +96,7 @@ public class GetBlockHeadersMessage extends EthMessage {
         byte[] reverse  = RLP.encodeByte((byte) (this.reverse ? 1 : 0));
 
         if (this.blockHash != null) {
-            byte[] hash = RLP.encodeElement(this.blockHash);
+            byte[] hash = RLP.encodeElement(this.blockHash.getBytes());
             this.encoded = RLP.encodeList(hash, maxHeaders, skipBlocks, reverse);
         } else {
             byte[] number = RLP.encodeBigInteger(BigInteger.valueOf(this.blockNumber));
@@ -112,7 +113,7 @@ public class GetBlockHeadersMessage extends EthMessage {
         if (blockBytes == null) {
             this.blockNumber = 0;
         } else if (blockBytes.length == DEFAULT_SIZE_BYTES) {
-            this.blockHash = blockBytes;
+            this.blockHash = new Sha3Hash(blockBytes);
         } else {
             this.blockNumber = byteArrayToLong(blockBytes);
         }
@@ -136,7 +137,7 @@ public class GetBlockHeadersMessage extends EthMessage {
         return blockNumber;
     }
 
-    public byte[] getBlockHash() {
+    public Sha3Hash getBlockHash() {
         if (!parsed) {
             parse();
         }
@@ -196,7 +197,7 @@ public class GetBlockHeadersMessage extends EthMessage {
         }
         return "[" + this.getCommand().name() +
                 " blockNumber=" + String.valueOf(blockNumber) +
-                " blockHash=" + ByteUtil.toHexString(blockHash) +
+                " blockHash=" + blockHash +
                 " maxHeaders=" + maxHeaders +
                 " skipBlocks=" + skipBlocks +
                 " reverse=" + reverse + "]";

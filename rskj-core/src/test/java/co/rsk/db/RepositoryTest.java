@@ -411,7 +411,7 @@ public class RepositoryTest {
         track1.commit();
         // leaving level_1
 
-        Assert.assertEquals(Hex.toHexString(HashUtil.EMPTY_TRIE_HASH), Hex.toHexString(repository.getRoot()));
+        Assert.assertEquals(Hex.toHexString(HashUtil.EMPTY_TRIE_HASH), repository.getRoot().toString());
         repository.close();
     }
 

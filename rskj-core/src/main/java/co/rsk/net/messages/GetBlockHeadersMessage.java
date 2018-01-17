@@ -19,6 +19,7 @@
 
 package co.rsk.net.messages;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.util.ByteUtil;
@@ -50,7 +51,7 @@ public class GetBlockHeadersMessage extends Message {
      * Block hash from which to start sending block headers <br>
      * Initial block can be addressed by either {@code blockNumber} or {@code blockHash}
      */
-    private byte[] blockHash;
+    private Sha3Hash blockHash;
 
     /**
      * The maximum number of headers to be returned. <br>
@@ -80,7 +81,7 @@ public class GetBlockHeadersMessage extends Message {
         this(blockNumber, null, maxHeaders, 0, false);
     }
 
-    public GetBlockHeadersMessage(byte[] blockHash, int maxHeaders) {
+    public GetBlockHeadersMessage(Sha3Hash blockHash, int maxHeaders) {
         this(0, blockHash, maxHeaders, 0, false);
     }
 
@@ -89,7 +90,7 @@ public class GetBlockHeadersMessage extends Message {
         this.parsed = false;
     }
 
-    public GetBlockHeadersMessage(long blockNumber, byte[] blockHash, int maxHeaders, int skipBlocks, boolean reverse) {
+    public GetBlockHeadersMessage(long blockNumber, Sha3Hash blockHash, int maxHeaders, int skipBlocks, boolean reverse) {
         this.blockNumber = blockNumber;
         this.blockHash = blockHash;
         this.maxHeaders = maxHeaders;
@@ -106,7 +107,7 @@ public class GetBlockHeadersMessage extends Message {
         byte[] reverse  = RLP.encodeByte((byte) (this.reverse ? 1 : 0));
 
         if (this.blockHash != null) {
-            byte[] hash = RLP.encodeElement(this.blockHash);
+            byte[] hash = RLP.encodeElement(this.blockHash.getBytes());
             this.encoded = RLP.encodeList(hash, maxHeaders, skipBlocks, reverse);
         } else {
             byte[] number = RLP.encodeBigInteger(BigInteger.valueOf(this.blockNumber));
@@ -123,7 +124,7 @@ public class GetBlockHeadersMessage extends Message {
         if (blockBytes == null) {
             this.blockNumber = 0;
         } else if (blockBytes.length == DEFAULT_SIZE_BYTES) {
-            this.blockHash = blockBytes;
+            this.blockHash = new Sha3Hash(blockBytes);
         } else {
             this.blockNumber = byteArrayToLong(blockBytes);
         }
@@ -148,7 +149,7 @@ public class GetBlockHeadersMessage extends Message {
         return blockNumber;
     }
 
-    public byte[] getBlockHash() {
+    public Sha3Hash getBlockHash() {
         if (!parsed) {
             parse();
         }
@@ -210,7 +211,7 @@ public class GetBlockHeadersMessage extends Message {
         
         return "[" + getMessageType() +
                 " blockNumber=" + String.valueOf(blockNumber) +
-                " blockHash=" + ByteUtil.toHexString(blockHash) +
+                " blockHash=" + blockHash +
                 " maxHeaders=" + maxHeaders +
                 " skipBlocks=" + skipBlocks +
                 " reverse=" + reverse + "]";

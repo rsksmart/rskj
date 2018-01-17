@@ -18,6 +18,7 @@
 
 package co.rsk.metrics;
 
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.util.RskCustomCache;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
@@ -27,7 +28,7 @@ import java.time.Duration;
 
 public class HashRateCalculatorNonMining extends HashRateCalculator {
 
-    public HashRateCalculatorNonMining(BlockStore blockStore, RskCustomCache<ByteArrayWrapper, BlockHeaderElement> headerCache) {
+    public HashRateCalculatorNonMining(BlockStore blockStore, RskCustomCache<Sha3Hash, BlockHeaderElement> headerCache) {
         super(blockStore, headerCache);
     }
 

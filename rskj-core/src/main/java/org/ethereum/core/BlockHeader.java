@@ -18,6 +18,7 @@
  */
 package org.ethereum.core;
 
+import co.rsk.crypto.Sha3Hash;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.HashUtil;
@@ -38,20 +39,19 @@ import static org.ethereum.util.ByteUtil.toHexString;
  * the basic information of a block
  */
 
-// TODO review implements SerializableObject
-public class BlockHeader implements SerializableObject {
+public class BlockHeader {
 
 
     /* The SHA3 256-bit hash of the parent block, in its entirety */
-    private byte[] parentHash;
+    private Sha3Hash parentHash;
     /* The SHA3 256-bit hash of the uncles list portion of this block */
-    private byte[] unclesHash;
+    private Sha3Hash unclesHash;
     /* The 160-bit address to which all fees collected from the
      * successful mining of this block be transferred; formally */
     private byte[] coinbase;
     /* The SHA3 256-bit hash of the root node of the state trie,
      * after all transactions are executed and finalisations applied */
-    private byte[] stateRoot;
+    private Sha3Hash stateRoot;
     /* The SHA3 256-bit hash of the root node of the trie structure
      * populated with each transaction in the transaction
      * list portion, the trie is populate by [key, val] --> [rlp(index), rlp(tx_recipe)]
@@ -103,13 +103,11 @@ public class BlockHeader implements SerializableObject {
     }
 
     public BlockHeader(RLPList rlpHeader, boolean sealed) {
-        this.parentHash = rlpHeader.get(0).getRLPData();
-        this.unclesHash = rlpHeader.get(1).getRLPData();
+        this.parentHash = new Sha3Hash(rlpHeader.get(0).getRLPData());
+        this.unclesHash = new Sha3Hash(rlpHeader.get(1).getRLPData());
         this.coinbase = rlpHeader.get(2).getRLPData();
-        this.stateRoot = rlpHeader.get(3).getRLPData();
-        if (this.stateRoot == null) {
-            this.stateRoot = EMPTY_TRIE_HASH;
-        }
+        byte[] rawStateRoot = rlpHeader.get(3).getRLPData();
+        this.stateRoot = rawStateRoot == null? new Sha3Hash(EMPTY_TRIE_HASH): new Sha3Hash(rawStateRoot);
 
         this.txTrieRoot = rlpHeader.get(4).getRLPData();
         if (this.txTrieRoot == null) {
@@ -158,7 +156,7 @@ public class BlockHeader implements SerializableObject {
         this.sealed = sealed;
     }
 
-    public BlockHeader(byte[] parentHash, byte[] unclesHash, byte[] coinbase,
+    public BlockHeader(Sha3Hash parentHash, Sha3Hash unclesHash, byte[] coinbase,
                        byte[] logsBloom, byte[] difficulty, long number,
                        byte[] gasLimit, long gasUsed, long timestamp,
                        byte[] extraData,
@@ -168,7 +166,7 @@ public class BlockHeader implements SerializableObject {
                 null, null, null, minimumGasPrice, uncleCount);
     }
 
-    public BlockHeader(byte[] parentHash, byte[] unclesHash, byte[] coinbase,
+    public BlockHeader(Sha3Hash parentHash, Sha3Hash unclesHash, byte[] coinbase,
                        byte[] logsBloom, byte[] difficulty, long number,
                        byte[] gasLimit, long gasUsed, long timestamp,
                        byte[] extraData,
@@ -186,7 +184,7 @@ public class BlockHeader implements SerializableObject {
         this.gasUsed = gasUsed;
         this.timestamp = timestamp;
         this.extraData = extraData;
-        this.stateRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
+        this.stateRoot = new Sha3Hash(EMPTY_TRIE_HASH);
         this.minimumGasPrice = minimumGasPrice;
         this.receiptTrieRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
         this.uncleCount = uncleCount;
@@ -213,7 +211,7 @@ public class BlockHeader implements SerializableObject {
         return this.getNumber() == Genesis.NUMBER;
     }
 
-    public byte[] getParentHash() {
+    public Sha3Hash getParentHash() {
         return parentHash;
     }
 
@@ -221,11 +219,11 @@ public class BlockHeader implements SerializableObject {
         return uncleCount;
     }
 
-    public byte[] getUnclesHash() {
+    public Sha3Hash getUnclesHash() {
         return unclesHash;
     }
 
-    public void setUnclesHash(byte[] unclesHash) {
+    public void setUnclesHash(Sha3Hash unclesHash) {
         /* A sealed block header is immutable, cannot be changed */
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter uncles hash");
@@ -247,11 +245,11 @@ public class BlockHeader implements SerializableObject {
         this.coinbase = coinbase;
     }
 
-    public byte[] getStateRoot() {
+    public Sha3Hash getStateRoot() {
         return stateRoot;
     }
 
-    public void setStateRoot(byte[] stateRoot) {
+    public void setStateRoot(Sha3Hash stateRoot) {
         /* A sealed block header is immutable, cannot be changed */
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter state root");
@@ -395,8 +393,8 @@ public class BlockHeader implements SerializableObject {
         this.extraData = extraData;
     }
 
-    public byte[] getHash() {
-        return HashUtil.sha3(getEncoded());
+    public Sha3Hash getHash() {
+        return new Sha3Hash(HashUtil.sha3(getEncoded()));
     }
 
     public byte[] getEncoded() {
@@ -421,12 +419,12 @@ public class BlockHeader implements SerializableObject {
     }
 
     public byte[] getEncoded(boolean withMergedMiningFields) {
-        byte[] parentHash = RLP.encodeElement(this.parentHash);
+        byte[] parentHash = RLP.encodeElement(this.parentHash.getBytes());
 
-        byte[] unclesHash = RLP.encodeElement(this.unclesHash);
+        byte[] unclesHash = RLP.encodeElement(this.unclesHash.getBytes());
         byte[] coinbase = RLP.encodeElement(this.coinbase);
 
-        byte[] stateRoot = RLP.encodeElement(this.stateRoot);
+        byte[] stateRoot = RLP.encodeElement(this.stateRoot.getBytes());
 
         if (txTrieRoot == null) {
             this.txTrieRoot = EMPTY_TRIE_HASH;
@@ -517,10 +515,10 @@ public class BlockHeader implements SerializableObject {
 
     private String toStringWithSuffix(final String suffix) {
         StringBuilder toStringBuff = new StringBuilder();
-        toStringBuff.append("  parentHash=").append(toHexString(parentHash)).append(suffix);
-        toStringBuff.append("  unclesHash=").append(toHexString(unclesHash)).append(suffix);
+        toStringBuff.append("  parentHash=").append(parentHash.toString()).append(suffix);
+        toStringBuff.append("  unclesHash=").append(unclesHash.toString()).append(suffix);
         toStringBuff.append("  coinbase=").append(toHexString(coinbase)).append(suffix);
-        toStringBuff.append("  stateRoot=").append(toHexString(stateRoot)).append(suffix);
+        toStringBuff.append("  stateRoot=").append(stateRoot.toString()).append(suffix);
         toStringBuff.append("  txTrieHash=").append(toHexString(txTrieRoot)).append(suffix);
         toStringBuff.append("  receiptsTrieHash=").append(toHexString(receiptTrieRoot)).append(suffix);
         toStringBuff.append("  difficulty=").append(toHexString(difficulty)).append(suffix);
@@ -538,16 +536,6 @@ public class BlockHeader implements SerializableObject {
         return toStringWithSuffix("");
     }
 
-    // TODO added to comply with SerializableObject
-
-    public byte[] getRawHash() {
-        return getHash();
-    }
-    // TODO added to comply with SerializableObject
-
-    public byte[] getEncodedRaw() {
-        return getEncoded();
-    }
     public byte[] getBitcoinMergedMiningHeader() {
         return bitcoinMergedMiningHeader;
     }
@@ -591,8 +579,8 @@ public class BlockHeader implements SerializableObject {
         return HashUtil.shortHash(getHashForMergedMining());
     }
 
-    public byte[] getHashForMergedMining() {
-        return HashUtil.sha3(getEncoded(false));
+    public Sha3Hash getHashForMergedMining() {
+        return new Sha3Hash(HashUtil.sha3(getEncoded(false)));
     }
 
     public String getShortHash() {

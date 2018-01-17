@@ -313,11 +313,12 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     private List<NodeID> getAvailableNodesIDSFor(Integer chunkNumber) {
         return skeletons.entrySet().stream()
                 .filter(e -> e.getValue().size() > chunkNumber + 1)
-                .filter(e -> ByteUtil.fastEquals(
-                    // the hash of the start of next chunk
-                    e.getValue().get(chunkNumber + 1).getHash(),
-                    // the first header of chunk
-                    pendingHeaders.get(chunkNumber).getLast().getHash()))
+                .filter(e ->
+                        // the hash of the start of next chunk
+                        e.getValue().get(chunkNumber + 1).getHash().equals(
+                                // the first header of chunk
+                                pendingHeaders.get(chunkNumber).getLast().getHash()
+                        ))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }

@@ -16,7 +16,7 @@ public class BlockUnclesHashValidationRule implements BlockValidationRule {
 
     @Override
     public boolean isValid(Block block) {
-        byte[] unclesHeader = block.getHeader().getUnclesHash();
+        byte[] unclesHeader = block.getHeader().getUnclesHash().getBytes();
         byte[] unclesBlock = HashUtil.sha3(BlockHeader.getUnclesEncoded(block.getUncleList()));
 
         if (!ByteUtil.fastEquals(unclesHeader, unclesBlock)) {

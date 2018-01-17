@@ -19,6 +19,7 @@
 
 package org.ethereum.jsontestsuite.builder;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.jsontestsuite.model.BlockHeaderTck;
 
@@ -39,8 +40,8 @@ public class BlockHeaderBuilder {
     public static BlockHeader  build(BlockHeaderTck headerTck){
 
         BlockHeader header = new BlockHeader(
-                parseData(headerTck.getParentHash()),
-                parseData(headerTck.getUncleHash()),
+                new Sha3Hash(parseData(headerTck.getParentHash())),
+                new Sha3Hash(parseData(headerTck.getUncleHash())),
                 parseData(headerTck.getCoinbase()),
                 parseData(headerTck.getBloom()),
                 parseNumericData(headerTck.getDifficulty()),
@@ -55,7 +56,7 @@ public class BlockHeaderBuilder {
 
         header.setReceiptsRoot(parseData(headerTck.getReceiptTrie()));
         header.setTransactionsRoot(parseData(headerTck.getTransactionsTrie()));
-        header.setStateRoot(parseData(headerTck.getStateRoot()));
+        header.setStateRoot(new Sha3Hash(parseData(headerTck.getStateRoot())));
 
         return header;
     }

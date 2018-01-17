@@ -42,7 +42,7 @@ public class LogFilterElement {
     public LogFilterElement(LogInfo logInfo, Block b, int txIndex, Transaction tx, int logIdx) {
         logIndex = toJsonHex(logIdx);
         blockNumber = b == null ? null : toJsonHex(b.getNumber());
-        blockHash = b == null ? null : toJsonHex(b.getHash());
+        blockHash = b == null ? null : toJsonHex(b.getHash().getBytes());
         transactionIndex = b == null ? null : toJsonHex(txIndex);
         transactionHash = toJsonHex(tx.getHash());
         address = toJsonHex(logInfo.getAddress());

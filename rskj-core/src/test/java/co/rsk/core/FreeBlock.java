@@ -1,5 +1,6 @@
 package co.rsk.core;
 
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.ethereum.core.ImmutableTransaction;
@@ -32,12 +33,12 @@ public class FreeBlock {
     private byte[] rlpEncoded;
     private boolean parsed = false;
 
-    public FreeBlock(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
-                 byte[] difficulty, byte[] number, byte[] gasLimit,
+    public FreeBlock(Sha3Hash parentHash, Sha3Hash unclesHash, byte[] coinbase, byte[] logsBloom,
+                     byte[] difficulty, byte[] number, byte[] gasLimit,
                      byte[] gasUsed, byte[] timestamp, byte[] extraData,
-                 byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
-                 byte[] transactionsRoot, byte[] stateRoot,
-                 List<Transaction> transactionsList,
+                     byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
+                     byte[] transactionsRoot, byte[] stateRoot,
+                     List<Transaction> transactionsList,
                      List<FreeBlockHeader> uncleList, byte[] minimumGasPrice,
                      byte[] paidFees) {
 
@@ -55,7 +56,7 @@ public class FreeBlock {
         this.flushRLP();
     }
 
-    public FreeBlock(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
+    public FreeBlock(Sha3Hash parentHash, Sha3Hash unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, byte[]  number, byte[] gasLimit,
                  byte[] gasUsed, byte[] timestamp,
                  byte[] extraData, byte[] mixHash, byte[] nonce,
@@ -119,7 +120,7 @@ public class FreeBlock {
         return this.header.getHash();
     }
 
-    public byte[] getParentHash() {
+    public Sha3Hash getParentHash() {
         if (!parsed) {
             parseRLP();
         }

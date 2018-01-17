@@ -19,6 +19,7 @@
 
 package org.ethereum.crypto;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.crypto.cryptohash.Keccak256;
 import org.ethereum.util.RLP;
 import org.ethereum.util.Utils;
@@ -175,6 +176,26 @@ public class HashUtil {
 
     @Nonnull
     public static String shortHash(@Nonnull final byte[] hash){
-        return Hex.toHexString(hash).substring(0, Math.min(hash.length, 6));
+        String stringHash = Hex.toHexString(hash);
+        return tillIndex(stringHash, 6);
+    }
+
+    @Nonnull
+    public static String shortHash(@Nonnull final Sha3Hash hash){
+        return getHashTillIndex(hash, 6);
+    }
+
+    @Nonnull
+    public static String getHashTillIndex(@Nonnull final Sha3Hash hash, int end) {
+        String stringHash = hash.toString();
+        return tillIndex(stringHash, end);
+    }
+
+    private static String tillIndex(@Nonnull final String hash, int end) {
+        return hash.substring(0, Math.min(hash.length(), end));
+    }
+
+    public static Sha3Hash randomSha3Hash() {
+        return new Sha3Hash(randomHash());
     }
 }

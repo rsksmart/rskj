@@ -21,6 +21,7 @@ package co.rsk.core;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.core.*;
 import org.spongycastle.util.encoders.Hex;
@@ -68,8 +69,8 @@ public class BlockTest {
         txs.add(remascTx);
 
         Block block =  new Block(
-                PegTestUtils.createHash3().getBytes(),          // parent hash
-                EMPTY_LIST_HASH,       // uncle hash
+                PegTestUtils.createHash3(),          // parent hash
+                new Sha3Hash(EMPTY_LIST_HASH),       // uncle hash
                 PegTestUtils.createHash3().getBytes(),            // coinbase
                 new Bloom().getData(),          // logs bloom
                 BigInteger.ONE.toByteArray(),    // difficulty
@@ -82,7 +83,7 @@ public class BlockTest {
                 new byte[]{0},         // provisory nonce
                 HashUtil.EMPTY_TRIE_HASH,       // receipts root
                 BlockChainImpl.calcTxTrie(txs), // transaction root
-                HashUtil.EMPTY_TRIE_HASH,    //EMPTY_TRIE_HASH,   // state root
+                new Sha3Hash(HashUtil.EMPTY_TRIE_HASH),    //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list
                 null,  // uncle list
                 BigInteger.TEN.toByteArray(),
@@ -127,7 +128,7 @@ public class BlockTest {
         block.seal();
 
         try {
-            block.setStateRoot(new byte[32]);
+            block.setStateRoot(new Sha3Hash(new byte[32]));
             Assert.fail();
         }
         catch (SealedBlockException ex) {
@@ -232,7 +233,7 @@ public class BlockTest {
         block.seal();
 
         try {
-            block.getHeader().setStateRoot(new byte[32]);
+            block.getHeader().setStateRoot(new Sha3Hash(new byte[32]));
             Assert.fail();
         }
         catch (SealedBlockHeaderException ex) {

@@ -114,7 +114,7 @@ public class Web3RskImpl extends Web3Impl {
 
     public void ext_dumpState()  {
         Block bestBlcock = blockStore.getBestBlock();
-        logger.info("Dumping state for block hash {}, block number {}", Hex.toHexString(bestBlcock.getHash()), bestBlcock.getNumber());
+        logger.info("Dumping state for block hash {}, block number {}", Hex.toHexString(bestBlcock.getHash().getBytes()), bestBlcock.getNumber());
         networkStateExporter.exportStatus(System.getProperty("user.dir") + "/" + "rskdump.json");
     }
 
@@ -140,14 +140,14 @@ public class Web3RskImpl extends Web3Impl {
                 result.addAll(blockStore.getChainBlocksByNumber(i));
             }
             for (Block block : result) {
-                writer.println(toSmallHash(block.getHash()) + " " + block.getNumber()+"-"+toSmallHash(block.getHash()));
+                writer.println(toSmallHash(block.getHash().getBytes()) + " " + block.getNumber()+"-"+toSmallHash(block.getHash().getBytes()));
             }
             writer.println("#");
             for (Block block : result) {
-                writer.println(toSmallHash(block.getHash()) + " " + toSmallHash(block.getParentHash()) + " P");
+                writer.println(toSmallHash(block.getHash().getBytes()) + " " + toSmallHash(block.getParentHash().getBytes()) + " P");
                 if (includeUncles) {
                     for (BlockHeader uncleHeader : block.getUncleList()) {
-                        writer.println(toSmallHash(block.getHash()) + " " + toSmallHash(uncleHeader.getHash()) + " U");
+                        writer.println(toSmallHash(block.getHash().getBytes()) + " " + toSmallHash(uncleHeader.getHash().getBytes()) + " U");
                     }
                 }
             }

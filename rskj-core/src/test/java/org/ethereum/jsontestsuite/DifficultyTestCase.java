@@ -19,6 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
+import co.rsk.crypto.Sha3Hash;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.ethereum.core.BlockHeader;
 
@@ -36,6 +37,7 @@ public class DifficultyTestCase {
     private String name;
 
     // Test data
+    private Sha3Hash emptyHash = new Sha3Hash(EMPTY_BYTE_ARRAY);
     private String parentTimestamp;
     private String parentDifficulty;
     private String currentTimestamp;
@@ -92,7 +94,7 @@ public class DifficultyTestCase {
 
     public BlockHeader getCurrent() {
         return new BlockHeader(
-                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY,
+                emptyHash, emptyHash, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY,
                 org.ethereum.json.Utils.parseLong(currentBlockNumber), new byte[] {0}, 0,
                 org.ethereum.json.Utils.parseLong(currentTimestamp),
                 EMPTY_BYTE_ARRAY, null,0);
@@ -100,7 +102,7 @@ public class DifficultyTestCase {
 
     public BlockHeader getParent() {
         return new BlockHeader(
-                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY,
+                emptyHash, emptyHash, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY,
                 org.ethereum.json.Utils.parseNumericData(parentDifficulty),
                 org.ethereum.json.Utils.parseLong(currentBlockNumber) - 1, new byte[] {0}, 0,
                 org.ethereum.json.Utils.parseLong(parentTimestamp),

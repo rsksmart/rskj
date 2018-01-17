@@ -1,6 +1,7 @@
 package co.rsk.net.sync;
 
 
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.net.BlockProcessResult;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
@@ -54,7 +55,7 @@ public class SimpleSyncInformation implements SyncInformation {
         return false;
     }
 
-    public boolean isKnownBlock(byte[] hash) {
+    public boolean isKnownBlock(Sha3Hash hash) {
         return false;
     }
 

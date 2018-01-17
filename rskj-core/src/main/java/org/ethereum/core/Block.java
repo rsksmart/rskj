@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.trie.Trie;
@@ -34,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.util.Arrays;
 import org.spongycastle.util.BigIntegers;
 import org.spongycastle.util.encoders.Hex;
+import sun.security.provider.SHA;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
@@ -114,13 +116,13 @@ public class Block {
                 header.getMinimumGasPrice());
     }
 
-    public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
+    public Block(Sha3Hash parentHash, Sha3Hash unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp, byte[] extraData,
                  byte[] mixHash,
                  byte[] nonce, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                  byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] receiptsRoot,
-                 byte[] transactionsRoot, byte[] stateRoot,
+                 byte[] transactionsRoot, Sha3Hash stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
@@ -134,11 +136,11 @@ public class Block {
         this.flushRLP();
     }
 
-    public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
+    public Block(Sha3Hash parentHash, Sha3Hash unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp, byte[] extraData,
                  byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
-                 byte[] transactionsRoot, byte[] stateRoot,
+                 byte[] transactionsRoot, Sha3Hash stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, BigInteger paidFees) {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
@@ -156,7 +158,7 @@ public class Block {
         this.flushRLP();
     }
 
-    public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
+    public Block(Sha3Hash parentHash, Sha3Hash unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp,
                  byte[] extraData, byte[] mixHash, byte[] nonce,
@@ -248,21 +250,21 @@ public class Block {
         return this.header;
     }
 
-    public byte[] getHash() {
+    public Sha3Hash getHash() {
         if (!parsed) {
             parseRLP();
         }
         return this.header.getHash();
     }
 
-    public byte[] getParentHash() {
+    public Sha3Hash getParentHash() {
         if (!parsed) {
             parseRLP();
         }
         return this.header.getParentHash();
     }
 
-    public byte[] getUnclesHash() {
+    public Sha3Hash getUnclesHash() {
         if (!parsed) {
             parseRLP();
         }
@@ -276,14 +278,14 @@ public class Block {
         return this.header.getCoinbase();
     }
 
-    public byte[] getStateRoot() {
+    public Sha3Hash getStateRoot() {
         if (!parsed) {
             parseRLP();
         }
         return this.header.getStateRoot();
     }
 
-    public void setStateRoot(byte[] stateRoot) {
+    public void setStateRoot(Sha3Hash stateRoot) {
         /* A sealed block is immutable, cannot be changed */
         if (this.sealed) {
             throw new SealedBlockException("trying to alter state root");
@@ -431,7 +433,7 @@ public class Block {
         toStringBuff.setLength(0);
         toStringBuff.append(Hex.toHexString(this.getEncoded())).append("\n");
         toStringBuff.append("BlockData [ ");
-        toStringBuff.append("hash=").append(ByteUtil.toHexString(this.getHash())).append("\n");
+        toStringBuff.append("hash=").append(ByteUtil.toHexString(this.getHash().getBytes())).append("\n");
         toStringBuff.append(header.toString());
 
         if (!getUncleList().isEmpty()) {
@@ -466,7 +468,7 @@ public class Block {
 
         toStringBuff.setLength(0);
         toStringBuff.append("BlockData [");
-        toStringBuff.append("hash=").append(ByteUtil.toHexString(this.getHash()));
+        toStringBuff.append("hash=").append(ByteUtil.toHexString(this.getHash().getBytes()));
         toStringBuff.append(header.toFlatString());
 
         for (Transaction tx : getTransactionsList()) {
@@ -522,7 +524,7 @@ public class Block {
     private void checkExpectedRoot(byte[] expectedRoot, byte[] calculatedRoot) {
         if (!Arrays.areEqual(expectedRoot, calculatedRoot)) {
             logger.error("Transactions trie root validation failed for block #{}", this.header.getNumber());
-            panicProcessor.panic("txroot", String.format("Transactions trie root validation failed for block %d %s", this.header.getNumber(), Hex.toHexString(this.header.getHash())));
+            panicProcessor.panic("txroot", String.format("Transactions trie root validation failed for block %d %s", this.header.getNumber(), Hex.toHexString(this.header.getHash().getBytes())));
         }
     }
 
@@ -533,7 +535,7 @@ public class Block {
      * @return - true if this block is parent of param block
      */
     public boolean isParentOf(Block block) {
-        return Arrays.areEqual(this.getHash(), block.getParentHash());
+        return Arrays.areEqual(this.getHash().getBytes(), block.getParentHash().getBytes());
     }
 
     public boolean isGenesis() {
@@ -545,11 +547,11 @@ public class Block {
     }
 
     public boolean isEqual(Block block) {
-        return Arrays.areEqual(this.getHash(), block.getHash());
+        return Arrays.areEqual(this.getHash().getBytes(), block.getHash().getBytes());
     }
 
     public boolean fastEquals(Block block) {
-        return block != null && ByteUtil.fastEquals(this.getHash(), block.getHash());
+        return block != null && ByteUtil.fastEquals(this.getHash().getBytes(), block.getHash().getBytes());
     }
 
     private byte[] getTransactionsEncoded() {
@@ -579,7 +581,7 @@ public class Block {
         }
 
         uncleList.add(uncle);
-        this.getHeader().setUnclesHash(SHA3Helper.sha3(getUnclesEncoded()));
+        this.getHeader().setUnclesHash(new Sha3Hash(SHA3Helper.sha3(getUnclesEncoded())));
         rlpEncoded = null;
     }
 
@@ -641,7 +643,7 @@ public class Block {
         return this.header.getShortHashForMergedMining();
     }
 
-    public byte[] getHashForMergedMining() {
+    public Sha3Hash getHashForMergedMining() {
         if (!parsed) {
             parseRLP();
         }
@@ -650,8 +652,8 @@ public class Block {
     }
 
     public String getShortDescr() {
-        return "#" + getNumber() + " (" + Hex.toHexString(getHash()).substring(0,6) + " <~ "
-                + Hex.toHexString(getParentHash()).substring(0,6) + ") Txs:" + getTransactionsList().size() +
+        return "#" + getNumber() + " (" + Hex.toHexString(getHash().getBytes()).substring(0,6) + " <~ "
+                + Hex.toHexString(getParentHash().getBytes()).substring(0,6) + ") Txs:" + getTransactionsList().size() +
                 ", Unc: " + getUncleList().size();
     }
 

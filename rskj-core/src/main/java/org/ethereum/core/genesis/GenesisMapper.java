@@ -19,6 +19,7 @@
 
 package org.ethereum.core.genesis;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.Genesis;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.json.Utils;
@@ -40,7 +41,7 @@ public class GenesisMapper {
         byte[] timestampBytes = Utils.parseData(json.timestamp);
         long timestamp = ByteUtil.byteArrayToLong(timestampBytes);
 
-        byte[] parentHash = Utils.parseData(json.parentHash);
+        Sha3Hash parentHash = new Sha3Hash(json.parentHash);
         byte[] extraData = Utils.parseData(json.extraData);
 
         byte[] gasLimitBytes = Utils.parseData(json.gasLimit);
@@ -58,9 +59,9 @@ public class GenesisMapper {
             minGasPrice = Utils.parseData(json.getMinimumGasPrice());
         }
 
-        return new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, Genesis.getZeroHash(),
-                difficulty, 0, gasLimit, 0, timestamp, extraData,
-                mixHash, nonce, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction, minGasPrice);
+        return new Genesis(parentHash, new Sha3Hash(EMPTY_LIST_HASH), coinbase,
+                Genesis.getZeroHash(), difficulty, 0, gasLimit, 0,
+                timestamp, extraData, mixHash, nonce, bitcoinMergedMiningHeader,
+                bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction, minGasPrice);
     }
 }

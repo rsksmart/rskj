@@ -33,25 +33,25 @@ public class BlockHeaderValidator {
 
         ArrayList<String> outputSummary = new ArrayList<>();
 
-        if (!toHexString(orig.getParentHash())
-                .equals(toHexString(valid.getParentHash()))) {
+        if (!toHexString(orig.getParentHash().getBytes())
+                .equals(toHexString(valid.getParentHash().getBytes()))) {
 
             String output =
                     String.format("wrong block.parentHash: \n expected: %s \n got: %s",
-                            toHexString(valid.getParentHash()),
-                            toHexString(orig.getParentHash())
+                            toHexString(valid.getParentHash().getBytes()),
+                            toHexString(orig.getParentHash().getBytes())
                     );
 
             outputSummary.add(output);
         }
 
-        if (!toHexString(orig.getUnclesHash())
-                .equals(toHexString(valid.getUnclesHash()))) {
+        if (!toHexString(orig.getUnclesHash().getBytes())
+                .equals(toHexString(valid.getUnclesHash().getBytes()))) {
 
             String output =
                     String.format("wrong block.unclesHash: \n expected: %s \n got: %s",
-                            toHexString(valid.getUnclesHash()),
-                            toHexString(orig.getUnclesHash())
+                            toHexString(valid.getUnclesHash().getBytes()),
+                            toHexString(orig.getUnclesHash().getBytes())
                     );
 
             outputSummary.add(output);
@@ -69,13 +69,13 @@ public class BlockHeaderValidator {
             outputSummary.add(output);
         }
 
-        if (!toHexString(orig.getStateRoot())
-                .equals(toHexString(valid.getStateRoot()))) {
+        if (!(orig.getStateRoot()).toString()
+                .equals(valid.getStateRoot().toString())) {
 
             String output =
                     String.format("wrong block.stateRoot: \n expected: %s \n got: %s",
-                            toHexString(valid.getStateRoot()),
-                            toHexString(orig.getStateRoot())
+                            valid.getStateRoot(),
+                            orig.getStateRoot()
                     );
 
             outputSummary.add(output);

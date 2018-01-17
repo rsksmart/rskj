@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -53,17 +54,17 @@ public interface Blockchain {
 
     void setTotalDifficulty(BigInteger totalDifficulty);
 
-    byte[] getBestBlockHash();
+    Sha3Hash getBestBlockHash();
 
-    Block getBlockByHash(byte[] hash);
+    Block getBlockByHash(Sha3Hash hash);
 
     void setExitOn(long exitOn);
 
-    boolean isBlockExist(byte[] hash);
+    boolean isBlockExist(Sha3Hash hash);
 
     List<BlockHeader> getListOfHeadersStartFrom(BlockIdentifier identifier, int skip, int limit, boolean reverse);
 
-    List<byte[]> getListOfBodiesByHashes(List<byte[]> hashes);
+    List<byte[]> getListOfBodiesByHashes(List<Sha3Hash> hashes);
 
     List<Block> getBlocksByNumber(long blockNr);
 
@@ -77,5 +78,5 @@ public interface Blockchain {
 
     List<BlockInformation> getBlocksInformationByNumber(long number);
 
-    boolean hasBlockInSomeBlockchain(byte[] hash);
+    boolean hasBlockInSomeBlockchain(Sha3Hash hash);
 }

@@ -19,6 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.*;
 import com.google.common.annotations.VisibleForTesting;
@@ -167,13 +168,13 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
     @Override
-    public synchronized byte[] getStorageHash() {
+    public synchronized Sha3Hash getStorageHash() {
         checkDataSourceIsOpened();
 
         this.trie.save();
         byte[] trieHash = this.trie.getHash();
         logger.trace("getting contract details trie hash {}, address {}", getHashAsString(trieHash), this.getAddressAsString());
-        return trieHash;
+        return new Sha3Hash(trieHash);
     }
 
     @Override
@@ -361,12 +362,12 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
     @Override
-    public synchronized ContractDetails getSnapshotTo(byte[] hash) {
+    public synchronized ContractDetails getSnapshotTo(Sha3Hash hash) {
         logger.trace("get snapshot");
 
         this.trie.save();
 
-        ContractDetailsImpl details = new ContractDetailsImpl(this.config, this.address, this.trie.getSnapshotTo(hash), this.code);
+        ContractDetailsImpl details = new ContractDetailsImpl(this.config, this.address, this.trie.getSnapshotTo(hash.getBytes()), this.code);
         details.keys = new HashSet<>();
         details.keys.addAll(this.keys);
         details.externalStorage = this.externalStorage;

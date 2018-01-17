@@ -20,6 +20,7 @@ package co.rsk.vm;
 
 import co.rsk.config.ConfigHelper;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
@@ -85,14 +86,14 @@ public class MinerHelper {
         // Repository track = new RepositoryTrack((Repository)ethereum.getRepository());
 
         // this variable is set before iterating transactions in case list is empty
-        latestStateRootHash = originalRepo.getRoot();
+        latestStateRootHash = originalRepo.getRoot().getBytes();
 
         // RSK test, remove
-        String stateHash1 = Hex.toHexString(blockchain.getBestBlock().getStateRoot());
-        String stateHash2 = Hex.toHexString(repository.getRoot());
+        String stateHash1 = blockchain.getBestBlock().toString();
+        String stateHash2 = repository.getRoot().toString();
         if (stateHash1.compareTo(stateHash2) != 0) {
-            logger.error("Strange state in block {} {}", block.getNumber(), Hex.toHexString(block.getHash()));
-            panicProcessor.panic("minerserver", String.format("Strange state in block %d %s", block.getNumber(), Hex.toHexString(block.getHash())));
+            logger.error("Strange state in block {} {}", block.getNumber(), block.getHash());
+            panicProcessor.panic("minerserver", String.format("Strange state in block %d %s", block.getNumber(), block.getHash()));
         }
 
         int txindex = 0;
@@ -118,7 +119,7 @@ public class MinerHelper {
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setGasUsed(gasUsed);
             receipt.setCumulativeGas(totalGasUsed);
-            latestStateRootHash = originalRepo.getRoot();
+            latestStateRootHash = originalRepo.getRoot().getBytes();
             receipt.setPostTxState(latestStateRootHash);
             receipt.setTxStatus(executor.getReceipt().isSuccessful());
             receipt.setStatus(executor.getReceipt().getStatus());
@@ -134,7 +135,7 @@ public class MinerHelper {
         processBlock(newBlock, parent);
 
         newBlock.getHeader().setReceiptsRoot(BlockChainImpl.calcReceiptsTrie(txReceipts));
-        newBlock.getHeader().setStateRoot(latestStateRootHash);
+        newBlock.getHeader().setStateRoot(new Sha3Hash(latestStateRootHash));
         newBlock.getHeader().setGasUsed(totalGasUsed);
 
         Bloom logBloom = new Bloom();

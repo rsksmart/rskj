@@ -58,7 +58,7 @@ public class WorldDslProcessorTest {
 
         Assert.assertNotNull(block);
         Assert.assertEquals(1, block.getNumber());
-        Assert.assertArrayEquals(genesis.getHash(), block.getParentHash());
+        Assert.assertArrayEquals(genesis.getHash().getBytes(), block.getParentHash().getBytes());
     }
 
     @Test
@@ -77,13 +77,13 @@ public class WorldDslProcessorTest {
 
         Assert.assertNotNull(block1);
         Assert.assertEquals(1, block1.getNumber());
-        Assert.assertArrayEquals(genesis.getHash(), block1.getParentHash());
+        Assert.assertArrayEquals(genesis.getHash().getBytes(), block1.getParentHash().getBytes());
 
         Block block2 = world.getBlockByName("b02");
 
         Assert.assertNotNull(block2);
         Assert.assertEquals(2, block2.getNumber());
-        Assert.assertArrayEquals(block1.getHash(), block2.getParentHash());
+        Assert.assertArrayEquals(block1.getHash().getBytes(), block2.getParentHash().getBytes());
     }
 
     @Test
@@ -101,7 +101,7 @@ public class WorldDslProcessorTest {
 
         Assert.assertNotNull(block);
         Assert.assertEquals(1, block.getNumber());
-        Assert.assertArrayEquals(genesis.getHash(), block.getParentHash());
+        Assert.assertArrayEquals(genesis.getHash().getBytes(), block.getParentHash().getBytes());
     }
 
     @Test
@@ -120,7 +120,7 @@ public class WorldDslProcessorTest {
         Assert.assertNotNull(parent);
         Assert.assertNotNull(block);
         Assert.assertEquals(2, block.getNumber());
-        Assert.assertArrayEquals(parent.getHash(), block.getParentHash());
+        Assert.assertArrayEquals(parent.getHash().getBytes(), block.getParentHash().getBytes());
     }
 
     @Test
@@ -139,7 +139,7 @@ public class WorldDslProcessorTest {
         Assert.assertNotNull(parent);
         Assert.assertNotNull(block);
         Assert.assertEquals(2, block.getNumber());
-        Assert.assertArrayEquals(parent.getHash(), block.getParentHash());
+        Assert.assertArrayEquals(parent.getHash().getBytes(), block.getParentHash().getBytes());
     }
 
     @Test
@@ -176,7 +176,7 @@ public class WorldDslProcessorTest {
         Assert.assertNotNull(parent);
         Assert.assertNotNull(block);
         Assert.assertEquals(3, block.getNumber());
-        Assert.assertArrayEquals(parent.getHash(), block.getParentHash());
+        Assert.assertArrayEquals(parent.getHash().getBytes(), block.getParentHash().getBytes());
     }
 
     @Test
@@ -316,8 +316,8 @@ public class WorldDslProcessorTest {
         Assert.assertFalse(block.getUncleList().isEmpty());
         Assert.assertEquals(2, block.getUncleList().size());
 
-        Assert.assertArrayEquals(world.getBlockByName("u01").getHash(), block.getUncleList().get(0).getHash());
-        Assert.assertArrayEquals(world.getBlockByName("u02").getHash(), block.getUncleList().get(1).getHash());
+        Assert.assertArrayEquals(world.getBlockByName("u01").getHash().getBytes(), block.getUncleList().get(0).getHash().getBytes());
+        Assert.assertArrayEquals(world.getBlockByName("u02").getHash().getBytes(), block.getUncleList().get(1).getHash().getBytes());
     }
 
     @Test

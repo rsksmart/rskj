@@ -23,7 +23,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,7 +60,7 @@ public class BlockHeadersMessageTest {
         Assert.assertEquals(mblocks.size(), blocks.size());
 
         for (int i = 0; i < blocks.size(); i++) {
-            Assert.assertArrayEquals(blocks.get(1).getHash(), mblocks.get(1).getHash());
+            Assert.assertArrayEquals(blocks.get(1).getHash().getBytes(), mblocks.get(1).getHash().getBytes());
         }
     }
 }

@@ -20,6 +20,7 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -92,7 +93,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
 //        byte[] data =  tx.getData() == null ? ByteUtil.EMPTY_BYTE_ARRAY : tx.getData() ;
 
         /***    PREVHASH  op  ***/
-        byte[] lastHash = env.getPreviousHash();
+        Sha3Hash lastHash = new Sha3Hash(env.getPreviousHash());
 
         /***   COINBASE  op ***/
         byte[] coinbase = env.getCurrentCoinbase();

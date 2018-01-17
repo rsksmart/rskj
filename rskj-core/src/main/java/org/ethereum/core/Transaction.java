@@ -58,7 +58,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 
 // TODO review implements SerializableObejct
-public class Transaction implements SerializableObject {
+public class Transaction {
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
     private static final Logger logger = LoggerFactory.getLogger(Transaction.class);

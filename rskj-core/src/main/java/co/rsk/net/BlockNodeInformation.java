@@ -18,6 +18,7 @@
 
 package co.rsk.net;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.db.ByteArrayWrapper;
 import org.springframework.stereotype.Component;
 
@@ -35,8 +36,8 @@ import java.util.*;
  */
 @Component
 public class BlockNodeInformation {
-    private final Map<NodeID, Set<ByteArrayWrapper>> blocksByNode;
-    private final LinkedHashMap<ByteArrayWrapper, Set<NodeID>> nodesByBlock;
+    private final Map<NodeID, Set<Sha3Hash>> blocksByNode;
+    private final LinkedHashMap<Sha3Hash, Set<NodeID>> nodesByBlock;
     private final int maxBlocks;
     private final int maxPeers;
 
@@ -45,16 +46,16 @@ public class BlockNodeInformation {
         this.maxPeers = maxPeers;
 
         // Nodes are evicted in Least-recently-accessed order.
-        blocksByNode = new LinkedHashMap<NodeID, Set<ByteArrayWrapper>>(BlockNodeInformation.this.maxPeers, 0.75f, true) {
+        blocksByNode = new LinkedHashMap<NodeID, Set<Sha3Hash>>(BlockNodeInformation.this.maxPeers, 0.75f, true) {
             @Override
-            protected boolean removeEldestEntry(Map.Entry<NodeID, Set<ByteArrayWrapper>> eldest) {
+            protected boolean removeEldestEntry(Map.Entry<NodeID, Set<Sha3Hash>> eldest) {
                 return size() > BlockNodeInformation.this.maxPeers;
             }
         };
         // Blocks are evicted in Least-recently-accessed order.
-        nodesByBlock = new LinkedHashMap<ByteArrayWrapper, Set<NodeID>>(BlockNodeInformation.this.maxBlocks, 0.75f, true) {
+        nodesByBlock = new LinkedHashMap<Sha3Hash, Set<NodeID>>(BlockNodeInformation.this.maxBlocks, 0.75f, true) {
             @Override
-            protected boolean removeEldestEntry(Map.Entry<ByteArrayWrapper, Set<NodeID>> eldest) {
+            protected boolean removeEldestEntry(Map.Entry<Sha3Hash, Set<NodeID>> eldest) {
                 return size() > BlockNodeInformation.this.maxBlocks;
             }
         };
@@ -70,14 +71,14 @@ public class BlockNodeInformation {
      * @param blockHash the block hash.
      * @param nodeID    the node to add the block to.
      */
-    public void addBlockToNode(@Nonnull final ByteArrayWrapper blockHash, @Nonnull final NodeID nodeID) {
-        Set<ByteArrayWrapper> nodeBlocks = blocksByNode.get(nodeID);
+    public void addBlockToNode(@Nonnull final Sha3Hash blockHash, @Nonnull final NodeID nodeID) {
+        Set<Sha3Hash> nodeBlocks = blocksByNode.get(nodeID);
         if (nodeBlocks == null) {
             // Create a new empty LRUCache for the blocks that a node know.
             // NodeBlocks are evicted in reverse insertion order.
             nodeBlocks = Collections.newSetFromMap(
-                    new LinkedHashMap<ByteArrayWrapper, Boolean>() {
-                        protected boolean removeEldestEntry(Map.Entry<ByteArrayWrapper, Boolean> eldest) {
+                    new LinkedHashMap<Sha3Hash, Boolean>() {
+                        protected boolean removeEldestEntry(Map.Entry<Sha3Hash, Boolean> eldest) {
                             return size() > maxBlocks;
                         }
                     }
@@ -104,8 +105,8 @@ public class BlockNodeInformation {
      * @return all the blocks known by the given nodeID.
      */
     @Nonnull
-    public Set<ByteArrayWrapper> getBlocksByNode(@Nonnull final NodeID nodeID) {
-        Set<ByteArrayWrapper> result = blocksByNode.get(nodeID);
+    public Set<Sha3Hash> getBlocksByNode(@Nonnull final NodeID nodeID) {
+        Set<Sha3Hash> result = blocksByNode.get(nodeID);
         if (result == null) {
             result = new HashSet<>();
         }
@@ -119,7 +120,7 @@ public class BlockNodeInformation {
      * @return A set containing all the nodes that have that block.
      */
     @Nonnull
-    public Set<NodeID> getNodesByBlock(@Nonnull final ByteArrayWrapper blockHash) {
+    public Set<NodeID> getNodesByBlock(@Nonnull final Sha3Hash blockHash) {
         Set<NodeID> result = nodesByBlock.get(blockHash);
         if (result == null) {
             result = new HashSet<>();
@@ -128,14 +129,14 @@ public class BlockNodeInformation {
     }
 
     /**
-     * getNodesByBlock is a convenient function to avoid creating a ByteArrayWrapper.
+     * getNodesByBlock is a convenient function to avoid creating a Sha3Hash.
      *
      * @param blockHash the block hash.
      * @return all the nodeIDs that contain the given block.
      */
     @Nonnull
     public Set<NodeID> getNodesByBlock(@Nonnull final byte[] blockHash) {
-        return getNodesByBlock(new ByteArrayWrapper(blockHash));
+        return getNodesByBlock(new Sha3Hash(blockHash));
     }
 
     /**
@@ -145,7 +146,7 @@ public class BlockNodeInformation {
      * @return all the hashes of the blocks that the given node knows.
      */
     @Nonnull
-    public Set<ByteArrayWrapper> getBlocksByNode(@Nonnull final byte[] nodeID) {
+    public Set<Sha3Hash> getBlocksByNode(@Nonnull final byte[] nodeID) {
         return getBlocksByNode(new NodeID(nodeID));
     }
 }

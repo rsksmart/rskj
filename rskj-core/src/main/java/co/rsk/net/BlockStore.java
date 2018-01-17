@@ -18,6 +18,7 @@
 
 package co.rsk.net;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.ByteArrayWrapper;
@@ -30,15 +31,15 @@ import java.util.stream.Collectors;
  * Created by ajlopez on 5/11/2016.
  */
 public class BlockStore {
-    private Map<ByteArrayWrapper, Block> blocks = new HashMap<>();
+    private Map<Sha3Hash, Block> blocks = new HashMap<>();
     private Map<Long, Set<Block>> blocksbynumber = new HashMap<>();
-    private Map<ByteArrayWrapper, Set<Block>> blocksbyparent = new HashMap<>();
+    private Map<Sha3Hash, Set<Block>> blocksbyparent = new HashMap<>();
 
-    private final Map<ByteArrayWrapper, BlockHeader> headers = new HashMap<>();
+    private final Map<Sha3Hash, BlockHeader> headers = new HashMap<>();
 
     public synchronized void saveBlock(Block block) {
-        ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
-        ByteArrayWrapper pkey = new ByteArrayWrapper(block.getParentHash());
+        Sha3Hash key = block.getHash();
+        Sha3Hash pkey = block.getParentHash();
         Long nkey = Long.valueOf(block.getNumber());
         this.blocks.put(key, block);
 
@@ -66,8 +67,8 @@ public class BlockStore {
             return;
         }
 
-        ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
-        ByteArrayWrapper pkey = new ByteArrayWrapper(block.getParentHash());
+        ByteArrayWrapper key = new ByteArrayWrapper(block.getHash().getBytes());
+        ByteArrayWrapper pkey = new ByteArrayWrapper(block.getParentHash().getBytes());
         Long nkey = Long.valueOf(block.getNumber());
 
         this.blocks.remove(key);
@@ -83,7 +84,7 @@ public class BlockStore {
             Block toremove = null;
 
             for (Block blk : byparent) {
-                if (new ByteArrayWrapper(blk.getHash()).equals(key)) {
+                if (new ByteArrayWrapper(blk.getHash().getBytes()).equals(key)) {
                     toremove = blk;
                     break;
                 }
@@ -106,7 +107,7 @@ public class BlockStore {
             Block toremove = null;
 
             for (Block blk : bynumber) {
-                if (new ByteArrayWrapper(blk.getHash()).equals(key)) {
+                if (new ByteArrayWrapper(blk.getHash().getBytes()).equals(key)) {
                     toremove = blk;
                     break;
                 }
@@ -121,10 +122,8 @@ public class BlockStore {
         }
     }
 
-    public synchronized Block getBlockByHash(byte[] hash) {
-        ByteArrayWrapper key = new ByteArrayWrapper(hash);
-
-        return this.blocks.get(key);
+    public synchronized Block getBlockByHash(Sha3Hash hash) {
+        return this.blocks.get(hash);
     }
 
     public synchronized List<Block> getBlocksByNumber(long number) {
@@ -139,10 +138,8 @@ public class BlockStore {
         return new ArrayList<>(blockSet);
     }
 
-    public synchronized List<Block> getBlocksByParentHash(byte[] hash) {
-        ByteArrayWrapper key = new ByteArrayWrapper(hash);
-
-        Set<Block> blockSet = this.blocksbyparent.get(key);
+    public synchronized List<Block> getBlocksByParentHash(Sha3Hash hash) {
+        Set<Block> blockSet = this.blocksbyparent.get(hash);
 
         if (blockSet == null) {
             blockSet = new HashSet<>();
@@ -159,17 +156,17 @@ public class BlockStore {
      */
     public List<Block> getChildrenOf(Set<Block> blocks) {
         return blocks.stream()
-                .flatMap(b-> getBlocksByParentHash(new ByteArrayWrapper(b.getHash()).getData()).stream())
+                .flatMap(b-> getBlocksByParentHash(b.getHash()).stream())
                 .distinct()
                 .collect(Collectors.toList());
     }
 
     public synchronized boolean hasBlock(Block block) {
-        return this.blocks.containsKey(new ByteArrayWrapper(block.getHash()));
+        return this.blocks.containsKey(block.getHash());
     }
 
-    public synchronized boolean hasBlock(byte[] hash) {
-        return this.blocks.containsKey(new ByteArrayWrapper(hash));
+    public synchronized boolean hasBlock(Sha3Hash hash) {
+        return this.blocks.containsKey(hash);
     }
 
     public synchronized int size() {
@@ -214,8 +211,8 @@ public class BlockStore {
      * @param hash the block's hash.
      * @return true if the store has the header, false otherwise.
      */
-    public synchronized boolean hasHeader(@Nonnull final byte[] hash) {
-        return this.headers.containsKey(new ByteArrayWrapper(hash));
+    public synchronized boolean hasHeader(@Nonnull final Sha3Hash hash) {
+        return this.headers.containsKey(hash);
     }
 
     /**
@@ -224,23 +221,19 @@ public class BlockStore {
      * @param header the header to store.
      */
     public synchronized void saveHeader(@Nonnull final BlockHeader header) {
-        ByteArrayWrapper key = new ByteArrayWrapper(header.getHash());
-
-        this.headers.put(key, header);
+        this.headers.put(header.getHash(), header);
     }
 
     /**
      * removeHeader removes the given header from the block store.
      *
-     * @param header the header to remove.
+     * @param hash the header to remove.
      */
-    public synchronized void removeHeader(@Nonnull final BlockHeader header) {
-        if (!this.hasHeader(header.getHash())) {
+    public synchronized void removeHeader(@Nonnull final Sha3Hash hash) {
+        if (!this.hasHeader(hash)) {
             return;
         }
 
-        ByteArrayWrapper key = new ByteArrayWrapper(header.getHash());
-
-        this.headers.remove(key);
+        this.headers.remove(hash);
     }
 }

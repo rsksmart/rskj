@@ -4,26 +4,11 @@ package co.rsk.core;
  * Created by SerAdmin on 12/5/2017.
  */
 
-import com.google.common.collect.Lists;
-import org.ethereum.core.SerializableObject;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
-import org.ethereum.util.Utils;
-import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
-import org.spongycastle.util.BigIntegers;
-
-import java.math.BigInteger;
-import java.util.List;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.util.ByteUtil.toHexString;
-
+import co.rsk.crypto.Sha3Hash;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.ethereum.util.Utils;
 import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 import org.spongycastle.util.BigIntegers;
 
@@ -38,14 +23,13 @@ import static org.ethereum.util.ByteUtil.toHexString;
  * the basic information of a block
  */
 
-// TODO review implements SerializableObject
-public class FreeBlockHeader implements SerializableObject {
+public class FreeBlockHeader {
 
 
     /* The SHA3 256-bit hash of the parent block, in its entirety */
-    private byte[] parentHash;
+    private Sha3Hash parentHash;
     /* The SHA3 256-bit hash of the uncles list portion of this block */
-    private byte[] unclesHash;
+    private Sha3Hash unclesHash;
     /* The 160-bit address to which all fees collected from the
      * successful mining of this block be transferred; formally */
     private byte[] coinbase;
@@ -100,8 +84,8 @@ public class FreeBlockHeader implements SerializableObject {
     }
 
     public FreeBlockHeader(RLPList rlpHeader) {
-        this.parentHash = rlpHeader.get(0).getRLPData();
-        this.unclesHash = rlpHeader.get(1).getRLPData();
+        this.parentHash = new Sha3Hash(rlpHeader.get(0).getRLPData());
+        this.unclesHash = new Sha3Hash(rlpHeader.get(1).getRLPData());
         this.coinbase = rlpHeader.get(2).getRLPData();
         this.stateRoot = rlpHeader.get(3).getRLPData();
         if (this.stateRoot == null)
@@ -165,7 +149,7 @@ public class FreeBlockHeader implements SerializableObject {
         return b.intValueExact();
     }
 
-    public FreeBlockHeader(byte[] parentHash, byte[] unclesHash, byte[] coinbase,
+    public FreeBlockHeader(Sha3Hash parentHash, Sha3Hash unclesHash, byte[] coinbase,
                        byte[] logsBloom, byte[] difficulty, byte[] number,
                        byte[] gasLimit, byte[] gasUsed, byte[] timestamp,
                        byte[] extraData,
@@ -187,7 +171,7 @@ public class FreeBlockHeader implements SerializableObject {
         this.uncleCount = uncleCount;
     }
 
-    public FreeBlockHeader(byte[] parentHash, byte[] unclesHash, byte[] coinbase,
+    public FreeBlockHeader(Sha3Hash parentHash, Sha3Hash unclesHash, byte[] coinbase,
                        byte[] logsBloom, byte[] difficulty, byte[] number,
                        byte[] gasLimit, byte[] gasUsed, byte[] timestamp,
                        byte[] extraData,
@@ -215,7 +199,7 @@ public class FreeBlockHeader implements SerializableObject {
     }
 
 
-    public byte[] getParentHash() {
+    public Sha3Hash getParentHash() {
         return parentHash;
     }
 
@@ -223,11 +207,11 @@ public class FreeBlockHeader implements SerializableObject {
         return uncleCount;
     }
 
-    public byte[] getUnclesHash() {
+    public Sha3Hash getUnclesHash() {
         return unclesHash;
     }
 
-    public void setUnclesHash(byte[] unclesHash) {
+    public void setUnclesHash(Sha3Hash unclesHash) {
 
         this.unclesHash = unclesHash;
     }
@@ -367,9 +351,9 @@ public class FreeBlockHeader implements SerializableObject {
     }
 
     public byte[] getEncoded(boolean withMergedMiningFields) {
-        byte[] parentHash = RLP.encodeElement(this.parentHash);
+        byte[] parentHash = RLP.encodeElement(this.parentHash.getBytes());
 
-        byte[] unclesHash = RLP.encodeElement(this.unclesHash);
+        byte[] unclesHash = RLP.encodeElement(this.unclesHash.getBytes());
         byte[] coinbase = RLP.encodeElement(this.coinbase);
 
         byte[] stateRoot = RLP.encodeElement(this.stateRoot);
@@ -457,8 +441,8 @@ public class FreeBlockHeader implements SerializableObject {
 
     private String toStringWithSuffix(final String suffix) {
         StringBuilder toStringBuff = new StringBuilder();
-        toStringBuff.append("  parentHash=").append(toHexString(parentHash)).append(suffix);
-        toStringBuff.append("  unclesHash=").append(toHexString(unclesHash)).append(suffix);
+        toStringBuff.append("  parentHash=").append(parentHash.toString()).append(suffix);
+        toStringBuff.append("  unclesHash=").append(unclesHash.toString()).append(suffix);
         toStringBuff.append("  coinbase=").append(toHexString(coinbase)).append(suffix);
         toStringBuff.append("  stateRoot=").append(toHexString(stateRoot)).append(suffix);
         toStringBuff.append("  txTrieHash=").append(toHexString(txTrieRoot)).append(suffix);

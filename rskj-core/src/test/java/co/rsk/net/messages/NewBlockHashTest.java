@@ -19,16 +19,17 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.crypto.Sha3Hash;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class NewBlockHashTest {
     @Test
     public void createWithBlockHash() {
-        byte[] hash = BlockGenerator.getInstance().getGenesisBlock().getHash();
+        Sha3Hash hash = BlockGenerator.getInstance().getGenesisBlock().getHash();
         NewBlockHashMessage message = new NewBlockHashMessage(hash);
 
-        Assert.assertArrayEquals(hash, message.getBlockHash());
+        Assert.assertEquals(hash, message.getBlockHash());
         Assert.assertEquals(MessageType.NEW_BLOCK_HASH_MESSAGE, message.getMessageType());
     }
 }

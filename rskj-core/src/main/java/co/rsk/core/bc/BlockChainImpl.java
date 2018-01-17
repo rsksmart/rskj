@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blocks.BlockRecorder;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.net.Metrics;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.Trie;
@@ -171,7 +172,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         }
 
         if (!block.isSealed()) {
-            panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), Hex.toHexString(block.getHash())));
+            panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), Hex.toHexString(block.getHash().getBytes())));
             block.seal();
         }
 
@@ -181,7 +182,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
 
         try {
             logger.info("Try connect block hash: {}, number: {}",
-                    Hex.toHexString(block.getHash()).substring(0, 6),
+                    block.getShortHash(),
                     block.getNumber());
 
             synchronized (connectLock) {
@@ -203,7 +204,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         if (blockStore.getBlockByHash(block.getHash()) != null &&
                 !BigInteger.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash()))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
-                    Hex.toHexString(block.getHash()).substring(0, 6),
+                    Hex.toHexString(block.getHash().getBytes()).substring(0, 6),
                     block.getNumber());
 
             return ImportResult.EXIST;
@@ -248,7 +249,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         if (!isValid(block)) {
             long blockNumber = block.getNumber();
             logger.warn("Invalid block with number: {}", blockNumber);
-            panicProcessor.panic("invalidblock", String.format("Invalid block %s %s", blockNumber, Hex.toHexString(block.getHash())));
+            panicProcessor.panic("invalidblock", String.format("Invalid block %s %s", blockNumber, block.getHash()));
             return ImportResult.INVALID_BLOCK;
         }
 
@@ -323,7 +324,10 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         else {
             if (bestBlock != null && !bestBlock.isParentOf(block)) {
                 logger.info("No rebranch: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
-                        bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
+                        bestBlock.getShortHash(),
+                        block.getShortHash(),
+                        bestBlock.getNumber(),
+                        block.getNumber(),
                         status.getTotalDifficulty().toString(), totalDifficulty.toString());
             }
 
@@ -367,7 +371,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public Block getBlockByHash(byte[] hash) {
+    public Block getBlockByHash(Sha3Hash hash) {
         return blockStore.getBlockByHash(hash);
     }
 
@@ -377,7 +381,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public boolean isBlockExist(byte[] hash) {
+    public boolean isBlockExist(Sha3Hash hash) {
         return blockStore.isBlockExist(hash);
     }
 
@@ -387,7 +391,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public List<byte[]> getListOfBodiesByHashes(List<byte[]> hashes) {
+    public List<byte[]> getListOfBodiesByHashes(List<Sha3Hash> hashes) {
         return null;
     }
 
@@ -404,7 +408,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public boolean hasBlockInSomeBlockchain(@Nonnull final byte[] hash) {
+    public boolean hasBlockInSomeBlockchain(@Nonnull final Sha3Hash hash) {
         final Block block = this.getBlockByHash(hash);
         return block != null && this.blockIsInIndex(block);
     }
@@ -484,7 +488,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public byte[] getBestBlockHash() {
+    public Sha3Hash getBestBlockHash() {
         return status.getBestBlock().getHash();
     }
 

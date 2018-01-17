@@ -18,6 +18,7 @@ package org.ethereum.core;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.spongycastle.util.encoders.Hex;
@@ -39,7 +40,7 @@ public class BlockIdentifier {
     /**
      * Block hash
      */
-    private byte[] hash;
+    private Sha3Hash hash;
 
     /**
      * Block number
@@ -47,16 +48,16 @@ public class BlockIdentifier {
     private long number;
 
     public BlockIdentifier(RLPList rlp) {
-        this.hash = rlp.get(0).getRLPData();
+        this.hash = new Sha3Hash(rlp.get(0).getRLPData());
         this.number = byteArrayToLong(rlp.get(1).getRLPData());
     }
 
-    public BlockIdentifier(byte[] hash, long number) {
+    public BlockIdentifier(Sha3Hash hash, long number) {
         this.hash = hash;
         this.number = number;
     }
 
-    public byte[] getHash() {
+    public Sha3Hash getHash() {
         return hash;
     }
 
@@ -65,7 +66,7 @@ public class BlockIdentifier {
     }
 
     public byte[] getEncoded() {
-        byte[] hash = RLP.encodeElement(this.hash);
+        byte[] hash = RLP.encodeElement(this.hash.getBytes());
         byte[] number = RLP.encodeBigInteger(BigInteger.valueOf(this.number));
 
         return RLP.encodeList(hash, number);
@@ -74,7 +75,7 @@ public class BlockIdentifier {
     @Override
     public String toString() {
         return "BlockIdentifier {" +
-                "hash=" + Hex.toHexString(hash) +
+                "hash=" + hash +
                 ", number=" + number +
                 '}';
     }

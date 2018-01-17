@@ -1,18 +1,19 @@
 package co.rsk.net.messages;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.util.RLP;
 
 /**
  * Wrapper around an RSK NewBlockHash message.
  */
 public class NewBlockHashMessage extends Message {
-    private byte[] hash;
+    private Sha3Hash hash;
 
-    public NewBlockHashMessage(byte[] hash) {
+    public NewBlockHashMessage(Sha3Hash hash) {
         this.hash = hash;
     }
 
-    public byte[] getBlockHash() {
+    public Sha3Hash getBlockHash() {
         return this.hash;
     }
 
@@ -23,7 +24,7 @@ public class NewBlockHashMessage extends Message {
 
     @Override
     public byte[] getEncodedMessage() {
-        byte[] elementHash = RLP.encodeElement(this.hash);
+        byte[] elementHash = RLP.encodeElement(this.hash.getBytes());
         return RLP.encodeList(elementHash);
     }
 }

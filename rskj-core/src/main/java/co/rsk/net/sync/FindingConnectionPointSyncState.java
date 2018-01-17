@@ -1,5 +1,6 @@
 package co.rsk.net.sync;
 
+import co.rsk.crypto.Sha3Hash;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.util.Optional;
@@ -14,7 +15,7 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
     }
 
     @Override
-    public void newConnectionPointData(byte[] hash) {
+    public void newConnectionPointData(Sha3Hash hash) {
 
         if (this.syncInformation.isKnownBlock(hash)) {
             connectionPointFinder.updateFound();

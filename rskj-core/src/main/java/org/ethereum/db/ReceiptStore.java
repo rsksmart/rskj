@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.TransactionReceipt;
 
 import java.util.List;
@@ -30,15 +31,15 @@ import java.util.List;
 
 public interface ReceiptStore {
 
-    void add(byte[] blockHash, int transactionIndex, TransactionReceipt receipt);
+    void add(Sha3Hash blockHash, int transactionIndex, TransactionReceipt receipt);
 
     TransactionInfo get(byte[] transactionHash);
 
-    TransactionInfo get(byte[] transactionHash, byte[] blockHash, BlockStore store);
+    TransactionInfo get(byte[] transactionHash, Sha3Hash blockHash, BlockStore store);
 
     TransactionInfo getInMainChain(byte[] transactionHash, BlockStore store);
 
     List<TransactionInfo> getAll(byte[] transactionHash);
 
-    void saveMultiple(byte[] blockHash, List<TransactionReceipt> receipts);
+    void saveMultiple(Sha3Hash blockHash, List<TransactionReceipt> receipts);
 }

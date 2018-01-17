@@ -21,6 +21,7 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.SnapshotManager;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerManager;
@@ -499,7 +500,7 @@ public class Web3Impl implements Web3 {
 
     public Block getBlockByJSonHash(String blockHash) throws Exception {
         byte[] bhash = stringHexToByteArray(blockHash);
-        return this.blockchain.getBlockByHash(bhash);
+        return this.blockchain.getBlockByHash(new Sha3Hash(bhash));
     }
 
     @Override
@@ -637,7 +638,7 @@ public class Web3Impl implements Web3 {
 
     public BlockInformationResult getBlockInformationResult(BlockInformation blockInformation) {
         BlockInformationResult bir = new BlockInformationResult();
-        bir.hash = TypeConverter.toJsonHex(blockInformation.getHash());
+        bir.hash = TypeConverter.toJsonHex(blockInformation.getHash().getBytes());
         bir.totalDifficulty = TypeConverter.toJsonHex(blockInformation.getTotalDifficulty());
         bir.inMainChain = blockInformation.isInMainChain();
 
@@ -655,12 +656,12 @@ public class Web3Impl implements Web3 {
 
         BlockResult br = new BlockResult();
         br.number = isPending ? null : TypeConverter.toJsonHex(b.getNumber());
-        br.hash = isPending ? null : TypeConverter.toJsonHex(b.getHash());
-        br.parentHash = TypeConverter.toJsonHex(b.getParentHash());
-        br.sha3Uncles= TypeConverter.toJsonHex(b.getUnclesHash());
+        br.hash = isPending ? null : TypeConverter.toJsonHex(b.getHash().getBytes());
+        br.parentHash = TypeConverter.toJsonHex(b.getParentHash().getBytes());
+        br.sha3Uncles= TypeConverter.toJsonHex(b.getUnclesHash().getBytes());
         br.logsBloom = isPending ? null : TypeConverter.toJsonHex(b.getLogBloom());
         br.transactionsRoot = TypeConverter.toJsonHex(b.getTxTrieRoot());
-        br.stateRoot = TypeConverter.toJsonHex(b.getStateRoot());
+        br.stateRoot = TypeConverter.toJsonHex(b.getStateRoot().getBytes());
         br.receiptsRoot = TypeConverter.toJsonHex(b.getReceiptsRoot());
         br.miner = isPending ? null : TypeConverter.toJsonHex(b.getCoinbase());
         br.difficulty = TypeConverter.toJsonHex(b.getDifficulty());
@@ -687,7 +688,7 @@ public class Web3Impl implements Web3 {
 
         List<String> ul = new ArrayList<>();
         for (BlockHeader header : b.getUncleList()) {
-            ul.add(toJsonHex(header.getHash()));
+            ul.add(toJsonHex(header.getHash().getBytes()));
         }
         br.uncles = ul.toArray(new String[ul.size()]);
 
@@ -768,7 +769,7 @@ public class Web3Impl implements Web3 {
                 block = blockchain.getBlockByHash(txInfo.getBlockHash());
                 // need to return txes only from main chain
                 Block mainBlock = blockchain.getBlockByNumber(block.getNumber());
-                if (!Arrays.equals(block.getHash(), mainBlock.getHash())) {
+                if (!Arrays.equals(block.getHash().getBytes(), mainBlock.getHash().getBytes())) {
                     return null;
                 }
                 txInfo.setTransaction(block.getTransactionsList().get(txInfo.getIndex()));
@@ -851,7 +852,7 @@ public class Web3Impl implements Web3 {
     public BlockResult eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) throws Exception {
         BlockResult s = null;
         try {
-            Block block = blockchain.getBlockByHash(stringHexToByteArray(blockHash));
+            Block block = blockchain.getBlockByHash(new Sha3Hash(blockHash));
             if (block == null) {
                 return null;
             }
@@ -878,7 +879,7 @@ public class Web3Impl implements Web3 {
         try {
             Block block = getByJsonBlockId(blockId);
             return s = block == null ? null :
-                    eth_getUncleByBlockHashAndIndex(Hex.toHexString(block.getHash()), uncleIdx);
+                    eth_getUncleByBlockHashAndIndex(Hex.toHexString(block.getHash().getBytes()), uncleIdx);
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getUncleByBlockNumberAndIndex(" + blockId + ", " + uncleIdx + "): " + s);
@@ -955,7 +956,7 @@ public class Web3Impl implements Web3 {
 
             @Override
             public String getJsonEventObject() {
-                return toJsonHex(b.getHash());
+                return toJsonHex(b.getHash().getBytes());
             }
         }
 

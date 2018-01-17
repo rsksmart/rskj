@@ -308,7 +308,7 @@ public class BlockQueueImpl implements BlockQueue {
 
         List<BlockHeader> filtered = new ArrayList<>();
         for (BlockHeader header : headers) {
-            if (!hashes.contains(new ByteArrayWrapper(header.getHash()))) {
+            if (!hashes.contains(new ByteArrayWrapper(header.getHash().getBytes()))) {
                 filtered.add(header);
             }
         }

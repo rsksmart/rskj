@@ -93,7 +93,7 @@ public class BlockStressTest {
             Block block = new Block(
                     Hex.decode(blockRLP)
             );
-            blockSource.put(block.getHash(), block);
+            blockSource.put(block.getHash().getBytes(), block);
 
             if (block.getNumber() % 10000 == 0)
                 logger.info(

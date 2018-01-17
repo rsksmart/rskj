@@ -87,7 +87,7 @@ public class BlockQueueTest {
                         block.getNumber());
 
             blocks.add(block);
-            hashes.add(block.getHash());
+            hashes.add(block.getHash().getBytes());
         }
 
         logger.info("total blocks loaded: {}", blocks.size());
@@ -190,12 +190,12 @@ public class BlockQueueTest {
 
         blockQueue.add(new BlockWrapper(ConfigHelper.CONFIG, b1_, nodeId));
         assertTrue(b1.isEqual(blockQueue.peek().getBlock()));
-        assertTrue(blockQueue.filterExisting(Arrays.asList(b1.getHash())).isEmpty());
+        assertTrue(blockQueue.filterExisting(Arrays.asList(b1.getHash().getBytes())).isEmpty());
 
         blockQueue.addOrReplace(new BlockWrapper(ConfigHelper.CONFIG, b1_, nodeId));
         assertTrue(b1_.isEqual(blockQueue.peek().getBlock()));
-        assertFalse(blockQueue.filterExisting(Arrays.asList(b1.getHash())).isEmpty());
-        assertTrue(blockQueue.filterExisting(Arrays.asList(b1_.getHash())).isEmpty());
+        assertFalse(blockQueue.filterExisting(Arrays.asList(b1.getHash().getBytes())).isEmpty());
+        assertTrue(blockQueue.filterExisting(Arrays.asList(b1_.getHash().getBytes())).isEmpty());
     }
 
     @Test // concurrency

@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.ConfigHelper;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
@@ -173,7 +174,7 @@ public class BlockValidatorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block1 = blockGenerator.createChildBlock(genesis);
-        block1.getHeader().setUnclesHash(new byte[]{0x01});
+        block1.getHeader().setUnclesHash(new Sha3Hash(new byte[]{0x01}));
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(null)
@@ -222,10 +223,10 @@ public class BlockValidatorTest {
         store.saveBlock(genesis, BigInteger.ONE, true);
         Block block = new BlockGenerator().createChildBlock(genesis);
 
-        Set<ByteArrayWrapper> ancestors = FamilyUtils.getAncestors(store, block, 6);
+        Set<Sha3Hash> ancestors = FamilyUtils.getAncestors(store, block, 6);
         Assert.assertFalse(ancestors.isEmpty());
-        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(genesis.getHash())));
-        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(block.getHash())));
+        Assert.assertTrue(ancestors.contains(genesis.getHash()));
+        Assert.assertFalse(ancestors.contains(block.getHash()));
     }
 
     @Test
@@ -247,15 +248,15 @@ public class BlockValidatorTest {
         Block block5 = blockGenerator.createChildBlock(block4);
         store.saveBlock(block5, BigInteger.ONE, true);
 
-        Set<ByteArrayWrapper> ancestors = FamilyUtils.getAncestors(store, block5, 3);
+        Set<Sha3Hash> ancestors = FamilyUtils.getAncestors(store, block5, 3);
         Assert.assertFalse(ancestors.isEmpty());
         Assert.assertEquals(3, ancestors.size());
-        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(genesis.getHash())));
-        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(block1.getHash())));
-        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(block2.getHash())));
-        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(block3.getHash())));
-        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(block4.getHash())));
-        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(block5.getHash())));
+        Assert.assertFalse(ancestors.contains(genesis.getHash()));
+        Assert.assertFalse(ancestors.contains(block1.getHash()));
+        Assert.assertTrue(ancestors.contains(block2.getHash()));
+        Assert.assertTrue(ancestors.contains(block3.getHash()));
+        Assert.assertTrue(ancestors.contains(block4.getHash()));
+        Assert.assertFalse(ancestors.contains(block5.getHash()));
     }
 
     @Test
@@ -291,17 +292,17 @@ public class BlockValidatorTest {
         store.saveBlock(uncle2b, BigInteger.ONE, false);
         store.saveBlock(block2, BigInteger.ONE, true);
 
-        Set<ByteArrayWrapper> used = FamilyUtils.getUsedUncles(store, block3, 6);
+        Set<Sha3Hash> used = FamilyUtils.getUsedUncles(store, block3, 6);
 
         Assert.assertFalse(used.isEmpty());
-        Assert.assertFalse(used.contains(new ByteArrayWrapper(block3.getHash())));
-        Assert.assertFalse(used.contains(new ByteArrayWrapper(block2.getHash())));
-        Assert.assertTrue(used.contains(new ByteArrayWrapper(uncle2a.getHash())));
-        Assert.assertTrue(used.contains(new ByteArrayWrapper(uncle2b.getHash())));
-        Assert.assertFalse(used.contains(new ByteArrayWrapper(block1.getHash())));
-        Assert.assertTrue(used.contains(new ByteArrayWrapper(uncle1a.getHash())));
-        Assert.assertTrue(used.contains(new ByteArrayWrapper(uncle1b.getHash())));
-        Assert.assertFalse(used.contains(new ByteArrayWrapper(genesis.getHash())));
+        Assert.assertFalse(used.contains(block3.getHash()));
+        Assert.assertFalse(used.contains(block2.getHash()));
+        Assert.assertTrue(used.contains(uncle2a.getHash()));
+        Assert.assertTrue(used.contains(uncle2b.getHash()));
+        Assert.assertFalse(used.contains(block1.getHash()));
+        Assert.assertTrue(used.contains(uncle1a.getHash()));
+        Assert.assertTrue(used.contains(uncle1b.getHash()));
+        Assert.assertFalse(used.contains(genesis.getHash()));
     }
 
     @Test
@@ -872,13 +873,13 @@ public class BlockValidatorTest {
         }
 
         @Override
-        public byte[] getBlockHashByNumber(long blockNumber) {
-            return new byte[0];
+        public Sha3Hash getBlockHashByNumber(long blockNumber) {
+            return new Sha3Hash(new byte[0]);
         }
 
         @Override
-        public byte[] getBlockHashByNumber(long blockNumber, byte[] branchBlockHash) {
-            return new byte[0];
+        public Sha3Hash getBlockHashByNumber(long blockNumber, Sha3Hash branchBlockHash) {
+            return new Sha3Hash(new byte[0]);
         }
 
         @Override
@@ -892,32 +893,32 @@ public class BlockValidatorTest {
         }
 
         @Override
-        public Block getBlockByHash(byte[] hash) {
+        public Block getBlockByHash(Sha3Hash hash) {
             return block;
         }
 
         @Override
-        public Block getBlockByHashAndDepth(byte[] hash, long depth) {
+        public Block getBlockByHashAndDepth(Sha3Hash hash, long depth) {
             return null;
         }
 
         @Override
-        public boolean isBlockExist(byte[] hash) {
+        public boolean isBlockExist(Sha3Hash hash) {
             return false;
         }
 
         @Override
-        public List<byte[]> getListHashesEndWith(byte[] hash, long qty) {
+        public List<Sha3Hash> getListHashesEndWith(Sha3Hash hash, long qty) {
             return null;
         }
 
         @Override
-        public List<BlockHeader> getListHeadersEndWith(byte[] hash, long qty) {
+        public List<BlockHeader> getListHeadersEndWith(Sha3Hash hash, long qty) {
             return null;
         }
 
         @Override
-        public List<Block> getListBlocksEndWith(byte[] hash, long qty) {
+        public List<Block> getListBlocksEndWith(Sha3Hash hash, long qty) {
             return null;
         }
 
@@ -927,7 +928,7 @@ public class BlockValidatorTest {
         }
 
         @Override
-        public BigInteger getTotalDifficultyForHash(byte[] hash) {
+        public BigInteger getTotalDifficultyForHash(Sha3Hash hash) {
             return null;
         }
 

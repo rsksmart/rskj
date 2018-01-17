@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
@@ -126,9 +127,9 @@ public class BlockExecutor {
             return false;
         }
 
-        if (!Arrays.equals(result.getStateRoot(), block.getStateRoot()))  {
-            logger.error("Block's given State Root doesn't match: {} {} {} != {}", block.getNumber(), block.getShortHash(), Hex.toHexString(block.getStateRoot()), Hex.toHexString(result.getStateRoot()));
-            panicProcessor.panic("invalidstateroot", String.format("Block's given State Root Hash doesn't match: %s != %s", Hex.toHexString(block.getStateRoot()), Hex.toHexString(result.getStateRoot())));
+        if (!result.getStateRoot().equals(block.getStateRoot()))  {
+            logger.error("Block's given State Root doesn't match: {} {} {} != {}", block.getNumber(), block.getShortHash(), block.getStateRoot(), result.getStateRoot());
+            panicProcessor.panic("invalidstateroot", String.format("Block's given State Root Hash doesn't match: %s != %s", block.getStateRoot(), result.getStateRoot()));
             return false;
         }
 
@@ -187,20 +188,20 @@ public class BlockExecutor {
      * @param stateRoot    Initial state hash
      * @return BlockResult with the final state data.
      */
-    public BlockResult execute(Block block, byte[] stateRoot, boolean discardInvalidTxs) {
+    public BlockResult execute(Block block, Sha3Hash stateRoot, boolean discardInvalidTxs) {
         return execute(block, stateRoot, discardInvalidTxs, false);
     }
 
-    public BlockResult executeAll(Block block, byte[] stateRoot) {
+    public BlockResult executeAll(Block block, Sha3Hash stateRoot) {
         return execute(block, stateRoot, false, true);
     }
 
-    private BlockResult execute(Block block, byte[] stateRoot, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
+    private BlockResult execute(Block block, Sha3Hash stateRoot, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
         logger.info("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
         Repository initialRepository = repository.getSnapshotTo(stateRoot);
 
-        byte[] lastStateRootHash = initialRepository.getRoot();
+        Sha3Hash lastStateRootHash = initialRepository.getRoot();
 
         Repository track = initialRepository.startTracking();
         int i = 1;
@@ -257,7 +258,7 @@ public class BlockExecutor {
             receipt.setStatus(txExecutor.getReceipt().getStatus());
 
             logger.info("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()),
-                    Hex.toHexString(lastStateRootHash));
+                    lastStateRootHash);
 
             logger.info("tx[{}].receipt", i);
 

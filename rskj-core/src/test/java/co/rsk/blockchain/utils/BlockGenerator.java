@@ -21,6 +21,7 @@ package co.rsk.blockchain.utils;
 import co.rsk.config.ConfigHelper;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleBlock;
@@ -94,7 +95,7 @@ public class BlockGenerator {
 
         long   timestamp         = 0; // predictable timeStamp
 
-        byte[] parentHash  = EMPTY_BYTE_ARRAY;
+        Sha3Hash parentHash  = new Sha3Hash(EMPTY_BYTE_ARRAY);
         byte[] extraData   = EMPTY_BYTE_ARRAY;
 
         long   gasLimit         = initialGasLimit;
@@ -103,7 +104,7 @@ public class BlockGenerator {
         byte[] bitcoinMergedMiningMerkleProof = null;
         byte[] bitcoinMergedMiningCoinbaseTransaction = null;
 
-        Genesis genesis = new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, getZeroHash(),
+        Genesis genesis = new Genesis(parentHash, new Sha3Hash(EMPTY_LIST_HASH), coinbase, getZeroHash(),
                 difficulty, 0, gasLimit, 0, timestamp, extraData,
                 mixHash, nonce, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, BigInteger.valueOf(100L).toByteArray());
@@ -112,20 +113,19 @@ public class BlockGenerator {
             Map<ByteArrayWrapper, InitialAddressState> preMineMap2 = generatePreMine(preMineMap);
             genesis.setPremine(preMineMap2);
 
-            byte[] rootHash = generateRootHash(preMineMap2);
-            genesis.setStateRoot(rootHash);
+            genesis.setStateRoot(generateRootHash(preMineMap2));
         }
 
         return genesis;
     }
 
-    private byte[] generateRootHash(Map<ByteArrayWrapper, InitialAddressState> premine){
+    private Sha3Hash generateRootHash(Map<ByteArrayWrapper, InitialAddressState> premine){
         Trie state = new TrieImpl(null, true);
 
         for (ByteArrayWrapper key : premine.keySet())
             state = state.put(key.getData(), premine.get(key).getAccountState().getEncoded());
 
-        return state.getHash();
+        return new Sha3Hash(state.getHash());
     }
 
     private Map<ByteArrayWrapper, InitialAddressState> generatePreMine(Map<byte[], BigInteger> alloc){
@@ -170,7 +170,7 @@ public class BlockGenerator {
 
         return new Block(
                 parent.getHash(), // parent hash
-                unclesListHash, // uncle hash
+                new Sha3Hash(unclesListHash), // uncle hash
                 parent.getCoinbase(),
                 ByteUtils.clone(new Bloom().getData()),
                 difficulty, // difficulty
@@ -183,7 +183,7 @@ public class BlockGenerator {
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
                 BlockChainImpl.calcTxTrie(txs),  // transaction root
-                ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
+                parent.getStateRoot(), //EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 uncles,        // uncle list
                 null,
@@ -192,11 +192,11 @@ public class BlockGenerator {
 //        return createChildBlock(parent, 0);
     }
 
-    public Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot) {
+    public Block createChildBlock(Block parent, List<Transaction> txs, Sha3Hash stateRoot) {
         return createChildBlock(parent, txs, stateRoot, parent.getCoinbase());
     }
 
-    public Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot, byte[] coinbase) {
+    public Block createChildBlock(Block parent, List<Transaction> txs, Sha3Hash stateRoot, byte[] coinbase) {
         Bloom logBloom = new Bloom();
 
         if (txs == null) {
@@ -205,7 +205,7 @@ public class BlockGenerator {
 
         return new Block(
                 parent.getHash(), // parent hash
-                EMPTY_LIST_HASH, // uncle hash
+                new Sha3Hash(EMPTY_LIST_HASH), // uncle hash
                 coinbase, // coinbase
                 logBloom.getData(), // logs bloom
                 parent.getDifficulty(), // difficulty
@@ -264,7 +264,7 @@ public class BlockGenerator {
         byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
 
         BlockHeader newHeader = new BlockHeader(parent.getHash(),
-                unclesListHash,
+                new Sha3Hash(unclesListHash),
                 parent.getCoinbase(),
                 ByteUtils.clone(new Bloom().getData()),
                 new byte[]{1},
@@ -289,7 +289,7 @@ public class BlockGenerator {
 
         newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash());
 
-        newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
+        newHeader.setStateRoot(parent.getStateRoot());
 
         Block newBlock = new Block(newHeader, txs, uncles);
 
@@ -312,7 +312,7 @@ public class BlockGenerator {
 
         return new Block(
                 parent.getHash(), // parent hash
-                EMPTY_LIST_HASH, // uncle hash
+                new Sha3Hash(EMPTY_LIST_HASH), // uncle hash
                 parent.getCoinbase(), // coinbase
                 logBloom.getData(), // logs bloom
                 parent.getDifficulty(), // difficulty
@@ -325,7 +325,7 @@ public class BlockGenerator {
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
                 EMPTY_TRIE_HASH,  // transaction receipts
-                EMPTY_TRIE_HASH,   // state root
+                new Sha3Hash(EMPTY_TRIE_HASH),   // state root
                 txs,       // transaction list
                 null,        // uncle list
                 minimumGasPrice.toByteArray(),
@@ -344,7 +344,7 @@ public class BlockGenerator {
 
         return new SimpleBlock(
                 parent.getHash(), // parent hash
-                EMPTY_LIST_HASH, // uncle hash
+                new Sha3Hash(EMPTY_LIST_HASH), // uncle hash
                 parent.getCoinbase(), // coinbase
                 logBloom.getData(), // logs bloom
                 parent.getDifficulty(), // difficulty
@@ -357,7 +357,7 @@ public class BlockGenerator {
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
                 EMPTY_TRIE_HASH,  // transaction receipts
-                EMPTY_TRIE_HASH,   // state root
+                new Sha3Hash(EMPTY_TRIE_HASH),   // state root
                 txs,       // transaction list
                 null        // uncle list
         );
@@ -367,7 +367,7 @@ public class BlockGenerator {
         List<Transaction> txs = new ArrayList<>();
         Block block = new Block(
                 parent.getHash(), // parent hash
-                EMPTY_LIST_HASH, // uncle hash
+                new Sha3Hash(EMPTY_LIST_HASH), // uncle hash
                 parent.getCoinbase(),
                 ByteUtils.clone(new Bloom().getData()),
                 difficulty, // difficulty
@@ -380,7 +380,7 @@ public class BlockGenerator {
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
                 BlockChainImpl.calcTxTrie(txs),  // transaction root
-                ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
+                parent.getStateRoot(), //EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 null,        // uncle list
                 null,
@@ -398,7 +398,7 @@ public class BlockGenerator {
             fallbackKey = fallbackMiningKey1;
         }
 
-        byte[] signature = fallbackSign(block.getHashForMergedMining(), fallbackKey);
+        byte[] signature = fallbackSign(block.getHashForMergedMining().getBytes(), fallbackKey);
 
         if (!goodSig) {
             // just make it a little bad

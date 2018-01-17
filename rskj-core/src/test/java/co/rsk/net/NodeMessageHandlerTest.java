@@ -20,6 +20,7 @@ package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.ConfigHelper;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.handler.TxHandlerImpl;
@@ -272,7 +273,7 @@ public class NodeMessageHandlerTest {
 
         final GetBlockMessage gbMessage = (GetBlockMessage) msg;
 
-        Assert.assertArrayEquals(block.getHash(), gbMessage.getBlockHash());
+        Assert.assertEquals(block.getHash(), gbMessage.getBlockHash());
     }
 
     @Test
@@ -354,7 +355,7 @@ public class NodeMessageHandlerTest {
 
         final BlockMessage bMessage = (BlockMessage) message;
 
-        Assert.assertArrayEquals(block.getHash(), bMessage.getBlock().getHash());
+        Assert.assertEquals(block.getHash(), bMessage.getBlock().getHash());
     }
 
     @Test
@@ -390,7 +391,7 @@ public class NodeMessageHandlerTest {
 
         BlockMessage bmessage = (BlockMessage) message;
 
-        Assert.assertArrayEquals(blocks.get(4).getHash(), bmessage.getBlock().getHash());
+        Assert.assertEquals(blocks.get(4).getHash(), bmessage.getBlock().getHash());
     }
 
     @Test
@@ -436,7 +437,7 @@ public class NodeMessageHandlerTest {
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        handler.processMessage(sender, new BlockHeadersRequestMessage(1,block.getHash(), 1));
+        handler.processMessage(sender, new BlockHeadersRequestMessage(1, block.getHash(), 1));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -447,7 +448,7 @@ public class NodeMessageHandlerTest {
 
         final BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
-        Assert.assertArrayEquals(block.getHash(), bMessage.getBlockHeaders().get(0).getHash());
+        Assert.assertEquals(block.getHash(), bMessage.getBlockHeaders().get(0).getHash());
     }
 
     @Test
@@ -483,7 +484,7 @@ public class NodeMessageHandlerTest {
 
         BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
-        Assert.assertArrayEquals(blocks.get(4).getHash(), bMessage.getBlockHeaders().get(0).getHash());
+        Assert.assertEquals(blocks.get(4).getHash(), bMessage.getBlockHeaders().get(0).getHash());
     }
 
     @Test
@@ -580,22 +581,20 @@ public class NodeMessageHandlerTest {
 
             Assert.assertTrue(sender.getMessages().stream().allMatch(m -> m.getMessageType() == MessageType.GET_BLOCK_MESSAGE));
 
-            List<ByteArrayWrapper> msgs = sender.getMessages().stream()
+            List<Sha3Hash> msgs = sender.getMessages().stream()
                     .map(m -> (GetBlockMessage) m)
                     .map(m -> m.getBlockHash())
-                    .map(h -> new ByteArrayWrapper(h))
                     .collect(Collectors.toList());
 
-            Set<ByteArrayWrapper> expected = testCase.expected.stream()
+            Set<Sha3Hash> expected = testCase.expected.stream()
                     .map(b -> b.getHash())
-                    .map(h -> new ByteArrayWrapper(h))
                     .collect(Collectors.toSet());
 
-            for (ByteArrayWrapper h : msgs) {
+            for (Sha3Hash h : msgs) {
                 Assert.assertTrue(expected.contains(h));
             }
 
-            for (ByteArrayWrapper h : expected) {
+            for (Sha3Hash h : expected) {
                 Assert.assertTrue(
                         msgs.stream()
                                 .filter(h1 -> h.equals(h1))
@@ -733,8 +732,8 @@ public class NodeMessageHandlerTest {
         Assert.assertEquals(expected.size(), received.size());
         for (int i = 0; i < received.size(); i += 1) {
             Assert.assertEquals(expected.get(i).getNumber(), received.get(i).getNumber());
-            Assert.assertArrayEquals(expected.get(i).getHash(), received.get(i).getHash());
-            Assert.assertArrayEquals(expected.get(i).getParentHash(), received.get(i).getParentHash());
+            Assert.assertEquals(expected.get(i).getHash(), received.get(i).getHash());
+            Assert.assertEquals(expected.get(i).getParentHash(), received.get(i).getParentHash());
         }
     }
 
@@ -960,12 +959,12 @@ public class NodeMessageHandlerTest {
         processor.processMessage(new SimpleMessageChannel(), message);
 
         Assert.assertEquals(100, sbp.getRequestId());
-        Assert.assertArrayEquals(block.getHash(), sbp.getHash());
+        Assert.assertEquals(block.getHash(), sbp.getHash());
     }
 
     @Test
     public void processBlockHeadersRequestMessageUsingProcessor() throws UnknownHostException {
-        byte[] hash = HashUtil.randomHash();
+        Sha3Hash hash = HashUtil.randomSha3Hash();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(ConfigHelper.CONFIG, sbp, null, null, null, null, null,
                 new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
@@ -974,7 +973,7 @@ public class NodeMessageHandlerTest {
         processor.processMessage(new SimpleMessageChannel(), message);
 
         Assert.assertEquals(100, sbp.getRequestId());
-        Assert.assertArrayEquals(hash, sbp.getHash());
+        Assert.assertEquals(hash, sbp.getHash());
     }
 
     private static PeerScoringManager createPeerScoringManager() {

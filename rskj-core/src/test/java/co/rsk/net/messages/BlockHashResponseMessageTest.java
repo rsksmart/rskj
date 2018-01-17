@@ -18,6 +18,7 @@
 
 package co.rsk.net.messages;
 
+import co.rsk.crypto.Sha3Hash;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -27,14 +28,15 @@ public class BlockHashResponseMessageTest {
     @Test
     public void createMessage() {
         long id = 42;
-        byte[] hash = new byte[32];
+        byte[] rawHash = new byte[32];
         Random random = new Random();
-        random.nextBytes(hash);
+        random.nextBytes(rawHash);
+        Sha3Hash hash = new Sha3Hash(rawHash);
 
         BlockHashResponseMessage message = new BlockHashResponseMessage(id, hash);
 
         Assert.assertEquals(id, message.getId());
-        Assert.assertArrayEquals(hash, message.getHash());
+        Assert.assertEquals(hash, message.getHash());
         Assert.assertEquals(MessageType.BLOCK_HASH_RESPONSE_MESSAGE, message.getMessageType());
     }
 }

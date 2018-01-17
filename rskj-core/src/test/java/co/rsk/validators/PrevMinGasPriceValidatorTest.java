@@ -39,7 +39,7 @@ public class PrevMinGasPriceValidatorTest {
     public void noParentBlock() {
         Block block = Mockito.mock(Block.class);
 
-        Mockito.when(block.getParentHash()).thenReturn(PARENT_HASH);
+        Mockito.when(block.getParentHash().getBytes()).thenReturn(PARENT_HASH);
         Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(BLOCK_MGP);
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
@@ -77,7 +77,7 @@ public class PrevMinGasPriceValidatorTest {
         Block block = Mockito.mock(Block.class);
         Block parent = Mockito.mock(Block.class);
 
-        Mockito.when(block.getParentHash()).thenReturn(PARENT_HASH);
+        Mockito.when(block.getParentHash().getBytes()).thenReturn(PARENT_HASH);
         Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(BLOCK_MGP);
         Mockito.when(parent.getMinGasPriceAsInteger()).thenReturn(BigInteger.TEN);
 
@@ -93,7 +93,7 @@ public class PrevMinGasPriceValidatorTest {
         Block parent = Mockito.mock(Block.class);
         BlockStore blockStore = Mockito.mock(BlockStore.class);
 
-        Mockito.when(block.getParentHash()).thenReturn(PARENT_HASH);
+        Mockito.when(block.getParentHash().getBytes()).thenReturn(PARENT_HASH);
         Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(BLOCK_MGP);
         Mockito.when(parent.getMinGasPriceAsInteger()).thenReturn(PARENT_BLOCK_MGP);
 

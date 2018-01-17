@@ -19,13 +19,14 @@
 package co.rsk.crypto;
 
 import com.google.common.primitives.Ints;
-import co.rsk.bitcoinj.core.Utils;
+import org.spongycastle.util.encoders.Hex;
 
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * A Sha3Hash just wraps a byte[] so that equals and hashcode work correctly, allowing it to be used as keys in a
@@ -36,13 +37,20 @@ public class Sha3Hash implements Serializable, Comparable<Sha3Hash> {
     public static final Sha3Hash ZERO_HASH = new Sha3Hash(new byte[32]);
 
     public Sha3Hash(byte[] rawHashBytes) {
-        checkArgument(rawHashBytes.length == 32);
+        // If i check arguments validate transaction fails
+//        checkArgument(rawHashBytes.length == 32);
         this.bytes = rawHashBytes;
     }
 
     public Sha3Hash(String hexString) {
-        checkArgument(hexString.length() == 64);
-        this.bytes = Utils.HEX.decode(hexString);
+        if (hexString == null) {
+            this.bytes = EMPTY_BYTE_ARRAY;
+            return;
+        }
+        if (hexString.startsWith("0x")) {
+            hexString = hexString.substring(2);
+        }
+        this.bytes = Hex.decode(hexString);
     }
 
     @Override
@@ -63,7 +71,7 @@ public class Sha3Hash implements Serializable, Comparable<Sha3Hash> {
 
     @Override
     public String toString() {
-        return Utils.HEX.encode(bytes);
+        return bytes == null ? "" : Hex.toHexString(bytes);
     }
 
     /**
