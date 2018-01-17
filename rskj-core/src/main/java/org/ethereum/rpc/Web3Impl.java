@@ -32,7 +32,6 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.scoring.InvalidInetAddressException;
 import co.rsk.scoring.PeerScoringInformation;
 import co.rsk.scoring.PeerScoringManager;
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
@@ -1305,11 +1304,5 @@ public class Web3Impl implements Web3 {
     @Override
     public String[] sco_bannedAddresses() {
         return this.peerScoringManager.getBannedAddresses().toArray(new String[0]);
-    }
-
-    @Deprecated
-    @VisibleForTesting
-    public Blockchain getBlockchain() {
-        return blockchain;
     }
 }
