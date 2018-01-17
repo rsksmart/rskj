@@ -26,8 +26,8 @@ import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ByteUtil {
 
@@ -482,9 +482,9 @@ public class ByteUtil {
 
     public static <T> Set<T> difference(Set<T> setA, Set<T> setB){
 
-        return setA.stream()
-                .filter(elementA -> !setB.contains(elementA))
-                .collect(Collectors.toSet());
+        Set<T> temp = new HashSet<>(setA);
+        temp.removeAll(setB);
+        return temp;
     }
 
     public static int length(byte[]... bytes) {
