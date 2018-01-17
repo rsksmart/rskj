@@ -1,6 +1,7 @@
 package co.rsk.remasc;
 
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.core.RskAddress;
 import co.rsk.peg.BridgeSupport;
 import org.ethereum.crypto.ECKey;
 
@@ -20,8 +21,8 @@ public class RemascFederationProvider {
         return this.bridgeSupport.getFederationSize().intValue();
     }
 
-    public byte[] getFederatorAddress(int n) throws IOException {
+    public RskAddress getFederatorAddress(int n) {
         byte[] publicKey = this.bridgeSupport.getFederatorPublicKey(n);
-        return ECKey.fromPublicOnly(publicKey).getAddress();
+        return new RskAddress(ECKey.fromPublicOnly(publicKey).getAddress());
     }
 }

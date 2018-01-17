@@ -929,7 +929,7 @@ public class RemascProcessMinerFeesTest {
         BigInteger federatorBalance = BigInteger.valueOf(federationReward / nfederators);
 
         for (int k = 0; k < nfederators; k++)
-            assertEquals(federatorBalance, repository.getBalance(new RskAddress(provider.getFederatorAddress(k))));
+            assertEquals(federatorBalance, repository.getBalance(provider.getFederatorAddress(k)));
     }
 
     private void validateAccountsCurrentBalanceIsCorrect(Repository repository, BigInteger cowBalance,

@@ -156,7 +156,7 @@ public class Remasc {
         BigInteger paidToFederation = BigInteger.ZERO;
 
         for (int k = 0; k < nfederators; k++) {
-            RskAddress federatorAddress = new RskAddress(federationProvider.getFederatorAddress(k));
+            RskAddress federatorAddress = federationProvider.getFederatorAddress(k);
 
             if (k == nfederators - 1 && restToLastFederator.compareTo(BigInteger.ZERO) > 0) {
                 feesPayer.payMiningFees(processingBlockHash, payToFederator.add(restToLastFederator), federatorAddress, logs);
