@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.util.Arrays;
 import org.spongycastle.util.BigIntegers;
 import org.spongycastle.util.encoders.Hex;
-import sun.security.provider.SHA;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
