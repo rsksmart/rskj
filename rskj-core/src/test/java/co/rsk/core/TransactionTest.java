@@ -90,9 +90,9 @@ public class TransactionTest {
 
     @Test  /* achieve public key of the sender when signature manually set */
     public void test3() throws Exception {
-        if (config.getBlockchainConfig().getCommonConstants().getChainId() != 0)
+        if (config.getBlockchainConfig().getCommonConstants().getChainId() != 0) {
             return;
-
+        }
         // cat --> 79b08ad8787060333663d19704909ee7b1903e58
         // cow --> cd2a3d9f938e13cd947ec05abc7fe734df8dd826
 
