@@ -60,9 +60,9 @@ public class NetworkStateExporter {
         try(FileWriter fw = new FileWriter(dumpFile.getAbsoluteFile()); BufferedWriter bw = new BufferedWriter(fw)) {
             JsonNodeFactory jsonFactory = new JsonNodeFactory(false);
             ObjectNode mainNode = jsonFactory.objectNode();
-            for (RskAddress address : frozenRepository.getAccountsKeys()) {
-                if(!address.equals(RskAddress.nullAddress())) {
-                    mainNode.set(address.toString(), createAccountNode(mainNode, address, frozenRepository));
+            for (RskAddress addr : frozenRepository.getAccountsKeys()) {
+                if(!addr.equals(RskAddress.nullAddress())) {
+                    mainNode.set(addr.toString(), createAccountNode(mainNode, addr, frozenRepository));
                 }
             }
             ObjectMapper mapper = new ObjectMapper();
