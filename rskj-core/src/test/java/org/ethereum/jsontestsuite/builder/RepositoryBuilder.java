@@ -20,12 +20,12 @@
 package org.ethereum.jsontestsuite.builder;
 
 import co.rsk.config.ConfigHelper;
+import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.ContractDetailsCacheImpl;
 import org.ethereum.jsontestsuite.model.AccountTck;
@@ -33,16 +33,14 @@ import org.ethereum.jsontestsuite.model.AccountTck;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.ethereum.json.Utils.parseData;
-import static org.ethereum.util.ByteUtil.wrap;
-
 public class RepositoryBuilder {
 
     public static Repository build(Map<String, AccountTck> accounts){
-        HashMap<ByteArrayWrapper, AccountState> stateBatch = new HashMap<>();
-        HashMap<ByteArrayWrapper, ContractDetails> detailsBatch = new HashMap<>();
+        HashMap<RskAddress, AccountState> stateBatch = new HashMap<>();
+        HashMap<RskAddress, ContractDetails> detailsBatch = new HashMap<>();
 
         for (String address : accounts.keySet()) {
+            RskAddress addr = new RskAddress(address);
 
             AccountTck accountTCK = accounts.get(address);
             AccountBuilder.StateWrap stateWrap = AccountBuilder.build(accountTCK);
@@ -50,12 +48,12 @@ public class RepositoryBuilder {
             AccountState state = stateWrap.getAccountState();
             ContractDetails details = stateWrap.getContractDetails();
 
-            stateBatch.put(wrap(parseData(address)), state);
+            stateBatch.put(addr, state);
 
             ContractDetailsCacheImpl detailsCache = new ContractDetailsCacheImpl(details);
             detailsCache.setDirty(true);
 
-            detailsBatch.put(wrap(parseData(address)), detailsCache);
+            detailsBatch.put(addr, detailsCache);
         }
 
         RepositoryImpl repositoryDummy = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));

@@ -75,7 +75,7 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
             }
 
             synchronized (pendingState) {
-                BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : (pendingState.getRepository().getNonce(account.getAddress().getBytes()));
+                BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : pendingState.getRepository().getNonce(account.getAddress());
                 Transaction tx = Transaction.create(config, toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
                 tx.sign(account.getEcKey().getPrivKeyBytes());
                 eth.submitTransaction(tx.toImmutableTransaction());

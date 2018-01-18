@@ -18,6 +18,7 @@
 
 package co.rsk.test.builders;
 
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
 import org.ethereum.core.Account;
@@ -75,13 +76,13 @@ public class AccountBuilder {
 
             Repository track = repository.startTracking();
 
-            track.createAccount(account.getAddress().getBytes());
+            track.createAccount(account.getAddress());
 
             if (this.balance != null)
-                track.addBalance(account.getAddress().getBytes(), this.balance);
+                track.addBalance(account.getAddress(), this.balance);
 
             if (this.code != null)
-                track.saveCode(account.getAddress().getBytes(), this.code);
+                track.saveCode(account.getAddress(), this.code);
 
             track.commit();
 

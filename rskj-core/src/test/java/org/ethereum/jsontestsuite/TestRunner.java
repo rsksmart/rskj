@@ -20,6 +20,7 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.config.ConfigHelper;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.db.RepositoryImpl;
@@ -201,7 +202,7 @@ public class TestRunner {
             byte[] address = exec.getAddress();
             byte[] origin = exec.getOrigin();
             byte[] caller = exec.getCaller();
-            byte[] balance = ByteUtil.bigIntegerToBytes(repository.getBalance(exec.getAddress()));
+            byte[] balance = ByteUtil.bigIntegerToBytes(repository.getBalance(new RskAddress(exec.getAddress())));
             byte[] gasPrice = exec.getGasPrice();
             byte[] gas = exec.getGas();
             byte[] callValue = exec.getValue();
@@ -214,10 +215,10 @@ public class TestRunner {
             byte[] gaslimit = env.getCurrentGasLimit();
 
             // Origin and caller need to exist in order to be able to execute
-            if (repository.getAccountState(origin) == null)
-                repository.createAccount(origin);
-            if (repository.getAccountState(caller) == null)
-                repository.createAccount(caller);
+            if (repository.getAccountState(new RskAddress(origin)) == null)
+                repository.createAccount(new RskAddress(origin));
+            if (repository.getAccountState(new RskAddress(caller)) == null)
+                repository.createAccount(new RskAddress(caller));
 
             ProgramInvoke programInvoke = new ProgramInvokeImpl(address, origin, caller, balance,
                     gasPrice, gas, callValue, msgData, lastHash, coinbase,
@@ -280,6 +281,7 @@ public class TestRunner {
 
                 /* 5. Assert Post values */
                 for (ByteArrayWrapper key : testCase.getPost().keySet()) {
+                    RskAddress addr = new RskAddress(key.getData());
 
                     AccountState accountState = testCase.getPost().get(key);
 
@@ -287,7 +289,7 @@ public class TestRunner {
                     BigInteger expectedBalance = accountState.getBigIntegerBalance();
                     byte[] expectedCode = accountState.getCode();
 
-                    boolean accountExist = (null != repository.getAccountState(key.getData()));
+                    boolean accountExist = (null != repository.getAccountState(addr));
                     if (!accountExist) {
 
                         String output =
@@ -298,9 +300,9 @@ public class TestRunner {
                         continue;
                     }
 
-                    long actualNonce = repository.getNonce(key.getData()).longValue();
-                    BigInteger actualBalance = repository.getBalance(key.getData());
-                    byte[] actualCode = repository.getCode(key.getData());
+                    long actualNonce = repository.getNonce(addr).longValue();
+                    BigInteger actualBalance = repository.getBalance(addr);
+                    byte[] actualCode = repository.getCode(addr);
                     if (actualCode == null) actualCode = "".getBytes();
 
                     if (expectedNonce != actualNonce) {
@@ -339,7 +341,7 @@ public class TestRunner {
                         byte[] expectedStValue = storage.get(storageKey).getData();
 
                         ContractDetails contractDetails =
-                                program.getStorage().getContractDetails(accountState.getAddress());
+                                program.getStorage().getContractDetails(new RskAddress(accountState.getAddress()));
 
                         if (contractDetails == null) {
 
@@ -584,10 +586,10 @@ public class TestRunner {
         for (ByteArrayWrapper key : pre.keySet()) {
 
             AccountState accountState = pre.get(key);
-            byte[] addr = key.getData();
+            RskAddress addr = new RskAddress(key.getData());
 
             track.addBalance(addr, new BigInteger(1, accountState.getBalance()));
-            ((RepositoryTrack)track).setNonce(key.getData(), new BigInteger(1, accountState.getNonce()));
+            ((RepositoryTrack)track).setNonce(addr, new BigInteger(1, accountState.getNonce()));
 
             track.saveCode(addr, accountState.getCode());
 

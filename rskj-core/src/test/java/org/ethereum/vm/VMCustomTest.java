@@ -20,6 +20,7 @@
 package org.ethereum.vm;
 
 import co.rsk.config.ConfigHelper;
+import co.rsk.core.RskAddress;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Program.OutOfGasException;
 import org.ethereum.vm.program.Program.StackTooSmallException;
@@ -45,7 +46,7 @@ public class VMCustomTest {
 
     @Before
     public void setup() {
-        byte[] ownerAddress = Hex.decode("77045E71A7A2C50903D88E564CD72FAB11E82051");
+        RskAddress ownerAddress = new RskAddress("77045E71A7A2C50903D88E564CD72FAB11E82051");
         byte[] msgData = Hex.decode("00000000000000000000000000000000000000000000000000000000000000A1" +
                 "00000000000000000000000000000000000000000000000000000000000000B1");
 

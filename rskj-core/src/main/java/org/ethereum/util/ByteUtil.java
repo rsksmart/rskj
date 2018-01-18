@@ -480,25 +480,11 @@ public class ByteUtil {
         return true;
     }
 
-    public static Set<ByteArrayWrapper> difference(Set<ByteArrayWrapper> setA, Set<ByteArrayWrapper> setB){
+    public static <T> Set<T> difference(Set<T> setA, Set<T> setB){
 
-        Set<ByteArrayWrapper> result = new HashSet<>();
-
-        for (ByteArrayWrapper elementA : setA){
-            boolean found = false;
-            for (ByteArrayWrapper elementB : setB){
-
-                if (elementA.equals(elementB)){
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                result.add(elementA);
-            }
-        }
-
-        return result;
+        Set<T> temp = new HashSet<>(setA);
+        temp.removeAll(setB);
+        return temp;
     }
 
     public static int length(byte[]... bytes) {

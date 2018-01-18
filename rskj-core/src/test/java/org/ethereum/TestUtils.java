@@ -19,6 +19,7 @@
 
 package org.ethereum;
 
+import co.rsk.core.RskAddress;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.Block;
 import org.ethereum.db.IndexedBlockStore;
@@ -54,8 +55,8 @@ public final class TestUtils {
         return new DataWord(randomBytes(32));
     }
 
-    public static byte[] randomAddress() {
-        return randomBytes(20);
+    public static RskAddress randomAddress() {
+        return new RskAddress(randomBytes(20));
     }
 
     public static Map<Long, List<IndexedBlockStore.BlockInfo>> createIndexMap(DB db){

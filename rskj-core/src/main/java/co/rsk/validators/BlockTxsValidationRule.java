@@ -79,17 +79,17 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
             RskAddress sender = tx.getSender();
             BigInteger expectedNonce = curNonce.get(sender);
             if (expectedNonce == null) {
-                expectedNonce = parentRepo.getNonce(sender.getBytes());
+                expectedNonce = parentRepo.getNonce(sender);
             }
             curNonce.put(sender, expectedNonce.add(ONE));
             BigInteger txNonce = new BigInteger(1, tx.getNonce());
 
             if (!expectedNonce.equals(txNonce)) {
                 logger.warn("Invalid transaction: Tx nonce {} != expected nonce {} (parent nonce: {}): {}",
-                        txNonce, expectedNonce, parentRepo.getNonce(sender.getBytes()), tx);
+                        txNonce, expectedNonce, parentRepo.getNonce(sender), tx);
 
                 panicProcessor.panic("invalidtransaction", String.format("Invalid transaction: Tx nonce %s != expected nonce %s (parent nonce: %s): %s",
-                        txNonce.toString(), expectedNonce.toString(), parentRepo.getNonce(sender.getBytes()).toString(), Hex.toHexString(tx.getHash())));
+                        txNonce.toString(), expectedNonce.toString(), parentRepo.getNonce(sender).toString(), Hex.toHexString(tx.getHash())));
 
                 return false;
             }

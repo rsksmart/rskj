@@ -18,6 +18,7 @@
 
 package co.rsk.remasc;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Repository;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -27,7 +28,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ public class RemascFeesPayerTest {
 
         byte[] blockHash = { 0x1, 0x2 };
         BigInteger value = BigInteger.valueOf(7L);
-        byte[] toAddress = Hex.decode("6c386a4b26f73c802f34673f7248bb118f97424a");
+        RskAddress toAddress = new RskAddress("6c386a4b26f73c802f34673f7248bb118f97424a");
         List<LogInfo> logs = new ArrayList<>();
 
         // Do call
@@ -77,7 +77,7 @@ public class RemascFeesPayerTest {
         Assert.assertEquals(value, RLP.decodeBigInteger(dataList.get(1).getRLPData(), 0));
 
         // Assert repository calls are made right
-        verify(repositoryMock, times(1)).addBalance(PrecompiledContracts.REMASC_ADDR.getBytes(), value.negate());
+        verify(repositoryMock, times(1)).addBalance(PrecompiledContracts.REMASC_ADDR, value.negate());
         verify(repositoryMock, times(1)).addBalance(toAddress, value);
     }
 }

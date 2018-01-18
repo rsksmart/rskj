@@ -52,7 +52,7 @@ public final class ReversibleTransactionExecutor extends TransactionExecutor {
                                                          byte[] fromAddress) {
         Repository repository = track.getSnapshotTo(executionBlock.getStateRoot()).startTracking();
 
-        byte[] nonce = repository.getNonce(fromAddress).toByteArray();
+        byte[] nonce = repository.getNonce(new RskAddress(fromAddress)).toByteArray();
         UnsignedTransaction tx = new UnsignedTransaction(nonce, gasPrice, gasLimit, toAddress, value, data, fromAddress);
 
         ReversibleTransactionExecutor executor = new ReversibleTransactionExecutor(config, tx, coinbase, repository, blockStore, receiptStore, programInvokeFactory, executionBlock);

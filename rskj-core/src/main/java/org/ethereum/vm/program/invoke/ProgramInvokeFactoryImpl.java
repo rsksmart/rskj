@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program.invoke;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -51,7 +52,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
 
         /***         ADDRESS op       ***/
         // YP: Get address of currently executing account.
-        byte[] address = tx.isContractCreation() ? tx.getContractAddress().getBytes() : tx.getReceiveAddress().getBytes();
+        RskAddress address = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
 
         /***         ORIGIN op       ***/
         // YP: This is the sender of original transaction; it is never a contract.
@@ -114,7 +115,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             "difficulty={}\n" +
                             "gaslimit={}\n",
 
-                    Hex.toHexString(address),
+                    address,
                     Hex.toHexString(origin),
                     Hex.toHexString(caller),
                     new BigInteger(1, balance).longValue(),
@@ -131,7 +132,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     gaslimit);
         }
 
-        return new ProgramInvokeImpl(address, origin, caller, balance, gasPrice, gas, callValue, data,
+        return new ProgramInvokeImpl(address.getBytes(), origin, caller, balance, gasPrice, gas, callValue, data,
                 lastHash, coinbase, timestamp, number, txindex,difficulty, gaslimit,
                 repository, blockStore);
     }

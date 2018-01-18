@@ -678,7 +678,7 @@ public class TransactionTest {
 
     private Transaction createTx(Blockchain blockchain, ECKey sender, byte[] receiveAddress,
                                    byte[] data, long value) throws InterruptedException {
-        BigInteger nonce = blockchain.getRepository().getNonce(sender.getAddress());
+        BigInteger nonce = blockchain.getRepository().getNonce(new RskAddress(sender.getAddress()));
         Transaction tx = new Transaction(
                 ByteUtil.bigIntegerToBytes(nonce),
                 ByteUtil.longToBytesNoLeadZeroes(1),

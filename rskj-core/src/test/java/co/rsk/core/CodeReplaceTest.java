@@ -65,7 +65,7 @@ public class CodeReplaceTest {
         Transaction tx1 = createTx(blockchain, sender, new byte[0], code);
         executeTransaction(blockchain, tx1);
         // Now we can directly check the store and see the new code.
-        byte[] createdContract = tx1.getContractAddress().getBytes();
+        RskAddress createdContract = tx1.getContractAddress();
         byte[] expectedCode  = Arrays.copyOfRange(code, 12, 12+20);
         byte[] installedCode = blockchain.getRepository().getContractDetails(createdContract).getCode();
         // assert the contract has been created
@@ -129,7 +129,7 @@ public class CodeReplaceTest {
 
     protected Transaction createTx(BlockChainImpl blockchain, ECKey sender, byte[] receiveAddress,
                                    byte[] data, long value) throws InterruptedException {
-        BigInteger nonce = blockchain.getRepository().getNonce(sender.getAddress());
+        BigInteger nonce = blockchain.getRepository().getNonce(new RskAddress(sender.getAddress()));
         Transaction tx = new Transaction(
                 ByteUtil.bigIntegerToBytes(nonce),
                 ByteUtil.longToBytesNoLeadZeroes(1),

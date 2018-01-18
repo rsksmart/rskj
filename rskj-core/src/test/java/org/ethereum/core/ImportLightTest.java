@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.config.ConfigHelper;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.db.RepositoryImpl;
@@ -91,8 +92,8 @@ public class ImportLightTest {
 
         Repository track = repository.startTracking();
         for (ByteArrayWrapper key : genesis.getPremine().keySet()) {
-            track.createAccount(key.getData());
-            track.addBalance(key.getData(), genesis.getPremine().get(key).getAccountState().getBalance());
+            track.createAccount(new RskAddress(key.getData()));
+            track.addBalance(new RskAddress(key.getData()), genesis.getPremine().get(key).getAccountState().getBalance());
         }
 
         track.commit();

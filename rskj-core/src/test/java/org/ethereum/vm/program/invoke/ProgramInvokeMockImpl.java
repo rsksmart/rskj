@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program.invoke;
 
+import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImplForTesting;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -41,8 +42,8 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     private DataWord txindex;
 
     private Repository repository;
-    private byte[] ownerAddress = Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
-    private final byte[] contractAddress = Hex.decode("471fd3ad3e9eeadeec4608b92d16ce6b500704cc");
+    private RskAddress ownerAddress = new RskAddress("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
+    private final RskAddress contractAddress = new RskAddress("471fd3ad3e9eeadeec4608b92d16ce6b500704cc");
 
     // default for most tests. This can be overwritten by the test
     private long gasLimit = 1000000;
@@ -73,7 +74,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
     /*           ADDRESS op         */
     public DataWord getOwnerAddress() {
-        return new DataWord(ownerAddress);
+        return new DataWord(ownerAddress.getBytes());
     }
 
     /*           BALANCE op         */
@@ -220,7 +221,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         this.gasLimit = gasLimit;
     }
 
-    public void setOwnerAddress(byte[] ownerAddress) {
+    public void setOwnerAddress(RskAddress ownerAddress) {
         this.ownerAddress = ownerAddress;
     }
 

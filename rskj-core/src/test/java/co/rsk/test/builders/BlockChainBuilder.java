@@ -20,6 +20,7 @@ package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.ConfigHelper;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.RepositoryBlockStore;
@@ -136,8 +137,8 @@ public class BlockChainBuilder {
 
         if (this.genesis != null) {
             for (ByteArrayWrapper key : this.genesis.getPremine().keySet()) {
-                this.repository.createAccount(key.getData());
-                this.repository.addBalance(key.getData(), this.genesis.getPremine().get(key).getAccountState().getBalance());
+                this.repository.createAccount(new RskAddress(key.getData()));
+                this.repository.addBalance(new RskAddress(key.getData()), this.genesis.getPremine().get(key).getAccountState().getBalance());
             }
 
             Repository track = this.repository.startTracking();
@@ -193,8 +194,8 @@ public class BlockChainBuilder {
             for (int k = 0; k < accounts.size(); k++) {
                 Account account = accounts.get(k);
                 BigInteger balance = balances.get(k);
-                blockChain.getRepository().createAccount(account.getAddress().getBytes());
-                blockChain.getRepository().addBalance(account.getAddress().getBytes(), balance);
+                blockChain.getRepository().createAccount(account.getAddress());
+                blockChain.getRepository().addBalance(account.getAddress(), balance);
             }
 
         genesis.setStateRoot(blockChain.getRepository().getRoot());

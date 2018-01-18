@@ -166,7 +166,7 @@ public class MinerUtils {
                 if (accountNonces.containsKey(txSender)) {
                     expectedNonce = new BigInteger(1, accountNonces.get(txSender).toByteArray()).add(BigInteger.ONE);
                 } else {
-                    expectedNonce = originalRepo.getNonce(txSender.getBytes());
+                    expectedNonce = originalRepo.getNonce(txSender);
                 }
 
                 if (!(tx instanceof RemascTransaction) && tx.getGasPriceAsInteger().compareTo(minGasPrice) < 0) {

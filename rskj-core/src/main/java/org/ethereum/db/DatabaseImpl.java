@@ -20,14 +20,13 @@
 package org.ethereum.db;
 
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Generic interface for Ethereum database
@@ -96,14 +95,10 @@ public class DatabaseImpl implements Database {
         keyValueDataSource.close();
     }
 
-    public List<ByteArrayWrapper> dumpKeys() {
-
-        ArrayList<ByteArrayWrapper> keys = new ArrayList<>();
-
-        for (byte[] key : keyValueDataSource.keys()) {
-            keys.add(ByteUtil.wrap(key));
-        }
-        Collections.sort(keys);
-        return keys;
+    public <T> List<T> dumpKeys(Function<byte[], T> mapper) {
+        return keyValueDataSource.keys()
+                .stream()
+                .map(mapper)
+                .collect(Collectors.toList());
     }
 }

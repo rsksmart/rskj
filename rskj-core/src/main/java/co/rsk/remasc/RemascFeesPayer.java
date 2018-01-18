@@ -39,25 +39,25 @@ class RemascFeesPayer {
 
     private final RskAddress contractAddress;
 
-    RemascFeesPayer(Repository repository, RskAddress contractAddress) {
+    public RemascFeesPayer(Repository repository, RskAddress contractAddress) {
         this.repository = repository;
         this.contractAddress = contractAddress;
     }
 
-    void payMiningFees(byte[] blockHash, BigInteger value, byte[] toAddress, List<LogInfo> logs) {
+    public void payMiningFees(byte[] blockHash, BigInteger value, RskAddress toAddress, List<LogInfo> logs) {
         this.transferPayment(value, toAddress);
         this.logPayment(blockHash, value, toAddress, logs);
     }
 
-    private void transferPayment(BigInteger value, byte[] toAddress) {
-        this.repository.addBalance(contractAddress.getBytes(), value.negate());
+    private void transferPayment(BigInteger value, RskAddress toAddress) {
+        this.repository.addBalance(contractAddress, value.negate());
         this.repository.addBalance(toAddress, value);
     }
 
-    private void logPayment(byte[] blockHash, BigInteger value, byte[] toAddress, List<LogInfo> logs) {
+    private void logPayment(byte[] blockHash, BigInteger value, RskAddress toAddress, List<LogInfo> logs) {
 
         byte[] loggerContractAddress = this.contractAddress.getBytes();
-        List<DataWord> topics = Arrays.asList(RemascContract.MINING_FEE_TOPIC, new DataWord(toAddress));
+        List<DataWord> topics = Arrays.asList(RemascContract.MINING_FEE_TOPIC, new DataWord(toAddress.getBytes()));
         byte[] data = RLP.encodeList(RLP.encodeElement(blockHash), RLP.encodeBigInteger(value));
 
         logs.add(new LogInfo(loggerContractAddress, topics, data));

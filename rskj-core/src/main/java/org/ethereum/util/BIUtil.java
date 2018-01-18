@@ -19,6 +19,7 @@
 
 package org.ethereum.util;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Repository;
 
 import java.math.BigInteger;
@@ -111,7 +112,7 @@ public class BIUtil {
     }
 
 
-    public static void transfer(Repository repository, byte[] fromAddr, byte[] toAddr, BigInteger value){
+    public static void transfer(Repository repository, RskAddress fromAddr, RskAddress toAddr, BigInteger value){
         repository.addBalance(fromAddr, value.negate());
         repository.addBalance(toAddr, value);
     }

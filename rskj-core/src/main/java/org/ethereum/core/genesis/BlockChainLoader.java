@@ -20,6 +20,7 @@
 package org.ethereum.core.genesis;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
@@ -69,17 +70,18 @@ public class BlockChainLoader {
             BigInteger initialNonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
             Genesis genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), initialNonce, true);
             for (ByteArrayWrapper address : genesis.getPremine().keySet()) {
-                repository.createAccount(address.getData());
+                RskAddress addr = new RskAddress(address.getData());
+                repository.createAccount(addr);
                 InitialAddressState initialAddressState = genesis.getPremine().get(address);
-                repository.addBalance(address.getData(), initialAddressState.getAccountState().getBalance());
-                AccountState accountState = repository.getAccountState(address.getData());
+                repository.addBalance(addr, initialAddressState.getAccountState().getBalance());
+                AccountState accountState = repository.getAccountState(addr);
                 accountState.setNonce(initialAddressState.getAccountState().getNonce());
                 if (initialAddressState.getContractDetails()!=null) {
-                    repository.updateContractDetails(address.getData(), initialAddressState.getContractDetails());
+                    repository.updateContractDetails(addr, initialAddressState.getContractDetails());
                     accountState.setStateRoot(initialAddressState.getAccountState().getStateRoot());
                     accountState.setCodeHash(initialAddressState.getAccountState().getCodeHash());
                 }
-                repository.updateAccountState(address.getData(), accountState);
+                repository.updateAccountState(addr, accountState);
             }
 
             genesis.setStateRoot(repository.getRoot());

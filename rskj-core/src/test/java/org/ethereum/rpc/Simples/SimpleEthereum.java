@@ -20,10 +20,10 @@ package org.ethereum.rpc.Simples;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
+import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.facade.Blockchain;
 import org.ethereum.facade.Ethereum;
-import org.ethereum.facade.Repository;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.manager.WorldManager;

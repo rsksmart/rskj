@@ -21,6 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blocks.DummyBlockRecorder;
 import co.rsk.config.ConfigHelper;
+import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -100,7 +101,7 @@ public class BlockChainImplTest {
 
         Assert.assertArrayEquals(genesis.getStateRoot(), repository.getRoot());
 
-        Assert.assertEquals(new BigInteger("21000000000000000000000000"), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR.getBytes()));
+        Assert.assertEquals(new BigInteger("21000000000000000000000000"), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
     }
 
 
@@ -127,7 +128,7 @@ public class BlockChainImplTest {
 
         Assert.assertArrayEquals(genesis.getStateRoot(), repository.getRoot());
 
-        Assert.assertEquals(new BigInteger("21000000000000000000000000"), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR.getBytes()));
+        Assert.assertEquals(new BigInteger("21000000000000000000000000"), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
     }
 
     @Test
@@ -158,7 +159,7 @@ public class BlockChainImplTest {
 
         Assert.assertArrayEquals(genesis.getStateRoot(), repository.getRoot());
 
-        Assert.assertEquals(new BigInteger("21000000000000000000000000"), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR.getBytes()));
+        Assert.assertEquals(new BigInteger("21000000000000000000000000"), repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
     }
 
     @Test
@@ -903,8 +904,8 @@ public class BlockChainImplTest {
         Genesis genesis = GenesisLoader.loadGenesis(ConfigHelper.CONFIG, "rsk-unittests.json", BigInteger.ZERO, true);
 
         for (ByteArrayWrapper key : genesis.getPremine().keySet()) {
-            repository.createAccount(key.getData());
-            repository.addBalance(key.getData(), genesis.getPremine().get(key).getAccountState().getBalance());
+            repository.createAccount(new RskAddress(key.getData()));
+            repository.addBalance(new RskAddress(key.getData()), genesis.getPremine().get(key).getAccountState().getBalance());
         }
 
         genesis.setStateRoot(repository.getRoot());

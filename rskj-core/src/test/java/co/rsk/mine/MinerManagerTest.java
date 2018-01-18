@@ -359,7 +359,7 @@ public class MinerManagerTest {
         SimpleEthereum ethereum = new SimpleEthereum();
         SimpleWorldManager worldManager = new SimpleWorldManager();
         worldManager.setBlockchain(blockchain);
-        ethereum.repository = (org.ethereum.facade.Repository)blockchain.getRepository();
+        ethereum.repository = blockchain.getRepository();
         ethereum.worldManager = worldManager;
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(ConfigHelper.CONFIG);
         return new MinerServerImpl(ConfigHelper.CONFIG, ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(),

@@ -61,10 +61,10 @@ public class TxHandlerImpl implements TxHandler {
      * @param repository
      * @param blockchain
      */
-    public TxHandlerImpl(RskSystemProperties config, WorldManager worldManager, org.ethereum.facade.Repository repository, Blockchain blockchain) {
+    public TxHandlerImpl(RskSystemProperties config, WorldManager worldManager, Repository repository, Blockchain blockchain) {
         this.config = config;
         this.blockchain = blockchain;
-        this.repository = (Repository) repository;
+        this.repository = repository;
 
         // Clean old transactions every so seconds
         this.executorService = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TxHandler"));

@@ -86,7 +86,7 @@ class TxValidator {
             }
             knownTxs.put(hash, new TxTimestamp(tx, System.currentTimeMillis()));
 
-            AccountState state = repository.getAccountState(tx.getSender().getBytes());
+            AccountState state = repository.getAccountState(tx.getSender());
 
             if (state == null) {
                 state = new AccountState(BigInteger.ZERO, BigInteger.ZERO);

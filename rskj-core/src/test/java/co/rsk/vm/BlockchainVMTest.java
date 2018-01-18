@@ -20,6 +20,7 @@ package co.rsk.vm;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.ConfigHelper;
+import co.rsk.core.RskAddress;
 import co.rsk.test.World;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -98,11 +99,11 @@ public class BlockchainVMTest {
         srcAmount = faucetAmount.subtract(transferAmount);
         srcAmount = srcAmount.subtract(transactionGas);
 
-        Assert.assertEquals(binfo.repository.getBalance(binfo.faucetKey.getAddress()).toString(),
+        Assert.assertEquals(binfo.repository.getBalance(new RskAddress(binfo.faucetKey.getAddress())).toString(),
                 srcAmount.toString());
 
         BigInteger dstAmount = transferAmount;
-        Assert.assertEquals(binfo.repository.getBalance(dstAddress).toString(),
+        Assert.assertEquals(binfo.repository.getBalance(new RskAddress(dstAddress)).toString(),
                 dstAmount.toString());
     }
 

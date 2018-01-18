@@ -21,6 +21,7 @@ package org.ethereum.core.genesis;
 
 import co.rsk.config.ConfigHelper;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImplTest;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
@@ -32,7 +33,6 @@ import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -70,17 +70,17 @@ public class BlockchainLoaderTest {
 
         Assert.assertEquals(5, repository.getAccountsKeys().size());
 
-        Assert.assertEquals(BigInteger.valueOf(2000), repository.getBalance(Hex.decode("dabadabadabadabadabadabadabadabadaba0001")));
-        Assert.assertEquals(BigInteger.valueOf(24), repository.getNonce(Hex.decode("dabadabadabadabadabadabadabadabadaba0001")));
+        Assert.assertEquals(BigInteger.valueOf(2000), repository.getBalance(new RskAddress("dabadabadabadabadabadabadabadabadaba0001")));
+        Assert.assertEquals(BigInteger.valueOf(24), repository.getNonce(new RskAddress("dabadabadabadabadabadabadabadabadaba0001")));
 
-        Assert.assertEquals(BigInteger.valueOf(1000), repository.getBalance(Hex.decode("dabadabadabadabadabadabadabadabadaba0002")));
-        Assert.assertEquals(BigInteger.ZERO, repository.getNonce(Hex.decode("dabadabadabadabadabadabadabadabadaba0002")));
+        Assert.assertEquals(BigInteger.valueOf(1000), repository.getBalance(new RskAddress("dabadabadabadabadabadabadabadabadaba0002")));
+        Assert.assertEquals(BigInteger.ZERO, repository.getNonce(new RskAddress("dabadabadabadabadabadabadabadabadaba0002")));
 
-        Assert.assertEquals(BigInteger.valueOf(10), repository.getBalance(Hex.decode("77045e71a7a2c50903d88e564cd72fab11e82051")));
-        Assert.assertEquals(BigInteger.valueOf(25), repository.getNonce(Hex.decode("77045e71a7a2c50903d88e564cd72fab11e82051")));
-        Assert.assertEquals(DataWord.ONE, repository.getContractDetails(Hex.decode("77045e71a7a2c50903d88e564cd72fab11e82051")).get(DataWord.ZERO));
-        Assert.assertEquals(new DataWord(3), repository.getContractDetails(Hex.decode("77045e71a7a2c50903d88e564cd72fab11e82051")).get(DataWord.ONE));
-        Assert.assertEquals(274, repository.getContractDetails(Hex.decode("77045e71a7a2c50903d88e564cd72fab11e82051")).getCode().length);
+        Assert.assertEquals(BigInteger.valueOf(10), repository.getBalance(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")));
+        Assert.assertEquals(BigInteger.valueOf(25), repository.getNonce(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")));
+        Assert.assertEquals(DataWord.ONE, repository.getContractDetails(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).get(DataWord.ZERO));
+        Assert.assertEquals(new DataWord(3), repository.getContractDetails(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).get(DataWord.ONE));
+        Assert.assertEquals(274, repository.getContractDetails(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).getCode().length);
 
     }
 
