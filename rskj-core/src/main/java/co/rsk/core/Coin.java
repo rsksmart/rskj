@@ -18,6 +18,8 @@
 
 package co.rsk.core;
 
+import org.ethereum.core.Denomination;
+
 import java.math.BigInteger;
 
 /**
@@ -44,6 +46,13 @@ public class Coin {
 
     public BigInteger asBigInteger() {
         return value;
+    }
+
+    /**
+     * @return the value denominated in Bitcoin, according to the 2-way peg convertibility rules.
+     */
+    public co.rsk.bitcoinj.core.Coin toBitcoin() {
+        return co.rsk.bitcoinj.core.Coin.valueOf(Denomination.weisToSatoshis(value).longValue());
     }
 
     @Override

@@ -53,7 +53,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.ethereum.util.BIUtil.toBI;
 import static org.ethereum.util.BIUtil.transfer;
 
 /**
@@ -435,8 +434,7 @@ public class BridgeSupport {
         Context.propagate(btcContext);
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
-        BigInteger valueInWeis = rskTx.getValue().asBigInteger();
-        Coin value = Coin.valueOf(Denomination.weisToSatoshis(valueInWeis).longValue());
+        Coin value = rskTx.getValue().toBitcoin();
         boolean addResult = requestRelease(btcDestinationAddress, value);
 
         if (addResult) {
