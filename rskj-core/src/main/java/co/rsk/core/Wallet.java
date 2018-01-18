@@ -40,6 +40,9 @@ public class Wallet {
     @GuardedBy("accessLock")
     private final Map<RskAddress, byte[]> accounts = new HashMap<>();
 
+    @GuardedBy("accessLock")
+    private final List<RskAddress> initialAccounts = new ArrayList<>();
+
     private final Object accessLock = new Object();
     private final Map<RskAddress, Long> unlocksTimeouts = new HashMap<>();
 
@@ -52,11 +55,16 @@ public class Wallet {
         Set<RskAddress> keys = new HashSet<>();
 
         synchronized(accessLock) {
+            for (RskAddress address: this.initialAccounts) {
+                addresses.add(address.getBytes());
+            }
+
             for (byte[] address: keyDS.keys()) {
                 keys.add(new RskAddress(address));
             }
 
             keys.addAll(accounts.keySet());
+            keys.removeAll(this.initialAccounts);
 
             for (RskAddress address: keys) {
                 addresses.add(address.getBytes());
@@ -168,7 +176,11 @@ public class Wallet {
 
     public byte[] addAccountWithPrivateKey(byte[] privateKeyBytes) {
         Account account = new Account(ECKey.fromPrivate(privateKeyBytes));
-        return addAccount(account).getBytes();
+        synchronized (accessLock) {
+            RskAddress address = addAccount(account);
+            this.initialAccounts.add(address);
+            return address.getBytes();
+        }
     }
 
     public byte[] addAccountWithPrivateKey(byte[] privateKeyBytes, String passphrase) {
