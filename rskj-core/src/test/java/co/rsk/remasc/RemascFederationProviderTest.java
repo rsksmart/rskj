@@ -27,7 +27,7 @@ public class RemascFederationProviderTest {
     public void getFederatorAddress() throws IOException, BlockStoreException {
         RemascFederationProvider provider = getRemascFederationProvider();
 
-        byte[] address = provider.getFederatorAddress(0);
+        byte[] address = provider.getFederatorAddress(0).getBytes();
 
         Assert.assertNotNull(address);
         Assert.assertEquals(20, address.length);

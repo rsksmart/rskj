@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.ConfigHelper;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.RskAddress;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.Block;
@@ -58,7 +59,7 @@ public class BlockDifficultyValidationRuleTest {
 
     private BlockHeader getEmptyHeader(BigInteger difficulty,long blockTimestamp,int uCount) {
         BlockHeader header = new BlockHeader(null, null,
-                null, null, difficulty.toByteArray(), 0,
+                RskAddress.nullAddress().getBytes(), null, difficulty.toByteArray(), 0,
                 null, 0,
                 blockTimestamp, null, null, uCount);
         return header;

@@ -97,7 +97,7 @@ public final class TestUtils {
             byte[] difficutly = BigIntegers.asUnsignedByteArray(new BigInteger(8, new Random()));
             byte[] newHash = randomHash();
 
-            Block block = new Block(lastHash, newHash,  null, null, difficutly, lastIndex, new byte[] {0}, 0, 0, null, null,
+            Block block = new Block(lastHash, newHash,  RskAddress.nullAddress().getBytes(), null, difficutly, lastIndex, new byte[] {0}, 0, 0, null, null,
                     null, null, EMPTY_TRIE_HASH, randomHash(), null, null, null, BigInteger.ZERO);
 
             ++lastIndex;

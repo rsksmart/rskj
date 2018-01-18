@@ -57,13 +57,12 @@ public class BlockHeaderValidator {
             outputSummary.add(output);
         }
 
-        if (!toHexString(orig.getCoinbase())
-                .equals(toHexString(valid.getCoinbase()))) {
+        if (!orig.getCoinbase().equals(valid.getCoinbase())) {
 
             String output =
                     String.format("wrong block.coinbase: \n expected: %s \n got: %s",
-                            toHexString(valid.getCoinbase()),
-                            toHexString(orig.getCoinbase())
+                            valid.getCoinbase(),
+                            orig.getCoinbase()
                     );
 
             outputSummary.add(output);

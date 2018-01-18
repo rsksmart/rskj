@@ -22,6 +22,7 @@ package co.rsk.core;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.peg.PegTestUtils;
+import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.spongycastle.util.encoders.Hex;
 import co.rsk.remasc.RemascTransaction;
@@ -70,7 +71,7 @@ public class BlockTest {
         Block block =  new Block(
                 PegTestUtils.createHash3().getBytes(),          // parent hash
                 EMPTY_LIST_HASH,       // uncle hash
-                PegTestUtils.createHash3().getBytes(),            // coinbase
+                TestUtils.randomAddress().getBytes(),            // coinbase
                 new Bloom().getData(),          // logs bloom
                 BigInteger.ONE.toByteArray(),    // difficulty
                 1,
@@ -207,21 +208,6 @@ public class BlockTest {
         }
         catch (SealedBlockException ex) {
             Assert.assertEquals("Sealed block: trying to alter bitcoin merged mining Merkle proof", ex.getMessage());
-        }
-    }
-
-    @Test
-    public void sealedBlockHeaderSetCoinbase() {
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setCoinbase(new byte[32]);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter coinbase", ex.getMessage());
         }
     }
 

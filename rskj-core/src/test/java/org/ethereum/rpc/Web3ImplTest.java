@@ -958,9 +958,9 @@ public class Web3ImplTest {
 
     @Test
     public void eth_coinbase()  {
-        String originalCoinbase = "1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347";
+        String originalCoinbase = "1dcc4de8dec75d7aab85b513f0a142fd40d49347";
         MinerServer minerServerMock = Mockito.mock(MinerServer.class);
-        Mockito.when(minerServerMock.getCoinbaseAddress()).thenReturn(Hex.decode(originalCoinbase));
+        Mockito.when(minerServerMock.getCoinbaseAddress()).thenReturn(new RskAddress(originalCoinbase));
 
         Ethereum ethMock = Web3Mocks.getMockEthereum();
         WorldManager wmMock = Web3Mocks.getMockWorldManager();

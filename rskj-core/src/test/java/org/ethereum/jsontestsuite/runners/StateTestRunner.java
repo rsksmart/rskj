@@ -20,6 +20,7 @@
 package org.ethereum.jsontestsuite.runners;
 
 import co.rsk.config.ConfigHelper;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -68,7 +69,7 @@ public class StateTestRunner {
         Repository track = repository.startTracking();
 
         TransactionExecutor executor =
-                new TransactionExecutor(ConfigHelper.CONFIG, transaction, 0, env.getCurrentCoinbase(), track, new BlockStoreDummy(), null,
+                new TransactionExecutor(ConfigHelper.CONFIG, transaction, 0, new RskAddress(env.getCurrentCoinbase()), track, new BlockStoreDummy(), null,
                         invokeFactory, blockchain.getBestBlock());
 
         try{

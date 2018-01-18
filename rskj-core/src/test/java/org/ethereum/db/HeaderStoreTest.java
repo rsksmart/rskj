@@ -20,6 +20,7 @@
 package org.ethereum.db;
 
 import co.rsk.config.ConfigHelper;
+import co.rsk.core.RskAddress;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockHeaderWrapper;
 import org.ethereum.datasource.mapdb.MapDBFactoryImpl;
@@ -49,7 +50,7 @@ public class HeaderStoreTest {
     static BlockHeaderWrapper[] createHeaders(int headCnt) {
         BlockHeaderWrapper[] ret = new BlockHeaderWrapper[headCnt];
         for (int i = 0; i < ret.length; i++) {
-            ret[i] = new BlockHeaderWrapper(new BlockHeader(new byte[0], new byte[0], new byte[0], new byte[0], new byte[0],
+            ret[i] = new BlockHeaderWrapper(new BlockHeader(new byte[0], new byte[0], RskAddress.nullAddress().getBytes(), new byte[0], new byte[0],
                     cnt.getAndIncrement(), new byte[] {0}, 0, 0, new byte[0], new byte[0], 0), null);
         }
         return ret;

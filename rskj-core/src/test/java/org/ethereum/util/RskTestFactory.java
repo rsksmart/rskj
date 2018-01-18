@@ -2,6 +2,7 @@ package org.ethereum.util;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.ConfigHelper;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.db.RepositoryImpl;
@@ -81,7 +82,7 @@ public class RskTestFactory {
 
     private TransactionExecutor executeTransaction(Transaction transaction) {
         Repository track = getRepository().startTracking();
-        TransactionExecutor executor = new TransactionExecutor(ConfigHelper.CONFIG, transaction, 0, new byte[32],
+        TransactionExecutor executor = new TransactionExecutor(ConfigHelper.CONFIG, transaction, 0, RskAddress.nullAddress(),
                 getRepository(), getBlockStore(), getReceiptStore(),
                 getProgramInvokeFactory(), getBlockchain().getBestBlock());
         executor.init();

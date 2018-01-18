@@ -140,7 +140,7 @@ public class Transaction implements SerializableObject {
         this.nonce = ByteUtil.cloneBytes(nonce);
         this.gasPrice = ByteUtil.cloneBytes(gasPrice);
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
-        this.receiveAddress = parseRskAddress(ByteUtil.cloneBytes(receiveAddress));
+        this.receiveAddress = RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress));
         if (value == null || ByteUtil.isSingleZero(value)) {
             this.value = EMPTY_BYTE_ARRAY;
         } else {
@@ -234,7 +234,7 @@ public class Transaction implements SerializableObject {
         this.nonce = transaction.get(0).getRLPData();
         this.gasPrice = transaction.get(1).getRLPData();
         this.gasLimit = transaction.get(2).getRLPData();
-        this.receiveAddress = parseRskAddress(transaction.get(3).getRLPData());
+        this.receiveAddress = RLP.parseRskAddress(transaction.get(3).getRLPData());
         this.value = transaction.get(4).getRLPData();
         this.data = transaction.get(5).getRLPData();
         // only parse signature in case tx is signed
@@ -478,7 +478,7 @@ public class Transaction implements SerializableObject {
         }
         byte[] toEncodeGasPrice = RLP.encodeElement(this.gasPrice);
         byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
-        byte[] toEncodeReceiveAddress = encodeRskAddress(this.receiveAddress);
+        byte[] toEncodeReceiveAddress = RLP.encodeRskAddress(this.receiveAddress);
         byte[] toEncodeValue = RLP.encodeElement(this.value);
         byte[] toEncodeData = RLP.encodeElement(this.data);
 
@@ -513,7 +513,7 @@ public class Transaction implements SerializableObject {
         }
         byte[] toEncodeGasPrice = RLP.encodeElement(this.gasPrice);
         byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
-        byte[] toEncodeReceiveAddress = encodeRskAddress(this.receiveAddress);
+        byte[] toEncodeReceiveAddress = RLP.encodeRskAddress(this.receiveAddress);
         byte[] toEncodeValue = RLP.encodeElement(this.value);
         byte[] toEncodeData = RLP.encodeElement(this.data);
 
@@ -545,14 +545,6 @@ public class Transaction implements SerializableObject {
         this.hash = this.getHash();
 
         return rlpEncoded;
-    }
-
-    private byte[] encodeRskAddress(RskAddress address) {
-        if (address == null || address.equals(RskAddress.nullAddress())) {
-            return RLP.encodeElement(null);
-        }
-
-        return RLP.encodeElement(address.getBytes());
     }
 
     public BigInteger getGasPriceAsInteger() {
@@ -601,14 +593,6 @@ public class Transaction implements SerializableObject {
                 BigIntegers.asUnsignedByteArray(amount),
                 decodedData,
                 config.getBlockchainConfig().getCommonConstants().getChainId());
-    }
-
-    public static RskAddress parseRskAddress(@Nullable byte[] bytes) {
-        if (bytes == null || ByteUtil.isAllZeroes(bytes)) {
-            return RskAddress.nullAddress();
-        } else {
-            return new RskAddress(bytes);
-        }
     }
 
 }

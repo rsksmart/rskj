@@ -27,6 +27,7 @@ import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockParentDependantValidationRule;
 import co.rsk.validators.BlockValidator;
 import co.rsk.validators.ProofOfWorkRule;
+import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockInformation;
@@ -489,7 +490,7 @@ public class BlockValidatorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
 
         Block genesis = blockGenerator.getGenesisBlock();
-        Block uncle1a = blockGenerator.createChildBlock(new SimpleBlock(null, null, new byte[]{12, 12}, null, BigInteger.ONE.toByteArray(),
+        Block uncle1a = blockGenerator.createChildBlock(new SimpleBlock(null, null, TestUtils.randomAddress().getBytes(), null, BigInteger.ONE.toByteArray(),
                 0, null, 0L, 0L, new byte[]{}, null, null, null, Block.getTxTrie(null).getHash(), null, null, null));
 
         List<BlockHeader> uncles1 = new ArrayList<>();

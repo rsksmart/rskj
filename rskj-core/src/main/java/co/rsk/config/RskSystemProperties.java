@@ -18,6 +18,7 @@
 
 package co.rsk.config;
 
+import co.rsk.core.RskAddress;
 import co.rsk.net.eth.MessageFilter;
 import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.WriterMessageRecorder;
@@ -31,7 +32,6 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.Nullable;
 import java.io.BufferedWriter;
@@ -67,15 +67,15 @@ public class RskSystemProperties extends SystemProperties {
     private List<ModuleDescription> moduleDescriptions;
 
     @Nullable
-    public byte[] coinbaseAddress() {
+    public RskAddress coinbaseAddress() {
         if (!minerServerEnabled()) {
-            return null;
+            return RskAddress.nullAddress();
         }
 
         // validity checks are performed by localCoinbaseAccount
         Account account = localCoinbaseAccount();
         if (account != null) {
-            return account.getAddress().getBytes();
+            return account.getAddress();
         }
 
         String coinbaseAddress = configFromFiles.getString(MINER_REWARD_ADDRESS_CONFIG);
@@ -83,7 +83,7 @@ public class RskSystemProperties extends SystemProperties {
             throw new RskConfigurationException(MINER_REWARD_ADDRESS_CONFIG + " needs to be Hex encoded and 20 byte length");
         }
 
-        return Hex.decode(coinbaseAddress);
+        return new RskAddress(coinbaseAddress);
     }
 
     @Nullable

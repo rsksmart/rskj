@@ -171,7 +171,7 @@ public class BlockGenerator {
         return new Block(
                 parent.getHash(), // parent hash
                 unclesListHash, // uncle hash
-                parent.getCoinbase(),
+                parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
                 difficulty, // difficulty
                 parent.getNumber() + 1,
@@ -193,7 +193,7 @@ public class BlockGenerator {
     }
 
     public Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot) {
-        return createChildBlock(parent, txs, stateRoot, parent.getCoinbase());
+        return createChildBlock(parent, txs, stateRoot, parent.getCoinbase().getBytes());
     }
 
     public Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot, byte[] coinbase) {
@@ -265,7 +265,7 @@ public class BlockGenerator {
 
         BlockHeader newHeader = new BlockHeader(parent.getHash(),
                 unclesListHash,
-                parent.getCoinbase(),
+                parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
                 new byte[]{1},
                 parent.getNumber()+1,
@@ -313,7 +313,7 @@ public class BlockGenerator {
         return new Block(
                 parent.getHash(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
-                parent.getCoinbase(), // coinbase
+                parent.getCoinbase().getBytes(), // coinbase
                 logBloom.getData(), // logs bloom
                 parent.getDifficulty(), // difficulty
                 number,
@@ -345,7 +345,7 @@ public class BlockGenerator {
         return new SimpleBlock(
                 parent.getHash(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
-                parent.getCoinbase(), // coinbase
+                parent.getCoinbase().getBytes(), // coinbase
                 logBloom.getData(), // logs bloom
                 parent.getDifficulty(), // difficulty
                 parent.getNumber() + 1,
@@ -368,7 +368,7 @@ public class BlockGenerator {
         Block block = new Block(
                 parent.getHash(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
-                parent.getCoinbase(),
+                parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
                 difficulty, // difficulty
                 parent.getNumber() + 1,
