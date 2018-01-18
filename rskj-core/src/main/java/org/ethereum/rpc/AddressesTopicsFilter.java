@@ -19,6 +19,7 @@
 
 package org.ethereum.rpc;
 
+import co.rsk.core.RskAddress;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.vm.DataWord;
@@ -30,15 +31,15 @@ import java.util.List;
 
 public class AddressesTopicsFilter {
     private List<byte[][]> topics = new ArrayList<>();  //  [[addr1, addr2], null, [A, B], [C]]
-    private byte[][] contractAddresses = new byte[0][];
+    private RskAddress[] addresses = new RskAddress[0];
     private Bloom[][] filterBlooms;
 
-    public AddressesTopicsFilter(byte[][] addresses, byte[][] topics) {
+    public AddressesTopicsFilter(RskAddress[] addresses, byte[][] topics) {
         if (topics != null) {
             this.topics.add(topics);
         }
 
-        this.contractAddresses = addresses;
+        this.addresses = addresses;
 
         initBlooms();
     }
@@ -50,7 +51,12 @@ public class AddressesTopicsFilter {
 
         List<byte[][]> addrAndTopics = new ArrayList<>(topics);
 
-        addrAndTopics.add(contractAddresses);
+        byte[][] addrs = new byte[addresses.length][];
+
+        for (int k = 0; k < addresses.length; k++)
+            addrs[k] = addresses[k].getBytes();
+
+        addrAndTopics.add(addrs);
 
         filterBlooms = new Bloom[addrAndTopics.size()][];
 
@@ -89,22 +95,22 @@ public class AddressesTopicsFilter {
         return true;
     }
 
-    boolean matchesContractAddress(byte[] toAddr) {
+    boolean matchesContractAddress(RskAddress toAddr) {
         initBlooms();
 
-        for (byte[] address : contractAddresses) {
-            if (Arrays.equals(address, toAddr)) {
+        for (RskAddress address : addresses) {
+            if (address.equals(toAddr)) {
                 return true;
             }
         }
 
-        return contractAddresses.length == 0;
+        return addresses.length == 0;
     }
 
     public boolean matchesExactly(LogInfo logInfo) {
         initBlooms();
 
-        if (!matchesContractAddress(logInfo.getAddress())) {
+        if (!matchesContractAddress(new RskAddress(logInfo.getAddress()))) {
             return false;
         }
 

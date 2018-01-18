@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc;
 
+import co.rsk.core.RskAddress;
 import co.rsk.test.builders.AccountBuilder;
 import org.ethereum.core.Account;
 import org.junit.Assert;
@@ -30,11 +31,11 @@ public class AddressesTopicsFilterTest {
     @Test
     public void matchAddress() {
         Account account = new AccountBuilder().name("account").build();
-        byte[] address = account.getAddress().getBytes();
+        RskAddress address = account.getAddress();
 
-        AddressesTopicsFilter filter = new AddressesTopicsFilter(new byte[][] { address }, null);
+        AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[] { address }, null);
 
         Assert.assertTrue(filter.matchesContractAddress(address));
-        Assert.assertFalse(filter.matchesContractAddress(new byte[20]));
+        Assert.assertFalse(filter.matchesContractAddress(RskAddress.nullAddress()));
     }
 }
