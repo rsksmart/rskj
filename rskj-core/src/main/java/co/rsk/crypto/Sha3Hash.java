@@ -65,8 +65,7 @@ public class Sha3Hash implements Serializable, Comparable<Sha3Hash> {
      */
     @Override
     public int hashCode() {
-        // Use the last 4 bytes, not the first 4 which are often zeros in Bitcoin.
-        return Ints.fromBytes(bytes[28], bytes[29], bytes[30], bytes[31]);
+       return Arrays.hashCode(this.bytes);
     }
 
     @Override
