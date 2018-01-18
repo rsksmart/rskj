@@ -136,6 +136,54 @@ public class TransactionTest {
         System.out.println(tx.toString());
     }
 
+    @Test  /* achieve public key of the sender when signature manually set */
+    public void test3() throws Exception {
+        if (ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId() != 0)
+            return;
+
+        // cat --> 79b08ad8787060333663d19704909ee7b1903e58
+        // cow --> cd2a3d9f938e13cd947ec05abc7fe734df8dd826
+
+        BigInteger value = new BigInteger("1000000000000000000000");
+
+        byte[] privKey = HashUtil.sha3("cat".getBytes());
+        ECKey ecKey = ECKey.fromPrivate(privKey);
+
+        byte[] senderPrivKey = HashUtil.sha3("cow".getBytes());
+
+        byte[] gasPrice = Hex.decode("09184e72a000");
+        byte[] gas = Hex.decode("4255");
+
+        // Tn (nonce); Tp(pgas); Tg(gaslimi); Tt(value); Tv(value); Ti(sender);  Tw; Tr; Ts
+        Transaction tx = new Transaction(null, gasPrice, gas, ecKey.getAddress(),
+                value.toByteArray(),
+                null);
+
+        byte[] hash = tx.getRawHash();
+        ECKey.ECDSASignature signature = ECKey.fromPrivate(senderPrivKey).sign(hash);
+        tx.setSignature(signature);
+
+        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().v}));
+        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().r)));
+        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().s)));
+
+        System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
+
+        // retrieve the signer/sender of the transaction
+        ECKey key = ECKey.signatureToKey(tx.getHash(), tx.getSignature().toBase64());
+
+        System.out.println("Tx unsigned RLP\t\t: " + Hex.toHexString(tx.getEncodedRaw()));
+        System.out.println("Tx signed   RLP\t\t: " + Hex.toHexString(tx.getEncoded()));
+
+        System.out.println("Signature public key\t: " + Hex.toHexString(key.getPubKey()));
+        System.out.println("Sender is\t\t: " + Hex.toHexString(key.getAddress()));
+
+        assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826",
+                Hex.toHexString(key.getAddress()));
+
+        System.out.println(tx.toString());
+    }
+
     @Test
     public void constantCallConflictTest() throws Exception {
         /*
