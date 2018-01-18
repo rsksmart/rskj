@@ -18,6 +18,7 @@
 
 package co.rsk.metrics;
 
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.util.RskCustomCache;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -45,21 +46,31 @@ public class HashRateCalculatorTest {
     private BlockStore blockStore;
     private Block block;
     private BlockHeader blockHeader;
+    private Sha3Hash blockHash;
+    private Sha3Hash blockHeaderParentHash;
+    private Sha3Hash blockHeaderHash;
 
     @Before
     public void init() {
         blockStore = Mockito.mock(BlockStore.class);
         block = Mockito.mock(Block.class);
         blockHeader = Mockito.mock(BlockHeader.class);
+        blockHash = Mockito.mock(Sha3Hash.class);
+        blockHeaderHash = Mockito.mock(Sha3Hash.class);
+        blockHeaderParentHash = Mockito.mock(Sha3Hash.class);
+
 
         Mockito.when(block.getHeader()).thenReturn(blockHeader);
-        Mockito.when(block.getHash().getBytes()).thenReturn(FAKE_GENERIC_HASH);
+        Mockito.when(block.getHash()).thenReturn(blockHash);
+        Mockito.when(blockHash.getBytes()).thenReturn(FAKE_GENERIC_HASH);
+        Mockito.when(blockHeader.getParentHash()).thenReturn(blockHeaderParentHash);
         Mockito.when(blockHeader.getParentHash().getBytes()).thenReturn(FAKE_GENERIC_HASH)
                 .thenReturn(OHTER_FAKE_GENERIC_HASH)
                 .thenReturn(FAKE_GENERIC_HASH)
                 .thenReturn(null);
 
-        Mockito.when(blockHeader.getHash().getBytes()).thenReturn(FAKE_GENERIC_HASH);
+        Mockito.when(blockHeader.getHash()).thenReturn(blockHeaderHash);
+        Mockito.when(blockHeaderHash.getBytes()).thenReturn(FAKE_GENERIC_HASH);
 
         Mockito.when(blockStore.getBlockByHash(Mockito.any())).thenReturn(block)
                 .thenReturn(block).thenReturn(block).thenReturn(null);
