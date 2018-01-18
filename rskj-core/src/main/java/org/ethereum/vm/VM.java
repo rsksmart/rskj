@@ -21,7 +21,6 @@ package org.ethereum.vm;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.panic.PanicProcessor;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.program.Program;
@@ -80,7 +79,6 @@ public class VM {
 
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger dumpLogger = LoggerFactory.getLogger("dump");
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final String logString = "{}    Op: [{}]  Gas: [{}] Deep: [{}]  Hint: [{}]";
     private static final boolean computeGas = true; // for performance comp
 
@@ -90,6 +88,20 @@ public class VM {
     private static VMHook vmHook;
 
     private final RskSystemProperties config;
+
+    // Execution variables
+    Program program;
+    Stack stack;
+    OpCode op;
+    long oldMemSize ;
+
+    String hint ;
+
+    long memWords; // parameters for logging
+    long gasCost;
+    long gasBefore; // only for tracing
+    int stepBefore; // only for debugging
+    boolean isLogEnabled;
 
     public VM(RskSystemProperties config) {
         this.config = config;
@@ -105,7 +117,7 @@ public class VM {
 
     }
     private long calcMemGas(long oldMemSize, long newMemSize, long copySize) {
-        long gasCost = 0;
+        long currentGasCost = 0;
 
         // Avoid overflows
         checkSizeArgument(newMemSize);
@@ -126,17 +138,17 @@ public class VM {
                  memGas = (GasCost.MEMORY * memWords + memWords * memWords / 512)
                         - (GasCost.MEMORY * memWordsOld + memWordsOld * memWordsOld / 512);
 
-                gasCost += memGas;
+                currentGasCost += memGas;
             }
         }
 
         // copySize is invalid if newMemSize > 2^63, but it only gets here if newMemSize is <= 2^30
         if (copySize > 0) {
             long copyGas = GasCost.COPY_GAS * ((copySize + 31) / 32);
-            gasCost += copyGas;
+            currentGasCost += copyGas;
         }
 
-        return gasCost;
+        return currentGasCost;
     }
 
 
@@ -151,20 +163,6 @@ public class VM {
     public void resetVmCounter() { // for profiling only
         vmCounter =0;
     }
-
-    // Execution variables
-    Program program;
-    Stack stack;
-    OpCode op;
-    long oldMemSize ;
-
-    String hint ;
-
-    long memWords; // parameters for logging
-    long gasCost;
-    long gasBefore; // only for tracing
-    int stepBefore; // only for debugging
-    boolean isLogEnabled;
 
     protected void checkOpcode() {
         if (op == null) {
@@ -1916,7 +1914,7 @@ public class VM {
                 vmCounter++;
             } // for
         } catch (RuntimeException e) {
-                logger.error("VM halted: [{}]", e);
+                logger.error("VM halted", e);
                 program.spendAllGas();
                 program.resetFutureRefund();
                 program.stop();
@@ -1951,7 +1949,7 @@ public class VM {
         } catch (RuntimeException e) {
             program.setRuntimeFailure(e);
         } catch (StackOverflowError soe){
-            logger.error("\n !!! StackOverflowError: update your java run command with -Xss32M !!!\n");
+            logger.error("\n !!! StackOverflowError: update your java run command with -Xss32M !!!\n", soe);
             System.exit(-1);
         }
     }
