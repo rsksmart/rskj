@@ -95,7 +95,7 @@ public class ReceiptStoreImplTest {
 
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getBlockHash());
-        Assert.assertEquals(blockHash, result.getBlockHash());
+        Assert.assertArrayEquals(blockHash, result.getBlockHash().getBytes());
         Assert.assertEquals(238, result.getIndex());
         Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
     }
@@ -118,7 +118,7 @@ public class ReceiptStoreImplTest {
 
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getBlockHash());
-        Assert.assertEquals(blockHash, result.getBlockHash());
+        Assert.assertArrayEquals(blockHash, result.getBlockHash().getBytes());
         Assert.assertEquals(42, result.getIndex());
         Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
     }
@@ -143,12 +143,12 @@ public class ReceiptStoreImplTest {
         Assert.assertEquals(2, result.size());
 
         Assert.assertNotNull(result.get(0).getBlockHash());
-        Assert.assertEquals(blockHash0, result.get(0).getBlockHash());
+        Assert.assertArrayEquals(blockHash0, result.get(0).getBlockHash().getBytes());
         Assert.assertEquals(3, result.get(0).getIndex());
         Assert.assertArrayEquals(receipt0.getEncoded(), result.get(0).getReceipt().getEncoded());
 
         Assert.assertNotNull(result.get(1).getBlockHash());
-        Assert.assertEquals(blockHash, result.get(1).getBlockHash());
+        Assert.assertArrayEquals(blockHash, result.get(1).getBlockHash().getBytes());
         Assert.assertEquals(42, result.get(1).getIndex());
         Assert.assertArrayEquals(receipt.getEncoded(), result.get(1).getReceipt().getEncoded());
     }
@@ -197,7 +197,7 @@ public class ReceiptStoreImplTest {
         TransactionInfo result = store.get(receipt.getTransaction().getHash(), new Sha3Hash(blockHash0), null);
 
         Assert.assertNotNull(result.getBlockHash());
-        Assert.assertEquals(blockHash0, result.getBlockHash());
+        Assert.assertArrayEquals(blockHash0, result.getBlockHash().getBytes());
         Assert.assertEquals(3, result.getIndex());
         Assert.assertArrayEquals(receipt0.getEncoded(), result.getReceipt().getEncoded());
     }
@@ -219,7 +219,7 @@ public class ReceiptStoreImplTest {
         TransactionInfo result = store.get(receipt.getTransaction().getHash(), new Sha3Hash(blockHash), null);
 
         Assert.assertNotNull(result.getBlockHash());
-        Assert.assertEquals(blockHash, result.getBlockHash());
+        Assert.assertArrayEquals(blockHash, result.getBlockHash().getBytes());
         Assert.assertEquals(42, result.getIndex());
         Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
     }

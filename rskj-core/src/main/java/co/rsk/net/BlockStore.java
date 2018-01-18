@@ -21,7 +21,6 @@ package co.rsk.net;
 import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.db.ByteArrayWrapper;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -67,24 +66,20 @@ public class BlockStore {
             return;
         }
 
-        ByteArrayWrapper key = new ByteArrayWrapper(block.getHash().getBytes());
-        ByteArrayWrapper pkey = new ByteArrayWrapper(block.getParentHash().getBytes());
-        Long nkey = Long.valueOf(block.getNumber());
+        this.blocks.remove(block.getHash());
 
-        this.blocks.remove(key);
-
-        removeBlockByNumber(key, nkey);
-        removeBlockByParent(key, pkey);
+        removeBlockByNumber(block.getHash(), block.getNumber());
+        removeBlockByParent(block.getHash(), block.getParentHash());
     }
 
-    private void removeBlockByParent(ByteArrayWrapper key, ByteArrayWrapper pkey) {
+    private void removeBlockByParent(Sha3Hash key, Sha3Hash pkey) {
         Set<Block> byparent = this.blocksbyparent.get(pkey);
 
         if (byparent != null && !byparent.isEmpty()) {
             Block toremove = null;
 
             for (Block blk : byparent) {
-                if (new ByteArrayWrapper(blk.getHash().getBytes()).equals(key)) {
+                if (blk.getHash().equals(key)) {
                     toremove = blk;
                     break;
                 }
@@ -100,14 +95,14 @@ public class BlockStore {
         }
     }
 
-    private void removeBlockByNumber(ByteArrayWrapper key, Long nkey) {
+    private void removeBlockByNumber(Sha3Hash key, Long nkey) {
         Set<Block> bynumber = this.blocksbynumber.get(nkey);
 
         if (bynumber != null && !bynumber.isEmpty()) {
             Block toremove = null;
 
             for (Block blk : bynumber) {
-                if (new ByteArrayWrapper(blk.getHash().getBytes()).equals(key)) {
+                if (blk.getHash().equals(key)) {
                     toremove = blk;
                     break;
                 }

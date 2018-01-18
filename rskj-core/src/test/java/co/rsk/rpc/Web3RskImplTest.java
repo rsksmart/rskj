@@ -23,6 +23,7 @@ import co.rsk.core.NetworkStateExporter;
 import co.rsk.core.Rsk;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
@@ -58,7 +59,9 @@ public class Web3RskImplTest {
         Mockito.when(networkStateExporter.exportStatus(Mockito.anyString())).thenReturn(true);
 
         Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getHash().getBytes()).thenReturn(PegTestUtils.createHash3().getBytes());
+        Sha3Hash blockHash = Mockito.mock(Sha3Hash.class);
+        Mockito.when(block.getHash()).thenReturn(PegTestUtils.createHash3());
+        Mockito.when(blockHash.getBytes()).thenReturn(PegTestUtils.createHash3().getBytes());
         Mockito.when(block.getNumber()).thenReturn(1L);
 
         BlockStore blockStore = Mockito.mock(BlockStore.class);
@@ -84,7 +87,9 @@ public class Web3RskImplTest {
         topics.add(new DataWord("c2"));
         Mockito.when(logInfo.getTopics()).thenReturn(topics);
         Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getHash().getBytes()).thenReturn(new byte[]{1});
+        Sha3Hash blockHash = Mockito.mock(Sha3Hash.class);
+        Mockito.when(block.getHash()).thenReturn(PegTestUtils.createHash3());
+        Mockito.when(blockHash.getBytes()).thenReturn(new byte[]{1});
         Mockito.when(block.getNumber()).thenReturn(1L);
         int txIndex = 1;
         Transaction tx = Mockito.mock(Transaction.class);
@@ -93,7 +98,8 @@ public class Web3RskImplTest {
 
         LogFilterElement logFilterElement = new LogFilterElement(logInfo, block, txIndex, tx, logIdx);
 
-        Assert.assertEquals(logFilterElement.toString(), "LogFilterElement{logIndex='0x5', blockNumber='0x1', blockHash='0x01', transactionHash='0x02', transactionIndex='0x1', address='0x00', data='0x01', topics=[0x00000000000000000000000000000000000000000000000000000000000000c1, 0x00000000000000000000000000000000000000000000000000000000000000c2]}");
+        Assert.assertEquals(logFilterElement.toString(),
+                "LogFilterElement{logIndex='0x5', x`blockNumber='0x1', blockHash='0x01', transactionHash='0x02', transactionIndex='0x1', address='0x00', data='0x01', topics=[0x00000000000000000000000000000000000000000000000000000000000000c1, 0x00000000000000000000000000000000000000000000000000000000000000c2]}");
     }
 
     @Test

@@ -419,12 +419,12 @@ public class BlockHeader {
     }
 
     public byte[] getEncoded(boolean withMergedMiningFields) {
-        byte[] parentHash = RLP.encodeElement(this.parentHash.getBytes());
+        byte[] parentHash = RLP.encodeElement(this.parentHash != null?this.parentHash.getBytes():null);
 
-        byte[] unclesHash = RLP.encodeElement(this.unclesHash.getBytes());
+        byte[] unclesHash = RLP.encodeElement(this.unclesHash != null?this.unclesHash.getBytes(): null);
         byte[] coinbase = RLP.encodeElement(this.coinbase);
 
-        byte[] stateRoot = RLP.encodeElement(this.stateRoot.getBytes());
+        byte[] stateRoot = RLP.encodeElement(this.stateRoot != null?this.stateRoot.getBytes():null);
 
         if (txTrieRoot == null) {
             this.txTrieRoot = EMPTY_TRIE_HASH;
