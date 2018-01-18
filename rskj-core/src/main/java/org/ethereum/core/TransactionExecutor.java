@@ -133,11 +133,6 @@ public class TransactionExecutor {
 
         boolean cumulativeGasReached = txGasLimit.add(BigInteger.valueOf(gasUsedInTheBlock)).compareTo(curBlockGasLimit) > 0;
         if (cumulativeGasReached) {
-
-            logger.warn("Too much gas used in this block: Block Gas Limit: {} , Tx Gas Limit {}, Gas Used in the Block: {}", curBlockGasLimit, txGasLimit, gasUsedInTheBlock);
-
-            panicProcessor.panic("toomuchgasused", String.format("Too much gas used in this block: Block Gas Limit: %d , Tx Gas Limit %d, Gas Used in the Block: %d", curBlockGasLimit.longValue(), txGasLimit.longValue(), gasUsedInTheBlock));
-
             execError(String.format("Too much gas used in this block: Require: %s Got: %s",
                     curBlockGasLimit.longValue() - toBI(tx.getGasLimit()).longValue(),
                     toBI(tx.getGasLimit()).longValue()));
@@ -146,13 +141,7 @@ public class TransactionExecutor {
         }
 
         if (txGasLimit.compareTo(BigInteger.valueOf(basicTxCost)) < 0) {
-
-            logger.warn("Not enough gas for transaction execution: Require: {} Got: {}", basicTxCost, txGasLimit);
-
-            panicProcessor.panic("notenoughgas", String.format("Not enough gas for transaction execution: Require: %d Got: %d", basicTxCost, txGasLimit.longValue()));
-
             execError(String.format("Not enough gas for transaction execution: Require: %s Got: %s", basicTxCost, txGasLimit));
-
             return false;
         }
 
@@ -167,9 +156,6 @@ public class TransactionExecutor {
             }
 
             execError(String.format("Invalid nonce: required: %s , tx.nonce: %s", reqNonce, txNonce));
-
-            panicProcessor.panic("invalidnonce", String.format("Invalid nonce: sender %s, required: %d , tx.nonce: %d, tx %s", tx.getSender(), reqNonce.longValue(), txNonce.longValue(), Hex.toHexString(tx.getHash())));
-
             return false;
         }
 
