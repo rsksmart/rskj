@@ -101,7 +101,7 @@ public class MessageTest {
         result = Message.create(encoded);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(encoded, result.getEncoded());
+        Assert.assertArrayEquals(encoded, result.getEncoded());
         Assert.assertEquals(MessageType.GET_BLOCK_HEADERS_MESSAGE, result.getMessageType());
         newmessage = (GetBlockHeadersMessage) result;
 
@@ -122,7 +122,7 @@ public class MessageTest {
         Message result = Message.create(encoded);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(encoded, result.getEncoded());
+        Assert.assertArrayEquals(encoded, result.getEncoded());
         Assert.assertEquals(MessageType.STATUS_MESSAGE, result.getMessageType());
 
         StatusMessage newmessage = (StatusMessage) result;
@@ -324,7 +324,7 @@ public class MessageTest {
             Transaction tx1 = txs.get(k);
             Transaction tx2 = newmessage.getTransactions().get(k);
 
-            Assert.assertEquals(tx1.getHash(), tx2.getHash());
+            Assert.assertArrayEquals(tx1.getHash(), tx2.getHash());
         }
     }
 

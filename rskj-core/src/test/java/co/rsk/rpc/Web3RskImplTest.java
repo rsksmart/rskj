@@ -87,19 +87,20 @@ public class Web3RskImplTest {
         topics.add(new DataWord("c2"));
         Mockito.when(logInfo.getTopics()).thenReturn(topics);
         Block block = Mockito.mock(Block.class);
-        Sha3Hash blockHash = Mockito.mock(Sha3Hash.class);
-        Mockito.when(block.getHash()).thenReturn(PegTestUtils.createHash3());
-        Mockito.when(blockHash.getBytes()).thenReturn(new byte[]{1});
+        Sha3Hash blockHash = new Sha3Hash(new byte[]{1});
+        Mockito.when(block.getHash()).thenReturn(blockHash);
         Mockito.when(block.getNumber()).thenReturn(1L);
         int txIndex = 1;
         Transaction tx = Mockito.mock(Transaction.class);
         Mockito.when(tx.getHash()).thenReturn(new byte[]{2});
         int logIdx = 5;
 
-        LogFilterElement logFilterElement = new LogFilterElement(logInfo, block, txIndex, tx, logIdx);
+        LogFilterElement logFilterElement =
+                new LogFilterElement(logInfo, block, txIndex, tx, logIdx);
 
-        Assert.assertEquals(logFilterElement.toString(),
-                "LogFilterElement{logIndex='0x5', x`blockNumber='0x1', blockHash='0x01', transactionHash='0x02', transactionIndex='0x1', address='0x00', data='0x01', topics=[0x00000000000000000000000000000000000000000000000000000000000000c1, 0x00000000000000000000000000000000000000000000000000000000000000c2]}");
+        Assert.assertEquals(
+                "LogFilterElement{logIndex='0x5', blockNumber='0x1', blockHash='0x01', transactionHash='0x02', transactionIndex='0x1', address='0x00', data='0x01', topics=[0x00000000000000000000000000000000000000000000000000000000000000c1, 0x00000000000000000000000000000000000000000000000000000000000000c2]}",
+                logFilterElement.toString());
     }
 
     @Test
