@@ -143,8 +143,20 @@ public class LogFilter extends Filter {
 
         LogFilter filter = new LogFilter(addressesTopicsFilter, blockchain);
 
-        Block blockFrom = fr.fromBlock == null ? blockchain.getBestBlock() : Web3Impl.getBlockByNumberOrStr(fr.fromBlock, blockchain);
-        Block blockTo = fr.toBlock == null ? null : Web3Impl.getBlockByNumberOrStr(fr.toBlock, blockchain);
+        // Default from block value
+        if (fr.fromBlock == null)
+            fr.fromBlock = "latest";
+
+        // Default to block value
+        if (fr.toBlock == null)
+            fr.toBlock = "latest";
+
+        Block blockFrom = isBlockWord(fr.fromBlock) ? null : Web3Impl.getBlockByNumberOrStr(fr.fromBlock, blockchain);
+        Block blockTo = isBlockWord(fr.toBlock) ? null : Web3Impl.getBlockByNumberOrStr(fr.toBlock, blockchain);
+
+        if (blockFrom == null && "earliest".equalsIgnoreCase(fr.fromBlock)) {
+            blockFrom = blockchain.getBlockByNumber(0);
+        }
 
         if (blockFrom != null) {
             // need to add historical data
@@ -154,6 +166,9 @@ public class LogFilter extends Filter {
                 filter.onBlock(blockchain.getBlockByNumber(blockNum));
             }
         }
+        else if ("latest".equalsIgnoreCase(fr.fromBlock)) {
+            filter.onBlock(blockchain.getBestBlock());
+        }
 
         // the following is not precisely documented
         if ("pending".equalsIgnoreCase(fr.fromBlock) || "pending".equalsIgnoreCase(fr.toBlock)) {
@@ -162,9 +177,10 @@ public class LogFilter extends Filter {
             filter.onNewBlock = true;
         }
 
-        // RSK brute force
-        filter.onNewBlock = true;
-
         return filter;
+    }
+
+    private static boolean isBlockWord(String id) {
+        return "latest".equalsIgnoreCase(id) || "pending".equalsIgnoreCase(id) || "earliest".equalsIgnoreCase(id);
     }
 }
