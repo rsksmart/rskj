@@ -118,9 +118,7 @@ public class PendingStateImpl implements PendingState {
 
     @Override
     public void start(Block initialBestBlock) {
-        if (bestBlock == null) {
-            processBest(initialBestBlock);
-        }
+        processBest(initialBestBlock);
 
         if (this.outdatedTimeout <= 0 || this.cleanerTimer == null) {
             return;
@@ -400,10 +398,6 @@ public class PendingStateImpl implements PendingState {
     }
 
     private long getCurrentBestBlockNumber() {
-        if (bestBlock == null) {
-            return 0;
-        }
-
         return bestBlock.getNumber();
     }
 

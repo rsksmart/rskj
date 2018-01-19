@@ -396,6 +396,7 @@ public class Web3ImplTest {
         World world = new World();
         BlockChainImpl blockChain = world.getBlockChain();
         PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
+        pendingState.processBest(blockChain.getBestBlock());
         Web3Impl web3 = createWeb3(world, pendingState);
 
         Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(2000000)).build();
