@@ -8,42 +8,52 @@ import java.math.BigInteger;
 /**
  * An ECDSA signature.
  *
- * It's just a wrapper around org.ethereum.crypto.ECKey.ECDSASignature,
- * but the idea is that we can convert to other ECDSA classes too
- * (e.g., BTC ECDSA signatures) and don't ultimately depend
- * upon ethereum's specific implementation since the usage
+ * It's just a copy of what ECKey.ECDSASignature does,
+ * so that we can convert to other ECDSA classes too
+ * (e.g., Ethereum or BTC ECDSA signatures) and don't ultimately depend
+ * upon ethereum or BTC's specific implementations since the usage
  * of this is broader.
  *
  * @author Ariel Mendelzon
  */
 public class ECDSASignature {
-    private final ECKey.ECDSASignature signature;
+    private final BigInteger r;
+    private final BigInteger s;
+    // For compatibility with ECKey.ECDSASignature
+    private byte v;
 
     private ECDSASignature(BigInteger r, BigInteger s) {
-        this.signature = new ECKey.ECDSASignature(r, s);
+        this.r = r;
+        this.s = s;
+        this.v = 0;
     }
 
-    public static ECDSASignature fromComponents(BigInteger r, BigInteger s) {
-        return new ECDSASignature(r, s);
+    private ECDSASignature(BigInteger r, BigInteger s, byte v) {
+        this(r, s);
+        this.v = v;
     }
 
     public static ECDSASignature fromEthSignature(ECKey.ECDSASignature signature) {
-        return ECDSASignature.fromComponents(signature.r, signature.s);
+        return new ECDSASignature(signature.r, signature.s, signature.v);
     }
 
     public BigInteger getR() {
-        return signature.r;
+        return r;
     }
 
     public BigInteger getS() {
-        return signature.s;
+        return s;
     }
 
+    public byte getV() { return v; }
+
     public ECKey.ECDSASignature toRskSignature() {
-        return new ECKey.ECDSASignature(signature.r, signature.s);
+        ECKey.ECDSASignature result = new ECKey.ECDSASignature(r, s);
+        result.v = v;
+        return result;
     }
 
     public BtcECKey.ECDSASignature toBtcSignature() {
-        return new BtcECKey.ECDSASignature(signature.r, signature.s);
+        return new BtcECKey.ECDSASignature(r, s);
     }
 }

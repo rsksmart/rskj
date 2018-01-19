@@ -12,12 +12,12 @@ public class PlainMessage extends Message {
 
     public PlainMessage(byte[] message) {
         // Save a copy
-        this.message = Arrays.copyOf(message, 0);
+        this.message = copy(message);
     }
 
     @Override
     public byte[] getBytes() {
-        return Arrays.copyOf(message, 0);
+        return copy(message);
     }
 
     @Override
@@ -36,5 +36,9 @@ public class PlainMessage extends Message {
     @Override
     public int hashCode() {
         return Arrays.hashCode(message);
+    }
+
+    private byte[] copy(byte[] a) {
+        return Arrays.copyOf(a, a.length);
     }
 }

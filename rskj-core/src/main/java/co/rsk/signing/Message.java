@@ -1,5 +1,7 @@
 package co.rsk.signing;
 
+import org.spongycastle.util.encoders.Hex;
+
 /**
  * Represents a message that can be signed.
  *
@@ -7,4 +9,9 @@ package co.rsk.signing;
  */
 public abstract class Message {
     public abstract byte[] getBytes();
+
+    @Override
+    public String toString() {
+        return Hex.toHexString(getBytes());
+    }
 }
