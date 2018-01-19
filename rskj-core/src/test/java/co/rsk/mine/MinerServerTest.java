@@ -24,7 +24,6 @@ import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.config.ConfigHelper;
 import co.rsk.config.ConfigUtils;
 import co.rsk.core.DifficultyCalculator;
-import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.World;
@@ -79,9 +78,9 @@ public class MinerServerTest {
         Mockito.when(tx1.getEncoded()).thenReturn(new byte[32]);
 
         Mockito.when(repository.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);
-        Mockito.when(repository.getNonce(RskAddress.nullAddress())).thenReturn(BigInteger.ZERO);
+        Mockito.when(repository.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
         Mockito.when(repository.getBalance(tx1.getSender())).thenReturn(BigInteger.valueOf(4200000L));
-        Mockito.when(repository.getBalance(RskAddress.nullAddress())).thenReturn(BigInteger.valueOf(4200000L));
+        Mockito.when(repository.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.valueOf(4200000L));
 
         List<Transaction> txs = new ArrayList<>(Arrays.asList(tx1));
 
