@@ -621,7 +621,7 @@ public class MinerServerImpl implements MinerServer {
 
         final List<Transaction> txsToRemove = new ArrayList<>();
 
-        BigInteger minimumGasPrice = new MinimumGasPriceCalculator().calculate(newBlockParent.getMinGasPriceAsInteger(), minerMinGasPriceTarget);
+        Coin minimumGasPrice = new MinimumGasPriceCalculator().calculate(new Coin(newBlockParent.getMinGasPriceAsInteger()), new Coin(minerMinGasPriceTarget));
         final List<Transaction> txs = getTransactions(txsToRemove, newBlockParent, minimumGasPrice);
         minimumAcceptableTime = newBlockParent.getTimestamp() + 1;
 
@@ -718,7 +718,7 @@ public class MinerServerImpl implements MinerServer {
         pendingState.clearWire(transactions);
     }
 
-    private List<Transaction> getTransactions(List<Transaction> txsToRemove, Block parent, BigInteger minGasPrice) {
+    private List<Transaction> getTransactions(List<Transaction> txsToRemove, Block parent, Coin minGasPrice) {
 
         logger.debug("Starting getTransactions");
 
@@ -770,7 +770,7 @@ public class MinerServerImpl implements MinerServer {
         }
     }
 
-    private BlockHeader createHeader(Block newBlockParent, List<BlockHeader> uncles, List<Transaction> txs, BigInteger minimumGasPrice) {
+    private BlockHeader createHeader(Block newBlockParent, List<BlockHeader> uncles, List<Transaction> txs, Coin minimumGasPrice) {
         final byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
 
         final long timestampSeconds = this.getCurrentTimeInSeconds();
@@ -797,7 +797,7 @@ public class MinerServerImpl implements MinerServer {
                 new byte[]{},
                 new byte[]{},
                 new byte[]{},
-                minimumGasPrice.toByteArray(),
+                minimumGasPrice.getBytes(),
                 CollectionUtils.size(uncles)
         );
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()));
@@ -805,7 +805,7 @@ public class MinerServerImpl implements MinerServer {
         return newHeader;
     }
 
-    private Block createBlock(Block newBlockParent, List<BlockHeader> uncles, List<Transaction> txs, BigInteger minimumGasPrice) {
+    private Block createBlock(Block newBlockParent, List<BlockHeader> uncles, List<Transaction> txs, Coin minimumGasPrice) {
         final BlockHeader newHeader = createHeader(newBlockParent, uncles, txs, minimumGasPrice);
         final Block newBlock = new Block(newHeader, txs, uncles);
         return validationRules.isValid(newBlock) ? newBlock : new Block(newHeader, txs, null);

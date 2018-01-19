@@ -22,12 +22,13 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
 import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import com.google.common.collect.Lists;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -148,7 +149,7 @@ public class MinerUtils {
         return new LinkedList<>(ret);
     }
 
-    public List<org.ethereum.core.Transaction> filterTransactions(List<org.ethereum.core.Transaction> txsToRemove, List<org.ethereum.core.Transaction> txs, Map<RskAddress, BigInteger> accountNonces, Repository originalRepo, BigInteger minGasPrice) {
+    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, Repository originalRepo, Coin minGasPrice) {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
@@ -162,12 +163,12 @@ public class MinerUtils {
                 BigInteger expectedNonce;
 
                 if (accountNonces.containsKey(txSender)) {
-                    expectedNonce = new BigInteger(1, accountNonces.get(txSender).toByteArray()).add(BigInteger.ONE);
+                    expectedNonce = accountNonces.get(txSender).add(BigInteger.ONE);
                 } else {
                     expectedNonce = originalRepo.getNonce(txSender);
                 }
 
-                if (!(tx instanceof RemascTransaction) && tx.getGasPrice().asBigInteger().compareTo(minGasPrice) < 0) {
+                if (!(tx instanceof RemascTransaction) && tx.getGasPrice().compareTo(minGasPrice) < 0) {
                     logger.warn("Rejected tx={} because of low gas account {}, removing tx from pending state.", hexHash, txSender);
 
                     txsToRemove.add(tx);

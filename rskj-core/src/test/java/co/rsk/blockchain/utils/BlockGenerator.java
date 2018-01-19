@@ -297,9 +297,8 @@ public class BlockGenerator {
             txs.add(new SimpleRskTransaction(null));
         }
 
-        byte[] parentMGP = (parent.getMinimumGasPrice() != null) ? parent.getMinimumGasPrice() : BigInteger.valueOf(10L).toByteArray();
-        BigInteger minimumGasPrice = new MinimumGasPriceCalculator().calculate(new BigInteger(1, parentMGP)
-                , BigInteger.valueOf(100L));
+        Coin previousMGP = (parent.getMinimumGasPrice() != null) ? new Coin(parent.getMinimumGasPrice()) : Coin.valueOf(10L);
+        Coin minimumGasPrice = new MinimumGasPriceCalculator().calculate(previousMGP, Coin.valueOf(100L));
 
         return new Block(
                 parent.getHash(), // parent hash
@@ -319,7 +318,7 @@ public class BlockGenerator {
                 EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 null,        // uncle list
-                minimumGasPrice.toByteArray(),
+                minimumGasPrice.getBytes(),
                 Coin.ZERO
         );
     }

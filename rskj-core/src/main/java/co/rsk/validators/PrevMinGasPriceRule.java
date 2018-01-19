@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.Coin;
 import co.rsk.mine.BlockGasPriceRange;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
@@ -44,13 +45,13 @@ public class PrevMinGasPriceRule implements BlockParentDependantValidationRule {
             return false;
         }
 
-        BlockGasPriceRange range = new BlockGasPriceRange(parent.getMinGasPriceAsInteger());
-        boolean result = range.inRange(block.getMinGasPriceAsInteger());
+        BlockGasPriceRange range = new BlockGasPriceRange(new Coin(parent.getMinGasPriceAsInteger()));
+        boolean result = range.inRange(new Coin(block.getMinGasPriceAsInteger()));
         if(!result) {
             logger.warn("Error validating Min Gas Price.");
             panicProcessor.panic("invalidmingasprice", "Error validating Min Gas Price.");
         }
 
-        return range.inRange(block.getMinGasPriceAsInteger());
+        return range.inRange(new Coin(block.getMinGasPriceAsInteger()));
     }
 }
