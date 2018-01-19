@@ -151,6 +151,19 @@ public class LogFilter extends Filter {
         if (fr.toBlock == null)
             fr.toBlock = "latest";
 
+        retrieveHistoricalData(fr, blockchain, filter);
+
+        // the following is not precisely documented
+        if ("pending".equalsIgnoreCase(fr.fromBlock) || "pending".equalsIgnoreCase(fr.toBlock)) {
+            filter.onPendingTx = true;
+        } else if ("latest".equalsIgnoreCase(fr.fromBlock) || "latest".equalsIgnoreCase(fr.toBlock)) {
+            filter.onNewBlock = true;
+        }
+
+        return filter;
+    }
+
+    private static void retrieveHistoricalData(Web3.FilterRequest fr, Blockchain blockchain, LogFilter filter) throws Exception {
         Block blockFrom = isBlockWord(fr.fromBlock) ? null : Web3Impl.getBlockByNumberOrStr(fr.fromBlock, blockchain);
         Block blockTo = isBlockWord(fr.toBlock) ? null : Web3Impl.getBlockByNumberOrStr(fr.toBlock, blockchain);
 
@@ -169,15 +182,6 @@ public class LogFilter extends Filter {
         else if ("latest".equalsIgnoreCase(fr.fromBlock)) {
             filter.onBlock(blockchain.getBestBlock());
         }
-
-        // the following is not precisely documented
-        if ("pending".equalsIgnoreCase(fr.fromBlock) || "pending".equalsIgnoreCase(fr.toBlock)) {
-            filter.onPendingTx = true;
-        } else if ("latest".equalsIgnoreCase(fr.fromBlock) || "latest".equalsIgnoreCase(fr.toBlock)) {
-            filter.onNewBlock = true;
-        }
-
-        return filter;
     }
 
     private static boolean isBlockWord(String id) {
