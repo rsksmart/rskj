@@ -60,7 +60,7 @@ public class TransactionResultDTO {
         to = TypeConverter.toJsonHex(tx.getReceiveAddress().getBytes());
         gas = TypeConverter.toJsonHex(tx.getGasLimit()); // Todo: unclear if it's the gas limit or gas consumed what is asked
 
-        gasPrice = TypeConverter.toJsonHex(tx.getGasPrice());
+        gasPrice = TypeConverter.toJsonHex(tx.getGasPrice().getBytes());
 
         if (Coin.ZERO.equals(tx.getValue())) {
             value = "0";

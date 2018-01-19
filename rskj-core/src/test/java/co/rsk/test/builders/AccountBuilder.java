@@ -19,7 +19,7 @@
 package co.rsk.test.builders;
 
 import co.rsk.core.BlockDifficulty;
-import co.rsk.core.RskAddress;
+import co.rsk.core.Coin;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.World;
 import org.ethereum.core.Account;
@@ -28,14 +28,12 @@ import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 
-import java.math.BigInteger;
-
 /**
  * Created by ajlopez on 8/6/2016.
  */
 public class AccountBuilder {
     private String name;
-    private BigInteger balance;
+    private Coin balance;
     private byte[] code;
     private BlockChainImpl blockChain;
 
@@ -55,7 +53,7 @@ public class AccountBuilder {
         return this;
     }
 
-    public AccountBuilder balance(BigInteger balance) {
+    public AccountBuilder balance(Coin balance) {
         this.balance = balance;
         return this;
     }

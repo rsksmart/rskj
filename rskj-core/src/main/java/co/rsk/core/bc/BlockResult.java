@@ -18,15 +18,15 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.core.Coin;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieImpl;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.crypto.HashUtil;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieImpl;
 import org.ethereum.util.RLP;
 
-import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 
@@ -41,11 +41,11 @@ public class BlockResult {
     private final byte[] stateRoot;
     private final byte[] receiptsRoot;
     private final long gasUsed;
-    private final BigInteger paidFees;
+    private final Coin paidFees;
     private final byte[] logsBloom;
 
     public BlockResult(List<Transaction> executedTransactions, List<TransactionReceipt> transactionReceipts,
-                       byte[] stateRoot, long gasUsed, BigInteger paidFees) {
+                       byte[] stateRoot, long gasUsed, Coin paidFees) {
         this.executedTransactions = executedTransactions;
         this.transactionReceipts = transactionReceipts;
         this.stateRoot = stateRoot;
@@ -76,7 +76,7 @@ public class BlockResult {
         return this.gasUsed;
     }
 
-    public BigInteger getPaidFees() {
+    public Coin getPaidFees() {
         return this.paidFees;
     }
 
@@ -108,7 +108,7 @@ public class BlockResult {
 
     private static class InterruptedExecutionBlockResult extends BlockResult {
         public InterruptedExecutionBlockResult() {
-            super(Collections.emptyList(), Collections.emptyList(), null, 0, BigInteger.ZERO);
+            super(Collections.emptyList(), Collections.emptyList(), null, 0, Coin.ZERO);
         }
     }
 }

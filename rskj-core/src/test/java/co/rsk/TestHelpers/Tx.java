@@ -41,8 +41,7 @@ public class Tx {
         Mockito.when(transaction.getValue()).thenReturn(new Coin(BigInteger.valueOf(value)));
         Mockito.when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(gaslimit).toByteArray());
         Mockito.when(transaction.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(gaslimit));
-        Mockito.when(transaction.getGasPrice()).thenReturn(BigInteger.valueOf(gasprice).toByteArray());
-        Mockito.when(transaction.getGasPriceAsInteger()).thenReturn(BigInteger.valueOf(gasprice));
+        Mockito.when(transaction.getGasPrice()).thenReturn(Coin.valueOf(gasprice));
         Mockito.when(transaction.getNonce()).thenReturn(BigInteger.valueOf(nonce).toByteArray());
         Mockito.when(transaction.getNonceAsInteger()).thenReturn(BigInteger.valueOf(nonce));
 

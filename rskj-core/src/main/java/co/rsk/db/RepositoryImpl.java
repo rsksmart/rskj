@@ -19,6 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
@@ -81,7 +82,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized AccountState createAccount(RskAddress addr) {
-        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
+        AccountState accountState = new AccountState();
         updateAccountState(addr, accountState);
         updateContractDetails(addr, new ContractDetailsImpl(config));
         return accountState;
@@ -233,16 +234,16 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
-    public synchronized BigInteger getBalance(RskAddress addr) {
+    public synchronized Coin getBalance(RskAddress addr) {
         AccountState account = getAccountState(addr);
-        return (account == null) ? AccountState.EMPTY.getBalance() : account.getBalance();
+        return (account == null) ? new AccountState().getBalance() : account.getBalance();
     }
 
     @Override
-    public synchronized BigInteger addBalance(RskAddress addr, BigInteger value) {
+    public synchronized Coin addBalance(RskAddress addr, Coin value) {
         AccountState account = getAccountStateOrCreateNew(addr);
 
-        BigInteger result = account.addToBalance(value);
+        Coin result = account.addToBalance(value);
         updateAccountState(addr, account);
 
         return result;
@@ -383,7 +384,7 @@ public class RepositoryImpl implements Repository {
         AccountState account = getAccountState(addr);
         ContractDetails details = getContractDetails(addr);
 
-        account = (account == null) ? new AccountState(BigInteger.ZERO, BigInteger.ZERO) : account.clone();
+        account = (account == null) ? new AccountState() : account.clone();
         details = new ContractDetailsCacheImpl(details);
 
         cacheAccounts.put(addr, account);

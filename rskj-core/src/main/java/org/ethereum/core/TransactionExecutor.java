@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.Constants;
@@ -69,7 +70,7 @@ public class TransactionExecutor {
     private final ReceiptStore receiptStore;
     private String executionError = "";
     private final long gasUsedInTheBlock;
-    private BigInteger paidFees;
+    private Coin paidFees;
     private boolean readyToExecute = false;
 
     private final ProgramInvokeFactory programInvokeFactory;
@@ -160,14 +161,14 @@ public class TransactionExecutor {
         }
 
 
-        BigInteger totalCost = BigInteger.ZERO;
+        Coin totalCost = Coin.ZERO;
         if (basicTxCost > 0 ) {
             // Estimate transaction cost only if is not a free trx
-            BigInteger txGasCost = toBI(tx.getGasPrice()).multiply(txGasLimit);
-            totalCost = tx.getValue().asBigInteger().add(txGasCost);
+            Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
+            totalCost = tx.getValue().add(txGasCost);
         }
 
-        BigInteger senderBalance = track.getBalance(tx.getSender());
+        Coin senderBalance = track.getBalance(tx.getSender());
 
         if (!isCovers(senderBalance, totalCost)) {
 
@@ -218,12 +219,10 @@ public class TransactionExecutor {
             track.increaseNonce(tx.getSender());
 
             BigInteger txGasLimit = toBI(tx.getGasLimit());
-            BigInteger txGasCost = toBI(tx.getGasPrice()).multiply(txGasLimit);
+            Coin txGasCost = tx.getGasPrice().multiply(txGasLimit);
             track.addBalance(tx.getSender(), txGasCost.negate());
 
-            if (logger.isTraceEnabled()){
-                logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, toBI(tx.getGasPrice()), txGasLimit);
-            }
+            logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
         }
 
         if (tx.isContractCreation()) {
@@ -289,8 +288,8 @@ public class TransactionExecutor {
         }
 
         if (result.getException() == null) {
-            BigInteger endowment = tx.getValue().asBigInteger();
-            transfer(cacheTrack, tx.getSender(), targetAddress, endowment);
+            Coin endowment = tx.getValue();
+            cacheTrack.transfer(tx.getSender(), targetAddress, endowment);
         }
     }
 
@@ -313,8 +312,8 @@ public class TransactionExecutor {
             }
         }
 
-        BigInteger endowment = tx.getValue().asBigInteger();
-        transfer(cacheTrack, tx.getSender(), newContractAddress, endowment);
+        Coin endowment = tx.getValue();
+        cacheTrack.transfer(tx.getSender(), newContractAddress, endowment);
     }
 
     private void execError(Throwable err) {
@@ -472,7 +471,7 @@ public class TransactionExecutor {
         logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
 
         // Transfer fees to miner
-        BigInteger summaryFee = summary.getFee();
+        Coin summaryFee = summary.getFee();
 
         //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
         if(config.isRemascEnabled()) {
@@ -534,5 +533,5 @@ public class TransactionExecutor {
         return toBI(tx.getGasLimit()).subtract(mEndGas).longValue();
     }
 
-    public BigInteger getPaidFees() { return paidFees; }
+    public Coin getPaidFees() { return paidFees; }
 }

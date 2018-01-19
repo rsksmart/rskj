@@ -20,6 +20,7 @@
 package org.ethereum.core.genesis;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImplTest;
 import org.ethereum.config.BlockchainNetConfig;
@@ -69,13 +70,13 @@ public class BlockchainLoaderTest {
 
         Assert.assertEquals(5, repository.getAccountsKeys().size());
 
-        Assert.assertEquals(BigInteger.valueOf(2000), repository.getBalance(new RskAddress("dabadabadabadabadabadabadabadabadaba0001")));
+        Assert.assertEquals(Coin.valueOf(2000), repository.getBalance(new RskAddress("dabadabadabadabadabadabadabadabadaba0001")));
         Assert.assertEquals(BigInteger.valueOf(24), repository.getNonce(new RskAddress("dabadabadabadabadabadabadabadabadaba0001")));
 
-        Assert.assertEquals(BigInteger.valueOf(1000), repository.getBalance(new RskAddress("dabadabadabadabadabadabadabadabadaba0002")));
+        Assert.assertEquals(Coin.valueOf(1000), repository.getBalance(new RskAddress("dabadabadabadabadabadabadabadabadaba0002")));
         Assert.assertEquals(BigInteger.ZERO, repository.getNonce(new RskAddress("dabadabadabadabadabadabadabadabadaba0002")));
 
-        Assert.assertEquals(BigInteger.valueOf(10), repository.getBalance(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")));
+        Assert.assertEquals(Coin.valueOf(10), repository.getBalance(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")));
         Assert.assertEquals(BigInteger.valueOf(25), repository.getNonce(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")));
         Assert.assertEquals(DataWord.ONE, repository.getContractDetails(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).get(DataWord.ZERO));
         Assert.assertEquals(new DataWord(3), repository.getContractDetails(new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051")).get(DataWord.ONE));

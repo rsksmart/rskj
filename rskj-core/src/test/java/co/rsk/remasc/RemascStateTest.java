@@ -19,11 +19,11 @@
 package co.rsk.remasc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.core.Coin;
 import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
@@ -35,15 +35,15 @@ import java.util.TreeMap;
 public class RemascStateTest {
     @Test
     public void serializeAndDeserializeWithNoValues() {
-        RemascState state = new RemascState(BigInteger.ZERO, BigInteger.ZERO, new TreeMap<>(), false);
+        RemascState state = new RemascState(Coin.ZERO, Coin.ZERO, new TreeMap<>(), false);
 
         byte[] bytes = state.getEncoded();
 
         RemascState result = RemascState.create(bytes);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(BigInteger.ZERO, result.getRewardBalance());
-        Assert.assertEquals(BigInteger.ZERO, result.getBurnedBalance());
+        Assert.assertEquals(Coin.ZERO, result.getRewardBalance());
+        Assert.assertEquals(Coin.ZERO, result.getBurnedBalance());
         Assert.assertNotNull(result.getSiblings());
         Assert.assertTrue(result.getSiblings().isEmpty());
         Assert.assertFalse(result.getBrokenSelectionRule());
@@ -85,15 +85,15 @@ public class RemascStateTest {
         siblings.put(Long.valueOf(1), siblings1);
         siblings.put(Long.valueOf(2), siblings2);
 
-        RemascState state = new RemascState(BigInteger.ONE, BigInteger.TEN, siblings, true);
+        RemascState state = new RemascState(Coin.valueOf(1), Coin.valueOf(10), siblings, true);
 
         byte[] bytes = state.getEncoded();
 
         RemascState result = RemascState.create(bytes);
 
         Assert.assertNotNull(result);
-        Assert.assertEquals(BigInteger.ONE, result.getRewardBalance());
-        Assert.assertEquals(BigInteger.TEN, result.getBurnedBalance());
+        Assert.assertEquals(Coin.valueOf(1), result.getRewardBalance());
+        Assert.assertEquals(Coin.valueOf(10), result.getBurnedBalance());
         Assert.assertNotNull(result.getSiblings());
         Assert.assertFalse(result.getSiblings().isEmpty());
         Assert.assertTrue(result.getBrokenSelectionRule());

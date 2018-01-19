@@ -20,20 +20,19 @@
 package org.ethereum.core.genesis;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
 import org.apache.commons.lang3.StringUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JavaType;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Genesis;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
-import co.rsk.trie.Trie;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -85,7 +84,7 @@ public class GenesisLoader {
 
         for (Map.Entry<String, AllocatedAccount> accountEntry : alloc.entrySet()) {
             if(!StringUtils.equals("00", accountEntry.getKey())) {
-                BigInteger balance = new BigInteger(accountEntry.getValue().getBalance());
+                Coin balance = new Coin(new BigInteger(accountEntry.getValue().getBalance()));
                 BigInteger nonce;
 
                 if (accountEntry.getValue().getNonce() != null) {

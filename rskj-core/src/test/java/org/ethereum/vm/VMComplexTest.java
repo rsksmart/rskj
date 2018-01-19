@@ -20,6 +20,7 @@
 package org.ethereum.vm;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -82,7 +83,7 @@ public class VMComplexTest {
         byte[] codeB = Hex.decode(code);
 
         byte[] codeKey = HashUtil.sha3(codeB);
-        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
+        AccountState accountState = new AccountState();
         accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
@@ -90,7 +91,8 @@ public class VMComplexTest {
         Repository repository = pi.getRepository();
 
         repository.createAccount(callerAddrB);
-        repository.addBalance(callerAddrB, new BigInteger("100000000000000000000"));
+        final BigInteger value = new BigInteger("100000000000000000000");
+        repository.addBalance(callerAddrB, new Coin(value));
 
         repository.createAccount(contractAddrB);
         repository.saveCode(contractAddrB, codeB);
@@ -110,7 +112,7 @@ public class VMComplexTest {
         System.out.println();
         System.out.println("============ Results ============");
 
-        BigInteger balance = repository.getBalance(callerAddrB);
+        Coin balance = repository.getBalance(callerAddrB);
 
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
         System.out.println("*** Contract Balance: " + balance);
@@ -175,7 +177,8 @@ public class VMComplexTest {
         repository.saveCode(contractB_addr, codeB);
 
         repository.createAccount(caller_addr);
-        repository.addBalance(caller_addr, new BigInteger("100000000000000000000"));
+        final BigInteger value = new BigInteger("100000000000000000000");
+        repository.addBalance(caller_addr, new Coin(value));
 
 
         // ****************** //
@@ -264,7 +267,8 @@ public class VMComplexTest {
         repository.saveCode(contractB_addr, codeB);
 
         repository.createAccount(caller_addr);
-        repository.addBalance(caller_addr, new BigInteger("100000000000000000000"));
+        final BigInteger value = new BigInteger("100000000000000000000");
+        repository.addBalance(caller_addr, new Coin(value));
 
         // ****************** //
         //  Play the program  //
@@ -407,14 +411,16 @@ public class VMComplexTest {
         Repository repository = pi.getRepository();
         repository.createAccount(contractA_addr);
         repository.saveCode(contractA_addr, codeA);
-        repository.addBalance(contractA_addr, BigInteger.valueOf(23));
+        repository.addBalance(contractA_addr, Coin.valueOf(23));
 
         repository.createAccount(contractB_addr);
         repository.saveCode(contractB_addr, codeB);
-        repository.addBalance(contractB_addr, new BigInteger("1000000000000000000"));
+        final BigInteger value = new BigInteger("1000000000000000000");
+        repository.addBalance(contractB_addr, new Coin(value));
 
         repository.createAccount(caller_addr);
-        repository.addBalance(caller_addr, new BigInteger("100000000000000000000"));
+        final BigInteger value1 = new BigInteger("100000000000000000000");
+        repository.addBalance(caller_addr, new Coin(value1));
 
         // ****************** //
         //  Play the program  //
@@ -468,7 +474,7 @@ public class VMComplexTest {
         byte[] codeB = Hex.decode(code);
 
         byte[] codeKey = HashUtil.sha3(codeB);
-        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
+        AccountState accountState = new AccountState();
         accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
@@ -476,7 +482,8 @@ public class VMComplexTest {
         Repository repository = pi.getRepository();
 
         repository.createAccount(callerAddrB);
-        repository.addBalance(callerAddrB, new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935"));
+        final BigInteger value = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935");
+        repository.addBalance(callerAddrB, new Coin(value));
 
         repository.createAccount(contractAddrB);
         repository.saveCode(contractAddrB, codeB);
@@ -496,7 +503,7 @@ public class VMComplexTest {
         System.out.println();
         System.out.println("============ Results ============");
 
-        BigInteger balance = repository.getBalance(callerAddrB);
+        Coin balance = repository.getBalance(callerAddrB);
 
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
         System.out.println("*** Contract Balance: " + balance);
@@ -527,7 +534,7 @@ public class VMComplexTest {
         byte[] codeB = Hex.decode(code);
 
         byte[] codeKey = HashUtil.sha3(codeB);
-        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
+        AccountState accountState = new AccountState();
         accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
@@ -535,7 +542,8 @@ public class VMComplexTest {
         Repository repository = pi.getRepository();
 
         repository.createAccount(callerAddrB);
-        repository.addBalance(callerAddrB, new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935"));
+        final BigInteger value = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935");
+        repository.addBalance(callerAddrB, new Coin(value));
 
         repository.createAccount(contractAddrB);
         repository.saveCode(contractAddrB, codeB);
@@ -555,7 +563,7 @@ public class VMComplexTest {
         System.out.println();
         System.out.println("============ Results ============");
 
-        BigInteger balance = repository.getBalance(callerAddrB);
+        Coin balance = repository.getBalance(callerAddrB);
 
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
         System.out.println("*** Contract Balance: " + balance);
@@ -586,7 +594,7 @@ public class VMComplexTest {
         byte[] codeB = Hex.decode(code);
 
         byte[] codeKey = HashUtil.sha3(codeB);
-        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
+        AccountState accountState = new AccountState();
         accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
@@ -594,7 +602,8 @@ public class VMComplexTest {
         Repository repository = pi.getRepository();
 
         repository.createAccount(callerAddrB);
-        repository.addBalance(callerAddrB, new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935"));
+        final BigInteger value = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935");
+        repository.addBalance(callerAddrB, new Coin(value));
 
         repository.createAccount(contractAddrB);
         repository.saveCode(contractAddrB, codeB);
@@ -614,7 +623,7 @@ public class VMComplexTest {
         System.out.println();
         System.out.println("============ Results ============");
 
-        BigInteger balance = repository.getBalance(callerAddrB);
+        Coin balance = repository.getBalance(callerAddrB);
 
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
         System.out.println("*** Contract Balance: " + balance);
@@ -645,7 +654,7 @@ public class VMComplexTest {
         byte[] codeB = Hex.decode(code);
 
         byte[] codeKey = HashUtil.sha3(codeB);
-        AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
+        AccountState accountState = new AccountState();
         accountState.setCodeHash(codeKey);
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
@@ -653,7 +662,8 @@ public class VMComplexTest {
         Repository repository = pi.getRepository();
 
         repository.createAccount(callerAddrB);
-        repository.addBalance(callerAddrB, new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935"));
+        final BigInteger value = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935");
+        repository.addBalance(callerAddrB, new Coin(value));
 
         repository.createAccount(contractAddrB);
         repository.saveCode(contractAddrB, codeB);
@@ -673,7 +683,7 @@ public class VMComplexTest {
         System.out.println();
         System.out.println("============ Results ============");
 
-        BigInteger balance = repository.getBalance(callerAddrB);
+        Coin balance = repository.getBalance(callerAddrB);
 
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
         System.out.println("*** Contract Balance: " + balance);

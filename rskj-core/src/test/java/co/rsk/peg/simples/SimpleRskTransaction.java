@@ -24,8 +24,6 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.SHA3Helper;
 
-import java.math.BigInteger;
-
 /**
  * Created by ajlopez on 6/8/2016.
  */
@@ -42,7 +40,9 @@ public class SimpleRskTransaction extends Transaction {
     public byte[] getHash() { return hash; }
 
     @Override
-    public Coin getValue() { return new Coin(BigInteger.valueOf(10000000)); }
+    public Coin getValue() {
+        return Coin.valueOf(10000000);
+    }
 
     @Override
     public String toString() { return "Tx " + this.getHash().toString(); }

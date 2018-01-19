@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.Coin;
 import org.junit.Test;
 
 import org.spongycastle.util.encoders.Hex;
@@ -35,39 +36,39 @@ public class AccountStateTest {
                 + "a0100000000000000000000000000000000000000000000000000"
                 + "a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
                 + "a0c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470";
-        AccountState acct = new AccountState(BigInteger.ZERO, BigInteger.valueOf(2).pow(200));
+        AccountState acct = new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
         assertEquals(expected, Hex.toHexString(acct.getEncoded()));
     }
 
     @Test
     public void encodeDecodeStateWithZeroInStateFlags() {
-        AccountState acct = new AccountState(BigInteger.ZERO, BigInteger.valueOf(2).pow(200));
+        AccountState acct = new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
         AccountState result = new AccountState(acct.getEncoded());
 
         assertEquals(BigInteger.ZERO, result.getNonce());
-        assertEquals(BigInteger.valueOf(2).pow(200), result.getBalance());
+        assertEquals(BigInteger.valueOf(2).pow(200), result.getBalance().asBigInteger());
         assertEquals(0, result.getStateFlags());
     }
 
     @Test
     public void encodeDecodeStateWith128InStateFlags() {
-        AccountState acct = new AccountState(BigInteger.ZERO, BigInteger.valueOf(2).pow(200));
+        AccountState acct = new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
         acct.setStateFlags(128);
         AccountState result = new AccountState(acct.getEncoded());
 
         assertEquals(BigInteger.ZERO, result.getNonce());
-        assertEquals(BigInteger.valueOf(2).pow(200), result.getBalance());
+        assertEquals(BigInteger.valueOf(2).pow(200), result.getBalance().asBigInteger());
         assertEquals(128, result.getStateFlags());
     }
 
     @Test
     public void encodeDecodeStateWith238InStateFlags() {
-        AccountState acct = new AccountState(BigInteger.ZERO, BigInteger.valueOf(2).pow(200));
+        AccountState acct = new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
         acct.setStateFlags(238);
         AccountState result = new AccountState(acct.getEncoded());
 
         assertEquals(BigInteger.ZERO, result.getNonce());
-        assertEquals(BigInteger.valueOf(2).pow(200), result.getBalance());
+        assertEquals(BigInteger.valueOf(2).pow(200), result.getBalance().asBigInteger());
         assertEquals(238, result.getStateFlags());
     }
 }

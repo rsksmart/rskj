@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
@@ -29,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -151,8 +151,8 @@ public class BlockExecutor {
             return false;
         }
 
-        BigInteger paidFees = result.getPaidFees();
-        BigInteger feesPaidToMiner = block.getFeesPaidToMiner();
+        Coin paidFees = result.getPaidFees();
+        Coin feesPaidToMiner = block.getFeesPaidToMiner();
 
         if (!paidFees.equals(feesPaidToMiner))  {
             logger.error("Block's given paidFees doesn't match: {} != {} Block {} {}", feesPaidToMiner, paidFees, block.getNumber(), block.getShortHash());
@@ -195,7 +195,7 @@ public class BlockExecutor {
         Repository track = initialRepository.startTracking();
         int i = 1;
         long totalGasUsed = 0;
-        BigInteger totalPaidFees = BigInteger.ZERO;
+        Coin totalPaidFees = Coin.ZERO;
         List<TransactionReceipt> receipts = new ArrayList<>();
         List<Transaction> executedTransactions = new ArrayList<>();
 
@@ -232,7 +232,7 @@ public class BlockExecutor {
 
             long gasUsed = txExecutor.getGasUsed();
             totalGasUsed += gasUsed;
-            BigInteger paidFees = txExecutor.getPaidFees();
+            Coin paidFees = txExecutor.getPaidFees();
             if (paidFees != null) {
                 totalPaidFees = totalPaidFees.add(paidFees);
             }

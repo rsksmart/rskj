@@ -20,6 +20,7 @@ package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.Federation;
 import org.ethereum.config.blockchain.RegTestConfig;
@@ -164,7 +165,7 @@ public class TxValidatorTest {
 
     private void createAccountState(Transaction tx, Repository repository, long balance, long nonce) {
         AccountState as = Mockito.mock(AccountState.class);
-        Mockito.when(as.getBalance()).thenReturn(BigInteger.valueOf(balance));
+        Mockito.when(as.getBalance()).thenReturn(Coin.valueOf(balance));
         Mockito.when(as.getNonce()).thenReturn(BigInteger.valueOf(nonce));
         Mockito.when(repository.getAccountState(tx.getSender())).thenReturn(as);
     }

@@ -48,16 +48,16 @@ public class TxFilterAccumCostFilterTest {
 
         Mockito.when(tx1.getGasLimit()).thenReturn(BigInteger.valueOf(1).toByteArray());
         Mockito.when(tx2.getGasLimit()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx1.getGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx2.getGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx1.getValue()).thenReturn(new Coin(BigInteger.valueOf(1)));
-        Mockito.when(tx2.getValue()).thenReturn(new Coin(BigInteger.valueOf(1)));
+        Mockito.when(tx1.getGasPrice()).thenReturn(Coin.valueOf(1));
+        Mockito.when(tx2.getGasPrice()).thenReturn(Coin.valueOf(1));
+        Mockito.when(tx1.getValue()).thenReturn(Coin.valueOf(1));
+        Mockito.when(tx2.getValue()).thenReturn(Coin.valueOf(1));
         Mockito.when(tx1.getNonce()).thenReturn(BigInteger.valueOf(0).toByteArray());
         Mockito.when(tx2.getNonce()).thenReturn(BigInteger.valueOf(1).toByteArray());
 
-        Mockito.when(as1.getBalance()).thenReturn(BigInteger.valueOf(1000));
-        Mockito.when(as2.getBalance()).thenReturn(BigInteger.valueOf(4));
-        Mockito.when(as3.getBalance()).thenReturn(BigInteger.valueOf(3));
+        Mockito.when(as1.getBalance()).thenReturn(Coin.valueOf(1000));
+        Mockito.when(as2.getBalance()).thenReturn(Coin.valueOf(4));
+        Mockito.when(as3.getBalance()).thenReturn(Coin.valueOf(3));
         Mockito.when(as1.getNonce()).thenReturn(BigInteger.valueOf(0));
         Mockito.when(as2.getNonce()).thenReturn(BigInteger.valueOf(0));
         Mockito.when(as3.getNonce()).thenReturn(BigInteger.valueOf(0));
@@ -104,16 +104,16 @@ public class TxFilterAccumCostFilterTest {
 
         Mockito.when(tx1.getGasLimit()).thenReturn(BigInteger.valueOf(1).toByteArray());
         Mockito.when(tx2.getGasLimit()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx1.getGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx2.getGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
-        Mockito.when(tx1.getValue()).thenReturn(new Coin(BigInteger.valueOf(1)));
-        Mockito.when(tx2.getValue()).thenReturn(new Coin(BigInteger.valueOf(1)));
+        Mockito.when(tx1.getGasPrice()).thenReturn(Coin.valueOf(1));
+        Mockito.when(tx2.getGasPrice()).thenReturn(Coin.valueOf(1));
+        Mockito.when(tx1.getValue()).thenReturn(Coin.valueOf(1));
+        Mockito.when(tx2.getValue()).thenReturn(Coin.valueOf(1));
         Mockito.when(tx1.getNonce()).thenReturn(BigInteger.valueOf(0).toByteArray());
         Mockito.when(tx2.getNonce()).thenReturn(BigInteger.valueOf(1).toByteArray());
 
-        Mockito.when(as1.getBalance()).thenReturn(BigInteger.valueOf(0));
-        Mockito.when(as2.getBalance()).thenReturn(BigInteger.valueOf(1));
-        Mockito.when(as3.getBalance()).thenReturn(BigInteger.valueOf(2));
+        Mockito.when(as1.getBalance()).thenReturn(Coin.valueOf(0));
+        Mockito.when(as2.getBalance()).thenReturn(Coin.valueOf(1));
+        Mockito.when(as3.getBalance()).thenReturn(Coin.valueOf(2));
         Mockito.when(as1.getNonce()).thenReturn(BigInteger.valueOf(0));
         Mockito.when(as2.getNonce()).thenReturn(BigInteger.valueOf(0));
         Mockito.when(as3.getNonce()).thenReturn(BigInteger.valueOf(0));

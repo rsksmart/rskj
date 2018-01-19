@@ -252,7 +252,7 @@ public class WorldDslProcessorTest {
         Account account = world.getAccountByName("acc1");
 
         Assert.assertNotNull(account);
-        Assert.assertEquals(BigInteger.ZERO, world.getRepository().getBalance(account.getAddress()));
+        Assert.assertEquals(BigInteger.ZERO, world.getRepository().getBalance(account.getAddress()).asBigInteger());
     }
 
     @Test
@@ -268,7 +268,7 @@ public class WorldDslProcessorTest {
         Account account = world.getAccountByName("acc1");
 
         Assert.assertNotNull(account);
-        Assert.assertEquals(new BigInteger("1000000"), world.getRepository().getBalance(account.getAddress()));
+        Assert.assertEquals(new BigInteger("1000000"), world.getRepository().getBalance(account.getAddress()).asBigInteger());
     }
 
     @Test
@@ -399,7 +399,7 @@ public class WorldDslProcessorTest {
         Assert.assertEquals(new BigInteger("1000"), tx01.getValue().asBigInteger());
         Assert.assertNotNull(tx01.getData());
         Assert.assertEquals(0, tx01.getData().length);
-        Assert.assertEquals(new BigInteger("2"), tx01.getGasPriceAsInteger());
+        Assert.assertEquals(new BigInteger("2"), tx01.getGasPrice().asBigInteger());
         Assert.assertEquals(new BigInteger("1200000"), tx01.getGasLimitAsInteger());
     }
 

@@ -70,5 +70,8 @@ public enum Denomination {
         return satoshis.multiply(SATOSHI.value());
     }
 
+    public static BigInteger satoshisToWeis(long satoshis) {
+        return BigInteger.valueOf(satoshis).multiply(SATOSHI.value());
+    }
 
 }

@@ -75,7 +75,7 @@ public class RskForksBridgeTest {
 
         genesis = (Genesis)blockChain.getBestBlock();
         keyHoldingRSKs = new ECKey();
-        BigInteger balance = new BigInteger("10000000000000000000");
+        co.rsk.core.Coin balance = new co.rsk.core.Coin(new BigInteger("10000000000000000000"));
         repository.addBalance(new RskAddress(keyHoldingRSKs.getAddress()), balance);
         genesis.setStateRoot(repository.getRoot());
         genesis.flushRLP();

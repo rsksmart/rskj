@@ -19,6 +19,7 @@
 package org.ethereum.rpc;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.BlockChainImpl;
@@ -108,7 +109,7 @@ public class Web3ImplLogsTest {
     @Test
     public void newFilterGetChangesAfterBlock() throws Exception {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         BlockChainImpl blockChain = world.getBlockChain();
         PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
@@ -312,7 +313,7 @@ public class Web3ImplLogsTest {
     @Test
     public void createMainContractWithoutEvents() throws Exception {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         BlockChainImpl blockChain = world.getBlockChain();
         PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
@@ -350,7 +351,7 @@ public class Web3ImplLogsTest {
     @Test
     public void createCallerContractWithEvents() throws Exception {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         BlockChainImpl blockChain = world.getBlockChain();
         PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
@@ -402,7 +403,7 @@ public class Web3ImplLogsTest {
     @Test
     public void createCallerContractWithEventsOnInvoke() throws Exception {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         BlockChainImpl blockChain = world.getBlockChain();
         PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
@@ -494,7 +495,7 @@ public class Web3ImplLogsTest {
 
     private Web3Impl getWeb3WithContractCreationWithoutEvents() {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         Block genesis = world.getBlockByName("g00");
 
@@ -534,7 +535,7 @@ public class Web3ImplLogsTest {
 
     private Web3Impl getWeb3WithEventInContractCreation() {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         Block genesis = world.getBlockByName("g00");
         Transaction tx;
@@ -555,7 +556,7 @@ public class Web3ImplLogsTest {
 
     private Web3Impl getWeb3WithContractInvoke() {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         Block genesis = world.getBlockByName("g00");
         Transaction tx;
@@ -585,7 +586,7 @@ public class Web3ImplLogsTest {
 
     private Web3Impl getWeb3WithContractCall() {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
         // acc1 Account created address should be 661b05ca9eb621164906671efd2731ce0d7dd8b4
 
         Block genesis = world.getBlockByName("g00");

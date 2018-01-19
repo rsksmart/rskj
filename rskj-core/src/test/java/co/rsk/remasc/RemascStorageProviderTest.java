@@ -20,6 +20,7 @@ package co.rsk.remasc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.RepositoryImplForTesting;
@@ -29,7 +30,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -49,7 +49,7 @@ public class RemascStorageProviderTest {
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        Assert.assertEquals(BigInteger.ZERO, provider.getRewardBalance());
+        Assert.assertEquals(Coin.ZERO, provider.getRewardBalance());
     }
 
     @Test
@@ -59,9 +59,9 @@ public class RemascStorageProviderTest {
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        provider.setRewardBalance(BigInteger.ONE);
+        provider.setRewardBalance(Coin.valueOf(1));
 
-        Assert.assertEquals(BigInteger.ONE, provider.getRewardBalance());
+        Assert.assertEquals(Coin.valueOf(1), provider.getRewardBalance());
     }
 
     @Test
@@ -71,13 +71,13 @@ public class RemascStorageProviderTest {
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        provider.setRewardBalance(BigInteger.valueOf(255));
+        provider.setRewardBalance(Coin.valueOf(255));
 
         provider.save();
 
         RemascStorageProvider newProvider = new RemascStorageProvider(repository, accountAddress);
 
-        Assert.assertEquals(BigInteger.valueOf(255), newProvider.getRewardBalance());
+        Assert.assertEquals(Coin.valueOf(255), newProvider.getRewardBalance());
     }
 
     @Test
@@ -87,7 +87,7 @@ public class RemascStorageProviderTest {
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        Assert.assertEquals(BigInteger.ZERO, provider.getBurnedBalance());
+        Assert.assertEquals(Coin.ZERO, provider.getBurnedBalance());
     }
 
     @Test
@@ -97,9 +97,9 @@ public class RemascStorageProviderTest {
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        provider.setBurnedBalance(BigInteger.ONE);
+        provider.setBurnedBalance(Coin.valueOf(1));
 
-        Assert.assertEquals(BigInteger.ONE, provider.getBurnedBalance());
+        Assert.assertEquals(Coin.valueOf(1), provider.getBurnedBalance());
     }
 
     @Test
@@ -109,13 +109,13 @@ public class RemascStorageProviderTest {
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
-        provider.setBurnedBalance(BigInteger.valueOf(255));
+        provider.setBurnedBalance(Coin.valueOf(255));
 
         provider.save();
 
         RemascStorageProvider newProvider = new RemascStorageProvider(repository, accountAddress);
 
-        Assert.assertEquals(BigInteger.valueOf(255), newProvider.getBurnedBalance());
+        Assert.assertEquals(Coin.valueOf(255), newProvider.getBurnedBalance());
     }
 
     @Test

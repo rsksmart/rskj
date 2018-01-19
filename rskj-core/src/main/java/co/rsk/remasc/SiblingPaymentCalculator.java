@@ -19,7 +19,9 @@
 package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
+import co.rsk.core.Coin;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 
 /**
@@ -27,46 +29,48 @@ import java.math.BigInteger;
  */
 public class SiblingPaymentCalculator {
 
-    private BigInteger individualPublisherReward;
-    private BigInteger publishersSurplus;
-    private BigInteger individualMinerReward;
-    private BigInteger minersSurplus;
-    private BigInteger punishment;
+    private final Coin individualPublisherReward;
+    private final Coin publishersSurplus;
+    private final Coin individualMinerReward;
+    private final Coin minersSurplus;
+    private final Coin punishment;
 
-    public SiblingPaymentCalculator(BigInteger fullBlockReward, boolean brokenSelectionRule, long siblingsNumber, RemascConfig remascConstants) {
-        BigInteger publishersReward = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getPublishersDivisor()));
-        BigInteger minersReward = fullBlockReward.subtract(publishersReward);
-        BigInteger[] integerDivisionResult = publishersReward.divideAndRemainder(BigInteger.valueOf(siblingsNumber));
+    public SiblingPaymentCalculator(Coin fullBlockReward, boolean brokenSelectionRule, long siblingsNumber, RemascConfig remascConstants) {
+        Coin publishersReward = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getPublishersDivisor()));
+        Coin minersReward = fullBlockReward.subtract(publishersReward);
+        Coin[] integerDivisionResult = publishersReward.divideAndRemainder(BigInteger.valueOf(siblingsNumber));
         this.individualPublisherReward = integerDivisionResult[0];
         this.publishersSurplus = integerDivisionResult[1];
 
-        BigInteger[] individualRewardDivisionResult = minersReward.divideAndRemainder(BigInteger.valueOf(siblingsNumber + 1L));
-        this.individualMinerReward = individualRewardDivisionResult[0];
+        Coin[] individualRewardDivisionResult = minersReward.divideAndRemainder(BigInteger.valueOf(siblingsNumber + 1L));
         this.minersSurplus = individualRewardDivisionResult[1];
-
         if (brokenSelectionRule) {
-            this.punishment = individualMinerReward.divide(BigInteger.valueOf(remascConstants.getPunishmentDivisor()));
-            individualMinerReward = individualMinerReward.subtract(punishment);
+            this.punishment = individualRewardDivisionResult[0].divide(BigInteger.valueOf(remascConstants.getPunishmentDivisor()));
+            this.individualMinerReward = individualRewardDivisionResult[0].subtract(punishment);
+        } else {
+            this.punishment = null;
+            this.individualMinerReward = individualRewardDivisionResult[0];
         }
     }
 
-    public BigInteger getIndividualPublisherReward() {
+    public Coin getIndividualPublisherReward() {
         return individualPublisherReward;
     }
 
-    public BigInteger getPublishersSurplus() {
+    public Coin getPublishersSurplus() {
         return publishersSurplus;
     }
 
-    public BigInteger getIndividualMinerReward() {
+    public Coin getIndividualMinerReward() {
         return individualMinerReward;
     }
 
-    public BigInteger getMinersSurplus() {
+    public Coin getMinersSurplus() {
         return minersSurplus;
     }
 
-    public BigInteger getPunishment() {
+    @Nullable
+    public Coin getPunishment() {
         return punishment;
     }
 }

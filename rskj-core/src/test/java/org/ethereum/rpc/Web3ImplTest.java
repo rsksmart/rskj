@@ -19,6 +19,7 @@
 package org.ethereum.rpc;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
@@ -158,7 +159,7 @@ public class Web3ImplTest {
     @Test
     public void getBalanceWithAccount() throws Exception {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(10000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
 
         Web3Impl web3 = createWeb3();
 
@@ -170,7 +171,7 @@ public class Web3ImplTest {
     @Test
     public void getBalanceWithAccountAndLatestBlock() throws Exception {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(10000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
 
         Web3Impl web3 = createWeb3(world);
         web3.repository = world.getBlockChain().getRepository();
@@ -181,7 +182,7 @@ public class Web3ImplTest {
     @Test
     public void getBalanceWithAccountAndGenesisBlock() throws Exception {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(10000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
 
         Web3Impl web3 = createWeb3(world);
         web3.repository = world.getBlockChain().getRepository();
@@ -195,7 +196,7 @@ public class Web3ImplTest {
     @Test
     public void getBalanceWithAccountAndBlock() throws Exception {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(10000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
         Block genesis = world.getBlockByName("g00");
 
         Block block1 = new BlockBuilder().parent(genesis).build();
@@ -215,7 +216,7 @@ public class Web3ImplTest {
         World world = new World();
         BlockChainImpl blockChain = world.getBlockChain();
         PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(10000000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000000)).build();
         Account acc2 = new AccountBuilder(world).name("acc2").build();
         Block genesis = world.getBlockByName("g00");
 
@@ -309,7 +310,7 @@ public class Web3ImplTest {
         World world = new World();
         Web3Impl web3 = createWeb3(world);
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(2000000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
@@ -341,7 +342,7 @@ public class Web3ImplTest {
         World world = new World();
         Web3Impl web3 = createWeb3(world);
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(2000000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
@@ -368,7 +369,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(2000000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
@@ -399,7 +400,7 @@ public class Web3ImplTest {
         pendingState.processBest(blockChain.getBestBlock());
         Web3Impl web3 = createWeb3(world, pendingState);
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(2000000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         pendingState.addPendingTransaction(tx);
@@ -424,7 +425,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(2000000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
@@ -450,7 +451,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(2000000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
@@ -493,7 +494,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(2000000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
@@ -535,7 +536,7 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3(world);
         web3.repository = world.getRepository();
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(100000000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(100000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
@@ -707,7 +708,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(220000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(220000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(0)).build();
         List<Transaction> txs = new ArrayList<>();
@@ -735,7 +736,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(220000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(220000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(0)).build();
         List<Transaction> txs = new ArrayList<>();
@@ -775,7 +776,7 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3(world);
         web3.repository = world.getRepository();
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(100000000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(100000000)).build();
         byte[] code = new byte[] { 0x01, 0x02, 0x03 };
         world.getRepository().saveCode(acc1.getAddress(), code);
         Block genesis = world.getBlockChain().getBestBlock();
@@ -796,7 +797,7 @@ public class Web3ImplTest {
     @Test
     public void callFromDefaultAddressInWallet() throws Exception {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("default").balance(BigInteger.valueOf(10000000)).build();
+        Account acc1 = new AccountBuilder(world).name("default").balance(Coin.valueOf(10000000)).build();
 
         Block genesis = world.getBlockByName("g00");
         TestContract greeter = TestContract.greeter();
@@ -825,7 +826,7 @@ public class Web3ImplTest {
     @Test
     public void callFromAddressInWallet() throws Exception {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         Block genesis = world.getBlockByName("g00");
 
@@ -875,7 +876,7 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3(world);
         web3.repository = world.getRepository();
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(100000000)).build();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(100000000)).build();
         byte[] code = new byte[] { 0x01, 0x02, 0x03 };
         world.getRepository().saveCode(acc1.getAddress(), code);
 

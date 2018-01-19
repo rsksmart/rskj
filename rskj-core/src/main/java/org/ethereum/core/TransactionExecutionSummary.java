@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.Coin;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.InternalTransaction;
@@ -36,8 +37,8 @@ import static org.ethereum.util.BIUtil.toBI;
 public class TransactionExecutionSummary {
 
     private Transaction tx;
-    private BigInteger value = BigInteger.ZERO;
-    private BigInteger gasPrice = BigInteger.ZERO;
+    private Coin value = Coin.ZERO;
+    private Coin gasPrice = Coin.ZERO;
     private BigInteger gasLimit = BigInteger.ZERO;
     private BigInteger gasUsed = BigInteger.ZERO;
     private BigInteger gasLeftover = BigInteger.ZERO;
@@ -60,11 +61,11 @@ public class TransactionExecutionSummary {
         return getTransaction().getHash() ;
     }
 
-    private BigInteger calcCost(BigInteger gas) {
+    private Coin calcCost(BigInteger gas) {
         return gasPrice.multiply(gas);
     }
 
-    public BigInteger getFee() {
+    public Coin getFee() {
         if (failed) {
             return calcCost(gasLimit);
         }
@@ -72,23 +73,23 @@ public class TransactionExecutionSummary {
         return calcCost(gasLimit.subtract(gasLeftover.add(gasRefund)));
     }
 
-    public BigInteger getRefund() {
+    public Coin getRefund() {
         if (failed) {
-            return BigInteger.ZERO;
+            return Coin.ZERO;
         }
 
         return calcCost(gasRefund);
     }
 
-    public BigInteger getLeftover() {
+    public Coin getLeftover() {
         if (failed) {
-            return BigInteger.ZERO;
+            return Coin.ZERO;
         }
 
         return calcCost(gasLeftover);
     }
 
-    public BigInteger getGasPrice() {
+    public Coin getGasPrice() {
         return gasPrice;
     }
 
@@ -104,7 +105,7 @@ public class TransactionExecutionSummary {
         return gasLeftover;
     }
 
-    public BigInteger getValue() {
+    public Coin getValue() {
         return value;
     }
 
@@ -150,8 +151,8 @@ public class TransactionExecutionSummary {
             summary = new TransactionExecutionSummary();
             summary.tx = transaction;
             summary.gasLimit = toBI(transaction.getGasLimit());
-            summary.gasPrice = toBI(transaction.getGasPrice());
-            summary.value = transaction.getValue().asBigInteger();
+            summary.gasPrice = transaction.getGasPrice();
+            summary.value = transaction.getValue();
         }
 
         public Builder gasUsed(BigInteger gasUsed) {

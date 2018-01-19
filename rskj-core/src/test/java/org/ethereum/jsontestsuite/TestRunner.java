@@ -20,6 +20,7 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
@@ -204,7 +205,7 @@ public class TestRunner {
             byte[] address = exec.getAddress();
             byte[] origin = exec.getOrigin();
             byte[] caller = exec.getCaller();
-            byte[] balance = ByteUtil.bigIntegerToBytes(repository.getBalance(new RskAddress(exec.getAddress())));
+            byte[] balance = ByteUtil.bigIntegerToBytes(repository.getBalance(new RskAddress(exec.getAddress())).asBigInteger());
             byte[] gasPrice = exec.getGasPrice();
             byte[] gas = exec.getGas();
             byte[] callValue = exec.getValue();
@@ -286,7 +287,7 @@ public class TestRunner {
                     AccountState accountState = testCase.getPost().get(addr);
 
                     long expectedNonce = accountState.getNonceLong();
-                    BigInteger expectedBalance = accountState.getBigIntegerBalance();
+                    Coin expectedBalance = accountState.getBalance();
                     byte[] expectedCode = accountState.getCode();
 
                     boolean accountExist = (null != repository.getAccountState(addr));
@@ -302,7 +303,7 @@ public class TestRunner {
                     }
 
                     long actualNonce = repository.getNonce(addr).longValue();
-                    BigInteger actualBalance = repository.getBalance(addr);
+                    Coin actualBalance = repository.getBalance(addr);
                     byte[] actualCode = repository.getCode(addr);
                     if (actualCode == null) actualCode = "".getBytes();
 
@@ -339,7 +340,7 @@ public class TestRunner {
                         byte[] expectedStValue = storage.get(storageKey).getData();
 
                         ContractDetails contractDetails =
-                                program.getStorage().getContractDetails(new RskAddress(accountState.getAddress()));
+                                program.getStorage().getContractDetails(accountState.getAddress());
 
                         if (contractDetails == null) {
                             String output =
@@ -589,7 +590,7 @@ public class TestRunner {
 
             AccountState accountState = pre.get(addr);
 
-            track.addBalance(addr, new BigInteger(1, accountState.getBalance()));
+            track.addBalance(addr, accountState.getBalance());
             ((RepositoryTrack)track).setNonce(addr, new BigInteger(1, accountState.getNonce()));
 
             track.saveCode(addr, accountState.getCode());

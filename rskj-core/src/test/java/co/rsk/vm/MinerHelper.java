@@ -19,6 +19,7 @@
 package co.rsk.vm;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
@@ -46,7 +47,7 @@ public class MinerHelper {
 
     private byte[] latestStateRootHash;
     private long totalGasUsed;
-    private BigInteger totalPaidFees = BigInteger.ZERO;
+    private Coin totalPaidFees = Coin.ZERO;
     private List<TransactionReceipt> txReceipts;
 
     public MinerHelper(Repository repository , Blockchain blockchain) {
@@ -58,7 +59,7 @@ public class MinerHelper {
     public void processBlock( Block block, Block parent) {
         latestStateRootHash = null;
         totalGasUsed = 0;
-        totalPaidFees = BigInteger.ZERO;
+        totalPaidFees = Coin.ZERO;
         txReceipts = new ArrayList<>();
 
         //Repository originalRepo  = ((Repository) ethereum.getRepository()).getSnapshotTo(parent.getStateRoot());
@@ -95,7 +96,7 @@ public class MinerHelper {
             executor.finalization();
 
             long gasUsed = executor.getGasUsed();
-            BigInteger paidFees = executor.getPaidFees();
+            Coin paidFees = executor.getPaidFees();
             totalGasUsed += gasUsed;
             totalPaidFees = totalPaidFees.add(paidFees);
 

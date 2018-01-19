@@ -18,6 +18,7 @@
 
 package co.rsk.remasc;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.util.RLP;
@@ -40,7 +41,7 @@ public class Sibling {
     // Coinbase address of the sibling block
     private final RskAddress coinbase;
     // Fees paid by the sibling block
-    private final BigInteger  paidFees;
+    private final Coin paidFees;
     // Coinbase address of the block that included the sibling block as uncle
     private final RskAddress includedBlockCoinbase;
     // Height of the block that included the sibling block as uncle
@@ -58,7 +59,7 @@ public class Sibling {
                 blockHeader.getUncleCount());
     }
 
-    private Sibling(byte[] hash, RskAddress coinbase, RskAddress includedBlockCoinbase, BigInteger paidFees, long includedHeight, int uncleCount) {
+    private Sibling(byte[] hash, RskAddress coinbase, RskAddress includedBlockCoinbase, Coin paidFees, long includedHeight, int uncleCount) {
         this.hash = hash;
         this.coinbase = coinbase;
         this.paidFees = paidFees;
@@ -75,7 +76,7 @@ public class Sibling {
         return coinbase;
     }
 
-    public BigInteger  getPaidFees() {
+    public Coin getPaidFees() {
         return paidFees;
     }
 
@@ -94,7 +95,7 @@ public class Sibling {
         byte[] rlpCoinbase = RLP.encodeRskAddress(this.coinbase);
         byte[] rlpIncludedBlockCoinbase = RLP.encodeRskAddress(this.includedBlockCoinbase);
 
-        byte[] rlpPaidFees = RLP.encodeBigInteger(this.paidFees);
+        byte[] rlpPaidFees = RLP.encodeCoin(this.paidFees);
         byte[] rlpIncludedHeight = RLP.encodeBigInteger(BigInteger.valueOf(this.includedHeight));
         byte[] rlpUncleCount = RLP.encodeBigInteger(BigInteger.valueOf((this.uncleCount)));
 
@@ -109,13 +110,12 @@ public class Sibling {
         RskAddress coinbase = RLP.parseRskAddress(sibling.get(1).getRLPData());
         RskAddress includedBlockCoinbase = RLP.parseRskAddress(sibling.get(2).getRLPData());
 
-        byte[] bytesPaidFees = sibling.get(3).getRLPData();
+        Coin paidFees = RLP.parseCoin(sibling.get(3).getRLPData());
         byte[] bytesIncludedHeight = sibling.get(4).getRLPData();
 
         RLPElement uncleCountElement = sibling.get(5);
         byte[] bytesUncleCount = uncleCountElement != null? uncleCountElement.getRLPData():null;
 
-        BigInteger paidFees = bytesPaidFees == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(bytesPaidFees);
         long includedHeight = bytesIncludedHeight == null ? 0 : BigIntegers.fromUnsignedByteArray(bytesIncludedHeight).longValue();
         int uncleCount = bytesUncleCount == null ? 0 : BigIntegers.fromUnsignedByteArray(bytesUncleCount).intValue();
 

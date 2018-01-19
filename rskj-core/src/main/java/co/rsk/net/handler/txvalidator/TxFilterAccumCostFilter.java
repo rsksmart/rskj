@@ -19,6 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.net.handler.TxsPerAccount;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
@@ -43,7 +44,7 @@ public class TxFilterAccumCostFilter implements TxFilter {
 
     @Override
     public List<Transaction> filter(AccountState state, TxsPerAccount tpa, Block block) {
-        BigInteger accumTxCost = BigInteger.valueOf(0);
+        Coin accumTxCost = Coin.ZERO;
 
         tpa.getTransactions().sort((t1, t2) -> {
             BigInteger n1 = new BigInteger(1, t1.getNonce());
@@ -54,16 +55,17 @@ public class TxFilterAccumCostFilter implements TxFilter {
         List<Transaction> newTxs = new LinkedList<>();
 
         for (Transaction t : tpa.getTransactions()) {
-            BigInteger gasCost = BigInteger.ZERO;
+            Coin gasCost = Coin.ZERO;
             if (block == null || t.transactionCost(config, block) > 0) {
-                gasCost = new BigInteger(1, t.getGasLimit()).multiply(new BigInteger(1, t.getGasPrice()));
+                BigInteger gasLimit = new BigInteger(1, t.getGasLimit());
+                gasCost = t.getGasPrice().multiply(gasLimit);
             }
 
             if (accumTxCost.add(gasCost).compareTo(state.getBalance()) > 0) {
                 break;
             }
             accumTxCost = accumTxCost.add(gasCost);
-            accumTxCost = accumTxCost.add(t.getValue().asBigInteger());
+            accumTxCost = accumTxCost.add(t.getValue());
             newTxs.add(t);
         }
         return newTxs;

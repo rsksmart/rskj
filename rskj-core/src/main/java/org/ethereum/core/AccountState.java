@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.Coin;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -42,7 +43,7 @@ public class AccountState {
     private BigInteger nonce;
 
     /* A scalar value equalBytes to the number of Wei owned by this address */
-    private BigInteger balance;
+    private Coin balance;
 
     /* A 256-bit hash of the root node of a trie structure
      * that encodes the storage contents of the contract,
@@ -70,9 +71,11 @@ public class AccountState {
     private boolean dirty = false;
     private boolean deleted = false;
 
-    public static final AccountState EMPTY = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
+    public AccountState() {
+        this(BigInteger.ZERO, Coin.ZERO);
+    }
 
-    public AccountState(BigInteger nonce, BigInteger balance) {
+    public AccountState(BigInteger nonce, Coin balance) {
         this.nonce = nonce;
         this.balance = balance;
     }
@@ -83,8 +86,7 @@ public class AccountState {
         RLPList items = (RLPList) RLP.decode2(rlpEncoded).get(0);
         this.nonce = items.get(0).getRLPData() == null ? BigInteger.ZERO
                 : new BigInteger(1, items.get(0).getRLPData());
-        this.balance = items.get(1).getRLPData() == null ? BigInteger.ZERO
-                : new BigInteger(1, items.get(1).getRLPData());
+        this.balance = RLP.parseCoin(items.get(1).getRLPData());
         this.stateRoot = items.get(2).getRLPData();
         this.codeHash = items.get(3).getRLPData();
 
@@ -137,12 +139,12 @@ public class AccountState {
         this.codeHash = codeHash;
     }
 
-    public BigInteger getBalance() {
+    public Coin getBalance() {
         return balance;
     }
 
-    public BigInteger addToBalance(BigInteger value) {
-        if (value.signum() != 0) {
+    public Coin addToBalance(Coin value) {
+        if (!value.equals(Coin.ZERO)) {
             rlpEncoded = null;
         }
 
@@ -151,8 +153,8 @@ public class AccountState {
         return this.balance;
     }
 
-    public void subFromBalance(BigInteger value) {
-        if (value.signum() != 0) {
+    public void subFromBalance(Coin value) {
+        if (!value.equals(Coin.ZERO)) {
             rlpEncoded = null;
         }
         
@@ -163,7 +165,7 @@ public class AccountState {
     public byte[] getEncoded() {
         if (rlpEncoded == null) {
             byte[] nonce = RLP.encodeBigInteger(this.nonce);
-            byte[] balance = RLP.encodeBigInteger(this.balance);
+            byte[] balance = RLP.encodeCoin(this.balance);
             byte[] stateRoot = RLP.encodeElement(this.stateRoot);
             byte[] codeHash = RLP.encodeElement(this.codeHash);
             if (stateFlags != 0) {
@@ -206,7 +208,7 @@ public class AccountState {
 
     public String toString() {
         String ret = "  Nonce: " + this.getNonce().toString() + "\n" +
-                "  Balance: " + getBalance() + "\n" +
+                "  Balance: " + getBalance().asBigInteger() + "\n" +
                 "  StateFlags: " + getStateFlags() + "\n" +
                 "  State Root: " + Hex.toHexString(this.getStateRoot()) + "\n" +
                 "  Code Hash: " + Hex.toHexString(this.getCodeHash());

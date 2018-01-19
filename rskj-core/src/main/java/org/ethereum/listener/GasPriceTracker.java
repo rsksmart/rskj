@@ -22,7 +22,6 @@ package org.ethereum.listener;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
-import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +63,7 @@ public class GasPriceTracker extends EthereumListenerAdapter {
             filled = true;
             lastVal = 0;  // recalculate only 'sometimes'
         }
-        window[idx--] = ByteUtil.byteArrayToLong(tx.getGasPrice());
+        window[idx--] = tx.getGasPrice().asBigInteger().longValue();
     }
 
     public long getGasPrice() {

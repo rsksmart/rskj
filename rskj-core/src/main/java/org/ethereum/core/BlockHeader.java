@@ -18,6 +18,7 @@
  */
 package org.ethereum.core;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.BlockDifficulty;
 import com.google.common.annotations.VisibleForTesting;
@@ -84,7 +85,7 @@ public class BlockHeader {
     /* A scalar value equalBytes to the total gas used in transactions in this block */
     private long gasUsed;
     /* A scalar value equalBytes to the total paid fees in transactions in this block */
-    private BigInteger paidFees;
+    private Coin paidFees;
 
     /* An arbitrary byte array containing data relevant to this block.
      * With the exception of the genesis block, this must be 32 bytes or fewer */
@@ -143,8 +144,7 @@ public class BlockHeader {
 
         this.extraData = rlpHeader.get(12).getRLPData();
 
-        byte[] pfBytes = rlpHeader.get(13).getRLPData();
-        this.paidFees = parseBigInteger(pfBytes);
+        this.paidFees = RLP.parseCoin(rlpHeader.get(13).getRLPData());
         this.minimumGasPrice = rlpHeader.get(14).getRLPData();
 
         int r = 15;
@@ -197,7 +197,7 @@ public class BlockHeader {
         this.minimumGasPrice = minimumGasPrice;
         this.receiptTrieRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
         this.uncleCount = uncleCount;
-        this.paidFees = BigInteger.ZERO;
+        this.paidFees = Coin.ZERO;
         this.bitcoinMergedMiningHeader = bitcoinMergedMiningHeader;
         this.bitcoinMergedMiningMerkleProof = bitcoinMergedMiningMerkleProof;
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
@@ -346,7 +346,7 @@ public class BlockHeader {
         return gasUsed;
     }
 
-    public void setPaidFees(BigInteger paidFees) {
+    public void setPaidFees(Coin paidFees) {
         /* A sealed block header is immutable, cannot be changed */
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter paid fees");
@@ -355,7 +355,7 @@ public class BlockHeader {
         this.paidFees = paidFees;
     }
 
-    public BigInteger getPaidFees() {
+    public Coin getPaidFees() {
         return this.paidFees;
     }
 
@@ -442,7 +442,7 @@ public class BlockHeader {
         byte[] gasUsed = RLP.encodeBigInteger(BigInteger.valueOf(this.gasUsed));
         byte[] timestamp = RLP.encodeBigInteger(BigInteger.valueOf(this.timestamp));
         byte[] extraData = RLP.encodeElement(this.extraData);
-        byte[] paidFees = RLP.encodeBigInteger(this.paidFees);
+        byte[] paidFees = RLP.encodeCoin(this.paidFees);
         byte[] mgp = RLP.encodeElement(this.minimumGasPrice);
         List<byte[]> fieldToEncodeList = Lists.newArrayList(parentHash, unclesHash, coinbase,
                 stateRoot, txTrieRoot, receiptTrieRoot, logsBloom, difficulty, number,

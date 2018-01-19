@@ -18,8 +18,12 @@
 
 package co.rsk.peg;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
@@ -28,7 +32,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.spongycastle.util.encoders.Hex;
 
 import java.lang.reflect.Method;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -102,7 +105,7 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
     {
         RskAddress addr = new RskAddress("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
 
-        BigInteger balance = new BigInteger("50000");
+        Coin balance = Coin.valueOf(50000);
         repository.addBalance(addr, balance);
 
         DataWord keyWord = new DataWord("result".getBytes(StandardCharsets.UTF_8));
@@ -120,7 +123,7 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
     {
         RskAddress addr = new RskAddress("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
 
-        BigInteger balance = new BigInteger("50000");
+        Coin balance = Coin.valueOf(50000);
         repository.addBalance(addr, balance);
     }
 
@@ -128,7 +131,7 @@ public class SamplePrecompiledContract extends PrecompiledContracts.PrecompiledC
     {
         RskAddress addr = new RskAddress("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
 
-        return repository.getBalance(addr).intValue();
+        return repository.getBalance(addr).asBigInteger().intValue();
     }
 
     public void IncrementResult(Object... args)

@@ -106,20 +106,20 @@ public class TestCase {
 
             for (Object key : preJSON.keySet()) {
 
-                byte[] keyBytes = Hex.decode(key.toString());
+                RskAddress addr = new RskAddress(key.toString());
                 AccountState accountState =
-                        new AccountState(keyBytes, (JSONObject) preJSON.get(key));
+                        new AccountState(addr, (JSONObject) preJSON.get(key));
 
-                pre.put(new RskAddress(keyBytes), accountState);
+                pre.put(addr, accountState);
             }
 
             for (Object key : postJSON.keySet()) {
 
-                byte[] keyBytes = Hex.decode(key.toString());
+                RskAddress addr = new RskAddress(key.toString());
                 AccountState accountState =
-                        new AccountState(keyBytes, (JSONObject) postJSON.get(key));
+                        new AccountState(addr, (JSONObject) postJSON.get(key));
 
-                post.put(new RskAddress(keyBytes), accountState);
+                post.put(addr, accountState);
             }
 
             for (Object callCreate : callCreates) {

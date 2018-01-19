@@ -29,7 +29,7 @@ import java.math.BigInteger;
 public class TxValidatorMinimuGasPriceValidator implements TxValidatorStep {
     @Override
     public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
-        BigInteger gasPrice = tx.getGasPriceAsInteger();
+        BigInteger gasPrice = tx.getGasPrice().asBigInteger();
         return gasPrice != null && gasPrice.compareTo(minimumGasPrice) >= 0;
     }
 }

@@ -47,7 +47,7 @@ public class TransactionBuilderTest {
         Assert.assertArrayEquals(sender.getAddress().getBytes(), tx.getSender().getBytes());
         Assert.assertArrayEquals(receiver.getAddress().getBytes(), tx.getReceiveAddress().getBytes());
         Assert.assertEquals(BigInteger.TEN, tx.getValue().asBigInteger());
-        Assert.assertEquals(BigInteger.ONE, new BigInteger(1, tx.getGasPrice()));
+        Assert.assertEquals(BigInteger.ONE, tx.getGasPrice().asBigInteger());
         Assert.assertEquals(BigInteger.valueOf(2), new BigInteger(1, tx.getNonce()));
         Assert.assertEquals(BigInteger.valueOf(21000), new BigInteger(1, tx.getGasLimit()));
         Assert.assertNotNull(tx.getData());

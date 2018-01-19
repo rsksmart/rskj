@@ -22,6 +22,7 @@ import co.rsk.config.MiningConfig;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
@@ -110,7 +111,7 @@ public class MinerServerImpl implements MinerServer {
     @GuardedBy("lock")
     private Block latestBlock;
     @GuardedBy("lock")
-    private BigInteger latestPaidFeesWithNotify;
+    private Coin latestPaidFeesWithNotify;
     @GuardedBy("lock")
     private volatile MinerWork currentWork; // This variable can be read at anytime without the lock.
     private final Object lock = new Object();
@@ -163,7 +164,7 @@ public class MinerServerImpl implements MinerServer {
 
         blocksWaitingforPoW = createNewBlocksWaitingList();
 
-        latestPaidFeesWithNotify = BigInteger.ZERO;
+        latestPaidFeesWithNotify = Coin.ZERO;
         latestParentHash = null;
         coinbaseAddress = miningConfig.getCoinbaseAddress();
         minFeesNotifyInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
@@ -681,9 +682,9 @@ public class MinerServerImpl implements MinerServer {
 
         // note: integer divisions might truncate values
         BigInteger percentage = BigInteger.valueOf(100L + RskMiningConstants.NOTIFY_FEES_PERCENTAGE_INCREASE);
-        BigInteger minFeesNotify = latestPaidFeesWithNotify.multiply(percentage).divide(BigInteger.valueOf(100L));
-        BigInteger feesPaidToMiner = block.getFeesPaidToMiner();
-        BigDecimal feesPaidToMinerInDollars = new BigDecimal(feesPaidToMiner).multiply(gasUnitInDollars);
+        Coin minFeesNotify = latestPaidFeesWithNotify.multiply(percentage).divide(BigInteger.valueOf(100L));
+        Coin feesPaidToMiner = block.getFeesPaidToMiner();
+        BigDecimal feesPaidToMinerInDollars = new BigDecimal(feesPaidToMiner.asBigInteger()).multiply(gasUnitInDollars);
         return feesPaidToMiner.compareTo(minFeesNotify) > 0
                 && feesPaidToMinerInDollars.compareTo(minFeesNotifyInDollars) >= 0;
 

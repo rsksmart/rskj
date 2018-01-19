@@ -84,9 +84,13 @@ public class Transaction {
      * In creation transaction the receive address is - 0 */
     private RskAddress receiveAddress;
 
-    /* the amount of ether to pay as a transaction fee
-     * to the miner for each unit of gas */
-    private byte[] gasPrice;
+    /**
+     * The amount to pay as a transaction fee to the miner for each unit of gas.
+     * Note that gasPriceRaw is saved to perform {@link #validate()} and {@link #getEncoded()},
+     * but once validated a Transaction should only rely on gasPrice.
+     * */
+    private byte[] gasPriceRaw;
+    private Coin gasPrice;
 
     /* the amount of "gas" to allow for the computation.
      * Gas is the fuel of the computational engine.
@@ -129,20 +133,21 @@ public class Transaction {
      * or simple send tx
      * [ nonce, gasPrice, gasLimit, receiveAddress, value, data, signature(v, r, s) ]
      */
-    public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
-        this(nonce, gasPrice, gasLimit, receiveAddress, value, data, (byte) 0);
+    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
     }
 
-    public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] r, byte[] s, byte v) {
-        this(nonce, gasPrice, gasLimit, receiveAddress, value, data, (byte) 0);
+    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] r, byte[] s, byte v) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
 
         this.signature = ECDSASignature.fromComponents(r, s, v);
     }
 
-    public Transaction(byte[] nonce, byte[] gasPrice, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
+    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
                        byte chainId) {
         this.nonce = ByteUtil.cloneBytes(nonce);
-        this.gasPrice = ByteUtil.cloneBytes(gasPrice);
+        this.gasPriceRaw = ByteUtil.cloneBytes(gasPriceRaw);
+        this.gasPrice = RLP.parseCoin(this.gasPriceRaw);
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
         this.receiveAddress = RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress));
         if (valueRaw == null || ByteUtil.isSingleZero(valueRaw)) {
@@ -214,7 +219,7 @@ public class Transaction {
         if (gasLimit.length > DATAWORD_LENGTH) {
             throw new RuntimeException("Gas Limit is not valid");
         }
-        if (gasPrice != null && gasPrice.length > DATAWORD_LENGTH) {
+        if (gasPriceRaw != null && gasPriceRaw.length > DATAWORD_LENGTH) {
             throw new RuntimeException("Gas Price is not valid");
         }
         if (valueRaw != null && valueRaw.length > DATAWORD_LENGTH) {
@@ -237,7 +242,8 @@ public class Transaction {
         List<RLPElement> transaction = (RLPList)RLP.decode2(rlpEncoded).get(0);
 
         this.nonce = transaction.get(0).getRLPData();
-        this.gasPrice = transaction.get(1).getRLPData();
+        this.gasPriceRaw = transaction.get(1).getRLPData();
+        this.gasPrice = RLP.parseCoin(this.gasPriceRaw);
         this.gasLimit = transaction.get(2).getRLPData();
         this.receiveAddress = RLP.parseRskAddress(transaction.get(3).getRLPData());
         this.valueRaw = nullToZeroArray(transaction.get(4).getRLPData());
@@ -307,12 +313,12 @@ public class Transaction {
         return receiveAddress;
     }
 
-    public byte[] getGasPrice() {
+    public Coin getGasPrice() {
         if (!parsed) {
             rlpParse();
         }
 
-        return nullToZeroArray(gasPrice);
+        return gasPrice;
     }
 
     public byte[] getGasLimit() {
@@ -450,7 +456,7 @@ public class Transaction {
 
         return "TransactionData [" + "hash=" + ByteUtil.toHexString(hash) +
                 "  nonce=" + ByteUtil.toHexString(nonce) +
-                ", gasPrice=" + ByteUtil.toHexString(gasPrice) +
+                ", gasPrice=" + gasPrice.toString() +
                 ", gas=" + ByteUtil.toHexString(gasLimit) +
                 ", receiveAddress=" + receiveAddress.toString() +
                 ", value=" + value.toString() +
@@ -482,7 +488,7 @@ public class Transaction {
         } else {
             toEncodeNonce = RLP.encodeElement(this.nonce);
         }
-        byte[] toEncodeGasPrice = RLP.encodeElement(this.gasPrice);
+        byte[] toEncodeGasPrice = RLP.encodeElement(this.gasPriceRaw);
         byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
         byte[] toEncodeReceiveAddress = RLP.encodeRskAddress(this.receiveAddress);
         byte[] toEncodeValue = RLP.encodeElement(this.valueRaw);
@@ -517,7 +523,7 @@ public class Transaction {
         } else {
             toEncodeNonce = RLP.encodeElement(this.nonce);
         }
-        byte[] toEncodeGasPrice = RLP.encodeElement(this.gasPrice);
+        byte[] toEncodeGasPrice = RLP.encodeElement(this.gasPriceRaw);
         byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
         byte[] toEncodeReceiveAddress = RLP.encodeRskAddress(this.receiveAddress);
         byte[] toEncodeValue = RLP.encodeElement(this.valueRaw);
@@ -551,10 +557,6 @@ public class Transaction {
         this.hash = this.getHash();
 
         return rlpEncoded;
-    }
-
-    public BigInteger getGasPriceAsInteger() {
-        return (this.getGasPrice() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getGasPrice());
     }
 
     public BigInteger getGasLimitAsInteger() {

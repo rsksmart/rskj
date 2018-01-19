@@ -45,7 +45,7 @@ public class TxBuilderTest {
         Transaction tx = builder.createNewTransaction(gasPrice, gasLimit, nonce);
 
         Assert.assertEquals(gasLimit, new BigInteger(1, tx.getGasLimit()));
-        Assert.assertEquals(gasPrice, new BigInteger(1, tx.getGasPrice()));
+        Assert.assertEquals(gasPrice, tx.getGasPrice().asBigInteger());
         Assert.assertEquals(nonce, new BigInteger(1, tx.getNonce()));
     }
 

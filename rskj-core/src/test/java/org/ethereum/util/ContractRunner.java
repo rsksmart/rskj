@@ -2,6 +2,7 @@ package org.ethereum.util;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.builders.AccountBuilder;
@@ -53,14 +54,14 @@ public class ContractRunner {
         // create a test sender account with a large balance for running any contract
         this.sender = new AccountBuilder(blockchain)
                 .name("sender")
-                .balance(BigInteger.valueOf(1_000_000_000_000L))
+                .balance(Coin.valueOf(1_000_000_000_000L))
                 .build();
     }
 
     public ContractDetails addContract(String runtimeBytecode) {
         Account contractAccount = new AccountBuilder(blockchain)
                         .name(runtimeBytecode)
-                        .balance(BigInteger.TEN)
+                        .balance(Coin.valueOf(10))
                         .code(TypeConverter.stringHexToByteArray(runtimeBytecode))
                         .build();
 

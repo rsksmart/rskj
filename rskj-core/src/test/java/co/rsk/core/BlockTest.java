@@ -87,7 +87,7 @@ public class BlockTest {
                 txs,                            // transaction list
                 null,  // uncle list
                 BigInteger.TEN.toByteArray(),
-                BigInteger.ZERO
+                Coin.ZERO
         );
 
         Block parsedBlock = new Block(block.getEncoded());
@@ -324,7 +324,7 @@ public class BlockTest {
         block.seal();
 
         try {
-            block.getHeader().setPaidFees(BigInteger.TEN);
+            block.getHeader().setPaidFees(Coin.valueOf(10L));
             Assert.fail();
         }
         catch (SealedBlockHeaderException ex) {

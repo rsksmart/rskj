@@ -23,6 +23,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Sha3Hash;
@@ -30,7 +31,6 @@ import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
-import co.rsk.blockchain.utils.BlockGenerator;
 import org.ethereum.TestUtils;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
@@ -51,11 +51,10 @@ import static org.junit.Assert.assertNull;
 
 public class RemascProcessMinerFeesTest {
 
-    private static BlockchainNetConfig blockchainNetConfigOriginal;
     private static RemascConfig remascConfig;
     private static RskSystemProperties config;
 
-    private BigInteger cowInitialBalance = new BigInteger("1000000000000000000");
+    private Coin cowInitialBalance = new Coin(new BigInteger("1000000000000000000"));
     private long initialGasLimit = 10000000L;
     private long minerFee = 21000;
     private long txValue = 10000;
@@ -68,9 +67,7 @@ public class RemascProcessMinerFeesTest {
     private static RskAddress coinbaseE = TestUtils.randomAddress();
     private static List<byte[]> accountsAddressesUpToD;
 
-    private Map<byte[], BigInteger> preMineMap = new HashMap<byte[], BigInteger>() {{
-        put(cowAddress, cowInitialBalance);
-    }};
+    private Map<byte[], BigInteger> preMineMap = Collections.singletonMap(cowAddress, cowInitialBalance.asBigInteger());
 
     private Genesis genesisBlock = (Genesis) (new BlockGenerator()).getNewGenesisBlock(initialGasLimit, preMineMap);
 
@@ -117,11 +114,11 @@ public class RemascProcessMinerFeesTest {
             blockchain.tryToConnect(b);
         }
 
-        assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue)), blockchain.getRepository().getAccountState(new RskAddress(cowAddress)).getBalance());
+        assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), blockchain.getRepository().getAccountState(new RskAddress(cowAddress)).getBalance());
 
         Repository repository = blockchain.getRepository();
 
-        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
+        assertEquals(Coin.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
         assertNull(repository.getAccountState(coinbaseA));
         assertNull(repository.getAccountState(remascConfig.getRskLabsAddress()));
 
@@ -132,14 +129,14 @@ public class RemascProcessMinerFeesTest {
 
         repository = blockchain.getRepository();
 
-        assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
-        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
+        assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
+        assertEquals(Coin.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
         assertNull(repository.getAccountState(coinbaseA));
         assertNull(repository.getAccountState(remascConfig.getRskLabsAddress()));
 
         RemascStorageProvider remascStorageProvider = getRemascStorageProvider(blockchain);
-        assertEquals(BigInteger.valueOf(minerFee), remascStorageProvider.getRewardBalance());
-        assertEquals(BigInteger.ZERO, remascStorageProvider.getBurnedBalance());
+        assertEquals(Coin.valueOf(minerFee), remascStorageProvider.getRewardBalance());
+        assertEquals(Coin.ZERO, remascStorageProvider.getBurnedBalance());
         assertEquals(0, remascStorageProvider.getSiblings().size());
     }
 
@@ -162,15 +159,15 @@ public class RemascProcessMinerFeesTest {
 
         Repository repository = blockchain.getRepository();
 
-        assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
-        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
+        assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
+        assertEquals(Coin.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
         assertNull(repository.getAccountState(coinbaseA));
         assertNull(repository.getAccountState(remascConfig.getRskLabsAddress()));
 
         RemascStorageProvider remascStorageProvider = getRemascStorageProvider(blockchain);
 
-        assertEquals(BigInteger.ZERO, remascStorageProvider.getRewardBalance());
-        assertEquals(BigInteger.ZERO, remascStorageProvider.getBurnedBalance());
+        assertEquals(Coin.ZERO, remascStorageProvider.getRewardBalance());
+        assertEquals(Coin.ZERO, remascStorageProvider.getBurnedBalance());
         assertEquals(0, remascStorageProvider.getSiblings().size());
 
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1), PegTestUtils.createHash3(), TestUtils.randomAddress(), null, null);
@@ -180,19 +177,19 @@ public class RemascProcessMinerFeesTest {
 
         repository = blockchain.getRepository();
 
-        assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
+        assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
         long blockReward = minerFee/remascConfig.getSyntheticSpan();
-        assertEquals(BigInteger.valueOf(minerFee - blockReward), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
+        assertEquals(Coin.valueOf(minerFee - blockReward), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
         long rskReward = blockReward/remascConfig.getRskLabsDivisor();
-        assertEquals(BigInteger.valueOf(rskReward), repository.getAccountState(remascConfig.getRskLabsAddress()).getBalance());
+        assertEquals(Coin.valueOf(rskReward), repository.getAccountState(remascConfig.getRskLabsAddress()).getBalance());
         long federationReward = (blockReward - rskReward)/remascConfig.getFederationDivisor();
         assertEquals(33, federationReward);
-        assertEquals(BigInteger.valueOf(blockReward - rskReward - federationReward), repository.getAccountState(coinbaseA).getBalance());
+        assertEquals(Coin.valueOf(blockReward - rskReward - federationReward), repository.getAccountState(coinbaseA).getBalance());
 
         remascStorageProvider = getRemascStorageProvider(blockchain);
 
-        assertEquals(BigInteger.valueOf(minerFee - blockReward), remascStorageProvider.getRewardBalance());
-        assertEquals(BigInteger.ZERO, remascStorageProvider.getBurnedBalance());
+        assertEquals(Coin.valueOf(minerFee - blockReward), remascStorageProvider.getRewardBalance());
+        assertEquals(Coin.ZERO, remascStorageProvider.getBurnedBalance());
         assertEquals(0, remascStorageProvider.getSiblings().size());
 
         this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
@@ -220,8 +217,8 @@ public class RemascProcessMinerFeesTest {
 
         Repository repository = blockchain.getRepository();
 
-        assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
-        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
+        assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
+        assertEquals(Coin.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
         assertNull(repository.getAccountState(coinbaseA));
         assertNull(repository.getAccountState(coinbaseB));
         assertNull(repository.getAccountState(coinbaseC));
@@ -229,8 +226,8 @@ public class RemascProcessMinerFeesTest {
 
         RemascStorageProvider remascStorageProvider = getRemascStorageProvider(blockchain);
 
-        assertEquals(BigInteger.ZERO, remascStorageProvider.getRewardBalance());
-        assertEquals(BigInteger.ZERO, remascStorageProvider.getBurnedBalance());
+        assertEquals(Coin.ZERO, remascStorageProvider.getRewardBalance());
+        assertEquals(Coin.ZERO, remascStorageProvider.getBurnedBalance());
         assertEquals(1, remascStorageProvider.getSiblings().size());
 
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
@@ -242,28 +239,28 @@ public class RemascProcessMinerFeesTest {
 
         repository = blockchain.getRepository();
 
-        assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
+        assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
 
         long blockReward = minerFee/remascConfig.getSyntheticSpan();
         // There is one unit burned
-        assertEquals(BigInteger.valueOf(minerFee - blockReward + 1), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
+        assertEquals(Coin.valueOf(minerFee - blockReward + 1), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
         long rskReward = blockReward/remascConfig.getRskLabsDivisor();
-        assertEquals(BigInteger.valueOf(rskReward), repository.getAccountState(remascConfig.getRskLabsAddress()).getBalance());
+        assertEquals(Coin.valueOf(rskReward), repository.getAccountState(remascConfig.getRskLabsAddress()).getBalance());
         long federationReward = (blockReward - rskReward)/remascConfig.getFederationDivisor();
         assertEquals(33, federationReward);
 
         blockReward = blockReward - rskReward - federationReward;
-        assertEquals(BigInteger.valueOf(blockReward/remascConfig.getPublishersDivisor()), repository.getAccountState(coinbaseC).getBalance());
+        assertEquals(Coin.valueOf(blockReward/remascConfig.getPublishersDivisor()), repository.getAccountState(coinbaseC).getBalance());
         blockReward = blockReward - blockReward/remascConfig.getPublishersDivisor();
-        assertEquals(BigInteger.valueOf(blockReward/2), repository.getAccountState(coinbaseA).getBalance());
-        assertEquals(BigInteger.valueOf(blockReward/2), repository.getAccountState(coinbaseB).getBalance());
+        assertEquals(Coin.valueOf(blockReward/2), repository.getAccountState(coinbaseA).getBalance());
+        assertEquals(Coin.valueOf(blockReward/2), repository.getAccountState(coinbaseB).getBalance());
 
         blockReward = minerFee/remascConfig.getSyntheticSpan();
 
         remascStorageProvider = getRemascStorageProvider(blockchain);
 
-        assertEquals(BigInteger.valueOf(minerFee - blockReward), remascStorageProvider.getRewardBalance());
-        assertEquals(BigInteger.ONE, remascStorageProvider.getBurnedBalance());
+        assertEquals(Coin.valueOf(minerFee - blockReward), remascStorageProvider.getRewardBalance());
+        assertEquals(Coin.valueOf(1), remascStorageProvider.getBurnedBalance());
         assertEquals(0, remascStorageProvider.getSiblings().size());
 
         this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
@@ -322,11 +319,11 @@ public class RemascProcessMinerFeesTest {
         }
 
         // validate that the blockchain's and REMASC's initial states are correct
-        BigInteger cowRemainingBalance = cowInitialBalance.subtract(BigInteger.valueOf(
+        Coin cowRemainingBalance = cowInitialBalance.subtract(Coin.valueOf(
                 minerFee * NUMBER_OF_TXS_WITH_FEES + txValue * NUMBER_OF_TXS_WITH_FEES));
         List<Long> otherAccountsBalance = new ArrayList<>(Arrays.asList(null, null, null, null));
         this.validateAccountsCurrentBalanceIsCorrect(blockchain.getRepository(), cowRemainingBalance, minerFee * NUMBER_OF_TXS_WITH_FEES, null, this.getAccountsWithExpectedBalance(otherAccountsBalance));
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), BigInteger.ZERO, BigInteger.ZERO, 2L);
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), Coin.ZERO, Coin.ZERO, 2L);
 
         // add block to pay fees of blocks on blockchain's height 4
         Block blockToPayFeesOnHeightFour = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size() - 1), PegTestUtils.createHash3(), TestUtils.randomAddress(), null, minerFee, 3, txValue, cowKey);
@@ -339,7 +336,7 @@ public class RemascProcessMinerFeesTest {
 
         // -- After executing REMASC's contract for paying height 4 block
         // validate that account's balances are correct
-        cowRemainingBalance = cowRemainingBalance.subtract(BigInteger.valueOf(minerFee + txValue));
+        cowRemainingBalance = cowRemainingBalance.subtract(Coin.valueOf(minerFee + txValue));
         long minerRewardOnHeightFour = minerFee / remascConfig.getSyntheticSpan();
         long burnBalanceLevelFour = minerRewardOnHeightFour;
         long remascCurrentBalance = minerFee * 4 - burnBalanceLevelFour;
@@ -353,8 +350,8 @@ public class RemascProcessMinerFeesTest {
         long siblingPunishmentLvlFour = (long)(minerRewardOnHeightFour *  0.05);
         long siblingReward = minerRewardOnHeightFour - siblingPunishmentLvlFour;
 
-        HashMap<byte[], BigInteger> otherAccountsBalanceOnHeightFour = this.getAccountsWithExpectedBalance(new ArrayList<>(Arrays.asList(minerRewardOnHeightFour, siblingReward, null, null)));
-        otherAccountsBalanceOnHeightFour.put(coinbaseE.getBytes(), BigInteger.valueOf(publishersFee));
+        HashMap<byte[], Coin> otherAccountsBalanceOnHeightFour = this.getAccountsWithExpectedBalance(new ArrayList<>(Arrays.asList(minerRewardOnHeightFour, siblingReward, null, null)));
+        otherAccountsBalanceOnHeightFour.put(coinbaseE.getBytes(), Coin.valueOf(publishersFee));
         remascCurrentBalance += siblingPunishmentLvlFour;
         // TODO review one unit burned?
         this.validateAccountsCurrentBalanceIsCorrect(repository, cowRemainingBalance, remascCurrentBalance + 1, rskCurrentBalance, otherAccountsBalanceOnHeightFour);
@@ -363,10 +360,10 @@ public class RemascProcessMinerFeesTest {
 
         // validate that REMASC's state is correct
         long blockRewardOnHeightFour = minerFee / remascConfig.getSyntheticSpan();
-        BigInteger expectedRewardBalance = BigInteger.valueOf(minerFee - blockRewardOnHeightFour);
-        BigInteger expectedBurnedBalance = BigInteger.valueOf(siblingPunishmentLvlFour);
+        Coin expectedRewardBalance = Coin.valueOf(minerFee - blockRewardOnHeightFour);
+        Coin expectedBurnedBalance = Coin.valueOf(siblingPunishmentLvlFour);
         // TODO review one more burned unit
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, expectedBurnedBalance.add(BigInteger.ONE), 1L);
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, expectedBurnedBalance.add(Coin.valueOf(1)), 1L);
 
         // add block to pay fees of blocks on blockchain's height 5
         Block blockToPayFeesOnHeightFive = RemascTestRunner.createBlock(this.genesisBlock, blockToPayFeesOnHeightFour, PegTestUtils.createHash3(), TestUtils.randomAddress(), null, minerFee, 4, txValue, cowKey);
@@ -377,7 +374,7 @@ public class RemascProcessMinerFeesTest {
 
         // -- After executing REMASC's contract for paying height 5 block
         // validate that account's balances are correct
-        cowRemainingBalance = cowRemainingBalance.subtract(BigInteger.valueOf(minerFee + txValue));
+        cowRemainingBalance = cowRemainingBalance.subtract(Coin.valueOf(minerFee + txValue));
         long rewardBalance = minerFee - blockRewardOnHeightFour;
         rewardBalance += minerFee;
         long blockRewardOnHeightFive = rewardBalance / remascConfig.getSyntheticSpan();
@@ -398,16 +395,16 @@ public class RemascProcessMinerFeesTest {
         blockRewardOnHeightFive -= punishmentFee;
         remascCurrentBalance += (numberOfSiblingsOnHeightFive * punishmentFee);
 
-        HashMap<byte[], BigInteger> otherAccountsBalanceOnHeightFive = this.getAccountsWithExpectedBalance(new ArrayList<>(Arrays.asList(minerRewardOnHeightFour, siblingReward, blockRewardOnHeightFive, blockRewardOnHeightFive)));
-        otherAccountsBalanceOnHeightFive.put(coinbaseE.getBytes(), BigInteger.valueOf(publishersFee + publishersFeeOnHeightFive));
+        HashMap<byte[], Coin> otherAccountsBalanceOnHeightFive = this.getAccountsWithExpectedBalance(new ArrayList<>(Arrays.asList(minerRewardOnHeightFour, siblingReward, blockRewardOnHeightFive, blockRewardOnHeightFive)));
+        otherAccountsBalanceOnHeightFive.put(coinbaseE.getBytes(), Coin.valueOf(publishersFee + publishersFeeOnHeightFive));
         // TODO review value 1
         this.validateAccountsCurrentBalanceIsCorrect(repository, cowRemainingBalance, remascCurrentBalance + 1, rskCurrentBalance, otherAccountsBalanceOnHeightFive);
         // validate that REMASC's state is correct
         blockRewardOnHeightFive = (2 * minerFee - blockRewardOnHeightFour ) / remascConfig.getSyntheticSpan();
-        expectedRewardBalance = BigInteger.valueOf(minerFee * 2 - blockRewardOnHeightFour - blockRewardOnHeightFive);
-        expectedBurnedBalance = BigInteger.valueOf((2 * punishmentFee) + siblingPunishmentLvlFour);
+        expectedRewardBalance = Coin.valueOf(minerFee * 2 - blockRewardOnHeightFour - blockRewardOnHeightFive);
+        expectedBurnedBalance = Coin.valueOf((2 * punishmentFee) + siblingPunishmentLvlFour);
         // TODO review value + 1
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, expectedBurnedBalance.add(BigInteger.ONE), 0L);
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, expectedBurnedBalance.add(Coin.valueOf(1)), 0L);
         this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward + federationReward2);
     }
 
@@ -437,10 +434,10 @@ public class RemascProcessMinerFeesTest {
         }
 
         // validate that the blockchain's and REMASC's initial states are correct
-        BigInteger cowRemainingBalance = cowInitialBalance.subtract(BigInteger.valueOf(minerFee * NUMBER_OF_TXS_WITH_FEES + txValue * NUMBER_OF_TXS_WITH_FEES));
+        Coin cowRemainingBalance = cowInitialBalance.subtract(Coin.valueOf(minerFee * NUMBER_OF_TXS_WITH_FEES + txValue * NUMBER_OF_TXS_WITH_FEES));
         List<Long> otherAccountsBalance = new ArrayList<>(Arrays.asList(null, null, null, null));
         this.validateAccountsCurrentBalanceIsCorrect(blockchain.getRepository(), cowRemainingBalance, minerFee * NUMBER_OF_TXS_WITH_FEES, null, this.getAccountsWithExpectedBalance(otherAccountsBalance));
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), BigInteger.ZERO, BigInteger.ZERO, 1L);
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), Coin.ZERO, Coin.ZERO, 1L);
 
         // add block to pay fees of blocks on blockchain's height 4
         Block blockToPayFeesOnHeightFour = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size() - 1), PegTestUtils.createHash3(), TestUtils.randomAddress(), null, minerFee, 0, txValue, cowKey);
@@ -462,8 +459,8 @@ public class RemascProcessMinerFeesTest {
         this.validateAccountsCurrentBalanceIsCorrect(repository, cowRemainingBalance, remascCurrentBalance, rskCurrentBalance, this.getAccountsWithExpectedBalance(otherAccountsBalanceOnHeightFour));
         // validate that REMASC's state is correct
         blockRewardOnHeightFour = minerFee / remascConfig.getSyntheticSpan();
-        BigInteger expectedRewardBalance = BigInteger.valueOf(minerFee - blockRewardOnHeightFour);
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, BigInteger.ZERO, 1L);
+        Coin expectedRewardBalance = Coin.valueOf(minerFee - blockRewardOnHeightFour);
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, Coin.ZERO, 1L);
         this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
     }
 
@@ -513,10 +510,10 @@ public class RemascProcessMinerFeesTest {
         }
 
         // validate that the blockchain's and REMASC's initial states are correct
-        BigInteger cowRemainingBalance = cowInitialBalance.subtract(BigInteger.valueOf(minerFee * NUMBER_OF_TXS_WITH_FEES + txValue * NUMBER_OF_TXS_WITH_FEES));
+        Coin cowRemainingBalance = cowInitialBalance.subtract(Coin.valueOf(minerFee * NUMBER_OF_TXS_WITH_FEES + txValue * NUMBER_OF_TXS_WITH_FEES));
         List<Long> otherAccountsBalance = new ArrayList<>(Arrays.asList(null, null, null, null));
         this.validateAccountsCurrentBalanceIsCorrect(blockchain.getRepository(), cowRemainingBalance, minerFee * NUMBER_OF_TXS_WITH_FEES, null, this.getAccountsWithExpectedBalance(otherAccountsBalance));
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), BigInteger.ZERO, BigInteger.ZERO, 1L);
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), Coin.ZERO, Coin.ZERO, 1L);
 
         // add block to pay fees of blocks on blockchain's height 5
         Block blockToPayFeesOnHeightFive = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size() - 1), PegTestUtils.createHash3(), TestUtils.randomAddress(), null, null);
@@ -543,9 +540,9 @@ public class RemascProcessMinerFeesTest {
         this.validateAccountsCurrentBalanceIsCorrect(blockchain.getRepository(), cowRemainingBalance, remascCurrentBalance + 1, rskCurrentBalance, this.getAccountsWithExpectedBalance(otherAccountsBalanceOnHeightFive));
         // validate that REMASC's state is correct
         blockRewardOnHeightFive = minerFee / remascConfig.getSyntheticSpan();
-        BigInteger expectedRewardBalance = BigInteger.valueOf(minerFee - blockRewardOnHeightFive);
+        Coin expectedRewardBalance = Coin.valueOf(minerFee - blockRewardOnHeightFive);
         // TODO review burned value 1
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, BigInteger.ONE, 0L);
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, Coin.valueOf(1), 0L);
 
         // add block to pay fees of blocks on blockchain's height 6
         Block blockToPayFeesOnHeightSix = RemascTestRunner.createBlock(this.genesisBlock, blockToPayFeesOnHeightFive, PegTestUtils.createHash3(), TestUtils.randomAddress(), null, null);
@@ -575,7 +572,7 @@ public class RemascProcessMinerFeesTest {
         this.validateAccountsCurrentBalanceIsCorrect(blockchain.getRepository(), cowRemainingBalance, remascCurrentBalance + 1, rskCurrentBalance, this.getAccountsWithExpectedBalance(otherAccountsBalanceOnHeightSix));
         this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward + federationReward2);
         // TODO review + 1
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), BigInteger.valueOf(rewardBalance), BigInteger.valueOf(burnedBalance + 1), 0L);
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), Coin.valueOf(rewardBalance), Coin.valueOf(burnedBalance + 1), 0L);
     }
 
     @Test
@@ -597,23 +594,23 @@ public class RemascProcessMinerFeesTest {
 
         Repository repository = blockchain.getRepository();
 
-        assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
-        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
+        assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
+        assertEquals(Coin.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
         assertNull(repository.getAccountState(coinbaseA));
         assertNull(repository.getAccountState(remascConfig.getRskLabsAddress()));
 
         RemascStorageProvider remasceStorageProvider = getRemascStorageProvider(blockchain);
-        assertEquals(BigInteger.ZERO, remasceStorageProvider.getRewardBalance());
-        assertEquals(BigInteger.ZERO, remasceStorageProvider.getBurnedBalance());
+        assertEquals(Coin.ZERO, remasceStorageProvider.getRewardBalance());
+        assertEquals(Coin.ZERO, remasceStorageProvider.getBurnedBalance());
         assertEquals(0, remasceStorageProvider.getSiblings().size());
 
         // A hacker trying to screw the system creates a tx to remasc and a fool/accomplice miner includes that tx in a block
         Transaction tx = new Transaction(
-                BigInteger.valueOf(1).toByteArray(),
-                BigInteger.ONE.toByteArray(),
-                BigInteger.valueOf(minerFee).toByteArray(),
+                Coin.valueOf(1).getBytes(),
+                Coin.valueOf(1).getBytes(),
+                Coin.valueOf(minerFee).getBytes(),
                 PrecompiledContracts.REMASC_ADDR.getBytes() ,
-                BigInteger.valueOf(txValue*2).toByteArray(),
+                Coin.valueOf(txValue*2).getBytes(),
                 null,
                 config.getBlockchainConfig().getCommonConstants().getChainId());
         tx.sign(cowKey.getPrivKeyBytes());
@@ -625,20 +622,20 @@ public class RemascProcessMinerFeesTest {
         repository = blockchain.getRepository();
 
         // Check "hack" tx makes no changes to the remasc state, sender pays fees, and value is added to remasc account balance
-        assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue+minerFee)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
+        assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue+minerFee)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
         long blockReward = minerFee/remascConfig.getSyntheticSpan();
         long originalBlockReward = blockReward;
-        assertEquals(BigInteger.valueOf(minerFee+minerFee-blockReward), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
+        assertEquals(Coin.valueOf(minerFee+minerFee-blockReward), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
         long rskReward = blockReward/remascConfig.getRskLabsDivisor();
-        assertEquals(BigInteger.valueOf(rskReward),repository.getAccountState(remascConfig.getRskLabsAddress()).getBalance());
+        assertEquals(Coin.valueOf(rskReward), repository.getAccountState(remascConfig.getRskLabsAddress()).getBalance());
         blockReward -= rskReward;
         long federationReward = blockReward / remascConfig.getFederationDivisor();
         assertEquals(33, federationReward);
         blockReward -= federationReward;
-        assertEquals(BigInteger.valueOf(blockReward), repository.getAccountState(coinbaseA).getBalance());
+        assertEquals(Coin.valueOf(blockReward), repository.getAccountState(coinbaseA).getBalance());
 
-        BigInteger expectedRewardBalance = BigInteger.valueOf(minerFee - originalBlockReward);
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, BigInteger.ZERO, 0L);
+        Coin expectedRewardBalance = Coin.valueOf(minerFee - originalBlockReward);
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, Coin.ZERO, 0L);
         this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
     }
 
@@ -662,14 +659,14 @@ public class RemascProcessMinerFeesTest {
 
         Repository repository = blockchain.getRepository();
 
-        assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
-        assertEquals(BigInteger.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
+        assertEquals(cowInitialBalance.subtract(Coin.valueOf(minerFee+txValue)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
+        assertEquals(Coin.valueOf(minerFee), repository.getAccountState(PrecompiledContracts.REMASC_ADDR).getBalance());
         assertNull(repository.getAccountState(coinbaseA));
         assertNull(repository.getAccountState(remascConfig.getRskLabsAddress()));
 
         RemascStorageProvider remasceStorageProvider = getRemascStorageProvider(blockchain);
-        assertEquals(BigInteger.ZERO, remasceStorageProvider.getRewardBalance());
-        assertEquals(BigInteger.ZERO, remasceStorageProvider.getBurnedBalance());
+        assertEquals(Coin.ZERO, remasceStorageProvider.getRewardBalance());
+        assertEquals(Coin.ZERO, remasceStorageProvider.getBurnedBalance());
         assertEquals(0, remasceStorageProvider.getSiblings().size());
 
         // A hacker trying to screw the system creates a contracts that calls remasc and a fool/accomplice miner includes that tx in a block
@@ -685,21 +682,21 @@ public class RemascProcessMinerFeesTest {
 //        }
         long txCreateContractGasLimit = 53755 + 32000;
         Transaction txCreateContract = new Transaction(
-                BigInteger.valueOf(1).toByteArray(),
-                BigInteger.ONE.toByteArray(),
-                BigInteger.valueOf(txCreateContractGasLimit).toByteArray(),
+                Coin.valueOf(1).getBytes(),
+                Coin.valueOf(1).getBytes(),
+                Coin.valueOf(txCreateContractGasLimit).getBytes(),
                 null ,
-                BigInteger.valueOf(0).toByteArray(),
+                Coin.ZERO.getBytes(),
                 Hex.decode("6060604052346000575b6077806100176000396000f30060606040525b3460005760495b6000600890508073ffffffffffffffffffffffffffffffffffffffff166040518090506000604051808303816000866161da5a03f1915050505b50565b0000a165627a7a7230582036692fbb1395da1688af0189be5b0ac18df3d93a2402f4fc8f927b31c1baa2460029"),
                 config.getBlockchainConfig().getCommonConstants().getChainId());
         txCreateContract.sign(cowKey.getPrivKeyBytes());
         long txCallRemascGasLimit = 21828;
         Transaction txCallRemasc = new Transaction(
-                BigInteger.valueOf(2).toByteArray(),
-                BigInteger.ONE.toByteArray(),
-                BigInteger.valueOf(txCallRemascGasLimit).toByteArray(),
+                Coin.valueOf(2).getBytes(),
+                Coin.valueOf(1).getBytes(),
+                Coin.valueOf(txCallRemascGasLimit).getBytes(),
                 Hex.decode("da7ce79725418f4f6e13bf5f520c89cec5f6a974") ,
-                BigInteger.valueOf(0).toByteArray(),
+                Coin.ZERO.getBytes(),
                 null,
                 config.getBlockchainConfig().getCommonConstants().getChainId());
         txCallRemasc.sign(cowKey.getPrivKeyBytes());
@@ -714,19 +711,19 @@ public class RemascProcessMinerFeesTest {
         repository = blockchain.getRepository();
 
         // Check "hack" tx makes no changes to the remasc state, sender pays fees, and value is added to remasc account balance
-        assertEquals(cowInitialBalance.subtract(BigInteger.valueOf(txCreateContractGasLimit+txCallRemascGasLimit+txValue+minerFee)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
+        assertEquals(cowInitialBalance.subtract(Coin.valueOf(txCreateContractGasLimit+txCallRemascGasLimit+txValue+minerFee)), repository.getAccountState(new RskAddress(cowAddress)).getBalance());
         long blockReward = minerFee/remascConfig.getSyntheticSpan();
         long originalBlockReward = blockReward;
         long rskReward = blockReward/remascConfig.getRskLabsDivisor();
-        assertEquals(BigInteger.valueOf(rskReward),repository.getAccountState(remascConfig.getRskLabsAddress()).getBalance());
+        assertEquals(Coin.valueOf(rskReward), repository.getAccountState(remascConfig.getRskLabsAddress()).getBalance());
         blockReward -= rskReward;
         long federationReward = blockReward / remascConfig.getFederationDivisor();
         assertEquals(33, federationReward);
         blockReward -= federationReward;
-        assertEquals(BigInteger.valueOf(blockReward), repository.getAccountState(coinbaseA).getBalance());
+        assertEquals(Coin.valueOf(blockReward), repository.getAccountState(coinbaseA).getBalance());
 
-        BigInteger expectedRewardBalance = BigInteger.valueOf(minerFee - originalBlockReward);
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, BigInteger.ZERO, 0L);
+        Coin expectedRewardBalance = Coin.valueOf(minerFee - originalBlockReward);
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), expectedRewardBalance, Coin.ZERO, 0L);
         this.validateFederatorsBalanceIsCorrect(blockchain.getRepository(), federationReward);
     }
 
@@ -744,15 +741,15 @@ public class RemascProcessMinerFeesTest {
         Blockchain blockchain = testRunner.getBlockChain();
 
         Block blockAtHeightSeven = blockchain.getBlockByNumber(8);
-        assertEquals(BigInteger.valueOf(1680L - 17L), testRunner.getAccountBalance(blockAtHeightSeven.getCoinbase()));
+        assertEquals(Coin.valueOf(1680L - 17L), testRunner.getAccountBalance(blockAtHeightSeven.getCoinbase()));
 
         Block blockAtHeightFiveMainchain = blockchain.getBlockByNumber(6);
-        assertEquals(BigInteger.valueOf(7560L - 76L), testRunner.getAccountBalance(blockAtHeightFiveMainchain.getCoinbase()));
+        assertEquals(Coin.valueOf(7560L - 76L), testRunner.getAccountBalance(blockAtHeightFiveMainchain.getCoinbase()));
 
         Block blockAtHeightFiveSibling = testRunner.getAddedSiblings().get(0);
-        assertEquals(BigInteger.valueOf(7182L - 72L), testRunner.getAccountBalance(blockAtHeightFiveSibling.getCoinbase()));
+        assertEquals(Coin.valueOf(7182L - 72L), testRunner.getAccountBalance(blockAtHeightFiveSibling.getCoinbase()));
 
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), BigInteger.valueOf(84000L), BigInteger.valueOf(378L - 3L), 0L);
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), Coin.valueOf(84000L), Coin.valueOf(378L - 3L), 0L);
     }
 
     @Test
@@ -769,21 +766,21 @@ public class RemascProcessMinerFeesTest {
         Blockchain blockchain = testRunner.getBlockChain();
 
         Block blockAtHeightSix = blockchain.getBlockByNumber(7);
-        assertEquals(BigInteger.valueOf(840L - 9L), testRunner.getAccountBalance(blockAtHeightSix.getCoinbase()));
+        assertEquals(Coin.valueOf(840L - 9L), testRunner.getAccountBalance(blockAtHeightSix.getCoinbase()));
 
         Block blockAtHeightSeven = blockchain.getBlockByNumber(8);
-        assertEquals(BigInteger.valueOf(840L - 9L), testRunner.getAccountBalance(blockAtHeightSeven.getCoinbase()));
+        assertEquals(Coin.valueOf(840L - 9L), testRunner.getAccountBalance(blockAtHeightSeven.getCoinbase()));
 
         Block blockAtHeightFiveMainchain = blockchain.getBlockByNumber(6);
-        assertEquals(BigInteger.valueOf(5040L - 51L), testRunner.getAccountBalance(blockAtHeightFiveMainchain.getCoinbase()));
+        assertEquals(Coin.valueOf(5040L - 51L), testRunner.getAccountBalance(blockAtHeightFiveMainchain.getCoinbase()));
 
         Block blockAtHeightFiveFirstSibling = testRunner.getAddedSiblings().get(0);
-        assertEquals(BigInteger.valueOf(5040L - 51L), testRunner.getAccountBalance(blockAtHeightFiveFirstSibling.getCoinbase()));
+        assertEquals(Coin.valueOf(5040L - 51L), testRunner.getAccountBalance(blockAtHeightFiveFirstSibling.getCoinbase()));
 
         Block blockAtHeightFiveSecondSibling = testRunner.getAddedSiblings().get(1);
-        assertEquals(BigInteger.valueOf(4788L - 48L), testRunner.getAccountBalance(blockAtHeightFiveSecondSibling.getCoinbase()));
+        assertEquals(Coin.valueOf(4788L - 48L), testRunner.getAccountBalance(blockAtHeightFiveSecondSibling.getCoinbase()));
 
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), BigInteger.valueOf(84000L), BigInteger.valueOf(252L), 0L);
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), Coin.valueOf(84000L), Coin.valueOf(252L), 0L);
     }
 
     @Test
@@ -800,20 +797,20 @@ public class RemascProcessMinerFeesTest {
         Blockchain blockchain = testRunner.getBlockChain();
 
         Block blockAtHeightTwelve = blockchain.getBlockByNumber(13);
-        assertEquals(BigInteger.valueOf(1680L - 17), testRunner.getAccountBalance(blockAtHeightTwelve.getCoinbase()));
+        assertEquals(Coin.valueOf(1680L - 17), testRunner.getAccountBalance(blockAtHeightTwelve.getCoinbase()));
 
         Block blockAtHeightFiveMainchain = blockchain.getBlockByNumber(6);
-        assertEquals(BigInteger.valueOf(7560L - 76), testRunner.getAccountBalance(blockAtHeightFiveMainchain.getCoinbase()));
+        assertEquals(Coin.valueOf(7560L - 76), testRunner.getAccountBalance(blockAtHeightFiveMainchain.getCoinbase()));
 
         Block blockAtHeightFiveSibling = testRunner.getAddedSiblings().get(0);
-        assertEquals(BigInteger.valueOf(5292L - 53), testRunner.getAccountBalance(blockAtHeightFiveSibling.getCoinbase()));
+        assertEquals(Coin.valueOf(5292L - 53), testRunner.getAccountBalance(blockAtHeightFiveSibling.getCoinbase()));
 
-        BigInteger remascCurrentBalance = testRunner.getAccountBalance(PrecompiledContracts.REMASC_ADDR.getBytes());
+        Coin remascCurrentBalance = testRunner.getAccountBalance(PrecompiledContracts.REMASC_ADDR);
         // TODO review value -22
-        assertEquals(BigInteger.valueOf(296268L - 22), remascCurrentBalance);
+        assertEquals(Coin.valueOf(296268L - 22), remascCurrentBalance);
 
         // TODO review value -22
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), BigInteger.valueOf(84000L), BigInteger.valueOf(2268L - 22), 0L);
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), Coin.valueOf(84000L), Coin.valueOf(2268L - 22), 0L);
     }
 
     @Test
@@ -837,23 +834,23 @@ public class RemascProcessMinerFeesTest {
 
         Block blockAtHeightSix = blockchain.getBlockByNumber(7);
         // TODO Review value 18
-        assertEquals(BigInteger.valueOf(1674 - 18), testRunner.getAccountBalance(blockAtHeightSix.getCoinbase()));
+        assertEquals(Coin.valueOf(1674 - 18), testRunner.getAccountBalance(blockAtHeightSix.getCoinbase()));
 
         Block blockAtHeightSeven = blockchain.getBlockByNumber(8);
         assertNull(testRunner.getAccountBalance(blockAtHeightSeven.getCoinbase()));
 
         Block blockAtHeightFiveMainchain = blockchain.getBlockByNumber(6);
-        assertEquals(BigInteger.valueOf(1512 - 16), testRunner.getAccountBalance(blockAtHeightFiveMainchain.getCoinbase()));
+        assertEquals(Coin.valueOf(1512 - 16), testRunner.getAccountBalance(blockAtHeightFiveMainchain.getCoinbase()));
 
         Block blockAtHeightFiveFirstSibling = testRunner.getAddedSiblings().get(0);
-        assertEquals(BigInteger.valueOf(1512 - 16), testRunner.getAccountBalance(blockAtHeightFiveFirstSibling.getCoinbase()));
+        assertEquals(Coin.valueOf(1512 - 16), testRunner.getAccountBalance(blockAtHeightFiveFirstSibling.getCoinbase()));
 
         Block blockAtHeightFiveSecondSibling = testRunner.getAddedSiblings().get(1);
 
-        assertEquals(BigInteger.valueOf(1512 - 16), testRunner.getAccountBalance(blockAtHeightFiveSecondSibling.getCoinbase()));
+        assertEquals(Coin.valueOf(1512 - 16), testRunner.getAccountBalance(blockAtHeightFiveSecondSibling.getCoinbase()));
 
         // TODO Review value 16 (original value 6)
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), BigInteger.valueOf(84000), BigInteger.valueOf(16), 0L);
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), Coin.valueOf(84000), Coin.valueOf(16), 0L);
 
     }
 
@@ -876,22 +873,22 @@ public class RemascProcessMinerFeesTest {
 
         Block blockAtHeightSix = blockchain.getBlockByNumber(7);
         // TODO review value -20
-        assertEquals(BigInteger.valueOf(1680 - 20), testRunner.getAccountBalance(blockAtHeightSix.getCoinbase()));
+        assertEquals(Coin.valueOf(1680 - 20), testRunner.getAccountBalance(blockAtHeightSix.getCoinbase()));
 
         Block blockAtHeightFiveMainchain = blockchain.getBlockByNumber(6);
-        assertEquals(BigInteger.valueOf(1374 - 14), testRunner.getAccountBalance(blockAtHeightFiveMainchain.getCoinbase()));
+        assertEquals(Coin.valueOf(1374 - 14), testRunner.getAccountBalance(blockAtHeightFiveMainchain.getCoinbase()));
 
         Block blockAtHeightFiveFirstSibling = testRunner.getAddedSiblings().get(0);
-        assertEquals(BigInteger.valueOf(1374 - 14), testRunner.getAccountBalance(blockAtHeightFiveFirstSibling.getCoinbase()));
+        assertEquals(Coin.valueOf(1374 - 14), testRunner.getAccountBalance(blockAtHeightFiveFirstSibling.getCoinbase()));
 
         Block blockAtHeightFiveSecondSibling = testRunner.getAddedSiblings().get(1);
-        assertEquals(BigInteger.valueOf(1374 - 14), testRunner.getAccountBalance(blockAtHeightFiveSecondSibling.getCoinbase()));
+        assertEquals(Coin.valueOf(1374 - 14), testRunner.getAccountBalance(blockAtHeightFiveSecondSibling.getCoinbase()));
 
         Block blockAtHeightFiveThirdSibling = testRunner.getAddedSiblings().get(2);
-        assertEquals(BigInteger.valueOf(1374 - 14), testRunner.getAccountBalance(blockAtHeightFiveThirdSibling.getCoinbase()));
+        assertEquals(Coin.valueOf(1374 - 14), testRunner.getAccountBalance(blockAtHeightFiveThirdSibling.getCoinbase()));
 
         // Review value +6
-        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), BigInteger.valueOf(84000), BigInteger.valueOf(6 + 6), 0);
+        this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(blockchain), Coin.valueOf(84000), Coin.valueOf(6 + 6), 0);
     }
 
     private List<Block> createSimpleBlocks(Block parent, int size) {
@@ -906,11 +903,12 @@ public class RemascProcessMinerFeesTest {
         return chain;
     }
 
-    private HashMap<byte[], BigInteger> getAccountsWithExpectedBalance(List<Long> otherAccountsBalance) {
-        HashMap<byte[], BigInteger> accountsWithExpectedBalance = new HashMap<>();
+    private HashMap<byte[], Coin> getAccountsWithExpectedBalance(List<Long> otherAccountsBalance) {
+        HashMap<byte[], Coin> accountsWithExpectedBalance = new HashMap<>();
 
-        for(int currentAccount = 0; currentAccount < accountsAddressesUpToD.size(); currentAccount++)
-            accountsWithExpectedBalance.put(accountsAddressesUpToD.get(currentAccount), otherAccountsBalance.get(currentAccount) == null ? null : BigInteger.valueOf(otherAccountsBalance.get(currentAccount)));
+        for(int currentAccount = 0; currentAccount < accountsAddressesUpToD.size(); currentAccount++) {
+            accountsWithExpectedBalance.put(accountsAddressesUpToD.get(currentAccount), otherAccountsBalance.get(currentAccount) == null ? null : Coin.valueOf(otherAccountsBalance.get(currentAccount)));
+        }
 
         return accountsWithExpectedBalance;
     }
@@ -925,32 +923,33 @@ public class RemascProcessMinerFeesTest {
 
         int nfederators = provider.getFederationSize();
 
-        BigInteger federatorBalance = BigInteger.valueOf(federationReward / nfederators);
+        Coin federatorBalance = Coin.valueOf(federationReward / nfederators);
 
-        for (int k = 0; k < nfederators; k++)
+        for (int k = 0; k < nfederators; k++) {
             assertEquals(federatorBalance, repository.getBalance(provider.getFederatorAddress(k)));
+        }
     }
 
-    private void validateAccountsCurrentBalanceIsCorrect(Repository repository, BigInteger cowBalance,
+    private void validateAccountsCurrentBalanceIsCorrect(Repository repository, Coin cowBalance,
                                                          Long remascBalance, Long rskBalance,
-                                                         HashMap<byte[], BigInteger> otherAccountsBalance) {
+                                                         HashMap<byte[], Coin> otherAccountsBalance) {
 
         assertEquals(cowBalance, RemascTestRunner.getAccountBalance(repository, cowAddress));
 
-        BigInteger remascExpectedBalance = BigInteger.valueOf(remascBalance);
-        BigInteger remascActualBalance = RemascTestRunner.getAccountBalance(repository, PrecompiledContracts.REMASC_ADDR);
+        Coin remascExpectedBalance = Coin.valueOf(remascBalance);
+        Coin remascActualBalance = RemascTestRunner.getAccountBalance(repository, PrecompiledContracts.REMASC_ADDR);
         assertEquals(remascExpectedBalance, remascActualBalance);
 
-        BigInteger rskExpectedBalance = rskBalance == null ? null : BigInteger.valueOf(rskBalance);
+        Coin rskExpectedBalance = rskBalance == null ? null : Coin.valueOf(rskBalance);
         assertEquals(rskExpectedBalance, RemascTestRunner.getAccountBalance(repository, remascConfig.getRskLabsAddress()));
 
-        for(Map.Entry<byte[], BigInteger> entry : otherAccountsBalance.entrySet()) {
-            BigInteger actualBalance = RemascTestRunner.getAccountBalance(repository, entry.getKey());
+        for(Map.Entry<byte[], Coin> entry : otherAccountsBalance.entrySet()) {
+            Coin actualBalance = RemascTestRunner.getAccountBalance(repository, entry.getKey());
             assertEquals("Failed for: " + Hex.toHexString(entry.getKey()), entry.getValue(), actualBalance);
         }
     }
 
-    private void validateRemascsStorageIsCorrect(RemascStorageProvider provider, BigInteger expectedRewardBalance, BigInteger expectedBurnedBalance, long expectedSiblingsSize) {
+    private void validateRemascsStorageIsCorrect(RemascStorageProvider provider, Coin expectedRewardBalance, Coin expectedBurnedBalance, long expectedSiblingsSize) {
         assertEquals(expectedRewardBalance, provider.getRewardBalance());
         assertEquals(expectedBurnedBalance, provider.getBurnedBalance());
         assertEquals(expectedSiblingsSize, provider.getSiblings().size());

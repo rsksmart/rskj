@@ -19,6 +19,7 @@
 
 package org.ethereum.jsontestsuite.validators;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.crypto.HashUtil;
@@ -54,8 +55,8 @@ public class AccountValidator {
         }
 
 
-        BigInteger expectedBalance = expectedState.getBalance();
-        if (currentState.getBalance().compareTo(expectedBalance) != 0) {
+        Coin expectedBalance = expectedState.getBalance();
+        if (!currentState.getBalance().equals(expectedBalance)) {
             String formattedString = String.format("Account: %s: has unexpected balance, expected balance: %s found balance: %s",
                     addr, expectedBalance.toString(), currentState.getBalance().toString());
             results.add(formattedString);

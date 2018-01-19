@@ -182,7 +182,7 @@ public class TransactionTest {
         assertEquals(RLP_ENCODED_SIGNED_TX, Hex.toHexString(txSigned.getEncoded()));
 
         assertEquals(BigInteger.ZERO, new BigInteger(1, txSigned.getNonce()));
-        assertEquals(new BigInteger(1, testGasPrice), new BigInteger(1, txSigned.getGasPrice()));
+        assertEquals(new BigInteger(1, testGasPrice), txSigned.getGasPrice().asBigInteger());
         assertEquals(new BigInteger(1, testGasLimit), new BigInteger(1, txSigned.getGasLimit()));
         assertEquals(Hex.toHexString(testReceiveAddress), Hex.toHexString(txSigned.getReceiveAddress().getBytes()));
         assertEquals(new BigInteger(1, testValue), txSigned.getValue().asBigInteger());
@@ -203,7 +203,7 @@ public class TransactionTest {
         assertEquals(RLP_ENCODED_SIGNED_TX, Hex.toHexString(txUnsigned.getEncoded()));
 
         assertEquals(BigInteger.ZERO, new BigInteger(1, txUnsigned.getNonce()));
-        assertEquals(new BigInteger(1, testGasPrice), new BigInteger(1, txUnsigned.getGasPrice()));
+        assertEquals(new BigInteger(1, testGasPrice), txUnsigned.getGasPrice().asBigInteger());
         assertEquals(new BigInteger(1, testGasLimit), new BigInteger(1, txUnsigned.getGasLimit()));
         assertEquals(Hex.toHexString(testReceiveAddress), Hex.toHexString(txUnsigned.getReceiveAddress().getBytes()));
         assertEquals(new BigInteger(1, testValue), txUnsigned.getValue().asBigInteger());
@@ -219,7 +219,7 @@ public class TransactionTest {
         Transaction txNew = new Transaction(testNonce, testGasPrice, testGasLimit, testReceiveAddress, testValue, testData);
 
         assertEquals("", Hex.toHexString(txNew.getNonce()));
-        assertEquals(new BigInteger(1, testGasPrice), new BigInteger(1, txNew.getGasPrice()));
+        assertEquals(new BigInteger(1, testGasPrice), txNew.getGasPrice().asBigInteger());
         assertEquals(new BigInteger(1, testGasLimit), new BigInteger(1, txNew.getGasLimit()));
         assertEquals(Hex.toHexString(testReceiveAddress), Hex.toHexString(txNew.getReceiveAddress().getBytes()));
         assertEquals(new BigInteger(1, testValue), txNew.getValue().asBigInteger());

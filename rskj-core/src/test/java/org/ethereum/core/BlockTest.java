@@ -19,26 +19,24 @@
 
 package org.ethereum.core;
 
-import co.rsk.trie.TrieImpl;
-import org.ethereum.config.SystemProperties;
-import org.ethereum.core.genesis.GenesisLoader;
-import org.ethereum.core.genesis.InitialAddressState;
+import co.rsk.core.Coin;
 import co.rsk.trie.Trie;
+import co.rsk.trie.TrieImpl;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
-import java.util.Collection;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -86,7 +84,7 @@ public class BlockTest {
 
             BigInteger wei = Denomination.valueOf(denom.toUpperCase()).value().multiply(new BigInteger(value));
 
-            AccountState accountState = new AccountState(BigInteger.ZERO, wei);
+            AccountState accountState = new AccountState(BigInteger.ZERO, new Coin(wei));
             byte[] encodedAccountState = accountState.getEncoded();
             byte[] accountKey = Hex.decode(key.toString());
             state = state.put(accountKey, encodedAccountState);
