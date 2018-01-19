@@ -66,6 +66,7 @@ public final class Topic {
         }
 
         Topic otherTopic = (Topic) other;
+
         return Arrays.equals(bytes, otherTopic.bytes);
     }
 

@@ -405,7 +405,7 @@ public class Web3ImplLogsTest {
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         fr.topics = new Object[1];
-        fr.topics[0] = "0102";
+        fr.topics[0] = "0102030405060102030405060102030405060102030405060102030405060102";
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);

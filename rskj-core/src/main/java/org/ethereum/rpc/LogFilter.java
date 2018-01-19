@@ -98,7 +98,7 @@ public class LogFilter extends Filter {
 
     public static LogFilter fromFilterRequest(Web3.FilterRequest fr, Blockchain blockchain) throws Exception {
         RskAddress[] addresses;
-        byte[][] topics = null;
+        Topic[] topics = null;
 
         if (fr.address instanceof String) {
             addresses = new RskAddress[] { new RskAddress(stringHexToByteArray((String) fr.address)) };
@@ -121,7 +121,7 @@ public class LogFilter extends Filter {
                 if (topic == null) {
                     topics = null;
                 } else if (topic instanceof String) {
-                    topics = new byte[][] { new DataWord(stringHexToByteArray((String) topic)).getData() };
+                    topics = new Topic[] { new Topic((String) topic) };
                 } else if (topic instanceof Collection<?>) {
                     Collection<?> iterable = (Collection<?>)topic;
 
@@ -129,9 +129,8 @@ public class LogFilter extends Filter {
                             .filter(String.class::isInstance)
                             .map(String.class::cast)
                             .map(TypeConverter::stringHexToByteArray)
-                            .map(DataWord::new)
-                            .map(DataWord::getData)
-                            .toArray(byte[][]::new);
+                            .map(Topic::new)
+                            .toArray(Topic[]::new);
                 }
             }
         }

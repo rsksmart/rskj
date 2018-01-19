@@ -30,11 +30,11 @@ import java.util.Arrays;
 import java.util.List;
 
 public class AddressesTopicsFilter {
-    private List<byte[][]> topics = new ArrayList<>();  //  [[addr1, addr2], null, [A, B], [C]]
+    private List<Topic[]> topics = new ArrayList<>();  //  [[addr1, addr2], null, [A, B], [C]]
     private RskAddress[] addresses = new RskAddress[0];
     private Bloom[][] filterBlooms;
 
-    public AddressesTopicsFilter(RskAddress[] addresses, byte[][] topics) {
+    public AddressesTopicsFilter(RskAddress[] addresses, Topic[] topics) {
         if (topics != null) {
             this.topics.add(topics);
         }
@@ -49,7 +49,16 @@ public class AddressesTopicsFilter {
             return;
         }
 
-        List<byte[][]> addrAndTopics = new ArrayList<>(topics);
+        List<byte[][]> addrAndTopics = new ArrayList<>();
+
+        for (Topic[] toplist : topics) {
+            byte[][] tops = new byte[toplist.length][];
+
+            for (int k = 0; k < tops.length; k++)
+                tops[k] = toplist[k].getBytes();
+
+            addrAndTopics.add(tops);
+        }
 
         byte[][] addrs = new byte[addresses.length][];
 
@@ -121,14 +130,14 @@ public class AddressesTopicsFilter {
                 return false;
             }
 
-            byte[][] orTopics = topics.get(i);
+            Topic[] orTopics = topics.get(i);
 
             if (orTopics != null && orTopics.length > 0) {
                 boolean orMatches = false;
                 DataWord logTopic = logTopics.get(i);
 
-                for (byte[] orTopic : orTopics) {
-                    if (new DataWord(orTopic).equals(logTopic)) {
+                for (Topic orTopic : orTopics) {
+                    if (new DataWord(orTopic.getBytes()).equals(logTopic)) {
                         orMatches = true;
                         break;
                     }
