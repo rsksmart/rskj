@@ -67,7 +67,8 @@ public class LogFilter extends Filter {
 
         for (int i = 0; i < logs.length; i++) {
             LogInfo logInfo = receipt.getLogInfoList().get(i);
-            if (addressesTopicsFilter.matchesContractAddress(new RskAddress(logInfo.getAddress()))) {
+
+            if (addressesTopicsFilter.matchesExactly(logInfo)) {
                 onLogMatch(logInfo, b, txIndex, receipt.getTransaction(), i);
             }
         }

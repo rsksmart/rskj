@@ -84,8 +84,6 @@ public class AddressesTopicsFilter {
     }
 
     public boolean matchBloom(Bloom blockBloom) {
-        initBlooms();
-
         for (Bloom[] andBloom : filterBlooms) {
             boolean orMatches = false;
 
@@ -105,8 +103,6 @@ public class AddressesTopicsFilter {
     }
 
     boolean matchesContractAddress(RskAddress toAddr) {
-        initBlooms();
-
         for (RskAddress address : addresses) {
             if (address.equals(toAddr)) {
                 return true;
@@ -117,8 +113,6 @@ public class AddressesTopicsFilter {
     }
 
     public boolean matchesExactly(LogInfo logInfo) {
-        initBlooms();
-
         if (!matchesContractAddress(new RskAddress(logInfo.getAddress()))) {
             return false;
         }
