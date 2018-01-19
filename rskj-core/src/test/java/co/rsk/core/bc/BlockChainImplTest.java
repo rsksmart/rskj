@@ -234,7 +234,7 @@ public class BlockChainImplTest {
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
-        block1.getHeader().setStateRoot(alterHash(block1.getHeader().getStateRoot()));
+        block1.getHeader().setStateRoot(cloneAlterHash(block1.getHeader().getStateRoot()));
 
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
     }
@@ -477,7 +477,7 @@ public class BlockChainImplTest {
         Block block1b = BlockGenerator.getInstance().createChildBlock(genesis,0,1l);
         Block block2b = BlockGenerator.getInstance().createChildBlock(block1b,0,2l);
 
-        block2b.getHeader().setStateRoot(block2b.getStateRoot());
+        block2b.getHeader().setStateRoot(cloneAlterHash(block2b.getStateRoot()));
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
@@ -919,14 +919,13 @@ public class BlockChainImplTest {
         return new BlockExecutor(ConfigHelper.CONFIG, blockChain.getRepository(), blockChain, blockChain.getBlockStore(), blockChain.getListener());
     }
 
-    private static Sha3Hash alterHash(Sha3Hash hash) {
-        byte[] hashBytes = hash.getBytes();
-        alterBytes(hashBytes);
-        return new Sha3Hash(hashBytes);
-    }
-
     private static void alterBytes(byte[] bytes) {
         bytes[0] = (byte)((bytes[0] + 1) % 256);
+    }
+
+    private static Sha3Hash cloneAlterHash(Sha3Hash hash) {
+        byte[] clonedAlterBytes = cloneAlterBytes(hash.getBytes());
+        return new Sha3Hash(clonedAlterBytes);
     }
 
     private static byte[] cloneAlterBytes(byte[] bytes) {
