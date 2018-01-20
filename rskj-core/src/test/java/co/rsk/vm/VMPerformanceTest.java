@@ -39,6 +39,8 @@ import java.util.List;
 // Remove junit imports for standalone use
 import org.junit.*;
 
+import static org.ethereum.TestUtils.padLeft;
+import static org.ethereum.TestUtils.padRight;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -50,7 +52,8 @@ public class VMPerformanceTest {
     ThreadMXBean thread;
     VM vm;
 
-    final static int maxLoops = 1000000;
+    final static int million = 1000*1000;
+    final static int maxLoops = 1*million;
     final static int maxGroups = 1;
     final static boolean useProfiler = false;
 
@@ -270,7 +273,8 @@ public class VMPerformanceTest {
     public class PerfRes {
         public long deltaUsedMemory;
         public long deltaRealTime;
-        public long deltaTime; // in microseconds.
+        public long wallClockTimeMillis; // in milliseconds
+        public long deltaTime; // in nanoseconds.
         public long gas;
 
     }
@@ -327,8 +331,9 @@ public class VMPerformanceTest {
 
             long endTime = thread.getCurrentThreadCpuTime();
             long endRealTime = System.currentTimeMillis();
-            pr.deltaTime = (endTime - startTime) / myLoops / divisor / 1000; // de nano a micro.
-            pr.deltaRealTime = (endRealTime - startRealTime) * 1000 / myLoops / divisor; // de milli a micro
+            pr.deltaTime = (endTime - startTime) / maxLoops / divisor ; // nano
+            pr.wallClockTimeMillis = (endRealTime - startRealTime);
+            pr.deltaRealTime = (endRealTime - startRealTime) * 1000 *1000 / maxLoops / divisor; // de milli a nano
             long endUsedMemory = (rt.totalMemory() - rt.freeMemory());
 
 
@@ -347,14 +352,16 @@ public class VMPerformanceTest {
             percent = 0;
 
         System.out.println(
-                TestUtils.padRight(opcode, 12) + ":" +
-                        " full: " + TestUtils.padLeft(Long.toString(best.deltaTime), 7) +
-                        " ref: " + TestUtils.padLeft(Long.toString(best.deltaTime - refTime), 7) +
-                        " (% ref): " + TestUtils.padLeft(Long.toString(percent), 5) +
-                        " gas: " + TestUtils.padLeft(Long.toString(best.gas), 6) +
-                        " time/gas: " + TestUtils.padLeft(Long.toString(best.deltaTime * 100 / best.gas), 6) +
-                        " fullReal: " + TestUtils.padLeft(Long.toString(best.deltaRealTime), 7) +
-                        " mem[Kb]: " + TestUtils.padLeft(Long.toString(best.deltaUsedMemory / 1000), 10));
+                padRight(opcode, 12) + ":" +
+                        " wctime[msec]: "+padLeft(Long.toString(best.wallClockTimeMillis), 7) +
+                        " full: " + padLeft(Long.toString(best.deltaTime), 7) +
+                        " ref: " + padLeft(Long.toString(best.deltaTime - refTime), 7) +
+                        " (% ref): " + padLeft(Long.toString(percent), 5) +
+                        " gas: " + padLeft(Long.toString(best.gas), 6) +
+                        " time/gas: " + padLeft(Long.toString(best.deltaTime * 100 / best.gas), 6) +
+                        " fullReal: " + padLeft(Long.toString(best.deltaRealTime), 7) +
+                        " mem[Kb]: " + padLeft(Long.toString(best.deltaUsedMemory / 1000), 10));
+
 
         if (resultLogger != null) {
             resultLogger.log(opcode, best);
@@ -399,13 +406,13 @@ public class VMPerformanceTest {
 
     }
 
-    long deltaTime; // in microseconds
+    long deltaTime; // in nanoseconds
     long deltaRealTime;
 
     void endMeasure() {
         if (startTime != 0) {
             long endTime = thread.getCurrentThreadCpuTime();
-            deltaTime = (endTime - startTime) / 1000; // de nano a micro.
+            deltaTime = (endTime - startTime); // nano
             //System.out.println("Time elapsed [us]: " + Long.toString(deltaTime)+" [s]:"+ Long.toString(deltaTime/1000/1000));
             System.out.println("Time elapsed [ms]: " + Long.toString(deltaTime/1000)+" [s]:"+ Long.toString(deltaTime/1000/1000));
         }
