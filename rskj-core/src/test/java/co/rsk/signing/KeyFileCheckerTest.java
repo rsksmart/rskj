@@ -5,12 +5,14 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.internal.util.collections.Sets;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
 
 /**
  * Created by ajlopez on 29/12/2016.
@@ -31,19 +33,19 @@ public class KeyFileCheckerTest {
     @Test
     public void invalidFileNameIfNull() {
         KeyFileChecker checker = new KeyFileChecker(null);
-        Assert.assertEquals(checker.checkKeyFile(), "Invalid Federate Key File Name");
+        Assert.assertEquals(checker.checkKeyFile(), "Invalid Key File Name");
     }
 
     @Test
     public void invalidFileNameIfEmpty() {
         KeyFileChecker checker = new KeyFileChecker("");
-        Assert.assertEquals(checker.checkKeyFile(), "Invalid Federate Key File Name");
+        Assert.assertEquals(checker.checkKeyFile(), "Invalid Key File Name");
     }
 
     @Test
     public void fileDoesNotExist() {
         KeyFileChecker checker = new KeyFileChecker("unknown.txt");
-        Assert.assertEquals(checker.checkKeyFile(), "Federate Key File 'unknown.txt' does not exist");
+        Assert.assertEquals(checker.checkKeyFile(), "Key File 'unknown.txt' does not exist");
     }
 
     @Test
@@ -58,7 +60,24 @@ public class KeyFileCheckerTest {
         this.writeTestKeyFile("zz3d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea3826af");
         KeyFileChecker checker = new KeyFileChecker(KEY_FILE_PATH);
 
-        Assert.assertEquals("Error Reading Federate Key File './keyfiletest.txt'", checker.checkKeyFile());
+        Assert.assertEquals("Error Reading Key File './keyfiletest.txt'", checker.checkKeyFile());
+    }
+
+    @Test
+    public void invalidPermissions() throws IOException {
+        this.writeTestKeyFile("zz3d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea3826af");
+        KeyFileChecker checker = new KeyFileChecker(KEY_FILE_PATH);
+
+        Assert.assertEquals("Invalid key file permissions", checker.checkFilePermissions());
+    }
+
+    @Test
+    public void validPermissions() throws IOException {
+        this.writeTestKeyFile("zz3d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea3826af");
+        Files.setPosixFilePermissions(Paths.get(KEY_FILE_PATH), Sets.newSet(PosixFilePermission.OWNER_READ));
+        KeyFileChecker checker = new KeyFileChecker(KEY_FILE_PATH);
+
+        Assert.assertEquals("", checker.checkFilePermissions());
     }
 
     private void writeTestKeyFile(String key) throws IOException {

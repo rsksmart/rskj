@@ -1,8 +1,12 @@
 package co.rsk.signing;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,16 +30,21 @@ public class KeyFileChecker {
             messages.add(messageFileName);
         }
 
+        String messagePermissions = this.checkFilePermissions();
+        if (StringUtils.isNotEmpty(messagePermissions)) {
+            messages.add(messagePermissions);
+        }
+
         return messages;
     }
 
     public String checkKeyFile() {
         if (StringUtils.isBlank(this.filePath)) {
-            return "Invalid Federate Key File Name";
+            return "Invalid Key File Name";
         }
 
         if (!Paths.get(this.filePath).toFile().exists()) {
-            return "Federate Key File '" + this.filePath + "' does not exist";
+            return "Key File '" + this.filePath + "' does not exist";
         }
         try {
             byte[] var;
@@ -47,9 +56,23 @@ public class KeyFileChecker {
                 return "Invalid Key Size";
             }
         } catch (Exception ex) {
-            return "Error Reading Federate Key File '" + this.filePath + "'";
+            return "Error Reading Key File '" + this.filePath + "'";
         }
         return "";
+    }
+
+    public String checkFilePermissions() {
+        final String errorMessage = "Invalid key file permissions";
+        try {
+            List<PosixFilePermission> permissions = new ArrayList<>(Files.getPosixFilePermissions(Paths.get(this.filePath)));
+            if (CollectionUtils.size(permissions) == 1 && permissions.get(0).equals(PosixFilePermission.OWNER_READ)) {
+                return "";
+            } else {
+                return errorMessage;
+            }
+        } catch (IOException e) {
+            return errorMessage;
+        }
     }
 
     private boolean validateKeyLength(byte[] var) {
