@@ -24,8 +24,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.math.BigInteger;
-
 public class TxValidatorMinimumGasPriceValidatorTest {
 
     @Test
@@ -41,9 +39,9 @@ public class TxValidatorMinimumGasPriceValidatorTest {
         TxValidatorMinimuGasPriceValidator tvmgpv = new TxValidatorMinimuGasPriceValidator();
 
 
-        Assert.assertTrue(tvmgpv.validate(tx1, null, null, BigInteger.valueOf(10), Long.MAX_VALUE, false));
-        Assert.assertTrue(tvmgpv.validate(tx2, null, null, BigInteger.valueOf(10), Long.MAX_VALUE, false));
-        Assert.assertTrue(tvmgpv.validate(tx3, null, null, BigInteger.valueOf(10), Long.MAX_VALUE, false));
+        Assert.assertTrue(tvmgpv.validate(tx1, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false));
+        Assert.assertTrue(tvmgpv.validate(tx2, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false));
+        Assert.assertTrue(tvmgpv.validate(tx3, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false));
     }
 
     @Test
@@ -58,9 +56,9 @@ public class TxValidatorMinimumGasPriceValidatorTest {
 
         TxValidatorMinimuGasPriceValidator tvmgpv = new TxValidatorMinimuGasPriceValidator();
 
-        Assert.assertFalse(tvmgpv.validate(tx1, null, null, BigInteger.valueOf(10), Long.MAX_VALUE, false));
-        Assert.assertFalse(tvmgpv.validate(tx2, null, null, BigInteger.valueOf(10), Long.MAX_VALUE, false));
-        Assert.assertFalse(tvmgpv.validate(tx3, null, null, BigInteger.valueOf(10), Long.MAX_VALUE, false));
+        Assert.assertFalse(tvmgpv.validate(tx1, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false));
+        Assert.assertFalse(tvmgpv.validate(tx2, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false));
+        Assert.assertFalse(tvmgpv.validate(tx3, null, null, Coin.valueOf(10L), Long.MAX_VALUE, false));
     }
 
 }

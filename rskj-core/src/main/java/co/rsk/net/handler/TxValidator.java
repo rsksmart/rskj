@@ -19,6 +19,7 @@
 package co.rsk.net.handler;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.net.handler.txvalidator.*;
 import org.ethereum.core.AccountState;
@@ -92,7 +93,7 @@ class TxValidator {
                 state = new AccountState();
             }
             BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(blockchain.getBestBlock().getGasLimit());
-            BigInteger minimumGasPrice = blockchain.getBestBlock().getMinimumGasPrice().asBigInteger();
+            Coin minimumGasPrice = blockchain.getBestBlock().getMinimumGasPrice();
             long bestBlockNumber = blockchain.getBestBlock().getNumber();
             long basicTxCost = tx.transactionCost(config, blockchain.getBestBlock());
 
