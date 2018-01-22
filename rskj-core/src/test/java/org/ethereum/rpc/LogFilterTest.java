@@ -19,6 +19,9 @@
 package org.ethereum.rpc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
+import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.Block;
 import org.junit.Assert;
@@ -28,6 +31,8 @@ import org.junit.Test;
  * Created by ajlopez on 17/01/2018.
  */
 public class LogFilterTest {
+    private final RskSystemProperties config = new RskSystemProperties();
+
     @Test
     public void noEvents() {
         LogFilter filter = new LogFilter(null, null, false, false);
@@ -50,5 +55,58 @@ public class LogFilterTest {
 
         Assert.assertNotNull(result);
         Assert.assertEquals(0, result.length);
+    }
+
+    @Test
+    public void eventAfterBlockWithEvent() {
+        World world = Web3ImplLogsTest.getWorld3WithBlockWithEventInContractCreation(config);
+        Block block = world.getBlockChain().getBestBlock();
+
+        AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);
+
+        LogFilter filter = new LogFilter(atfilter, world.getBlockChain(), false, true);
+
+        filter.newBlockReceived(block);
+
+        Object[] result = filter.getEvents();
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(1, result.length);
+    }
+
+    @Test
+    public void twoEventsAfterTwoBlocksWithEventAndToLatestBlock() {
+        World world = Web3ImplLogsTest.getWorld3WithBlockWithEventInContractCreation(config);
+        Block block = world.getBlockChain().getBestBlock();
+
+        AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);
+
+        LogFilter filter = new LogFilter(atfilter, world.getBlockChain(), false, true);
+
+        filter.newBlockReceived(block);
+        filter.newBlockReceived(block);
+
+        Object[] result = filter.getEvents();
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(2, result.length);
+    }
+
+    @Test
+    public void onlyOneEventAfterTwoBlocksWithEventAndFromLatestBlock() {
+        World world = Web3ImplLogsTest.getWorld3WithBlockWithEventInContractCreation(config);
+        Block block = world.getBlockChain().getBestBlock();
+
+        AddressesTopicsFilter atfilter = new AddressesTopicsFilter(new RskAddress[0], null);
+
+        LogFilter filter = new LogFilter(atfilter, world.getBlockChain(), true, true);
+
+        filter.newBlockReceived(block);
+        filter.newBlockReceived(block);
+
+        Object[] result = filter.getEvents();
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(1, result.length);
     }
 }

@@ -110,7 +110,7 @@ public class Web3ImplLogsTest {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
 
-        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null, null, 10, 100);
 
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = world.getBlockChain().getRepository();
@@ -149,7 +149,7 @@ public class Web3ImplLogsTest {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
 
-        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null, null, 10, 100);
 
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = world.getBlockChain().getRepository();
@@ -189,7 +189,7 @@ public class Web3ImplLogsTest {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
 
-        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null, null, 10, 100);
 
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = world.getBlockChain().getRepository();
@@ -454,6 +454,7 @@ public class Web3ImplLogsTest {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
 
+
         BlockChainImpl blockChain = world.getBlockChain();
         PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
 
@@ -605,7 +606,7 @@ public class Web3ImplLogsTest {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
 
-        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null, null, 10, 100);
 
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = world.getBlockChain().getRepository();
@@ -659,7 +660,7 @@ public class Web3ImplLogsTest {
     }
 
     private Web3Impl createWeb3(Blockchain blockchain, PendingState pendingState) {
-        PersonalModule personalModule = new PersonalModuleWalletEnabled(config, Web3Mocks.getMockEthereum(), null, pendingState);
+        PersonalModule personalModule = new PersonalModuleWalletEnabled(config, Web3Mocks.getMockEthereum(), WalletFactory.createWallet(), pendingState);
         return new Web3RskImpl(Web3Mocks.getMockEthereum(), blockchain, pendingState, config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), personalModule, null, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, blockchain.getBlockStore(), null, null, null, new SimpleConfigCapabilities());
     }
 
@@ -732,6 +733,17 @@ public class Web3ImplLogsTest {
     }
 
     private Web3Impl getWeb3WithEventInContractCreation() {
+        World world = getWorld3WithBlockWithEventInContractCreation(config);
+
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null, null, 10, 100);
+
+        Web3Impl web3 = createWeb3(world.getBlockChain(), pendingState);
+        web3.personal_newAccountWithSeed("notDefault");
+
+        return web3;
+    }
+
+    public static World getWorld3WithBlockWithEventInContractCreation(RskSystemProperties config) {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
 
@@ -745,11 +757,7 @@ public class Web3ImplLogsTest {
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         blockChain.tryToConnect(block1);
 
-        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
-
-        Web3Impl web3 = createWeb3(world.getBlockChain(), pendingState);
-        web3.personal_newAccountWithSeed("notDefault");
-        return web3;
+        return world;
     }
 
     private Web3Impl getWeb3WithContractInvoke() {
@@ -822,8 +830,8 @@ public class Web3ImplLogsTest {
 
     private static Transaction getContractTransaction(Account acc1) {
         return getContractTransaction(acc1,false);
-
     }
+
     //0.4.11+commit.68ef5810.Emscripten.clang WITH optimizations
     static final String compiled_0_4_11 = "6060604052341561000c57fe5b5b60466000819055507f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad16000546040518082815260200191505060405180910390a15b5b61014e8061005f6000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632096525514610046578063371303c01461006c575bfe5b341561004e57fe5b61005661007e565b6040518082815260200191505060405180910390f35b341561007457fe5b61007c6100c2565b005b60007f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b6000546040518082815260200191505060405180910390a160005490505b90565b60006000815460010191905081905550600160026000548115156100e257fe5b061415157f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad6000546040518082815260200191505060405180910390a25b5600a165627a7a7230582092c7b2c0483b85227396e18149993b33243059af0f3bd0364f1dc36b8bbbcdae0029";
     static final String compiled_unknown = "60606040526046600081905560609081527f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad190602090a160aa8060426000396000f3606060405260e060020a60003504632096525581146024578063371303c0146060575b005b60a36000805460609081527f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b90602090a1600060005054905090565b6022600080546001908101918290556060828152600290920614907f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad90602090a2565b5060206060f3";
