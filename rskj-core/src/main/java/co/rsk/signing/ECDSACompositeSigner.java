@@ -16,13 +16,10 @@ import java.util.Optional;
  * that can sign with the given key id.
  *
  * Has the sum of requirements of its components.
- * (TODO!)
  *
  * @author Ariel Mendelzon
  */
 public class ECDSACompositeSigner implements ECDSASigner {
-    private static final Logger logger = LoggerFactory.getLogger("ECDSACompositeSigner");
-
     private List<ECDSASigner> signers;
 
     public ECDSACompositeSigner() {

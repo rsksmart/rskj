@@ -37,6 +37,10 @@ public class ECDSASignature {
         return new ECDSASignature(signature.r, signature.s, signature.v);
     }
 
+    public static ECDSASignature fromBtcSignature(BtcECKey.ECDSASignature signature) {
+        return new ECDSASignature(signature.r, signature.s);
+    }
+
     public BigInteger getR() {
         return r;
     }

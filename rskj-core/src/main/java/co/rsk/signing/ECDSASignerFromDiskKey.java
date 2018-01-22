@@ -1,6 +1,5 @@
 package co.rsk.signing;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.crypto.ECKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +13,7 @@ import java.util.List;
  * Key is identified by a key id.
  *
  * Has certain requirements on filesystem permissions
- * of the file. (TODO!)
+ * of the file.
  *
  * No special authorization is required to sign a message.
  *
