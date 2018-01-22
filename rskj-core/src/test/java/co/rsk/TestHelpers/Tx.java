@@ -18,7 +18,7 @@
 
 package co.rsk.TestHelpers;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -34,7 +34,7 @@ import static org.mockito.Matchers.eq;
 
 public class Tx {
 
-    public static Transaction create(long value, long gaslimit, long gasprice, long nonce, long data, long sender, Random hashes) {
+    public static Transaction create(RskSystemProperties config, long value, long gaslimit, long gasprice, long nonce, long data, long sender, Random hashes) {
         Random r = new Random(sender);
         Transaction transaction = Mockito.mock(Transaction.class);
         Mockito.when(transaction.getValue()).thenReturn(BigInteger.valueOf(value).toByteArray());
@@ -55,7 +55,7 @@ public class Tx {
 
         Mockito.when(transaction.getSender()).thenReturn(returnSender);
         Mockito.when(transaction.getHash()).thenReturn(BigInteger.valueOf(hashes.nextLong()).toByteArray());
-        Mockito.when(transaction.acceptTransactionSignature(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId())).thenReturn(Boolean.TRUE);
+        Mockito.when(transaction.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId())).thenReturn(Boolean.TRUE);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(returnReceiveAddress);
         ArrayList<Byte> bytes = new ArrayList();
         long amount = 21000;
@@ -76,7 +76,7 @@ public class Tx {
             b[i] = bytes.get(i);
         }
         Mockito.when(transaction.getData()).thenReturn(b);
-        Mockito.when(transaction.transactionCost(eq(ConfigHelper.CONFIG), any(Block.class))).thenReturn(amount);
+        Mockito.when(transaction.transactionCost(eq(config), any(Block.class))).thenReturn(amount);
 
         return transaction;
     }

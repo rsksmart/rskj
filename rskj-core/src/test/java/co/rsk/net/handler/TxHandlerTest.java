@@ -39,8 +39,8 @@ public class TxHandlerTest {
         final long threshold = 300001;
         Random random = new Random(0);
 
-        Transaction tx1 = Tx.create(0, 0, 0, 0, 0, 0, random);
-        Transaction tx2 = Tx.create(0, 0, 0, 1, 0, 0, random);
+        Transaction tx1 = Tx.create(ConfigHelper.CONFIG, 0, 0, 0, 0, 0, 0, random);
+        Transaction tx2 = Tx.create(ConfigHelper.CONFIG, 0, 0, 0, 1, 0, 0, random);
 
         Map<String, TxTimestamp> knownTxs = new HashMap<>();
         Map<RskAddress, TxsPerAccount> txsPerAccounts = new HashMap<>();
@@ -69,7 +69,7 @@ public class TxHandlerTest {
         final long threshold = 300001;
         Random random = new Random(0);
 
-        Transaction tx1 = Tx.create(0, 0, 0, 0, 0, 0, random);
+        Transaction tx1 = Tx.create(ConfigHelper.CONFIG, 0, 0, 0, 0, 0, 0, random);
 
         Map<String, TxTimestamp> knownTxs = new HashMap<>();
         Map<RskAddress, TxsPerAccount> txsPerAccounts = new HashMap<>();
@@ -95,8 +95,8 @@ public class TxHandlerTest {
         long time = System.currentTimeMillis();
         Random random = new Random(0);
 
-        Transaction tx1 = Tx.create(0, 0, 0, 0, 0, 0, random);
-        Transaction tx2 = Tx.create(0, 0, 0, 1, 0, 0, random);
+        Transaction tx1 = Tx.create(ConfigHelper.CONFIG, 0, 0, 0, 0, 0, 0, random);
+        Transaction tx2 = Tx.create(ConfigHelper.CONFIG, 0, 0, 0, 1, 0, 0, random);
 
         Map<String, TxTimestamp> knownTxs = new HashMap<>();
         Map<RskAddress, TxsPerAccount> txsPerAccounts = new HashMap<>();

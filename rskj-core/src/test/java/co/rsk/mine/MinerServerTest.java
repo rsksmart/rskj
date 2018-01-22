@@ -69,7 +69,7 @@ public class MinerServerTest {
         Mockito.when(repository.getRoot()).thenReturn(blockchain.getRepository().getRoot());
         Mockito.when(repository.startTracking()).thenReturn(repository);
 
-        Transaction tx1 = Tx.create(0, 21000, 100, 0, 0, 0, new Random(0));
+        Transaction tx1 = Tx.create(ConfigHelper.CONFIG, 0, 21000, 100, 0, 0, 0, new Random(0));
         byte[] s1 = new byte[32];
         byte[] s2 = new byte[32];
         s1[0] = 0;

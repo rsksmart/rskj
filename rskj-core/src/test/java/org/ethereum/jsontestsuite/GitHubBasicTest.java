@@ -19,13 +19,12 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.BlockHeader;
 import org.json.simple.parser.ParseException;
-import org.junit.After;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -45,20 +44,15 @@ import static org.junit.Assert.assertEquals;
 @Ignore
 public class GitHubBasicTest {
 
+    private static RskSystemProperties config = new RskSystemProperties();
     private static final Logger logger = LoggerFactory.getLogger("TCK-Test");
-    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(ConfigHelper.CONFIG);
+    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
 
     public String shacommit = "99afe8f5aad7bca5d0f1b1685390a4dea32d73c3";
 
-    @After
-    public void recover() {
-        ConfigHelper.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
-    }
-
     @Test
     public void runDifficultyTest() throws IOException, ParseException {
-
-        ConfigHelper.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+        config.setBlockchainConfig(new MainNetConfig());
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficulty.json", shacommit);
 
@@ -78,7 +72,7 @@ public class GitHubBasicTest {
     @Test
     public void runDifficultyFrontierTest() throws IOException, ParseException {
 
-        ConfigHelper.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
+        config.setBlockchainConfig(new MainNetConfig());
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficultyFrontier.json", shacommit);
 
@@ -98,7 +92,7 @@ public class GitHubBasicTest {
     @Test
     public void runDifficultyHomesteadTest() throws IOException, ParseException {
 
-        ConfigHelper.CONFIG.setBlockchainConfig(new GenesisConfig());
+        config.setBlockchainConfig(new GenesisConfig());
 
         String json = JSONReader.loadJSONFromCommit("BasicTests/difficultyHomestead.json", shacommit);
 

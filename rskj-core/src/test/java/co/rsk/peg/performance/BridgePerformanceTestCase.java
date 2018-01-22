@@ -20,14 +20,13 @@ package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.vm.VMPerformanceTest;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
@@ -51,9 +50,9 @@ import java.util.List;
 import java.util.Random;
 
 public abstract class BridgePerformanceTestCase {
-    protected static NetworkParameters networkParameters = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getBtcParams();
-    protected static BlockchainNetConfig blockchainNetConfigOriginal;
+    protected static NetworkParameters networkParameters;
     protected static BridgeConstants bridgeConstants;
+    private static RskSystemProperties config;
 
     private boolean oldCpuTimeEnabled;
     private ThreadMXBean thread;
@@ -99,15 +98,10 @@ public abstract class BridgePerformanceTestCase {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        blockchainNetConfigOriginal = ConfigHelper.CONFIG.getBlockchainConfig();
-        ConfigHelper.CONFIG.setBlockchainConfig(new RegTestConfig());
-        bridgeConstants = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
+        config = new RskSystemProperties();
+        config.setBlockchainConfig(new RegTestConfig());
+        bridgeConstants = config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         networkParameters = bridgeConstants.getBtcParams();
-    }
-
-    @AfterClass
-    public static void tearDownAfterClass() throws Exception {
-        ConfigHelper.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     @AfterClass
@@ -253,7 +247,7 @@ public abstract class BridgePerformanceTestCase {
 
         ExecutionTracker executionInfo = new ExecutionTracker(thread);
 
-        RepositoryImpl repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        RepositoryImpl repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);
 
@@ -270,9 +264,9 @@ public abstract class BridgePerformanceTestCase {
 
         List<LogInfo> logs = new ArrayList<>();
 
-        RepositoryTrackWithBenchmarking benchmarkerTrack = new RepositoryTrackWithBenchmarking(ConfigHelper.CONFIG, repository);
+        RepositoryTrackWithBenchmarking benchmarkerTrack = new RepositoryTrackWithBenchmarking(config, repository);
 
-        Bridge bridge = new Bridge(ConfigHelper.CONFIG, PrecompiledContracts.BRIDGE_ADDR);
+        Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
         Blockchain blockchain = BlockChainBuilder.ofSizeWithNoPendingStateCleaner(heightProvider.getHeight(executionIndex));
         bridge.init(
                 tx,

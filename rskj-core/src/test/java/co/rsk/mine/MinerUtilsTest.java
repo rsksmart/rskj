@@ -19,6 +19,7 @@
 package co.rsk.mine;
 
 import co.rsk.TestHelpers.Tx;
+import co.rsk.config.ConfigHelper;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
@@ -65,7 +66,7 @@ public class MinerUtilsTest {
 
     @Test
     public void validTransactionRepositoryNonceTest() {
-        Transaction tx = Tx.create(0, 50000, 5, 0, 0, 0, new Random(0));
+        Transaction tx = Tx.create(ConfigHelper.CONFIG, 0, 50000, 5, 0, 0, 0, new Random(0));
         //Mockito.when(tx.checkGasPrice(Mockito.any(BigInteger.class))).thenReturn(true);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
@@ -80,7 +81,7 @@ public class MinerUtilsTest {
 
     @Test
     public void validTransactionAccWrapNonceTest() {
-        Transaction tx = Tx.create(0, 50000, 5, 1, 0, 0, new Random(0));
+        Transaction tx = Tx.create(ConfigHelper.CONFIG, 0, 50000, 5, 1, 0, 0, new Random(0));
         //Mockito.when(tx.checkGasPrice(Mockito.any(BigInteger.class))).thenReturn(true);
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
@@ -95,7 +96,7 @@ public class MinerUtilsTest {
 
     @Test
     public void invalidNonceTransactionTest() {
-        Transaction tx = Tx.create(0, 50000, 2, 0, 0, 0, new Random(0));
+        Transaction tx = Tx.create(ConfigHelper.CONFIG, 0, 50000, 2, 0, 0, 0, new Random(0));
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Map<RskAddress, BigInteger> accountNounces = new HashMap();
@@ -111,7 +112,7 @@ public class MinerUtilsTest {
 
     @Test
     public void invalidGasPriceTransactionTest() {
-        Transaction tx = Tx.create(0, 50000, 1, 0, 0, 0, new Random(0));
+        Transaction tx = Tx.create(ConfigHelper.CONFIG, 0, 50000, 1, 0, 0, 0, new Random(0));
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Map<RskAddress, BigInteger> accountNounces = new HashMap();
@@ -128,7 +129,7 @@ public class MinerUtilsTest {
 
     @Test
     public void harmfulTransactionTest() {
-        Transaction tx = Tx.create(0, 50000, 1, 0, 0, 0, new Random(0));
+        Transaction tx = Tx.create(ConfigHelper.CONFIG, 0, 50000, 1, 0, 0, 0, new Random(0));
         List<Transaction> txs = new LinkedList<>();
         txs.add(tx);
         Mockito.when(tx.getGasPrice()).thenReturn(null);

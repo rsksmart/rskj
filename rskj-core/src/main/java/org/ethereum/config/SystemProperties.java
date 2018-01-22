@@ -83,6 +83,7 @@ public abstract class SystemProperties {
 
     private static final String YES = "yes";
     private static final String NO = "no";
+    private static Config configDataFromFile;
 
     /**
      * Marks config accessor methods which need to be called (for value validation)
@@ -113,11 +114,15 @@ public abstract class SystemProperties {
     
     protected SystemProperties() {
         try {
-            configFromFiles = getConfigFromFiles();
-            validateConfig();
-
-            logger.debug("Config trace: " + configFromFiles.root().render(ConfigRenderOptions.defaults().
-                    setComments(false).setJson(false)));
+            // could be locked but the result should be the same if there is no race condition
+            if (configDataFromFile == null){
+                configDataFromFile = getConfigFromFiles();
+                logger.debug("Config trace: " + configDataFromFile.root().render(ConfigRenderOptions.defaults().
+                        setComments(false).setJson(false)));
+                configFromFiles = configDataFromFile;
+                validateConfig();
+            }
+            configFromFiles = configDataFromFile;
 
             Properties props = new Properties();
             InputStream is = getClass().getResourceAsStream("/version.properties");
@@ -414,11 +419,6 @@ public abstract class SystemProperties {
 
     public void setDataBaseDir(String dataBaseDir) {
         this.databaseDir = dataBaseDir;
-    }
-
-    @ValidateMe
-    public boolean dumpCleanOnRestart() {
-        return configFromFiles.getBoolean("dump.clean.on.restart");
     }
 
     @ValidateMe

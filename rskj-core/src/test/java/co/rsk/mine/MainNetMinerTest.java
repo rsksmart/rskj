@@ -2,7 +2,6 @@ package co.rsk.mine;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.VerificationException;
-import co.rsk.config.ConfigHelper;
 import co.rsk.config.ConfigUtils;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
@@ -21,7 +20,10 @@ import org.ethereum.core.ImportResult;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.rpc.TypeConverter;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 
@@ -40,21 +42,18 @@ public class MainNetMinerTest {
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
+    private RskSystemProperties config;
 
     @Before
     public void setup() {
-        oldConfig = ConfigHelper.CONFIG.getBlockchainConfig();
-        ConfigHelper.CONFIG.setBlockchainConfig(new FallbackMainNetConfig());
-        DIFFICULTY_CALCULATOR = new DifficultyCalculator(ConfigHelper.CONFIG);
+        config = new RskSystemProperties();
+        config.setBlockchainConfig(new FallbackMainNetConfig());
+        DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
         World world = new World();
         blockchain = world.getBlockChain();
 
     }
 
-    @After
-    public void clean() {
-        ConfigHelper.CONFIG.setBlockchainConfig(oldConfig);
-    }
     /*
      * This test is probabilistic, but it has a really high chance to pass. We will generate
      * a random block that it is unlikely to pass the Long.MAX_VALUE difficulty, though
@@ -74,9 +73,9 @@ public class MainNetMinerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ConfigHelper.CONFIG, ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule, world.getBlockProcessor(), DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(ConfigHelper.CONFIG),
-                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
+        MinerServer minerServer = new MinerServerImpl(config, ethereumImpl, this.blockchain, null, this.blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(), unclesValidationRule, world.getBlockProcessor(), DIFFICULTY_CALCULATOR,
+                new GasLimitCalculator(config),
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
         try {
             minerServer.start();
             MinerWork work = minerServer.getWork();
@@ -121,7 +120,7 @@ public class MainNetMinerTest {
 
         RskSystemProperties tempConfig = new RskSystemProperties() {
 
-            BlockchainNetConfig blockchainNetConfig = ConfigHelper.CONFIG.getBlockchainConfig();
+            BlockchainNetConfig blockchainNetConfig = config.getBlockchainConfig();
 
             @Override
             public String fallbackMiningKeysDir() {
@@ -166,7 +165,7 @@ public class MainNetMinerTest {
         MinerServer minerServer = new MinerServerImpl(tempConfig, ethereumImpl, blockchain, null,
                 blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
                 unclesValidationRule, null, DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(ConfigHelper.CONFIG),
+                new GasLimitCalculator(config),
                 new ProofOfWorkRule(tempConfig).setFallbackMiningEnabled(true)
         );
         try {
@@ -236,12 +235,12 @@ public class MainNetMinerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(ConfigHelper.CONFIG, ethereumImpl, this.blockchain, null,
+        MinerServer minerServer = new MinerServerImpl(config, ethereumImpl, this.blockchain, null,
                 this.blockchain.getPendingState(), blockchain.getRepository(),
                 ConfigUtils.getDefaultMiningConfig(), unclesValidationRule,
                 world.getBlockProcessor(), DIFFICULTY_CALCULATOR,
-                new GasLimitCalculator(ConfigHelper.CONFIG),
-                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
+                new GasLimitCalculator(config),
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
         try {
         minerServer.start();
         MinerWork work = minerServer.getWork();
