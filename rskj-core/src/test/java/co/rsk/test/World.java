@@ -18,7 +18,7 @@
 
 package co.rsk.test;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import co.rsk.core.bc.BlockExecutor;
@@ -72,7 +72,7 @@ public class World {
 
     public BlockExecutor getBlockExecutor() {
         if (this.blockExecutor == null)
-            this.blockExecutor = new BlockExecutor(ConfigHelper.CONFIG, this.getRepository(), this.getBlockChain(), this.getBlockChain().getBlockStore(), null);
+            this.blockExecutor = new BlockExecutor(new RskSystemProperties(), this.getRepository(), this.getBlockChain(), this.getBlockChain().getBlockStore(), null);
 
         return this.blockExecutor;
     }

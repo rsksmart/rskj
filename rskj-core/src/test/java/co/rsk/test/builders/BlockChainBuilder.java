@@ -19,16 +19,15 @@
 package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.RepositoryBlockStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
-import org.ethereum.core.*;
 import co.rsk.validators.DummyBlockValidator;
-import org.ethereum.core.Block;
+import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
@@ -46,6 +45,7 @@ import java.util.List;
  * Created by ajlopez on 8/6/2016.
  */
 public class BlockChainBuilder {
+    private final RskSystemProperties config = new RskSystemProperties();
     private boolean testing;
 
     private List<Block> blocks;
@@ -92,10 +92,10 @@ public class BlockChainBuilder {
 
     public BlockChainImpl build(boolean withoutCleaner) {
         if (repository == null)
-            repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));
+            repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));
 
         if (blockStore == null) {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
+            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(config);
             indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
             blockStore = indexedBlockStore;
         }
@@ -120,7 +120,7 @@ public class BlockChainBuilder {
         if (this.adminInfo == null)
             this.adminInfo = new AdminInfo();
 
-        BlockChainImpl blockChain = new BlockChainImpl(ConfigHelper.CONFIG, this.repository, this.blockStore, receiptStore, null, listener, this.adminInfo, blockValidator);
+        BlockChainImpl blockChain = new BlockChainImpl(config, this.repository, this.blockStore, receiptStore, null, listener, this.adminInfo, blockValidator);
 
         if (this.testing) {
             blockChain.setBlockValidator(new DummyBlockValidator());
@@ -129,9 +129,9 @@ public class BlockChainBuilder {
 
         PendingStateImpl pendingState;
         if (withoutCleaner) {
-            pendingState = new PendingStateImplNoCleaner(ConfigHelper.CONFIG, blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+            pendingState = new PendingStateImplNoCleaner(config, blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         } else {
-            pendingState = new PendingStateImpl(ConfigHelper.CONFIG, blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+            pendingState = new PendingStateImpl(config, blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         }
         blockChain.setPendingState(pendingState);
 
@@ -142,7 +142,7 @@ public class BlockChainBuilder {
             }
 
             Repository track = this.repository.startTracking();
-            new RepositoryBlockStore(ConfigHelper.CONFIG, track, PrecompiledContracts.BRIDGE_ADDR);
+            new RepositoryBlockStore(config, track, PrecompiledContracts.BRIDGE_ADDR);
             track.commit();
 
             this.genesis.setStateRoot(this.repository.getRoot());
@@ -153,7 +153,7 @@ public class BlockChainBuilder {
         }
 
         if (this.blocks != null) {
-            BlockExecutor blockExecutor = new BlockExecutor(ConfigHelper.CONFIG, repository, blockChain, blockStore, listener);
+            BlockExecutor blockExecutor = new BlockExecutor(config, repository, blockChain, blockStore, listener);
 
             for (Block b : this.blocks) {
                 blockExecutor.executeAndFillAll(b, blockChain.getBestBlock());

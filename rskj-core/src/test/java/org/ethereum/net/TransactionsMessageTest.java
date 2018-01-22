@@ -19,26 +19,26 @@
 
 package org.ethereum.net;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.net.eth.message.TransactionsMessage;
 import org.ethereum.util.ByteUtil;
-
 import org.junit.Ignore;
 import org.junit.Test;
-
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
+import java.util.Collections;
+import java.util.Iterator;
 
-import java.util.*;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class TransactionsMessageTest {
+    private final RskSystemProperties config = new RskSystemProperties();
 
     /* TRANSACTIONS */
 
@@ -53,7 +53,7 @@ public class TransactionsMessageTest {
 
         byte[] payload = Hex.decode(txsPacketRaw);
 
-        TransactionsMessage transactionsMessage = new TransactionsMessage(ConfigHelper.CONFIG, payload);
+        TransactionsMessage transactionsMessage = new TransactionsMessage(config, payload);
         System.out.println(transactionsMessage);
 
         assertEquals(EthMessageCodes.TRANSACTIONS, transactionsMessage.getCommand());
@@ -100,7 +100,7 @@ public class TransactionsMessageTest {
 
         byte[] payload = Hex.decode(txsPacketRaw);
 
-        TransactionsMessage transactionsMessage = new TransactionsMessage(ConfigHelper.CONFIG, payload);
+        TransactionsMessage transactionsMessage = new TransactionsMessage(config, payload);
         System.out.println(transactionsMessage);
 
         assertEquals(EthMessageCodes.TRANSACTIONS, transactionsMessage.getCommand());
@@ -194,7 +194,7 @@ public class TransactionsMessageTest {
         tx.sign(privKey);
         tx.getEncoded();
 
-        TransactionsMessage transactionsMessage = new TransactionsMessage(ConfigHelper.CONFIG, Collections.singletonList(tx));
+        TransactionsMessage transactionsMessage = new TransactionsMessage(config, Collections.singletonList(tx));
 
         assertEquals(expected, Hex.toHexString(transactionsMessage.getEncoded()));
     }
@@ -202,7 +202,7 @@ public class TransactionsMessageTest {
     @Test
     public void test_4() {
         String msg = "f872f87083011a6d850ba43b740083015f9094ec210ec3715d5918b37cfa4d344a45d177ed849f881b461c1416b9d000801ba023a3035235ca0a6f80f08a1d4bd760445d5b0f8a25c32678fe18a451a88d6377a0765dde224118bdb40a67f315583d542d93d17d8637302b1da26e1013518d3ae8";
-        TransactionsMessage tmsg = new TransactionsMessage(ConfigHelper.CONFIG, Hex.decode(msg));
+        TransactionsMessage tmsg = new TransactionsMessage(config, Hex.decode(msg));
         assertEquals(1, tmsg.getTransactions().size());
     }
 }

@@ -19,7 +19,7 @@
 package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.test.World;
@@ -93,7 +93,7 @@ public class BlockBuilder {
         Block block = BlockGenerator.getInstance().createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice, gasLimit);
 
         if (blockChain != null) {
-            BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, blockChain.getRepository(), blockChain, blockChain.getBlockStore(), blockChain.getListener());
+            BlockExecutor executor = new BlockExecutor(new RskSystemProperties(), blockChain.getRepository(), blockChain, blockChain.getBlockStore(), blockChain.getListener());
             executor.executeAndFill(block, parent);
         }
 

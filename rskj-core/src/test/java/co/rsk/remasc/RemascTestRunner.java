@@ -18,7 +18,7 @@
 
 package co.rsk.remasc;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -104,7 +104,7 @@ class RemascTestRunner {
         List<Block> mainChainBlocks = new ArrayList<>();
         this.blockchain.tryToConnect(this.genesis);
 
-        BlockExecutor blockExecutor = new BlockExecutor(ConfigHelper.CONFIG, blockchain.getRepository(),
+        BlockExecutor blockExecutor = new BlockExecutor(new RskSystemProperties(), blockchain.getRepository(),
                 blockchain, blockchain.getBlockStore(), null);
 
         for(int i = 0; i <= this.initialHeight; i++) {
@@ -189,7 +189,7 @@ class RemascTestRunner {
                 new ECKey().getAddress() ,
                 BigInteger.valueOf(txValue).toByteArray(),
                 null,
-                ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getChainId());
+                new RskSystemProperties().getBlockchainConfig().getCommonConstants().getChainId());
 
         tx.sign(txSigningKey.getPrivKeyBytes());
         //createBlook 1

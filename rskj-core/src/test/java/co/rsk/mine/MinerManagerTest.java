@@ -18,8 +18,8 @@
 
 package co.rsk.mine;
 
-import co.rsk.config.ConfigHelper;
 import co.rsk.config.ConfigUtils;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskImpl;
 import co.rsk.core.SnapshotManager;
@@ -43,6 +43,9 @@ import java.util.concurrent.Callable;
  * Created by ajlopez on 15/04/2017.
  */
 public class MinerManagerTest {
+
+    private static final RskSystemProperties config = new RskSystemProperties();
+
     @Test
     public void mineBlockWhenStopped() {
         World world = new World();
@@ -352,7 +355,7 @@ public class MinerManagerTest {
     }
 
     private static MinerClientImpl getMinerClient(RskImplForTest rsk, MinerServerImpl minerServer) {
-        return new MinerClientImpl(rsk, minerServer, ConfigHelper.CONFIG);
+        return new MinerClientImpl(rsk, minerServer, config);
     }
 
     private static MinerServerImpl getMinerServer(Blockchain blockchain) {
@@ -361,12 +364,12 @@ public class MinerManagerTest {
         worldManager.setBlockchain(blockchain);
         ethereum.repository = blockchain.getRepository();
         ethereum.worldManager = worldManager;
-        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(ConfigHelper.CONFIG);
-        return new MinerServerImpl(ConfigHelper.CONFIG, ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(),
+        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
+        return new MinerServerImpl(config, ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(),
                 blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
                 new BlockValidationRuleDummy(), worldManager.getNodeBlockProcessor(),
-                difficultyCalculator, new GasLimitCalculator(ConfigHelper.CONFIG),
-                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
+                difficultyCalculator, new GasLimitCalculator(config),
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
     }
 
     public static class BlockValidationRuleDummy implements BlockValidationRule {

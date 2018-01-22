@@ -19,7 +19,6 @@
 
 package org.ethereum.core.genesis;
 
-import co.rsk.config.ConfigHelper;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImplTest;
@@ -53,7 +52,7 @@ public class BlockchainLoaderTest {
         BlockchainNetConfig blockchainNetConfig = Mockito.mock(BlockchainNetConfig.class);
         Mockito.when(blockchainNetConfig.getCommonConstants()).thenReturn(constants);
 
-        Mockito.when(systemProperties.databaseDir()).thenReturn(ConfigHelper.CONFIG.databaseDir());
+        Mockito.when(systemProperties.databaseDir()).thenReturn(new RskSystemProperties().databaseDir());
         Mockito.when(systemProperties.getBlockchainConfig()).thenReturn(blockchainNetConfig);
         Mockito.when(systemProperties.genesisInfo()).thenReturn(jsonFile);
 

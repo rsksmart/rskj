@@ -18,7 +18,7 @@
 
 package co.rsk.net.handler.txvalidator;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.handler.TxsPerAccount;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
@@ -30,6 +30,8 @@ import java.math.BigInteger;
 import java.util.LinkedList;
 
 public class TxFilterAccumCostFilterTest {
+
+    private final RskSystemProperties config = new RskSystemProperties();
 
     @Test
     public void twoTxsValidAccumGasPrice() {
@@ -59,7 +61,7 @@ public class TxFilterAccumCostFilterTest {
         Mockito.when(as2.getNonce()).thenReturn(BigInteger.valueOf(0));
         Mockito.when(as3.getNonce()).thenReturn(BigInteger.valueOf(0));
 
-        TxFilterAccumCostFilter tfacf = new TxFilterAccumCostFilter(ConfigHelper.CONFIG);
+        TxFilterAccumCostFilter tfacf = new TxFilterAccumCostFilter(config);
 
         tpa1.setTransactions(new LinkedList<>());
         tpa1.getTransactions().add(tx1);
@@ -115,7 +117,7 @@ public class TxFilterAccumCostFilterTest {
         Mockito.when(as2.getNonce()).thenReturn(BigInteger.valueOf(0));
         Mockito.when(as3.getNonce()).thenReturn(BigInteger.valueOf(0));
 
-        TxFilterAccumCostFilter tfacf = new TxFilterAccumCostFilter(ConfigHelper.CONFIG);
+        TxFilterAccumCostFilter tfacf = new TxFilterAccumCostFilter(config);
 
         tpa1.setTransactions(new LinkedList<>());
         tpa1.getTransactions().add(tx1);

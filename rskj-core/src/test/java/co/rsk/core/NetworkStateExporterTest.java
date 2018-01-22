@@ -18,7 +18,7 @@
 
 package co.rsk.core;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
 import com.fasterxml.jackson.databind.JavaType;
@@ -33,6 +33,7 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
@@ -50,6 +51,12 @@ public class NetworkStateExporterTest {
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
     static String jsonFileName = "networkStateExporterTest.json";
+    private RskSystemProperties config;
+
+    @Before
+    public void setup(){
+        config = new RskSystemProperties();
+    }
 
     @AfterClass
     public static void cleanup(){
@@ -58,7 +65,7 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testEmptyRepo() throws Exception {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
 
         Map result = writeAndReadJson(repository);
 
@@ -67,7 +74,7 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testNoContracts() throws Exception {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress address1 = new RskAddress(address1String);
         repository.createAccount(address1);
@@ -110,13 +117,13 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testContracts() throws Exception {
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG, new TrieStoreImpl(new HashMapDB()));
+        Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
         String address1String = "1000000000000000000000000000000000000000";
         RskAddress address1 = new RskAddress(address1String);
         repository.createAccount(address1);
         repository.addBalance(address1, BigInteger.ONE);
         repository.increaseNonce(address1);
-        ContractDetails contractDetails = new co.rsk.db.ContractDetailsImpl(ConfigHelper.CONFIG);
+        ContractDetails contractDetails = new co.rsk.db.ContractDetailsImpl(config);
         contractDetails.setCode(new byte[] {1, 2, 3, 4});
         contractDetails.put(DataWord.ZERO, DataWord.ONE);
         contractDetails.putBytes(DataWord.ONE, new byte[] {5, 6, 7, 8});
