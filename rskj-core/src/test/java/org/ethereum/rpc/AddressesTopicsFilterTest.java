@@ -21,8 +21,11 @@ package org.ethereum.rpc;
 import co.rsk.core.RskAddress;
 import co.rsk.test.builders.AccountBuilder;
 import org.ethereum.core.Account;
+import org.ethereum.core.Bloom;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.Random;
 
 /**
  * Created by ajlopez on 18/01/2018.
@@ -37,5 +40,68 @@ public class AddressesTopicsFilterTest {
 
         Assert.assertTrue(filter.matchesContractAddress(address));
         Assert.assertFalse(filter.matchesContractAddress(RskAddress.nullAddress()));
+    }
+
+    @Test
+    public void matchEmptyBloomWithAllFilter() {
+        AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[0], null);
+
+        Assert.assertTrue(filter.matchBloom(new Bloom()));
+    }
+
+    @Test
+    public void noMatchEmptyBloomWithFilterWithAccount() {
+        Account account = new AccountBuilder().name("account").build();
+        RskAddress address = account.getAddress();
+
+        AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[] { address }, null);
+
+        Assert.assertFalse(filter.matchBloom(new Bloom()));
+    }
+
+    @Test
+    public void noMatchEmptyBloomWithFilterWithTopic() {
+        Topic topic = createTopic();
+
+        AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[0], new Topic[] { topic });
+
+        Assert.assertFalse(filter.matchBloom(new Bloom()));
+    }
+
+    @Test
+    public void matchAllBloomWithFilterWithTopic() {
+        Topic topic = createTopic();
+
+        AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[0], new Topic[] { topic });
+
+        Assert.assertTrue(filter.matchBloom(getAllBloom()));
+    }
+
+    @Test
+    public void matchAllBloomWithFilterWithAccount() {
+        Account account = new AccountBuilder().name("account").build();
+        RskAddress address = account.getAddress();
+
+        AddressesTopicsFilter filter = new AddressesTopicsFilter(new RskAddress[] { address }, null);
+
+        Assert.assertTrue(filter.matchBloom(getAllBloom()));
+    }
+
+    private static Topic createTopic() {
+        byte[] bytes = new byte[32];
+        Random random = new Random();
+
+        random.nextBytes(bytes);
+
+        return new Topic(bytes);
+    }
+
+    private static Bloom getAllBloom() {
+        byte[] bytes = new byte[256];
+
+        for (int k = 0; k < bytes.length; k++)
+            bytes[k] = (byte)0xff;
+
+        return new Bloom(bytes);
     }
 }
