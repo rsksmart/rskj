@@ -18,6 +18,9 @@
 
 package org.ethereum.rpc;
 
+import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.test.builders.BlockBuilder;
+import org.ethereum.core.Block;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,6 +31,20 @@ public class LogFilterTest {
     @Test
     public void noEvents() {
         LogFilter filter = new LogFilter(null, null, false, false);
+
+        Object[] result = filter.getEvents();
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(0, result.length);
+    }
+
+    @Test
+    public void noEventsAfterEmptyBlock() {
+        LogFilter filter = new LogFilter(null, null, false, false);
+
+        Block block = new BlockGenerator().getBlock(1);
+
+        filter.newBlockReceived(block);
 
         Object[] result = filter.getEvents();
 

@@ -820,7 +820,7 @@ public class Web3ImplLogsTest {
         return web3;
     }
 
-    private Transaction getContractTransaction(Account acc1) {
+    private static Transaction getContractTransaction(Account acc1) {
         return getContractTransaction(acc1,false);
 
     }
@@ -828,7 +828,7 @@ public class Web3ImplLogsTest {
     static final String compiled_0_4_11 = "6060604052341561000c57fe5b5b60466000819055507f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad16000546040518082815260200191505060405180910390a15b5b61014e8061005f6000396000f30060606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632096525514610046578063371303c01461006c575bfe5b341561004e57fe5b61005661007e565b6040518082815260200191505060405180910390f35b341561007457fe5b61007c6100c2565b005b60007f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b6000546040518082815260200191505060405180910390a160005490505b90565b60006000815460010191905081905550600160026000548115156100e257fe5b061415157f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad6000546040518082815260200191505060405180910390a25b5600a165627a7a7230582092c7b2c0483b85227396e18149993b33243059af0f3bd0364f1dc36b8bbbcdae0029";
     static final String compiled_unknown = "60606040526046600081905560609081527f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad190602090a160aa8060426000396000f3606060405260e060020a60003504632096525581146024578063371303c0146060575b005b60a36000805460609081527f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b90602090a1600060005054905090565b6022600080546001908101918290556060828152600290920614907f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad90602090a2565b5060206060f3";
 
-    private Transaction getContractTransaction(Account acc1,boolean withEvent) {
+    private static Transaction getContractTransaction(Account acc1,boolean withEvent) {
     /* contract compiled in data attribute of tx
     contract counter {
         event Incremented(bool indexed odd, uint x);
@@ -860,7 +860,7 @@ public class Web3ImplLogsTest {
                 .build();
     }
 
-    private Transaction getContractTransactionWithInvoke(Account acc1, byte[] receiverAddress) {
+    private static Transaction getContractTransactionWithInvoke(Account acc1, byte[] receiverAddress) {
         return new TransactionBuilder()
                 .sender(acc1)
                 .receiverAddress(receiverAddress)
@@ -871,7 +871,7 @@ public class Web3ImplLogsTest {
                 .build();
     }
 
-    private Transaction getContractTransactionWithCall(Account acc1, byte[] receiverAddress) {
+    private static Transaction getContractTransactionWithCall(Account acc1, byte[] receiverAddress) {
         return new TransactionBuilder()
                 .sender(acc1)
                 .receiverAddress(receiverAddress)
@@ -902,7 +902,7 @@ contract main {
                 .build();
     }
 
-    private Transaction getCallerContractTransaction(Account acc1, String mainAddress) {
+    private static Transaction getCallerContractTransaction(Account acc1, String mainAddress) {
         String address = mainAddress;
 
         while (address.length() < 64)
@@ -933,7 +933,7 @@ contract caller {
                 .build();
     }
 
-    private Transaction getCallerContractTransactionWithInvoke(Account acc1, byte[] receiverAddress, String mainAddress) {
+    private static Transaction getCallerContractTransactionWithInvoke(Account acc1, byte[] receiverAddress, String mainAddress) {
         String address = mainAddress;
 
         while (address.length() < 64)
