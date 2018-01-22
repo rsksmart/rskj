@@ -51,17 +51,11 @@ public class LogFilter extends Filter {
     boolean onPendingTx;
     private final Blockchain blockchain;
 
-    public LogFilter(AddressesTopicsFilter addressesTopicsFilter, Blockchain blockchain) {
+    public LogFilter(AddressesTopicsFilter addressesTopicsFilter, Blockchain blockchain, boolean fromLatestBlock, boolean toLatestBlock) {
         this.addressesTopicsFilter = addressesTopicsFilter;
         this.blockchain = blockchain;
-    }
-
-    public void setFromLatestBlock(boolean value) {
-        this.fromLatestBlock = value;
-    }
-
-    public void setToLatestBlock(boolean value) {
-        this.toLatestBlock = value;
+        this.fromLatestBlock = fromLatestBlock;
+        this.toLatestBlock = toLatestBlock;
     }
 
     void onLogMatch(LogInfo logInfo, Block b, int txIndex, Transaction tx, int logIdx) {
@@ -154,8 +148,6 @@ public class LogFilter extends Filter {
 
         AddressesTopicsFilter addressesTopicsFilter = new AddressesTopicsFilter(addresses, topics);
 
-        LogFilter filter = new LogFilter(addressesTopicsFilter, blockchain);
-
         // Default from block value
         if (fr.fromBlock == null)
             fr.fromBlock = "latest";
@@ -164,19 +156,16 @@ public class LogFilter extends Filter {
         if (fr.toBlock == null)
             fr.toBlock = "latest";
 
+        boolean fromLatestBlock = "latest".equalsIgnoreCase(fr.fromBlock);
+        boolean toLatestBlock = "latest".equalsIgnoreCase(fr.toBlock);
+
+        LogFilter filter = new LogFilter(addressesTopicsFilter, blockchain, fromLatestBlock, toLatestBlock);
+
         retrieveHistoricalData(fr, blockchain, filter);
 
         // the following is not precisely documented
         if ("pending".equalsIgnoreCase(fr.fromBlock) || "pending".equalsIgnoreCase(fr.toBlock)) {
             filter.onPendingTx = true;
-        }
-
-        if ("latest".equalsIgnoreCase(fr.fromBlock)) {
-            filter.setFromLatestBlock(true);
-        }
-
-        if ("latest".equalsIgnoreCase(fr.toBlock)) {
-            filter.setToLatestBlock(true);
         }
 
         return filter;

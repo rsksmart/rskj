@@ -27,7 +27,7 @@ import org.junit.Test;
 public class LogFilterTest {
     @Test
     public void noEvents() {
-        LogFilter filter = new LogFilter(null, null);
+        LogFilter filter = new LogFilter(null, null, false, false);
 
         Object[] result = filter.getEvents();
 
