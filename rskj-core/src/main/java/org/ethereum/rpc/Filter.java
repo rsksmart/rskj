@@ -34,9 +34,9 @@ public class Filter {
         public abstract Object getJsonEventObject();
     }
 
-    List<FilterEvent> events = new ArrayList<>();
-    int processedEvents = 0;
-    long accessTime = System.currentTimeMillis();
+    private List<FilterEvent> events = new ArrayList<>();
+    private int processedEvents = 0;
+    private long accessTime = System.currentTimeMillis();
 
     public boolean hasExpired(long timeout) {
         long nowTime = System.currentTimeMillis();
