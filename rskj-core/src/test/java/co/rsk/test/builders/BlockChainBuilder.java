@@ -38,7 +38,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
 
@@ -96,9 +95,7 @@ public class BlockChainBuilder {
             repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));
 
         if (blockStore == null) {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(config);
-            indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
-            blockStore = indexedBlockStore;
+            blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         }
 
         KeyValueDataSource ds = new HashMapDB();

@@ -128,9 +128,7 @@ public class RskTestFactory {
 
     public BlockStore getBlockStore() {
         if (blockStore == null) {
-            blockStore = new IndexedBlockStore(config);
-            HashMapDB blockStore = new HashMapDB();
-            this.blockStore.init(new HashMap<>(), blockStore, null);
+            this.blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         }
 
         return blockStore;

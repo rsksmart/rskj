@@ -24,17 +24,16 @@ import co.rsk.core.BlockDifficulty;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mapdb.DB;
 
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by ajlopez on 12/08/2016.
@@ -255,10 +254,7 @@ public class FamilyUtilsTest {
     }
 
     private static BlockStore createBlockStore() {
-        IndexedBlockStore blockStore = new IndexedBlockStore(new RskSystemProperties());
-        blockStore.init(new HashMap<>(), new HashMapDB(), null);
-
-        return blockStore;
+        return new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
     }
 
     private static boolean containsHash(byte[] hash, List<BlockHeader> headers) {

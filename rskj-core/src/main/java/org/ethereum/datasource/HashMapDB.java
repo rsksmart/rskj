@@ -30,7 +30,7 @@ import static org.ethereum.util.ByteUtil.wrap;
 
 public class HashMapDB implements KeyValueDataSource {
 
-    Map<ByteArrayWrapper, byte[]> storage = new ConcurrentHashMap<>();
+    private final Map<ByteArrayWrapper, byte[]> storage = new ConcurrentHashMap<>();
     private boolean clearOnClose = true;
 
     @Override

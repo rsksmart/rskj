@@ -167,8 +167,6 @@ public class BlockForkTest {
     }
 
     private static BlockStore createBlockStore() {
-        IndexedBlockStore blockStore = new IndexedBlockStore(new RskSystemProperties());
-        blockStore.init(new HashMap<>(), new HashMapDB(), null);
-        return blockStore;
+        return new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
     }
 }

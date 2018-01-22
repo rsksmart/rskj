@@ -98,9 +98,7 @@ public class StateTestRunner {
 
         transaction = TransactionBuilder.build(stateTestCase.getTransaction());
         logger.info("transaction: {}", transaction.toString());
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(config);
-        indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
-        BlockStore blockStore = indexedBlockStore;
+        BlockStore blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
 
         blockchain = new BlockChainImpl(config, repository, blockStore, null, null, null, null, null);
 

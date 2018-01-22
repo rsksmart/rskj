@@ -73,7 +73,7 @@ public class RepositoryImpl implements Repository {
         this(config, store, new DetailsDataStore(config, new DatabaseImpl(detailsDS)));
     }
 
-    public RepositoryImpl(RskSystemProperties config, TrieStore store, DetailsDataStore detailsDataStore) {
+    private RepositoryImpl(RskSystemProperties config, TrieStore store, DetailsDataStore detailsDataStore) {
         this.config = config;
         this.store = store;
         this.trie = new TrieImpl(store, true);
