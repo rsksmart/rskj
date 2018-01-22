@@ -48,7 +48,6 @@ public class LogFilter extends Filter {
     private AddressesTopicsFilter addressesTopicsFilter;
     private boolean fromLatestBlock;
     private boolean toLatestBlock;
-    boolean onPendingTx;
     private final Blockchain blockchain;
 
     public LogFilter(AddressesTopicsFilter addressesTopicsFilter, Blockchain blockchain, boolean fromLatestBlock, boolean toLatestBlock) {
@@ -106,6 +105,8 @@ public class LogFilter extends Filter {
 
     public static LogFilter fromFilterRequest(Web3.FilterRequest fr, Blockchain blockchain) throws Exception {
         RskAddress[] addresses;
+
+        // TODO get array of topics, with topics, and array of topics inside (the OR operation over topics)
         Topic[] topics = null;
 
         if (fr.address instanceof String) {
@@ -148,6 +149,9 @@ public class LogFilter extends Filter {
 
         AddressesTopicsFilter addressesTopicsFilter = new AddressesTopicsFilter(addresses, topics);
 
+        // TODO review pending transaction processing
+        // when fromBlock and/or toBlock are "pending"
+
         // Default from block value
         if (fr.fromBlock == null)
             fr.fromBlock = "latest";
@@ -162,11 +166,6 @@ public class LogFilter extends Filter {
         LogFilter filter = new LogFilter(addressesTopicsFilter, blockchain, fromLatestBlock, toLatestBlock);
 
         retrieveHistoricalData(fr, blockchain, filter);
-
-        // the following is not precisely documented
-        if ("pending".equalsIgnoreCase(fr.fromBlock) || "pending".equalsIgnoreCase(fr.toBlock)) {
-            filter.onPendingTx = true;
-        }
 
         return filter;
     }
