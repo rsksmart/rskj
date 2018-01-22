@@ -109,12 +109,11 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         this.repository = repository;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
+        this.pendingState = pendingState;
         this.listener = listener;
         this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
         this.blockExecutor = new BlockExecutor(config, repository, this, blockStore, listener);
-
-        setPendingState(pendingState);
     }
 
     @Override
@@ -128,9 +127,6 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     // circular dependency
     public void setPendingState(PendingState pendingState) {
         this.pendingState = pendingState;
-        if (this.pendingState != null) {
-            this.pendingState.start();
-        }
     }
 
     @Override
