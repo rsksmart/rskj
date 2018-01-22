@@ -378,21 +378,6 @@ public class BlockTest {
     }
 
     @Test
-    public void sealedBlockHeaderSetMinimumGasPrice() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setMinimumGasPrice(new byte[32]);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter minimum gas price", ex.getMessage());
-        }
-    }
-
-    @Test
     public void sealedBlockHeaderSetBitcoinMergedMiningHeader() {
         Block block = new BlockGenerator().createBlock(10, 0);
 

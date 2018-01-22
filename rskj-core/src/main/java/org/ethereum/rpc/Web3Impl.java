@@ -19,6 +19,7 @@
 package org.ethereum.rpc;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.SnapshotManager;
 import co.rsk.metrics.HashRateCalculator;
@@ -672,8 +673,8 @@ public class Web3Impl implements Web3 {
         br.extraData = TypeConverter.toJsonHex(b.getExtraData());
         br.size = TypeConverter.toJsonHex(b.getEncoded().length);
         br.gasLimit = TypeConverter.toJsonHex(b.getGasLimit());
-        BigInteger mgp = b.getMinGasPriceAsInteger();
-        br.minimumGasPrice = mgp != null ? mgp.toString() : "";
+        Coin mgp = b.getMinimumGasPrice();
+        br.minimumGasPrice = mgp != null ? mgp.asBigInteger().toString() : "";
         br.gasUsed = TypeConverter.toJsonHex(b.getGasUsed());
         br.timestamp = TypeConverter.toJsonHex(b.getTimestamp());
 

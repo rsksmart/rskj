@@ -92,7 +92,7 @@ class TxValidator {
                 state = new AccountState();
             }
             BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(blockchain.getBestBlock().getGasLimit());
-            BigInteger minimumGasPrice = BigIntegers.fromUnsignedByteArray(blockchain.getBestBlock().getMinimumGasPrice());
+            BigInteger minimumGasPrice = blockchain.getBestBlock().getMinimumGasPrice().asBigInteger();
             long bestBlockNumber = blockchain.getBestBlock().getNumber();
             long basicTxCost = tx.transactionCost(config, blockchain.getBestBlock());
 

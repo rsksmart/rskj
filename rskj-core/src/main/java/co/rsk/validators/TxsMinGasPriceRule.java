@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.Coin;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import org.apache.commons.collections4.CollectionUtils;
@@ -27,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
-import java.math.BigInteger;
 import java.util.List;
 
 /**
@@ -41,15 +41,15 @@ public class TxsMinGasPriceRule implements BlockValidationRule {
     @Override
     public boolean isValid(Block block) {
         List<Transaction> txs = block.getTransactionsList();
-        if(block.getMinGasPriceAsInteger() == null) {
+        if(block.getMinimumGasPrice() == null) {
             logger.warn("Could not retrieve block min gas priceß");
             return false;
         }
 
-        BigInteger blockMgp = block.getMinGasPriceAsInteger();
+        Coin blockMgp = block.getMinimumGasPrice();
         if(CollectionUtils.isNotEmpty(block.getTransactionsList())) {
             for (Transaction tx : txs) {
-                if (!(tx instanceof RemascTransaction) && tx.getGasPrice().asBigInteger().compareTo(blockMgp) < 0) {
+                if (!(tx instanceof RemascTransaction) && tx.getGasPrice().compareTo(blockMgp) < 0) {
                     logger.warn("Tx gas price is under the Min gas Price of the block tx={}", Hex.toHexString(tx.getHash()));
                     return false;
                 }

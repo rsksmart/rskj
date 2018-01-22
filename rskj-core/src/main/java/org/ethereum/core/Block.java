@@ -116,7 +116,7 @@ public class Block {
                 header.getStateRoot(),
                 transactionsList,
                 uncleList,
-                header.getMinimumGasPrice());
+                header.getMinimumGasPrice() == null ? null : header.getMinimumGasPrice().getBytes());
     }
 
     public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
@@ -416,7 +416,7 @@ public class Block {
         return Collections.unmodifiableList(this.uncleList);
     }
 
-    public byte[] getMinimumGasPrice() {
+    public Coin getMinimumGasPrice() {
         if (!parsed) {
             parseRLP();
         }
@@ -746,10 +746,6 @@ public class Block {
         }
 
         return txsState;
-    }
-
-    public BigInteger getMinGasPriceAsInteger() {
-        return (this.getMinimumGasPrice() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getMinimumGasPrice());
     }
 
     public BigInteger getGasLimitAsInteger() {

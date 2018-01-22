@@ -297,7 +297,7 @@ public class BlockGenerator {
             txs.add(new SimpleRskTransaction(null));
         }
 
-        Coin previousMGP = (parent.getMinimumGasPrice() != null) ? new Coin(parent.getMinimumGasPrice()) : Coin.valueOf(10L);
+        Coin previousMGP = parent.getMinimumGasPrice() != null ? parent.getMinimumGasPrice() : Coin.valueOf(10L);
         Coin minimumGasPrice = new MinimumGasPriceCalculator().calculate(previousMGP, Coin.valueOf(100L));
 
         return new Block(
