@@ -126,7 +126,8 @@ public class Start {
         BuildInfo.printInfo();
 
         loader.loadBlockchain();
-        pendingState.start();
+        // this should be the genesis block at this point
+        pendingState.start(blockchain.getBestBlock());
         channelManager.start();
         txHandler.start();
         messageHandler.start();

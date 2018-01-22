@@ -129,9 +129,9 @@ public class BlockChainBuilder {
 
         PendingStateImpl pendingState;
         if (withoutCleaner) {
-            pendingState = new PendingStateImplNoCleaner(config, blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+            pendingState = new PendingStateImplNoCleaner(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         } else {
-            pendingState = new PendingStateImpl(config, blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+            pendingState = new PendingStateImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), receiptStore, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         }
         blockChain.setPendingState(pendingState);
 

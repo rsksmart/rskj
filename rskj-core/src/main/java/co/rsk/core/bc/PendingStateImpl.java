@@ -27,6 +27,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
@@ -59,9 +60,9 @@ public class PendingStateImpl implements PendingState {
     private final Map<ByteArrayWrapper, Long> transactionTimes = new HashMap<>();
 
     private final RskSystemProperties config;
-    private final Blockchain blockChain;
     private final BlockStore blockStore;
     private final Repository repository;
+    private final ReceiptStore receiptStore;
     private final ProgramInvokeFactory programInvokeFactory;
     private final EthereumListener listener;
     private final int outdatedThreshold;
@@ -75,16 +76,16 @@ public class PendingStateImpl implements PendingState {
     private Repository pendingStateRepository;
     private final TxPendingValidator validator = new TxPendingValidator();
 
-    public PendingStateImpl(Blockchain blockChain,
-                            BlockStore blockStore,
+    public PendingStateImpl(BlockStore blockStore,
+                            ReceiptStore receiptStore,
                             EthereumListener listener,
                             ProgramInvokeFactory programInvokeFactory,
                             Repository repository,
                             RskSystemProperties config) {
         this(config,
-                blockChain,
                 repository,
                 blockStore,
+                receiptStore,
                 programInvokeFactory,
                 listener,
                 config.txOutdatedThreshold(),
@@ -92,24 +93,23 @@ public class PendingStateImpl implements PendingState {
     }
 
     public PendingStateImpl(RskSystemProperties config,
-                            Blockchain blockChain,
                             Repository repository,
                             BlockStore blockStore,
+                            ReceiptStore receiptStore,
                             ProgramInvokeFactory programInvokeFactory,
                             EthereumListener listener,
                             int outdatedThreshold,
                             int outdatedTimeout) {
         this.config = config;
-        this.blockChain = blockChain;
         this.blockStore = blockStore;
         this.repository = repository;
+        this.receiptStore = receiptStore;
         this.programInvokeFactory = programInvokeFactory;
         this.listener = listener;
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
 
         this.pendingStateRepository = repository.startTracking();
-        this.bestBlock = blockChain.getBestBlock();
 
         if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "PendingStateCleanerTimer"));
@@ -117,7 +117,11 @@ public class PendingStateImpl implements PendingState {
     }
 
     @Override
-    public void start() {
+    public void start(Block initialBestBlock) {
+        if (bestBlock == null) {
+            processBest(initialBestBlock);
+        }
+
         if (this.outdatedTimeout <= 0 || this.cleanerTimer == null) {
             return;
         }
@@ -145,19 +149,11 @@ public class PendingStateImpl implements PendingState {
         return blockStore;
     }
 
-    public Blockchain getBlockChain() {
-        return blockChain;
-    }
-
     public int getOutdatedThreshold() { return outdatedThreshold; }
 
     public int getOutdatedTimeout() { return outdatedTimeout; }
 
-    public synchronized Block getBestBlock() {
-        if (bestBlock == null) {
-            bestBlock = blockChain.getBestBlock();
-        }
-
+    public Block getBestBlock() {
         return bestBlock;
     }
 
@@ -166,7 +162,7 @@ public class PendingStateImpl implements PendingState {
         List<Transaction> added = new ArrayList<>();
         Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
 
-        logger.trace("Trying add {} wire transactions using block {} {}", transactions.size(), bnumber, getBestBlock().getShortHash());
+        logger.trace("Trying add {} wire transactions using block {} {}", transactions.size(), bnumber, bestBlock.getShortHash());
 
         for (Transaction tx : transactions) {
             if (!shouldAcceptTx(tx)) {
@@ -255,15 +251,17 @@ public class PendingStateImpl implements PendingState {
     public synchronized void processBest(Block block) {
         logger.trace("Processing best block {} {}", block.getNumber(), block.getShortHash());
 
-        BlockFork fork = new BlockFork();
-        fork.calculate(getBestBlock(), block, blockStore);
+        if (bestBlock != null) {
+            BlockFork fork = new BlockFork();
+            fork.calculate(bestBlock, block, blockStore);
 
-        for (Block blk : fork.getOldBlocks()) {
-            retractBlock(blk);
-        }
+            for (Block blk : fork.getOldBlocks()) {
+                retractBlock(blk);
+            }
 
-        for (Block blk : fork.getNewBlocks()) {
-            acceptBlock(blk);
+            for (Block blk : fork.getNewBlocks()) {
+                acceptBlock(blk);
+            }
         }
 
         removeObsoleteTransactions(block.getNumber(), this.outdatedThreshold, this.outdatedTimeout);
@@ -386,11 +384,9 @@ public class PendingStateImpl implements PendingState {
     private void executeTransaction(Transaction tx) {
         logger.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
 
-        Block best = blockChain.getBestBlock();
-
         TransactionExecutor executor = new TransactionExecutor(
-                config, tx, 0, best.getCoinbase(), pendingStateRepository,
-                blockStore, blockChain.getReceiptStore(), programInvokeFactory, createFakePendingBlock(best)
+                config, tx, 0, bestBlock.getCoinbase(), pendingStateRepository,
+                blockStore, receiptStore, programInvokeFactory, createFakePendingBlock(bestBlock)
         );
 
         executor.init();
@@ -404,10 +400,6 @@ public class PendingStateImpl implements PendingState {
     }
 
     private long getCurrentBestBlockNumber() {
-        if (bestBlock == null) {
-            bestBlock = this.blockChain.getBestBlock();
-        }
-
         if (bestBlock == null) {
             return 0;
         }
