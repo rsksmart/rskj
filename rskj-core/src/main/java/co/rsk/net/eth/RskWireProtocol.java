@@ -157,6 +157,11 @@ public class RskWireProtocol extends EthHandler {
             if (!Arrays.equals(msg.getGenesisHash(), genesis.getHash())
                     || msg.getProtocolVersion() != version.getCode()) {
                 loggerNet.info("Removing EthHandler for {} due to protocol incompatibility", ctx.channel().remoteAddress());
+                if (msg.getProtocolVersion() != version.getCode()){
+                    loggerNet.info("Protocol version {} - message protocol version {}", version.getCode(), msg.getProtocolVersion());
+                } else {
+                    loggerNet.info("Config genesis hash {} - message genesis hash {}", genesis.getHash(), msg.getGenesisHash());
+                }
                 ethState = EthState.STATUS_FAILED;
                 recordEvent(EventType.INCOMPATIBLE_PROTOCOL);
                 disconnect(ReasonCode.INCOMPATIBLE_PROTOCOL);
@@ -164,7 +169,8 @@ public class RskWireProtocol extends EthHandler {
                 return;
             }
 
-            if (msg.getNetworkId() != config.networkId()) {
+            if (config.networkId() != msg.getNetworkId()) {
+                loggerNet.info("Different network received: config network ID {} - message network ID {}", config.networkId(), msg.getNetworkId());
                 ethState = EthState.STATUS_FAILED;
                 recordEvent(EventType.INVALID_NETWORK);
                 disconnect(ReasonCode.NULL_IDENTITY);

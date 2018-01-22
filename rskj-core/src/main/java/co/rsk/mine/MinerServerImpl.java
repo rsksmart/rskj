@@ -469,14 +469,11 @@ public class MinerServerImpl implements MinerServer {
 
     private boolean isValid(Block block) {
         try {
-            if (!powRule.isValid(block)) {
-                return false;
-            }
+            return powRule.isValid(block);
         } catch (Exception e) {
             logger.error("Failed to validate PoW from block {}: {}", block.getShortHash(), e);
             return false;
         }
-        return true;
     }
 
     public static byte[] compressCoinbase(byte[] bitcoinMergedMiningCoinbaseTransactionSerialized) {
@@ -607,7 +604,7 @@ public class MinerServerImpl implements MinerServer {
             newBlockParent = blockchain.getBlockByHash(newBlockParent.getParentHash());
         }
 
-        logger.info("Starting block to mine from parent {}", newBlockParent.getNumber() + " " + Hex.toHexString(newBlockParent.getHash()));
+        logger.info("Starting block to mine from parent {} {}", newBlockParent.getNumber(), Hex.toHexString(newBlockParent.getHash()));
 
         List<BlockHeader> uncles;
         if (blockStore != null) {
@@ -711,7 +708,7 @@ public class MinerServerImpl implements MinerServer {
     private void removePendingTransactions(List<Transaction> transactions) {
         if (transactions != null) {
             for (Transaction tx : transactions) {
-                logger.info("Removing transaction {}", Hex.toHexString(tx.getHash()));
+                logger.debug("Removing transaction {}", Hex.toHexString(tx.getHash()));
             }
         }
 
@@ -721,7 +718,7 @@ public class MinerServerImpl implements MinerServer {
 
     private List<Transaction> getTransactions(List<Transaction> txsToRemove, Block parent, BigInteger minGasPrice) {
 
-        logger.info("Starting getTransactions");
+        logger.debug("Starting getTransactions");
 
         List<Transaction> txs = new MinerUtils().getAllTransactions(pendingState);
         logger.debug("txsList size {}", txs.size());
