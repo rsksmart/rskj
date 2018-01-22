@@ -2,7 +2,6 @@ package co.rsk.net;
 
 import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.Block;
-import org.ethereum.db.ByteArrayWrapper;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

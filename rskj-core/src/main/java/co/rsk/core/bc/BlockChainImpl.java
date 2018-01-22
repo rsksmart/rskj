@@ -172,7 +172,6 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         }
 
         if (!block.isSealed()) {
-            panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), Hex.toHexString(block.getHash().getBytes())));
             block.seal();
         }
 

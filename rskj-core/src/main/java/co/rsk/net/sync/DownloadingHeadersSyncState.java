@@ -27,7 +27,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
         Optional<ChunkDescriptor> currentChunk = chunksDownloadHelper.getCurrentChunk();
         if (!currentChunk.isPresent()
                 || chunk.size() != currentChunk.get().getCount()
-                || chunk.get(0).getHash().equals(currentChunk.get().getHash())) {
+                || !chunk.get(0).getHash().equals(currentChunk.get().getHash())) {
             syncEventsHandler.onErrorSyncing(
                     "Invalid chunk received from node {} {}", EventType.INVALID_MESSAGE,
                     syncInformation.getSelectedPeerId(), currentChunk.get().getHash());
