@@ -54,6 +54,13 @@ public class Filter {
         return ret;
     }
 
+    public synchronized void clearEvents() {
+        this.accessTime = System.currentTimeMillis();
+
+        events.clear();
+        processedEvents = 0;
+    }
+
     public synchronized Object[] getEvents() {
         this.accessTime = System.currentTimeMillis();
 

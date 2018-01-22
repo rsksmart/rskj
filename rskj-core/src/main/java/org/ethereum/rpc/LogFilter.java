@@ -46,13 +46,22 @@ public class LogFilter extends Filter {
     }
 
     private AddressesTopicsFilter addressesTopicsFilter;
-    boolean onNewBlock;
+    private boolean fromLatestBlock;
+    private boolean toLatestBlock;
     boolean onPendingTx;
     private final Blockchain blockchain;
 
     public LogFilter(AddressesTopicsFilter addressesTopicsFilter, Blockchain blockchain) {
         this.addressesTopicsFilter = addressesTopicsFilter;
         this.blockchain = blockchain;
+    }
+
+    public void setFromLatestBlock(boolean value) {
+        this.fromLatestBlock = value;
+    }
+
+    public void setToLatestBlock(boolean value) {
+        this.toLatestBlock = value;
     }
 
     void onLogMatch(LogInfo logInfo, Block b, int txIndex, Transaction tx, int logIdx) {
@@ -87,7 +96,11 @@ public class LogFilter extends Filter {
 
     @Override
     public void newBlockReceived(Block b) {
-        if (onNewBlock) {
+        if (this.fromLatestBlock) {
+            this.clearEvents();
+            onBlock(b);
+        }
+        else if (this.toLatestBlock) {
             onBlock(b);
         }
     }
@@ -156,8 +169,14 @@ public class LogFilter extends Filter {
         // the following is not precisely documented
         if ("pending".equalsIgnoreCase(fr.fromBlock) || "pending".equalsIgnoreCase(fr.toBlock)) {
             filter.onPendingTx = true;
-        } else if ("latest".equalsIgnoreCase(fr.fromBlock) || "latest".equalsIgnoreCase(fr.toBlock)) {
-            filter.onNewBlock = true;
+        }
+
+        if ("latest".equalsIgnoreCase(fr.fromBlock)) {
+            filter.setFromLatestBlock(true);
+        }
+
+        if ("latest".equalsIgnoreCase(fr.toBlock)) {
+            filter.setToLatestBlock(true);
         }
 
         return filter;
