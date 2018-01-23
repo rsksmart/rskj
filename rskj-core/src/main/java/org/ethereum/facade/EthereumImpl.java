@@ -117,7 +117,7 @@ public class EthereumImpl implements Ethereum {
 
     @Override
     public void addListener(EthereumListener listener) {
-        worldManager.addListener(listener);
+        compositeEthereumListener.addListener(listener);
     }
 
     @Override

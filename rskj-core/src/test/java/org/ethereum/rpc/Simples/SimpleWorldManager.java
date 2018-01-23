@@ -50,7 +50,6 @@ public class SimpleWorldManager implements WorldManager {
         this.listener = listener;
     }
 
-    @Override
     public void addListener(EthereumListener listener) {
         if (this.listener == null) {
             this.listener = new CompositeEthereumListener();

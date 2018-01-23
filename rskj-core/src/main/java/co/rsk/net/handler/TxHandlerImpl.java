@@ -22,8 +22,8 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
+import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.rpc.TypeConverter;
 
 import java.math.BigInteger;
@@ -55,13 +55,8 @@ public class TxHandlerImpl implements TxHandler {
      * As TxHandler will hold txs that weren't relayed or similar stuff, this
      * threads will help to keep memory low and consistency through all the
      * life of the application
-     *
-     * @param config
-     * @param worldManager strongly depends on the worldManager
-     * @param repository
-     * @param blockchain
      */
-    public TxHandlerImpl(RskSystemProperties config, WorldManager worldManager, Repository repository, Blockchain blockchain) {
+    public TxHandlerImpl(RskSystemProperties config, CompositeEthereumListener compositeEthereumListener, Repository repository, Blockchain blockchain) {
         this.config = config;
         this.blockchain = blockchain;
         this.repository = repository;
@@ -70,7 +65,7 @@ public class TxHandlerImpl implements TxHandler {
         this.executorService = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TxHandler"));
 
         // Clean txs on new block
-        worldManager.addListener(new TxHandlerImpl.Listener());
+        compositeEthereumListener.addListener(new TxHandlerImpl.Listener());
     }
 
     @Override

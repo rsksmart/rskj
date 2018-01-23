@@ -131,8 +131,8 @@ public class RskFactory {
     }
 
     @Bean
-    public TxHandler getTxHandler(RskSystemProperties config, WorldManager worldManager, Repository repository, Blockchain blockchain) {
-        return new TxHandlerImpl(config, worldManager, repository, blockchain);
+    public TxHandler getTxHandler(RskSystemProperties config, CompositeEthereumListener compositeEthereumListener, Repository repository, Blockchain blockchain) {
+        return new TxHandlerImpl(config, compositeEthereumListener, repository, blockchain);
     }
 
     @Bean

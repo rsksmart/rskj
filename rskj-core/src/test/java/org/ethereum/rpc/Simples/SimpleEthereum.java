@@ -18,11 +18,13 @@
 
 package org.ethereum.rpc.Simples;
 
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.rpc.Web3;
 import org.ethereum.vm.program.ProgramResult;
 
@@ -37,7 +39,7 @@ import java.util.concurrent.Future;
 public class SimpleEthereum implements Ethereum {
 
     public Transaction tx;
-    public WorldManager worldManager;
+    public SimpleWorldManager worldManager;
     public Repository repository;
 
     public SimpleEthereum() {

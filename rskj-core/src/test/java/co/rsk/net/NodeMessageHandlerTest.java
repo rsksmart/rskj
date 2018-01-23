@@ -42,7 +42,7 @@ import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.manager.WorldManager;
+import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
@@ -859,7 +859,7 @@ public class NodeMessageHandlerTest {
         PendingState state = mock(PendingState.class);
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
-        TxHandler txHandler = new TxHandlerImpl(config, mock(WorldManager.class), mock(RepositoryImpl.class), blockchain);
+        TxHandler txHandler = new TxHandlerImpl(config, mock(CompositeEthereumListener.class), mock(RepositoryImpl.class), blockchain);
 
         final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, channelManager, state, txHandler, scoring,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));

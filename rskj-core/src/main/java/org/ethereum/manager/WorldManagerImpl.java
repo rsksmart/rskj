@@ -86,12 +86,6 @@ public class WorldManagerImpl implements WorldManager {
     }
 
     @Override
-    public void addListener(EthereumListener listener) {
-        logger.info("Ethereum listener added");
-        ((CompositeEthereumListener) this.listener).addListener(listener);
-    }
-
-    @Override
     public void removeListener(EthereumListener listener) {
         logger.info("Ethereum listener removed");
         ((CompositeEthereumListener) this.listener).removeListener(listener);
