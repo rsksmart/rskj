@@ -132,7 +132,7 @@ public class Start {
             logger.info("Capability eth version: [{}]", versions);
         }
         if (rskSystemProperties.isBlocksEnabled()) {
-            setupRecorder(rsk, rskSystemProperties.blocksRecorder());
+            setupRecorder(rskSystemProperties.blocksRecorder());
             setupPlayer(rsk, channelManager, blockchain, rskSystemProperties.blocksPlayer());
         }
 
@@ -231,9 +231,9 @@ public class Start {
         channelManager.stop();
     }
 
-    private void setupRecorder(Rsk rsk, @Nullable String blocksRecorderFileName) {
+    private void setupRecorder(@Nullable String blocksRecorderFileName) {
         if (blocksRecorderFileName != null) {
-            rsk.getBlockchain().setBlockRecorder(new FileBlockRecorder(blocksRecorderFileName));
+            blockchain.setBlockRecorder(new FileBlockRecorder(blocksRecorderFileName));
         }
     }
 

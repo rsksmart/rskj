@@ -20,7 +20,6 @@
 package org.ethereum.facade;
 
 import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
 import org.ethereum.listener.EthereumListener;
@@ -36,8 +35,6 @@ import java.util.concurrent.Future;
  * @since 27.07.2014
  */
 public interface Ethereum {
-
-    Blockchain getBlockchain();
 
     void addListener(EthereumListener listener);
 

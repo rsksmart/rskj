@@ -106,11 +106,6 @@ public class EthereumImpl implements Ethereum {
     }
 
     @Override
-    public Blockchain getBlockchain() {
-        return worldManager.getBlockchain();
-    }
-
-    @Override
     public ImportResult addNewMinedBlock(final @Nonnull Block block) {
         final ImportResult importResult = worldManager.getBlockchain().tryToConnect(block);
 
@@ -174,7 +169,7 @@ public class EthereumImpl implements Ethereum {
 
     @Override
     public ProgramResult callConstant(Web3.CallArguments args) {
-        Block bestBlock = getBlockchain().getBestBlock();
+        Block bestBlock = worldManager.getBlockchain().getBestBlock();
         return ReversibleTransactionExecutor.executeTransaction(
                 config,
                 repository,
