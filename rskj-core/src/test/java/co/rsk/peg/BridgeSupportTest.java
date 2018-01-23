@@ -100,7 +100,7 @@ public class BridgeSupportTest {
 
     private static BridgeConstants bridgeConstants;
     private static NetworkParameters btcParams;
-    private static RskSystemProperties config;
+    private RskSystemProperties config;
 
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
     private static final BigInteger DUST_AMOUNT = new BigInteger("1");

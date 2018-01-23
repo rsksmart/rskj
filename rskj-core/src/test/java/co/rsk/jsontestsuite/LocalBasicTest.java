@@ -26,10 +26,7 @@ import org.ethereum.jsontestsuite.DifficultyTestCase;
 import org.ethereum.jsontestsuite.DifficultyTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
-import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,23 +39,15 @@ import static org.junit.Assert.assertEquals;
  * @author Angel J Lopez
  * @since 02.23.2016
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LocalBasicTest {
 
     private static final Logger logger = LoggerFactory.getLogger("TCK-Test");
-    private RskSystemProperties config;
-
-    @Before
-    public void setup() {
-        // if not set explicitly
-        // this test fails being run by Gradle
-        config = new RskSystemProperties();
-        config.setGenesisInfo("frontier.json");
-        config.setBlockchainConfig(new MainNetConfig());
-    }
+    private RskSystemProperties config = new RskSystemProperties();;
 
     @Test
     public void runDifficultyTest() throws IOException, ParseException {
+        config.setGenesisInfo("frontier.json");
+        config.setBlockchainConfig(new MainNetConfig());
 
         String json = getJSON("difficulty");
 

@@ -83,7 +83,6 @@ public abstract class SystemProperties {
 
     private static final String YES = "yes";
     private static final String NO = "no";
-    private static Config configDataFromFile;
 
     /**
      * Marks config accessor methods which need to be called (for value validation)
@@ -93,7 +92,7 @@ public abstract class SystemProperties {
     @Retention(RetentionPolicy.RUNTIME)
     private @interface ValidateMe {}
 
-    protected Config configFromFiles;
+    protected static Config configFromFiles;
 
     // mutable options for tests
     private String databaseDir = null;
@@ -115,14 +114,12 @@ public abstract class SystemProperties {
     protected SystemProperties() {
         try {
             // could be locked but the result should be the same if there is no race condition
-            if (configDataFromFile == null){
-                configDataFromFile = getConfigFromFiles();
-                logger.debug("Config trace: " + configDataFromFile.root().render(ConfigRenderOptions.defaults().
+            if (configFromFiles == null){
+                configFromFiles = getConfigFromFiles();
+                logger.debug("Config trace: " + configFromFiles.root().render(ConfigRenderOptions.defaults().
                         setComments(false).setJson(false)));
-                configFromFiles = configDataFromFile;
                 validateConfig();
             }
-            configFromFiles = configDataFromFile;
 
             Properties props = new Properties();
             InputStream is = getClass().getResourceAsStream("/version.properties");

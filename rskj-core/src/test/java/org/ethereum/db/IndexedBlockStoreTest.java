@@ -93,7 +93,6 @@ public class IndexedBlockStoreTest {
     @Test // save some load, and check it exist
     @Ignore
     public void test1(){
-        config = new RskSystemProperties();
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore(config);
         indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
 
@@ -201,7 +200,6 @@ public class IndexedBlockStoreTest {
     @Test // save some load, and check it exist
     @Ignore
     public void test2(){
-        config = new RskSystemProperties();
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore(config);
         indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
 
@@ -311,7 +309,6 @@ public class IndexedBlockStoreTest {
     @Test
     @Ignore
     public void test3(){
-        config = new RskSystemProperties();
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore(config);
         indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
 
@@ -422,7 +419,6 @@ public class IndexedBlockStoreTest {
     @Test // leveldb + mapdb, save some load, flush to disk, and check it exist
     @Ignore
     public void test4() throws IOException {
-        config = new RskSystemProperties();
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
@@ -571,7 +567,6 @@ public class IndexedBlockStoreTest {
     @Test // leveldb + mapdb, save part to disk part to cache, and check it exist
     @Ignore
     public void test5() throws IOException {
-        config = new RskSystemProperties();
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
@@ -734,7 +729,6 @@ public class IndexedBlockStoreTest {
 
     @Test // leveldb + mapdb, multi branch, total difficulty test
     public void test6() throws IOException {
-        config = new RskSystemProperties();
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
@@ -839,7 +833,6 @@ public class IndexedBlockStoreTest {
 
     @Test // leveldb + mapdb, multi branch, total re-branch test
     public void test7() throws IOException {
-        config = new RskSystemProperties();
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
@@ -894,7 +887,6 @@ public class IndexedBlockStoreTest {
 
     @Test // leveldb + mapdb, multi branch, total re-branch test
     public void test8() throws IOException {
-        config = new RskSystemProperties();
         BigInteger bi = new BigInteger(32, new Random());
         String testDir = "test_db_" + bi;
         config.setDataBaseDir(testDir);
@@ -971,7 +963,6 @@ public class IndexedBlockStoreTest {
 
     @Test // test index merging during the flush
     public void test9() {
-        config = new RskSystemProperties();
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore(config);
         indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
 
