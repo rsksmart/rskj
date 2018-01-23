@@ -122,7 +122,7 @@ public class EthereumImpl implements Ethereum {
 
     @Override
     public void removeListener(EthereumListener listener) {
-        worldManager.removeListener(listener);
+        compositeEthereumListener.removeListener(listener);
     }
 
     @Override

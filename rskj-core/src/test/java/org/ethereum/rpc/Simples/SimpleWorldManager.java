@@ -57,7 +57,6 @@ public class SimpleWorldManager implements WorldManager {
         ((CompositeEthereumListener) this.listener).addListener(listener);
     }
 
-    @Override
     public void removeListener(EthereumListener listener) {
         if (this.listener == null) {
             return;

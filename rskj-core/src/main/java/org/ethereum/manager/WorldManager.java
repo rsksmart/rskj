@@ -24,7 +24,6 @@ import co.rsk.net.BlockProcessor;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.PendingState;
 import org.ethereum.db.BlockStore;
-import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.client.ConfigCapabilities;
 
 /**
@@ -36,8 +35,6 @@ import org.ethereum.net.client.ConfigCapabilities;
  */
 
 public interface WorldManager {
-
-    void removeListener(EthereumListener listener);
 
     Blockchain getBlockchain();
 
