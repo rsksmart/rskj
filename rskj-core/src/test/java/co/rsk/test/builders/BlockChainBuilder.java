@@ -188,7 +188,8 @@ public class BlockChainBuilder {
         BlockChainBuilder builder = new BlockChainBuilder();
         BlockChainImpl blockChain = builder.build(withoutCleaner);
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
 
         if (accounts != null)
             for (int k = 0; k < accounts.size(); k++) {
@@ -204,7 +205,7 @@ public class BlockChainBuilder {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
         if (size > 0) {
-            List<Block> blocks = mining ? BlockGenerator.getInstance().getMinedBlockChain(genesis, size) : BlockGenerator.getInstance().getBlockChain(genesis, size);
+            List<Block> blocks = mining ? blockGenerator.getMinedBlockChain(genesis, size) : blockGenerator.getBlockChain(genesis, size);
 
             for (Block block: blocks)
                 Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block));
@@ -237,7 +238,7 @@ public class BlockChainBuilder {
 
     public static void extend(Blockchain blockchain, int size, boolean withUncles, boolean mining) {
         Block initial = blockchain.getBestBlock();
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(initial, size, 0, withUncles, mining, null);
+        List<Block> blocks = new BlockGenerator().getBlockChain(initial, size, 0, withUncles, mining, null);
 
         for (Block block: blocks)
             blockchain.tryToConnect(block);

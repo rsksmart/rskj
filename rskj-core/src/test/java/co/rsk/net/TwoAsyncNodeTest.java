@@ -45,7 +45,7 @@ public class TwoAsyncNodeTest {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(blockchain.getBestBlock(), size);
+        List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), size);
 
         for (Block b: blocks)
             blockchain.tryToConnect(b);
@@ -64,7 +64,7 @@ public class TwoAsyncNodeTest {
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = world.getBlockChain();
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(blockchain.getBestBlock(), size, 0, true);
+        List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), size, 0, true);
 
         for (Block b: blocks)
             blockchain.tryToConnect(b);
@@ -133,7 +133,7 @@ public class TwoAsyncNodeTest {
         SimpleAsyncNode node1 = createNode(0);
         SimpleAsyncNode node2 = createNode(0);
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(getGenesis(), 10);
+        List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
 
         for (Block block : blocks) {
             BlockMessage message = new BlockMessage(block);

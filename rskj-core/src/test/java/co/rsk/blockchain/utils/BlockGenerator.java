@@ -41,10 +41,8 @@ import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static org.ethereum.core.Genesis.getZeroHash;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
@@ -54,22 +52,12 @@ import static org.ethereum.util.ByteUtil.wrap;
  * Created by ajlopez on 5/10/2016.
  */
 public class BlockGenerator {
-    private static final BlockGenerator INSTANCE = new BlockGenerator();
 
     private static final byte[] EMPTY_LIST_HASH = HashUtil.sha3(RLP.encodeList());
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     private static final Block[] blockCache = new Block[5];
-
-    /**
-     * @deprecated
-     * Using this singleton instance is a bad idea because {@link #count} will be shared by all tests.
-     * This dependency makes tests flaky and prevents us from running tests in parallel or unordered.
-     */
-    public static BlockGenerator getInstance() {
-        return INSTANCE;
-    }
 
     private final DifficultyCalculator difficultyCalculator = new DifficultyCalculator(new RskSystemProperties());
     private int count = 0;

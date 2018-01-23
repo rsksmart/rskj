@@ -126,7 +126,7 @@ public class TwoAsyncNodeUsingSyncProcessorTest {
         SimpleAsyncNode node1 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
         SimpleAsyncNode node2 = SimpleAsyncNode.createNodeWithWorldBlockChain(0, false, true);
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(getGenesis(), 10, 0, false, true, null);
+        List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10, 0, false, true, null);
 
         for (Block block : blocks) {
             BlockMessage message = new BlockMessage(block);

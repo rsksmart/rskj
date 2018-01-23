@@ -37,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 public class BlockchainTest {
     @Test
     public void genesisTest() {
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block genesis = new BlockGenerator().getGenesisBlock();
         Assert.assertEquals(0, genesis.getNumber());
     }
 
@@ -57,7 +57,7 @@ public class BlockchainTest {
     public void childBlock() {
         Blockchain blockchain = createBlockchain();
 
-        Block block = BlockGenerator.getInstance().createChildBlock(blockchain.getBestBlock());
+        Block block = new BlockGenerator().createChildBlock(blockchain.getBestBlock());
 
         Assert.assertNotNull(block);
         Assert.assertEquals(1, block.getNumber());
@@ -68,7 +68,7 @@ public class BlockchainTest {
     public void addFirstBlock() {
         Blockchain blockchain = createBlockchain();
 
-        Block block = BlockGenerator.getInstance().createChildBlock(blockchain.getBestBlock());
+        Block block = new BlockGenerator().createChildBlock(blockchain.getBestBlock());
 
         blockchain.tryToConnect(block);
         Assert.assertEquals(blockchain.getBestBlock(), block);
@@ -78,8 +78,9 @@ public class BlockchainTest {
     public void addTwoBlocks() {
         Blockchain blockchain = createBlockchain();
 
-        Block block1 = BlockGenerator.getInstance().createChildBlock(blockchain.getBestBlock());
-        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock());
+        Block block2 = blockGenerator.createChildBlock(block1);
 
         blockchain.tryToConnect(block1);
         blockchain.tryToConnect(block2);
@@ -92,8 +93,9 @@ public class BlockchainTest {
     public void tryToConnect() {
         Blockchain blockchain = createBlockchain();
 
-        Block block1 = BlockGenerator.getInstance().createChildBlock(blockchain.getBestBlock());
-        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock());
+        Block block2 = blockGenerator.createChildBlock(block1);
 
         Assert.assertEquals(ImportResult.NO_PARENT, blockchain.tryToConnect(block2));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block1));
@@ -108,10 +110,11 @@ public class BlockchainTest {
         // Two competing blockchains of the same size (2)
         Blockchain blockchain = createBlockchain();
 
-        Block block1 = BlockGenerator.getInstance().createChildBlock(blockchain.getBestBlock());
-        Block block2 = BlockGenerator.getInstance().createChildBlock(block1, 0, 5);
-        Block block1b = BlockGenerator.getInstance().createChildBlock(blockchain.getBestBlock());
-        Block block2b = BlockGenerator.getInstance().createChildBlock(block1b,0,4);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock());
+        Block block2 = blockGenerator.createChildBlock(block1, 0, 5);
+        Block block1b = blockGenerator.createChildBlock(blockchain.getBestBlock());
+        Block block2b = blockGenerator.createChildBlock(block1b,0,4);
         // genesis <- block1 <- block2
         // genesis <- block1b <- block2b
 
@@ -131,11 +134,12 @@ public class BlockchainTest {
     public void tryToConnectWithFork() {
         Blockchain blockchain = createBlockchain();
 
-        Block block1 = BlockGenerator.getInstance().createChildBlock(blockchain.getBestBlock(),0,1);
-        Block block1b = BlockGenerator.getInstance().createChildBlock(blockchain.getBestBlock(),0,2);
-        Block block2 = BlockGenerator.getInstance().createChildBlock(block1,0,3);
-        Block block2b = BlockGenerator.getInstance().createChildBlock(block1b, 0, 1);
-        Block block3b = BlockGenerator.getInstance().createChildBlock(block2b,0,4);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock(),0,1);
+        Block block1b = blockGenerator.createChildBlock(blockchain.getBestBlock(),0,2);
+        Block block2 = blockGenerator.createChildBlock(block1,0,3);
+        Block block2b = blockGenerator.createChildBlock(block1b, 0, 1);
+        Block block3b = blockGenerator.createChildBlock(block2b,0,4);
 
         Assert.assertEquals(ImportResult.NO_PARENT, blockchain.tryToConnect(block2));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block1));
@@ -155,15 +159,16 @@ public class BlockchainTest {
         final int height = 200;
         final long chain1Diff = 2;
         final long chain2Diff = 1;
-        List<Block> chain1 = BlockGenerator.getInstance().getBlockChain(blockchain.getBestBlock(), height, chain1Diff);
-        List<Block> chain2 = BlockGenerator.getInstance().getBlockChain(blockchain.getBestBlock(), height, chain2Diff);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        List<Block> chain1 = blockGenerator.getBlockChain(blockchain.getBestBlock(), height, chain1Diff);
+        List<Block> chain2 = blockGenerator.getBlockChain(blockchain.getBestBlock(), height, chain2Diff);
 
         for (Block b : chain1)
             Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(b));
         for (Block b : chain2)
             Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockchain.tryToConnect(b));
 
-        Block newblock = BlockGenerator.getInstance().createChildBlock(chain2.get(chain2.size() - 1), 0, 2*height*chain2Diff);
+        Block newblock = blockGenerator.createChildBlock(chain2.get(chain2.size() - 1), 0, 2*height*chain2Diff);
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(newblock));
 
         Assert.assertEquals(blockchain.getBestBlock(), newblock);
@@ -174,12 +179,13 @@ public class BlockchainTest {
     public void checkItDoesntAddAnInvalidBlock() {
         Blockchain blockchain = createBlockchain();
 
-        Block block1 = BlockGenerator.getInstance().createChildBlock(blockchain.getBestBlock());
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock());
         ImportResult importResult1 = blockchain.tryToConnect(block1);
         assertTrue(importResult1.isSuccessful());
 
-        Block block2 = BlockGenerator.getInstance().createChildBlock(blockchain.getBestBlock());
-        Block block2b = BlockGenerator.getInstance().createBlock(10, 5);
+        Block block2 = blockGenerator.createChildBlock(blockchain.getBestBlock());
+        Block block2b = blockGenerator.createBlock(10, 5);
         Block block3 = Block.fromValidData(block2.getHeader(), block2b.getTransactionsList(), block2b.getUncleList());
         ImportResult importResult2 = blockchain.tryToConnect(block3);
         Assert.assertFalse(importResult2.isSuccessful());

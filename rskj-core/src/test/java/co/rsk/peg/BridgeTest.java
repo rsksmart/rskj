@@ -131,7 +131,7 @@ public class BridgeTest {
         track = repository.startTracking();
 
         World world = new World();
-        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(world.getBlockChain().getBestBlock(), 10);
+        List<Block> blocks = new BlockGenerator().getSimpleBlockChain(world.getBlockChain().getBestBlock(), 10);
 
         Transaction rskTx = Transaction.create(config, PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
         rskTx.sign(new ECKey().getPrivKeyBytes());
@@ -332,7 +332,7 @@ public class BridgeTest {
         Repository track = repository.startTracking();
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, BlockGenerator.getInstance().getGenesisBlock(), track, null, null, null);
+        bridge.init(null, new BlockGenerator().getGenesisBlock(), track, null, null, null);
 
         byte[] federatorPublicKeySerialized = new BtcECKey().getPubKey();
         Object[] signaturesObjectArray = new Object[]{new byte[3]};
@@ -348,7 +348,7 @@ public class BridgeTest {
         Repository track = repository.startTracking();
 
         Bridge bridge = new Bridge(config, PrecompiledContracts.BRIDGE_ADDR);
-        bridge.init(null, BlockGenerator.getInstance().getGenesisBlock(), track, null, null, null);
+        bridge.init(null, new BlockGenerator().getGenesisBlock(), track, null, null, null);
 
         byte[] federatorPublicKeySerialized = new BtcECKey().getPubKey();
         Object[] signaturesObjectArray = new Object[]{new BtcECKey().sign(Sha256Hash.ZERO_HASH).encodeToDER()};
@@ -456,7 +456,7 @@ public class BridgeTest {
                 Bridge.UPDATE_COLLECTIONS);
         rskTx.sign(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0).getPrivKeyBytes());
 
-        Block rskExecutionBlock = BlockGenerator.getInstance().createChildBlock(Genesis.getInstance(config));
+        Block rskExecutionBlock = new BlockGenerator().createChildBlock(Genesis.getInstance(config));
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
         Assert.assertEquals(0, bridge.getGasForData(rskTx.getData()));
 
@@ -549,9 +549,10 @@ public class BridgeTest {
 
         rskTx.sign(((BridgeRegTestConstants)bridgeConstants).getFederatorPrivateKeys().get(0).getPrivKeyBytes());
 
-        Block rskExecutionBlock = BlockGenerator.getInstance().createChildBlock(Genesis.getInstance(config));
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block rskExecutionBlock = blockGenerator.createChildBlock(Genesis.getInstance(config));
         for (int i = 0; i < 20; i++) {
-            rskExecutionBlock = BlockGenerator.getInstance().createChildBlock(rskExecutionBlock);
+            rskExecutionBlock = blockGenerator.createChildBlock(rskExecutionBlock);
         }
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
         Assert.assertEquals(expected, bridge.getGasForData(rskTx.getData()));

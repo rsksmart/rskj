@@ -43,12 +43,13 @@ public class BlockGeneratorTest {
 
     @Test
     public void getBlockChain() {
-        List<Block> chain = BlockGenerator.getInstance().getBlockChain(BlockGenerator.getInstance().getBlock(2), 10);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        List<Block> chain = blockGenerator.getBlockChain(blockGenerator.getBlock(2), 10);
 
         Assert.assertNotNull(chain);
         Assert.assertEquals(10, chain.size());
 
-        Block parent = BlockGenerator.getInstance().getBlock(2);
+        Block parent = blockGenerator.getBlock(2);
 
         for (Block b : chain) {
             Assert.assertNotNull(b);

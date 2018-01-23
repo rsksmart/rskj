@@ -418,7 +418,7 @@ public class BridgeUtilsTest {
                 Bridge.UPDATE_COLLECTIONS);
         rskTx.sign(privKeyBytes);
 
-        Block rskExecutionBlock = BlockGenerator.getInstance().createChildBlock(Genesis.getInstance(config));
+        Block rskExecutionBlock = new BlockGenerator().createChildBlock(Genesis.getInstance(config));
         bridge.init(rskTx, rskExecutionBlock, null, null, null, null);
         Assert.assertEquals(expected, BridgeUtils.isFreeBridgeTx(config, rskTx, rskExecutionBlock.getNumber()));
     }

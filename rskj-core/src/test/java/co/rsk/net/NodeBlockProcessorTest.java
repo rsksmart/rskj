@@ -46,8 +46,9 @@ public class NodeBlockProcessorTest {
         final MessageChannel sender = new SimpleMessageChannel();
 
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        final Block parent = BlockGenerator.getInstance().createChildBlock(BlockGenerator.getInstance().getGenesisBlock());
-        final Block orphan = BlockGenerator.getInstance().createChildBlock(parent);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        final Block parent = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
+        final Block orphan = blockGenerator.createChildBlock(parent);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -67,7 +68,7 @@ public class NodeBlockProcessorTest {
         final MessageChannel sender = new SimpleMessageChannel();
 
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        final Block orphan = BlockGenerator.getInstance().createBlock(1000, 0);
+        final Block orphan = new BlockGenerator().createBlock(1000, 0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -90,7 +91,7 @@ public class NodeBlockProcessorTest {
         BlockStore store = new BlockStore();
         Block genesis = blockchain.getBlockByNumber(0);
         store.saveBlock(genesis);
-        Block block = BlockGenerator.getInstance().createChildBlock(blockchain.getBlockByNumber(10));
+        Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
         Assert.assertEquals(11, block.getNumber());
         Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
@@ -114,7 +115,7 @@ public class NodeBlockProcessorTest {
         BlockStore store = new BlockStore();
         Block genesis = blockchain.getBestBlock();
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(genesis, 10);
+        List<Block> blocks = new BlockGenerator().getBlockChain(genesis, 10);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -136,8 +137,9 @@ public class NodeBlockProcessorTest {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockStore store = new BlockStore();
         Block genesis = blockchain.getBestBlock();
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(genesis, 10);
-        List<Block> blocks2 = BlockGenerator.getInstance().getBlockChain(genesis, 20);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        List<Block> blocks = blockGenerator.getBlockChain(genesis, 10);
+        List<Block> blocks2 = blockGenerator.getBlockChain(genesis, 20);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -162,8 +164,9 @@ public class NodeBlockProcessorTest {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
         Block genesis = blockchain.getBestBlock();
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(genesis, 10);
-        List<Block> blocks2 = BlockGenerator.getInstance().getBlockChain(blocks.get(4), 20);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        List<Block> blocks = blockGenerator.getBlockChain(genesis, 10);
+        List<Block> blocks2 = blockGenerator.getBlockChain(blocks.get(4), 20);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -198,7 +201,7 @@ public class NodeBlockProcessorTest {
     @Test @Ignore("Ignored when Process status deleted on block processor")
     public void noSyncingWithEmptyBlockchainAndLowBestBlock() {
         BlockStore store = new BlockStore();
-        Block block = BlockGenerator.getInstance().createBlock(10, 0);
+        Block block = new BlockGenerator().createBlock(10, 0);
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -217,7 +220,7 @@ public class NodeBlockProcessorTest {
     @Test @Ignore("Ignored when Process status deleted on block processor")
     public void syncingWithEmptyBlockchainAndHighBestBlock() {
         BlockStore store = new BlockStore();
-        Block block = BlockGenerator.getInstance().createBlock(30, 0);
+        Block block = new BlockGenerator().createBlock(30, 0);
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -236,7 +239,7 @@ public class NodeBlockProcessorTest {
     @Test @Ignore("Ignored when Process status deleted on block processor")
     public void syncingThenNoSyncing() {
         BlockStore store = new BlockStore();
-        Block block = BlockGenerator.getInstance().createBlock(30, 0);
+        Block block = new BlockGenerator().createBlock(30, 0);
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -258,7 +261,7 @@ public class NodeBlockProcessorTest {
         Assert.assertFalse(processor.hasBetterBlockToSync());
         Assert.assertFalse(processor.hasBetterBlockToSync());
 
-        Block block2 = BlockGenerator.getInstance().createBlock(60, 0);
+        Block block2 = new BlockGenerator().createBlock(60, 0);
 //        Status status2 = new Status(block2.getNumber(), block2.getHash());
 //        processor.processStatus(new SimpleNodeChannel(null, null), status2);
 
@@ -271,7 +274,7 @@ public class NodeBlockProcessorTest {
         BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
         Block genesis = blockchain.getBestBlock();
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(genesis, 10);
+        List<Block> blocks = new BlockGenerator().getBlockChain(genesis, 10);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -292,7 +295,7 @@ public class NodeBlockProcessorTest {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockStore store = new BlockStore();
         Block genesis = blockchain.getBestBlock();
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(genesis, 10);
+        List<Block> blocks = new BlockGenerator().getBlockChain(genesis, 10);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -313,7 +316,7 @@ public class NodeBlockProcessorTest {
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
         BlockStore store = new BlockStore();
         Block genesis = blockchain.getBestBlock();
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(genesis, 10);
+        List<Block> blocks = new BlockGenerator().getBlockChain(genesis, 10);
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
@@ -334,11 +337,12 @@ public class NodeBlockProcessorTest {
     @Test
     public void processBlockAddingToBlockchainUsingItsParent() {
         BlockStore store = new BlockStore();
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
         store.saveBlock(genesis);
         Blockchain blockchain = BlockChainBuilder.ofSize(10);
-        Block parent = BlockGenerator.getInstance().createChildBlock(blockchain.getBlockByNumber(10));
-        Block block = BlockGenerator.getInstance().createChildBlock(parent);
+        Block parent = blockGenerator.createChildBlock(blockchain.getBlockByNumber(10));
+        Block block = blockGenerator.createChildBlock(parent);
 
         Assert.assertEquals(11, parent.getNumber());
         Assert.assertEquals(12, block.getNumber());
@@ -375,9 +379,10 @@ public class NodeBlockProcessorTest {
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        final Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        final Block parent = BlockGenerator.getInstance().createChildBlock(genesis);
-        final Block block = BlockGenerator.getInstance().createChildBlock(parent);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        final Block genesis = blockGenerator.getGenesisBlock();
+        final Block parent = blockGenerator.createChildBlock(genesis);
+        final Block block = blockGenerator.createChildBlock(parent);
 
         processor.processBlock(sender, block);
 
@@ -407,8 +412,9 @@ public class NodeBlockProcessorTest {
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        final Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        final Block block = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        final Block genesis = blockGenerator.getGenesisBlock();
+        final Block block = blockGenerator.createChildBlock(genesis);
 //        final Status status = new Status(block.getNumber(), block.getHash());
 
 //        processor.processStatus(sender, status);
@@ -437,8 +443,9 @@ public class NodeBlockProcessorTest {
         final NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        final Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        final Block block = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        final Block genesis = blockGenerator.getGenesisBlock();
+        final Block block = blockGenerator.createChildBlock(genesis);
 
         store.saveBlock(block);
 //        final Status status = new Status(block.getNumber(), block.getHash());
@@ -499,7 +506,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processGetBlockHeaderMessageUsingBlockInStore() throws UnknownHostException {
-        final Block block = BlockGenerator.getInstance().getBlock(3);
+        final Block block = new BlockGenerator().getBlock(3);
 
         final BlockStore store = new BlockStore();
         store.saveBlock(block);
@@ -528,7 +535,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processGetBlockHeaderMessageUsingEmptyStore() throws UnknownHostException {
-        final Block block = BlockGenerator.getInstance().getBlock(3);
+        final Block block = new BlockGenerator().getBlock(3);
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
@@ -577,7 +584,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processGetBlockMessageUsingBlockInStore() throws UnknownHostException {
-        final Block block = BlockGenerator.getInstance().getBlock(3);
+        final Block block = new BlockGenerator().getBlock(3);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
 
         final BlockStore store = new BlockStore();
@@ -611,7 +618,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processGetBlockMessageUsingEmptyStore() throws UnknownHostException {
-        final Block block = BlockGenerator.getInstance().getBlock(3);
+        final Block block = new BlockGenerator().getBlock(3);
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
@@ -665,7 +672,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processBlockRequestMessageUsingBlockInStore() throws UnknownHostException {
-        final Block block = BlockGenerator.getInstance().getBlock(3);
+        final Block block = new BlockGenerator().getBlock(3);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
 
         final BlockStore store = new BlockStore();
@@ -728,7 +735,7 @@ public class NodeBlockProcessorTest {
 
     @Test
     public void processBlockHashRequestMessageUsingEmptyStore() throws UnknownHostException {
-        final Block block = BlockGenerator.getInstance().getBlock(3);
+        final Block block = new BlockGenerator().getBlock(3);
         final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);

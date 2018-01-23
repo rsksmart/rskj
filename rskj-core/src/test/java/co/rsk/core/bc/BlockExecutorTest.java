@@ -59,7 +59,8 @@ public class BlockExecutorTest {
 
     @Test
     public void executeBlockWithoutTransaction() {
-        Block block = BlockGenerator.getInstance().createChildBlock(BlockGenerator.getInstance().getGenesisBlock());
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
 
         Repository repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB()));
 
@@ -163,7 +164,8 @@ public class BlockExecutorTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        Block block = BlockGenerator.getInstance().createChildBlock(BlockGenerator.getInstance().getGenesisBlock(), txs, uncles, 1, null);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock(), txs, uncles, 1, null);
 
         BlockResult result = executor.execute(block, repository.getRoot(), false);
 
@@ -253,9 +255,10 @@ public class BlockExecutorTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
         genesis.setStateRoot(repository.getRoot());
-        Block block = BlockGenerator.getInstance().createChildBlock(genesis, txs, uncles, 1, null);
+        Block block = blockGenerator.createChildBlock(genesis, txs, uncles, 1, null);
 
         executor.executeAndFill(block, genesis);
 
@@ -291,9 +294,10 @@ public class BlockExecutorTest {
 
         List<BlockHeader> uncles = new ArrayList<>();
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
         genesis.setStateRoot(repository.getRoot());
-        Block block = BlockGenerator.getInstance().createChildBlock(genesis, txs, uncles, 1, null);
+        Block block = blockGenerator.createChildBlock(genesis, txs, uncles, 1, null);
 
         BlockResult result = executor.execute(block, genesis.getStateRoot(), false);
 
@@ -396,7 +400,7 @@ public class BlockExecutorTest {
 
         Block genesis = BlockChainImplTest.getGenesisBlock(blockchain);
         genesis.setStateRoot(repository.getRoot());
-        Block block = BlockGenerator.getInstance().createChildBlock(genesis, txs, uncles, 1, null);
+        Block block = new BlockGenerator().createChildBlock(genesis, txs, uncles, 1, null);
 
         executor.executeAndFill(block, genesis);
 
@@ -534,7 +538,7 @@ public class BlockExecutorTest {
 
         Block genesis = BlockChainImplTest.getGenesisBlock(blockchain);
         genesis.setStateRoot(repository.getRoot());
-        Block block = BlockGenerator.getInstance().createChildBlock(genesis, txs, uncles, 1, null);
+        Block block = new BlockGenerator().createChildBlock(genesis, txs, uncles, 1, null);
 
         executor.executeAndFillReal(block, genesis); // Forces all transactions included
 

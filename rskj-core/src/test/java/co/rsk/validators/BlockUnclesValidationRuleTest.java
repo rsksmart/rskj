@@ -23,14 +23,15 @@ public class BlockUnclesValidationRuleTest {
 
     @Test
     public void rejectBlockWithSiblingUncle() {
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
 
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block uncle = BlockGenerator.getInstance().createChildBlock(block1);
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block uncle = blockGenerator.createChildBlock(block1);
         List<BlockHeader> uncles = new ArrayList<>();
         uncles.add(uncle.getHeader());
 
-        Block block = BlockGenerator.getInstance().createChildBlock(block1, null, uncles, 1, null);
+        Block block = blockGenerator.createChildBlock(block1, null, uncles, 1, null);
 
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
         BlockStore store = blockChain.getBlockStore();
@@ -45,15 +46,16 @@ public class BlockUnclesValidationRuleTest {
 
     @Test
     public void rejectBlockWithUncleHavingHigherNumber() {
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
 
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block uncle1 = BlockGenerator.getInstance().createChildBlock(block1);
-        Block uncle2 = BlockGenerator.getInstance().createChildBlock(uncle1);
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block uncle1 = blockGenerator.createChildBlock(block1);
+        Block uncle2 = blockGenerator.createChildBlock(uncle1);
         List<BlockHeader> uncles = new ArrayList<>();
         uncles.add(uncle2.getHeader());
 
-        Block block = BlockGenerator.getInstance().createChildBlock(block1, null, uncles, 1, null);
+        Block block = blockGenerator.createChildBlock(block1, null, uncles, 1, null);
 
         BlockChainImpl blockChain = BlockChainImplTest.createBlockChain();
         BlockStore store = blockChain.getBlockStore();

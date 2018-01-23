@@ -43,7 +43,7 @@ public class OneNodeTest {
     public void buildBlockchain() {
         SimpleNode node = SimpleNode.createNode();
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(getGenesis(), 10);
+        List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
 
         for (Block block : blocks)
             node.receiveMessageFrom(null, new BlockMessage(block));
@@ -56,7 +56,7 @@ public class OneNodeTest {
     public void buildBlockchainInReverse() {
         SimpleNode node = SimpleNode.createNode();
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(getGenesis(), 10);
+        List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
         List<Block> reverse = new ArrayList<>();
 
         for (Block block : blocks)
