@@ -76,7 +76,6 @@ public class SimpleWorldManager implements WorldManager {
         this.blockChain = blockchain;
     }
 
-    @Override
     public BlockStore getBlockStore() {
         return blockStore;
     }

@@ -43,6 +43,7 @@ import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
@@ -252,10 +253,11 @@ public class Web3ImplTest {
         WorldManager worldManager = Web3Mocks.getMockWorldManager();
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         PendingState pendingState = Web3Mocks.getMockPendingState();
+        BlockStore blockStore = Web3Mocks.getMockBlockStore();
         RskSystemProperties mockProperties = Web3Mocks.getMockProperties();
         MinerClient minerClient = new SimpleMinerClient();
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
-        Web3 web3 = new Web3Impl(ethMock, worldManager, blockchain, pendingState, mockProperties, minerClient, null, personalModule, null, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null);
+        Web3 web3 = new Web3Impl(ethMock, worldManager, blockchain, pendingState, blockStore, mockProperties, minerClient, null, personalModule, null, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null);
 
         Assert.assertTrue("Node is not mining", !web3.eth_mining());
     try {
@@ -968,9 +970,10 @@ public class Web3ImplTest {
         WorldManager wmMock = Web3Mocks.getMockWorldManager();
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         PendingState pendingState = Web3Mocks.getMockPendingState();
+        BlockStore blockStore = Web3Mocks.getMockBlockStore();
         RskSystemProperties mockProperties = Web3Mocks.getMockProperties();
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
-        Web3 web3 = new Web3Impl(ethMock, wmMock, blockchain, pendingState, mockProperties, null, minerServerMock, personalModule, null, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null);
+        Web3 web3 = new Web3Impl(ethMock, wmMock, blockchain, pendingState, blockStore, mockProperties, null, minerServerMock, personalModule, null, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null);
 
         Assert.assertEquals("0x" + originalCoinbase, web3.eth_coinbase());
         Mockito.verify(minerServerMock, Mockito.times(1)).getCoinbaseAddress();
@@ -1241,7 +1244,7 @@ public class Web3ImplTest {
     }
 
     private Web3Impl createWeb3() {
-        return createWeb3(Web3Mocks.getMockEthereum(), Web3Mocks.getMockWorldManager(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockPendingState());
+        return createWeb3(Web3Mocks.getMockEthereum(), Web3Mocks.getMockWorldManager(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockPendingState(), Web3Mocks.getMockBlockStore());
     }
 
     private Web3Impl createWeb3(SimpleWorldManager worldManager) {
@@ -1271,16 +1274,16 @@ public class Web3ImplTest {
     }
 
     private Web3Impl createWeb3(Ethereum eth, SimpleWorldManager worldManager) {
-        return createWeb3(eth, worldManager, worldManager.getBlockchain(), worldManager.getPendingState());
+        return createWeb3(eth, worldManager, worldManager.getBlockchain(), worldManager.getPendingState(), worldManager.getBlockStore());
     }
 
-    private Web3Impl createWeb3(Ethereum eth, WorldManager worldManager, Blockchain blockchain, PendingState pendingState) {
+    private Web3Impl createWeb3(Ethereum eth, WorldManager worldManager, Blockchain blockchain, PendingState pendingState, BlockStore blockStore) {
         wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, pendingState);
         EthModule ethModule = new EthModule(config, eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, pendingState));
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
-        return new Web3RskImpl(eth, worldManager, blockchain, pendingState, config, minerClient, Web3Mocks.getMockMinerServer(), personalModule, ethModule, channelManager, Web3Mocks.getMockRepository(), null, null, null, null);
+        return new Web3RskImpl(eth, worldManager, blockchain, pendingState, config, minerClient, Web3Mocks.getMockMinerServer(), personalModule, ethModule, channelManager, Web3Mocks.getMockRepository(), null, null, blockStore, null);
     }
 
     @Test

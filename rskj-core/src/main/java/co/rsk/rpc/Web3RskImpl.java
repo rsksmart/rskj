@@ -71,7 +71,7 @@ public class Web3RskImpl extends Web3Impl {
                        NetworkStateExporter networkStateExporter,
                        BlockStore blockStore,
                        PeerServer peerServer) {
-        super(eth, worldManager, blockchain, pendingState, properties, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, peerServer);
+        super(eth, worldManager, blockchain, pendingState, blockStore, properties, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, peerServer);
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;
     }

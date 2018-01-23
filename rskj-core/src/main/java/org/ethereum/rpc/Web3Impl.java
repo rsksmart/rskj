@@ -111,6 +111,7 @@ public class Web3Impl implements Web3 {
                        WorldManager worldManager,
                        Blockchain blockchain,
                        PendingState pendingState,
+                       BlockStore blockStore,
                        RskSystemProperties config,
                        MinerClient minerClient,
                        MinerServer minerServer,
@@ -122,6 +123,7 @@ public class Web3Impl implements Web3 {
                        PeerServer peerServer) {
         this.eth = eth;
         this.blockchain = blockchain;
+        this.blockStore = blockStore;
         this.repository = repository;
         this.pendingState = pendingState;
         this.minerClient = minerClient;
@@ -134,7 +136,6 @@ public class Web3Impl implements Web3 {
         this.nodeBlockProcessor = worldManager.getNodeBlockProcessor();
         this.hashRateCalculator = worldManager.getHashRateCalculator();
         this.configCapabilities = worldManager.getConfigCapabilities();
-        this.blockStore = worldManager.getBlockStore();
         this.config = config;
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 

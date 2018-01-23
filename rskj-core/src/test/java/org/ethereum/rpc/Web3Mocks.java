@@ -24,13 +24,12 @@ import co.rsk.mine.MinerServer;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
+import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
 
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class Web3Mocks {
     public static Ethereum getMockEthereum() {
@@ -69,5 +68,9 @@ public class Web3Mocks {
 
     public static PendingState getMockPendingState() {
         return mock(PendingState.class);
+    }
+
+    public static BlockStore getMockBlockStore() {
+        return mock(BlockStore.class);
     }
 }

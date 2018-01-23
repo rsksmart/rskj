@@ -24,11 +24,11 @@ import co.rsk.core.ReversibleTransactionExecutor;
 import org.ethereum.core.*;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.net.submit.TransactionExecutor;
@@ -55,40 +55,43 @@ public class EthereumImpl implements Ethereum {
     private static final Logger logger = LoggerFactory.getLogger("facade");
     private static final Logger gLogger = LoggerFactory.getLogger("general");
 
-    private final WorldManager worldManager;
     private final ChannelManager channelManager;
     private final PeerServer peerServer;
     private final ProgramInvokeFactory programInvokeFactory;
     private final PendingState pendingState;
+    private final BlockStore blockStore;
     private final RskSystemProperties config;
     private final CompositeEthereumListener compositeEthereumListener;
     private final ReceiptStore receiptStore;
     private final Blockchain blockchain;
+    private final BlockStore blockStore;
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
     private final Repository repository;
     private ExecutorService peerServiceExecutor;
 
     public EthereumImpl(RskSystemProperties config,
-                        WorldManager worldManager,
                         ChannelManager channelManager,
                         PeerServer peerServer,
                         ProgramInvokeFactory programInvokeFactory,
                         PendingState pendingState,
+                        BlockStore blockStore,
                         CompositeEthereumListener compositeEthereumListener,
                         ReceiptStore receiptStore,
                         Repository repository,
-                        Blockchain blockchain) {
-        this.worldManager = worldManager;
+                        Blockchain blockchain,
+                        BlockStore blockStore) {
         this.channelManager = channelManager;
         this.peerServer = peerServer;
         this.programInvokeFactory = programInvokeFactory;
         this.pendingState = pendingState;
+        this.blockStore = blockStore;
         this.config = config;
         this.compositeEthereumListener = compositeEthereumListener;
         this.receiptStore = receiptStore;
         this.repository = repository;
         this.blockchain = blockchain;
+        this.blockStore = blockStore;
     }
 
     @Override
@@ -176,7 +179,7 @@ public class EthereumImpl implements Ethereum {
         return ReversibleTransactionExecutor.executeTransaction(
                 config,
                 repository,
-                worldManager.getBlockStore(),
+                blockStore,
                 receiptStore,
                 programInvokeFactory,
                 bestBlock,
