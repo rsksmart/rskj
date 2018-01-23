@@ -106,8 +106,8 @@ public class EthereumImpl implements Ethereum {
     }
 
     @Override
-    public org.ethereum.facade.Blockchain getBlockchain() {
-        return (org.ethereum.facade.Blockchain)worldManager.getBlockchain();
+    public Blockchain getBlockchain() {
+        return worldManager.getBlockchain();
     }
 
     @Override

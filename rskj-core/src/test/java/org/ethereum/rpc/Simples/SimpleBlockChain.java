@@ -20,6 +20,7 @@ package org.ethereum.rpc.Simples;
 
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.blocks.BlockRecorder;
 import co.rsk.core.bc.BlockChainStatus;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockInformation;
@@ -75,6 +76,11 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
         Block block = BlockGenerator.getInstance().getGenesisBlock();
 
         return block;
+    }
+
+    @Override
+    public void setBlockRecorder(BlockRecorder blockRecorder) {
+
     }
 
     @Override

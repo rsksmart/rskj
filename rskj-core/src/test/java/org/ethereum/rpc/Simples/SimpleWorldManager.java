@@ -21,6 +21,7 @@ package org.ethereum.rpc.Simples;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.net.BlockProcessor;
 import co.rsk.net.simples.SimpleBlockProcessor;
+import org.ethereum.core.Blockchain;
 import org.ethereum.core.PendingState;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -66,7 +67,7 @@ public class SimpleWorldManager implements WorldManager {
     }
 
     @Override
-    public org.ethereum.core.Blockchain getBlockchain() {
+    public Blockchain getBlockchain() {
         if (blockChain != null)
             return blockChain;
 
