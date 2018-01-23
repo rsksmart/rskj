@@ -21,12 +21,15 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
+import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class Web3Mocks {
     public static Ethereum getMockEthereum() {
@@ -34,9 +37,13 @@ public class Web3Mocks {
     }
 
     public static WorldManager getMockWorldManager() {
-        WorldManager mockWorldManager = mock(WorldManager.class, RETURNS_DEEP_STUBS);
-        when(mockWorldManager.getBlockchain().getBestBlock().getNumber()).thenReturn(0L);
-        return mockWorldManager;
+        return mock(WorldManager.class);
+    }
+
+    public static Blockchain getMockBlockchain() {
+        Blockchain mockBlockchain = mock(Blockchain.class, RETURNS_DEEP_STUBS);
+        when(mockBlockchain.getBestBlock().getNumber()).thenReturn(0L);
+        return mockBlockchain;
     }
 
     public static RskSystemProperties getMockProperties() {

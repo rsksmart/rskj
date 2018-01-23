@@ -28,7 +28,6 @@ import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.db.BlockStore;
-import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
@@ -83,11 +82,6 @@ public class WorldManagerImpl implements WorldManager {
 
         BlockChainLoader loader = new BlockChainLoader(config, this.blockchain, this.blockStore, this.repository, this.listener);
         loader.loadBlockchain();
-    }
-
-    @Override
-    public Blockchain getBlockchain() {
-        return blockchain;
     }
 
     @Override

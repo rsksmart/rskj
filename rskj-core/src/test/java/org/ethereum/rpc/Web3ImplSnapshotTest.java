@@ -176,7 +176,7 @@ public class Web3ImplSnapshotTest {
         ethereum.repository = world.getRepository();
         ethereum.worldManager = worldManager;
 
-        return new Web3Impl(ethereum, worldManager, Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, Web3Mocks.getMockChannelManager(), ethereum.repository, null, null);
+        return new Web3Impl(ethereum, worldManager, worldManager.getBlockchain(), Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, Web3Mocks.getMockChannelManager(), ethereum.repository, null, null);
     }
 
     private static Web3Impl createWeb3(World world) {

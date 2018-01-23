@@ -138,6 +138,7 @@ public class RskFactory {
     @Bean
     public Start.Web3Factory getWeb3Factory(Rsk rsk,
                                             WorldManager worldManager,
+                                            Blockchain blockchain,
                                             RskSystemProperties config,
                                             MinerClient minerClient,
                                             MinerServer minerServer,
@@ -149,7 +150,7 @@ public class RskFactory {
                                             NetworkStateExporter networkStateExporter,
                                             org.ethereum.db.BlockStore blockStore,
                                             PeerServer peerServer) {
-        return () -> new Web3RskImpl(rsk, worldManager, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, networkStateExporter, blockStore, peerServer);
+        return () -> new Web3RskImpl(rsk, worldManager, blockchain, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, networkStateExporter, blockStore, peerServer);
     }
 
     @Bean

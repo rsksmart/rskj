@@ -63,6 +63,7 @@ public class EthereumImpl implements Ethereum {
     private final RskSystemProperties config;
     private final CompositeEthereumListener compositeEthereumListener;
     private final ReceiptStore receiptStore;
+    private final Blockchain blockchain;
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
     private final Repository repository;
@@ -76,7 +77,8 @@ public class EthereumImpl implements Ethereum {
                         PendingState pendingState,
                         CompositeEthereumListener compositeEthereumListener,
                         ReceiptStore receiptStore,
-                        Repository repository) {
+                        Repository repository,
+                        Blockchain blockchain) {
         this.worldManager = worldManager;
         this.channelManager = channelManager;
         this.peerServer = peerServer;
@@ -86,6 +88,7 @@ public class EthereumImpl implements Ethereum {
         this.compositeEthereumListener = compositeEthereumListener;
         this.receiptStore = receiptStore;
         this.repository = repository;
+        this.blockchain = blockchain;
     }
 
     @Override
@@ -107,9 +110,9 @@ public class EthereumImpl implements Ethereum {
 
     @Override
     public ImportResult addNewMinedBlock(final @Nonnull Block block) {
-        final ImportResult importResult = worldManager.getBlockchain().tryToConnect(block);
+        final ImportResult importResult = blockchain.tryToConnect(block);
 
-        if (worldManager.getBlockchain().getBlockByHash(block.getHash()) != null) {
+        if (blockchain.getBlockByHash(block.getHash()) != null) {
             channelManager.broadcastBlock(block, null);
         }
         return importResult;
@@ -169,7 +172,7 @@ public class EthereumImpl implements Ethereum {
 
     @Override
     public ProgramResult callConstant(Web3.CallArguments args) {
-        Block bestBlock = worldManager.getBlockchain().getBestBlock();
+        Block bestBlock = blockchain.getBestBlock();
         return ReversibleTransactionExecutor.executeTransaction(
                 config,
                 repository,

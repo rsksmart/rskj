@@ -109,6 +109,7 @@ public class Web3Impl implements Web3 {
 
     protected Web3Impl(Ethereum eth,
                        WorldManager worldManager,
+                       Blockchain blockchain,
                        RskSystemProperties config,
                        MinerClient minerClient,
                        MinerServer minerServer,
@@ -119,6 +120,7 @@ public class Web3Impl implements Web3 {
                        PeerScoringManager peerScoringManager,
                        PeerServer peerServer) {
         this.eth = eth;
+        this.blockchain = blockchain;
         this.repository = repository;
         this.minerClient = minerClient;
         this.minerServer = minerServer;
@@ -127,7 +129,6 @@ public class Web3Impl implements Web3 {
         this.channelManager = channelManager;
         this.peerScoringManager = peerScoringManager;
         this.peerServer = peerServer;
-        this.blockchain = worldManager.getBlockchain();
         this.nodeBlockProcessor = worldManager.getNodeBlockProcessor();
         this.hashRateCalculator = worldManager.getHashRateCalculator();
         this.configCapabilities = worldManager.getConfigCapabilities();

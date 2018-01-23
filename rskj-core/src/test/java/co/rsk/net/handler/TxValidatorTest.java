@@ -25,7 +25,6 @@ import co.rsk.peg.Federation;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
@@ -57,10 +56,8 @@ public class TxValidatorTest {
         Map<RskAddress, TxsPerAccount> txmap;
         Repository repository = Mockito.mock(Repository.class);
         final long blockGasLimit = 100000;
-        WorldManager worldManager = Mockito.mock(WorldManager.class);
         Blockchain blockchain = Mockito.mock(Blockchain.class);
         Block block = Mockito.mock(Block.class);
-        Mockito.when(worldManager.getBlockchain()).thenReturn(blockchain);
         Mockito.when(blockchain.getBestBlock()).thenReturn(block);
         Mockito.when(block.getGasLimit()).thenReturn(BigInteger.valueOf(blockGasLimit).toByteArray());
         Mockito.when(block.getMinimumGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
@@ -129,7 +126,7 @@ public class TxValidatorTest {
         txs = new LinkedList<>();
         txs.addAll(vtxs);
         txs.addAll(itxs);
-        TxValidator txValidator = new TxValidator(config, repository, worldManager.getBlockchain());
+        TxValidator txValidator = new TxValidator(config, repository, blockchain);
         result = txValidator.filterTxs(txs, times, txmap);
         Assert.assertEquals(vtxs, result);
     }
@@ -146,10 +143,8 @@ public class TxValidatorTest {
         Map<RskAddress, TxsPerAccount> txmap;
         Repository repository = Mockito.mock(Repository.class);
         final long blockGasLimit = 100000;
-        WorldManager worldManager = Mockito.mock(WorldManager.class);
         Blockchain blockchain = Mockito.mock(Blockchain.class);
         Block block = Mockito.mock(Block.class);
-        Mockito.when(worldManager.getBlockchain()).thenReturn(blockchain);
         Mockito.when(blockchain.getBestBlock()).thenReturn(block);
         Mockito.when(block.getGasLimit()).thenReturn(BigInteger.valueOf(blockGasLimit).toByteArray());
         Mockito.when(block.getMinimumGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
@@ -157,7 +152,7 @@ public class TxValidatorTest {
         times = new HashMap<>();
         txmap = new HashMap<>();
 
-        TxValidator txValidator = new TxValidator(config, repository, worldManager.getBlockchain());
+        TxValidator txValidator = new TxValidator(config, repository, blockchain);
         List<Transaction> result = txValidator.filterTxs(txs, times, txmap);
         Assert.assertTrue(result.size() == 1);
     }

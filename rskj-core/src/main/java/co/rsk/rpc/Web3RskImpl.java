@@ -29,6 +29,7 @@ import co.rsk.scoring.PeerScoringManager;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.BlockStore;
@@ -60,6 +61,7 @@ public class Web3RskImpl extends Web3Impl {
 
     public Web3RskImpl(Ethereum eth,
                        WorldManager worldManager,
+                       Blockchain blockchain,
                        RskSystemProperties properties,
                        MinerClient minerClient,
                        MinerServer minerServer,
@@ -71,7 +73,7 @@ public class Web3RskImpl extends Web3Impl {
                        NetworkStateExporter networkStateExporter,
                        BlockStore blockStore,
                        PeerServer peerServer) {
-        super(eth, worldManager, properties, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, peerServer);
+        super(eth, worldManager, blockchain, properties, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, peerServer);
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;
     }
