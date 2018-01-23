@@ -568,9 +568,8 @@ public class RLP {
         return encodeElement(difficulty.getBytes());
     }
 
-    public static byte[] encodeElement(byte[] srcData) {
-
-        if (isNullOrZeroArray(srcData)) {
+    public static byte[] encodeElement(@Nullable byte[] srcData) {
+        if (srcData == null || srcData.length == 0) {
             return new byte[]{(byte) OFFSET_SHORT_ITEM};
         } else if (isSingleZero(srcData)) {
             return srcData;
@@ -606,31 +605,6 @@ public class RLP {
             return data;
         }
     }
-
-    public static int calcElementPrefixSize(byte[] srcData) {
-
-        if (isNullOrZeroArray(srcData)) {
-            return 0;
-        } else if (isSingleZero(srcData)) {
-            return 0;
-        } else if (srcData.length == 1 && (srcData[0] & 0xFF) < 0x80) {
-            return 0;
-        } else if (srcData.length < SIZE_THRESHOLD) {
-            return 1;
-        } else {
-            // length of length = BX
-            // prefix = [BX, [length]]
-            int tmpLength = srcData.length;
-            byte byteNum = 0;
-            while (tmpLength != 0) {
-                ++byteNum;
-                tmpLength = tmpLength >> 8;
-            }
-
-            return 1 + byteNum;
-        }
-    }
-
 
     public static byte[] encodeListHeader(int size) {
 
