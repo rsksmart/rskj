@@ -1,7 +1,7 @@
 package co.rsk.validators;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockChainImplTest;
 import org.ethereum.core.Block;
@@ -18,6 +18,9 @@ import java.util.List;
  * Created by ajlopez on 18/08/2017.
  */
 public class BlockUnclesValidationRuleTest {
+
+    private final RskSystemProperties config = new RskSystemProperties();
+
     @Test
     public void rejectBlockWithSiblingUncle() {
         Block genesis = BlockGenerator.getInstance().getGenesisBlock();
@@ -35,7 +38,7 @@ public class BlockUnclesValidationRuleTest {
         store.saveBlock(genesis, BigInteger.valueOf(1), true);
         store.saveBlock(block1, BigInteger.valueOf(2), true);
 
-        BlockUnclesValidationRule rule = new BlockUnclesValidationRule(ConfigHelper.CONFIG, store, 10, 10, new BlockCompositeRule(), new BlockParentCompositeRule());
+        BlockUnclesValidationRule rule = new BlockUnclesValidationRule(config, store, 10, 10, new BlockCompositeRule(), new BlockParentCompositeRule());
 
         Assert.assertFalse(rule.isValid(block));
     }
@@ -58,7 +61,7 @@ public class BlockUnclesValidationRuleTest {
         store.saveBlock(genesis, BigInteger.valueOf(1), true);
         store.saveBlock(block1, BigInteger.valueOf(2), true);
 
-        BlockUnclesValidationRule rule = new BlockUnclesValidationRule(ConfigHelper.CONFIG, store, 10, 10, new BlockCompositeRule(), new BlockParentCompositeRule());
+        BlockUnclesValidationRule rule = new BlockUnclesValidationRule(config, store, 10, 10, new BlockCompositeRule(), new BlockParentCompositeRule());
 
         Assert.assertFalse(rule.isValid(block));
     }

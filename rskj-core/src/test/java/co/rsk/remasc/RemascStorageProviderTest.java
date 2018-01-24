@@ -19,7 +19,7 @@
 package co.rsk.remasc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.RepositoryImplForTesting;
@@ -39,10 +39,13 @@ import java.util.SortedMap;
  * Created by usuario on 13/04/2017.
  */
 public class RemascStorageProviderTest {
+
+    private final RskSystemProperties config = new RskSystemProperties();
+
     @Test
     public void getDefautRewardBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -52,7 +55,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setAndGetRewardBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -80,7 +83,7 @@ public class RemascStorageProviderTest {
     @Test
     public void getDefautBurnedBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -90,7 +93,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setAndGetBurnedBalance() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -118,7 +121,7 @@ public class RemascStorageProviderTest {
     @Test
     public void getDefaultBrokenSelectionRule() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -128,7 +131,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setAndGetBrokenSelectionRule() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -156,7 +159,7 @@ public class RemascStorageProviderTest {
     @Test
     public void getDefaultSiblings() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 
@@ -169,7 +172,7 @@ public class RemascStorageProviderTest {
     @Test
     public void setAndGetSiblings() {
         RskAddress accountAddress = randomAddress();
-        Repository repository = new RepositoryImpl(ConfigHelper.CONFIG);
+        Repository repository = new RepositoryImpl(config);
 
         RemascStorageProvider provider = new RemascStorageProvider(repository, accountAddress);
 

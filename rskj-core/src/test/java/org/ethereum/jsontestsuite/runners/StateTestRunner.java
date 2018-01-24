@@ -19,10 +19,13 @@
 
 package org.ethereum.jsontestsuite.runners;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.BlockStoreDummy;
@@ -48,6 +51,7 @@ import java.util.List;
 public class StateTestRunner {
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
+    private final RskSystemProperties config = new RskSystemProperties();
 
     public static List<String> run(StateTestCase stateTestCase2) {
         return new StateTestRunner(stateTestCase2).runImpl();
@@ -69,7 +73,7 @@ public class StateTestRunner {
         Repository track = repository.startTracking();
 
         TransactionExecutor executor =
-                new TransactionExecutor(ConfigHelper.CONFIG, transaction, 0, new RskAddress(env.getCurrentCoinbase()), track, new BlockStoreDummy(), null,
+                new TransactionExecutor(config, transaction, 0, new RskAddress(env.getCurrentCoinbase()), track, new BlockStoreDummy(), null,
                         invokeFactory, blockchain.getBestBlock());
 
         try{
@@ -94,11 +98,11 @@ public class StateTestRunner {
 
         transaction = TransactionBuilder.build(stateTestCase.getTransaction());
         logger.info("transaction: {}", transaction.toString());
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(config);
         indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
         BlockStore blockStore = indexedBlockStore;
 
-        blockchain = new BlockChainImpl(ConfigHelper.CONFIG, repository, blockStore, null, null, null, null, null);
+        blockchain = new BlockChainImpl(config, repository, blockStore, null, null, null, null, null);
 
         env = EnvBuilder.build(stateTestCase.getEnv());
         invokeFactory = new TestProgramInvokeFactory(env);

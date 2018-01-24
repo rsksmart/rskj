@@ -19,13 +19,15 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.validators.DummyBlockValidator;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.*;
@@ -65,6 +67,7 @@ import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
  */
 public class TestRunner {
 
+    private final RskSystemProperties config = new RskSystemProperties();
     private Logger logger = LoggerFactory.getLogger("TCK-Test");
     private ProgramTrace trace = null;
     private boolean setNewStateRoot;
@@ -94,7 +97,7 @@ public class TestRunner {
         Block genesis = BlockBuilder.build(testCase.getGenesisBlockHeader(), null, null);
         Repository repository = RepositoryBuilder.build(testCase.getPre());
 
-        IndexedBlockStore blockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
+        IndexedBlockStore blockStore = new IndexedBlockStore(config);
         blockStore.init(new HashMap<>(), new HashMapDB(), null);
         blockStore.saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
 
@@ -104,13 +107,13 @@ public class TestRunner {
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
 
-        BlockChainImpl blockchain = new BlockChainImpl(ConfigHelper.CONFIG, repository, blockStore, receiptStore, null, null, null, new DummyBlockValidator());
+        BlockChainImpl blockchain = new BlockChainImpl(config, repository, blockStore, receiptStore, null, null, null, new DummyBlockValidator());
         //BlockchainImpl blockchain = new BlockchainImpl(blockStore, repository, wallet, adminInfo, listener,
         //        new CommonConfig().parentHeaderValidator(), receiptStore);
 
         blockchain.setNoValidation(true);
 
-        PendingStateImpl pendingState = new PendingStateImpl(ConfigHelper.CONFIG, blockchain, repository, null, null, listener, 10, 100);
+        PendingStateImpl pendingState = new PendingStateImpl(config, blockchain, repository, null, null, listener, 10, 100);
 
         blockchain.setBestBlock(genesis);
         blockchain.setTotalDifficulty(genesis.getCumulativeDifficulty());
@@ -189,7 +192,7 @@ public class TestRunner {
 
 
         logger.info("--------- PRE ---------");
-        Repository repository = loadRepository(new RepositoryImpl(ConfigHelper.CONFIG).startTracking(), testCase.getPre());
+        Repository repository = loadRepository(new RepositoryImpl(config).startTracking(), testCase.getPre());
 
         try {
 
@@ -226,8 +229,8 @@ public class TestRunner {
 
             /* 3. Create Program - exec.code */
             /* 4. run VM */
-            VM vm = new VM(ConfigHelper.CONFIG);
-            Program program = new Program(ConfigHelper.CONFIG, exec.getCode(), programInvoke);
+            VM vm = new VM(config);
+            Program program = new Program(config, exec.getCode(), programInvoke);
             boolean vmDidThrowAnEception = false;
             Exception e = null;
             ThreadMXBean thread;
@@ -252,7 +255,7 @@ public class TestRunner {
             }
 
             try {
-                saveProgramTraceFile(ConfigHelper.CONFIG, testCase.getName(), program.getTrace());
+                saveProgramTraceFile(config, testCase.getName(), program.getTrace());
             } catch (IOException ioe) {
                 vmDidThrowAnEception = true;
                 e = ioe;

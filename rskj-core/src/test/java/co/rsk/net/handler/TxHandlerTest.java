@@ -19,19 +19,21 @@
 package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.rpc.TypeConverter;
+import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.junit.Assert;
 
 import java.math.BigInteger;
 import java.util.*;
 
 public class TxHandlerTest {
+
+    private final RskSystemProperties config = new RskSystemProperties();
 
     @Test
     public void cleanOldTxsTest() {
@@ -39,8 +41,8 @@ public class TxHandlerTest {
         final long threshold = 300001;
         Random random = new Random(0);
 
-        Transaction tx1 = Tx.create(0, 0, 0, 0, 0, 0, random);
-        Transaction tx2 = Tx.create(0, 0, 0, 1, 0, 0, random);
+        Transaction tx1 = Tx.create(config, 0, 0, 0, 0, 0, 0, random);
+        Transaction tx2 = Tx.create(config, 0, 0, 0, 1, 0, 0, random);
 
         Map<String, TxTimestamp> knownTxs = new HashMap<>();
         Map<RskAddress, TxsPerAccount> txsPerAccounts = new HashMap<>();
@@ -53,7 +55,7 @@ public class TxHandlerTest {
         tpa.getTransactions().add(tx2);
         txsPerAccounts.put(tx1.getSender(), tpa);
 
-        TxHandlerImpl txHandler = new TxHandlerImpl(ConfigHelper.CONFIG);
+        TxHandlerImpl txHandler = new TxHandlerImpl(config);
         txHandler.setKnownTxs(knownTxs);
         txHandler.setTxsPerAccounts(txsPerAccounts);
 
@@ -69,7 +71,7 @@ public class TxHandlerTest {
         final long threshold = 300001;
         Random random = new Random(0);
 
-        Transaction tx1 = Tx.create(0, 0, 0, 0, 0, 0, random);
+        Transaction tx1 = Tx.create(config, 0, 0, 0, 0, 0, 0, random);
 
         Map<String, TxTimestamp> knownTxs = new HashMap<>();
         Map<RskAddress, TxsPerAccount> txsPerAccounts = new HashMap<>();
@@ -80,7 +82,7 @@ public class TxHandlerTest {
         tpa.getTransactions().add(tx1);
         txsPerAccounts.put(tx1.getSender(), tpa);
 
-        TxHandlerImpl txHandler = new TxHandlerImpl(ConfigHelper.CONFIG);
+        TxHandlerImpl txHandler = new TxHandlerImpl(config);
         txHandler.setKnownTxs(knownTxs);
         txHandler.setTxsPerAccounts(txsPerAccounts);
 
@@ -95,8 +97,8 @@ public class TxHandlerTest {
         long time = System.currentTimeMillis();
         Random random = new Random(0);
 
-        Transaction tx1 = Tx.create(0, 0, 0, 0, 0, 0, random);
-        Transaction tx2 = Tx.create(0, 0, 0, 1, 0, 0, random);
+        Transaction tx1 = Tx.create(config, 0, 0, 0, 0, 0, 0, random);
+        Transaction tx2 = Tx.create(config, 0, 0, 0, 1, 0, 0, random);
 
         Map<String, TxTimestamp> knownTxs = new HashMap<>();
         Map<RskAddress, TxsPerAccount> txsPerAccounts = new HashMap<>();
@@ -118,7 +120,7 @@ public class TxHandlerTest {
         List<TransactionReceipt> receiptList = new LinkedList<>();
         receiptList.add(receipt);
 
-        TxHandlerImpl txHandler = new TxHandlerImpl(ConfigHelper.CONFIG);
+        TxHandlerImpl txHandler = new TxHandlerImpl(config);
         txHandler.setTxsPerAccounts(txsPerAccounts);
         txHandler.setKnownTxs(knownTxs);
 

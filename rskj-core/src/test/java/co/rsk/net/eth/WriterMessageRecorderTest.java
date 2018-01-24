@@ -19,7 +19,7 @@
 package co.rsk.net.eth;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.test.builders.AccountBuilder;
@@ -44,6 +44,9 @@ import java.util.Random;
  * Created by ajlopez on 26/04/2017.
  */
 public class WriterMessageRecorderTest {
+
+    private static final RskSystemProperties config = new RskSystemProperties();
+
     @Test
     public void recordRskMessage() throws IOException {
         Message message = createRskMessage();
@@ -138,13 +141,13 @@ public class WriterMessageRecorderTest {
     public static Message createRskMessage() {
         Block block = BlockGenerator.getInstance().getBlock(1);
         GetBlockMessage message = new GetBlockMessage(block.getHash());
-        return new RskMessage(ConfigHelper.CONFIG, message);
+        return new RskMessage(config, message);
     }
 
     public static Message createEthMessage() {
         Account acc1 = new AccountBuilder().name("acc1").build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new co.rsk.test.builders.TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
-        return new TransactionsMessage(ConfigHelper.CONFIG, tx);
+        return new TransactionsMessage(config, tx);
     }
 }

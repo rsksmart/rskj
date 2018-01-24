@@ -19,7 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.datasource.HashMapDB;
@@ -246,7 +246,7 @@ public class FamilyUtilsTest {
     }
 
     private static BlockStore createBlockStore() {
-        IndexedBlockStore blockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
+        IndexedBlockStore blockStore = new IndexedBlockStore(new RskSystemProperties());
         blockStore.init(new HashMap<>(), new HashMapDB(), null);
 
         return blockStore;

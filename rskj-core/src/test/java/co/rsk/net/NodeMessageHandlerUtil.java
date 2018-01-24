@@ -1,6 +1,6 @@
 package co.rsk.net;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
@@ -17,7 +17,8 @@ import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
 
 public class NodeMessageHandlerUtil {
-    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(ConfigHelper.CONFIG);
+    private static final RskSystemProperties config = new RskSystemProperties();
+    private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config);
 
     public static NodeMessageHandler createHandler(BlockValidationRule validationRule) {
         final World world = new World();
@@ -27,10 +28,10 @@ public class NodeMessageHandlerUtil {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
-        SyncProcessor syncProcessor = new SyncProcessor(ConfigHelper.CONFIG, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), syncConfiguration, new DummyBlockValidationRule(), DIFFICULTY_CALCULATOR);
+        SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, RskMockFactory.getPeerScoringManager(), syncConfiguration, new DummyBlockValidationRule(), DIFFICULTY_CALCULATOR);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        return new NodeMessageHandler(ConfigHelper.CONFIG, processor, syncProcessor, new SimpleChannelManager(), null, null, RskMockFactory.getPeerScoringManager(), validationRule);
+        return new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, null, RskMockFactory.getPeerScoringManager(), validationRule);
     }
 
     public static NodeMessageHandler createHandlerWithSyncProcessor() {
@@ -49,10 +50,10 @@ public class NodeMessageHandlerUtil {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         BlockSyncService blockSyncService = new BlockSyncService(store, blockchain, nodeInformation, syncConfiguration);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        ProofOfWorkRule blockValidationRule = new ProofOfWorkRule(ConfigHelper.CONFIG);
+        ProofOfWorkRule blockValidationRule = new ProofOfWorkRule(config);
         PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
         Mockito.when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
-        SyncProcessor syncProcessor = new SyncProcessor(ConfigHelper.CONFIG, blockchain, blockSyncService, peerScoringManager, syncConfiguration, blockValidationRule, DIFFICULTY_CALCULATOR);
-        return new NodeMessageHandler(ConfigHelper.CONFIG, processor, syncProcessor, null, null, null, null, blockValidationRule);
+        SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, syncConfiguration, blockValidationRule, DIFFICULTY_CALCULATOR);
+        return new NodeMessageHandler(config, processor, syncProcessor, null, null, null, null, blockValidationRule);
     }
 }

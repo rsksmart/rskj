@@ -19,19 +19,17 @@
 
 package org.ethereum.vm;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.AccountState;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.core.Repository;
-
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -48,6 +46,7 @@ import static org.junit.Assert.assertEquals;
 public class VMComplexTest {
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
+    private final RskSystemProperties config = new RskSystemProperties();
 
     @Ignore //TODO #POC9
     @Test // contract call recursive
@@ -98,8 +97,8 @@ public class VMComplexTest {
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
+        VM vm = new VM(config);
+        Program program = new Program(config, codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -182,8 +181,8 @@ public class VMComplexTest {
         // ****************** //
         //  Play the program  //
         // ****************** //
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
+        VM vm = new VM(config);
+        Program program = new Program(config, codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -270,8 +269,8 @@ public class VMComplexTest {
         // ****************** //
         //  Play the program  //
         // ****************** //
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
+        VM vm = new VM(config);
+        Program program = new Program(config, codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -348,8 +347,8 @@ public class VMComplexTest {
         // ****************** //
         //  Play the program  //
         // ****************** //
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeA, pi);
+        VM vm = new VM(config);
+        Program program = new Program(config, codeA, pi);
 
         try {
             while (!program.isStopped())
@@ -420,8 +419,8 @@ public class VMComplexTest {
         // ****************** //
         //  Play the program  //
         // ****************** //
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
+        VM vm = new VM(config);
+        Program program = new Program(config, codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -484,8 +483,8 @@ public class VMComplexTest {
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
+        VM vm = new VM(config);
+        Program program = new Program(config, codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -543,8 +542,8 @@ public class VMComplexTest {
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
+        VM vm = new VM(config);
+        Program program = new Program(config, codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -602,8 +601,8 @@ public class VMComplexTest {
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
+        VM vm = new VM(config);
+        Program program = new Program(config, codeB, pi);
 
         try {
             while (!program.isStopped())
@@ -661,8 +660,8 @@ public class VMComplexTest {
         repository.addStorageRow(contractAddrB, key1, value1);
 
         // Play the program
-        VM vm = new VM(ConfigHelper.CONFIG);
-        Program program = new Program(ConfigHelper.CONFIG, codeB, pi);
+        VM vm = new VM(config);
+        Program program = new Program(config, codeB, pi);
 
         try {
             while (!program.isStopped())
