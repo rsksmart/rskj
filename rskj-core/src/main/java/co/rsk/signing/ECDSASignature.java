@@ -1,3 +1,21 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2017 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.signing;
 
 import co.rsk.bitcoinj.core.BtcECKey;
@@ -20,16 +38,15 @@ public class ECDSASignature {
     private final BigInteger r;
     private final BigInteger s;
     // For compatibility with ECKey.ECDSASignature
-    private byte v;
+    private final byte v;
 
     private ECDSASignature(BigInteger r, BigInteger s) {
-        this.r = r;
-        this.s = s;
-        this.v = 0;
+        this(r, s, (byte) 0);
     }
 
     private ECDSASignature(BigInteger r, BigInteger s, byte v) {
-        this(r, s);
+        this.r = r;
+        this.s = s;
         this.v = v;
     }
 
