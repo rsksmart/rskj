@@ -381,7 +381,11 @@ public class Transaction implements SerializableObject {
     public void sign(byte[] privKeyBytes) throws MissingPrivateKeyException {
         byte[] rawHash = this.getRawHash();
         ECKey key = ECKey.fromPrivate(privKeyBytes).decompress();
-        this.signature = key.sign(rawHash);
+        this.setSignature(key.sign(rawHash));
+    }
+
+    public void setSignature(ECDSASignature signature) {
+        this.signature = signature;
         this.rlpEncoded = null;
     }
 
