@@ -77,9 +77,6 @@ public class WorldManagerImpl implements WorldManager {
         this.configCapabilities = configCapabilities;
         this.listener = listener;
         this.nodeBlockProcessor = nodeBlockProcessor;
-
-        BlockChainLoader loader = new BlockChainLoader(config, this.blockchain, this.blockStore, this.repository, this.listener);
-        loader.loadBlockchain();
     }
 
 }

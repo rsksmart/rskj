@@ -29,6 +29,8 @@ import org.ethereum.listener.EthereumListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -39,6 +41,7 @@ import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 /**
  * Created by mario on 13/01/17.
  */
+@Component
 public class BlockChainLoader {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
@@ -49,6 +52,7 @@ public class BlockChainLoader {
     private final Blockchain blockchain;
     private final EthereumListener listener;
 
+    @Autowired
     public BlockChainLoader(RskSystemProperties config, Blockchain blockchain, BlockStore blockStore, Repository repository, EthereumListener listener) {
         this.config = config;
         this.blockStore = blockStore;
