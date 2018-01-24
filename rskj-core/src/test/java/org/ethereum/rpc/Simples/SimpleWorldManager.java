@@ -95,11 +95,6 @@ public class SimpleWorldManager implements WorldManager {
     }
 
     @Override
-    public void close() {
-
-    }
-
-    @Override
     public ConfigCapabilities getConfigCapabilities() {
         ConfigCapabilities configCapabilities = new SimpleConfigCapabilities();
 

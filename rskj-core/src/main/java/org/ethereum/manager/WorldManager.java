@@ -33,8 +33,6 @@ import org.ethereum.net.client.ConfigCapabilities;
 
 public interface WorldManager {
 
-    void close() ;
-
     ConfigCapabilities getConfigCapabilities();
 
     BlockProcessor getNodeBlockProcessor();
