@@ -18,14 +18,14 @@
 
 package co.rsk.crypto;
 
-import com.google.common.primitives.Ints;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.RLP;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -34,7 +34,17 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class Sha3Hash implements Serializable, Comparable<Sha3Hash> {
     private final byte[] bytes;
-    public static final Sha3Hash ZERO_HASH = new Sha3Hash(new byte[32]);
+    private static final Sha3Hash ZERO_HASH = new Sha3Hash(new byte[32]);
+    private static final Sha3Hash EMPTY_LIST_HASH = new Sha3Hash(HashUtil.sha3(RLP.encodeList()));
+
+
+    public static Sha3Hash zeroHash() {
+        return ZERO_HASH;
+    }
+
+    public static Sha3Hash emptyListHash() {
+        return EMPTY_LIST_HASH;
+    }
 
     public Sha3Hash(byte[] rawHashBytes) {
         // If i check arguments validate transaction fails

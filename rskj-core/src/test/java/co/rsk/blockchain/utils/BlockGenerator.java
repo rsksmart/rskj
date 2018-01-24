@@ -57,7 +57,7 @@ import static org.ethereum.util.ByteUtil.wrap;
 public class BlockGenerator {
     private static final BlockGenerator INSTANCE = new BlockGenerator();
 
-    private static final byte[] EMPTY_LIST_HASH = HashUtil.sha3(RLP.encodeList());
+    private static final Sha3Hash EMPTY_LIST_HASH = Sha3Hash.emptyListHash();
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
@@ -91,20 +91,20 @@ public class BlockGenerator {
         ecKey = new ECKey(rand);
         address = ecKey.getAddress();
         */
-        byte[] coinbase    = Hex.decode("e94aef644e428941ee0a3741f28d80255fddba7f");
+        byte[] coinbase = Hex.decode("e94aef644e428941ee0a3741f28d80255fddba7f");
 
-        long   timestamp         = 0; // predictable timeStamp
+        long   timestamp = 0; // predictable timeStamp
 
-        Sha3Hash parentHash  = new Sha3Hash(EMPTY_BYTE_ARRAY);
-        byte[] extraData   = EMPTY_BYTE_ARRAY;
+        Sha3Hash parentHash = Sha3Hash.zeroHash();
+        byte[] extraData = EMPTY_BYTE_ARRAY;
 
-        long   gasLimit         = initialGasLimit;
+        long   gasLimit = initialGasLimit;
 
         byte[] bitcoinMergedMiningHeader = null;
         byte[] bitcoinMergedMiningMerkleProof = null;
         byte[] bitcoinMergedMiningCoinbaseTransaction = null;
 
-        Genesis genesis = new Genesis(parentHash, new Sha3Hash(EMPTY_LIST_HASH), coinbase, getZeroHash(),
+        Genesis genesis = new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, getZeroHash(),
                 difficulty, 0, gasLimit, 0, timestamp, extraData,
                 mixHash, nonce, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, BigInteger.valueOf(100L).toByteArray());
@@ -205,7 +205,7 @@ public class BlockGenerator {
 
         return new Block(
                 parent.getHash(), // parent hash
-                new Sha3Hash(EMPTY_LIST_HASH), // uncle hash
+                EMPTY_LIST_HASH, // uncle hash
                 coinbase, // coinbase
                 logBloom.getData(), // logs bloom
                 parent.getDifficulty(), // difficulty
@@ -312,7 +312,7 @@ public class BlockGenerator {
 
         return new Block(
                 parent.getHash(), // parent hash
-                new Sha3Hash(EMPTY_LIST_HASH), // uncle hash
+                EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase(), // coinbase
                 logBloom.getData(), // logs bloom
                 parent.getDifficulty(), // difficulty
@@ -344,7 +344,7 @@ public class BlockGenerator {
 
         return new SimpleBlock(
                 parent.getHash(), // parent hash
-                new Sha3Hash(EMPTY_LIST_HASH), // uncle hash
+                EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase(), // coinbase
                 logBloom.getData(), // logs bloom
                 parent.getDifficulty(), // difficulty
@@ -367,7 +367,7 @@ public class BlockGenerator {
         List<Transaction> txs = new ArrayList<>();
         Block block = new Block(
                 parent.getHash(), // parent hash
-                new Sha3Hash(EMPTY_LIST_HASH), // uncle hash
+                EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase(),
                 ByteUtils.clone(new Bloom().getData()),
                 difficulty, // difficulty
