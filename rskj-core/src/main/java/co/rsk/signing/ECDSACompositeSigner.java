@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Signer that signs using one of many signers.
@@ -52,9 +53,9 @@ public class ECDSACompositeSigner implements ECDSASigner {
 
     @Override
     public ECDSASignerCheckResult check() {
-        List<String> messages = new ArrayList<>();
-
-        signers.stream().forEach(signer -> messages.addAll(signer.check().getMessages()));
+        List<String> messages = signers.stream()
+                .flatMap(s -> s.check().getMessages().stream())
+                .collect(Collectors.toList());
 
         return new ECDSASignerCheckResult(messages);
     }
