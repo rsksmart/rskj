@@ -215,7 +215,7 @@ class RemascTestRunner {
 
         Coin paidFees = Coin.ZERO;
         for (Transaction tx : txs) {
-            BigInteger gasLimit = new BigInteger(tx.getGasLimit());
+            BigInteger gasLimit = new BigInteger(1, tx.getGasLimit());
             Coin gasPrice = tx.getGasPrice();
             paidFees = paidFees.add(gasPrice.multiply(gasLimit));
         }
