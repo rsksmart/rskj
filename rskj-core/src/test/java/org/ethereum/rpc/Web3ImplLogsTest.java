@@ -478,7 +478,7 @@ public class Web3ImplLogsTest {
     private Web3Impl createWeb3(Ethereum eth, SimpleWorldManager worldManager, Wallet wallet) {
         PersonalModule personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
         EthModule ethModule = new EthModule(config, eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));
-        return new Web3RskImpl(eth, worldManager, worldManager.getBlockchain(), worldManager.getPendingState(), config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), personalModule, ethModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, worldManager.getBlockStore(), null);
+        return new Web3RskImpl(eth, worldManager.getBlockchain(), worldManager.getPendingState(), config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), personalModule, ethModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, worldManager.getBlockStore(), null, worldManager.getNodeBlockProcessor(), worldManager.getHashRateCalculator(), worldManager.getConfigCapabilities());
     }
 
     private Web3Impl getWeb3() {

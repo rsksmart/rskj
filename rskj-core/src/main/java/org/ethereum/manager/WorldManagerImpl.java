@@ -82,15 +82,4 @@ public class WorldManagerImpl implements WorldManager {
         loader.loadBlockchain();
     }
 
-    @Override
-    public ConfigCapabilities getConfigCapabilities() { return configCapabilities; }
-
-    @Override
-    public BlockProcessor getNodeBlockProcessor(){
-        return this.nodeBlockProcessor;
-    }
-
-    @Override
-    public HashRateCalculator getHashRateCalculator() { return hashRateCalculator; }
-
 }

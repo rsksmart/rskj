@@ -94,19 +94,16 @@ public class SimpleWorldManager implements WorldManager {
         this.pendingState = pendingState;
     }
 
-    @Override
     public ConfigCapabilities getConfigCapabilities() {
         ConfigCapabilities configCapabilities = new SimpleConfigCapabilities();
 
         return configCapabilities;
     }
 
-    @Override
     public BlockProcessor getNodeBlockProcessor(){
         return this.nodeBlockProcessor;
     }
 
-    @Override
     public HashRateCalculator getHashRateCalculator() {
         return null;
     }

@@ -42,7 +42,6 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.Channel;
@@ -108,7 +107,6 @@ public class Web3Impl implements Web3 {
     private final EthModule ethModule;
 
     protected Web3Impl(Ethereum eth,
-                       WorldManager worldManager,
                        Blockchain blockchain,
                        PendingState pendingState,
                        BlockStore blockStore,
@@ -120,7 +118,10 @@ public class Web3Impl implements Web3 {
                        ChannelManager channelManager,
                        Repository repository,
                        PeerScoringManager peerScoringManager,
-                       PeerServer peerServer) {
+                       PeerServer peerServer,
+                       BlockProcessor nodeBlockProcessor,
+                       HashRateCalculator hashRateCalculator,
+                       ConfigCapabilities configCapabilities) {
         this.eth = eth;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -133,9 +134,9 @@ public class Web3Impl implements Web3 {
         this.channelManager = channelManager;
         this.peerScoringManager = peerScoringManager;
         this.peerServer = peerServer;
-        this.nodeBlockProcessor = worldManager.getNodeBlockProcessor();
-        this.hashRateCalculator = worldManager.getHashRateCalculator();
-        this.configCapabilities = worldManager.getConfigCapabilities();
+        this.nodeBlockProcessor = nodeBlockProcessor;
+        this.hashRateCalculator = hashRateCalculator;
+        this.configCapabilities = configCapabilities;
         this.config = config;
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 

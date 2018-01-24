@@ -64,7 +64,6 @@ public class EthereumImpl implements Ethereum {
     private final CompositeEthereumListener compositeEthereumListener;
     private final ReceiptStore receiptStore;
     private final Blockchain blockchain;
-    private final BlockStore blockStore;
 
     private GasPriceTracker gasPriceTracker = new GasPriceTracker();
     private final Repository repository;
@@ -79,8 +78,7 @@ public class EthereumImpl implements Ethereum {
                         CompositeEthereumListener compositeEthereumListener,
                         ReceiptStore receiptStore,
                         Repository repository,
-                        Blockchain blockchain,
-                        BlockStore blockStore) {
+                        Blockchain blockchain) {
         this.channelManager = channelManager;
         this.peerServer = peerServer;
         this.programInvokeFactory = programInvokeFactory;
@@ -91,7 +89,6 @@ public class EthereumImpl implements Ethereum {
         this.receiptStore = receiptStore;
         this.repository = repository;
         this.blockchain = blockchain;
-        this.blockStore = blockStore;
     }
 
     @Override

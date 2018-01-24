@@ -19,10 +19,6 @@
 
 package org.ethereum.manager;
 
-import co.rsk.metrics.HashRateCalculator;
-import co.rsk.net.BlockProcessor;
-import org.ethereum.net.client.ConfigCapabilities;
-
 /**
  * WorldManager is a singleton containing references to different parts of the system.
  * This interface facilitate the writing of unit tests
@@ -32,11 +28,5 @@ import org.ethereum.net.client.ConfigCapabilities;
  */
 
 public interface WorldManager {
-
-    ConfigCapabilities getConfigCapabilities();
-
-    BlockProcessor getNodeBlockProcessor();
-
-    HashRateCalculator getHashRateCalculator();
 
 }

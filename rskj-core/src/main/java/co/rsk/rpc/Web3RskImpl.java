@@ -21,7 +21,9 @@ package co.rsk.rpc;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
+import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.*;
+import co.rsk.net.BlockProcessor;
 import co.rsk.rpc.exception.JsonRpcSubmitBlockException;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
@@ -31,7 +33,7 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
-import org.ethereum.manager.WorldManager;
+import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.TypeConverter;
@@ -57,7 +59,6 @@ public class Web3RskImpl extends Web3Impl {
     private final BlockStore blockStore;
 
     public Web3RskImpl(Ethereum eth,
-                       WorldManager worldManager,
                        Blockchain blockchain,
                        PendingState pendingState,
                        RskSystemProperties properties,
@@ -70,8 +71,11 @@ public class Web3RskImpl extends Web3Impl {
                        PeerScoringManager peerScoringManager,
                        NetworkStateExporter networkStateExporter,
                        BlockStore blockStore,
-                       PeerServer peerServer) {
-        super(eth, worldManager, blockchain, pendingState, blockStore, properties, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, peerServer);
+                       PeerServer peerServer,
+                       BlockProcessor nodeBlockProcessor,
+                       HashRateCalculator hashRateCalculator,
+                       ConfigCapabilities configCapabilities) {
+        super(eth, blockchain, pendingState, blockStore, properties, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, peerServer, nodeBlockProcessor, hashRateCalculator, configCapabilities);
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;
     }
