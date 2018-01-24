@@ -46,7 +46,6 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
@@ -252,7 +251,6 @@ public class Web3ImplTest {
     @Test
     public void eth_mining()  {
         Ethereum ethMock = Web3Mocks.getMockEthereum();
-        WorldManager worldManager = Web3Mocks.getMockWorldManager();
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         PendingState pendingState = Web3Mocks.getMockPendingState();
         BlockStore blockStore = Web3Mocks.getMockBlockStore();
@@ -1245,7 +1243,7 @@ public class Web3ImplTest {
     }
 
     private Web3Impl createWeb3() {
-        return createWeb3(Web3Mocks.getMockEthereum(), Web3Mocks.getMockWorldManager(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockPendingState(), Web3Mocks.getMockBlockStore(), null, null);
+        return createWeb3(Web3Mocks.getMockEthereum(), Web3Mocks.getMockBlockchain(), Web3Mocks.getMockPendingState(), Web3Mocks.getMockBlockStore(), null, null);
     }
 
     private Web3Impl createWeb3(SimpleWorldManager worldManager) {
@@ -1324,7 +1322,6 @@ public class Web3ImplTest {
 
         Wallet wallet = WalletFactory.createWallet();
         Ethereum eth = Web3Mocks.getMockEthereum();
-        WorldManager worldManager = Web3Mocks.getMockWorldManager();
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         PendingState pendingState = Web3Mocks.getMockPendingState();
         EthModule ethModule = new EthModule(config, eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));

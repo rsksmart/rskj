@@ -26,13 +26,12 @@ import org.ethereum.core.PendingState;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.net.client.ConfigCapabilities;
 
 /**
  * Created by Ruben Altman on 09/06/2016.
  */
-public class SimpleWorldManager implements WorldManager {
+public class SimpleWorldManager {
 
     BlockProcessor nodeBlockProcessor;
     org.ethereum.core.Blockchain blockChain;

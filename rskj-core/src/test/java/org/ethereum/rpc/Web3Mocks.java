@@ -26,7 +26,6 @@ import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
 
 import static org.mockito.Mockito.*;
@@ -34,10 +33,6 @@ import static org.mockito.Mockito.*;
 public class Web3Mocks {
     public static Ethereum getMockEthereum() {
         return mock(Ethereum.class);
-    }
-
-    public static WorldManager getMockWorldManager() {
-        return mock(WorldManager.class);
     }
 
     public static Blockchain getMockBlockchain() {
