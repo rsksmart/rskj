@@ -20,7 +20,9 @@ package co.rsk.metrics;
 
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.core.RskAddress;
 import co.rsk.util.RskCustomCache;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
@@ -39,8 +41,8 @@ public class HashRateCalculatorTest {
 
     private final Sha3Hash FAKE_GENERIC_HASH = PegTestUtils.createHash3();
     private final Sha3Hash OHTER_FAKE_GENERIC_HASH = PegTestUtils.createHash3();
-    private final byte[] FAKE_COINBASE = {34,12,98,13};
-    private final byte[] NOT_MY_COINBASE = {1,2,3,4};
+    private final RskAddress FAKE_COINBASE = TestUtils.randomAddress();
+    private final RskAddress NOT_MY_COINBASE = TestUtils.randomAddress();
 
     private BlockStore blockStore;
     private Block block;

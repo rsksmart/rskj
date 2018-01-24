@@ -22,7 +22,7 @@ import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.params.RegTestParams;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.db.RepositoryImplForTesting;
 import org.apache.commons.lang3.tuple.Triple;
 import org.ethereum.core.Repository;
@@ -82,7 +82,8 @@ public class RepositoryBlockStoreTest {
         InputStream fileInputStream = ClassLoader.getSystemResourceAsStream("peg/RepositoryBlockStore_data.ser");
         ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
         Repository repository = new RepositoryImplForTesting();
-        RepositoryBlockStore store = new RepositoryBlockStore(ConfigHelper.CONFIG, repository, PrecompiledContracts.BRIDGE_ADDR);
+        RskSystemProperties config = new RskSystemProperties();
+        RepositoryBlockStore store = new RepositoryBlockStore(config, repository, PrecompiledContracts.BRIDGE_ADDR);
         for (int i = 0; i < 614; i++) {
             Triple<byte[], BigInteger , Integer> tripleStoredBlock = (Triple<byte[], BigInteger , Integer>) objectInputStream.readObject();
             BtcBlock header = RegTestParams.get().getDefaultSerializer().makeBlock(tripleStoredBlock.getLeft());
@@ -94,7 +95,7 @@ public class RepositoryBlockStoreTest {
         }
 
         // Create a new instance of the store
-        RepositoryBlockStore store2 = new RepositoryBlockStore(ConfigHelper.CONFIG, repository, PrecompiledContracts.BRIDGE_ADDR);
+        RepositoryBlockStore store2 = new RepositoryBlockStore(config, repository, PrecompiledContracts.BRIDGE_ADDR);
 
 
         // Check a specific block that used to fail when we had a bug

@@ -1,6 +1,7 @@
 package org.ethereum.util;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
@@ -103,7 +104,7 @@ public class ContractRunner {
 
     private TransactionExecutor executeTransaction(Transaction transaction) {
         Repository track = repository.startTracking();
-        TransactionExecutor executor = new TransactionExecutor(ConfigHelper.CONFIG, transaction, 0, new byte[32],
+        TransactionExecutor executor = new TransactionExecutor(new RskSystemProperties(), transaction, 0, RskAddress.nullAddress(),
                 repository, blockStore, receiptStore,
                 new ProgramInvokeFactoryImpl(), blockchain.getBestBlock());
         executor.init();

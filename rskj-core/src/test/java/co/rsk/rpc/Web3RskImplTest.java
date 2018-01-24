@@ -18,7 +18,7 @@
 
 package co.rsk.rpc;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.core.Rsk;
 import co.rsk.core.Wallet;
@@ -40,9 +40,9 @@ import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.Web3Mocks;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
+import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.junit.Assert;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,9 +72,10 @@ public class Web3RskImplTest {
         Mockito.when(blockchain.getBestBlock()).thenReturn(block);
 
         Wallet wallet = WalletFactory.createWallet();
-        PersonalModule pm = new PersonalModuleWalletEnabled(ConfigHelper.CONFIG, rsk, wallet, null);
-        EthModule em = new EthModule(ConfigHelper.CONFIG, rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(ConfigHelper.CONFIG, rsk, wallet, null));
-        Web3RskImpl web3 = new Web3RskImpl(rsk, worldManager, ConfigHelper.CONFIG, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, networkStateExporter, blockStore, null);
+        RskSystemProperties config = new RskSystemProperties();
+        PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
+        EthModule em = new EthModule(config, rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, rsk, wallet, null));
+        Web3RskImpl web3 = new Web3RskImpl(rsk, worldManager, config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, networkStateExporter, blockStore, null);
         web3.ext_dumpState();
     }
 

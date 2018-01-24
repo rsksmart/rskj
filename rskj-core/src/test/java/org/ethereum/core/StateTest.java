@@ -20,18 +20,15 @@
 package org.ethereum.core;
 
 
-import co.rsk.config.ConfigHelper;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ByteArrayWrapper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
-
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Ignore;
 import org.junit.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
@@ -131,7 +128,7 @@ public class StateTest {
 
     private Trie generateGenesisState() {
         Trie trie = new TrieImpl();
-        Genesis genesis = (Genesis)Genesis.getInstance(ConfigHelper.CONFIG);
+        Genesis genesis = (Genesis)Genesis.getInstance(new RskSystemProperties());
 
         for (ByteArrayWrapper key : genesis.getPremine().keySet())
             trie = trie.put(key.getData(), genesis.getPremine().get(key).getAccountState().getEncoded());

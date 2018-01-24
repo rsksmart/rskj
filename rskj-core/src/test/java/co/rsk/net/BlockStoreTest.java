@@ -20,6 +20,7 @@ package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.crypto.Sha3Hash;
+import co.rsk.core.RskAddress;
 import com.google.common.collect.Lists;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -214,9 +215,10 @@ public class BlockStoreTest {
     @Test
     public void saveHeader() {
         BlockStore store = new BlockStore();
+
         BlockHeader blockHeader = new BlockHeader(new Sha3Hash(new byte[]{}),
                 new Sha3Hash(new byte[]{}),
-                new byte[]{},
+                RskAddress.nullAddress().getBytes(),
                 new Bloom().getData(),
                 new byte[]{},
                 1,
@@ -240,7 +242,7 @@ public class BlockStoreTest {
         BlockStore store = new BlockStore();
         BlockHeader blockHeader = new BlockHeader(new Sha3Hash(new byte[]{}),
                 new Sha3Hash(new byte[]{}),
-                new byte[]{},
+                RskAddress.nullAddress().getBytes(),
                 new Bloom().getData(),
                 new byte[]{},
                 1,

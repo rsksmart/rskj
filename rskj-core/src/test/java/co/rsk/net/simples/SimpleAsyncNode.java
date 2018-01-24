@@ -18,7 +18,7 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.net.*;
 import co.rsk.net.messages.Message;
@@ -42,6 +42,7 @@ import static org.mockito.Mockito.when;
  * Created by ajlopez on 5/15/2016.
  */
 public class SimpleAsyncNode extends SimpleNode {
+    private static final RskSystemProperties config = new RskSystemProperties();
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private LinkedBlockingQueue<Future> futures = new LinkedBlockingQueue<>(5000);
     private SyncProcessor syncProcessor;
@@ -118,8 +119,8 @@ public class SimpleAsyncNode extends SimpleNode {
         PeerScoringManager peerScoringManager = Mockito.mock(PeerScoringManager.class);
         when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
         when(peerScoringManager.getPeerScoring(isA(NodeID.class))).thenReturn(new PeerScoring());
-        SyncProcessor syncProcessor = new SyncProcessor(ConfigHelper.CONFIG, blockchain, blockSyncService, peerScoringManager, syncConfiguration, blockValidationRule, new DifficultyCalculator(ConfigHelper.CONFIG));
-        NodeMessageHandler handler = new NodeMessageHandler(ConfigHelper.CONFIG, processor, syncProcessor, new SimpleChannelManager(), null, null, peerScoringManager, blockValidationRule);
+        SyncProcessor syncProcessor = new SyncProcessor(config, blockchain, blockSyncService, peerScoringManager, syncConfiguration, blockValidationRule, new DifficultyCalculator(config));
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, null, peerScoringManager, blockValidationRule);
         return new SimpleAsyncNode(handler, syncProcessor);
     }
 

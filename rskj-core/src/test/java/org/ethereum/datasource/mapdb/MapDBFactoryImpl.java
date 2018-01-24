@@ -19,8 +19,7 @@
 
 package org.ethereum.datasource.mapdb;
 
-import co.rsk.config.ConfigHelper;
-import org.ethereum.config.SystemProperties;
+import co.rsk.config.RskSystemProperties;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 
@@ -29,8 +28,6 @@ import java.io.File;
 import static java.lang.System.getProperty;
 
 public class MapDBFactoryImpl implements MapDBFactory {
-
-    private static final SystemProperties config = ConfigHelper.CONFIG;
 
     @Override
     public DB createDB(String name) {
@@ -43,7 +40,7 @@ public class MapDBFactoryImpl implements MapDBFactory {
     }
 
     private DB createDB(String name, boolean transactional) {
-        File dbFile = new File(getProperty("user.dir") + "/" + config.databaseDir() + "/" + name);
+        File dbFile = new File(getProperty("user.dir") + "/" + new RskSystemProperties().databaseDir() + "/" + name);
         if (!dbFile.getParentFile().exists()) {
             dbFile.getParentFile().mkdirs();
         }

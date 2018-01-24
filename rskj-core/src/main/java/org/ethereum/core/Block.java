@@ -18,8 +18,8 @@
  */
 
 package org.ethereum.core;
-
 import co.rsk.crypto.Sha3Hash;
+import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.trie.Trie;
@@ -94,7 +94,7 @@ public class Block {
         this(
                 header.getParentHash(),
                 header.getUnclesHash(),
-                header.getCoinbase(),
+                header.getCoinbase().getBytes(),
                 header.getLogsBloom(),
                 header.getDifficulty(),
                 header.getNumber(),
@@ -270,7 +270,7 @@ public class Block {
         return this.header.getUnclesHash();
     }
 
-    public byte[] getCoinbase() {
+    public RskAddress getCoinbase() {
         if (!parsed) {
             parseRLP();
         }

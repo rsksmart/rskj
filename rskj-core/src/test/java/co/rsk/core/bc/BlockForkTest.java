@@ -19,7 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -36,6 +36,7 @@ import java.util.List;
  * Created by ajlopez on 09/08/2016.
  */
 public class BlockForkTest {
+
     @Test
     public void calculateParentChild() {
         BlockStore store = createBlockStore();
@@ -159,7 +160,7 @@ public class BlockForkTest {
     }
 
     private static BlockStore createBlockStore() {
-        IndexedBlockStore blockStore = new IndexedBlockStore(ConfigHelper.CONFIG);
+        IndexedBlockStore blockStore = new IndexedBlockStore(new RskSystemProperties());
         blockStore.init(new HashMap<>(), new HashMapDB(), null);
         return blockStore;
     }

@@ -19,6 +19,7 @@
 package org.ethereum.core;
 
 import co.rsk.crypto.Sha3Hash;
+import co.rsk.core.RskAddress;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.HashUtil;
@@ -48,7 +49,7 @@ public class BlockHeader {
     private Sha3Hash unclesHash;
     /* The 160-bit address to which all fees collected from the
      * successful mining of this block be transferred; formally */
-    private byte[] coinbase;
+    private RskAddress coinbase;
     /* The SHA3 256-bit hash of the root node of the state trie,
      * after all transactions are executed and finalisations applied */
     private Sha3Hash stateRoot;
@@ -103,9 +104,10 @@ public class BlockHeader {
     }
 
     public BlockHeader(RLPList rlpHeader, boolean sealed) {
+
         this.parentHash = new Sha3Hash(rlpHeader.get(0).getRLPData());
         this.unclesHash = new Sha3Hash(rlpHeader.get(1).getRLPData());
-        this.coinbase = rlpHeader.get(2).getRLPData();
+        this.coinbase = RLP.parseRskAddress(rlpHeader.get(2).getRLPData());
         byte[] rawStateRoot = rlpHeader.get(3).getRLPData();
         this.stateRoot = rawStateRoot == null? new Sha3Hash(EMPTY_TRIE_HASH): new Sha3Hash(rawStateRoot);
 
@@ -176,7 +178,7 @@ public class BlockHeader {
                        int uncleCount) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
-        this.coinbase = coinbase;
+        this.coinbase = new RskAddress(coinbase);
         this.logsBloom = logsBloom;
         this.difficulty = difficulty;
         this.number = number;
@@ -232,17 +234,8 @@ public class BlockHeader {
         this.unclesHash = unclesHash;
     }
 
-    public byte[] getCoinbase() {
-        return coinbase;
-    }
-
-    public void setCoinbase(byte[] coinbase) {
-        /* A sealed block header is immutable, cannot be changed */
-        if (this.sealed) {
-            throw new SealedBlockHeaderException("trying to alter coinbase");
-        }
-
-        this.coinbase = coinbase;
+    public RskAddress getCoinbase() {
+        return this.coinbase;
     }
 
     public Sha3Hash getStateRoot() {
@@ -422,7 +415,7 @@ public class BlockHeader {
         byte[] parentHash = RLP.encodeElement(this.parentHash != null?this.parentHash.getBytes():null);
 
         byte[] unclesHash = RLP.encodeElement(this.unclesHash != null?this.unclesHash.getBytes(): null);
-        byte[] coinbase = RLP.encodeElement(this.coinbase);
+        byte[] coinbase = RLP.encodeRskAddress(this.coinbase);
 
         byte[] stateRoot = RLP.encodeElement(this.stateRoot != null?this.stateRoot.getBytes():null);
 
@@ -515,10 +508,10 @@ public class BlockHeader {
 
     private String toStringWithSuffix(final String suffix) {
         StringBuilder toStringBuff = new StringBuilder();
-        toStringBuff.append("  parentHash=").append(parentHash.toString()).append(suffix);
-        toStringBuff.append("  unclesHash=").append(unclesHash.toString()).append(suffix);
-        toStringBuff.append("  coinbase=").append(toHexString(coinbase)).append(suffix);
-        toStringBuff.append("  stateRoot=").append(stateRoot.toString()).append(suffix);
+        toStringBuff.append("  parentHash=").append(parentHash).append(suffix);
+        toStringBuff.append("  unclesHash=").append(unclesHash).append(suffix);
+        toStringBuff.append("  coinbase=").append(coinbase).append(suffix);
+        toStringBuff.append("  stateRoot=").append(stateRoot).append(suffix);
         toStringBuff.append("  txTrieHash=").append(toHexString(txTrieRoot)).append(suffix);
         toStringBuff.append("  receiptsTrieHash=").append(toHexString(receiptTrieRoot)).append(suffix);
         toStringBuff.append("  difficulty=").append(toHexString(difficulty)).append(suffix);

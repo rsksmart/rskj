@@ -18,20 +18,15 @@
 
 package co.rsk.jsontestsuite;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.jsontestsuite.DifficultyTestCase;
 import org.ethereum.jsontestsuite.DifficultyTestSuite;
 import org.ethereum.jsontestsuite.JSONReader;
 import org.json.simple.parser.ParseException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
-import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,30 +39,15 @@ import static org.junit.Assert.assertEquals;
  * @author Angel J Lopez
  * @since 02.23.2016
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LocalBasicTest {
 
     private static final Logger logger = LoggerFactory.getLogger("TCK-Test");
-    private BlockchainNetConfig originalBlockchainConfig;
-
-    @Before
-    public void setup() {
-        // if not set explicitly
-        // this test fails being run by Gradle
-        ConfigHelper.CONFIG.setGenesisInfo("frontier.json");
-
-        originalBlockchainConfig = ConfigHelper.CONFIG.getBlockchainConfig();
-        ConfigHelper.CONFIG.setBlockchainConfig(MainNetConfig.INSTANCE);
-    }
-
-    @After
-    public void tearDown() {
-        ConfigHelper.CONFIG.setBlockchainConfig(originalBlockchainConfig);
-    }
-
+    private RskSystemProperties config = new RskSystemProperties();;
 
     @Test
     public void runDifficultyTest() throws IOException, ParseException {
+        config.setGenesisInfo("frontier.json");
+        config.setBlockchainConfig(new MainNetConfig());
 
         String json = getJSON("difficulty");
 
@@ -79,7 +59,7 @@ public class LocalBasicTest {
 
             BlockHeader current = testCase.getCurrent();
             BlockHeader parent = testCase.getParent();
-            BigInteger calc = new DifficultyCalculator(ConfigHelper.CONFIG).calcDifficulty(current, parent);
+            BigInteger calc = new DifficultyCalculator(config).calcDifficulty(current, parent);
             int c = calc.compareTo(parent.getDifficultyBI());
             if (c>0)
                 logger.info(" Difficulty increase test\n");

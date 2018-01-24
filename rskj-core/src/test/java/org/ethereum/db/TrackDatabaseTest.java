@@ -19,22 +19,20 @@
 
 package org.ethereum.db;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
-
 import org.iq80.leveldb.Options;
-
 import org.junit.AfterClass;
 import org.junit.Test;
-
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.File;
 import java.io.IOException;
 
 import static org.iq80.leveldb.impl.Iq80DBFactory.factory;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author Roman Mandeleil
@@ -45,7 +43,7 @@ public class TrackDatabaseTest {
     @Test
     public void test1() {
 
-        KeyValueDataSource keyValueDataSource = new LevelDbDataSource(ConfigHelper.CONFIG, "temp");
+        KeyValueDataSource keyValueDataSource = new LevelDbDataSource(new RskSystemProperties(), "temp");
         keyValueDataSource.init();
 
         DatabaseImpl db1 = new DatabaseImpl(keyValueDataSource);

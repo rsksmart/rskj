@@ -123,19 +123,16 @@ public class BlockExecutor {
     public boolean validate(Block block, BlockResult result) {
         if (result == BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
             logger.error("Block's execution was interrupted because of an invalid transaction: {} {}.", block.getNumber(), block.getShortHash());
-            panicProcessor.panic("interruptedblock", "Block's execution was interrupted because of an invalid transaction");
             return false;
         }
 
         if (!result.getStateRoot().equals(block.getStateRoot()))  {
             logger.error("Block's given State Root doesn't match: {} {} {} != {}", block.getNumber(), block.getShortHash(), block.getStateRoot(), result.getStateRoot());
-            panicProcessor.panic("invalidstateroot", String.format("Block's given State Root Hash doesn't match: %s != %s", block.getStateRoot(), result.getStateRoot()));
             return false;
         }
 
         if (!Arrays.equals(result.getReceiptsRoot(), block.getReceiptsRoot())) {
             logger.error("Block's given Receipt Hash doesn't match: {} {} != {}", block.getNumber(), block.getShortHash(), Hex.toHexString(result.getReceiptsRoot()));
-            panicProcessor.panic("invalidreceipt", String.format("Block's given Receipt Hash doesn't match: %s != %s", Hex.toHexString(block.getReceiptsRoot()), Hex.toHexString(result.getReceiptsRoot())));
             return false;
         }
 
@@ -147,13 +144,11 @@ public class BlockExecutor {
             String blockLogsBloomString = Hex.toHexString(blockLogsBloom);
 
             logger.error("Block's given logBloom Hash doesn't match: {} != {} Block {} {}", resultLogsBloomString, blockLogsBloomString, block.getNumber(), block.getShortHash());
-            panicProcessor.panic("invalidbloom", String.format("Block's given logBloom Hash doesn't match: %s != %s", blockLogsBloomString, resultLogsBloomString));
             return false;
         }
 
         if (result.getGasUsed() != block.getGasUsed()) {
             logger.error("Block's given gasUsed doesn't match: {} != {} Block {} {}", block.getGasUsed(), result.getGasUsed(), block.getNumber(), block.getShortHash());
-            panicProcessor.panic("invalidgasused", String.format("Block's given gasUsed doesn't match: %s != %s", block.getGasUsed(), result.getGasUsed()));
             return false;
         }
 
@@ -162,10 +157,6 @@ public class BlockExecutor {
 
         if (!paidFees.equals(feesPaidToMiner))  {
             logger.error("Block's given paidFees doesn't match: {} != {} Block {} {}", feesPaidToMiner, paidFees, block.getNumber(), block.getShortHash());
-            panicProcessor.panic("invalidpaidfees",
-                    String.format("Block's given logBloom Hash doesn't match: %s != %s",
-                            feesPaidToMiner, paidFees));
-            //ERROR [panic]  invalidpaidfees: Block's given logBloom Hash doesn't match: 10 != 0
             return false;
         }
 
@@ -174,7 +165,6 @@ public class BlockExecutor {
 
         if (!executedTransactions.equals(transactionsList))  {
             logger.error("Block's given txs doesn't match: {} != {} Block {} {}", transactionsList, executedTransactions, block.getNumber(), block.getShortHash());
-            panicProcessor.panic("invalidtxs", String.format("Block's given txs doesn't match: %s != %s", transactionsList, executedTransactions));
             return false;
         }
 
@@ -197,7 +187,7 @@ public class BlockExecutor {
     }
 
     private BlockResult execute(Block block, Sha3Hash stateRoot, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
-        logger.info("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
+        logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
         Repository initialRepository = repository.getSnapshotTo(stateRoot);
 
@@ -213,7 +203,7 @@ public class BlockExecutor {
         int txindex = 0;
 
         for (Transaction tx : block.getTransactionsList()) {
-            logger.info("apply block: [{}] tx: [{}] ", block.getNumber(), i);
+            logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
 
             TransactionExecutor txExecutor = new TransactionExecutor(config, tx, txindex++, block.getCoinbase(), track, blockStore, blockChain.getReceiptStore(), programInvokeFactory, block, listener, totalGasUsed);
 
@@ -235,11 +225,11 @@ public class BlockExecutor {
             txExecutor.go();
             txExecutor.finalization();
 
-            logger.info("tx executed");
+            logger.trace("tx executed");
 
             track.commit();
 
-            logger.info("track commit");
+            logger.trace("track commit");
 
             long gasUsed = txExecutor.getGasUsed();
             totalGasUsed += gasUsed;
@@ -257,16 +247,16 @@ public class BlockExecutor {
             receipt.setLogInfoList(txExecutor.getVMLogs());
             receipt.setStatus(txExecutor.getReceipt().getStatus());
 
-            logger.info("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()),
+            logger.trace("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()),
                     lastStateRootHash);
 
-            logger.info("tx[{}].receipt", i);
+            logger.trace("tx[{}].receipt", i);
 
             i++;
 
             receipts.add(receipt);
 
-            logger.info("tx done");
+            logger.trace("tx done");
         }
 
         return new BlockResult(executedTransactions, receipts, lastStateRootHash, totalGasUsed, totalPaidFees);

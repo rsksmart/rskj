@@ -42,7 +42,7 @@ public class SiblingTest {
         Assert.assertNotNull(result);
 
         Assert.assertEquals(sibling.getHash(), result.getHash());
-        Assert.assertArrayEquals(sibling.getIncludedBlockCoinbase(), result.getIncludedBlockCoinbase());
+        Assert.assertEquals(sibling.getIncludedBlockCoinbase(), result.getIncludedBlockCoinbase());
         Assert.assertArrayEquals(sibling.getEncoded(), result.getEncoded());
 
         Assert.assertEquals(sibling.getIncludedHeight(), result.getIncludedHeight());
@@ -65,7 +65,7 @@ public class SiblingTest {
         Assert.assertNotNull(result);
 
         Assert.assertEquals(sibling.getHash(), result.getHash());
-        Assert.assertArrayEquals(sibling.getIncludedBlockCoinbase(), result.getIncludedBlockCoinbase());
+        Assert.assertEquals(sibling.getIncludedBlockCoinbase(), result.getIncludedBlockCoinbase());
         Assert.assertArrayEquals(sibling.getEncoded(), result.getEncoded());
 
         Assert.assertEquals(sibling.getIncludedHeight(), result.getIncludedHeight());

@@ -18,7 +18,7 @@
 
 package co.rsk.test.dsl;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -222,7 +222,7 @@ public class WorldDslProcessor {
                 difficulty = difficultyTokenizer.hasMoreTokens()?parseDifficulty(difficultyTokenizer.nextToken(),k):k;
             }
             Block block = new BlockBuilder().difficulty(difficulty).parent(parent).build();
-            BlockExecutor executor = new BlockExecutor(ConfigHelper.CONFIG, world.getRepository(),
+            BlockExecutor executor = new BlockExecutor(new RskSystemProperties(), world.getRepository(),
                     world.getBlockChain(), world.getBlockChain().getBlockStore(), null);
             executor.executeAndFill(block, parent);
             world.saveBlock(name, block);

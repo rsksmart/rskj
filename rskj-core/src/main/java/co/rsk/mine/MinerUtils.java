@@ -154,10 +154,10 @@ public class MinerUtils {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
-                logger.info("Pending transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+                logger.debug("Pending transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
                 RskAddress txSender = tx.getSender();
 
-                logger.info("Examining transaction {} sender: {} value: {} nonce: {}", Hex.toHexString(tx.getHash()), txSender, Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
+                logger.debug("Examining transaction {} sender: {} value: {} nonce: {}", Hex.toHexString(tx.getHash()), txSender, Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
 
                 BigInteger txNonce = new BigInteger(1, tx.getNonce());
 
@@ -183,7 +183,7 @@ public class MinerUtils {
 
                 accountNonces.put(txSender, txNonce);
 
-                logger.info("Accepted transaction {} sender: {} value: {} nonce: {}", Hex.toHexString(tx.getHash()), txSender, Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
+                logger.debug("Accepted transaction {} sender: {} value: {} nonce: {}", Hex.toHexString(tx.getHash()), txSender, Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
             } catch (Exception e) {
                 // Txs that can't be selected by any reason should be removed from pending state
                 String hash = null == tx.getHash() ? "" : Hex.toHexString(tx.getHash());
@@ -199,7 +199,7 @@ public class MinerUtils {
             txsResult.add(tx);
         }
 
-        logger.info("Ending getTransactions {}", txsResult.size());
+        logger.debug("Ending getTransactions {}", txsResult.size());
 
         return txsResult;
     }

@@ -103,10 +103,13 @@ public class MinerClientImpl implements MinerClient {
 
     public void doWork() {
         try {
-            if (mineBlock() &&
-                (config.getBlockchainConfig() instanceof RegTestConfig ||
-                config.getBlockchainConfig() instanceof DevNetConfig)) {
-                Thread.sleep(20000);
+            if (mineBlock()) {
+                if (config.getBlockchainConfig() instanceof RegTestConfig) {
+                    Thread.sleep(1000);
+                }
+                else if (config.getBlockchainConfig() instanceof DevNetConfig) {
+                    Thread.sleep(20000);
+                }
             }
         } catch (Exception e) {
             logger.error("Error on mining", e);
@@ -120,7 +123,8 @@ public class MinerClientImpl implements MinerClient {
             if (this.rsk.hasBetterBlockToSync()) {
                 try {
                     Thread.sleep(10000);
-                } catch (InterruptedException e1) {
+                } catch (InterruptedException ex) {
+                    logger.error("Interrupted mining sleep", ex);
                 }
                 return false;
             }
@@ -128,7 +132,8 @@ public class MinerClientImpl implements MinerClient {
             if (this.rsk.isPlayingBlocks()) {
                 try {
                     Thread.sleep(10000);
-                } catch (InterruptedException e1) {
+                } catch (InterruptedException ex) {
+                    logger.error("Interrupted mining sleep", ex);
                 }
                 return false;
             }
@@ -140,7 +145,8 @@ public class MinerClientImpl implements MinerClient {
             logger.warn("No work to do");
             try {
                 Thread.sleep(2000);
-            } catch (InterruptedException e1) {
+            } catch (InterruptedException ex) {
+                logger.error("Interrupted mining sleep", ex);
             }
             return false;
         }
@@ -177,7 +183,8 @@ public class MinerClientImpl implements MinerClient {
             if (this.rsk.hasBetterBlockToSync()) {
                 try {
                     Thread.sleep(10000);
-                } catch (InterruptedException e1) {
+                } catch (InterruptedException ex) {
+                    logger.error("Interrupted mining sleep", ex);
                 }
                 return false;
             }
@@ -185,7 +192,8 @@ public class MinerClientImpl implements MinerClient {
             if (this.rsk.isPlayingBlocks()) {
                 try {
                     Thread.sleep(10000);
-                } catch (InterruptedException e1) {
+                } catch (InterruptedException ex) {
+                    logger.error("Interrupted mining sleep", ex);
                 }
                 return false;
             }
@@ -226,10 +234,11 @@ public class MinerClientImpl implements MinerClient {
     }
 
     public void stop() {
-
         stop = true;
-        if (aTimer!=null)
+
+        if (aTimer!=null) {
             aTimer.cancel();
+        }
     }
 
     /**

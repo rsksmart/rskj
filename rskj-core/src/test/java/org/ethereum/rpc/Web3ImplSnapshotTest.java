@@ -19,8 +19,8 @@
 package org.ethereum.rpc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.ConfigHelper;
 import co.rsk.config.ConfigUtils;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.mine.*;
@@ -42,6 +42,9 @@ import java.util.List;
  * Created by ajlopez on 15/04/2017.
  */
 public class Web3ImplSnapshotTest {
+
+    private static final RskSystemProperties config = new RskSystemProperties();
+
     @Test
     public void takeFirstSnapshot() {
         World world = new World();
@@ -165,7 +168,7 @@ public class Web3ImplSnapshotTest {
     }
 
     private static Web3Impl createWeb3(World world, SimpleEthereum ethereum, MinerServer minerServer) {
-        MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, ConfigHelper.CONFIG);
+        MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, config);
         PersonalModule pm = new PersonalModuleWalletDisabled();
 
         SimpleWorldManager worldManager = new SimpleWorldManager();
@@ -183,9 +186,9 @@ public class Web3ImplSnapshotTest {
 
     static MinerServer getMinerServerForTest(World world, SimpleEthereum ethereum) {
         BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
-        return new MinerServerImpl(ConfigHelper.CONFIG, ethereum, world.getBlockChain(), world.getBlockChain().getBlockStore(),
-                world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), ConfigUtils.getDefaultMiningConfig(), rule, world.getBlockProcessor(), new DifficultyCalculator(ConfigHelper.CONFIG), new GasLimitCalculator(ConfigHelper.CONFIG),
-                new ProofOfWorkRule(ConfigHelper.CONFIG).setFallbackMiningEnabled(false));
+        return new MinerServerImpl(config, ethereum, world.getBlockChain(), world.getBlockChain().getBlockStore(),
+                world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), ConfigUtils.getDefaultMiningConfig(), rule, world.getBlockProcessor(), new DifficultyCalculator(config), new GasLimitCalculator(config),
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
     }
 
     private static void addBlocks(Blockchain blockchain, int size) {

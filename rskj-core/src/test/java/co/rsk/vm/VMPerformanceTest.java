@@ -18,14 +18,18 @@
 
 package co.rsk.vm;
 
-import co.rsk.config.ConfigHelper;
-import org.ethereum.TestUtils;
+import co.rsk.config.RskSystemProperties;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.OpCode;
+import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
-import org.ethereum.vm.VM;
-import org.ethereum.vm.OpCode;
-import org.ethereum.vm.DataWord;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.management.GarbageCollectorMXBean;
@@ -36,21 +40,24 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-// Remove junit imports for standalone use
-import org.junit.*;
-
+import static org.ethereum.TestUtils.padLeft;
+import static org.ethereum.TestUtils.padRight;
 import static org.junit.Assert.assertEquals;
+
+// Remove junit imports for standalone use
 
 /**
  * Created by Sergio on 03/07/2016.
  */
 public class VMPerformanceTest {
+    private final RskSystemProperties config = new RskSystemProperties();
     private ProgramInvokeMockImpl invoke;
     private Program program;
     ThreadMXBean thread;
     VM vm;
 
-    final static int maxLoops = 1000000;
+    final static int million = 1000*1000;
+    final static int maxLoops = 1*million;
     final static int maxGroups = 1;
     final static boolean useProfiler = false;
 
@@ -159,7 +166,7 @@ public class VMPerformanceTest {
 
         Boolean old = thread.isThreadCpuTimeEnabled();
         thread.setThreadCpuTimeEnabled(true);
-        vm = new VM(ConfigHelper.CONFIG);
+        vm = new VM(config);
         if (useProfiler)
             waitForProfiler();
 
@@ -270,7 +277,8 @@ public class VMPerformanceTest {
     public class PerfRes {
         public long deltaUsedMemory;
         public long deltaRealTime;
-        public long deltaTime; // in microseconds.
+        public long wallClockTimeMillis; // in milliseconds
+        public long deltaTime; // in nanoseconds.
         public long gas;
 
     }
@@ -287,7 +295,7 @@ public class VMPerformanceTest {
             baos.write(code, 0, code.length);
         byte[] newCode = baos.toByteArray();
 
-        program = new Program(ConfigHelper.CONFIG, newCode, invoke);
+        program = new Program(config, newCode, invoke);
         int sa = program.getStartAddr();
 
         long myLoops = maxLoops / cloneCount;
@@ -327,8 +335,9 @@ public class VMPerformanceTest {
 
             long endTime = thread.getCurrentThreadCpuTime();
             long endRealTime = System.currentTimeMillis();
-            pr.deltaTime = (endTime - startTime) / myLoops / divisor / 1000; // de nano a micro.
-            pr.deltaRealTime = (endRealTime - startRealTime) * 1000 / myLoops / divisor; // de milli a micro
+            pr.deltaTime = (endTime - startTime) / maxLoops / divisor ; // nano
+            pr.wallClockTimeMillis = (endRealTime - startRealTime);
+            pr.deltaRealTime = (endRealTime - startRealTime) * 1000 *1000 / maxLoops / divisor; // de milli a nano
             long endUsedMemory = (rt.totalMemory() - rt.freeMemory());
 
 
@@ -347,14 +356,16 @@ public class VMPerformanceTest {
             percent = 0;
 
         System.out.println(
-                TestUtils.padRight(opcode, 12) + ":" +
-                        " full: " + TestUtils.padLeft(Long.toString(best.deltaTime), 7) +
-                        " ref: " + TestUtils.padLeft(Long.toString(best.deltaTime - refTime), 7) +
-                        " (% ref): " + TestUtils.padLeft(Long.toString(percent), 5) +
-                        " gas: " + TestUtils.padLeft(Long.toString(best.gas), 6) +
-                        " time/gas: " + TestUtils.padLeft(Long.toString(best.deltaTime * 100 / best.gas), 6) +
-                        " fullReal: " + TestUtils.padLeft(Long.toString(best.deltaRealTime), 7) +
-                        " mem[Kb]: " + TestUtils.padLeft(Long.toString(best.deltaUsedMemory / 1000), 10));
+                padRight(opcode, 12) + ":" +
+                        " wctime[msec]: "+padLeft(Long.toString(best.wallClockTimeMillis), 7) +
+                        " full: " + padLeft(Long.toString(best.deltaTime), 7) +
+                        " ref: " + padLeft(Long.toString(best.deltaTime - refTime), 7) +
+                        " (% ref): " + padLeft(Long.toString(percent), 5) +
+                        " gas: " + padLeft(Long.toString(best.gas), 6) +
+                        " time/gas: " + padLeft(Long.toString(best.deltaTime * 100 / best.gas), 6) +
+                        " fullReal: " + padLeft(Long.toString(best.deltaRealTime), 7) +
+                        " mem[Kb]: " + padLeft(Long.toString(best.deltaUsedMemory / 1000), 10));
+
 
         if (resultLogger != null) {
             resultLogger.log(opcode, best);
@@ -399,13 +410,13 @@ public class VMPerformanceTest {
 
     }
 
-    long deltaTime; // in microseconds
+    long deltaTime; // in nanoseconds
     long deltaRealTime;
 
     void endMeasure() {
         if (startTime != 0) {
             long endTime = thread.getCurrentThreadCpuTime();
-            deltaTime = (endTime - startTime) / 1000; // de nano a micro.
+            deltaTime = (endTime - startTime); // nano
             //System.out.println("Time elapsed [us]: " + Long.toString(deltaTime)+" [s]:"+ Long.toString(deltaTime/1000/1000));
             System.out.println("Time elapsed [ms]: " + Long.toString(deltaTime/1000)+" [s]:"+ Long.toString(deltaTime/1000/1000));
         }
@@ -464,7 +475,7 @@ public class VMPerformanceTest {
 } // contract
         */
 
-        vm = new VM(ConfigHelper.CONFIG);
+        vm = new VM(config);
         // Strip the first 16 bytes which are added by Solidity to store the contract.
         byte[] codePlusPrefix = Hex.decode(
                 //---------------------------------------------------------------------------------------------------------------------nn
@@ -491,7 +502,7 @@ public class VMPerformanceTest {
         ------------------------------------------------------------------------------------------------------------------------------------------------------*/
         byte[] code = Arrays.copyOfRange(codePlusPrefix,16,codePlusPrefix.length);
 
-        program =new Program(ConfigHelper.CONFIG, code, invoke);
+        program =new Program(config, code, invoke);
 
         //String s_expected_1 = "000000000000000000000000000000000000000000000000000000033FFC1244"; // 55
         //String s_expected_1 = "00000000000000000000000000000000000000000000000000000002EE333961";// 50
@@ -550,7 +561,7 @@ public class VMPerformanceTest {
          }
          } // contract
          ********************************************************************************************/
-        vm = new VM(ConfigHelper.CONFIG);
+        vm = new VM(config);
         /////////////////////////////////////////////////////////////////////////////////////////////////
         // To increase precesion of the measurement, the maximum k value was increased
         // until the contract took more than 30 seconds
@@ -606,7 +617,7 @@ public class VMPerformanceTest {
     -----------------------------------------------------------------------------*/
 
     public void testRunTime(byte[] code, String s_expected) {
-        program = new Program(ConfigHelper.CONFIG, code, invoke);
+        program = new Program(config, code, invoke);
         System.out.println("-----------------------------------------------------------------------------");
         System.out.println("Starting test....");
         System.out.println("Configuration: Program.useDataWordPool =  " + Program.getUseDataWordPool().toString());

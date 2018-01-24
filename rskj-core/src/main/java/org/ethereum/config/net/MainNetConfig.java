@@ -27,8 +27,6 @@ import org.ethereum.config.blockchain.MainNetBeforeBridgeSyncConfig;
  * Created by Anton Nashatyrev on 25.02.2016.
  */
 public class MainNetConfig extends AbstractNetConfig {
-    public static final MainNetConfig INSTANCE = new MainNetConfig();
-
     public MainNetConfig() {
         add(0, new MainNetBeforeBridgeSyncConfig());
         // 60 days of 1 block every 14 seconds.

@@ -19,19 +19,18 @@
 package co.rsk.metrics;
 
 import co.rsk.crypto.Sha3Hash;
+import co.rsk.core.RskAddress;
 import co.rsk.util.RskCustomCache;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
 
 import java.math.BigInteger;
 import java.time.Duration;
-import java.util.Arrays;
 
 public class HashRateCalculatorMining extends HashRateCalculator {
 
-    private byte[] coinbaseAddress;
+    private final RskAddress coinbaseAddress;
 
-    public HashRateCalculatorMining(BlockStore blockStore, RskCustomCache<Sha3Hash, BlockHeaderElement> headerCache, byte[] coinbaseAddress) {
+    public HashRateCalculatorMining(BlockStore blockStore, RskCustomCache<Sha3Hash, BlockHeaderElement> headerCache, RskAddress coinbaseAddress) {
         super(blockStore, headerCache);
         this.coinbaseAddress = coinbaseAddress;
     }
@@ -42,7 +41,7 @@ public class HashRateCalculatorMining extends HashRateCalculator {
     }
 
     private Boolean checkOwnership(BlockHeaderElement element) {
-        return Arrays.equals(element.getBlockHeader().getCoinbase(), coinbaseAddress);
+        return coinbaseAddress.equals(element.getBlockHeader().getCoinbase());
     }
 
 }

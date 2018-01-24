@@ -59,7 +59,6 @@ import java.util.stream.Collectors;
 public class ChannelManagerImpl implements ChannelManager {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
-    private static final Logger mlogger = LoggerFactory.getLogger("metrics");
 
     // If the inbound peer connection was dropped by us with a reason message
     // then we ban that peer IP on any connections for some time to protect from
@@ -327,8 +326,7 @@ public class ChannelManagerImpl implements ChannelManager {
         syncPool.onDisconnect(channel);
         activePeers.values().remove(channel);
         if(newPeers.remove(channel)) {
-            logger.debug("Peer removed from active peers: {}", channel);
-            mlogger.info("Peer removed from active peers: {}", channel);
+            logger.info("Peer removed from active peers: {}", channel.getPeerId());
         }
     }
 

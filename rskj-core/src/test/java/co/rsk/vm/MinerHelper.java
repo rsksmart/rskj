@@ -18,7 +18,7 @@
 
 package co.rsk.vm;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.mine.GasLimitCalculator;
@@ -42,6 +42,7 @@ import java.util.List;
 public class MinerHelper {
     private static final Logger logger = LoggerFactory.getLogger("minerhelper");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
+    private final RskSystemProperties config = new RskSystemProperties();
     @Autowired
     private BlockStore blockStore;
 
@@ -67,7 +68,7 @@ public class MinerHelper {
         this.repository = repository;
         this.blockchain = blockchain;
        // this.blockStore =blockStore;
-        gasLimitCalculator = new GasLimitCalculator(ConfigHelper.CONFIG);
+        gasLimitCalculator = new GasLimitCalculator(config);
     }
 
     public void processBlock( Block block, Block parent) {
@@ -100,7 +101,7 @@ public class MinerHelper {
 
         for (Transaction tx : block.getTransactionsList()) {
 
-            TransactionExecutor executor = new TransactionExecutor(ConfigHelper.CONFIG, tx, txindex++, block.getCoinbase(),
+            TransactionExecutor executor = new TransactionExecutor(config, tx, txindex++, block.getCoinbase(),
                     track, blockStore, blockchain.getReceiptStore(),
                     programInvokeFactory, block, new EthereumListenerAdapter(), totalGasUsed);
 
@@ -145,8 +146,8 @@ public class MinerHelper {
 
         newBlock.getHeader().setLogsBloom(logBloom.getData());
 
-        BigInteger minGasLimit = BigInteger.valueOf(ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getMinGasLimit());
-        BigInteger targetGasLimit = BigInteger.valueOf(ConfigHelper.CONFIG.getTargetGasLimit());
+        BigInteger minGasLimit = BigInteger.valueOf(config.getBlockchainConfig().getCommonConstants().getMinGasLimit());
+        BigInteger targetGasLimit = BigInteger.valueOf(config.getTargetGasLimit());
         BigInteger parentGasLimit = new BigInteger(1, parent.getGasLimit());
         BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit, BigInteger.valueOf(totalGasUsed), minGasLimit, targetGasLimit, false);
 

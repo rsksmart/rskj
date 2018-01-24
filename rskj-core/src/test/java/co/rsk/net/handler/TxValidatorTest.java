@@ -19,16 +19,16 @@
 package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.Federation;
-import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -40,7 +40,14 @@ import static org.mockito.Matchers.eq;
 public class TxValidatorTest {
 
 
+    private RskSystemProperties config;
+
     Random hashes = new Random(0);
+
+    @Before
+    public void setup(){
+        config = new RskSystemProperties();
+    }
 
     @Test
     public void oneTestToRuleThemAll() {
@@ -122,19 +129,18 @@ public class TxValidatorTest {
         txs = new LinkedList<>();
         txs.addAll(vtxs);
         txs.addAll(itxs);
-        TxValidator txValidator = new TxValidator(ConfigHelper.CONFIG, repository, worldManager.getBlockchain());
+        TxValidator txValidator = new TxValidator(config, repository, worldManager.getBlockchain());
         result = txValidator.filterTxs(txs, times, txmap);
         Assert.assertEquals(vtxs, result);
     }
 
     @Test
     public void brigdeTxTest() {
-        BlockchainNetConfig blockchainNetConfigOriginal = ConfigHelper.CONFIG.getBlockchainConfig();
-        ConfigHelper.CONFIG.setBlockchainConfig(new RegTestConfig());
+        config.setBlockchainConfig(new RegTestConfig());
 
         List<Transaction> txs = new LinkedList<>();
         //Bridge Tx
-        txs.add(createBridgeTx(1, 0, 1, 0, 0, 6, hashes));
+        txs.add(createBridgeTx(config, 1, 0, 1, 0, 0, 6, hashes));
 
         Map<String, TxTimestamp> times;
         Map<RskAddress, TxsPerAccount> txmap;
@@ -151,15 +157,13 @@ public class TxValidatorTest {
         times = new HashMap<>();
         txmap = new HashMap<>();
 
-        TxValidator txValidator = new TxValidator(ConfigHelper.CONFIG, repository, worldManager.getBlockchain());
+        TxValidator txValidator = new TxValidator(config, repository, worldManager.getBlockchain());
         List<Transaction> result = txValidator.filterTxs(txs, times, txmap);
         Assert.assertTrue(result.size() == 1);
-
-        ConfigHelper.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
     }
 
     private Transaction createTransaction(long value, long gaslimit, long gasprice, long nonce, long data, long sender) {
-        return Tx.create(value, gaslimit, gasprice, nonce, data, sender, hashes);
+        return Tx.create(config, value, gaslimit, gasprice, nonce, data, sender, hashes);
     }
 
 
@@ -170,14 +174,14 @@ public class TxValidatorTest {
         Mockito.when(repository.getAccountState(tx.getSender())).thenReturn(as);
     }
 
-    public static Transaction createBridgeTx(long value, long gaslimit, long gasprice, long nonce, long data, long sender, Random hashes) {
-        Transaction transaction = Tx.create(value, gaslimit, gasprice, nonce, data, sender, hashes);
+    public static Transaction createBridgeTx(RskSystemProperties config, long value, long gaslimit, long gasprice, long nonce, long data, long sender, Random hashes) {
+        Transaction transaction = Tx.create(config, value, gaslimit, gasprice, nonce, data, sender, hashes);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(PrecompiledContracts.BRIDGE_ADDR);
         Mockito.when(transaction.getSignature()).thenReturn(new ECKey.ECDSASignature(BigInteger.ONE, BigInteger.ONE));
-        Mockito.when(transaction.transactionCost(eq(ConfigHelper.CONFIG), Mockito.any())).thenReturn(new Long(0));
+        Mockito.when(transaction.transactionCost(eq(config), Mockito.any())).thenReturn(new Long(0));
         Mockito.when(transaction.getGasLimitAsInteger()).thenReturn(BigInteger.ZERO);
         // Federation is the genesis federation ATM
-        Federation federation = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants().getGenesisFederation();
+        Federation federation = config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getGenesisFederation();
         byte[] federator0PubKey = federation.getPublicKeys().get(0).getPubKey();
         Mockito.when(transaction.getKey()).thenReturn(ECKey.fromPublicOnly(federator0PubKey));
         return transaction;

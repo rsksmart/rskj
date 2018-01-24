@@ -18,8 +18,9 @@
 
 package org.ethereum.validator;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.RskAddress;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.vm.DataWord;
 import org.junit.Ignore;
@@ -33,7 +34,7 @@ import static org.junit.Assert.assertTrue;
  * @since 02.23.2016
  */
 public class DifficultyRuleTest {
-    private final DifficultyRule rule = new DifficultyRule(new DifficultyCalculator(ConfigHelper.CONFIG));
+    private final DifficultyRule rule = new DifficultyRule(new DifficultyCalculator(new RskSystemProperties()));
 
     @Ignore
     @Test // pass rule
@@ -53,7 +54,7 @@ public class DifficultyRuleTest {
     private static BlockHeader getHeader(long difficultyValue) {
         byte[] difficulty = new DataWord(difficultyValue).getData();
 
-        BlockHeader header = new BlockHeader(null, null, null, null, difficulty, 0,
+        BlockHeader header = new BlockHeader(null, null, RskAddress.nullAddress().getBytes(), null, difficulty, 0,
                 null, 0,
                 0, null, null, 0);
 

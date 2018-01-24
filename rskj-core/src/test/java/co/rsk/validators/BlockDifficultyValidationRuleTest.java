@@ -18,15 +18,12 @@
 
 package co.rsk.validators;
 
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
-import org.ethereum.config.BlockchainNetConfig;
+import co.rsk.core.RskAddress;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -39,26 +36,17 @@ import java.math.BigInteger;
  */
 public class BlockDifficultyValidationRuleTest {
 
-    private static BlockchainNetConfig blockchainNetConfigOriginal;
-    private static BridgeConstants bridgeConstants;
-    private static NetworkParameters btcParams;
+    private static RskSystemProperties config;
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        blockchainNetConfigOriginal = ConfigHelper.CONFIG.getBlockchainConfig();
-        ConfigHelper.CONFIG.setBlockchainConfig(new RegTestConfig());
-        bridgeConstants = ConfigHelper.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants();
-        btcParams = bridgeConstants.getBtcParams();
-    }
-
-    @AfterClass
-    public static void tearDownAfterClass() throws Exception {
-        ConfigHelper.CONFIG.setBlockchainConfig(blockchainNetConfigOriginal);
+        config = new RskSystemProperties();
+        config.setBlockchainConfig(new RegTestConfig());
     }
 
     private BlockHeader getEmptyHeader(BigInteger difficulty,long blockTimestamp,int uCount) {
         BlockHeader header = new BlockHeader(null, null,
-                null, null, difficulty.toByteArray(), 0,
+                RskAddress.nullAddress().getBytes(), null, difficulty.toByteArray(), 0,
                 null, 0,
                 blockTimestamp, null, null, uCount);
         return header;
@@ -66,7 +54,7 @@ public class BlockDifficultyValidationRuleTest {
 
     @Test
     public void testDifficulty() {
-        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(ConfigHelper.CONFIG);
+        DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
         BlockDifficultyRule validationRule = new BlockDifficultyRule(difficultyCalculator);
 
         Block block = Mockito.mock(Block.class);

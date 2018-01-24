@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
 import org.ethereum.datasource.HashMapDB;
@@ -27,22 +27,25 @@ import org.ethereum.vm.DataWord;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
 
-import static org.ethereum.TestUtils.*;
-import static org.junit.Assert.*;
+import static org.ethereum.TestUtils.randomAddress;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class DetailsDataStoreTest {
+
+    private final RskSystemProperties config = new RskSystemProperties();
 
     @Test
     public void test1(){
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(ConfigHelper.CONFIG, db);
+        DetailsDataStore dds = new DetailsDataStore(config, db);
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
         byte[] key =  Hex.decode("11");
         byte[] value =  Hex.decode("aa");
 
-        ContractDetails contractDetails = new ContractDetailsImpl(ConfigHelper.CONFIG);
+        ContractDetails contractDetails = new ContractDetailsImpl(config);
         contractDetails.setAddress(randomAddress().getBytes());
         contractDetails.setCode(code);
         contractDetails.put(new DataWord(key), new DataWord(value));
@@ -67,14 +70,14 @@ public class DetailsDataStoreTest {
     public void test2(){
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(ConfigHelper.CONFIG, db);
+        DetailsDataStore dds = new DetailsDataStore(config, db);
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
         byte[] key =  Hex.decode("11");
         byte[] value =  Hex.decode("aa");
 
-        ContractDetails contractDetails = new ContractDetailsImpl(ConfigHelper.CONFIG);
+        ContractDetails contractDetails = new ContractDetailsImpl(config);
         contractDetails.setCode(code);
         contractDetails.setAddress(randomAddress().getBytes());
         contractDetails.put(new DataWord(key), new DataWord(value));
@@ -103,14 +106,14 @@ public class DetailsDataStoreTest {
     public void test3(){
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(ConfigHelper.CONFIG, db);
+        DetailsDataStore dds = new DetailsDataStore(config, db);
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
         byte[] code = Hex.decode("60606060");
         byte[] key =  Hex.decode("11");
         byte[] value =  Hex.decode("aa");
 
-        ContractDetails contractDetails = new ContractDetailsImpl(ConfigHelper.CONFIG);
+        ContractDetails contractDetails = new ContractDetailsImpl(config);
         contractDetails.setCode(code);
         contractDetails.put(new DataWord(key), new DataWord(value));
 
@@ -141,7 +144,7 @@ public class DetailsDataStoreTest {
     public void test4() {
 
         DatabaseImpl db = new DatabaseImpl(new HashMapDB());
-        DetailsDataStore dds = new DetailsDataStore(ConfigHelper.CONFIG, db);
+        DetailsDataStore dds = new DetailsDataStore(config, db);
 
         RskAddress c_key = new RskAddress("0000000000000000000000000000000000001a2b");
 

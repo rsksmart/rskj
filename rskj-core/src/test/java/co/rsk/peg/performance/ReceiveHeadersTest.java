@@ -23,7 +23,7 @@ import co.rsk.bitcoinj.core.BtcBlockChain;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBlockStore;
@@ -46,7 +46,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
         final int maxBtcBlocks = 2000;
 
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
-            BtcBlockStore btcBlockStore = new RepositoryBlockStore(ConfigHelper.CONFIG, repository, PrecompiledContracts.BRIDGE_ADDR);
+            BtcBlockStore btcBlockStore = new RepositoryBlockStore(new RskSystemProperties(), repository, PrecompiledContracts.BRIDGE_ADDR);
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {

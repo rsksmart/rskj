@@ -153,7 +153,7 @@ public class Metrics {
     }
 
     private static void logEvent(@Nonnull final String event) {
-        logger.info("{} at: {} nano: {} | {} ", nodeID, currentTimeMillis(), nanoTime(), event);
+        logger.debug("{} at: {} nano: {} | {} ", nodeID, currentTimeMillis(), nanoTime(), event);
     }
 
     public static void registerNodeID(byte[] bytes) {

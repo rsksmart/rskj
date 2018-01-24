@@ -92,7 +92,7 @@ public abstract class SystemProperties {
     @Retention(RetentionPolicy.RUNTIME)
     private @interface ValidateMe {}
 
-    protected Config configFromFiles;
+    protected static Config configFromFiles;
 
     // mutable options for tests
     private String databaseDir = null;
@@ -113,11 +113,13 @@ public abstract class SystemProperties {
     
     protected SystemProperties() {
         try {
-            configFromFiles = getConfigFromFiles();
-            validateConfig();
-
-            logger.debug("Config trace: " + configFromFiles.root().render(ConfigRenderOptions.defaults().
-                    setComments(false).setJson(false)));
+            // could be locked but the result should be the same if there is no race condition
+            if (configFromFiles == null){
+                configFromFiles = getConfigFromFiles();
+                logger.debug("Config trace: " + configFromFiles.root().render(ConfigRenderOptions.defaults().
+                        setComments(false).setJson(false)));
+                validateConfig();
+            }
 
             Properties props = new Properties();
             InputStream is = getClass().getResourceAsStream("/version.properties");
@@ -414,11 +416,6 @@ public abstract class SystemProperties {
 
     public void setDataBaseDir(String dataBaseDir) {
         this.databaseDir = dataBaseDir;
-    }
-
-    @ValidateMe
-    public boolean dumpCleanOnRestart() {
-        return configFromFiles.getBoolean("dump.clean.on.restart");
     }
 
     @ValidateMe

@@ -18,7 +18,7 @@
 
 package co.rsk.blockchain.utils;
 
-import co.rsk.config.ConfigHelper;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.crypto.Sha3Hash;
@@ -72,7 +72,7 @@ public class BlockGenerator {
         return INSTANCE;
     }
 
-    private final DifficultyCalculator difficultyCalculator = new DifficultyCalculator(ConfigHelper.CONFIG);
+    private final DifficultyCalculator difficultyCalculator = new DifficultyCalculator(new RskSystemProperties());
     private int count = 0;
 
     public Genesis getGenesisBlock() {
@@ -171,7 +171,7 @@ public class BlockGenerator {
         return new Block(
                 parent.getHash(), // parent hash
                 new Sha3Hash(unclesListHash), // uncle hash
-                parent.getCoinbase(),
+                parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
                 difficulty, // difficulty
                 parent.getNumber() + 1,
@@ -193,7 +193,7 @@ public class BlockGenerator {
     }
 
     public Block createChildBlock(Block parent, List<Transaction> txs, Sha3Hash stateRoot) {
-        return createChildBlock(parent, txs, stateRoot, parent.getCoinbase());
+        return createChildBlock(parent, txs, stateRoot, parent.getCoinbase().getBytes());
     }
 
     public Block createChildBlock(Block parent, List<Transaction> txs, Sha3Hash stateRoot, byte[] coinbase) {
@@ -265,7 +265,7 @@ public class BlockGenerator {
 
         BlockHeader newHeader = new BlockHeader(parent.getHash(),
                 new Sha3Hash(unclesListHash),
-                parent.getCoinbase(),
+                parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
                 new byte[]{1},
                 parent.getNumber()+1,
@@ -313,7 +313,7 @@ public class BlockGenerator {
         return new Block(
                 parent.getHash(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
-                parent.getCoinbase(), // coinbase
+                parent.getCoinbase().getBytes(), // coinbase
                 logBloom.getData(), // logs bloom
                 parent.getDifficulty(), // difficulty
                 number,
@@ -345,7 +345,7 @@ public class BlockGenerator {
         return new SimpleBlock(
                 parent.getHash(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
-                parent.getCoinbase(), // coinbase
+                parent.getCoinbase().getBytes(), // coinbase
                 logBloom.getData(), // logs bloom
                 parent.getDifficulty(), // difficulty
                 parent.getNumber() + 1,
@@ -368,7 +368,7 @@ public class BlockGenerator {
         Block block = new Block(
                 parent.getHash(), // parent hash
                 EMPTY_LIST_HASH, // uncle hash
-                parent.getCoinbase(),
+                parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
                 difficulty, // difficulty
                 parent.getNumber() + 1,

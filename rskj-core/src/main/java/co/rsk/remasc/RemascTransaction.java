@@ -32,6 +32,19 @@ import org.ethereum.vm.PrecompiledContracts;
 public class RemascTransaction extends Transaction {
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
+    /**
+     * The Remasc transaction is not signed so it has no sender.
+     * Due to a bug in the implementation before mainnet release, this address has a special encoding.
+     * Instead of the empty array, it is encoded as the array with just one zero.
+     * This instance should not be used for any other reason.
+     */
+    public static final RskAddress REMASC_ADDRESS = new RskAddress(RskAddress.nullAddress().getBytes()) {
+        @Override
+        public byte[] getBytes() {
+            return ZERO_BYTE_ARRAY;
+        }
+    };
+
     public RemascTransaction(byte[] rawData) {
         super(rawData);
     }
@@ -54,8 +67,7 @@ public class RemascTransaction extends Transaction {
 
     @Override
     public RskAddress getSender() {
-        // RemascTransaction is not signed so has no sender
-        return RskAddress.nullAddress();
+        return REMASC_ADDRESS;
     }
 
     @Override
