@@ -89,12 +89,6 @@ public class WorldManagerImpl implements WorldManager {
         return blockStore;
     }
 
-    @Override
-    public PendingState getPendingState() {
-        return pendingState;
-    }
-
-    @Override
     @PreDestroy
     public void close() {
         repository.close();

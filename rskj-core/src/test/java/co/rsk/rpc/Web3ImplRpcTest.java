@@ -22,6 +22,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.manager.WorldManager;
@@ -41,9 +42,10 @@ public class Web3ImplRpcTest {
         Ethereum eth = Web3Mocks.getMockEthereum();
         WorldManager worldManager = Web3Mocks.getMockWorldManager();
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
+        PendingState pendingState = Web3Mocks.getMockPendingState();
         PersonalModule pm = new PersonalModuleWalletDisabled();
         Repository repository = Web3Mocks.getMockRepository();
-        Web3Impl web3 = new Web3RskImpl(eth, worldManager, blockchain, new RskSystemProperties(), null, null, pm, null, null, repository, null, null, null, null);
+        Web3Impl web3 = new Web3RskImpl(eth, worldManager, blockchain, pendingState, new RskSystemProperties(), null, null, pm, null, null, repository, null, null, null, null);
 
         Map<String, String> result = web3.rpc_modules();
 

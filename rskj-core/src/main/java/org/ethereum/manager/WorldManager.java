@@ -21,7 +21,6 @@ package org.ethereum.manager;
 
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.net.BlockProcessor;
-import org.ethereum.core.PendingState;
 import org.ethereum.db.BlockStore;
 import org.ethereum.net.client.ConfigCapabilities;
 
@@ -36,8 +35,6 @@ import org.ethereum.net.client.ConfigCapabilities;
 public interface WorldManager {
 
     BlockStore getBlockStore();
-
-    PendingState getPendingState();
 
     void close() ;
 

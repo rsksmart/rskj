@@ -110,18 +110,20 @@ public class Web3Impl implements Web3 {
     protected Web3Impl(Ethereum eth,
                        WorldManager worldManager,
                        Blockchain blockchain,
+                       PendingState pendingState,
                        RskSystemProperties config,
                        MinerClient minerClient,
                        MinerServer minerServer,
                        PersonalModule personalModule,
                        EthModule ethModule,
                        ChannelManager channelManager,
-                       org.ethereum.core.Repository repository,
+                       Repository repository,
                        PeerScoringManager peerScoringManager,
                        PeerServer peerServer) {
         this.eth = eth;
         this.blockchain = blockchain;
         this.repository = repository;
+        this.pendingState = pendingState;
         this.minerClient = minerClient;
         this.minerServer = minerServer;
         this.personalModule = personalModule;
@@ -133,7 +135,6 @@ public class Web3Impl implements Web3 {
         this.hashRateCalculator = worldManager.getHashRateCalculator();
         this.configCapabilities = worldManager.getConfigCapabilities();
         this.blockStore = worldManager.getBlockStore();
-        this.pendingState = worldManager.getPendingState();
         this.config = config;
         initialBlockNumber = this.blockchain.getBestBlock().getNumber();
 

@@ -34,7 +34,6 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
 import org.ethereum.facade.Ethereum;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.rpc.Simples.SimpleWorldManager;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
@@ -479,7 +478,7 @@ public class Web3ImplLogsTest {
     private Web3Impl createWeb3(Ethereum eth, SimpleWorldManager worldManager, Wallet wallet) {
         PersonalModule personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
         EthModule ethModule = new EthModule(config, eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));
-        return new Web3RskImpl(eth, worldManager, worldManager.getBlockchain(), config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), personalModule, ethModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, null, null);
+        return new Web3RskImpl(eth, worldManager, worldManager.getBlockchain(), worldManager.getPendingState(), config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), personalModule, ethModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, worldManager.getBlockStore(), null);
     }
 
     private Web3Impl getWeb3() {
