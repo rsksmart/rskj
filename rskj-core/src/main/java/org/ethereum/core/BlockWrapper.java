@@ -174,6 +174,11 @@ public class BlockWrapper {
     }
 
     @Override
+    public int hashCode() {
+        return this.block.hashCode();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
