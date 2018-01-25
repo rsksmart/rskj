@@ -20,7 +20,7 @@
 package org.ethereum.vm.program.invoke;
 
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -81,7 +81,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         byte[] data = tx.isContractCreation() ? ByteUtil.EMPTY_BYTE_ARRAY : nullToEmpty(tx.getData());
 
         /***    PREVHASH  op  ***/
-        Sha3Hash lastHash = block.getParentHash();
+        Keccak256 lastHash = block.getParentHash();
 
         /***   COINBASE  op ***/
         byte[] coinbase = block.getCoinbase().getBytes();
@@ -158,7 +158,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         DataWord callValue = inValue;
 
         byte[] data = dataIn;
-        Sha3Hash lastHash = program.getPrevHash();
+        Keccak256 lastHash = program.getPrevHash();
         DataWord coinbase = program.getCoinbase();
         DataWord timestamp = program.getTimestamp();
         DataWord number = program.getNumber();

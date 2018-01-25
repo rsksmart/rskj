@@ -19,7 +19,7 @@
 
 package org.ethereum.core;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -55,7 +55,7 @@ public class AccountState {
      * I define a convenient equivalence TRIE (σ[a] s ) ≡ σ[a] s .
      * It shall be understood that σ[a] s is not a ‘physical’ member
      * of the account and does not contribute to its later serialisation */
-    private Sha3Hash stateRoot = new Sha3Hash(EMPTY_TRIE_HASH);
+    private Keccak256 stateRoot = new Keccak256(EMPTY_TRIE_HASH);
 
     /* The hash of the EVM code of this contract—this is the code
      * that gets executed should this address receive a message call.
@@ -86,7 +86,7 @@ public class AccountState {
                 : new BigInteger(1, items.get(0).getRLPData());
         this.balance = items.get(1).getRLPData() == null ? BigInteger.ZERO
                 : new BigInteger(1, items.get(1).getRLPData());
-        this.stateRoot = new Sha3Hash(items.get(2).getRLPData());
+        this.stateRoot = new Keccak256(items.get(2).getRLPData());
         this.codeHash = items.get(3).getRLPData();
 
         if (items.size() > 4) {
@@ -113,11 +113,11 @@ public class AccountState {
         this.nonce = nonce;
     }
 
-    public Sha3Hash getStateRoot() {
+    public Keccak256 getStateRoot() {
         return stateRoot;
     }
 
-    public void setStateRoot(Sha3Hash stateRoot) {
+    public void setStateRoot(Keccak256 stateRoot) {
         rlpEncoded = null;
         this.stateRoot = stateRoot;
         setDirty(true);

@@ -18,7 +18,7 @@
  */
 
 package org.ethereum.core;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
@@ -115,13 +115,13 @@ public class Block {
                 header.getMinimumGasPrice());
     }
 
-    public Block(Sha3Hash parentHash, Sha3Hash unclesHash, byte[] coinbase, byte[] logsBloom,
+    public Block(Keccak256 parentHash, Keccak256 unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp, byte[] extraData,
                  byte[] mixHash,
                  byte[] nonce, byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                  byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] receiptsRoot,
-                 byte[] transactionsRoot, Sha3Hash stateRoot,
+                 byte[] transactionsRoot, Keccak256 stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice) {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
@@ -135,11 +135,11 @@ public class Block {
         this.flushRLP();
     }
 
-    public Block(Sha3Hash parentHash, Sha3Hash unclesHash, byte[] coinbase, byte[] logsBloom,
+    public Block(Keccak256 parentHash, Keccak256 unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp, byte[] extraData,
                  byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
-                 byte[] transactionsRoot, Sha3Hash stateRoot,
+                 byte[] transactionsRoot, Keccak256 stateRoot,
                  List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, BigInteger paidFees) {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
@@ -157,7 +157,7 @@ public class Block {
         this.flushRLP();
     }
 
-    public Block(Sha3Hash parentHash, Sha3Hash unclesHash, byte[] coinbase, byte[] logsBloom,
+    public Block(Keccak256 parentHash, Keccak256 unclesHash, byte[] coinbase, byte[] logsBloom,
                  byte[] difficulty, long number, byte[] gasLimit,
                  long gasUsed, long timestamp,
                  byte[] extraData, byte[] mixHash, byte[] nonce,
@@ -249,21 +249,21 @@ public class Block {
         return this.header;
     }
 
-    public Sha3Hash getHash() {
+    public Keccak256 getHash() {
         if (!parsed) {
             parseRLP();
         }
         return this.header.getHash();
     }
 
-    public Sha3Hash getParentHash() {
+    public Keccak256 getParentHash() {
         if (!parsed) {
             parseRLP();
         }
         return this.header.getParentHash();
     }
 
-    public Sha3Hash getUnclesHash() {
+    public Keccak256 getUnclesHash() {
         if (!parsed) {
             parseRLP();
         }
@@ -277,14 +277,14 @@ public class Block {
         return this.header.getCoinbase();
     }
 
-    public Sha3Hash getStateRoot() {
+    public Keccak256 getStateRoot() {
         if (!parsed) {
             parseRLP();
         }
         return this.header.getStateRoot();
     }
 
-    public void setStateRoot(Sha3Hash stateRoot) {
+    public void setStateRoot(Keccak256 stateRoot) {
         /* A sealed block is immutable, cannot be changed */
         if (this.sealed) {
             throw new SealedBlockException("trying to alter state root");
@@ -580,7 +580,7 @@ public class Block {
         }
 
         uncleList.add(uncle);
-        this.getHeader().setUnclesHash(new Sha3Hash(HashUtil.keccak256(getUnclesEncoded())));
+        this.getHeader().setUnclesHash(new Keccak256(HashUtil.keccak256(getUnclesEncoded())));
         rlpEncoded = null;
     }
 
@@ -642,7 +642,7 @@ public class Block {
         return this.header.getShortHashForMergedMining();
     }
 
-    public Sha3Hash getHashForMergedMining() {
+    public Keccak256 getHashForMergedMining() {
         if (!parsed) {
             parseRLP();
         }

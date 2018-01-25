@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -41,8 +41,8 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public void add(Sha3Hash blockHash, int transactionIndex, TransactionReceipt receipt){
-        Sha3Hash txHash = receipt.getTransaction().getHash();
+    public void add(Keccak256 blockHash, int transactionIndex, TransactionReceipt receipt){
+        Keccak256 txHash = receipt.getTransaction().getHash();
 
         TransactionInfo newTxInfo = new TransactionInfo(receipt, blockHash, transactionIndex);
 
@@ -62,7 +62,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public TransactionInfo get(Sha3Hash transactionHash){
+    public TransactionInfo get(Keccak256 transactionHash){
         List<TransactionInfo> txs = getAll(transactionHash);
 
         if (txs.isEmpty()) {
@@ -73,7 +73,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public TransactionInfo get(Sha3Hash transactionHash, Sha3Hash blockHash, BlockStore store) {
+    public TransactionInfo get(Keccak256 transactionHash, Keccak256 blockHash, BlockStore store) {
         List<TransactionInfo> txsInfo = getAll(transactionHash);
 
         if (txsInfo.isEmpty()) {
@@ -81,14 +81,14 @@ public class ReceiptStoreImpl implements ReceiptStore {
         }
 
         Block block = null;
-        Map<Sha3Hash, Block> tiblocks = new HashMap();
+        Map<Keccak256, Block> tiblocks = new HashMap();
 
         if (store != null) {
             block = store.getBlockByHash(blockHash);
 
             for (TransactionInfo ti : txsInfo) {
-                Sha3Hash sha3Hash = ti.getBlockHash();
-                tiblocks.put(sha3Hash , store.getBlockByHash(sha3Hash));
+                Keccak256 keccak256 = ti.getBlockHash();
+                tiblocks.put(keccak256, store.getBlockByHash(keccak256));
             }
         }
 
@@ -96,7 +96,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
             int nless = 0;
 
             for (TransactionInfo ti : txsInfo) {
-                Sha3Hash hash = ti.getBlockHash();
+                Keccak256 hash = ti.getBlockHash();
                 Block tiblock = tiblocks.get(hash);
 
                 if (tiblock != null && block != null) {
@@ -146,7 +146,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public TransactionInfo getInMainChain(Sha3Hash transactionHash, BlockStore store) {
+    public TransactionInfo getInMainChain(Keccak256 transactionHash, BlockStore store) {
         List<TransactionInfo> tis = this.getAll(transactionHash);
 
         if (tis.isEmpty()) {
@@ -154,7 +154,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
         }
 
         for (TransactionInfo ti : tis) {
-            Sha3Hash bhash = ti.getBlockHash();
+            Keccak256 bhash = ti.getBlockHash();
 
             Block block = store.getBlockByHash(bhash);
 
@@ -177,7 +177,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public List<TransactionInfo> getAll(Sha3Hash transactionHash) {
+    public List<TransactionInfo> getAll(Keccak256 transactionHash) {
         byte[] txsBytes = receiptsDS.get(transactionHash.getBytes());
 
         if (txsBytes == null || txsBytes.length == 0) {
@@ -196,7 +196,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public void saveMultiple(Sha3Hash blockHash, List<TransactionReceipt> receipts) {
+    public void saveMultiple(Keccak256 blockHash, List<TransactionReceipt> receipts) {
         int i = 0;
         for (TransactionReceipt receipt : receipts) {
             this.add(blockHash, i++, receipt);

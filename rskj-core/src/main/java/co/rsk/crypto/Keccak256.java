@@ -29,30 +29,30 @@ import java.util.Arrays;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
- * A Sha3Hash just wraps a byte[] so that equals and hashcode work correctly, allowing it to be used as keys in a
+ * A Keccak256 just wraps a byte[] so that equals and hashcode work correctly, allowing it to be used as keys in a
  * map. It also checks that the length is correct and provides a bit more type safety.
  */
-public class Sha3Hash implements Serializable, Comparable<Sha3Hash> {
+public class Keccak256 implements Serializable, Comparable<Keccak256> {
     private final byte[] bytes;
-    private static final Sha3Hash ZERO_HASH = new Sha3Hash(new byte[32]);
-    private static final Sha3Hash EMPTY_LIST_HASH = new Sha3Hash(HashUtil.keccak256(RLP.encodeList()));
+    private static final Keccak256 ZERO_HASH = new Keccak256(new byte[32]);
+    private static final Keccak256 EMPTY_LIST_HASH = new Keccak256(HashUtil.keccak256(RLP.encodeList()));
 
 
-    public static Sha3Hash zeroHash() {
+    public static Keccak256 zeroHash() {
         return ZERO_HASH;
     }
 
-    public static Sha3Hash emptyListHash() {
+    public static Keccak256 emptyListHash() {
         return EMPTY_LIST_HASH;
     }
 
-    public Sha3Hash(byte[] rawHashBytes) {
+    public Keccak256(byte[] rawHashBytes) {
         // If i check arguments validate transaction fails
 //        checkArgument(rawHashBytes.length == 32);
         this.bytes = rawHashBytes;
     }
 
-    public Sha3Hash(String hexString) {
+    public Keccak256(String hexString) {
         if (hexString == null) {
             this.bytes = EMPTY_BYTE_ARRAY;
             return;
@@ -65,7 +65,7 @@ public class Sha3Hash implements Serializable, Comparable<Sha3Hash> {
 
     @Override
     public boolean equals(Object o) {
-        return this == o || o != null && getClass() == o.getClass() && Arrays.equals(bytes, ((Sha3Hash) o).bytes);
+        return this == o || o != null && getClass() == o.getClass() && Arrays.equals(bytes, ((Keccak256) o).bytes);
     }
 
     /**
@@ -98,7 +98,7 @@ public class Sha3Hash implements Serializable, Comparable<Sha3Hash> {
     }
 
     @Override
-    public int compareTo(Sha3Hash o) {
+    public int compareTo(Keccak256 o) {
         for (int i = 32 - 1; i >= 0; i--) {
             final int thisByte = this.bytes[i] & 0xff;
             final int otherByte = o.bytes[i] & 0xff;

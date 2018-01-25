@@ -1,19 +1,19 @@
 package co.rsk.net.messages;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.util.RLP;
 
 /**
  * Wrapper around an RSK NewBlockHash message.
  */
 public class NewBlockHashMessage extends Message {
-    private Sha3Hash hash;
+    private Keccak256 hash;
 
-    public NewBlockHashMessage(Sha3Hash hash) {
+    public NewBlockHashMessage(Keccak256 hash) {
         this.hash = hash;
     }
 
-    public Sha3Hash getBlockHash() {
+    public Keccak256 getBlockHash() {
         return this.hash;
     }
 

@@ -4,7 +4,7 @@ package co.rsk.core;
  * Created by SerAdmin on 12/5/2017.
  */
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
@@ -27,9 +27,9 @@ public class FreeBlockHeader {
 
 
     /* The SHA3 256-bit hash of the parent block, in its entirety */
-    private Sha3Hash parentHash;
+    private Keccak256 parentHash;
     /* The SHA3 256-bit hash of the uncles list portion of this block */
-    private Sha3Hash unclesHash;
+    private Keccak256 unclesHash;
     /* The 160-bit address to which all fees collected from the
      * successful mining of this block be transferred; formally */
     private byte[] coinbase;
@@ -84,8 +84,8 @@ public class FreeBlockHeader {
     }
 
     public FreeBlockHeader(RLPList rlpHeader) {
-        this.parentHash = new Sha3Hash(rlpHeader.get(0).getRLPData());
-        this.unclesHash = new Sha3Hash(rlpHeader.get(1).getRLPData());
+        this.parentHash = new Keccak256(rlpHeader.get(0).getRLPData());
+        this.unclesHash = new Keccak256(rlpHeader.get(1).getRLPData());
         this.coinbase = rlpHeader.get(2).getRLPData();
         this.stateRoot = rlpHeader.get(3).getRLPData();
         if (this.stateRoot == null)
@@ -149,11 +149,11 @@ public class FreeBlockHeader {
         return b.intValueExact();
     }
 
-    public FreeBlockHeader(Sha3Hash parentHash, Sha3Hash unclesHash, byte[] coinbase,
-                       byte[] logsBloom, byte[] difficulty, byte[] number,
-                       byte[] gasLimit, byte[] gasUsed, byte[] timestamp,
-                       byte[] extraData,
-                       byte[] minimumGasPrice,
+    public FreeBlockHeader(Keccak256 parentHash, Keccak256 unclesHash, byte[] coinbase,
+                           byte[] logsBloom, byte[] difficulty, byte[] number,
+                           byte[] gasLimit, byte[] gasUsed, byte[] timestamp,
+                           byte[] extraData,
+                           byte[] minimumGasPrice,
                            byte[] uncleCount) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
@@ -171,13 +171,13 @@ public class FreeBlockHeader {
         this.uncleCount = uncleCount;
     }
 
-    public FreeBlockHeader(Sha3Hash parentHash, Sha3Hash unclesHash, byte[] coinbase,
-                       byte[] logsBloom, byte[] difficulty, byte[] number,
-                       byte[] gasLimit, byte[] gasUsed, byte[] timestamp,
-                       byte[] extraData,
-                       byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
-                       byte[] bitcoinMergedMiningCoinbaseTransaction,
-                       byte[] minimumGasPrice,
+    public FreeBlockHeader(Keccak256 parentHash, Keccak256 unclesHash, byte[] coinbase,
+                           byte[] logsBloom, byte[] difficulty, byte[] number,
+                           byte[] gasLimit, byte[] gasUsed, byte[] timestamp,
+                           byte[] extraData,
+                           byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
+                           byte[] bitcoinMergedMiningCoinbaseTransaction,
+                           byte[] minimumGasPrice,
                            byte[] uncleCount) {
         this.parentHash = parentHash;
         this.unclesHash = unclesHash;
@@ -199,7 +199,7 @@ public class FreeBlockHeader {
     }
 
 
-    public Sha3Hash getParentHash() {
+    public Keccak256 getParentHash() {
         return parentHash;
     }
 
@@ -207,11 +207,11 @@ public class FreeBlockHeader {
         return uncleCount;
     }
 
-    public Sha3Hash getUnclesHash() {
+    public Keccak256 getUnclesHash() {
         return unclesHash;
     }
 
-    public void setUnclesHash(Sha3Hash unclesHash) {
+    public void setUnclesHash(Keccak256 unclesHash) {
 
         this.unclesHash = unclesHash;
     }

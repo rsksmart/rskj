@@ -19,7 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.core.RskAddress;
 import co.rsk.net.handler.TxPendingValidator;
 import co.rsk.trie.Trie;
@@ -53,10 +53,10 @@ public class PendingStateImpl implements PendingState {
     private static final Logger logger = LoggerFactory.getLogger("pendingstate");
     private static final byte[] emptyUncleHashList = HashUtil.keccak256(RLP.encodeList(new byte[0]));
 
-    private final Map<Sha3Hash, Transaction> pendingTransactions = new HashMap<>();
-    private final Map<Sha3Hash, Transaction> wireTransactions = new HashMap<>();
-    private final Map<Sha3Hash, Long> transactionBlocks = new HashMap<>();
-    private final Map<Sha3Hash, Long> transactionTimes = new HashMap<>();
+    private final Map<Keccak256, Transaction> pendingTransactions = new HashMap<>();
+    private final Map<Keccak256, Transaction> wireTransactions = new HashMap<>();
+    private final Map<Keccak256, Long> transactionBlocks = new HashMap<>();
+    private final Map<Keccak256, Long> transactionTimes = new HashMap<>();
 
     private final RskSystemProperties config;
     private final Blockchain blockChain;
@@ -175,7 +175,7 @@ public class PendingStateImpl implements PendingState {
 
             logger.trace("Trying add wire transaction nonce {} hash {}", tx.getHash(), toBI(tx.getNonce()));
 
-            Sha3Hash hash = tx.getHash();
+            Keccak256 hash = tx.getHash();
 
             if (pendingTransactions.containsKey(hash) || wireTransactions.containsKey(hash)) {
                 logger.trace("TX already exists: {} ", tx);
@@ -229,7 +229,7 @@ public class PendingStateImpl implements PendingState {
 
         logger.trace("add pending transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
-        Sha3Hash hash = tx.getHash();
+        Keccak256 hash = tx.getHash();
         Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
 
         if (pendingTransactions.containsKey(hash)) {
@@ -293,10 +293,10 @@ public class PendingStateImpl implements PendingState {
 
     @VisibleForTesting
     public void removeObsoleteTransactions(long currentBlock, int depth, int timeout) {
-        List<Sha3Hash> toremove = new ArrayList<>();
+        List<Keccak256> toremove = new ArrayList<>();
         final long timestampSeconds = this.getCurrentTimeInSeconds();
 
-        for (Map.Entry<Sha3Hash, Long> entry : transactionBlocks.entrySet()) {
+        for (Map.Entry<Keccak256, Long> entry : transactionBlocks.entrySet()) {
             long block = entry.getValue().longValue();
 
             if (block < currentBlock - depth) {
@@ -317,9 +317,9 @@ public class PendingStateImpl implements PendingState {
 
     @VisibleForTesting
     public synchronized void removeObsoleteTransactions(long timeSeconds) {
-        List<Sha3Hash> toremove = new ArrayList<>();
+        List<Keccak256> toremove = new ArrayList<>();
 
-        for (Map.Entry<Sha3Hash, Long> entry : transactionTimes.entrySet()) {
+        for (Map.Entry<Keccak256, Long> entry : transactionTimes.entrySet()) {
             long txtime = entry.getValue().longValue();
 
             if (txtime <= timeSeconds) {
@@ -333,8 +333,8 @@ public class PendingStateImpl implements PendingState {
         removeTransactionList(toremove);
     }
 
-    private void removeTransactionList(List<Sha3Hash> toremove) {
-        for (Sha3Hash key : toremove) {
+    private void removeTransactionList(List<Keccak256> toremove) {
+        for (Keccak256 key : toremove) {
             pendingTransactions.remove(key);
             wireTransactions.remove(key);
             transactionBlocks.remove(key);
@@ -345,7 +345,7 @@ public class PendingStateImpl implements PendingState {
     @Override
     public synchronized void clearPendingState(List<Transaction> txs) {
         for (Transaction tx : txs) {
-            Sha3Hash hash = tx.getHash();
+            Keccak256 hash = tx.getHash();
             pendingTransactions.remove(hash);
             logger.trace("Clear pending transaction, hash: [{}]", hash);
         }
@@ -354,7 +354,7 @@ public class PendingStateImpl implements PendingState {
     @Override
     public synchronized void clearWire(List<Transaction> txs) {
         for (Transaction tx: txs) {
-            Sha3Hash hash = tx.getHash();
+            Keccak256 hash = tx.getHash();
             wireTransactions.remove(hash);
             logger.trace("Clear wire transaction, hash: [{}]", hash);
         }
@@ -418,7 +418,7 @@ public class PendingStateImpl implements PendingState {
 
         // creating fake lightweight calculated block with no hashes calculations
         return new Block(best.getHash(),
-                            new Sha3Hash(emptyUncleHashList), // uncleHash
+                            new Keccak256(emptyUncleHashList), // uncleHash
                             RskAddress.nullAddress().getBytes(), //coinbase
                             new byte[32], // log bloom - from tx receipts
                             best.getDifficulty(), // difficulty
@@ -434,7 +434,7 @@ public class PendingStateImpl implements PendingState {
                             new byte[0],
                             new byte[32],  // receiptsRoot
                             txsTrie.getHash(),  // TransactionsRoot-
-                            Sha3Hash.zeroHash(),  // stateRoot
+                            Keccak256.zeroHash(),  // stateRoot
                             Collections.<Transaction>emptyList(), // tx list
                             Collections.<BlockHeader>emptyList(), // uncle list
                             ByteUtil.bigIntegerToBytes(BigInteger.ZERO)); //minimum gas price

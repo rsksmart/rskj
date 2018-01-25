@@ -21,7 +21,7 @@ package org.ethereum.rpc.Simples;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
@@ -79,7 +79,7 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     }
 
     @Override
-    public TransactionInfo getTransactionInfo(Sha3Hash hash) {
+    public TransactionInfo getTransactionInfo(Keccak256 hash) {
         return null;
     }
 
@@ -99,12 +99,12 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     }
 
     @Override
-    public Sha3Hash getBestBlockHash() {
-        return new Sha3Hash(new byte[0]);
+    public Keccak256 getBestBlockHash() {
+        return new Keccak256(new byte[0]);
     }
 
     @Override
-    public Block getBlockByHash(Sha3Hash hash) {
+    public Block getBlockByHash(Keccak256 hash) {
         return null;
     }
 
@@ -114,7 +114,7 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     }
 
     @Override
-    public boolean isBlockExist(Sha3Hash hash) {
+    public boolean isBlockExist(Keccak256 hash) {
         return false;
     }
 
@@ -124,7 +124,7 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     }
 
     @Override
-    public List<byte[]> getListOfBodiesByHashes(List<Sha3Hash> hashes) {
+    public List<byte[]> getListOfBodiesByHashes(List<Keccak256> hashes) {
         return null;
     }
 
@@ -153,7 +153,7 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     }
 
     @Override
-    public boolean hasBlockInSomeBlockchain(Sha3Hash hash) {
+    public boolean hasBlockInSomeBlockchain(Keccak256 hash) {
         return false;
     }
 

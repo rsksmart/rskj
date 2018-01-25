@@ -18,7 +18,7 @@
 
 package co.rsk.remasc;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.util.RLP;
@@ -37,7 +37,7 @@ import java.util.ArrayList;
 public class Sibling {
 
     // Hash of the sibling block
-    private Sha3Hash hash;
+    private Keccak256 hash;
     // Coinbase address of the sibling block
     private final RskAddress coinbase;
     // Fees paid by the sibling block
@@ -59,7 +59,7 @@ public class Sibling {
                 blockHeader.getUncleCount());
     }
 
-    private Sibling(Sha3Hash hash, RskAddress coinbase, RskAddress includedBlockCoinbase, BigInteger  paidFees, long includedHeight, int uncleCount) {
+    private Sibling(Keccak256 hash, RskAddress coinbase, RskAddress includedBlockCoinbase, BigInteger  paidFees, long includedHeight, int uncleCount) {
         this.hash = hash;
         this.coinbase = coinbase;
         this.paidFees = paidFees;
@@ -68,7 +68,7 @@ public class Sibling {
         this.uncleCount = uncleCount;
     }
 
-    public Sha3Hash getHash() {
+    public Keccak256 getHash() {
         return hash;
     }
 
@@ -107,7 +107,7 @@ public class Sibling {
         ArrayList<RLPElement> params = RLP.decode2(data);
         RLPList sibling = (RLPList) params.get(0);
 
-        Sha3Hash hash = new Sha3Hash(sibling.get(0).getRLPData());
+        Keccak256 hash = new Keccak256(sibling.get(0).getRLPData());
         RskAddress coinbase = RLP.parseRskAddress(sibling.get(1).getRLPData());
         RskAddress includedBlockCoinbase = RLP.parseRskAddress(sibling.get(2).getRLPData());
 

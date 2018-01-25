@@ -1,6 +1,6 @@
 package org.ethereum.db;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 
 import java.math.BigInteger;
 
@@ -8,17 +8,17 @@ import java.math.BigInteger;
  * Created by usuario on 07/06/2017.
  */
 public class BlockInformation {
-    private Sha3Hash hash;
+    private Keccak256 hash;
     private BigInteger totalDifficulty;
     private boolean inMainChain;
 
-    public BlockInformation(Sha3Hash hash, BigInteger totalDifficulty, boolean inMainChain) {
+    public BlockInformation(Keccak256 hash, BigInteger totalDifficulty, boolean inMainChain) {
         this.hash = hash;
         this.totalDifficulty = totalDifficulty;
         this.inMainChain = inMainChain;
     }
 
-    public Sha3Hash getHash() {
+    public Keccak256 getHash() {
         return this.hash;
     }
 

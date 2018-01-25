@@ -1,6 +1,6 @@
 package co.rsk.net;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 
 import java.util.LinkedHashMap;
@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * Created by ajlopez on 17/06/2017.
  */
-public class BlockCache extends LinkedHashMap<Sha3Hash, Block> {
+public class BlockCache extends LinkedHashMap<Keccak256, Block> {
     private int cacheSize;
 
     public BlockCache(int cacheSize) {
@@ -18,7 +18,7 @@ public class BlockCache extends LinkedHashMap<Sha3Hash, Block> {
     }
 
     @Override
-    protected boolean removeEldestEntry(Map.Entry<Sha3Hash, Block> eldest) {
+    protected boolean removeEldestEntry(Map.Entry<Keccak256, Block> eldest) {
         return size() > this.cacheSize;
     }
 
@@ -30,7 +30,7 @@ public class BlockCache extends LinkedHashMap<Sha3Hash, Block> {
         this.put(block.getHash(), block);
     }
 
-    public Block getBlockByHash(Sha3Hash hash) {
+    public Block getBlockByHash(Keccak256 hash) {
         return this.get(hash);
     }
 }

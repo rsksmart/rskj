@@ -19,7 +19,7 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,7 +29,7 @@ import org.junit.Test;
 public class GetBlockMessageTest {
     @Test
     public void createWithBlockHash() {
-        Sha3Hash hash = BlockGenerator.getInstance().getGenesisBlock().getHash();
+        Keccak256 hash = BlockGenerator.getInstance().getGenesisBlock().getHash();
         GetBlockMessage message = new GetBlockMessage(hash);
 
         Assert.assertEquals(hash, message.getBlockHash());

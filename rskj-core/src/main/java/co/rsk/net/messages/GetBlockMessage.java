@@ -18,16 +18,16 @@
 
 package co.rsk.net.messages;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.util.RLP;
 
 /**
  * Created by ajlopez on 5/11/2016.
  */
 public class GetBlockMessage extends Message {
-    private Sha3Hash hash;
+    private Keccak256 hash;
 
-    public GetBlockMessage(Sha3Hash hash) {
+    public GetBlockMessage(Keccak256 hash) {
         this.hash = hash;
     }
 
@@ -43,7 +43,7 @@ public class GetBlockMessage extends Message {
         return RLP.encodeList(hash);
     }
 
-    public Sha3Hash getBlockHash() {
+    public Keccak256 getBlockHash() {
         return this.hash;
     }
 }

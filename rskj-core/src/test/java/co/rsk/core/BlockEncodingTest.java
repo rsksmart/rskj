@@ -19,7 +19,7 @@
 package co.rsk.core;
 
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
@@ -62,7 +62,7 @@ public class BlockEncodingTest {
 
         FreeBlock fblock = new FreeBlock(
                 PegTestUtils.createHash3(),          // parent hash
-                new Sha3Hash(EMPTY_LIST_HASH),       // uncle hash
+                new Keccak256(EMPTY_LIST_HASH),       // uncle hash
                 TestUtils.randomAddress().getBytes(),            // coinbase
                 new Bloom().getData(),          // logs bloom
                 BigInteger.ONE.toByteArray(),    // difficulty

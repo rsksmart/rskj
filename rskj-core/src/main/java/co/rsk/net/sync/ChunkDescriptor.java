@@ -18,13 +18,13 @@
 
 package co.rsk.net.sync;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 
 public class ChunkDescriptor {
-    private final Sha3Hash hash;
+    private final Keccak256 hash;
     private final int count;
 
-    public ChunkDescriptor(Sha3Hash hash, int count) {
+    public ChunkDescriptor(Keccak256 hash, int count) {
         this.hash = hash;
         this.count = count;
     }
@@ -33,7 +33,7 @@ public class ChunkDescriptor {
         return count;
     }
 
-    public Sha3Hash getHash() {
+    public Keccak256 getHash() {
         return hash;
     }
 }

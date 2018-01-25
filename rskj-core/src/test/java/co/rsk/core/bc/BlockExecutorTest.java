@@ -21,7 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockchainDummy;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieStoreImpl;
@@ -29,7 +29,6 @@ import com.google.common.collect.Lists;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.crypto.cryptohash.Keccak256;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.eth.message.StatusMessage;
@@ -69,7 +68,7 @@ public class BlockExecutorTest {
         Assert.assertTrue(account.getEcKey().hasPrivKey());
         track.commit();
 
-        Assert.assertFalse(new Sha3Hash(EMPTY_TRIE_HASH).equals(repository.getRoot()));
+        Assert.assertFalse(new Keccak256(EMPTY_TRIE_HASH).equals(repository.getRoot()));
 
         BlockExecutor executor = new BlockExecutor(config, repository, null, null, null);
 
@@ -151,7 +150,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(repository.getRoot().equals(new Sha3Hash(EMPTY_TRIE_HASH)));
+        Assert.assertFalse(repository.getRoot().equals(new Keccak256(EMPTY_TRIE_HASH)));
 
         BlockExecutor executor = new BlockExecutor(config, repository, new BlockchainDummy(), null, null);
 
@@ -241,7 +240,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(repository.getRoot().equals(new Sha3Hash(EMPTY_TRIE_HASH)));
+        Assert.assertFalse(repository.getRoot().equals(new Keccak256(EMPTY_TRIE_HASH)));
 
         BlockExecutor executor = new BlockExecutor(config, repository, new BlockchainDummy(), null, null);
 
@@ -279,7 +278,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(repository.getRoot().equals(new Sha3Hash(EMPTY_TRIE_HASH)));
+        Assert.assertFalse(repository.getRoot().equals(new Keccak256(EMPTY_TRIE_HASH)));
 
         BlockExecutor executor = new BlockExecutor(config, repository, new BlockchainDummy(), null, null);
 
@@ -384,7 +383,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse( repository.getRoot().equals(new Sha3Hash(EMPTY_TRIE_HASH)));
+        Assert.assertFalse( repository.getRoot().equals(new Keccak256(EMPTY_TRIE_HASH)));
 
         BlockExecutor executor = new BlockExecutor(config, repository, new BlockchainDummy(), null, null);
 
@@ -522,7 +521,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(repository.getRoot().equals(new Sha3Hash(EMPTY_TRIE_HASH)));
+        Assert.assertFalse(repository.getRoot().equals(new Keccak256(EMPTY_TRIE_HASH)));
 
         BlockExecutor executor = new BlockExecutor(config, repository, new BlockchainDummy(), null, null);
 
@@ -573,7 +572,7 @@ public class BlockExecutorTest {
     }
 
     private static byte[] sha3(byte[] input) {
-        Keccak256 digest =  new Keccak256();
+        org.ethereum.crypto.cryptohash.Keccak256 digest =  new org.ethereum.crypto.cryptohash.Keccak256();
         digest.update(input);
         return digest.digest();
     }

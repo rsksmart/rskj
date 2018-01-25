@@ -20,7 +20,7 @@ package co.rsk.vm;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
@@ -29,7 +29,6 @@ import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigInteger;
@@ -136,7 +135,7 @@ public class MinerHelper {
         processBlock(newBlock, parent);
 
         newBlock.getHeader().setReceiptsRoot(BlockChainImpl.calcReceiptsTrie(txReceipts));
-        newBlock.getHeader().setStateRoot(new Sha3Hash(latestStateRootHash));
+        newBlock.getHeader().setStateRoot(new Keccak256(latestStateRootHash));
         newBlock.getHeader().setGasUsed(totalGasUsed);
 
         Bloom logBloom = new Bloom();

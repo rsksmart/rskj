@@ -1,6 +1,6 @@
 package co.rsk.net.messages;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -11,7 +11,7 @@ import org.junit.Test;
 public class BlockHeadersRequestMessageTest {
     @Test
     public void createMessage() {
-        Sha3Hash hash = HashUtil.randomSha3Hash();
+        Keccak256 hash = HashUtil.randomSha3Hash();
         BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(1, hash, 100);
 
         Assert.assertEquals(1, message.getId());

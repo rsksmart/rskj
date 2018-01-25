@@ -1,6 +1,6 @@
 package co.rsk.net.sync;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.util.Optional;
@@ -15,7 +15,7 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
     }
 
     @Override
-    public void newConnectionPointData(Sha3Hash hash) {
+    public void newConnectionPointData(Keccak256 hash) {
 
         if (this.syncInformation.isKnownBlock(hash)) {
             connectionPointFinder.updateFound();

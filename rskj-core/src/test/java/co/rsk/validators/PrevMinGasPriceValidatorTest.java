@@ -18,7 +18,7 @@
 
 package co.rsk.validators;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.junit.Assert;
@@ -39,7 +39,7 @@ public class PrevMinGasPriceValidatorTest {
     @Test
     public void noParentBlock() {
         Block block = Mockito.mock(Block.class);
-        Sha3Hash blockParentHash = Mockito.mock(Sha3Hash.class);
+        Keccak256 blockParentHash = Mockito.mock(Keccak256.class);
 
         Mockito.when(block.getParentHash()).thenReturn(blockParentHash);
         Mockito.when(blockParentHash.getBytes()).thenReturn(PARENT_HASH);
@@ -79,7 +79,7 @@ public class PrevMinGasPriceValidatorTest {
     public void outOfValidMGPRangeBlock() {
         Block block = Mockito.mock(Block.class);
         Block parent = Mockito.mock(Block.class);
-        Sha3Hash blockParentHash = Mockito.mock(Sha3Hash.class);
+        Keccak256 blockParentHash = Mockito.mock(Keccak256.class);
 
         Mockito.when(block.getParentHash()).thenReturn(blockParentHash);
         Mockito.when(blockParentHash.getBytes()).thenReturn(PARENT_HASH);
@@ -97,7 +97,7 @@ public class PrevMinGasPriceValidatorTest {
         Block block = Mockito.mock(Block.class);
         Block parent = Mockito.mock(Block.class);
         BlockStore blockStore = Mockito.mock(BlockStore.class);
-        Sha3Hash blockParentHash = Mockito.mock(Sha3Hash.class);
+        Keccak256 blockParentHash = Mockito.mock(Keccak256.class);
         Mockito.when(block.getParentHash()).thenReturn(blockParentHash);
         Mockito.when(blockParentHash.getBytes()).thenReturn(PARENT_HASH);
         Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(BLOCK_MGP);

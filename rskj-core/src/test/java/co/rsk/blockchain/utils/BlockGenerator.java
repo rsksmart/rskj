@@ -21,7 +21,7 @@ package co.rsk.blockchain.utils;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleBlock;
@@ -57,7 +57,7 @@ import static org.ethereum.util.ByteUtil.wrap;
 public class BlockGenerator {
     private static final BlockGenerator INSTANCE = new BlockGenerator();
 
-    private static final Sha3Hash EMPTY_LIST_HASH = Sha3Hash.emptyListHash();
+    private static final Keccak256 EMPTY_LIST_HASH = Keccak256.emptyListHash();
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
@@ -95,7 +95,7 @@ public class BlockGenerator {
 
         long   timestamp = 0; // predictable timeStamp
 
-        Sha3Hash parentHash = Sha3Hash.zeroHash();
+        Keccak256 parentHash = Keccak256.zeroHash();
         byte[] extraData = EMPTY_BYTE_ARRAY;
 
         long   gasLimit = initialGasLimit;
@@ -119,13 +119,13 @@ public class BlockGenerator {
         return genesis;
     }
 
-    private Sha3Hash generateRootHash(Map<ByteArrayWrapper, InitialAddressState> premine){
+    private Keccak256 generateRootHash(Map<ByteArrayWrapper, InitialAddressState> premine){
         Trie state = new TrieImpl(null, true);
 
         for (ByteArrayWrapper key : premine.keySet())
             state = state.put(key.getData(), premine.get(key).getAccountState().getEncoded());
 
-        return new Sha3Hash(state.getHash());
+        return new Keccak256(state.getHash());
     }
 
     private Map<ByteArrayWrapper, InitialAddressState> generatePreMine(Map<byte[], BigInteger> alloc){
@@ -170,7 +170,7 @@ public class BlockGenerator {
 
         return new Block(
                 parent.getHash(), // parent hash
-                new Sha3Hash(unclesListHash), // uncle hash
+                new Keccak256(unclesListHash), // uncle hash
                 parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
                 difficulty, // difficulty
@@ -192,11 +192,11 @@ public class BlockGenerator {
 //        return createChildBlock(parent, 0);
     }
 
-    public Block createChildBlock(Block parent, List<Transaction> txs, Sha3Hash stateRoot) {
+    public Block createChildBlock(Block parent, List<Transaction> txs, Keccak256 stateRoot) {
         return createChildBlock(parent, txs, stateRoot, parent.getCoinbase().getBytes());
     }
 
-    public Block createChildBlock(Block parent, List<Transaction> txs, Sha3Hash stateRoot, byte[] coinbase) {
+    public Block createChildBlock(Block parent, List<Transaction> txs, Keccak256 stateRoot, byte[] coinbase) {
         Bloom logBloom = new Bloom();
 
         if (txs == null) {
@@ -264,7 +264,7 @@ public class BlockGenerator {
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
         BlockHeader newHeader = new BlockHeader(parent.getHash(),
-                new Sha3Hash(unclesListHash),
+                new Keccak256(unclesListHash),
                 parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
                 new byte[]{1},
@@ -325,7 +325,7 @@ public class BlockGenerator {
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
                 EMPTY_TRIE_HASH,  // transaction receipts
-                new Sha3Hash(EMPTY_TRIE_HASH),   // state root
+                new Keccak256(EMPTY_TRIE_HASH),   // state root
                 txs,       // transaction list
                 null,        // uncle list
                 minimumGasPrice.toByteArray(),
@@ -357,7 +357,7 @@ public class BlockGenerator {
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
                 EMPTY_TRIE_HASH,  // transaction receipts
-                new Sha3Hash(EMPTY_TRIE_HASH),   // state root
+                new Keccak256(EMPTY_TRIE_HASH),   // state root
                 txs,       // transaction list
                 null        // uncle list
         );

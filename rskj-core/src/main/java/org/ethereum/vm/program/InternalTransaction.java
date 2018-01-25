@@ -19,7 +19,7 @@
 
 package org.ethereum.vm.program;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -30,13 +30,13 @@ import static org.apache.commons.lang3.ArrayUtils.*;
 
 public class InternalTransaction extends Transaction {
 
-    private Sha3Hash parentHash;
+    private Keccak256 parentHash;
     private int deep;
     private int index;
     private boolean rejected = false;
     private String note;
 
-    public InternalTransaction(Sha3Hash parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
+    public InternalTransaction(Keccak256 parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
                                byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
 
         super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data));
@@ -73,7 +73,7 @@ public class InternalTransaction extends Transaction {
         return note;
     }
 
-    public Sha3Hash getParentHash() {
+    public Keccak256 getParentHash() {
         return parentHash;
     }
 

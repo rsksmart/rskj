@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite.builder;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
@@ -63,8 +63,8 @@ public class BlockBuilder {
     public static Block build(Env env){
 
         Block block = new Block(
-                new Sha3Hash(ByteUtil.EMPTY_BYTE_ARRAY),
-                new Sha3Hash(ByteUtil.EMPTY_BYTE_ARRAY),
+                new Keccak256(ByteUtil.EMPTY_BYTE_ARRAY),
+                new Keccak256(ByteUtil.EMPTY_BYTE_ARRAY),
                 env.getCurrentCoinbase(),
                 ByteUtil.EMPTY_BYTE_ARRAY,
                 env.getCurrentDifficulty(),
@@ -80,7 +80,7 @@ public class BlockBuilder {
                 ZERO_BYTE_ARRAY,
                 EMPTY_TRIE_HASH,
                 EMPTY_TRIE_HASH,
-                new Sha3Hash(EMPTY_TRIE_HASH),
+                new Keccak256(EMPTY_TRIE_HASH),
                 null, null, null);
 
         return block;

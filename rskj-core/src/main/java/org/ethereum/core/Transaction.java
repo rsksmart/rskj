@@ -20,7 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
 import co.rsk.core.RskAddress;
@@ -68,7 +68,7 @@ public class Transaction {
     public static final int DATAWORD_LENGTH = 32;
 
     /* SHA3 hash of the RLP encoded transaction */
-    private Sha3Hash hash;
+    private Keccak256 hash;
 
     /* a counter used to make sure each transaction can only be processed once */
     private byte[] nonce;
@@ -259,13 +259,13 @@ public class Transaction {
         return parsed;
     }
 
-    public Sha3Hash getHash() {
+    public Keccak256 getHash() {
         if (!parsed) {
             rlpParse();
         }
 
         byte[] plainMsg = this.getEncoded();
-        return new Sha3Hash(HashUtil.keccak256(plainMsg));
+        return new Keccak256(HashUtil.keccak256(plainMsg));
     }
 
     public byte[] getRawHash() {

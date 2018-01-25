@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.*;
@@ -39,7 +39,7 @@ public class ReceiptStoreImplTest {
     @Test
     public void getUnknownKey() {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
-        Sha3Hash key = new Sha3Hash(new byte[] { 0x01, 0x02 });
+        Keccak256 key = new Keccak256(new byte[] { 0x01, 0x02 });
 
         TransactionInfo result = store.get(key);
 
@@ -51,7 +51,7 @@ public class ReceiptStoreImplTest {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
 
         TransactionReceipt receipt = createReceipt();
-        Sha3Hash blockHash = new Sha3Hash(Hex.decode("0102030405060708"));
+        Keccak256 blockHash = new Keccak256(Hex.decode("0102030405060708"));
 
         store.add(blockHash, 42, receipt);
 
@@ -69,7 +69,7 @@ public class ReceiptStoreImplTest {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
 
         TransactionReceipt receipt = createReceipt();
-        Sha3Hash blockHash = new Sha3Hash(Hex.decode("0102030405060708"));
+        Keccak256 blockHash = new Keccak256(Hex.decode("0102030405060708"));
 
         store.add(blockHash, 128, receipt);
 
@@ -89,7 +89,7 @@ public class ReceiptStoreImplTest {
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
 
-        store.add(new Sha3Hash(blockHash), 238, receipt);
+        store.add(new Keccak256(blockHash), 238, receipt);
 
         TransactionInfo result = store.get(receipt.getTransaction().getHash());
 
@@ -107,12 +107,12 @@ public class ReceiptStoreImplTest {
         TransactionReceipt receipt0 = createReceipt();
         byte[] blockHash0 = Hex.decode("010203040506070809");
 
-        store.add(new Sha3Hash(blockHash0), 3, receipt0);
+        store.add(new Keccak256(blockHash0), 3, receipt0);
 
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
 
-        store.add(new Sha3Hash(blockHash), 42, receipt);
+        store.add(new Keccak256(blockHash), 42, receipt);
 
         TransactionInfo result = store.get(receipt.getTransaction().getHash());
 
@@ -130,12 +130,12 @@ public class ReceiptStoreImplTest {
         TransactionReceipt receipt0 = createReceipt();
         byte[] blockHash0 = Hex.decode("010203040506070809");
 
-        store.add(new Sha3Hash(blockHash0), 3, receipt0);
+        store.add(new Keccak256(blockHash0), 3, receipt0);
 
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
 
-        store.add(new Sha3Hash(blockHash), 42, receipt);
+        store.add(new Keccak256(blockHash), 42, receipt);
 
         List<TransactionInfo> result = store.getAll(receipt.getTransaction().getHash());
 
@@ -158,7 +158,7 @@ public class ReceiptStoreImplTest {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
         TransactionReceipt receipt = createReceipt();
 
-        Sha3Hash blockHash = new Sha3Hash(Hex.decode("010203040506070809"));
+        Keccak256 blockHash = new Keccak256(Hex.decode("010203040506070809"));
 
         TransactionInfo result = store.get(receipt.getTransaction().getHash(), blockHash, null);
 
@@ -173,9 +173,9 @@ public class ReceiptStoreImplTest {
         byte[] blockHash0 = Hex.decode("0102030405060708");
         byte[] blockHash = Hex.decode("010203040506070809");
 
-        store.add(new Sha3Hash(blockHash), 1, receipt);
+        store.add(new Keccak256(blockHash), 1, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash(), new Sha3Hash(blockHash0), null);
+        TransactionInfo result = store.get(receipt.getTransaction().getHash(), new Keccak256(blockHash0), null);
 
         Assert.assertNull(result);
     }
@@ -187,14 +187,14 @@ public class ReceiptStoreImplTest {
         TransactionReceipt receipt0 = createReceipt();
         byte[] blockHash0 = Hex.decode("010203040506070809");
 
-        store.add(new Sha3Hash(blockHash0), 3, receipt0);
+        store.add(new Keccak256(blockHash0), 3, receipt0);
 
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
 
-        store.add(new Sha3Hash(blockHash), 42, receipt);
+        store.add(new Keccak256(blockHash), 42, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash(), new Sha3Hash(blockHash0), null);
+        TransactionInfo result = store.get(receipt.getTransaction().getHash(), new Keccak256(blockHash0), null);
 
         Assert.assertNotNull(result.getBlockHash());
         Assert.assertArrayEquals(blockHash0, result.getBlockHash().getBytes());
@@ -209,14 +209,14 @@ public class ReceiptStoreImplTest {
         TransactionReceipt receipt0 = createReceipt();
         byte[] blockHash0 = Hex.decode("010203040506070809");
 
-        store.add(new Sha3Hash(blockHash0), 3, receipt0);
+        store.add(new Keccak256(blockHash0), 3, receipt0);
 
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
 
-        store.add(new Sha3Hash(blockHash), 42, receipt);
+        store.add(new Keccak256(blockHash), 42, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash(), new Sha3Hash(blockHash), null);
+        TransactionInfo result = store.get(receipt.getTransaction().getHash(), new Keccak256(blockHash), null);
 
         Assert.assertNotNull(result.getBlockHash());
         Assert.assertArrayEquals(blockHash, result.getBlockHash().getBytes());

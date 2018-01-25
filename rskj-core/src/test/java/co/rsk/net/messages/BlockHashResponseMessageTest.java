@@ -18,7 +18,7 @@
 
 package co.rsk.net.messages;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -31,7 +31,7 @@ public class BlockHashResponseMessageTest {
         byte[] rawHash = new byte[32];
         Random random = new Random();
         random.nextBytes(rawHash);
-        Sha3Hash hash = new Sha3Hash(rawHash);
+        Keccak256 hash = new Keccak256(rawHash);
 
         BlockHashResponseMessage message = new BlockHashResponseMessage(id, hash);
 

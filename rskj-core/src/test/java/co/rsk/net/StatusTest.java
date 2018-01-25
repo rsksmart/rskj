@@ -1,13 +1,11 @@
 package co.rsk.net;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.HashUtilTest;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.Random;
 
 /**
  * Created by ajlopez on 26/08/2017.
@@ -15,7 +13,7 @@ import java.util.Random;
 public class StatusTest {
     @Test
     public void createWithOriginalArguments() {
-        Sha3Hash hash = HashUtil.randomSha3Hash();
+        Keccak256 hash = HashUtil.randomSha3Hash();
 
         Status status = new Status(42, hash);
 
@@ -28,8 +26,8 @@ public class StatusTest {
 
     @Test
     public void createWithCompleteArguments() {
-        Sha3Hash hash = HashUtil.randomSha3Hash();
-        Sha3Hash parentHash = HashUtil.randomSha3Hash();
+        Keccak256 hash = HashUtil.randomSha3Hash();
+        Keccak256 parentHash = HashUtil.randomSha3Hash();
 
         Status status = new Status(42, hash, parentHash, BigInteger.TEN);
 

@@ -20,7 +20,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Before;
@@ -258,7 +258,7 @@ public class PendingFederationTest {
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         PowerMockito.when(BridgeSerializationUtils.serializePendingFederation(pendingFederation)).thenReturn(new byte[] { (byte) 0xaa });
 
-        Sha3Hash expectedHash = new Sha3Hash(HashUtil.keccak256(new byte[] { (byte) 0xaa }));
+        Keccak256 expectedHash = new Keccak256(HashUtil.keccak256(new byte[] { (byte) 0xaa }));
 
         Assert.assertEquals(expectedHash, pendingFederation.getHash());
     }

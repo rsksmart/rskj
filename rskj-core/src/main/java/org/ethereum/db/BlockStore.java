@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
@@ -33,14 +33,14 @@ import java.util.List;
  */
 public interface BlockStore {
 
-    Sha3Hash getBlockHashByNumber(long blockNumber);
+    Keccak256 getBlockHashByNumber(long blockNumber);
 
     /**
      * Gets the block hash by its index.
      * When more than one block with the specified index exists (forks)
      * the select the block which is ancestor of the branchBlockHash
      */
-    Sha3Hash getBlockHashByNumber(long blockNumber, Sha3Hash branchBlockHash);
+    Keccak256 getBlockHashByNumber(long blockNumber, Keccak256 branchBlockHash);
 
     Block getChainBlockByNumber(long blockNumber);
 
@@ -49,21 +49,21 @@ public interface BlockStore {
 
     void removeBlock(Block block);
 
-    Block getBlockByHash(Sha3Hash hash);
+    Block getBlockByHash(Keccak256 hash);
 
-    Block getBlockByHashAndDepth(Sha3Hash hash, long depth);
+    Block getBlockByHashAndDepth(Keccak256 hash, long depth);
 
-    boolean isBlockExist(Sha3Hash hash);
+    boolean isBlockExist(Keccak256 hash);
 
-    List<Sha3Hash> getListHashesEndWith(Sha3Hash hash, long qty);
+    List<Keccak256> getListHashesEndWith(Keccak256 hash, long qty);
 
-    List<BlockHeader> getListHeadersEndWith(Sha3Hash hash, long qty);
+    List<BlockHeader> getListHeadersEndWith(Keccak256 hash, long qty);
 
-    List<Block> getListBlocksEndWith(Sha3Hash hash, long qty);
+    List<Block> getListBlocksEndWith(Keccak256 hash, long qty);
 
     void saveBlock(Block block, BigInteger cummDifficulty, boolean mainChain);
 
-    BigInteger getTotalDifficultyForHash(Sha3Hash hash);
+    BigInteger getTotalDifficultyForHash(Keccak256 hash);
 
     Block getBestBlock();
 

@@ -18,7 +18,7 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
@@ -42,12 +42,12 @@ public class FamilyUtils {
      *
      * @return set of ancestors block hashes
      */
-    public static Set<Sha3Hash> getAncestors(BlockStore blockStore, Block block, int limitNum) {
+    public static Set<Keccak256> getAncestors(BlockStore blockStore, Block block, int limitNum) {
         return getAncestors(blockStore, block.getNumber(), block.getParentHash(), limitNum);
     }
 
-    public static Set<Sha3Hash> getAncestors(BlockStore blockStore, long blockNumber, Sha3Hash parentHash, int limitNum) {
-        Set<Sha3Hash> ret = new HashSet<>();
+    public static Set<Keccak256> getAncestors(BlockStore blockStore, long blockNumber, Keccak256 parentHash, int limitNum) {
+        Set<Keccak256> ret = new HashSet<>();
 
         if (blockStore == null) {
             return ret;
@@ -73,12 +73,12 @@ public class FamilyUtils {
      *
      * @return set of already used uncles block hashes
      */
-    public static Set<Sha3Hash> getUsedUncles(BlockStore blockStore, Block block, int limitNum) {
+    public static Set<Keccak256> getUsedUncles(BlockStore blockStore, Block block, int limitNum) {
         return getUsedUncles(blockStore, block.getNumber(), block.getParentHash(), limitNum);
     }
 
-    public static Set<Sha3Hash> getUsedUncles(BlockStore blockStore, long blockNumber, Sha3Hash parentHash, int limitNum) {
-        Set<Sha3Hash> ret = new HashSet<>();
+    public static Set<Keccak256> getUsedUncles(BlockStore blockStore, long blockNumber, Keccak256 parentHash, int limitNum) {
+        Set<Keccak256> ret = new HashSet<>();
 
         if (blockStore == null) {
             return ret;
@@ -101,11 +101,11 @@ public class FamilyUtils {
         return getUnclesHeaders(store, block.getNumber(), block.getParentHash(), levels);
     }
 
-    public static List<BlockHeader> getUnclesHeaders(@Nonnull  BlockStore store, long blockNumber, Sha3Hash parentHash, int levels) {
+    public static List<BlockHeader> getUnclesHeaders(@Nonnull  BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
         List<BlockHeader> uncles = new ArrayList<>();
-        Set<Sha3Hash> unclesHeaders = getUncles(store, blockNumber, parentHash, levels);
+        Set<Keccak256> unclesHeaders = getUncles(store, blockNumber, parentHash, levels);
 
-        for (Sha3Hash uncleHash : unclesHeaders) {
+        for (Keccak256 uncleHash : unclesHeaders) {
             Block uncle = store.getBlockByHash(uncleHash);
 
             if (uncle != null) {
@@ -116,27 +116,27 @@ public class FamilyUtils {
         return uncles;
     }
 
-    public static Set<Sha3Hash> getUncles(BlockStore store, Block block, int levels) {
+    public static Set<Keccak256> getUncles(BlockStore store, Block block, int levels) {
         return getUncles(store, block.getNumber(), block.getParentHash(), levels);
     }
 
-    public static Set<Sha3Hash> getUncles(BlockStore store, long blockNumber, Sha3Hash parentHash, int levels) {
-        Set<Sha3Hash> family = getFamily(store, blockNumber, parentHash, levels);
-        Set<Sha3Hash> ancestors = getAncestors(store, blockNumber, parentHash, levels);
+    public static Set<Keccak256> getUncles(BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
+        Set<Keccak256> family = getFamily(store, blockNumber, parentHash, levels);
+        Set<Keccak256> ancestors = getAncestors(store, blockNumber, parentHash, levels);
         family.removeAll(ancestors);
         family.removeAll(getUsedUncles(store, blockNumber, parentHash, levels));
 
         return family;
     }
 
-    public static Set<Sha3Hash> getFamily(BlockStore store, Block block, int levels) {
+    public static Set<Keccak256> getFamily(BlockStore store, Block block, int levels) {
         return getFamily(store, block.getNumber(), block.getParentHash(), levels);
     }
 
-    public static Set<Sha3Hash> getFamily(BlockStore store, long blockNumber, Sha3Hash parentHash, int levels) {
+    public static Set<Keccak256> getFamily(BlockStore store, long blockNumber, Keccak256 parentHash, int levels) {
         long minNumber = max(0, blockNumber - levels);
 
-        Set<Sha3Hash> family = new HashSet<>();
+        Set<Keccak256> family = new HashSet<>();
         List<Block> ancestors = new ArrayList<>();
 
         Block parent = store.getBlockByHash(parentHash);

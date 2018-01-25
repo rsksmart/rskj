@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.HashUtil;
@@ -37,13 +37,13 @@ import java.util.List;
 public class BlockStoreDummy implements BlockStore {
 
     @Override
-    public Sha3Hash getBlockHashByNumber(long blockNumber) {
+    public Keccak256 getBlockHashByNumber(long blockNumber) {
         byte[] data = String.valueOf(blockNumber).getBytes(StandardCharsets.UTF_8);
-        return new Sha3Hash(HashUtil.keccak256(data));
+        return new Keccak256(HashUtil.keccak256(data));
     }
 
     @Override
-    public Sha3Hash getBlockHashByNumber(long blockNumber, Sha3Hash branchBlockHash) {
+    public Keccak256 getBlockHashByNumber(long blockNumber, Keccak256 branchBlockHash) {
         return getBlockHashByNumber(blockNumber);
     }
 
@@ -53,32 +53,32 @@ public class BlockStoreDummy implements BlockStore {
     }
 
     @Override
-    public Block getBlockByHash(Sha3Hash hash) {
+    public Block getBlockByHash(Keccak256 hash) {
         return null;
     }
 
     @Override
-    public Block getBlockByHashAndDepth(Sha3Hash hash, long depth) {
+    public Block getBlockByHashAndDepth(Keccak256 hash, long depth) {
         return null;
     }
 
     @Override
-    public boolean isBlockExist(Sha3Hash hash) {
+    public boolean isBlockExist(Keccak256 hash) {
         return false;
     }
 
     @Override
-    public List<Sha3Hash> getListHashesEndWith(Sha3Hash hash, long qty) {
+    public List<Keccak256> getListHashesEndWith(Keccak256 hash, long qty) {
         return null;
     }
 
     @Override
-    public List<BlockHeader> getListHeadersEndWith(Sha3Hash hash, long qty) {
+    public List<BlockHeader> getListHeadersEndWith(Keccak256 hash, long qty) {
         return null;
     }
 
     @Override
-    public List<Block> getListBlocksEndWith(Sha3Hash hash, long qty) {
+    public List<Block> getListBlocksEndWith(Keccak256 hash, long qty) {
         return null;
     }
 
@@ -117,7 +117,7 @@ public class BlockStoreDummy implements BlockStore {
     }
 
     @Override
-    public BigInteger getTotalDifficultyForHash(Sha3Hash hash) {
+    public BigInteger getTotalDifficultyForHash(Keccak256 hash) {
         return null;
     }
 

@@ -18,11 +18,10 @@
 
 package co.rsk.metrics;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.util.RskCustomCache;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
 
 import java.math.BigInteger;
 import java.time.Clock;
@@ -33,9 +32,9 @@ import java.util.function.Predicate;
 public abstract class HashRateCalculator {
 
     private final BlockStore blockStore;
-    private final RskCustomCache<Sha3Hash, BlockHeaderElement> headerCache;
+    private final RskCustomCache<Keccak256, BlockHeaderElement> headerCache;
 
-    public HashRateCalculator(BlockStore blockStore, RskCustomCache<Sha3Hash, BlockHeaderElement> headerCache) {
+    public HashRateCalculator(BlockStore blockStore, RskCustomCache<Keccak256, BlockHeaderElement> headerCache) {
         this.blockStore = blockStore;
         this.headerCache = headerCache;
     }
@@ -86,7 +85,7 @@ public abstract class HashRateCalculator {
         return blockStore.getBestBlock() != null;
     }
 
-    private BlockHeaderElement getHeaderElement(Sha3Hash hash) {
+    private BlockHeaderElement getHeaderElement(Keccak256 hash) {
         BlockHeaderElement element = null;
         if (hash != null) {
             element = this.headerCache.get(hash);

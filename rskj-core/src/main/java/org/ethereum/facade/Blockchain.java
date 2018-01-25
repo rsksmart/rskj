@@ -20,7 +20,7 @@
 package org.ethereum.facade;
 
 import co.rsk.blocks.BlockRecorder;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 
 import java.math.BigInteger;
@@ -39,7 +39,7 @@ public interface Blockchain {
      * @param hash - hash of the block
      * @return - bloc by that hash
      */
-    Block getBlockByHash(Sha3Hash hash);
+    Block getBlockByHash(Keccak256 hash);
 
     /**
      * Get total difficulty from the start

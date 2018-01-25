@@ -18,7 +18,7 @@
 
 package co.rsk.net.messages;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.util.RLP;
 
 /**
@@ -26,9 +26,9 @@ import org.ethereum.util.RLP;
  */
 public class BlockHashResponseMessage extends MessageWithId {
     private final long id;
-    private final Sha3Hash hash;
+    private final Keccak256 hash;
 
-    public BlockHashResponseMessage(long id, Sha3Hash hash) {
+    public BlockHashResponseMessage(long id, Keccak256 hash) {
         this.id = id;
         this.hash = hash;
     }
@@ -47,5 +47,5 @@ public class BlockHashResponseMessage extends MessageWithId {
 
     public long getId() { return this.id; }
 
-    public Sha3Hash getHash() { return this.hash; }
+    public Keccak256 getHash() { return this.hash; }
 }

@@ -1,6 +1,6 @@
 package co.rsk.net.messages;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.util.RLP;
 
 /**
@@ -15,14 +15,14 @@ public class BlockHeadersRequestMessage extends MessageWithId {
     /**
      * Hash of the first header to retrieve
      */
-    private Sha3Hash hash;
+    private Keccak256 hash;
 
     /**
      * Count of headers to retrieve
      */
     private int count;
 
-    public BlockHeadersRequestMessage(long id, Sha3Hash hash, int count) {
+    public BlockHeadersRequestMessage(long id, Keccak256 hash, int count) {
         if (count < 0) {
             throw new IllegalArgumentException();
         }
@@ -34,7 +34,7 @@ public class BlockHeadersRequestMessage extends MessageWithId {
 
     public long getId() { return this.id; }
 
-    public Sha3Hash getHash() { return this.hash; }
+    public Keccak256 getHash() { return this.hash; }
 
     public int getCount() { return this.count; }
 

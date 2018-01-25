@@ -18,13 +18,12 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockStore;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.db.BlockInformation;
-import org.ethereum.db.ByteArrayWrapper;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -40,30 +39,30 @@ public class BlockUtils {
         return blockInSomeBlockChain(block.getHash(), block.getNumber(), blockChain);
     }
 
-    public static boolean blockInSomeBlockChain(Sha3Hash blockHash, long blockNumber, Blockchain blockChain) {
+    public static boolean blockInSomeBlockChain(Keccak256 blockHash, long blockNumber, Blockchain blockChain) {
         final List<BlockInformation> blocks = blockChain.getBlocksInformationByNumber(blockNumber);
 
         return blocks.stream().anyMatch(bi -> blockHash.equals(bi.getHash()));
     }
 
-    public static Set<Sha3Hash> unknownDirectAncestorsHashes(Block block, Blockchain blockChain, BlockStore store) {
-        Set<Sha3Hash> hashes = new HashSet<>();
+    public static Set<Keccak256> unknownDirectAncestorsHashes(Block block, Blockchain blockChain, BlockStore store) {
+        Set<Keccak256> hashes = new HashSet<>();
 
         hashes.add(block.getParentHash());
 
         return unknownAncestorsHashes(hashes, blockChain, store, false);
     }
 
-    public static Set<Sha3Hash> unknownAncestorsHashes(Sha3Hash blockHash, Blockchain blockChain, BlockStore store) {
-        Set<Sha3Hash> hashes = new HashSet<>();
+    public static Set<Keccak256> unknownAncestorsHashes(Keccak256 blockHash, Blockchain blockChain, BlockStore store) {
+        Set<Keccak256> hashes = new HashSet<>();
         hashes.add(blockHash);
 
         return unknownAncestorsHashes(hashes, blockChain, store, true);
     }
 
-    public static Set<Sha3Hash> unknownAncestorsHashes(Set<Sha3Hash> hashesToProcess, Blockchain blockChain, BlockStore store, boolean withUncles) {
-        Set<Sha3Hash> unknown = new HashSet<>();
-        Set<Sha3Hash> hashes = hashesToProcess;
+    public static Set<Keccak256> unknownAncestorsHashes(Set<Keccak256> hashesToProcess, Blockchain blockChain, BlockStore store, boolean withUncles) {
+        Set<Keccak256> unknown = new HashSet<>();
+        Set<Keccak256> hashes = hashesToProcess;
 
         while (!hashes.isEmpty()) {
             hashes = getNextHashes(hashes, unknown, blockChain, store, withUncles);
@@ -72,9 +71,9 @@ public class BlockUtils {
         return unknown;
     }
 
-    private static Set<Sha3Hash> getNextHashes(Set<Sha3Hash> previousHashes, Set<Sha3Hash> unknown, Blockchain blockChain, BlockStore store, boolean withUncles) {
-        Set<Sha3Hash> nextHashes = new HashSet<>();
-        for (Sha3Hash hash : previousHashes) {
+    private static Set<Keccak256> getNextHashes(Set<Keccak256> previousHashes, Set<Keccak256> unknown, Blockchain blockChain, BlockStore store, boolean withUncles) {
+        Set<Keccak256> nextHashes = new HashSet<>();
+        for (Keccak256 hash : previousHashes) {
             if (unknown.contains(hash)) {
                 continue;
             }

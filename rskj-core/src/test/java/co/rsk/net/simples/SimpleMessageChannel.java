@@ -18,13 +18,12 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
-import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Assert;
 
 import java.net.InetAddress;
@@ -75,7 +74,7 @@ public class SimpleMessageChannel implements MessageChannel {
                 .collect(Collectors.toList());
     }
 
-    public List<Sha3Hash> getGetBlockMessagesHashes() {
+    public List<Keccak256> getGetBlockMessagesHashes() {
         return this.messages.stream()
                 .filter(message -> message.getMessageType() == MessageType.GET_BLOCK_MESSAGE)
                 .map(message -> ((GetBlockMessage) message).getBlockHash())

@@ -18,7 +18,7 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.*;
 import co.rsk.net.messages.NewBlockHashesMessage;
 import org.ethereum.core.Block;
@@ -40,7 +40,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
     public long lastKnownBlockNumber = 0;
     private List<Block> blocks = new ArrayList<Block>();
     private long requestId;
-    private Sha3Hash hash;
+    private Keccak256 hash;
     private int count;
 
     @Override
@@ -52,25 +52,25 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public void processGetBlock(MessageChannel sender, Sha3Hash hash) {
+    public void processGetBlock(MessageChannel sender, Keccak256 hash) {
 
     }
 
     @Override
-    public void processBlockRequest(MessageChannel sender, long requestId, Sha3Hash hash) {
+    public void processBlockRequest(MessageChannel sender, long requestId, Keccak256 hash) {
         this.requestId = requestId;
         this.hash = hash;
     }
 
     @Override
-    public void processBlockHeadersRequest(MessageChannel sender, long requestId, Sha3Hash hash, int count) {
+    public void processBlockHeadersRequest(MessageChannel sender, long requestId, Keccak256 hash, int count) {
         this.requestId = requestId;
         this.hash = hash;
         this.count = count;
     }
 
     @Override
-    public void processBodyRequest(MessageChannel sender, long requestId, Sha3Hash hash) {
+    public void processBodyRequest(MessageChannel sender, long requestId, Keccak256 hash) {
     }
 
     @Override
@@ -111,17 +111,17 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public boolean hasBlock(Sha3Hash hash) {
+    public boolean hasBlock(Keccak256 hash) {
         return false;
     }
 
     @Override
-    public boolean hasBlockInProcessorStore(Sha3Hash hash) {
+    public boolean hasBlockInProcessorStore(Keccak256 hash) {
         return false;
     }
 
     @Override
-    public boolean hasBlockInSomeBlockchain(Sha3Hash hash) {
+    public boolean hasBlockInSomeBlockchain(Keccak256 hash) {
         return false;
     }
 
@@ -130,5 +130,5 @@ public class SimpleBlockProcessor implements BlockProcessor {
 
     public long getRequestId() { return this.requestId; }
 
-    public Sha3Hash getHash() { return this.hash; }
+    public Keccak256 getHash() { return this.hash; }
 }

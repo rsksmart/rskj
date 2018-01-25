@@ -19,7 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.net.handler.TxHandler;
@@ -42,7 +42,6 @@ import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
@@ -580,20 +579,20 @@ public class NodeMessageHandlerTest {
 
             Assert.assertTrue(sender.getMessages().stream().allMatch(m -> m.getMessageType() == MessageType.GET_BLOCK_MESSAGE));
 
-            List<Sha3Hash> msgs = sender.getMessages().stream()
+            List<Keccak256> msgs = sender.getMessages().stream()
                     .map(m -> (GetBlockMessage) m)
                     .map(m -> m.getBlockHash())
                     .collect(Collectors.toList());
 
-            Set<Sha3Hash> expected = testCase.expected.stream()
+            Set<Keccak256> expected = testCase.expected.stream()
                     .map(b -> b.getHash())
                     .collect(Collectors.toSet());
 
-            for (Sha3Hash h : msgs) {
+            for (Keccak256 h : msgs) {
                 Assert.assertTrue(expected.contains(h));
             }
 
-            for (Sha3Hash h : expected) {
+            for (Keccak256 h : expected) {
                 Assert.assertTrue(
                         msgs.stream()
                                 .filter(h1 -> h.equals(h1))
@@ -963,7 +962,7 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processBlockHeadersRequestMessageUsingProcessor() throws UnknownHostException {
-        Sha3Hash hash = HashUtil.randomSha3Hash();
+        Keccak256 hash = HashUtil.randomSha3Hash();
         SimpleBlockProcessor sbp = new SimpleBlockProcessor();
         NodeMessageHandler processor = new NodeMessageHandler(config, sbp, null, null, null, null, null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));

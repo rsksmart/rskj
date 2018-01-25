@@ -20,7 +20,7 @@
 package org.ethereum;
 
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.Block;
 import org.ethereum.db.IndexedBlockStore;
@@ -89,14 +89,14 @@ public final class TestUtils {
 
         List<Block> result = new ArrayList<>();
 
-        Sha3Hash lastHash = new Sha3Hash(startParentHash);
+        Keccak256 lastHash = new Keccak256(startParentHash);
         long lastIndex = startNumber;
 
 
         for (int i = 0; i < length; ++i){
 
             byte[] difficutly = BigIntegers.asUnsignedByteArray(new BigInteger(8, new Random()));
-            Sha3Hash newHash = randomSha3Hash();
+            Keccak256 newHash = randomSha3Hash();
 
             Block block = new Block(lastHash, newHash,  RskAddress.nullAddress().getBytes(), null, difficutly, lastIndex, new byte[] {0}, 0, 0, null, null,
                     null, null, EMPTY_TRIE_HASH, randomSha3Hash(), null, null, null, BigInteger.ZERO);

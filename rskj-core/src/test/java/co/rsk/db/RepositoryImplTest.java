@@ -20,7 +20,7 @@ package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.TrieImplHashTest;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -86,12 +86,12 @@ public class RepositoryImplTest {
         repository.flush();
 
         RskAddress accAddress = randomAccountAddress();
-        Sha3Hash initialRoot = repository.getRoot();
+        Keccak256 initialRoot = repository.getRoot();
 
         repository.createAccount(accAddress);
         repository.flush();
 
-        Sha3Hash newRoot = repository.getRoot();
+        Keccak256 newRoot = repository.getRoot();
 
         Assert.assertTrue(repository.isExist(accAddress));
 
@@ -450,7 +450,7 @@ public class RepositoryImplTest {
         repository.createAccount(accAddress1);
         repository.flush();
 
-        Sha3Hash root = repository.getRoot();
+        Keccak256 root = repository.getRoot();
 
         repository.createAccount(accAddress2);
 
@@ -476,7 +476,7 @@ public class RepositoryImplTest {
         RepositoryImpl repository = new RepositoryImpl(config, store);
 
         RskAddress accAddress = randomAccountAddress();
-        Sha3Hash initialRoot = repository.getRoot();
+        Keccak256 initialRoot = repository.getRoot();
 
         repository.createAccount(accAddress);
         repository.flushNoReconnect();

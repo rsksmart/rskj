@@ -19,7 +19,7 @@
 
 package org.ethereum.vm.program.invoke;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.DataWord;
@@ -52,7 +52,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     /**
      * BLOCK  env **
      */
-    private final Sha3Hash prevHash;
+    private final Keccak256 prevHash;
     private final DataWord coinbase;
     private final DataWord timestamp;
     private final DataWord number;
@@ -72,7 +72,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                              DataWord gasPrice,
                              long gas,
                              DataWord callValue, byte[] msgData,
-                             Sha3Hash lastHash, DataWord coinbase, DataWord timestamp, DataWord number, DataWord transactionIndex, DataWord
+                             Keccak256 lastHash, DataWord coinbase, DataWord timestamp, DataWord number, DataWord transactionIndex, DataWord
                                      difficulty,
                              DataWord gaslimit, Repository repository, int callDeep, BlockStore blockStore, boolean byTestingSuite) {
 
@@ -104,7 +104,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
     public ProgramInvokeImpl(byte[] address, byte[] origin, byte[] caller, byte[] balance,
                              byte[] gasPrice, byte[] gas, byte[] callValue, byte[] msgData,
-                             Sha3Hash lastHash, byte[] coinbase, long timestamp, long number, int transactionIndex, byte[] difficulty,
+                             Keccak256 lastHash, byte[] coinbase, long timestamp, long number, int transactionIndex, byte[] difficulty,
                              byte[] gaslimit,
                              Repository repository, BlockStore blockStore, boolean byTestingSuite) {
         this(address, origin, caller, balance, gasPrice, gas, callValue, msgData, lastHash, coinbase,
@@ -115,7 +115,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
     public ProgramInvokeImpl(byte[] address, byte[] origin, byte[] caller, byte[] balance,
                              byte[] gasPrice, byte[] gas, byte[] callValue, byte[] msgData,
-                             Sha3Hash lastHash, byte[] coinbase, long timestamp, long number, int transactionIndex, byte[] difficulty,
+                             Keccak256 lastHash, byte[] coinbase, long timestamp, long number, int transactionIndex, byte[] difficulty,
                              byte[] gaslimit,
                              Repository repository, BlockStore blockStore) {
 
@@ -240,7 +240,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
 
     /*     PREVHASH op    */
-    public Sha3Hash getPrevHash() {
+    public Keccak256 getPrevHash() {
         return prevHash;
     }
 

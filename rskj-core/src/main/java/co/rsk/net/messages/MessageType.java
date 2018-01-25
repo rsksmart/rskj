@@ -18,7 +18,7 @@
 
 package co.rsk.net.messages;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.Status;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.*;
@@ -47,7 +47,7 @@ public enum MessageType {
             byte[] hash = list.get(1).getRLPData();
 
             if (list.size() == 2) {
-                return new StatusMessage(new Status(number, new Sha3Hash(hash)));
+                return new StatusMessage(new Status(number, new Keccak256(hash)));
             }
 
             byte[] parentHash = list.get(2).getRLPData();
@@ -56,8 +56,8 @@ public enum MessageType {
 
             return new StatusMessage(
                     new Status(number,
-                    new Sha3Hash(hash),
-                    new Sha3Hash(parentHash),
+                    new Keccak256(hash),
+                    new Keccak256(parentHash),
                             totalDifficulty));
         }
     },
@@ -70,7 +70,7 @@ public enum MessageType {
     GET_BLOCK_MESSAGE(3) {
         @Override
         public Message createMessage(RLPList list) {
-            return new GetBlockMessage(new Sha3Hash(list.get(0).getRLPData()));
+            return new GetBlockMessage(new Keccak256(list.get(0).getRLPData()));
         }
     },
     BLOCK_HEADERS_MESSAGE(4) {
@@ -122,7 +122,7 @@ public enum MessageType {
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             byte[] hash = message.get(0).getRLPData();
 
-            return new BlockHashResponseMessage(id, new Sha3Hash(hash));
+            return new BlockHashResponseMessage(id, new Keccak256(hash));
         }
     },
     BLOCK_HEADERS_REQUEST_MESSAGE(9) {
@@ -136,7 +136,7 @@ public enum MessageType {
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
             int count = byteArrayToInt(rlpCount);
 
-            return new BlockHeadersRequestMessage(id, new Sha3Hash(hash), count);
+            return new BlockHeadersRequestMessage(id, new Keccak256(hash), count);
         }
     },
     BLOCK_HEADERS_RESPONSE_MESSAGE(10) {
@@ -160,7 +160,7 @@ public enum MessageType {
             RLPList message = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
             byte[] rlpId = list.get(0).getRLPData();
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            return new BlockRequestMessage(id, new Sha3Hash(message.get(0).getRLPData()));
+            return new BlockRequestMessage(id, new Keccak256(message.get(0).getRLPData()));
         }
     },
     BLOCK_RESPONSE_MESSAGE(12) {
@@ -199,7 +199,7 @@ public enum MessageType {
             byte[] hash = message.get(0).getRLPData();
 
             long id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-            return new BodyRequestMessage(id, new Sha3Hash(hash));
+            return new BodyRequestMessage(id, new Keccak256(hash));
         }
     },
     BODY_RESPONSE_MESSAGE(15) {
@@ -245,7 +245,7 @@ public enum MessageType {
         @Override
         public Message createMessage(RLPList list) {
             byte[] hash = list.get(0).getRLPData();
-            return new NewBlockHashMessage(new Sha3Hash(hash));
+            return new NewBlockHashMessage(new Keccak256(hash));
         }
     };
 

@@ -18,7 +18,7 @@
 
 package co.rsk.net.handler.txvalidator;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
@@ -49,7 +49,7 @@ public class TxValidatorGasLimitValidatorTest {
         Transaction tx1 = Mockito.mock(Transaction.class);
 
         Mockito.when(tx1.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(6));
-        Mockito.when(tx1.getHash()).thenReturn(Sha3Hash.zeroHash());
+        Mockito.when(tx1.getHash()).thenReturn(Keccak256.zeroHash());
 
         BigInteger gl = BigInteger.valueOf(3);
 

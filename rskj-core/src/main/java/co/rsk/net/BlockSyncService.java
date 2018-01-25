@@ -19,7 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.core.bc.BlockUtils;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.sync.SyncConfiguration;
 import org.ethereum.core.Block;
@@ -44,7 +44,7 @@ public class BlockSyncService {
     public static final int CHUNK_PART_LIMIT = 8;
     public static final int PROCESSED_BLOCKS_TO_CHECK_STORE = 200;
     public static final int RELEASED_RANGE = 1000;
-    private Map<Sha3Hash, Integer> unknownBlockHashes;
+    private Map<Keccak256, Integer> unknownBlockHashes;
     private long processedBlocksCounter;
     private long lastKnownBlockNumber = 0;
 
@@ -72,7 +72,7 @@ public class BlockSyncService {
         Instant start = Instant.now();
         long bestBlockNumber = this.getBestBlockNumber();
         long blockNumber = block.getNumber();
-        final Sha3Hash blockHash = block.getHash();
+        final Keccak256 blockHash = block.getHash();
         int syncMaxDistance = syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks();
 
         tryReleaseStore(bestBlockNumber);
@@ -98,7 +98,7 @@ public class BlockSyncService {
         }
         trySaveStore(block);
 
-        Set<Sha3Hash> unknownHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
+        Set<Keccak256> unknownHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
         // We can't add the block if there are missing ancestors or uncles. Request the missing blocks to the sender.
         if (!unknownHashes.isEmpty()) {
             if (!ignoreMissingHashes){
@@ -170,7 +170,7 @@ public class BlockSyncService {
         for (Block block : remainingBlocks) {
             logger.trace("Trying to add block {} {}", block.getNumber(), block.getShortHash());
 
-            Set<Sha3Hash> missingHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
+            Set<Keccak256> missingHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
 
             if (!missingHashes.isEmpty()) {
                 if (!ignoreMissingHashes){
@@ -190,15 +190,15 @@ public class BlockSyncService {
         return connected;
     }
 
-    private void requestMissingHashes(MessageChannel sender, Set<Sha3Hash> hashes) {
+    private void requestMissingHashes(MessageChannel sender, Set<Keccak256> hashes) {
         logger.trace("Missing blocks to process {}", hashes.size());
 
-        for (Sha3Hash hash : hashes) {
+        for (Keccak256 hash : hashes) {
             this.requestMissingHash(sender, hash);
         }
     }
 
-    private void requestMissingHash(MessageChannel sender, Sha3Hash hash) {
+    private void requestMissingHash(MessageChannel sender, Keccak256 hash) {
         if (sender == null) {
             return;
         }
@@ -237,7 +237,7 @@ public class BlockSyncService {
      * BlockChain is coupled with the old org.ethereum.db.BlockStore.
      */
     @CheckForNull
-    public Block getBlockFromStoreOrBlockchain(@Nonnull final Sha3Hash hash) {
+    public Block getBlockFromStoreOrBlockchain(@Nonnull final Keccak256 hash) {
         final Block block = store.getBlockByHash(hash);
 
         if (block != null) {

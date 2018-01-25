@@ -20,7 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -46,7 +46,7 @@ public interface Blockchain {
 
     Block getBestBlock();
 
-    TransactionInfo getTransactionInfo(Sha3Hash hash);
+    TransactionInfo getTransactionInfo(Keccak256 hash);
 
     void close();
 
@@ -54,17 +54,17 @@ public interface Blockchain {
 
     void setTotalDifficulty(BigInteger totalDifficulty);
 
-    Sha3Hash getBestBlockHash();
+    Keccak256 getBestBlockHash();
 
-    Block getBlockByHash(Sha3Hash hash);
+    Block getBlockByHash(Keccak256 hash);
 
     void setExitOn(long exitOn);
 
-    boolean isBlockExist(Sha3Hash hash);
+    boolean isBlockExist(Keccak256 hash);
 
     List<BlockHeader> getListOfHeadersStartFrom(BlockIdentifier identifier, int skip, int limit, boolean reverse);
 
-    List<byte[]> getListOfBodiesByHashes(List<Sha3Hash> hashes);
+    List<byte[]> getListOfBodiesByHashes(List<Keccak256> hashes);
 
     List<Block> getBlocksByNumber(long blockNr);
 
@@ -78,5 +78,5 @@ public interface Blockchain {
 
     List<BlockInformation> getBlocksInformationByNumber(long number);
 
-    boolean hasBlockInSomeBlockchain(Sha3Hash hash);
+    boolean hasBlockInSomeBlockchain(Keccak256 hash);
 }

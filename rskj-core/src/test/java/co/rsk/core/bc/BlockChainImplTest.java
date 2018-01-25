@@ -22,7 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blocks.DummyBlockRecorder;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -310,7 +310,7 @@ public class BlockChainImplTest {
         Block genesis = getGenesisBlock(blockChain);
         Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
 
-        block1.getHeader().setUnclesHash(new Sha3Hash(HashUtil.randomHash()));
+        block1.getHeader().setUnclesHash(new Keccak256(HashUtil.randomHash()));
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block1));
@@ -736,7 +736,7 @@ public class BlockChainImplTest {
     @Test
     public void getUnknownTransactionInfoAsNull() {
         BlockChainImpl blockChain = createBlockChain();
-        Assert.assertNull(blockChain.getTransactionInfo(new Sha3Hash(new byte[] { 0x01 })));
+        Assert.assertNull(blockChain.getTransactionInfo(new Keccak256(new byte[] { 0x01 })));
     }
 
     @Test
@@ -926,9 +926,9 @@ public class BlockChainImplTest {
         bytes[0] = (byte)((bytes[0] + 1) % 256);
     }
 
-    private static Sha3Hash cloneAlterHash(Sha3Hash hash) {
+    private static Keccak256 cloneAlterHash(Keccak256 hash) {
         byte[] clonedAlterBytes = cloneAlterBytes(hash.getBytes());
-        return new Sha3Hash(clonedAlterBytes);
+        return new Keccak256(clonedAlterBytes);
     }
 
     private static byte[] cloneAlterBytes(byte[] bytes) {

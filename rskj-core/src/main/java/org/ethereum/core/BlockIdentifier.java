@@ -18,10 +18,9 @@ package org.ethereum.core;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -40,7 +39,7 @@ public class BlockIdentifier {
     /**
      * Block hash
      */
-    private Sha3Hash hash;
+    private Keccak256 hash;
 
     /**
      * Block number
@@ -48,16 +47,16 @@ public class BlockIdentifier {
     private long number;
 
     public BlockIdentifier(RLPList rlp) {
-        this.hash = new Sha3Hash(rlp.get(0).getRLPData());
+        this.hash = new Keccak256(rlp.get(0).getRLPData());
         this.number = byteArrayToLong(rlp.get(1).getRLPData());
     }
 
-    public BlockIdentifier(Sha3Hash hash, long number) {
+    public BlockIdentifier(Keccak256 hash, long number) {
         this.hash = hash;
         this.number = number;
     }
 
-    public Sha3Hash getHash() {
+    public Keccak256 getHash() {
         return hash;
     }
 

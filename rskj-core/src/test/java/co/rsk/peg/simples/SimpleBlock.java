@@ -18,7 +18,7 @@
 
 package co.rsk.peg.simples;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
@@ -34,12 +34,12 @@ import java.util.List;
 public class SimpleBlock extends Block {
     private List<Transaction> transactionList;
 
-    public SimpleBlock(Sha3Hash parentHash, Sha3Hash unclesHash, byte[] coinbase, byte[] logsBloom,
+    public SimpleBlock(Keccak256 parentHash, Keccak256 unclesHash, byte[] coinbase, byte[] logsBloom,
                        byte[] difficulty, long number, byte[] gasLimit,
                        long gasUsed, long timestamp, byte[] extraData,
                        byte[] mixHash,
                        byte[] nonce, byte[] receiptsRoot,
-                       byte[] transactionsRoot, Sha3Hash stateRoot,
+                       byte[] transactionsRoot, Keccak256 stateRoot,
                        List<Transaction> transactionsList, List<BlockHeader> uncleList) {
         super(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit, gasUsed,
                 timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot, stateRoot,

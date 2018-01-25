@@ -19,7 +19,7 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.Status;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.test.builders.AccountBuilder;
@@ -374,7 +374,7 @@ public class MessageTest {
         byte[] rawHash = new byte[32];
         Random random = new Random();
         random.nextBytes(rawHash);
-        Sha3Hash hash = new Sha3Hash(rawHash);
+        Keccak256 hash = new Keccak256(rawHash);
 
         BlockHashResponseMessage message = new BlockHashResponseMessage(id, hash);
 
@@ -394,7 +394,7 @@ public class MessageTest {
 
     @Test
     public void encodeDecodeBlockHeadersRequestMessage() {
-        Sha3Hash hash = HashUtil.randomSha3Hash();
+        Keccak256 hash = HashUtil.randomSha3Hash();
         BlockHeadersRequestMessage message = new BlockHeadersRequestMessage(1, hash, 100);
 
         byte[] encoded = message.getEncoded();
@@ -469,7 +469,7 @@ public class MessageTest {
 
     @Test
     public void encodeDecodeNewBlockHashMessage() {
-        Sha3Hash hash = HashUtil.randomSha3Hash();
+        Keccak256 hash = HashUtil.randomSha3Hash();
         NewBlockHashMessage message = new NewBlockHashMessage(hash);
 
         byte[] encoded = message.getEncoded();

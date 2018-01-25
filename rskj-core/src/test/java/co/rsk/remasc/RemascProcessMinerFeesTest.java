@@ -25,7 +25,7 @@ import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -482,8 +482,8 @@ public class RemascProcessMinerFeesTest {
             blockWithOneTxB = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
                     PegTestUtils.createHash3(), coinbaseB, null, minerFee * 3, 0, txValue, cowKey);
         } else {
-            Sha3Hash blockWithOneTxBHash = PegTestUtils.createHash3();
-            Sha3Hash blockWithOneTxAHash = PegTestUtils.createHash3();
+            Keccak256 blockWithOneTxBHash = PegTestUtils.createHash3();
+            Keccak256 blockWithOneTxAHash = PegTestUtils.createHash3();
             blockWithOneTxA = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
                     blockWithOneTxAHash, coinbaseA, null, minerFee, 0, txValue, cowKey);
             blockWithOneTxB = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),

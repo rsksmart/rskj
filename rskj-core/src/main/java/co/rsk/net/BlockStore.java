@@ -18,7 +18,7 @@
 
 package co.rsk.net;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
@@ -30,15 +30,15 @@ import java.util.stream.Collectors;
  * Created by ajlopez on 5/11/2016.
  */
 public class BlockStore {
-    private Map<Sha3Hash, Block> blocks = new HashMap<>();
+    private Map<Keccak256, Block> blocks = new HashMap<>();
     private Map<Long, Set<Block>> blocksbynumber = new HashMap<>();
-    private Map<Sha3Hash, Set<Block>> blocksbyparent = new HashMap<>();
+    private Map<Keccak256, Set<Block>> blocksbyparent = new HashMap<>();
 
-    private final Map<Sha3Hash, BlockHeader> headers = new HashMap<>();
+    private final Map<Keccak256, BlockHeader> headers = new HashMap<>();
 
     public synchronized void saveBlock(Block block) {
-        Sha3Hash key = block.getHash();
-        Sha3Hash pkey = block.getParentHash();
+        Keccak256 key = block.getHash();
+        Keccak256 pkey = block.getParentHash();
         Long nkey = Long.valueOf(block.getNumber());
         this.blocks.put(key, block);
 
@@ -72,7 +72,7 @@ public class BlockStore {
         removeBlockByParent(block.getHash(), block.getParentHash());
     }
 
-    private void removeBlockByParent(Sha3Hash key, Sha3Hash pkey) {
+    private void removeBlockByParent(Keccak256 key, Keccak256 pkey) {
         Set<Block> byparent = this.blocksbyparent.get(pkey);
 
         if (byparent != null && !byparent.isEmpty()) {
@@ -95,7 +95,7 @@ public class BlockStore {
         }
     }
 
-    private void removeBlockByNumber(Sha3Hash key, Long nkey) {
+    private void removeBlockByNumber(Keccak256 key, Long nkey) {
         Set<Block> bynumber = this.blocksbynumber.get(nkey);
 
         if (bynumber != null && !bynumber.isEmpty()) {
@@ -117,7 +117,7 @@ public class BlockStore {
         }
     }
 
-    public synchronized Block getBlockByHash(Sha3Hash hash) {
+    public synchronized Block getBlockByHash(Keccak256 hash) {
         return this.blocks.get(hash);
     }
 
@@ -133,7 +133,7 @@ public class BlockStore {
         return new ArrayList<>(blockSet);
     }
 
-    public synchronized List<Block> getBlocksByParentHash(Sha3Hash hash) {
+    public synchronized List<Block> getBlocksByParentHash(Keccak256 hash) {
         Set<Block> blockSet = this.blocksbyparent.get(hash);
 
         if (blockSet == null) {
@@ -160,7 +160,7 @@ public class BlockStore {
         return this.blocks.containsKey(block.getHash());
     }
 
-    public synchronized boolean hasBlock(Sha3Hash hash) {
+    public synchronized boolean hasBlock(Keccak256 hash) {
         return this.blocks.containsKey(hash);
     }
 
@@ -206,7 +206,7 @@ public class BlockStore {
      * @param hash the block's hash.
      * @return true if the store has the header, false otherwise.
      */
-    public synchronized boolean hasHeader(@Nonnull final Sha3Hash hash) {
+    public synchronized boolean hasHeader(@Nonnull final Keccak256 hash) {
         return this.headers.containsKey(hash);
     }
 
@@ -224,7 +224,7 @@ public class BlockStore {
      *
      * @param hash the header to remove.
      */
-    public synchronized void removeHeader(@Nonnull final Sha3Hash hash) {
+    public synchronized void removeHeader(@Nonnull final Keccak256 hash) {
         if (!this.hasHeader(hash)) {
             return;
         }

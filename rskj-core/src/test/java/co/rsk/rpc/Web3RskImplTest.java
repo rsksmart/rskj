@@ -23,7 +23,7 @@ import co.rsk.core.NetworkStateExporter;
 import co.rsk.core.Rsk;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
@@ -59,7 +59,7 @@ public class Web3RskImplTest {
         Mockito.when(networkStateExporter.exportStatus(Mockito.anyString())).thenReturn(true);
 
         Block block = Mockito.mock(Block.class);
-        Sha3Hash blockHash = Mockito.mock(Sha3Hash.class);
+        Keccak256 blockHash = Mockito.mock(Keccak256.class);
         Mockito.when(block.getHash()).thenReturn(PegTestUtils.createHash3());
         Mockito.when(blockHash.getBytes()).thenReturn(PegTestUtils.createHash3().getBytes());
         Mockito.when(block.getNumber()).thenReturn(1L);
@@ -88,12 +88,12 @@ public class Web3RskImplTest {
         topics.add(new DataWord("c2"));
         Mockito.when(logInfo.getTopics()).thenReturn(topics);
         Block block = Mockito.mock(Block.class);
-        Sha3Hash blockHash = new Sha3Hash(new byte[]{1});
+        Keccak256 blockHash = new Keccak256(new byte[]{1});
         Mockito.when(block.getHash()).thenReturn(blockHash);
         Mockito.when(block.getNumber()).thenReturn(1L);
         int txIndex = 1;
         Transaction tx = Mockito.mock(Transaction.class);
-        Mockito.when(tx.getHash()).thenReturn(new Sha3Hash(new byte[]{2}));
+        Mockito.when(tx.getHash()).thenReturn(new Keccak256(new byte[]{2}));
         int logIdx = 5;
 
         LogFilterElement logFilterElement =

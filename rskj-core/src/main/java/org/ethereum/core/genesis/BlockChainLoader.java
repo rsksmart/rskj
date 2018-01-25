@@ -21,7 +21,7 @@ package org.ethereum.core.genesis;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
@@ -29,11 +29,9 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.listener.EthereumListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
@@ -113,14 +111,14 @@ public class BlockChainLoader {
 
             // update world state by dummy hash
             logger.info("Loading root hash from property file: [{}]", rootHash);
-            this.repository.syncToRoot(new Sha3Hash(rootHash));
+            this.repository.syncToRoot(new Keccak256(rootHash));
 
         } else {
 
             // Update world state to latest loaded block from db
             // if state is not generated from empty premine list
             // todo this is just a workaround, move EMPTY_TRIE_HASH logic to Trie implementation
-            if (!blockchain.getBestBlock().getStateRoot().equals(new Sha3Hash(EMPTY_TRIE_HASH))) {
+            if (!blockchain.getBestBlock().getStateRoot().equals(new Keccak256(EMPTY_TRIE_HASH))) {
                 this.repository.syncToRoot(blockchain.getBestBlock().getStateRoot());
             }
         }

@@ -18,7 +18,7 @@
 
 package co.rsk.metrics;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.core.RskAddress;
 import co.rsk.util.RskCustomCache;
@@ -39,8 +39,8 @@ import java.time.Duration;
  */
 public class HashRateCalculatorTest {
 
-    private final Sha3Hash FAKE_GENERIC_HASH = PegTestUtils.createHash3();
-    private final Sha3Hash OHTER_FAKE_GENERIC_HASH = PegTestUtils.createHash3();
+    private final Keccak256 FAKE_GENERIC_HASH = PegTestUtils.createHash3();
+    private final Keccak256 OHTER_FAKE_GENERIC_HASH = PegTestUtils.createHash3();
     private final RskAddress FAKE_COINBASE = TestUtils.randomAddress();
     private final RskAddress NOT_MY_COINBASE = TestUtils.randomAddress();
 

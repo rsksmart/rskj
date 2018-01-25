@@ -19,7 +19,7 @@
 
 package org.ethereum.vm.program.invoke;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.DataWord;
@@ -50,7 +50,7 @@ public interface ProgramInvoke {
 
     byte[] getDataCopy(DataWord offsetData, DataWord lengthData);
 
-    Sha3Hash getPrevHash();
+    Keccak256 getPrevHash();
 
     DataWord getCoinbase();
 

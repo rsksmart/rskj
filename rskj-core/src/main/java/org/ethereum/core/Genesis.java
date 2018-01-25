@@ -20,7 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.genesis.InitialAddressState;
 import org.ethereum.db.ByteArrayWrapper;
@@ -60,7 +60,7 @@ public class Genesis extends Block {
         super(rawData, false);
     }
 
-    public Genesis(Sha3Hash parentHash, Sha3Hash unclesHash, byte[] coinbase, byte[] logsBloom,
+    public Genesis(Keccak256 parentHash, Keccak256 unclesHash, byte[] coinbase, byte[] logsBloom,
                    byte[] difficulty, long number, long gasLimit,
                    long gasUsed, long timestamp,
                    byte[] extraData, byte[] mixHash, byte[] nonce,
@@ -70,7 +70,7 @@ public class Genesis extends Block {
                 number, ByteUtil.longToBytesNoLeadZeroes(gasLimit), gasUsed, timestamp, extraData,
                 mixHash, nonce, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
                 bitcoinMergedMiningCoinbaseTransaction, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
-                new Sha3Hash(EMPTY_TRIE_HASH), null, null, minimumGasPrice);
+                new Keccak256(EMPTY_TRIE_HASH), null, null, minimumGasPrice);
     }
 
     public static Block getInstance(RskSystemProperties config) {

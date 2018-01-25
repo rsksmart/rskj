@@ -31,7 +31,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.simples.SimpleBlockChain;
 import co.rsk.peg.simples.SimpleRskTransaction;
@@ -795,7 +795,7 @@ public class BridgeSupportTest {
         btcTx.addOutput(output);
 
         // Save btc tx to be signed
-        final Sha3Hash rskTxHash = PegTestUtils.createHash3();
+        final Keccak256 rskTxHash = PegTestUtils.createHash3();
         provider.getRskTxsWaitingForSignatures().put(rskTxHash, btcTx);
         provider.save();
         track.commit();
@@ -865,7 +865,7 @@ public class BridgeSupportTest {
         Federation federation = bridgeConstants.getGenesisFederation();
         Repository repository = new RepositoryImpl(config);
 
-        final Sha3Hash sha3Hash = PegTestUtils.createHash3();
+        final Keccak256 keccak256 = PegTestUtils.createHash3();
 
         Repository track = repository.startTracking();
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants);
@@ -886,7 +886,7 @@ public class BridgeSupportTest {
         t.addInput(prevOut1).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
         t.addInput(prevOut2).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
         t.addInput(prevOut3).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
-        provider.getRskTxsWaitingForSignatures().put(sha3Hash, t);
+        provider.getRskTxsWaitingForSignatures().put(keccak256, t);
         provider.save();
         track.commit();
 
@@ -921,7 +921,7 @@ public class BridgeSupportTest {
         }
 
         // Sign with two valid signatuers and one invalid signature
-        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, sha3Hash.getBytes());
+        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
         bridgeSupport.save();
         track.commit();
 
@@ -931,18 +931,18 @@ public class BridgeSupportTest {
             malformedSignature[i] = (byte) i;
         }
         derEncodedSigsFirstFed.set(2, malformedSignature);
-        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, sha3Hash.getBytes());
+        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
         bridgeSupport.save();
         track.commit();
 
         // Sign with fully valid signatures for same federator
         derEncodedSigsFirstFed.set(2, lastSig.encodeToDER());
-        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, sha3Hash.getBytes());
+        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfFirstFed), derEncodedSigsFirstFed, keccak256.getBytes());
         bridgeSupport.save();
         track.commit();
 
         // Sign with second federation
-        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfSecondFed), derEncodedSigsSecondFed, sha3Hash.getBytes());
+        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeyOfSecondFed), derEncodedSigsSecondFed, keccak256.getBytes());
         bridgeSupport.save();
         track.commit();
 
@@ -977,7 +977,7 @@ public class BridgeSupportTest {
         Federation federation = bridgeConstants.getGenesisFederation();
         Repository repository = new RepositoryImpl(config);
 
-        final Sha3Hash sha3Hash = PegTestUtils.createHash3();
+        final Keccak256 keccak256 = PegTestUtils.createHash3();
 
         Repository track = repository.startTracking();
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
@@ -990,7 +990,7 @@ public class BridgeSupportTest {
         TransactionOutput output = new TransactionOutput(btcParams, t, Coin.COIN, new BtcECKey().toAddress(btcParams));
         t.addOutput(output);
         t.addInput(prevOut).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
-        provider.getRskTxsWaitingForSignatures().put(sha3Hash, t);
+        provider.getRskTxsWaitingForSignatures().put(keccak256, t);
         provider.save();
         track.commit();
 
@@ -1015,7 +1015,7 @@ public class BridgeSupportTest {
         for (int i = 0; i < numberOfInputsToSign; i++) {
             derEncodedSigs.add(derEncodedSig);
         }
-        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(0)), derEncodedSigs, sha3Hash.getBytes());
+        bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(0)), derEncodedSigs, keccak256.getBytes());
         if (signTwice) {
             // Create another valid signature with the same private key
             ECDSASigner signer = new ECDSASigner();
@@ -1023,7 +1023,7 @@ public class BridgeSupportTest {
             signer.init(true, privKey);
             BigInteger[] components = signer.generateSignature(sighash.getBytes());
             BtcECKey.ECDSASignature sig2 = new BtcECKey.ECDSASignature(components[0], components[1]).toCanonicalised();
-            bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(0)), Lists.newArrayList(sig2.encodeToDER()), sha3Hash.getBytes());
+            bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(0)), Lists.newArrayList(sig2.encodeToDER()), keccak256.getBytes());
         }
         if (privateKeysToSignWith.size()>1) {
             BtcECKey.ECDSASignature sig2 = privateKeysToSignWith.get(1).sign(sighash);
@@ -1032,7 +1032,7 @@ public class BridgeSupportTest {
             for (int i = 0; i < numberOfInputsToSign; i++) {
                 derEncodedSigs2.add(derEncodedSig2);
             }
-            bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(1)), derEncodedSigs2, sha3Hash.getBytes());
+            bridgeSupport.addSignature(1, findPublicKeySignedBy(federation.getPublicKeys(), privateKeysToSignWith.get(1)), derEncodedSigs2, keccak256.getBytes());
         }
         bridgeSupport.save();
         track.commit();
@@ -1052,7 +1052,7 @@ public class BridgeSupportTest {
             Assert.assertEquals(true, retrievedScriptSig.getChunks().get(1).data.length > 0);
             Assert.assertEquals(true, retrievedScriptSig.getChunks().get(2).data.length > 0);
         } else {
-            Script retrievedScriptSig = provider.getRskTxsWaitingForSignatures().get(sha3Hash).getInput(0).getScriptSig();
+            Script retrievedScriptSig = provider.getRskTxsWaitingForSignatures().get(keccak256).getInput(0).getScriptSig();
             Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
             boolean expectSignatureToBePersisted = false; // for "InvalidParameters"
             if ("PartiallySigned".equals(expectedResult)) {
@@ -2508,7 +2508,7 @@ public class BridgeSupportTest {
     @Test
     public void commitFederation_noPendingFederation() throws IOException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("commit", new byte[][]{
-                new Sha3Hash(HashUtil.keccak256(Hex.decode("aabbcc"))).getBytes()
+                new Keccak256(HashUtil.keccak256(Hex.decode("aabbcc"))).getBytes()
         }, true);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
@@ -2535,7 +2535,7 @@ public class BridgeSupportTest {
         }));
 
         VotingMocksProvider mocksProvider = new VotingMocksProvider("commit", new byte[][]{
-                new Sha3Hash(HashUtil.keccak256(Hex.decode("aabbcc"))).getBytes()
+                new Keccak256(HashUtil.keccak256(Hex.decode("aabbcc"))).getBytes()
         }, true);
 
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
@@ -2564,7 +2564,7 @@ public class BridgeSupportTest {
         }));
 
         VotingMocksProvider mocksProvider = new VotingMocksProvider("commit", new byte[][]{
-                new Sha3Hash(HashUtil.keccak256(Hex.decode("aabbcc"))).getBytes()
+                new Keccak256(HashUtil.keccak256(Hex.decode("aabbcc"))).getBytes()
         }, true);
 
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
@@ -3062,7 +3062,7 @@ public class BridgeSupportTest {
 
     private Transaction getMockedRskTxWithHash(String s) {
         byte[] hash = HashUtil.keccak256(s);
-        return new SimpleRskTransaction(new Sha3Hash(hash));
+        return new SimpleRskTransaction(new Keccak256(hash));
     }
 
     private UTXO createUTXO(Coin value, Address address) {

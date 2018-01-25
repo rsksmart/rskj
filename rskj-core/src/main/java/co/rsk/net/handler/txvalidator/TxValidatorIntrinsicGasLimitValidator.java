@@ -19,7 +19,7 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.*;
 
@@ -39,8 +39,8 @@ public class TxValidatorIntrinsicGasLimitValidator implements TxValidatorStep {
 
     @Override
     public boolean validate(Transaction tx, AccountState state, BigInteger gasLimit, BigInteger minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
-        BlockHeader blockHeader = new BlockHeader(new Sha3Hash(new byte[]{}),
-                new Sha3Hash(new byte[]{}),
+        BlockHeader blockHeader = new BlockHeader(new Keccak256(new byte[]{}),
+                new Keccak256(new byte[]{}),
                 RskAddress.nullAddress().getBytes(),
                 new Bloom().getData(),
                 new byte[]{},

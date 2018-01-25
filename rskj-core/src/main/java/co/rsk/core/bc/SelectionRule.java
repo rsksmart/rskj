@@ -1,6 +1,6 @@
 package co.rsk.core.bc;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.Sibling;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -64,7 +64,7 @@ public class SelectionRule {
         return maxUncleCount > processingBlockHeader.getUncleCount();
     }
 
-    public static boolean isThisBlockHashSmaller(Sha3Hash thisBlockHash, Sha3Hash compareBlockHash) {
+    public static boolean isThisBlockHashSmaller(Keccak256 thisBlockHash, Keccak256 compareBlockHash) {
         return FastByteComparisons.compareTo(
                 thisBlockHash.getBytes(), BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH,
                 compareBlockHash.getBytes(), BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH) < 0;

@@ -19,7 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.*;
 import com.google.common.annotations.VisibleForTesting;
@@ -168,13 +168,13 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
     @Override
-    public synchronized Sha3Hash getStorageHash() {
+    public synchronized Keccak256 getStorageHash() {
         checkDataSourceIsOpened();
 
         this.trie.save();
         byte[] trieHash = this.trie.getHash();
         logger.trace("getting contract details trie hash {}, address {}", getHashAsString(trieHash), this.getAddressAsString());
-        return new Sha3Hash(trieHash);
+        return new Keccak256(trieHash);
     }
 
     @Override
@@ -362,7 +362,7 @@ public class ContractDetailsImpl implements ContractDetails {
     }
 
     @Override
-    public synchronized ContractDetails getSnapshotTo(Sha3Hash hash) {
+    public synchronized ContractDetails getSnapshotTo(Keccak256 hash) {
         logger.trace("get snapshot");
 
         this.trie.save();

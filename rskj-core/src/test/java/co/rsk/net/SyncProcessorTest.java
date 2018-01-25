@@ -4,7 +4,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.sync.DownloadingBodiesSyncState;
@@ -60,8 +60,8 @@ public class SyncProcessorTest {
     public void processStatusWithAdvancedPeers() {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        Sha3Hash hash = HashUtil.randomSha3Hash();
-        Sha3Hash parentHash = HashUtil.randomSha3Hash();
+        Keccak256 hash = HashUtil.randomSha3Hash();
+        Keccak256 parentHash = HashUtil.randomSha3Hash();
 
         Status status = new Status(100, hash, parentHash, blockchain.getTotalDifficulty().add(BigInteger.TEN));
 
@@ -96,8 +96,8 @@ public class SyncProcessorTest {
     public void syncWithAdvancedPeerAfterTimeoutWaitingPeers() {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        Sha3Hash hash = HashUtil.randomSha3Hash();
-        Sha3Hash parentHash = HashUtil.randomSha3Hash();
+        Keccak256 hash = HashUtil.randomSha3Hash();
+        Keccak256 parentHash = HashUtil.randomSha3Hash();
 
         Status status = new Status(100, hash, parentHash, blockchain.getTotalDifficulty().add(BigInteger.TEN));
 
@@ -138,8 +138,8 @@ public class SyncProcessorTest {
     public void dontSyncWithoutAdvancedPeerAfterTimeoutWaitingPeers() {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        Sha3Hash hash = HashUtil.randomSha3Hash();
-        Sha3Hash parentHash = HashUtil.randomSha3Hash();
+        Keccak256 hash = HashUtil.randomSha3Hash();
+        Keccak256 parentHash = HashUtil.randomSha3Hash();
 
         Status status = new Status(0, hash, parentHash, blockchain.getTotalDifficulty());
 
@@ -171,8 +171,8 @@ public class SyncProcessorTest {
     public void syncWithAdvancedStatusAnd5Peers() {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(0);
-        Sha3Hash hash = HashUtil.randomSha3Hash();
-        Sha3Hash parentHash = HashUtil.randomSha3Hash();
+        Keccak256 hash = HashUtil.randomSha3Hash();
+        Keccak256 parentHash = HashUtil.randomSha3Hash();
 
         Status status = new Status(100, hash, parentHash, blockchain.getTotalDifficulty().add(BigInteger.TEN));
 
@@ -231,8 +231,8 @@ public class SyncProcessorTest {
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(100);
         SimpleMessageChannel sender = new SimpleMessageChannel(new byte[] { 0x01 });
-        Sha3Hash hash = HashUtil.randomSha3Hash();
-        Sha3Hash parentHash = HashUtil.randomSha3Hash();
+        Keccak256 hash = HashUtil.randomSha3Hash();
+        Keccak256 parentHash = HashUtil.randomSha3Hash();
 
         Status status = new Status(blockchain.getStatus().getBestBlockNumber(), hash, parentHash, blockchain.getStatus().getTotalDifficulty());
 
@@ -876,7 +876,7 @@ public class SyncProcessorTest {
             int number = start + k * step;
             Block block = blockchain.getBlockByNumber(number);
 
-            Sha3Hash hash;
+            Keccak256 hash;
 
             if (block != null)
                 hash = block.getHash();

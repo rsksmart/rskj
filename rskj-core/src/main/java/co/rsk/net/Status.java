@@ -18,7 +18,7 @@
 
 package co.rsk.net;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
@@ -28,16 +28,16 @@ import java.math.BigInteger;
  */
 public class Status {
     private long bestBlockNumber;
-    private Sha3Hash bestBlockHash;
-    private Sha3Hash bestBlockParentHash;
+    private Keccak256 bestBlockHash;
+    private Keccak256 bestBlockParentHash;
     private BigInteger totalDifficulty;
 
-    public Status(long bestBlockNumber, Sha3Hash bestBlockHash) {
+    public Status(long bestBlockNumber, Keccak256 bestBlockHash) {
         this.bestBlockNumber = bestBlockNumber;
         this.bestBlockHash = bestBlockHash;
     }
 
-    public Status(long bestBlockNumber, Sha3Hash bestBlockHash, Sha3Hash bestBlockParentHash, BigInteger totalDifficulty) {
+    public Status(long bestBlockNumber, Keccak256 bestBlockHash, Keccak256 bestBlockParentHash, BigInteger totalDifficulty) {
         this.bestBlockNumber = bestBlockNumber;
         this.bestBlockHash = bestBlockHash;
         this.bestBlockParentHash = bestBlockParentHash;
@@ -48,12 +48,12 @@ public class Status {
         return this.bestBlockNumber;
     }
 
-    public Sha3Hash getBestBlockHash() {
+    public Keccak256 getBestBlockHash() {
         return this.bestBlockHash;
     }
 
     @Nullable
-    public Sha3Hash getBestBlockParentHash() { return this.bestBlockParentHash; }
+    public Keccak256 getBestBlockParentHash() { return this.bestBlockParentHash; }
 
     @Nullable
     public BigInteger getTotalDifficulty() { return this.totalDifficulty; }

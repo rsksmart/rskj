@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.util.RLP;
@@ -28,7 +28,6 @@ import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 import org.spongycastle.util.BigIntegers;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 
 /**
@@ -37,10 +36,10 @@ import java.util.ArrayList;
 public class TransactionInfo {
 
     TransactionReceipt receipt;
-    Sha3Hash blockHash;
+    Keccak256 blockHash;
     int index;
 
-    public TransactionInfo(TransactionReceipt receipt, Sha3Hash blockHash, int index) {
+    public TransactionInfo(TransactionReceipt receipt, Keccak256 blockHash, int index) {
         this.receipt = receipt;
         this.blockHash = blockHash;
         this.index = index;
@@ -54,7 +53,7 @@ public class TransactionInfo {
         RLPItem indexRLP = (RLPItem) txInfo.get(2);
 
         receipt = new TransactionReceipt(receiptRLP.getRLPData());
-        blockHash = new Sha3Hash(blockHashRLP.getRLPData());
+        blockHash = new Keccak256(blockHashRLP.getRLPData());
         if (indexRLP.getRLPData() == null) {
             index = 0;
         } else {
@@ -82,7 +81,7 @@ public class TransactionInfo {
         return receipt;
     }
 
-    public Sha3Hash getBlockHash() { return blockHash; }
+    public Keccak256 getBlockHash() { return blockHash; }
 
     public int getIndex() { return index; }
 }

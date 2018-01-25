@@ -19,7 +19,7 @@
 package co.rsk.peg.simples;
 
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -30,16 +30,16 @@ import java.math.BigInteger;
  * Created by ajlopez on 6/8/2016.
  */
 public class SimpleRskTransaction extends Transaction {
-    private Sha3Hash hash;
+    private Keccak256 hash;
 
-    public SimpleRskTransaction(Sha3Hash hash) {
+    public SimpleRskTransaction(Keccak256 hash) {
         super(null);
         this.hash = hash;
         this.sender = new RskAddress(ECKey.fromPrivate(HashUtil.keccak256("cow".getBytes())).getAddress());
     }
 
     @Override
-    public Sha3Hash getHash() { return hash; }
+    public Keccak256 getHash() { return hash; }
 
     @Override
     public byte[] getValue() { return BigInteger.valueOf(10000000).toByteArray(); }

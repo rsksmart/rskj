@@ -19,7 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -49,7 +49,7 @@ public class FamilyUtilsTest {
         store.saveBlock(genesis, BigInteger.ONE, true);
         store.saveBlock(block1, BigInteger.ONE, true);
 
-        Set<Sha3Hash> family = FamilyUtils.getFamily(store, block1, 6);
+        Set<Keccak256> family = FamilyUtils.getFamily(store, block1, 6);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
@@ -66,7 +66,7 @@ public class FamilyUtilsTest {
 
         store.saveBlock(genesis, BigInteger.ONE, true);
 
-        Set<Sha3Hash> family = FamilyUtils.getFamily(store, genesis, 6);
+        Set<Keccak256> family = FamilyUtils.getFamily(store, genesis, 6);
 
         Assert.assertNotNull(family);
         Assert.assertTrue(family.isEmpty());
@@ -86,7 +86,7 @@ public class FamilyUtilsTest {
         store.saveBlock(block2, BigInteger.ONE, true);
         store.saveBlock(block3, BigInteger.ONE, true);
 
-        Set<Sha3Hash> family = FamilyUtils.getFamily(store, block3, 2);
+        Set<Keccak256> family = FamilyUtils.getFamily(store, block3, 2);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
@@ -124,7 +124,7 @@ public class FamilyUtilsTest {
         store.saveBlock(uncle31, BigInteger.ONE, false);
         store.saveBlock(uncle32, BigInteger.ONE, false);
 
-        Set<Sha3Hash> family = FamilyUtils.getFamily(store, block3, 2);
+        Set<Keccak256> family = FamilyUtils.getFamily(store, block3, 2);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());
@@ -227,7 +227,7 @@ public class FamilyUtilsTest {
         store.saveBlock(uncle31, BigInteger.ONE, false);
         store.saveBlock(uncle32, BigInteger.ONE, false);
 
-        Set<Sha3Hash> family = FamilyUtils.getUncles(store, block3, 3);
+        Set<Keccak256> family = FamilyUtils.getUncles(store, block3, 3);
 
         Assert.assertNotNull(family);
         Assert.assertFalse(family.isEmpty());

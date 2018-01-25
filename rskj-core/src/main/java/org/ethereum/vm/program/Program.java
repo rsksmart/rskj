@@ -21,7 +21,7 @@ package org.ethereum.vm.program;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.Bridge;
 import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
@@ -1089,7 +1089,7 @@ public class Program {
         return getStorage().getStorageValue(new RskAddress(getOwnerAddress()), key);
     }
 
-    public Sha3Hash getPrevHash() {
+    public Keccak256 getPrevHash() {
         return invoke.getPrevHash();
     }
 
@@ -1568,7 +1568,7 @@ public class Program {
                 // CREATE CALL INTERNAL TRANSACTION
                 InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, EMPTY_BYTE_ARRAY, "call");
 
-                Block executionBlock = new Block(getPrevHash(), Sha3Hash.zeroHash(), getCoinbase().getData(), EMPTY_BYTE_ARRAY,
+                Block executionBlock = new Block(getPrevHash(), Keccak256.zeroHash(), getCoinbase().getData(), EMPTY_BYTE_ARRAY,
                         getDifficulty().getData(), getNumber().longValue(), getGasLimit().getData(), 0, getTimestamp().longValue(),
                         EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, new ArrayList<>(), new ArrayList<>(), null);
 

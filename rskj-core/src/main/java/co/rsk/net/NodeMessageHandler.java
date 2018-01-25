@@ -20,7 +20,7 @@ package co.rsk.net;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
@@ -338,13 +338,13 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private void processGetBlockMessage(@Nonnull final MessageChannel sender, @Nonnull final GetBlockMessage message) {
-        final Sha3Hash hash = message.getBlockHash();
+        final Keccak256 hash = message.getBlockHash();
         this.blockProcessor.processGetBlock(sender, hash);
     }
 
     private void processBlockRequestMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockRequestMessage message) {
         final long requestId = message.getId();
-        final Sha3Hash hash = message.getBlockHash();
+        final Keccak256 hash = message.getBlockHash();
         this.blockProcessor.processBlockRequest(sender, requestId, hash);
     }
 
@@ -360,7 +360,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private void processBlockHeadersRequestMessage(@Nonnull final MessageChannel sender, @Nonnull final BlockHeadersRequestMessage message) {
         final long requestId = message.getId();
-        final Sha3Hash hash = message.getHash();
+        final Keccak256 hash = message.getHash();
         final int count = message.getCount();
         this.blockProcessor.processBlockHeadersRequest(sender, requestId, hash, count);
     }
@@ -389,7 +389,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private void processBodyRequestMessage(@Nonnull final MessageChannel sender, @Nonnull final BodyRequestMessage message) {
         final long requestId = message.getId();
-        final Sha3Hash hash = message.getBlockHash();
+        final Keccak256 hash = message.getBlockHash();
         this.blockProcessor.processBodyRequest(sender, requestId, hash);
     }
 
@@ -438,7 +438,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private void relayTransactions(@Nonnull MessageChannel sender, List<Transaction> acceptedTxs) {
         for (Transaction tx : acceptedTxs) {
-            final Sha3Hash txHash = tx.getHash();
+            final Keccak256 txHash = tx.getHash();
             transactionNodeInformation.addTransactionToNode(txHash, sender.getPeerNodeID());
             final Set<NodeID> nodesToSkip = new HashSet<>(transactionNodeInformation.getNodesByTransaction(tx.getHash()));
             final Set<NodeID> newNodes = channelManager.broadcastTransaction(tx, nodesToSkip);

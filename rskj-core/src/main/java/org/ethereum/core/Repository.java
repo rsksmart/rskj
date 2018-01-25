@@ -20,7 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.DetailsDataStore;
 import org.ethereum.vm.DataWord;
@@ -199,7 +199,7 @@ public interface Repository {
      *
      * @param root - new root
      */
-    void syncToRoot(Sha3Hash root);
+    void syncToRoot(Keccak256 root);
 
     /**
      * Check to see if the current repository has an open connection to the database
@@ -222,13 +222,13 @@ public interface Repository {
                      Map<RskAddress, ContractDetails> contractDetailes);
 
 
-    Sha3Hash getRoot();
+    Keccak256 getRoot();
 
     void loadAccount(RskAddress addr,
                      Map<RskAddress, AccountState> cacheAccounts,
                      Map<RskAddress, ContractDetails> cacheDetails);
 
-    Repository getSnapshotTo(Sha3Hash root);
+    Repository getSnapshotTo(Keccak256 root);
 
     DetailsDataStore getDetailsDataStore();
 

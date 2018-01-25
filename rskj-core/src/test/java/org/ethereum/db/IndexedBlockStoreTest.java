@@ -20,7 +20,7 @@
 package org.ethereum.db;
 
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.config.RskSystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.Genesis;
@@ -48,7 +48,6 @@ import java.util.*;
 
 import static java.math.BigInteger.ZERO;
 import static org.ethereum.TestUtils.*;
-import static org.ethereum.util.ByteUtil.wrap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -129,7 +128,7 @@ public class IndexedBlockStoreTest {
         block_ = indexedBlockStore.getBlockByHash(block.getHash());
         assertEquals(block.getNumber(), block_.getNumber());
 
-        block_  = indexedBlockStore.getBlockByHash(new Sha3Hash(Hex.decode("00112233")));
+        block_  = indexedBlockStore.getBlockByHash(new Keccak256(Hex.decode("00112233")));
         assertEquals(null, block_);
 
         //  testing:  getChainBlockByNumber(long)
@@ -178,7 +177,7 @@ public class IndexedBlockStoreTest {
         //  testing: getListHashesEndWith(byte[], long)
 
         block  = blocks.get(8003);
-        List<Sha3Hash> hashList =  indexedBlockStore.getListHashesEndWith(block.getHash(), 100);
+        List<Keccak256> hashList =  indexedBlockStore.getListHashesEndWith(block.getHash(), 100);
         for (int i = 0; i < 100; ++i){
             block  = blocks.get(8003 - i);
             String hash  = hashList.get(i).toString();
@@ -236,7 +235,7 @@ public class IndexedBlockStoreTest {
         block_ = indexedBlockStore.getBlockByHash(block.getHash());
         assertEquals(block.getNumber(), block_.getNumber());
 
-        block_  = indexedBlockStore.getBlockByHash(new Sha3Hash(Hex.decode("00112233")));
+        block_  = indexedBlockStore.getBlockByHash(new Keccak256(Hex.decode("00112233")));
         assertEquals(null, block_);
 
         //  testing:  getChainBlockByNumber(long)
@@ -287,7 +286,7 @@ public class IndexedBlockStoreTest {
         //  testing: getListHashesEndWith(byte[], long)
 
         block  = blocks.get(8003);
-        List<Sha3Hash> hashList =  indexedBlockStore.getListHashesEndWith(block.getHash(), 100);
+        List<Keccak256> hashList =  indexedBlockStore.getListHashesEndWith(block.getHash(), 100);
         for (int i = 0; i < 100; ++i){
             block  = blocks.get(8003 - i);
             String hash  = hashList.get(i).toString();
@@ -348,7 +347,7 @@ public class IndexedBlockStoreTest {
         block_ = indexedBlockStore.getBlockByHash(block.getHash());
         assertEquals(block.getNumber(), block_.getNumber());
 
-        block_  = indexedBlockStore.getBlockByHash(new Sha3Hash(Hex.decode("00112233")));
+        block_  = indexedBlockStore.getBlockByHash(new Keccak256(Hex.decode("00112233")));
         assertEquals(null, block_);
 
         //  testing:  getChainBlockByNumber(long)
@@ -398,7 +397,7 @@ public class IndexedBlockStoreTest {
         //  testing: getListHashesEndWith(byte[], long)
 
         block  = blocks.get(8003);
-        List<Sha3Hash> hashList =  indexedBlockStore.getListHashesEndWith(block.getHash(), 100);
+        List<Keccak256> hashList =  indexedBlockStore.getListHashesEndWith(block.getHash(), 100);
         for (int i = 0; i < 100; ++i){
             block  = blocks.get(8003 - i);
             String hash  = hashList.get(i).toString();
@@ -465,7 +464,7 @@ public class IndexedBlockStoreTest {
         block_ = indexedBlockStore.getBlockByHash(block.getHash());
         assertEquals(block.getNumber(), block_.getNumber());
 
-        block_  = indexedBlockStore.getBlockByHash(new Sha3Hash(Hex.decode("00112233")));
+        block_  = indexedBlockStore.getBlockByHash(new Keccak256(Hex.decode("00112233")));
         assertEquals(null, block_);
 
         //  testing:  getChainBlockByNumber(long)
@@ -517,7 +516,7 @@ public class IndexedBlockStoreTest {
         //  testing: getListHashesEndWith(byte[], long)
 
         block  = blocks.get(8003);
-        List<Sha3Hash> hashList =  indexedBlockStore.getListHashesEndWith(block.getHash(), 100);
+        List<Keccak256> hashList =  indexedBlockStore.getListHashesEndWith(block.getHash(), 100);
         for (int i = 0; i < 100; ++i){
             block  = blocks.get(8003 - i);
             String hash  = hashList.get(i).toString();
@@ -624,7 +623,7 @@ public class IndexedBlockStoreTest {
             block_ = indexedBlockStore.getBlockByHash(block.getHash());
             assertEquals(block.getNumber(), block_.getNumber());
 
-            block_  = indexedBlockStore.getBlockByHash(new Sha3Hash(Hex.decode("00112233")));
+            block_  = indexedBlockStore.getBlockByHash(new Keccak256(Hex.decode("00112233")));
             assertEquals(null, block_);
 
             //  testing:  getChainBlockByNumber(long)
@@ -676,7 +675,7 @@ public class IndexedBlockStoreTest {
             //  testing: getListHashesEndWith(byte[], long)
 
             block  = blocks.get(8003);
-            List<Sha3Hash> hashList =  indexedBlockStore.getListHashesEndWith(block.getHash(), 100);
+            List<Keccak256> hashList =  indexedBlockStore.getListHashesEndWith(block.getHash(), 100);
             for (int i = 0; i < 100; ++i){
                 block  = blocks.get(8003 - i);
                 String hash  = hashList.get(i).toString();
@@ -773,7 +772,7 @@ public class IndexedBlockStoreTest {
             }
 
             // calc all TDs
-            Map<Sha3Hash, BigInteger> tDiffs = new HashMap<>();
+            Map<Keccak256, BigInteger> tDiffs = new HashMap<>();
             td = Genesis.getInstance(config).getCumulativeDifficulty();
 
             for (Block block : bestLine){
@@ -781,7 +780,7 @@ public class IndexedBlockStoreTest {
                 tDiffs.put(block.getHash(), td);
             }
 
-            Map<Sha3Hash, BigInteger> tForkDiffs = new HashMap<>();
+            Map<Keccak256, BigInteger> tForkDiffs = new HashMap<>();
             Block block = forkLine.get(0);
             td = tDiffs.get(block.getParentHash());
             for (Block currBlock : forkLine){
@@ -790,14 +789,14 @@ public class IndexedBlockStoreTest {
             }
 
             // Assert tds on bestLine
-            for ( Sha3Hash hash :  tDiffs.keySet()) {
+            for ( Keccak256 hash :  tDiffs.keySet()) {
                 BigInteger currTD = tDiffs.get(hash);
                 BigInteger checkTd =  indexedBlockStore.getTotalDifficultyForHash(hash);
                 assertEquals(checkTd, currTD);
             }
 
             // Assert tds on forkLine
-            for ( Sha3Hash hash :  tForkDiffs.keySet()) {
+            for ( Keccak256 hash :  tForkDiffs.keySet()) {
                 BigInteger currTD = tForkDiffs.get(hash);
                 BigInteger checkTd =  indexedBlockStore.getTotalDifficultyForHash(hash);
                 assertEquals(checkTd, currTD);
@@ -806,7 +805,7 @@ public class IndexedBlockStoreTest {
             indexedBlockStore.flush();
 
             // Assert tds on bestLine
-            for ( Sha3Hash hash :  tDiffs.keySet()) {
+            for ( Keccak256 hash :  tDiffs.keySet()) {
                 BigInteger currTD = tDiffs.get(hash);
                 BigInteger checkTd =  indexedBlockStore.getTotalDifficultyForHash(hash);
                 assertEquals(checkTd, currTD);
@@ -820,7 +819,7 @@ public class IndexedBlockStoreTest {
             assertEquals(totalDifficulty_, totalDifficulty);
 
             // Assert tds on forkLine
-            for ( Sha3Hash hash :  tForkDiffs.keySet()) {
+            for ( Keccak256 hash :  tForkDiffs.keySet()) {
                 BigInteger currTD = tForkDiffs.get(hash);
                 BigInteger checkTd =  indexedBlockStore.getTotalDifficultyForHash(hash);
                 assertEquals(checkTd, currTD);

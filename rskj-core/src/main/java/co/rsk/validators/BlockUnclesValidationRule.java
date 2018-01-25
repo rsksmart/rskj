@@ -20,16 +20,14 @@ package co.rsk.validators;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.FamilyUtils;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.HashSet;
 import java.util.List;
@@ -108,17 +106,17 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
      * @param used        used uncles
      * @return true if the uncles in the list are valid, false if not
      */
-    public boolean validateUncleList(long blockNumber, List<BlockHeader> uncles, Set<Sha3Hash> ancestors, Set<Sha3Hash> used) {
+    public boolean validateUncleList(long blockNumber, List<BlockHeader> uncles, Set<Keccak256> ancestors, Set<Keccak256> used) {
         if (uncles.size() > uncleListLimit) {
             logger.error("Uncle list to big: block.getUncleList().size() > UNCLE_LIST_LIMIT");
             panicProcessor.panic(INVALIDUNCLE, "Uncle list to big: block.getUncleList().size() > UNCLE_LIST_LIMIT");
             return false;
         }
 
-        Set<Sha3Hash> hashes = new HashSet<>();
+        Set<Keccak256> hashes = new HashSet<>();
 
         for (BlockHeader uncle : uncles) {
-            Sha3Hash uncleHash = uncle.getHash();
+            Keccak256 uncleHash = uncle.getHash();
 
             Block blockForUncleHeader = new Block(uncle);
 
@@ -162,7 +160,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         return true;
     }
 
-    private boolean validateUnclesAncestors(Set<Sha3Hash> ancestors, Sha3Hash uncleHash) {
+    private boolean validateUnclesAncestors(Set<Keccak256> ancestors, Keccak256 uncleHash) {
         if (ancestors != null && ancestors.contains(uncleHash)) {
             String uHashStr = uncleHash.toString();
             logger.error("Uncle is direct ancestor: {}", uHashStr);
@@ -172,7 +170,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         return true;
     }
 
-    private boolean validateIfUncleWasNeverUsed(Set<Sha3Hash> used, Sha3Hash uncleHash) {
+    private boolean validateIfUncleWasNeverUsed(Set<Keccak256> used, Keccak256 uncleHash) {
         String uhashString = uncleHash.toString();
         if (used != null && used.contains(uncleHash)) {
             logger.error("Uncle is not unique: {}", uhashString);
@@ -182,7 +180,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         return true;
     }
 
-    private boolean validateUncleParent(Set<Sha3Hash> ancestors, Block uncle) {
+    private boolean validateUncleParent(Set<Keccak256> ancestors, Block uncle) {
         String uhashString = uncle.getHash().toString();
         Block parent = blockStore.getBlockByHash(uncle.getParentHash());
 

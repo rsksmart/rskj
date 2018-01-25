@@ -19,7 +19,7 @@
 
 package org.ethereum.net.eth.message;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -49,7 +49,7 @@ public class GetBlockHeadersMessage extends EthMessage {
      * Block hash from which to start sending block headers <br>
      * Initial block can be addressed by either {@code blockNumber} or {@code blockHash}
      */
-    private Sha3Hash blockHash;
+    private Keccak256 blockHash;
 
     /**
      * The maximum number of headers to be returned. <br>
@@ -78,7 +78,7 @@ public class GetBlockHeadersMessage extends EthMessage {
         this(blockNumber, null, maxHeaders, 0, false);
     }
 
-    public GetBlockHeadersMessage(long blockNumber, Sha3Hash blockHash, int maxHeaders, int skipBlocks, boolean reverse) {
+    public GetBlockHeadersMessage(long blockNumber, Keccak256 blockHash, int maxHeaders, int skipBlocks, boolean reverse) {
         this.blockNumber = blockNumber;
         this.blockHash = blockHash;
         this.maxHeaders = maxHeaders;
@@ -112,7 +112,7 @@ public class GetBlockHeadersMessage extends EthMessage {
         if (blockBytes == null) {
             this.blockNumber = 0;
         } else if (blockBytes.length == DEFAULT_SIZE_BYTES) {
-            this.blockHash = new Sha3Hash(blockBytes);
+            this.blockHash = new Keccak256(blockBytes);
         } else {
             this.blockNumber = byteArrayToLong(blockBytes);
         }
@@ -136,7 +136,7 @@ public class GetBlockHeadersMessage extends EthMessage {
         return blockNumber;
     }
 
-    public Sha3Hash getBlockHash() {
+    public Keccak256 getBlockHash() {
         if (!parsed) {
             parse();
         }

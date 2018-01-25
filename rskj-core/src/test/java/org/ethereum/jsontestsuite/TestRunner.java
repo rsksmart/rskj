@@ -23,7 +23,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Block;
@@ -165,7 +165,7 @@ public class TestRunner {
         String currRoot = repository.getRoot().toString();
 
         byte[] bestHash = Hex.decode(testCase.getLastblockhash());
-        String finalRoot = blockStore.getBlockByHash(new Sha3Hash(bestHash)).getStateRoot().toString();
+        String finalRoot = blockStore.getBlockByHash(new Keccak256(bestHash)).getStateRoot().toString();
 
         Repository postRepository = RepositoryBuilder.build(testCase.getPostState());
         List<String> repoResults = RepositoryValidator.valid(repository, postRepository, false /*!blockchain.byTest*/);
@@ -202,7 +202,7 @@ public class TestRunner {
             byte[] gas = exec.getGas();
             byte[] callValue = exec.getValue();
             byte[] msgData = exec.getData();
-            Sha3Hash lastHash = new Sha3Hash(env.getPreviousHash());
+            Keccak256 lastHash = new Keccak256(env.getPreviousHash());
             byte[] coinbase = env.getCurrentCoinbase();
             long timestamp = ByteUtil.byteArrayToLong(env.getCurrentTimestamp());
             long number = ByteUtil.byteArrayToLong(env.getCurrentNumber());

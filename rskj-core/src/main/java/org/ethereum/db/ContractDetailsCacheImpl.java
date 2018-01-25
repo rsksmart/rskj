@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
@@ -124,7 +124,7 @@ public class ContractDetailsCacheImpl implements ContractDetails {
     }
 
     @Override
-    public Sha3Hash getStorageHash() { // todo: unsupported
+    public Keccak256 getStorageHash() { // todo: unsupported
         Trie storageTrie = new TrieImpl(null, true);
 
         for (DataWord key : storage.keySet()) {
@@ -142,7 +142,7 @@ public class ContractDetailsCacheImpl implements ContractDetails {
                     RLP.encodeElement(value));
         }
 
-        return new Sha3Hash(storageTrie.getHash());
+        return new Keccak256(storageTrie.getHash());
     }
 
     @Override
@@ -290,7 +290,7 @@ public class ContractDetailsCacheImpl implements ContractDetails {
 
 
     @Override
-    public ContractDetails getSnapshotTo(Sha3Hash hash) {
+    public ContractDetails getSnapshotTo(Keccak256 hash) {
         throw new UnsupportedOperationException("No snapshot option during cache state");
     }
 

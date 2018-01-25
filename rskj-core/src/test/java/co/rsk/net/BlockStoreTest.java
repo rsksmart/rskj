@@ -19,7 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.core.RskAddress;
 import com.google.common.collect.Lists;
 import org.ethereum.core.Block;
@@ -40,7 +40,7 @@ public class BlockStoreTest {
     public void getUnknownBlockAsNull() {
         BlockStore store = new BlockStore();
 
-        Assert.assertNull(store.getBlockByHash(new Sha3Hash(new byte[] { 0x01, 0x20 })));
+        Assert.assertNull(store.getBlockByHash(new Keccak256(new byte[] { 0x01, 0x20 })));
     }
 
     @Test
@@ -216,8 +216,8 @@ public class BlockStoreTest {
     public void saveHeader() {
         BlockStore store = new BlockStore();
 
-        BlockHeader blockHeader = new BlockHeader(new Sha3Hash(new byte[]{}),
-                new Sha3Hash(new byte[]{}),
+        BlockHeader blockHeader = new BlockHeader(new Keccak256(new byte[]{}),
+                new Keccak256(new byte[]{}),
                 RskAddress.nullAddress().getBytes(),
                 new Bloom().getData(),
                 new byte[]{},
@@ -240,8 +240,8 @@ public class BlockStoreTest {
     @Test
     public void removeHeader() {
         BlockStore store = new BlockStore();
-        BlockHeader blockHeader = new BlockHeader(new Sha3Hash(new byte[]{}),
-                new Sha3Hash(new byte[]{}),
+        BlockHeader blockHeader = new BlockHeader(new Keccak256(new byte[]{}),
+                new Keccak256(new byte[]{}),
                 RskAddress.nullAddress().getBytes(),
                 new Bloom().getData(),
                 new byte[]{},

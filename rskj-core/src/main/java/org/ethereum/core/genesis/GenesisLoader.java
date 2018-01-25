@@ -20,7 +20,7 @@
 package org.ethereum.core.genesis;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.TrieImpl;
 import com.google.common.io.ByteStreams;
 import org.apache.commons.lang3.StringUtils;
@@ -68,7 +68,7 @@ public class GenesisLoader {
             genesis.setPremine(premine);
 
             byte[] rootHash = generateRootHash(premine);
-            genesis.setStateRoot(new Sha3Hash(rootHash));
+            genesis.setStateRoot(new Keccak256(rootHash));
 
             genesis.flushRLP();
 

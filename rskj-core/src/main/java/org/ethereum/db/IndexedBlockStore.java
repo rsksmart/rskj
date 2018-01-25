@@ -20,7 +20,7 @@
 package org.ethereum.db;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockCache;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
@@ -31,7 +31,6 @@ import org.mapdb.DataIO;
 import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -109,7 +108,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized Sha3Hash getBlockHashByNumber(long blockNumber){
+    public synchronized Keccak256 getBlockHashByNumber(long blockNumber){
         List<BlockInfo> infos = this.index.get(blockNumber);
         if (infos != null) {
             Optional<BlockInfo> info =  infos.stream().filter(BlockInfo::isMainChain).findAny();
@@ -176,7 +175,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         }
 
         for (BlockInfo blockInfo : blockInfos) {
-            Sha3Hash hash = blockInfo.getHash();
+            Keccak256 hash = blockInfo.getHash();
             BigInteger totalDifficulty = blockInfo.getCummDifficulty();
             boolean isInBlockChain = blockInfo.isMainChain();
 
@@ -197,7 +196,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
             if (blockInfo.isMainChain()) {
 
-                Sha3Hash hash = blockInfo.getHash();
+                Keccak256 hash = blockInfo.getHash();
                 return getBlockByHash(hash);
             }
         }
@@ -206,7 +205,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized Block getBlockByHash(Sha3Hash hash) {
+    public synchronized Block getBlockByHash(Keccak256 hash) {
         Block block = this.blockCache.getBlockByHash(hash);
 
         if (block != null) {
@@ -224,12 +223,12 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized boolean isBlockExist(Sha3Hash hash) {
+    public synchronized boolean isBlockExist(Keccak256 hash) {
         return getBlockByHash(hash) != null;
     }
 
     @Override
-    public synchronized BigInteger getTotalDifficultyForHash(Sha3Hash hash){
+    public synchronized BigInteger getTotalDifficultyForHash(Keccak256 hash){
         Block block = this.getBlockByHash(hash);
         if (block == null) {
             return ZERO;
@@ -257,10 +256,10 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized List<Sha3Hash> getListHashesEndWith(Sha3Hash hash, long number){
+    public synchronized List<Keccak256> getListHashesEndWith(Keccak256 hash, long number){
 
         List<Block> blocks = getListBlocksEndWith(hash, number);
-        List<Sha3Hash> hashes = new ArrayList<>(blocks.size());
+        List<Keccak256> hashes = new ArrayList<>(blocks.size());
 
         for (Block b : blocks) {
             hashes.add(b.getHash());
@@ -270,7 +269,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized List<BlockHeader> getListHeadersEndWith(Sha3Hash hash, long qty) {
+    public synchronized List<BlockHeader> getListHeadersEndWith(Keccak256 hash, long qty) {
 
         List<Block> blocks = getListBlocksEndWith(hash, qty);
         List<BlockHeader> headers = new ArrayList<>(blocks.size());
@@ -283,7 +282,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized List<Block> getListBlocksEndWith(Sha3Hash hash, long qty) {
+    public synchronized List<Block> getListBlocksEndWith(Keccak256 hash, long qty) {
         Block block = getBlockByHash(hash);
 
         if (block == null) {
@@ -375,9 +374,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @VisibleForTesting
-    public synchronized List<Sha3Hash> getListHashesStartWith(long number, long maxBlocks) {
+    public synchronized List<Keccak256> getListHashesStartWith(long number, long maxBlocks) {
 
-        List<Sha3Hash> result = new ArrayList<>();
+        List<Keccak256> result = new ArrayList<>();
 
         int i;
         for (i = 0; i < maxBlocks; ++i) {
@@ -400,15 +399,15 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     public static class BlockInfo implements Serializable {
-        Sha3Hash hash;
+        Keccak256 hash;
         BigInteger cummDifficulty;
         boolean mainChain;
 
-        public Sha3Hash getHash() {
+        public Keccak256 getHash() {
             return hash;
         }
 
-        public void setHash(Sha3Hash hash) {
+        public void setHash(Keccak256 hash) {
             this.hash = hash;
         }
 
@@ -484,7 +483,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         }
     }
 
-    private static BlockInfo getBlockInfoForHash(List<BlockInfo> blocks, Sha3Hash hash){
+    private static BlockInfo getBlockInfoForHash(List<BlockInfo> blocks, Keccak256 hash){
         if (blocks == null) {
             return null;
         }
@@ -514,7 +513,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
         for (BlockInfo blockInfo : blockInfos){
 
-            Sha3Hash hash = blockInfo.getHash();
+            Keccak256 hash = blockInfo.getHash();
             Block block = getBlockByHash(hash);
 
             result.add(block);

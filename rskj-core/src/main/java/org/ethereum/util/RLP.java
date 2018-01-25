@@ -20,7 +20,7 @@
 package org.ethereum.util;
 
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.util.ByteBufferUtil;
 import co.rsk.util.RLPElementType;
 import co.rsk.util.RLPElementView;
@@ -568,8 +568,8 @@ public class RLP {
     }
 
 
-    public static byte[] encodeSha3HashElement(Sha3Hash parentHash) {
-        if (parentHash == null || Sha3Hash.zeroHash().equals(parentHash)) {
+    public static byte[] encodeSha3HashElement(Keccak256 parentHash) {
+        if (parentHash == null || Keccak256.zeroHash().equals(parentHash)) {
             return ENCODED_NULL;
         }
 

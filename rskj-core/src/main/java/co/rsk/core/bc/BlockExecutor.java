@@ -19,7 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
@@ -178,20 +178,20 @@ public class BlockExecutor {
      * @param stateRoot    Initial state hash
      * @return BlockResult with the final state data.
      */
-    public BlockResult execute(Block block, Sha3Hash stateRoot, boolean discardInvalidTxs) {
+    public BlockResult execute(Block block, Keccak256 stateRoot, boolean discardInvalidTxs) {
         return execute(block, stateRoot, discardInvalidTxs, false);
     }
 
-    public BlockResult executeAll(Block block, Sha3Hash stateRoot) {
+    public BlockResult executeAll(Block block, Keccak256 stateRoot) {
         return execute(block, stateRoot, false, true);
     }
 
-    private BlockResult execute(Block block, Sha3Hash stateRoot, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
+    private BlockResult execute(Block block, Keccak256 stateRoot, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
         Repository initialRepository = repository.getSnapshotTo(stateRoot);
 
-        Sha3Hash lastStateRootHash = initialRepository.getRoot();
+        Keccak256 lastStateRootHash = initialRepository.getRoot();
 
         Repository track = initialRepository.startTracking();
         int i = 1;

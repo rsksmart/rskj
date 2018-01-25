@@ -19,7 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.remasc.RemascTransaction;
@@ -177,7 +177,7 @@ public class BlockValidatorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block1 = blockGenerator.createChildBlock(genesis);
-        block1.getHeader().setUnclesHash(new Sha3Hash(new byte[]{0x01}));
+        block1.getHeader().setUnclesHash(new Keccak256(new byte[]{0x01}));
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(null)
@@ -226,7 +226,7 @@ public class BlockValidatorTest {
         store.saveBlock(genesis, BigInteger.ONE, true);
         Block block = new BlockGenerator().createChildBlock(genesis);
 
-        Set<Sha3Hash> ancestors = FamilyUtils.getAncestors(store, block, 6);
+        Set<Keccak256> ancestors = FamilyUtils.getAncestors(store, block, 6);
         Assert.assertFalse(ancestors.isEmpty());
         Assert.assertTrue(ancestors.contains(genesis.getHash()));
         Assert.assertFalse(ancestors.contains(block.getHash()));
@@ -251,7 +251,7 @@ public class BlockValidatorTest {
         Block block5 = blockGenerator.createChildBlock(block4);
         store.saveBlock(block5, BigInteger.ONE, true);
 
-        Set<Sha3Hash> ancestors = FamilyUtils.getAncestors(store, block5, 3);
+        Set<Keccak256> ancestors = FamilyUtils.getAncestors(store, block5, 3);
         Assert.assertFalse(ancestors.isEmpty());
         Assert.assertEquals(3, ancestors.size());
         Assert.assertFalse(ancestors.contains(genesis.getHash()));
@@ -295,7 +295,7 @@ public class BlockValidatorTest {
         store.saveBlock(uncle2b, BigInteger.ONE, false);
         store.saveBlock(block2, BigInteger.ONE, true);
 
-        Set<Sha3Hash> used = FamilyUtils.getUsedUncles(store, block3, 6);
+        Set<Keccak256> used = FamilyUtils.getUsedUncles(store, block3, 6);
 
         Assert.assertFalse(used.isEmpty());
         Assert.assertFalse(used.contains(block3.getHash()));
@@ -876,13 +876,13 @@ public class BlockValidatorTest {
         }
 
         @Override
-        public Sha3Hash getBlockHashByNumber(long blockNumber) {
-            return new Sha3Hash(new byte[0]);
+        public Keccak256 getBlockHashByNumber(long blockNumber) {
+            return new Keccak256(new byte[0]);
         }
 
         @Override
-        public Sha3Hash getBlockHashByNumber(long blockNumber, Sha3Hash branchBlockHash) {
-            return new Sha3Hash(new byte[0]);
+        public Keccak256 getBlockHashByNumber(long blockNumber, Keccak256 branchBlockHash) {
+            return new Keccak256(new byte[0]);
         }
 
         @Override
@@ -896,32 +896,32 @@ public class BlockValidatorTest {
         }
 
         @Override
-        public Block getBlockByHash(Sha3Hash hash) {
+        public Block getBlockByHash(Keccak256 hash) {
             return block;
         }
 
         @Override
-        public Block getBlockByHashAndDepth(Sha3Hash hash, long depth) {
+        public Block getBlockByHashAndDepth(Keccak256 hash, long depth) {
             return null;
         }
 
         @Override
-        public boolean isBlockExist(Sha3Hash hash) {
+        public boolean isBlockExist(Keccak256 hash) {
             return false;
         }
 
         @Override
-        public List<Sha3Hash> getListHashesEndWith(Sha3Hash hash, long qty) {
+        public List<Keccak256> getListHashesEndWith(Keccak256 hash, long qty) {
             return null;
         }
 
         @Override
-        public List<BlockHeader> getListHeadersEndWith(Sha3Hash hash, long qty) {
+        public List<BlockHeader> getListHeadersEndWith(Keccak256 hash, long qty) {
             return null;
         }
 
         @Override
-        public List<Block> getListBlocksEndWith(Sha3Hash hash, long qty) {
+        public List<Block> getListBlocksEndWith(Keccak256 hash, long qty) {
             return null;
         }
 
@@ -931,7 +931,7 @@ public class BlockValidatorTest {
         }
 
         @Override
-        public BigInteger getTotalDifficultyForHash(Sha3Hash hash) {
+        public BigInteger getTotalDifficultyForHash(Keccak256 hash) {
             return null;
         }
 

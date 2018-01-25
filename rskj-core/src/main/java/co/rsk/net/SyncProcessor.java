@@ -3,7 +3,7 @@ package co.rsk.net;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.*;
 import co.rsk.scoring.EventType;
@@ -119,7 +119,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     public void processNewBlockHash(MessageChannel sender, NewBlockHashMessage message) {
         logger.trace("Process new block hash from node {} hash {}", sender.getPeerNodeID(), HashUtil.shortHash(message.getBlockHash()));
-        Sha3Hash hash = message.getBlockHash();
+        Keccak256 hash = message.getBlockHash();
 
         if (syncState instanceof DecidingSyncState && blockSyncService.getBlockFromStoreOrBlockchain(hash) == null) {
             sendMessage(sender, new BlockRequestMessage(pendingMessages.getNextRequestId(), hash));
@@ -186,7 +186,7 @@ public class SyncProcessor implements SyncEventsHandler {
     public void startSyncing(MessageChannel peer) {
         selectedPeerId = peer.getPeerNodeID();
         logger.trace("Start syncing with node {}", peer.getPeerNodeID());
-        Sha3Hash bestBlockHash = syncInformation.getPeerStatus(selectedPeerId).getStatus().getBestBlockHash();
+        Keccak256 bestBlockHash = syncInformation.getPeerStatus(selectedPeerId).getStatus().getBestBlockHash();
         setSyncState(new CheckingBestHeaderSyncState(this.syncConfiguration, this, syncInformation, bestBlockHash));
     }
 
@@ -307,7 +307,7 @@ public class SyncProcessor implements SyncEventsHandler {
         }
 
         @Override
-        public boolean isKnownBlock(Sha3Hash hash) {
+        public boolean isKnownBlock(Keccak256 hash) {
             return blockchain.getBlockByHash(hash) != null;
         }
 

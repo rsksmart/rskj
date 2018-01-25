@@ -20,7 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blocks.BlockRecorder;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.Metrics;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.Trie;
@@ -366,7 +366,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public Block getBlockByHash(Sha3Hash hash) {
+    public Block getBlockByHash(Keccak256 hash) {
         return blockStore.getBlockByHash(hash);
     }
 
@@ -376,7 +376,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public boolean isBlockExist(Sha3Hash hash) {
+    public boolean isBlockExist(Keccak256 hash) {
         return blockStore.isBlockExist(hash);
     }
 
@@ -386,7 +386,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public List<byte[]> getListOfBodiesByHashes(List<Sha3Hash> hashes) {
+    public List<byte[]> getListOfBodiesByHashes(List<Keccak256> hashes) {
         return null;
     }
 
@@ -403,7 +403,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public boolean hasBlockInSomeBlockchain(@Nonnull final Sha3Hash hash) {
+    public boolean hasBlockInSomeBlockchain(@Nonnull final Keccak256 hash) {
         final Block block = this.getBlockByHash(hash);
         return block != null && this.blockIsInIndex(block);
     }
@@ -454,7 +454,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
      * @return transaction info, null if the transaction does not exist
      */
     @Override
-    public TransactionInfo getTransactionInfo(Sha3Hash hash) {
+    public TransactionInfo getTransactionInfo(Keccak256 hash) {
         TransactionInfo txInfo = receiptStore.get(hash);
 
         if (txInfo == null) {
@@ -483,7 +483,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public Sha3Hash getBestBlockHash() {
+    public Keccak256 getBestBlockHash() {
         return status.getBestBlock().getHash();
     }
 

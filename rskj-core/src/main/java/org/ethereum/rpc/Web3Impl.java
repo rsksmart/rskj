@@ -21,7 +21,7 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.SnapshotManager;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerManager;
@@ -500,7 +500,7 @@ public class Web3Impl implements Web3 {
 
     public Block getBlockByJSonHash(String blockHash) throws Exception {
         byte[] bhash = stringHexToByteArray(blockHash);
-        return this.blockchain.getBlockByHash(new Sha3Hash(bhash));
+        return this.blockchain.getBlockByHash(new Keccak256(bhash));
     }
 
     @Override
@@ -747,7 +747,7 @@ public class Web3Impl implements Web3 {
     public TransactionResultDTO eth_getTransactionByHash(String transactionHash) throws Exception {
         TransactionResultDTO s = null;
         try {
-            Sha3Hash txHash = stringHexToSha3Hash(transactionHash);
+            Keccak256 txHash = stringHexToSha3Hash(transactionHash);
             Block block = null;
 
             TransactionInfo txInfo = blockchain.getTransactionInfo(txHash);
@@ -833,7 +833,7 @@ public class Web3Impl implements Web3 {
     public TransactionReceiptDTO eth_getTransactionReceipt(String transactionHash) throws Exception {
         logger.trace("eth_getTransactionReceipt(" + transactionHash + ")");
 
-        Sha3Hash hash = stringHexToSha3Hash(transactionHash);
+        Keccak256 hash = stringHexToSha3Hash(transactionHash);
         TransactionInfo txInfo = blockchain.getReceiptStore().getInMainChain(hash, blockStore);
 
         if (txInfo == null) {
@@ -852,7 +852,7 @@ public class Web3Impl implements Web3 {
     public BlockResult eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) throws Exception {
         BlockResult s = null;
         try {
-            Block block = blockchain.getBlockByHash(new Sha3Hash(blockHash));
+            Block block = blockchain.getBlockByHash(new Keccak256(blockHash));
             if (block == null) {
                 return null;
             }

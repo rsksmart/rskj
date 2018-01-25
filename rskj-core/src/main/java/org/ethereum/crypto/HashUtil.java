@@ -19,8 +19,7 @@
 
 package org.ethereum.crypto;
 
-import co.rsk.crypto.Sha3Hash;
-import org.ethereum.crypto.cryptohash.Keccak256;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.util.RLP;
 import org.spongycastle.crypto.Digest;
 import org.spongycastle.crypto.digests.RIPEMD160Digest;
@@ -63,7 +62,7 @@ public class HashUtil {
     }
 
     public static byte[] keccak256(byte[] input) {
-        Keccak256 digest =  new Keccak256();
+        org.ethereum.crypto.cryptohash.Keccak256 digest =  new org.ethereum.crypto.cryptohash.Keccak256();
         digest.update(input);
         return digest.digest();
     }
@@ -196,12 +195,12 @@ public class HashUtil {
     }
 
     @Nonnull
-    public static String shortHash(@Nonnull final Sha3Hash hash){
+    public static String shortHash(@Nonnull final Keccak256 hash){
         return getHashTillIndex(hash, 6);
     }
 
     @Nonnull
-    public static String getHashTillIndex(@Nonnull final Sha3Hash hash, int end) {
+    public static String getHashTillIndex(@Nonnull final Keccak256 hash, int end) {
         String stringHash = hash.toString();
         return tillIndex(stringHash, end);
     }
@@ -210,8 +209,8 @@ public class HashUtil {
         return hash.substring(0, Math.min(hash.length(), end));
     }
 
-    public static Sha3Hash randomSha3Hash() {
-        return new Sha3Hash(randomHash());
+    public static Keccak256 randomSha3Hash() {
+        return new Keccak256(randomHash());
     }
 
     public static byte[] keccak256(byte[] m1, byte[] m2) {

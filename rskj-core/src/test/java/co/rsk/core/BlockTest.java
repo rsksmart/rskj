@@ -21,7 +21,7 @@ package co.rsk.core;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
@@ -71,7 +71,7 @@ public class BlockTest {
 
         Block block =  new Block(
                 PegTestUtils.createHash3(),          // parent hash
-                new Sha3Hash(EMPTY_LIST_HASH),       // uncle hash
+                new Keccak256(EMPTY_LIST_HASH),       // uncle hash
                 TestUtils.randomAddress().getBytes(),            // coinbase
                 new Bloom().getData(),          // logs bloom
                 BigInteger.ONE.toByteArray(),    // difficulty
@@ -84,7 +84,7 @@ public class BlockTest {
                 new byte[]{0},         // provisory nonce
                 HashUtil.EMPTY_TRIE_HASH,       // receipts root
                 BlockChainImpl.calcTxTrie(txs), // transaction root
-                new Sha3Hash(HashUtil.EMPTY_TRIE_HASH),    //EMPTY_TRIE_HASH,   // state root
+                new Keccak256(HashUtil.EMPTY_TRIE_HASH),    //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list
                 null,  // uncle list
                 BigInteger.TEN.toByteArray(),
@@ -129,7 +129,7 @@ public class BlockTest {
         block.seal();
 
         try {
-            block.setStateRoot(new Sha3Hash(new byte[32]));
+            block.setStateRoot(new Keccak256(new byte[32]));
             Assert.fail();
         }
         catch (SealedBlockException ex) {
@@ -219,7 +219,7 @@ public class BlockTest {
         block.seal();
 
         try {
-            block.getHeader().setStateRoot(new Sha3Hash(new byte[32]));
+            block.getHeader().setStateRoot(new Keccak256(new byte[32]));
             Assert.fail();
         }
         catch (SealedBlockHeaderException ex) {
