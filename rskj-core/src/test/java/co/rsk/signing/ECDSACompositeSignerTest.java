@@ -81,7 +81,7 @@ public class ECDSACompositeSignerTest {
         ECDSASignature result = signer.sign(new KeyId("a-key"), new PlainMessage(Hex.decode("aabbccdd")), auth);
 
         verify(signer1, never()).sign(any(), any(), any());
-        Assert.assertEquals(mockedSignature, result);
+        Assert.assertSame(mockedSignature, result);
     }
 
     @Test
@@ -90,6 +90,31 @@ public class ECDSACompositeSignerTest {
             when(signer1.canSignWith(new KeyId("another-key"))).thenReturn(false);
             when(signer2.canSignWith(new KeyId("another-key"))).thenReturn(false);
             signer.sign(new KeyId("another-id"), new PlainMessage(Hex.decode("aabbcc")), mock(SignAuthorization.class));
+            Assert.fail();
+        } catch (Exception e) {}
+    }
+
+    @Test
+    public void getPublicKey() throws Exception {
+        when(signer1.canSignWith(new KeyId("a-key"))).thenReturn(false);
+        when(signer2.canSignWith(new KeyId("a-key"))).thenReturn(true);
+        SignAuthorization auth = mock(SignAuthorization.class);
+
+        PublicKey mockedPublicKey = mock(PublicKey.class);
+        when(signer2.getPublicKey(new KeyId("a-key"))).thenReturn(mockedPublicKey);
+
+        PublicKey result = signer.getPublicKey(new KeyId("a-key"));
+
+        verify(signer1, never()).getPublicKey(any());
+        Assert.assertSame(mockedPublicKey, result);
+    }
+
+    @Test
+    public void getPublicKeyNonMatchingKeyId() throws Exception {
+        try {
+            when(signer1.canSignWith(new KeyId("another-key"))).thenReturn(false);
+            when(signer2.canSignWith(new KeyId("another-key"))).thenReturn(false);
+            signer.getPublicKey(new KeyId("another-id"));
             Assert.fail();
         } catch (Exception e) {}
     }

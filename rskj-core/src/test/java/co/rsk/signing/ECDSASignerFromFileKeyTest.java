@@ -85,4 +85,25 @@ public class ECDSASignerFromFileKeyTest {
         } catch (Exception e) {}
     }
 
+    @Test
+    public void getPublicKey() throws Exception {
+        KeyFileHandler handlerMock = mock(KeyFileHandler.class);
+        ECKey key = new ECKey();
+        when(handlerMock.privateKey()).thenReturn(key.getPrivKeyBytes());
+        PowerMockito.whenNew(KeyFileHandler.class).withArguments("a-file-path").thenReturn(handlerMock);
+
+        PublicKey result = signer.getPublicKey(new KeyId("an-id"));
+
+        PublicKey expectedPublicKey = new PublicKey(key.getPubKey());
+
+        Assert.assertEquals(expectedPublicKey, result);
+    }
+
+    @Test
+    public void getPublicKeyNonMatchingKeyId() throws Exception {
+        try {
+            signer.getPublicKey(new KeyId("another-id"));
+            Assert.fail();
+        } catch (Exception e) {}
+    }
 }

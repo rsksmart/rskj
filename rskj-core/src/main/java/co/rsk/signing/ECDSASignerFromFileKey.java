@@ -64,6 +64,11 @@ public class ECDSASignerFromFileKey implements ECDSASigner {
 
     @Override
     public PublicKey getPublicKey(KeyId keyId) throws SignerException {
+        if (!canSignWith(keyId)) {
+            logger.error("Can't get public key for that key id. Requested {}", keyId);
+            throw new SignerException(String.format("Can't get public key for the requested signing key: %s", keyId));
+        }
+
         return new PublicKey(getPrivateKey().getPubKey());
     }
 
