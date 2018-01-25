@@ -61,13 +61,22 @@ public class ECDSACompositeSigner implements ECDSASigner {
     }
 
     @Override
-    public ECDSASignature sign(KeyId keyId, Message message, SignAuthorization signAuthorization) throws IOException {
+    public PublicKey getPublicKey(KeyId keyId) throws SignerException {
+        return findSignerFor(keyId).getPublicKey(keyId);
+    }
+
+    @Override
+    public ECDSASignature sign(KeyId keyId, Message message, SignAuthorization signAuthorization) throws SignerException {
+        return findSignerFor(keyId).sign(keyId, message, signAuthorization);
+    }
+
+    private ECDSASigner findSignerFor(KeyId keyId) throws SignerException {
         Optional<ECDSASigner> signer = signers.stream().filter(sig -> sig.canSignWith(keyId)).findFirst();
 
         if (!signer.isPresent()) {
-            throw new IllegalArgumentException(String.format("No suitable signer found for the requested signing key: %s", keyId));
+            throw new SignerException(String.format("No suitable signer found for the requested signing key: %s", keyId));
         }
 
-        return signer.get().sign(keyId, message, signAuthorization);
+        return signer.get();
     }
 }

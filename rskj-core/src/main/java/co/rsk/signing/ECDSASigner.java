@@ -34,7 +34,9 @@ public interface ECDSASigner {
 
     ECDSASignerCheckResult check();
 
-    ECDSASignature sign(KeyId keyId, Message message, SignAuthorization signAuthorization) throws IOException;
+    PublicKey getPublicKey(KeyId keyId) throws SignerException;
+
+    ECDSASignature sign(KeyId keyId, Message message, SignAuthorization signAuthorization) throws SignerException;
 
     class ECDSASignerCheckResult {
         private boolean success;

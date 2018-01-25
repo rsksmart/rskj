@@ -63,18 +63,30 @@ public class ECDSASignerFromFileKey implements ECDSASigner {
     }
 
     @Override
-    public ECDSASignature sign(KeyId keyId, Message message, SignAuthorization signAuthorization) throws FileNotFoundException {
+    public PublicKey getPublicKey(KeyId keyId) throws SignerException {
+        return new PublicKey(getPrivateKey().getPubKey());
+    }
+
+    @Override
+    public ECDSASignature sign(KeyId keyId, Message message, SignAuthorization signAuthorization) throws SignerException {
         if (!canSignWith(keyId)) {
             logger.error("Can't sign with that key id. Requested {}", keyId);
-            throw new IllegalArgumentException(String.format("Can't sign with the requested signing key: %s", keyId));
+            throw new SignerException(String.format("Can't sign with the requested signing key: %s", keyId));
         }
 
+        // Sign (no authorization is needed) and return the wrapped signature.
+        return ECDSASignature.fromEthSignature(getPrivateKey().sign(message.getBytes()));
+    }
+
+    private ECKey getPrivateKey() throws SignerException {
         // Read the key from disk
         // We use Ethereum's ECKey for this and subsequent signing
         // since it's good enough and there's no loss of generality
-        ECKey key = ECKey.fromPrivate(new KeyFileHandler(keyPath).privateKey());
-
-        // Sign (no authorization is needed) and return the wrapped signature.
-        return ECDSASignature.fromEthSignature(key.sign(message.getBytes()));
+        try {
+            return ECKey.fromPrivate(new KeyFileHandler(keyPath).privateKey());
+        } catch (FileNotFoundException e) {
+            logger.error("File not found trying to access private key", e);
+            throw new SignerException(String.format("File not found trying to access private key: %s", keyPath));
+        }
     }
 }
