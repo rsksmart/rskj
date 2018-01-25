@@ -42,6 +42,7 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -65,7 +66,6 @@ import static org.ethereum.crypto.SHA3Helper.sha3;
  * @since 22.05.2014
  */
 public abstract class SystemProperties {
-    public static final String DEFAULT_BIND_IP = "::";
     private static Logger logger = LoggerFactory.getLogger("general");
 
     public static final String PROPERTY_DB_DIR = "database.dir";
@@ -103,7 +103,6 @@ public abstract class SystemProperties {
 
     private String genesisInfo = null;
 
-    private String bindIp = null;
     private String externalIp = null;
 
     private Boolean syncEnabled = null;
@@ -288,7 +287,7 @@ public abstract class SystemProperties {
     }
 
     @ValidateMe
-    public boolean peerDiscovery() {
+    public boolean isPeerDiscoveryEnabled() {
         return discoveryEnabled == null ? configFromFiles.getBoolean("peer.discovery.enabled") : discoveryEnabled;
     }
 
@@ -558,21 +557,17 @@ public abstract class SystemProperties {
         return configFromFiles.getInt("peer.listen.port");
     }
 
-    public String getPeerDiscoveryBindAddress() {
-        if (bindIp != null) {
-            return bindIp;
+    public InetAddress getBindAddress() {
+        if (!configFromFiles.hasPath("bind.ip")) {
+            return InetAddress.getLoopbackAddress();
         }
-
-        bindIp = DEFAULT_BIND_IP;
-        if (configFromFiles.hasPath("peer.discovery.bind.ip")) {
-            String bindIpFromConfig = configFromFiles.getString("peer.discovery.bind.ip").trim();
-            if (!bindIpFromConfig.isEmpty()) {
-                bindIp = bindIpFromConfig;
-            }
+        String host = configFromFiles.getString("bind.ip");
+        try {
+            return InetAddress.getByName(host);
+        } catch (UnknownHostException e) {
+            logger.warn("Unable to bind to {}. Using loopback instead", e);
+            return InetAddress.getLoopbackAddress();
         }
-
-        logger.info("Binding peer discovery on {}", bindIp);
-        return bindIp;
     }
 
     /**
@@ -617,7 +612,7 @@ public abstract class SystemProperties {
             logger.info("External address identified: {}", externalIp);
         } catch (IOException e) {
             logger.error("Can't get external IP. " + e);
-            externalIp = getPeerDiscoveryBindAddress();
+            externalIp = getBindAddress().toString();
         }
         return externalIp;
     }
@@ -723,6 +718,16 @@ public abstract class SystemProperties {
 
     public String netName() {
         return configFromFiles.hasPath("blockchain.config.name") ? configFromFiles.getString("blockchain.config.name") : null;
+    }
+
+    public boolean isRpcEnabled() {
+        return configFromFiles.hasPath(PROPERTY_RPC_ENABLED) ?
+                configFromFiles.getBoolean(PROPERTY_RPC_ENABLED) : false;
+    }
+
+    public int rpcPort() {
+        return configFromFiles.hasPath(PROPERTY_RPC_PORT) ?
+                configFromFiles.getInt(PROPERTY_RPC_PORT) : 4444;
     }
 
     public String corsDomains() {

@@ -32,8 +32,8 @@ public class RskSystemPropertiesTest {
 
     @Test
     public void defaultValues() {
-        Assert.assertEquals(false, config.minerClientEnabled());
-        Assert.assertEquals(false, config.minerServerEnabled());
+        Assert.assertEquals(false, config.isMinerClientEnabled());
+        Assert.assertEquals(false, config.isMinerServerEnabled());
         Assert.assertEquals(0, config.minerMinGasPrice());
         Assert.assertEquals(0, config.minerGasUnitInDollars(), 0.001);
         Assert.assertEquals(0, config.minerMinFeesNotifyInDollars(), 0.001);

@@ -50,7 +50,7 @@ public class NodeManager {
 
 
     // to avoid checking for null
-    private static NodeStatistics DUMMY_STAT = new NodeStatistics(new Node(new byte[0], "dummy.node", 0));
+    private static final NodeStatistics DUMMY_STAT = new NodeStatistics(new Node(new byte[0], "dummy.node", 0));
 
     private final PeerExplorer peerExplorer;
     private final SystemProperties config;
@@ -71,7 +71,7 @@ public class NodeManager {
 
     @PostConstruct
     void init() {
-        discoveryEnabled = config.peerDiscovery();
+        discoveryEnabled = config.isPeerDiscoveryEnabled();
 
         homeNode = new Node(config.nodeId(), config.getExternalIp(), config.listenPort());
 

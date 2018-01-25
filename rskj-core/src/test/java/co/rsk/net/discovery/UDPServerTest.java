@@ -45,7 +45,7 @@ public class UDPServerTest {
     private static final String KEY_3 = "bd3d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38263f";
     private static final String NODE_ID_3 = "e229918d45c131e130c91c4ea51c97ab4f66cfbd0437b35c92392b5c2b3d44b28ea15b84a262459437c955f6cc7f10ad1290132d3fc866bfaf4115eac0e8e860";
 
-    private static final String HOST = "localhost";
+    private String HOST = "localhost";
     private static final int PORT_1 = 40305;
     private static final int PORT_2 = 40306;
     private static final int PORT_3 = 40307;
@@ -55,7 +55,6 @@ public class UDPServerTest {
 
     @Test
     public void run3NodesFullTest() throws InterruptedException {
-
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
         ECKey key2 = ECKey.fromPrivate(Hex.decode(KEY_2)).decompress();
         ECKey key3 = ECKey.fromPrivate(Hex.decode(KEY_3)).decompress();

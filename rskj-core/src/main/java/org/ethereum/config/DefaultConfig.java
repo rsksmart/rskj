@@ -109,7 +109,7 @@ public class DefaultConfig {
     @Bean
     public HashRateCalculator hashRateCalculator(RskSystemProperties rskSystemProperties, BlockStore blockStore, MiningConfig miningConfig) {
         RskCustomCache<ByteArrayWrapper, BlockHeaderElement> cache = new RskCustomCache<>(60000L);
-        if (!rskSystemProperties.minerServerEnabled()) {
+        if (!rskSystemProperties.isMinerServerEnabled()) {
             return new HashRateCalculatorNonMining(blockStore, cache);
         }
 
@@ -225,6 +225,6 @@ public class DefaultConfig {
 
     @Bean
     public UDPServer udpServer(PeerExplorer peerExplorer, RskSystemProperties rskConfig) {
-        return new UDPServer(rskConfig.getPeerDiscoveryBindAddress(), rskConfig.listenPort(), peerExplorer);
+        return new UDPServer(rskConfig.getBindAddress().getHostAddress(), rskConfig.listenPort(), peerExplorer);
     }
 }

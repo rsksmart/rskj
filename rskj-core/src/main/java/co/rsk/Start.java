@@ -162,44 +162,41 @@ public class Start {
 
         if (rskSystemProperties.isRpcEnabled()) {
             logger.info("RPC enabled");
-            enableRpc();
+            startRPCServer();
         }
         else {
             logger.info("RPC disabled");
+        }
+
+        if (rskSystemProperties.isPeerDiscoveryEnabled()) {
+            udpServer.start();
         }
 
         if (rskSystemProperties.isSyncEnabled()) {
             syncPool.updateLowerUsefulDifficulty();
             syncPool.start(peerClientFactory);
             if (rskSystemProperties.waitForSync()) {
-                waitRskSyncDone(rsk);
+                waitRskSyncDone();
             }
         }
 
-        if (rskSystemProperties.minerServerEnabled()) {
+        if (rskSystemProperties.isMinerServerEnabled()) {
             minerServer.start();
 
-            if (rskSystemProperties.minerClientEnabled()) {
+            if (rskSystemProperties.isMinerClientEnabled()) {
                 minerClient.mine();
             }
         }
 
-        if (rskSystemProperties.peerDiscovery()) {
-            enablePeerDiscovery();
-        }
     }
 
-    private void enablePeerDiscovery() {
-        udpServer.start();
-    }
-
-    private void enableRpc() throws InterruptedException {
+    private void startRPCServer() throws InterruptedException {
         web3Service = web3Factory.newInstance();
         web3Service.start();
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, rskSystemProperties.getRpcModules());
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler(rskSystemProperties.corsDomains());
         new JsonRpcNettyServer(
-            rskSystemProperties.rpcHost(),
+            rskSystemProperties.getBindAddress(),
             rskSystemProperties.rpcPort(),
             rskSystemProperties.soLingerTime(),
             true,
@@ -217,7 +214,7 @@ public class Start {
         new TxBuilderEx(rskSystemProperties, rsk, repository, nodeBlockProcessor, pendingState).simulateTxs();
     }
 
-    private void waitRskSyncDone(Rsk rsk) throws InterruptedException {
+    private void waitRskSyncDone() throws InterruptedException {
         while (rsk.isBlockchainEmpty() || rsk.hasBetterBlockToSync() || rsk.isPlayingBlocks()) {
             try {
                 Thread.sleep(10000);

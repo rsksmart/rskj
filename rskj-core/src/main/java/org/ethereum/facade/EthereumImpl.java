@@ -52,7 +52,6 @@ import java.util.concurrent.Future;
 
 public class EthereumImpl implements Ethereum {
 
-    private static final Logger logger = LoggerFactory.getLogger("facade");
     private static final Logger gLogger = LoggerFactory.getLogger("general");
 
     private final ChannelManager channelManager;
@@ -96,12 +95,12 @@ public class EthereumImpl implements Ethereum {
         if (config.listenPort() > 0) {
             peerServiceExecutor = Executors.newSingleThreadExecutor(runnable -> {
                 Thread thread = new Thread(runnable, "Peer Server");
-                thread.setUncaughtExceptionHandler((exceptionThread, exception) -> {
-                    gLogger.error("Unable to start peer server", exception);
-                });
+                thread.setUncaughtExceptionHandler((exceptionThread, exception) ->
+                    gLogger.error("Unable to start peer server", exception)
+                );
                 return thread;
             });
-            peerServiceExecutor.execute(() -> peerServer.start(config.listenPort()));
+            peerServiceExecutor.execute(() -> peerServer.start(config.getBindAddress(), config.listenPort()));
         }
         compositeEthereumListener.addListener(gasPriceTracker);
 

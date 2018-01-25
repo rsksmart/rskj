@@ -67,7 +67,7 @@ public class NodeManagerTest {
 
         Mockito.when(config.peerActive()).thenReturn(activePeers);
         Mockito.when(peerExplorer.getNodes()).thenReturn(bootNodes);
-        Mockito.when(config.peerDiscovery()).thenReturn(false);
+        Mockito.when(config.isPeerDiscoveryEnabled()).thenReturn(false);
 
         nodeManager.init();
 
@@ -92,7 +92,7 @@ public class NodeManagerTest {
 
         Mockito.when(config.peerActive()).thenReturn(activePeers);
         Mockito.when(peerExplorer.getNodes()).thenReturn(bootNodes);
-        Mockito.when(config.peerDiscovery()).thenReturn(true);
+        Mockito.when(config.isPeerDiscoveryEnabled()).thenReturn(true);
 
         nodeManager.init();
 
@@ -114,7 +114,7 @@ public class NodeManagerTest {
 
         Mockito.when(config.peerActive()).thenReturn(activePeers);
         Mockito.when(peerExplorer.getNodes()).thenReturn(bootNodes);
-        Mockito.when(config.peerDiscovery()).thenReturn(true);
+        Mockito.when(config.isPeerDiscoveryEnabled()).thenReturn(true);
 
         nodeManager.init();
 
