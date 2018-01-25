@@ -64,7 +64,7 @@ public class TransactionsMessage extends Message {
 
         if(size > 0) {
             sb.append(": ");
-            this.getTransactions().forEach(tx -> sb.append(Hex.toHexString(tx.getHash())).append(", "));
+            this.getTransactions().forEach(tx -> sb.append(tx.getHash()).append(", "));
         }
 
         return sb.toString();

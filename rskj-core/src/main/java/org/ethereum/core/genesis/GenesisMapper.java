@@ -30,7 +30,7 @@ import org.ethereum.util.RLP;
  * Created by mario on 13/01/17.
  */
 public class GenesisMapper {
-    private static final byte[] EMPTY_LIST_HASH = HashUtil.sha3(RLP.encodeList());
+    private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     public Genesis mapFromJson(GenesisJson json, boolean rskFormat) {
         byte[] nonce = Utils.parseData(json.nonce);

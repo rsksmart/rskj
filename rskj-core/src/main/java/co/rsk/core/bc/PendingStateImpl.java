@@ -26,8 +26,8 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
@@ -35,7 +35,6 @@ import org.ethereum.util.RLP;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -44,7 +43,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static org.ethereum.crypto.HashUtil.sha3;
+import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.BIUtil.toBI;
 
 /**
@@ -52,12 +51,12 @@ import static org.ethereum.util.BIUtil.toBI;
  */
 public class PendingStateImpl implements PendingState {
     private static final Logger logger = LoggerFactory.getLogger("pendingstate");
-    private static final byte[] emptyUncleHashList = sha3(RLP.encodeList(new byte[0]));
+    private static final byte[] emptyUncleHashList = HashUtil.keccak256(RLP.encodeList(new byte[0]));
 
-    private final Map<ByteArrayWrapper, Transaction> pendingTransactions = new HashMap<>();
-    private final Map<ByteArrayWrapper, Transaction> wireTransactions = new HashMap<>();
-    private final Map<ByteArrayWrapper, Long> transactionBlocks = new HashMap<>();
-    private final Map<ByteArrayWrapper, Long> transactionTimes = new HashMap<>();
+    private final Map<Sha3Hash, Transaction> pendingTransactions = new HashMap<>();
+    private final Map<Sha3Hash, Transaction> wireTransactions = new HashMap<>();
+    private final Map<Sha3Hash, Long> transactionBlocks = new HashMap<>();
+    private final Map<Sha3Hash, Long> transactionTimes = new HashMap<>();
 
     private final RskSystemProperties config;
     private final Blockchain blockChain;
@@ -176,7 +175,7 @@ public class PendingStateImpl implements PendingState {
 
             logger.trace("Trying add wire transaction nonce {} hash {}", tx.getHash(), toBI(tx.getNonce()));
 
-            ByteArrayWrapper hash = new ByteArrayWrapper(tx.getHash());
+            Sha3Hash hash = tx.getHash();
 
             if (pendingTransactions.containsKey(hash) || wireTransactions.containsKey(hash)) {
                 logger.trace("TX already exists: {} ", tx);
@@ -228,9 +227,9 @@ public class PendingStateImpl implements PendingState {
             return;
         }
 
-        logger.trace("add pending transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+        logger.trace("add pending transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
-        ByteArrayWrapper hash = new ByteArrayWrapper(tx.getHash());
+        Sha3Hash hash = tx.getHash();
         Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
 
         if (pendingTransactions.containsKey(hash)) {
@@ -294,10 +293,10 @@ public class PendingStateImpl implements PendingState {
 
     @VisibleForTesting
     public void removeObsoleteTransactions(long currentBlock, int depth, int timeout) {
-        List<ByteArrayWrapper> toremove = new ArrayList<>();
+        List<Sha3Hash> toremove = new ArrayList<>();
         final long timestampSeconds = this.getCurrentTimeInSeconds();
 
-        for (Map.Entry<ByteArrayWrapper, Long> entry : transactionBlocks.entrySet()) {
+        for (Map.Entry<Sha3Hash, Long> entry : transactionBlocks.entrySet()) {
             long block = entry.getValue().longValue();
 
             if (block < currentBlock - depth) {
@@ -318,9 +317,9 @@ public class PendingStateImpl implements PendingState {
 
     @VisibleForTesting
     public synchronized void removeObsoleteTransactions(long timeSeconds) {
-        List<ByteArrayWrapper> toremove = new ArrayList<>();
+        List<Sha3Hash> toremove = new ArrayList<>();
 
-        for (Map.Entry<ByteArrayWrapper, Long> entry : transactionTimes.entrySet()) {
+        for (Map.Entry<Sha3Hash, Long> entry : transactionTimes.entrySet()) {
             long txtime = entry.getValue().longValue();
 
             if (txtime <= timeSeconds) {
@@ -334,8 +333,8 @@ public class PendingStateImpl implements PendingState {
         removeTransactionList(toremove);
     }
 
-    private void removeTransactionList(List<ByteArrayWrapper> toremove) {
-        for (ByteArrayWrapper key : toremove) {
+    private void removeTransactionList(List<Sha3Hash> toremove) {
+        for (Sha3Hash key : toremove) {
             pendingTransactions.remove(key);
             wireTransactions.remove(key);
             transactionBlocks.remove(key);
@@ -346,20 +345,18 @@ public class PendingStateImpl implements PendingState {
     @Override
     public synchronized void clearPendingState(List<Transaction> txs) {
         for (Transaction tx : txs) {
-            byte[] bhash = tx.getHash();
-            ByteArrayWrapper hash = new ByteArrayWrapper(bhash);
+            Sha3Hash hash = tx.getHash();
             pendingTransactions.remove(hash);
-            logger.trace("Clear pending transaction, hash: [{}]", Hex.toHexString(bhash));
+            logger.trace("Clear pending transaction, hash: [{}]", hash);
         }
     }
 
     @Override
     public synchronized void clearWire(List<Transaction> txs) {
         for (Transaction tx: txs) {
-            byte[] bhash = tx.getHash();
-            ByteArrayWrapper hash = new ByteArrayWrapper(bhash);
+            Sha3Hash hash = tx.getHash();
             wireTransactions.remove(hash);
-            logger.trace("Clear wire transaction, hash: [{}]", Hex.toHexString(bhash));
+            logger.trace("Clear wire transaction, hash: [{}]", hash);
         }
     }
 
@@ -385,7 +382,7 @@ public class PendingStateImpl implements PendingState {
     }
 
     private void executeTransaction(Transaction tx) {
-        logger.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+        logger.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), tx.getHash());
 
         Block best = blockChain.getBestBlock();
 
@@ -459,7 +456,7 @@ public class PendingStateImpl implements PendingState {
                 if (nonceDiff != 0) {
                     return nonceDiff > 0 ? 1 : -1;
                 }
-                return FastByteComparisons.compareTo(tx1.getHash(), 0, 32, tx2.getHash(), 0, 32);
+                return FastByteComparisons.compareTo(tx1.getHash().getBytes(), 0, 32, tx2.getHash().getBytes(), 0, 32);
             });
         }
     }

@@ -46,7 +46,7 @@ public interface Blockchain {
 
     Block getBestBlock();
 
-    TransactionInfo getTransactionInfo(byte[] hash);
+    TransactionInfo getTransactionInfo(Sha3Hash hash);
 
     void close();
 

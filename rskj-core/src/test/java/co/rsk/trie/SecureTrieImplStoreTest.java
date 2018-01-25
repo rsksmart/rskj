@@ -22,10 +22,6 @@ import org.ethereum.datasource.HashMapDB;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
-
-import static org.ethereum.crypto.SHA3Helper.sha3;
-
 /**
  * Created by ajlopez on 03/04/2017.
  */

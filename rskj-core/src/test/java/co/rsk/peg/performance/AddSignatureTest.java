@@ -23,14 +23,10 @@ import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
-import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.*;
 import org.ethereum.core.Repository;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -48,9 +44,9 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
     // Keys for the regtest genesis federation, which
     // we use for benchmarking this
     private static final List<BtcECKey> federatorKeys = Arrays.asList(
-            BtcECKey.fromPrivate(HashUtil.sha3("federator1".getBytes(StandardCharsets.UTF_8))),
-            BtcECKey.fromPrivate(HashUtil.sha3("federator2".getBytes(StandardCharsets.UTF_8))),
-            BtcECKey.fromPrivate(HashUtil.sha3("federator3".getBytes(StandardCharsets.UTF_8)))
+            BtcECKey.fromPrivate(HashUtil.keccak256("federator1".getBytes(StandardCharsets.UTF_8))),
+            BtcECKey.fromPrivate(HashUtil.keccak256("federator2".getBytes(StandardCharsets.UTF_8))),
+            BtcECKey.fromPrivate(HashUtil.keccak256("federator3".getBytes(StandardCharsets.UTF_8)))
     );
 
     @Test
@@ -135,7 +131,7 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
             federatorThatSignsKey = keysSelection.get(index);
 
             // Random tx hash that we then use for the method call
-            rskTxHash = new Sha3Hash(HashUtil.sha3(BigInteger.valueOf(new Random().nextLong()).toByteArray()));
+            rskTxHash = new Sha3Hash(HashUtil.keccak256(BigInteger.valueOf(new Random().nextLong()).toByteArray()));
 
             // Get the tx into the txs waiting for signatures
             try {

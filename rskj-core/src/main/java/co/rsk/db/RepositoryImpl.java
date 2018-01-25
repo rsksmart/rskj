@@ -44,14 +44,14 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.crypto.SHA3Helper.sha3;
+import static org.ethereum.crypto.HashUtil.keccak256;
 
 /**
  * Created by ajlopez on 29/03/2017.
  */
 public class RepositoryImpl implements Repository {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
-    private static final byte[] EMPTY_DATA_HASH = HashUtil.sha3(EMPTY_BYTE_ARRAY);
+    private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
 
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
@@ -166,7 +166,7 @@ public class RepositoryImpl implements Repository {
         }
 
         details.setCode(code);
-        accountState.setCodeHash(sha3(code));
+        accountState.setCodeHash(HashUtil.keccak256(code));
 
         updateContractDetails(addr, details);
         updateAccountState(addr, accountState);

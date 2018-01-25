@@ -42,7 +42,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
 
     @Override
     public void add(Sha3Hash blockHash, int transactionIndex, TransactionReceipt receipt){
-        byte[] txHash = receipt.getTransaction().getHash();
+        Sha3Hash txHash = receipt.getTransaction().getHash();
 
         TransactionInfo newTxInfo = new TransactionInfo(receipt, blockHash, transactionIndex);
 
@@ -58,11 +58,11 @@ public class ReceiptStoreImpl implements ReceiptStore {
 
         byte[][] txsBytes = encodedTxs.toArray(new byte[encodedTxs.size()][]);
 
-        receiptsDS.put(receipt.getTransaction().getHash(), RLP.encodeList(txsBytes));
+        receiptsDS.put(receipt.getTransaction().getHash().getBytes(), RLP.encodeList(txsBytes));
     }
 
     @Override
-    public TransactionInfo get(byte[] transactionHash){
+    public TransactionInfo get(Sha3Hash transactionHash){
         List<TransactionInfo> txs = getAll(transactionHash);
 
         if (txs.isEmpty()) {
@@ -73,7 +73,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public TransactionInfo get(byte[] transactionHash, Sha3Hash blockHash, BlockStore store) {
+    public TransactionInfo get(Sha3Hash transactionHash, Sha3Hash blockHash, BlockStore store) {
         List<TransactionInfo> txsInfo = getAll(transactionHash);
 
         if (txsInfo.isEmpty()) {
@@ -146,7 +146,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public TransactionInfo getInMainChain(byte[] transactionHash, BlockStore store) {
+    public TransactionInfo getInMainChain(Sha3Hash transactionHash, BlockStore store) {
         List<TransactionInfo> tis = this.getAll(transactionHash);
 
         if (tis.isEmpty()) {
@@ -177,11 +177,11 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public List<TransactionInfo> getAll(byte[] transactionHash) {
-        byte[] txsBytes = receiptsDS.get(transactionHash);
+    public List<TransactionInfo> getAll(Sha3Hash transactionHash) {
+        byte[] txsBytes = receiptsDS.get(transactionHash.getBytes());
 
         if (txsBytes == null || txsBytes.length == 0) {
-            return new ArrayList<TransactionInfo>();
+            return new ArrayList<>();
         }
 
         List<TransactionInfo> txsInfo = new ArrayList<>();

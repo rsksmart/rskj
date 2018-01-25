@@ -454,7 +454,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
      * @return transaction info, null if the transaction does not exist
      */
     @Override
-    public TransactionInfo getTransactionInfo(byte[] hash) {
+    public TransactionInfo getTransactionInfo(Sha3Hash hash) {
         TransactionInfo txInfo = receiptStore.get(hash);
 
         if (txInfo == null) {

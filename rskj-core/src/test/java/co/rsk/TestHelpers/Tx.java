@@ -20,6 +20,7 @@ package co.rsk.TestHelpers;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.mockito.Mockito;
@@ -54,7 +55,7 @@ public class Tx {
         RskAddress returnReceiveAddress = new RskAddress(returnReceiveAddressBytes);
 
         Mockito.when(transaction.getSender()).thenReturn(returnSender);
-        Mockito.when(transaction.getHash()).thenReturn(BigInteger.valueOf(hashes.nextLong()).toByteArray());
+        Mockito.when(transaction.getHash()).thenReturn(new Sha3Hash(BigInteger.valueOf(hashes.nextLong()).toByteArray()));
         Mockito.when(transaction.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId())).thenReturn(Boolean.TRUE);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(returnReceiveAddress);
         ArrayList<Byte> bytes = new ArrayList();

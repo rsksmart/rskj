@@ -457,7 +457,7 @@ public class WorldDslProcessorTest {
         Assert.assertNotNull(tx01);
         Assert.assertNotNull(tx02);
 
-        Assert.assertArrayEquals(tx01.getHash(), block.getTransactionsList().get(0).getHash());
-        Assert.assertArrayEquals(tx02.getHash(), block.getTransactionsList().get(1).getHash());
+        Assert.assertEquals(tx01.getHash(), block.getTransactionsList().get(0).getHash());
+        Assert.assertEquals(tx02.getHash(), block.getTransactionsList().get(1).getHash());
     }
 }

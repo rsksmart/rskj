@@ -18,6 +18,7 @@
 
 package co.rsk.net.handler.txvalidator;
 
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
@@ -32,7 +33,7 @@ public class TxValidatorNotRemascTxValidatorTest {
     public void remascTx() {
         TxValidatorNotRemascTxValidator validator = new TxValidatorNotRemascTxValidator();
         Transaction tx1 = Mockito.mock(RemascTransaction.class);
-        Mockito.when(tx1.getHash()).thenReturn(new byte[32]);
+        Mockito.when(tx1.getHash()).thenReturn(Sha3Hash.zeroHash());
         Assert.assertFalse(validator.validate(tx1, null, null, null, 0, false));
     }
 

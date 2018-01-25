@@ -166,7 +166,7 @@ public class BlockGenerator {
 
     public Block createChildBlock(Block parent, long fees, List<BlockHeader> uncles, byte[] difficulty) {
         List<Transaction> txs = new ArrayList<>();
-        byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
+        byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
         return new Block(
                 parent.getHash(), // parent hash
@@ -261,7 +261,7 @@ public class BlockGenerator {
             uncles = new ArrayList<>();
         }
 
-        byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
+        byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
         BlockHeader newHeader = new BlockHeader(parent.getHash(),
                 new Sha3Hash(unclesListHash),
@@ -339,7 +339,7 @@ public class BlockGenerator {
         List<Transaction> txs = new ArrayList<>();
 
         for (int ntx = 0; ntx < ntxs; ntx++) {
-            txs.add(new SimpleRskTransaction(PegTestUtils.createHash3().getBytes()));
+            txs.add(new SimpleRskTransaction(PegTestUtils.createHash3()));
         }
 
         return new SimpleBlock(

@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.InternalTransaction;
@@ -56,7 +57,7 @@ public class TransactionExecutionSummary {
         return tx;
     }
 
-    public byte[] getTransactionHash() {
+    public Sha3Hash getTransactionHash() {
         return getTransaction().getHash() ;
     }
 

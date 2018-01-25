@@ -79,7 +79,7 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
     }
 
     @Override
-    public TransactionInfo getTransactionInfo(byte[] hash) {
+    public TransactionInfo getTransactionInfo(Sha3Hash hash) {
         return null;
     }
 

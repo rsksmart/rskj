@@ -235,7 +235,7 @@ public class Web3Impl implements Web3 {
     public String web3_sha3(String data) throws Exception {
         String s = null;
         try {
-            byte[] result = HashUtil.sha3(data.getBytes(StandardCharsets.UTF_8));
+            byte[] result = HashUtil.keccak256(data.getBytes(StandardCharsets.UTF_8));
             return s = TypeConverter.toJsonHex(result);
         } finally {
             if (logger.isDebugEnabled()) {
@@ -747,7 +747,7 @@ public class Web3Impl implements Web3 {
     public TransactionResultDTO eth_getTransactionByHash(String transactionHash) throws Exception {
         TransactionResultDTO s = null;
         try {
-            byte[] txHash = stringHexToByteArray(transactionHash);
+            Sha3Hash txHash = stringHexToSha3Hash(transactionHash);
             Block block = null;
 
             TransactionInfo txInfo = blockchain.getTransactionInfo(txHash);
@@ -760,7 +760,7 @@ public class Web3Impl implements Web3 {
                 List<Transaction> txs = this.getTransactionsByJsonBlockId("pending");
 
                 for (Transaction tx : txs) {
-                    if (Hex.toHexString(tx.getHash()).equals(transactionHash))
+                    if (tx.getHash().toString().equals(transactionHash))
                     {
                         return s = new TransactionResultDTO(null, null, tx);
                     }
@@ -833,7 +833,7 @@ public class Web3Impl implements Web3 {
     public TransactionReceiptDTO eth_getTransactionReceipt(String transactionHash) throws Exception {
         logger.trace("eth_getTransactionReceipt(" + transactionHash + ")");
 
-        byte[] hash = stringHexToByteArray(transactionHash);
+        Sha3Hash hash = stringHexToSha3Hash(transactionHash);
         TransactionInfo txInfo = blockchain.getReceiptStore().getInMainChain(hash, blockStore);
 
         if (txInfo == null) {

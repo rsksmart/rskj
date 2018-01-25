@@ -22,6 +22,7 @@ package org.ethereum.jsontestsuite.builder;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.db.ContractDetailsImpl;
 import org.ethereum.core.AccountState;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.jsontestsuite.model.AccountTck;
 import org.ethereum.vm.DataWord;
 
@@ -29,7 +30,7 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.ethereum.crypto.HashUtil.sha3;
+import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.json.Utils.parseData;
 import static org.ethereum.util.Utils.unifiedNumericToBigInteger;
 
@@ -46,7 +47,7 @@ public class AccountBuilder {
         state.addToBalance(unifiedNumericToBigInteger(account.getBalance()));
         state.setNonce(unifiedNumericToBigInteger(account.getNonce()));
         state.setStateRoot(details.getStorageHash());
-        state.setCodeHash(sha3(details.getCode()));
+        state.setCodeHash(HashUtil.keccak256(details.getCode()));
 
         return new StateWrap(state, details);
     }

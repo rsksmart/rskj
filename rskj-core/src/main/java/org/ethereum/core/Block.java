@@ -24,7 +24,7 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
-import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -580,7 +580,7 @@ public class Block {
         }
 
         uncleList.add(uncle);
-        this.getHeader().setUnclesHash(new Sha3Hash(SHA3Helper.sha3(getUnclesEncoded())));
+        this.getHeader().setUnclesHash(new Sha3Hash(HashUtil.keccak256(getUnclesEncoded())));
         rlpEncoded = null;
     }
 

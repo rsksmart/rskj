@@ -19,6 +19,7 @@
 package co.rsk.test;
 
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
@@ -145,7 +146,7 @@ public class DslFilesTest {
         Block block = status.getBestBlock();
 
         Assert.assertEquals(1, block.getTransactionsList().size());
-        byte[] txhash = block.getTransactionsList().get(0).getHash();
+        Sha3Hash txhash = block.getTransactionsList().get(0).getHash();
         TransactionInfo txinfo = world.getBlockChain().getTransactionInfo(txhash);
 
         // only three events, raised by

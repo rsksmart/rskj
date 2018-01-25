@@ -117,7 +117,7 @@ public final class PendingFederation {
 
     public Sha3Hash getHash() {
         byte[] encoded = BridgeSerializationUtils.serializePendingFederation(this);
-        return new Sha3Hash(HashUtil.sha3(encoded));
+        return new Sha3Hash(HashUtil.keccak256(encoded));
     }
 
     @Override

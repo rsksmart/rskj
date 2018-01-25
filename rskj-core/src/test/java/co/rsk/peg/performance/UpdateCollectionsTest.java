@@ -27,7 +27,6 @@ import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.ReleaseRequestQueue;
 import co.rsk.peg.ReleaseTransactionSet;
 import org.ethereum.core.Repository;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -160,7 +159,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
             // Generate some txs waiting for signatures
             Script genesisFederationScript = bridgeConstants.getGenesisFederation().getP2SHScript();
             for (int i = 0; i < Helper.randomInRange(minTxsWaitingForSigs, maxTxsWaitingForSigs); i++) {
-                Sha3Hash rskHash = new Sha3Hash(HashUtil.sha3(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
+                Sha3Hash rskHash = new Sha3Hash(HashUtil.keccak256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
                 BtcTransaction btcTx = new BtcTransaction(networkParameters);
                 Sha256Hash inputHash = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
                 btcTx.addInput(inputHash, 0, genesisFederationScript);

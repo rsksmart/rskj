@@ -21,13 +21,12 @@ package org.ethereum.net.eth.message;
 
 import co.rsk.crypto.Sha3Hash;
 import org.ethereum.core.BlockIdentifier;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 
-import static org.ethereum.crypto.SHA3Helper.DEFAULT_SIZE_BYTES;
+import static org.ethereum.crypto.HashUtil.DEFAULT_SIZE_BYTES;
 import static org.ethereum.util.ByteUtil.byteArrayToInt;
 import static org.ethereum.util.ByteUtil.byteArrayToLong;
 

@@ -47,7 +47,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.digests.SHA256Digest;
 import org.spongycastle.util.Arrays;
-import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -708,7 +707,7 @@ public class MinerServerImpl implements MinerServer {
     private void removePendingTransactions(List<Transaction> transactions) {
         if (transactions != null) {
             for (Transaction tx : transactions) {
-                logger.debug("Removing transaction {}", Hex.toHexString(tx.getHash()));
+                logger.debug("Removing transaction {}", tx.getHash());
             }
         }
 
@@ -769,7 +768,7 @@ public class MinerServerImpl implements MinerServer {
     }
 
     private BlockHeader createHeader(Block newBlockParent, List<BlockHeader> uncles, List<Transaction> txs, BigInteger minimumGasPrice) {
-        final byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
+        final byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
         final long timestampSeconds = this.getCurrentTimeInSeconds();
 

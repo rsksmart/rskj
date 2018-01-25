@@ -46,7 +46,6 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -420,7 +419,7 @@ public class BlockExecutorTest {
     }
 
     public static Account createAccount(String seed) {
-        byte[] privateKeyBytes = HashUtil.sha3(seed.getBytes());
+        byte[] privateKeyBytes = HashUtil.keccak256(seed.getBytes());
         ECKey key = ECKey.fromPrivate(privateKeyBytes);
         Account account = new Account(key);
         return account;

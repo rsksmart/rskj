@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
 import co.rsk.core.RskAddress;
@@ -43,7 +44,6 @@ import org.spongycastle.util.encoders.Hex;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.security.SignatureException;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -68,7 +68,7 @@ public class Transaction {
     public static final int DATAWORD_LENGTH = 32;
 
     /* SHA3 hash of the RLP encoded transaction */
-    private byte[] hash;
+    private Sha3Hash hash;
 
     /* a counter used to make sure each transaction can only be processed once */
     private byte[] nonce;
@@ -259,13 +259,13 @@ public class Transaction {
         return parsed;
     }
 
-    public byte[] getHash() {
+    public Sha3Hash getHash() {
         if (!parsed) {
             rlpParse();
         }
 
         byte[] plainMsg = this.getEncoded();
-        return HashUtil.sha3(plainMsg);
+        return new Sha3Hash(HashUtil.keccak256(plainMsg));
     }
 
     public byte[] getRawHash() {
@@ -274,7 +274,7 @@ public class Transaction {
         }
 
         byte[] plainMsg = this.getEncodedRaw();
-        return HashUtil.sha3(plainMsg);
+        return HashUtil.keccak256(plainMsg);
     }
 
     public byte[] getNonce() {
@@ -442,7 +442,7 @@ public class Transaction {
             rlpParse();
         }
 
-        return "TransactionData [" + "hash=" + ByteUtil.toHexString(hash) +
+        return "TransactionData [" + "hash=" + hash +
                 "  nonce=" + ByteUtil.toHexString(nonce) +
                 ", gasPrice=" + ByteUtil.toHexString(gasPrice) +
                 ", gas=" + ByteUtil.toHexString(gasLimit) +
@@ -561,7 +561,7 @@ public class Transaction {
 
     @Override
     public int hashCode() {
-        return java.util.Arrays.hashCode(this.getHash());
+        return this.getHash().hashCode();
     }
 
     @Override
@@ -573,7 +573,7 @@ public class Transaction {
 
         Transaction tx = (Transaction) obj;
 
-        return Arrays.equals(this.getHash(), tx.getHash());
+        return this.getHash().equals(tx.getHash());
     }
 
     public static Transaction create(RskSystemProperties config, String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit){

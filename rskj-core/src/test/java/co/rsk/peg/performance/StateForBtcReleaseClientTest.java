@@ -19,10 +19,6 @@
 package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.crypto.TransactionSignature;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.crypto.Sha3Hash;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
@@ -95,7 +91,7 @@ public class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
                 }
 
 
-                Sha3Hash rskTxHash = new Sha3Hash(HashUtil.sha3(BigInteger.valueOf(new Random().nextLong()).toByteArray()));
+                Sha3Hash rskTxHash = new Sha3Hash(HashUtil.keccak256(BigInteger.valueOf(new Random().nextLong()).toByteArray()));
                 txsWaitingForSignatures.put(rskTxHash, releaseTx);
             }
         };

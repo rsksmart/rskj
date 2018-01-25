@@ -81,7 +81,7 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
+        byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         accountState.setCodeHash(codeKey);
 
@@ -467,7 +467,7 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
+        byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         accountState.setCodeHash(codeKey);
 
@@ -526,7 +526,7 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
+        byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         accountState.setCodeHash(codeKey);
 
@@ -585,7 +585,7 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
+        byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         accountState.setCodeHash(codeKey);
 
@@ -644,7 +644,7 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
+        byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         accountState.setCodeHash(codeKey);
 

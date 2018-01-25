@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  * Created by martin.medina on 1/5/17.
  */
 class RemascTestRunner {
-    private static final byte[] EMPTY_LIST_HASH = HashUtil.sha3(RLP.encodeList());
+    private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     private ECKey txSigningKey;
 

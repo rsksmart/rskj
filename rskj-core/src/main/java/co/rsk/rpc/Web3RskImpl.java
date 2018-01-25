@@ -30,7 +30,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
-import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.manager.WorldManager;
@@ -99,7 +99,7 @@ public class Web3RskImpl extends Web3Impl {
         List<Byte> rskTagAsByteList = java.util.Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
 
         int rskTagPosition = Collections.lastIndexOfSubList(coinbaseAsByteList, rskTagAsByteList);
-        byte[] blockHashForMergedMiningArray = new byte[SHA3Helper.Size.S256.getValue()/8];
+        byte[] blockHashForMergedMiningArray = new byte[HashUtil.Size.S256.getValue()/8];
         System.arraycopy(coinbaseAsByteArray, rskTagPosition+ RskMiningConstants.RSK_TAG.length, blockHashForMergedMiningArray, 0, blockHashForMergedMiningArray.length);
         String blockHashForMergedMining = TypeConverter.toJsonHex(blockHashForMergedMiningArray);
 

@@ -20,6 +20,7 @@
 package org.ethereum.util;
 
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.util.ByteBufferUtil;
 import co.rsk.util.RLPElementType;
 import co.rsk.util.RLPElementView;
@@ -99,6 +100,9 @@ public class RLP {
      * string. The range of the first byte is thus [0x80, 0xb7].
      */
     private static final int OFFSET_SHORT_ITEM = 0x80;
+
+    /** RLP encoding for null byte[] array */
+    private static final byte[] ENCODED_NULL = new byte[]{(byte) OFFSET_SHORT_ITEM};
 
     /**
      * [0xb7]
@@ -557,16 +561,25 @@ public class RLP {
 
     public static byte[] encodeRskAddress(RskAddress addr) {
         if (addr == null || RskAddress.nullAddress().equals(addr)) {
-            return encodeElement(null);
+            return ENCODED_NULL;
         }
 
         return encodeElement(addr.getBytes());
     }
 
+
+    public static byte[] encodeSha3HashElement(Sha3Hash parentHash) {
+        if (parentHash == null || Sha3Hash.zeroHash().equals(parentHash)) {
+            return ENCODED_NULL;
+        }
+
+        return encodeElement(parentHash.getBytes());
+    }
+
     public static byte[] encodeElement(byte[] srcData) {
 
         if (isNullOrZeroArray(srcData)) {
-            return new byte[]{(byte) OFFSET_SHORT_ITEM};
+            return ENCODED_NULL;
         } else if (isSingleZero(srcData)) {
             return srcData;
         } else if (srcData.length == 1 && (srcData[0] & 0xFF) < OFFSET_SHORT_ITEM) {
@@ -797,4 +810,5 @@ public class RLP {
         }
         throw new RuntimeException("Unsupported type: Only accepting String, Integer and BigInteger for now");
     }
+
 }

@@ -25,6 +25,7 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.crypto.Sha3Hash;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.World;
 import co.rsk.validators.BlockUnclesValidationRule;
@@ -72,10 +73,8 @@ public class MinerServerTest {
 
         Transaction tx1 = Tx.create(config, 0, 21000, 100, 0, 0, 0, new Random(0));
         byte[] s1 = new byte[32];
-        byte[] s2 = new byte[32];
         s1[0] = 0;
-        s2[0] = 1;
-        Mockito.when(tx1.getHash()).thenReturn(s1);
+        Mockito.when(tx1.getHash()).thenReturn(new Sha3Hash(s1));
         Mockito.when(tx1.getEncoded()).thenReturn(new byte[32]);
 
         Mockito.when(repository.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);

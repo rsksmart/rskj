@@ -33,13 +33,13 @@ public interface ReceiptStore {
 
     void add(Sha3Hash blockHash, int transactionIndex, TransactionReceipt receipt);
 
-    TransactionInfo get(byte[] transactionHash);
+    TransactionInfo get(Sha3Hash transactionHash);
 
-    TransactionInfo get(byte[] transactionHash, Sha3Hash blockHash, BlockStore store);
+    TransactionInfo get(Sha3Hash transactionHash, Sha3Hash blockHash, BlockStore store);
 
-    TransactionInfo getInMainChain(byte[] transactionHash, BlockStore store);
+    TransactionInfo getInMainChain(Sha3Hash transactionHash, BlockStore store);
 
-    List<TransactionInfo> getAll(byte[] transactionHash);
+    List<TransactionInfo> getAll(Sha3Hash transactionHash);
 
     void saveMultiple(Sha3Hash blockHash, List<TransactionReceipt> receipts);
 }

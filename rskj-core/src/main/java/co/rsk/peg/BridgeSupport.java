@@ -709,7 +709,7 @@ public class BridgeSupport {
 
         // Add the btc transaction to the 'awaiting signatures' list
         if (txsWithEnoughConfirmations.size() > 0) {
-            Sha3Hash rskTxHash = new Sha3Hash(rskTx.getHash());
+            Sha3Hash rskTxHash = rskTx.getHash();
             txsWaitingForSignatures.put(rskTxHash, txsWithEnoughConfirmations.iterator().next());
         }
     }

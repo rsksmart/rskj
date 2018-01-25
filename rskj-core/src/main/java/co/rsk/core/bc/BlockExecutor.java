@@ -210,11 +210,11 @@ public class BlockExecutor {
             boolean readyToExecute = txExecutor.init();
             if (!ignoreReadyToExecute && !readyToExecute) {
                 if (discardInvalidTxs) {
-                    logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()));
+                    logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
                     continue;
                 } else {
                     logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
-                            block.getNumber(), Hex.toHexString(tx.getHash()));
+                            block.getNumber(), tx.getHash());
                     return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
                 }
             }
@@ -247,7 +247,7 @@ public class BlockExecutor {
             receipt.setLogInfoList(txExecutor.getVMLogs());
             receipt.setStatus(txExecutor.getReceipt().getStatus());
 
-            logger.trace("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()),
+            logger.trace("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), tx.getHash(),
                     lastStateRootHash);
 
             logger.trace("tx[{}].receipt", i);

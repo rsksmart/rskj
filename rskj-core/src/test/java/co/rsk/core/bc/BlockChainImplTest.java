@@ -736,7 +736,7 @@ public class BlockChainImplTest {
     @Test
     public void getUnknownTransactionInfoAsNull() {
         BlockChainImpl blockChain = createBlockChain();
-        Assert.assertNull(blockChain.getTransactionInfo(new byte[] { 0x01 }));
+        Assert.assertNull(blockChain.getTransactionInfo(new Sha3Hash(new byte[] { 0x01 })));
     }
 
     @Test

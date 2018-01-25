@@ -39,7 +39,7 @@ public class ReceiptStoreImplTest {
     @Test
     public void getUnknownKey() {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
-        byte[] key = new byte[] { 0x01, 0x02 };
+        Sha3Hash key = new Sha3Hash(new byte[] { 0x01, 0x02 });
 
         TransactionInfo result = store.get(key);
 

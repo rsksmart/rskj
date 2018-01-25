@@ -87,7 +87,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     /*           ORIGIN op         */
     public DataWord getOriginAddress() {
 
-        byte[] cowPrivKey = HashUtil.sha3("horse".getBytes(StandardCharsets.UTF_8));
+        byte[] cowPrivKey = HashUtil.keccak256("horse".getBytes(StandardCharsets.UTF_8));
         byte[] addr = ECKey.fromPrivate(cowPrivKey).getAddress();
 
         return new DataWord(addr);
@@ -96,7 +96,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     /*           CALLER op         */
     public DataWord getCallerAddress() {
 
-        byte[] cowPrivKey = HashUtil.sha3("monkey".getBytes(StandardCharsets.UTF_8));
+        byte[] cowPrivKey = HashUtil.keccak256("monkey".getBytes(StandardCharsets.UTF_8));
         byte[] addr = ECKey.fromPrivate(cowPrivKey).getAddress();
 
         return new DataWord(addr);

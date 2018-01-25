@@ -387,7 +387,7 @@ public class BlockHeader {
     }
 
     public Sha3Hash getHash() {
-        return new Sha3Hash(HashUtil.sha3(getEncoded()));
+        return new Sha3Hash(HashUtil.keccak256(getEncoded()));
     }
 
     public byte[] getEncoded() {
@@ -573,7 +573,7 @@ public class BlockHeader {
     }
 
     public Sha3Hash getHashForMergedMining() {
-        return new Sha3Hash(HashUtil.sha3(getEncoded(false)));
+        return new Sha3Hash(HashUtil.keccak256(getEncoded(false)));
     }
 
     public String getShortHash() {

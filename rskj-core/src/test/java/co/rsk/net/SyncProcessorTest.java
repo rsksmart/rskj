@@ -899,7 +899,7 @@ public class SyncProcessorTest {
     }
 
     private static Account createAccount(String seed) {
-        byte[] privateKeyBytes = HashUtil.sha3(seed.getBytes());
+        byte[] privateKeyBytes = HashUtil.keccak256(seed.getBytes());
         ECKey key = ECKey.fromPrivate(privateKeyBytes);
         Account account = new Account(key);
         return account;

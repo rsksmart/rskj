@@ -39,7 +39,7 @@ public class BlockStoreDummy implements BlockStore {
     @Override
     public Sha3Hash getBlockHashByNumber(long blockNumber) {
         byte[] data = String.valueOf(blockNumber).getBytes(StandardCharsets.UTF_8);
-        return new Sha3Hash(HashUtil.sha3(data));
+        return new Sha3Hash(HashUtil.keccak256(data));
     }
 
     @Override

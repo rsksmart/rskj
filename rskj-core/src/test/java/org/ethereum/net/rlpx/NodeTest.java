@@ -20,6 +20,7 @@
 package org.ethereum.net.rlpx;
 
 import org.apache.commons.lang3.StringUtils;
+import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -30,7 +31,7 @@ import java.nio.charset.Charset;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.ethereum.crypto.HashUtil.sha3;
+import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -41,7 +42,7 @@ public class NodeTest {
 
     private Logger logger = LoggerFactory.getLogger(NodeTest.class);
 
-    private static final byte[] NODE_ID_1 = sha3("+++".getBytes(Charset.forName("UTF-8")));
+    private static final byte[] NODE_ID_1 = HashUtil.keccak256("+++".getBytes(Charset.forName("UTF-8")));
 
     private static final String NODE_HOST_1 = "85.65.19.231";
     private static final String GOOGLE = "www.google.com";

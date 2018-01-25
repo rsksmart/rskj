@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc;
 
+import co.rsk.crypto.Sha3Hash;
 import org.ethereum.util.ByteUtil;
 import org.spongycastle.util.encoders.Hex;
 
@@ -50,6 +51,10 @@ public class TypeConverter {
         return new BigInteger(input);
     }
 
+    public static Sha3Hash stringHexToSha3Hash(String x) {
+        return new Sha3Hash(stringHexToByteArray(x));
+    }
+
     public static byte[] stringHexToByteArray(String x) {
         String result = x;
         if (x.startsWith("0x")) {
@@ -63,6 +68,10 @@ public class TypeConverter {
 
     public static byte[] stringToByteArray(String input) {
         return input.getBytes(StandardCharsets.UTF_8);
+    }
+
+    public static String toJsonHex(Sha3Hash hash) {
+        return toJsonHex(hash.getBytes());
     }
 
     public static String toJsonHex(byte[] x) {

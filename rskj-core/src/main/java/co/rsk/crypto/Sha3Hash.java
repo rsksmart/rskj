@@ -35,7 +35,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class Sha3Hash implements Serializable, Comparable<Sha3Hash> {
     private final byte[] bytes;
     private static final Sha3Hash ZERO_HASH = new Sha3Hash(new byte[32]);
-    private static final Sha3Hash EMPTY_LIST_HASH = new Sha3Hash(HashUtil.sha3(RLP.encodeList()));
+    private static final Sha3Hash EMPTY_LIST_HASH = new Sha3Hash(HashUtil.keccak256(RLP.encodeList()));
 
 
     public static Sha3Hash zeroHash() {

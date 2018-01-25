@@ -154,10 +154,10 @@ public class MinerUtils {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
-                logger.debug("Pending transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+                logger.debug("Pending transaction {} {}", toBI(tx.getNonce()), tx.getHash());
                 RskAddress txSender = tx.getSender();
 
-                logger.debug("Examining transaction {} sender: {} value: {} nonce: {}", Hex.toHexString(tx.getHash()), txSender, Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
+                logger.debug("Examining transaction {} sender: {} value: {} nonce: {}", tx.getHash(), txSender, Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
 
                 BigInteger txNonce = new BigInteger(1, tx.getNonce());
 
@@ -170,23 +170,23 @@ public class MinerUtils {
                 }
 
                 if (!(tx instanceof RemascTransaction) && tx.getGasPriceAsInteger().compareTo(minGasPrice) < 0) {
-                    logger.warn("Rejected transaction {} because of low gas account {}, removing tx from pending state.", Hex.toHexString(tx.getHash()), txSender);
+                    logger.warn("Rejected transaction {} because of low gas account {}, removing tx from pending state.", tx.getHash(), txSender);
 
                     txsToRemove.add(tx);
                     continue;
                 }
 
                 if (!expectedNonce.equals(txNonce)) {
-                    logger.warn("Invalid nonce, expected {}, found {}, tx {}", expectedNonce.toString(), txNonce.toString(), Hex.toHexString(tx.getHash()));
+                    logger.warn("Invalid nonce, expected {}, found {}, tx {}", expectedNonce.toString(), txNonce.toString(), tx.getHash());
                     continue;
                 }
 
                 accountNonces.put(txSender, txNonce);
 
-                logger.debug("Accepted transaction {} sender: {} value: {} nonce: {}", Hex.toHexString(tx.getHash()), txSender, Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
+                logger.debug("Accepted transaction {} sender: {} value: {} nonce: {}", tx.getHash(), txSender, Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
             } catch (Exception e) {
                 // Txs that can't be selected by any reason should be removed from pending state
-                String hash = null == tx.getHash() ? "" : Hex.toHexString(tx.getHash());
+                String hash = null == tx.getHash() ? "" : tx.getHash().toString();
                 logger.warn("Error when processing transaction: " + hash, e);
                 if (txsToRemove != null) {
                     txsToRemove.add(tx);

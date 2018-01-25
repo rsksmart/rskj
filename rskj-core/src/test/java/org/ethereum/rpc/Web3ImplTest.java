@@ -42,7 +42,7 @@ import co.rsk.util.TestContract;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
@@ -309,7 +309,7 @@ public class Web3ImplTest {
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
 
-        String hashString = Hex.toHexString(tx.getHash());
+        String hashString = tx.getHash().toString();
 
         Assert.assertNull(web3.eth_getTransactionReceipt(hashString));
     }
@@ -331,7 +331,7 @@ public class Web3ImplTest {
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        String hashString = Hex.toHexString(tx.getHash());
+        String hashString = tx.getHash().toString();
 
         TransactionReceiptDTO tr = web3.eth_getTransactionReceipt(hashString);
 
@@ -371,7 +371,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
 
-        String hashString = Hex.toHexString(tx.getHash());
+        String hashString = tx.getHash().toString();
 
         TransactionReceiptDTO tr = web3.eth_getTransactionReceipt(hashString);
 
@@ -395,7 +395,7 @@ public class Web3ImplTest {
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        String hashString = Hex.toHexString(tx.getHash());
+        String hashString = tx.getHash().toString();
 
         TransactionResultDTO tr = web3.eth_getTransactionByHash(hashString);
 
@@ -423,7 +423,7 @@ public class Web3ImplTest {
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         pendingState.addPendingTransaction(tx);
 
-        String hashString = Hex.toHexString(tx.getHash());
+        String hashString = tx.getHash().toString();
 
         TransactionResultDTO tr = web3.eth_getTransactionByHash(hashString);
 
@@ -458,7 +458,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
 
-        String hashString = Hex.toHexString(tx.getHash());
+        String hashString = tx.getHash().toString();
 
         TransactionResultDTO tr = web3.eth_getTransactionByHash(hashString);
 
@@ -482,7 +482,7 @@ public class Web3ImplTest {
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        String hashString = Hex.toHexString(tx.getHash());
+        String hashString = tx.getHash().toString();
         String blockHashString = Hex.toHexString(block1.getHash().getBytes());
 
         TransactionResultDTO tr = web3.eth_getTransactionByBlockHashAndIndex(blockHashString, "0x0");
@@ -529,7 +529,7 @@ public class Web3ImplTest {
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        String hashString = Hex.toHexString(tx.getHash());
+        String hashString = tx.getHash().toString();
         String blockHashString = Hex.toHexString(block1.getHash().getBytes());
 
         TransactionResultDTO tr = web3.eth_getTransactionByBlockNumberAndIndex("0x01", "0x0");
@@ -997,7 +997,7 @@ public class Web3ImplTest {
         String addr1 = web3.personal_newAccountWithSeed("sampleSeed1");
         String addr2 = web3.personal_newAccountWithSeed("sampleSeed2");
 
-        byte[] hash = SHA3Helper.sha3("this is the data to hash".getBytes());
+        byte[] hash = HashUtil.keccak256("this is the data to hash".getBytes());
 
         String signature = "";
         try {

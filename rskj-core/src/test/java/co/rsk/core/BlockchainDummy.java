@@ -72,7 +72,7 @@ public class BlockchainDummy implements Blockchain {
     }
 
     @Override
-    public TransactionInfo getTransactionInfo(byte[] hash) {
+    public TransactionInfo getTransactionInfo(Sha3Hash hash) {
         return null;
     }
 

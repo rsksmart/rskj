@@ -39,7 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.ethereum.crypto.SHA3Helper.sha3;
+import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -47,7 +47,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @since 17.11.2014
  */
 public class RepositoryTrack implements Repository {
-    private static final byte[] EMPTY_DATA_HASH = HashUtil.sha3(EMPTY_BYTE_ARRAY);
+    private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
     private final Map<RskAddress, AccountState> cacheAccounts = new HashMap<>();
@@ -254,7 +254,7 @@ public class RepositoryTrack implements Repository {
         synchronized (repository) {
             getContractDetails(addr).setCode(code);
             getContractDetails(addr).setDirty(true);
-            getAccountState(addr).setCodeHash(sha3(code));
+            getAccountState(addr).setCodeHash(HashUtil.keccak256(code));
         }
     }
 

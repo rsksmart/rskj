@@ -36,7 +36,6 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -164,7 +163,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     }
 
     private void tryAddMessage(MessageChannel sender, Message message) {
-        ByteArrayWrapper encodedMessage = new ByteArrayWrapper(HashUtil.sha3(message.getEncoded()));
+        ByteArrayWrapper encodedMessage = new ByteArrayWrapper(HashUtil.keccak256(message.getEncoded()));
         if (!receivedMessages.contains(encodedMessage)) {
             if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
                 if (this.receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
@@ -439,7 +438,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private void relayTransactions(@Nonnull MessageChannel sender, List<Transaction> acceptedTxs) {
         for (Transaction tx : acceptedTxs) {
-            final ByteArrayWrapper txHash = new ByteArrayWrapper(tx.getHash());
+            final Sha3Hash txHash = tx.getHash();
             transactionNodeInformation.addTransactionToNode(txHash, sender.getPeerNodeID());
             final Set<NodeID> nodesToSkip = new HashSet<>(transactionNodeInformation.getNodesByTransaction(tx.getHash()));
             final Set<NodeID> newNodes = channelManager.broadcastTransaction(tx, nodesToSkip);

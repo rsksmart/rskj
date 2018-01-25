@@ -18,13 +18,11 @@
 
 package co.rsk.trie;
 
-import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
-
-import static org.ethereum.crypto.SHA3Helper.sha3;
+import static org.ethereum.crypto.HashUtil.keccak256;
 
 /**
  * Created by ajlopez on 03/04/2017.
@@ -49,7 +47,7 @@ public class SecureTrieImplMessageTest {
     @Test
     public void trieWithValueToMessage() {
         byte[] key = new byte[0];
-        byte[] newKey = sha3(key);
+        byte[] newKey = HashUtil.keccak256(key);
 
         Trie trie = new TrieImpl(true).put(key, new byte[] { 1, 2, 3, 4 });
 
@@ -76,7 +74,7 @@ public class SecureTrieImplMessageTest {
     @Test
     public void trieWithLongValueToMessage() {
         byte[] key = new byte[0];
-        byte[] newKey = sha3(key);
+        byte[] newKey = HashUtil.keccak256(key);
 
         Trie trie = new TrieImpl(true).put(key, TrieImplValueTest.makeValue(33));
 
@@ -104,7 +102,7 @@ public class SecureTrieImplMessageTest {
     @Test
     public void trieWithSubtrieAndNoValueToMessage() {
         byte[] key = new byte[] { 0x02 };
-        byte[] newKey = sha3(key);
+        byte[] newKey = HashUtil.keccak256(key);
 
         Trie trie = new TrieImpl(true).put(key, new byte[] { 1, 2, 3, 4 });
 
@@ -136,7 +134,7 @@ public class SecureTrieImplMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(6 + 2 * SHA3Helper.DEFAULT_SIZE_BYTES, message.length);
+        Assert.assertEquals(6 + 2 * HashUtil.DEFAULT_SIZE_BYTES, message.length);
         Assert.assertEquals(16, message[0]);
         Assert.assertEquals(1, message[1]);
         Assert.assertEquals(0, message[4]);
@@ -151,7 +149,7 @@ public class SecureTrieImplMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(6 + 0 + 2 * SHA3Helper.DEFAULT_SIZE_BYTES, message.length);
+        Assert.assertEquals(6 + 0 + 2 * HashUtil.DEFAULT_SIZE_BYTES, message.length);
         Assert.assertEquals(2, message[0]);
         Assert.assertEquals(1, message[1]);
         Assert.assertEquals(0, message[4]);

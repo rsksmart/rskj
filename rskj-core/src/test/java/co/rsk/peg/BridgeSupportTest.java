@@ -45,7 +45,6 @@ import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -2509,7 +2508,7 @@ public class BridgeSupportTest {
     @Test
     public void commitFederation_noPendingFederation() throws IOException {
         VotingMocksProvider mocksProvider = new VotingMocksProvider("commit", new byte[][]{
-                new Sha3Hash(HashUtil.sha3(Hex.decode("aabbcc"))).getBytes()
+                new Sha3Hash(HashUtil.keccak256(Hex.decode("aabbcc"))).getBytes()
         }, true);
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
                 false,
@@ -2536,7 +2535,7 @@ public class BridgeSupportTest {
         }));
 
         VotingMocksProvider mocksProvider = new VotingMocksProvider("commit", new byte[][]{
-                new Sha3Hash(HashUtil.sha3(Hex.decode("aabbcc"))).getBytes()
+                new Sha3Hash(HashUtil.keccak256(Hex.decode("aabbcc"))).getBytes()
         }, true);
 
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
@@ -2565,7 +2564,7 @@ public class BridgeSupportTest {
         }));
 
         VotingMocksProvider mocksProvider = new VotingMocksProvider("commit", new byte[][]{
-                new Sha3Hash(HashUtil.sha3(Hex.decode("aabbcc"))).getBytes()
+                new Sha3Hash(HashUtil.keccak256(Hex.decode("aabbcc"))).getBytes()
         }, true);
 
         BridgeSupport bridgeSupport = getBridgeSupportWithMocksForFederationTests(
@@ -3062,8 +3061,8 @@ public class BridgeSupportTest {
     }
 
     private Transaction getMockedRskTxWithHash(String s) {
-        byte[] hash = SHA3Helper.sha3(s);
-        return new SimpleRskTransaction(hash);
+        byte[] hash = HashUtil.keccak256(s);
+        return new SimpleRskTransaction(new Sha3Hash(hash));
     }
 
     private UTXO createUTXO(Coin value, Address address) {

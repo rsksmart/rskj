@@ -100,7 +100,7 @@ class TxValidator {
 
             for (TxValidatorStep step : validatorSteps) {
                 if (!step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0)) {
-                    logger.info("Tx validation failed: validator {} tx {}", step.getClass().getName(), Hex.toHexString(tx.getHash()));
+                    logger.info("Tx validation failed: validator {} tx {}", step.getClass().getName(), tx.getHash());
                     valid = false;
                     break;
                 }

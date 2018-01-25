@@ -18,11 +18,9 @@
 
 package co.rsk.trie;
 
-import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.IOException;
 
 /**
  * Created by ajlopez on 11/01/2017.
@@ -118,7 +116,7 @@ public class TrieImplMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(6 + 2 * SHA3Helper.DEFAULT_SIZE_BYTES, message.length);
+        Assert.assertEquals(6 + 2 * HashUtil.DEFAULT_SIZE_BYTES, message.length);
         Assert.assertEquals(16, message[0]);
         Assert.assertEquals(0, message[1]);
         Assert.assertEquals(0, message[2]);
@@ -135,7 +133,7 @@ public class TrieImplMessageTest {
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(6 + 1 + 2 * SHA3Helper.DEFAULT_SIZE_BYTES, message.length);
+        Assert.assertEquals(6 + 1 + 2 * HashUtil.DEFAULT_SIZE_BYTES, message.length);
         Assert.assertEquals(2, message[0]);
         Assert.assertEquals(0, message[1]);
         Assert.assertEquals(0, message[2]);
