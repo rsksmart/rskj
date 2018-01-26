@@ -33,6 +33,16 @@ public class JsonRpcNettyServerTest {
     }
 
     @Test
+    public void smokeTestUsingJsonWithCharsetContentType() throws Exception {
+        smokeTest("application/json; charset: utf-8");
+    }
+
+    @Test
+    public void smokeTestUsingJsonRpcWithCharsetContentType() throws Exception {
+        smokeTest("application/json-rpc; charset: utf-8");
+    }
+
+    @Test
     public void smokeTestUsingJsonRpcContentType() throws Exception {
         smokeTest("application/json-rpc");
     }
