@@ -360,14 +360,12 @@ public class MinerManagerTest {
 
     private static MinerServerImpl getMinerServer(Blockchain blockchain) {
         SimpleEthereum ethereum = new SimpleEthereum();
-        SimpleWorldManager worldManager = new SimpleWorldManager();
-        worldManager.setBlockchain(blockchain);
         ethereum.repository = blockchain.getRepository();
-        ethereum.worldManager = worldManager;
+        ethereum.blockchain = blockchain;
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
         return new MinerServerImpl(config, ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(),
                 blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
-                new BlockValidationRuleDummy(), worldManager.getNodeBlockProcessor(),
+                new BlockValidationRuleDummy(), null,
                 difficultyCalculator, new GasLimitCalculator(config),
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
     }

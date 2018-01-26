@@ -946,10 +946,8 @@ public class Web3ImplTest {
     @Test
     public void net_listening()  {
         World world = new World();
-        SimpleWorldManager worldManager = new SimpleWorldManager();
-        worldManager.setBlockchain(world.getBlockChain());
 
-        SimpleEthereum eth = new SimpleEthereum(worldManager);
+        SimpleEthereum eth = new SimpleEthereum(world.getBlockChain());
         SimplePeerServer peerServer = new SimplePeerServer();
 
         Web3Impl web3 = createWeb3(eth, peerServer);
