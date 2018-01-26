@@ -31,7 +31,6 @@ import org.awaitility.Duration;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.Simples.SimpleEthereum;
-import org.ethereum.rpc.Simples.SimpleWorldManager;
 import org.junit.Assert;
 import org.junit.Test;
 

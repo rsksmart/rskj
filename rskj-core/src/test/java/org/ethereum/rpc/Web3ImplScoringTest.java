@@ -34,7 +34,6 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.test.World;
 import org.ethereum.rpc.Simples.SimpleRsk;
-import org.ethereum.rpc.Simples.SimpleWorldManager;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.junit.Assert;
 import org.junit.Test;

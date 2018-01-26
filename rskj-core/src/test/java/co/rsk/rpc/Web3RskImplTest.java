@@ -34,7 +34,6 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.rpc.LogFilterElement;
-import org.ethereum.rpc.Simples.SimpleWorldManager;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.Web3Mocks;
 import org.ethereum.vm.DataWord;
