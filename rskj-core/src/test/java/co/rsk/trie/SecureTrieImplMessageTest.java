@@ -130,28 +130,13 @@ public class SecureTrieImplMessageTest {
 
     @Test
     public void trieWithSubtriesAndNoValueToMessage() {
-        Trie trie = new TrieImpl(16, true).put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 })
-                .put(new byte[] { 0x12 }, new byte[] { 1, 2, 3, 4 });
-
-        byte[] message = trie.toMessage();
-
-        Assert.assertNotNull(message);
-        Assert.assertEquals(6 + 2 * SHA3Helper.DEFAULT_SIZE_BYTES, message.length);
-        Assert.assertEquals(16, message[0]);
-        Assert.assertEquals(1, message[1]);
-        Assert.assertEquals(0, message[4]);
-        Assert.assertEquals(0, message[5]);
-    }
-
-    @Test
-    public void trieWithSubtriesAndNoValueToMessageUsingBinaryTree() {
         Trie trie = new TrieImpl(true).put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 })
                 .put(new byte[] { 0x12 }, new byte[] { 1, 2, 3, 4 });
 
         byte[] message = trie.toMessage();
 
         Assert.assertNotNull(message);
-        Assert.assertEquals(6 + 0 + 2 * SHA3Helper.DEFAULT_SIZE_BYTES, message.length);
+        Assert.assertEquals(6 + 2 * SHA3Helper.DEFAULT_SIZE_BYTES, message.length);
         Assert.assertEquals(2, message[0]);
         Assert.assertEquals(1, message[1]);
         Assert.assertEquals(0, message[4]);

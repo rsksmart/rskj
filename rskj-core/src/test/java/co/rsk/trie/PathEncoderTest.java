@@ -28,18 +28,7 @@ public class PathEncoderTest {
     @Test
     public void encodeNullBinaryPath() {
         try {
-            PathEncoder.encode(null, 2);
-            Assert.fail();
-        }
-        catch (Exception ex) {
-            Assert.assertTrue(ex instanceof IllegalArgumentException);
-        }
-    }
-
-    @Test
-    public void encodeNullHexadecimalPath() {
-        try {
-            PathEncoder.encode(null, 16);
+            PathEncoder.encode(null);
             Assert.fail();
         }
         catch (Exception ex) {
@@ -51,7 +40,7 @@ public class PathEncoderTest {
     public void encodeBinaryPath() {
         byte[] path = new byte[] { 0x00, 0x01, 0x01 };
 
-        byte[] encoded = PathEncoder.encode(path, 2);
+        byte[] encoded = PathEncoder.encode(path);
 
         Assert.assertNotNull(encoded);
         Assert.assertArrayEquals(new byte[] { 0x60 }, encoded);
@@ -61,7 +50,7 @@ public class PathEncoderTest {
     public void encodeBinaryPathOneByte() {
         byte[] path = new byte[] { 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01 };
 
-        byte[] encoded = PathEncoder.encode(path, 2);
+        byte[] encoded = PathEncoder.encode(path);
 
         Assert.assertNotNull(encoded);
         Assert.assertArrayEquals(new byte[] { 0x6d }, encoded);
@@ -71,7 +60,7 @@ public class PathEncoderTest {
     public void encodeBinaryPathNineBits() {
         byte[] path = new byte[] { 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01, 0x01 };
 
-        byte[] encoded = PathEncoder.encode(path, 2);
+        byte[] encoded = PathEncoder.encode(path);
 
         Assert.assertNotNull(encoded);
         Assert.assertArrayEquals(new byte[] { 0x6d, (byte)0x80 }, encoded);
@@ -81,56 +70,16 @@ public class PathEncoderTest {
     public void encodeBinaryPathOneAndHalfByte() {
         byte[] path = new byte[] { 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01 };
 
-        byte[] encoded = PathEncoder.encode(path, 2);
+        byte[] encoded = PathEncoder.encode(path);
 
         Assert.assertNotNull(encoded);
         Assert.assertArrayEquals(new byte[] { 0x6d, 0x50 }, encoded);
     }
 
     @Test
-    public void encodeHexadecimalPath() {
-        byte[] path = new byte[] { 0x06 };
-
-        byte[] encoded = PathEncoder.encode(path, 16);
-
-        Assert.assertNotNull(encoded);
-        Assert.assertArrayEquals(new byte[] { 0x60 }, encoded);
-    }
-
-    @Test
-    public void encodeHexadecimalPathOneByte() {
-        byte[] path = new byte[] { 0x06, 0x0d };
-
-        byte[] encoded = PathEncoder.encode(path, 16);
-
-        Assert.assertNotNull(encoded);
-        Assert.assertArrayEquals(new byte[] { 0x6d }, encoded);
-    }
-
-    @Test
-    public void encodeHexadecimalPathThreeNibbles() {
-        byte[] path = new byte[] { 0x06, 0x0d, 0x08 };
-
-        byte[] encoded = PathEncoder.encode(path, 16);
-
-        Assert.assertNotNull(encoded);
-        Assert.assertArrayEquals(new byte[] { 0x6d, (byte)0x80 }, encoded);
-    }
-
-    @Test
-    public void encodeHexadecimalPathFiveNibbles() {
-        byte[] path = new byte[] { 0x06, 0x0d, 0x08, 0x02, 0x05 };
-
-        byte[] encoded = PathEncoder.encode(path, 16);
-
-        Assert.assertNotNull(encoded);
-        Assert.assertArrayEquals(new byte[] { 0x6d, (byte)0x82, 0x50 }, encoded);
-    }
-
-    @Test
     public void decodeNullBinaryPath() {
         try {
-            PathEncoder.decode(null, 2, 0);
+            PathEncoder.decode(null, 0);
             Assert.fail();
         }
         catch (Exception ex) {
@@ -139,21 +88,10 @@ public class PathEncoderTest {
     }
 
     @Test
-    public void decodeNullHexadecimalPath() {
-        try {
-            PathEncoder.decode(null, 16, 0);
-            Assert.fail();
-        }
-        catch (Exception ex) {
-            Assert.assertTrue(ex instanceof IllegalArgumentException);   
-        }
-    }
-
-    @Test
     public void decodeBinaryPath() {
         byte[] encoded = new byte[] { 0x60 };
 
-        byte[] path = PathEncoder.decode(encoded, 2, 3);
+        byte[] path = PathEncoder.decode(encoded, 3);
 
         Assert.assertNotNull(path);
         Assert.assertArrayEquals(new byte[] { 0x00, 0x01, 0x01 }, path);
@@ -163,7 +101,7 @@ public class PathEncoderTest {
     public void decodeBinaryPathOneByte() {
         byte[] encoded = new byte[] { 0x6d };
 
-        byte[] path = PathEncoder.decode(encoded, 2, 8);
+        byte[] path = PathEncoder.decode(encoded, 8);
 
         Assert.assertNotNull(path);
         Assert.assertArrayEquals(new byte[] { 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01 }, path);
@@ -173,7 +111,7 @@ public class PathEncoderTest {
     public void decodeBinaryPathNineBits() {
         byte[] encoded = new byte[] { 0x6d, (byte)0x80 };
 
-        byte[] path = PathEncoder.decode(encoded, 2, 9);
+        byte[] path = PathEncoder.decode(encoded, 9);
 
         Assert.assertNotNull(path);
         Assert.assertArrayEquals(new byte[] { 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01, 0x01 }, path);
@@ -183,49 +121,9 @@ public class PathEncoderTest {
     public void decodeBinaryPathOneAndHalfByte() {
         byte[] encoded = new byte[] { 0x6d, 0x50 };
 
-        byte[] path = PathEncoder.decode(encoded, 2, 12);
+        byte[] path = PathEncoder.decode(encoded, 12);
 
         Assert.assertNotNull(path);
         Assert.assertArrayEquals(new byte[] { 0x00, 0x01, 0x01, 0x00, 0x01, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01 }, path);
-    }
-
-    @Test
-    public void decodeHexadecimalPath() {
-        byte[] encoded = new byte[] { 0x60 };
-
-        byte[] path = PathEncoder.decode(encoded, 16, 1);
-
-        Assert.assertNotNull(path);
-        Assert.assertArrayEquals(new byte[] { 0x06 }, path);
-    }
-
-    @Test
-    public void decodeHexadecimalPathOneByte() {
-        byte[] encoded = new byte[] { 0x6d };
-
-        byte[] path = PathEncoder.decode(encoded, 16, 2);
-
-        Assert.assertNotNull(path);
-        Assert.assertArrayEquals(new byte[] { 0x06, 0x0d }, path);
-    }
-
-    @Test
-    public void decodeHexadecimalPathThreeNibbles() {
-        byte[] encoded = new byte[] { 0x6d, (byte)0x80 };
-
-        byte[] path = PathEncoder.decode(encoded, 16, 3);
-
-        Assert.assertNotNull(path);
-        Assert.assertArrayEquals(new byte[] { 0x06, 0x0d, 0x08 }, path);
-    }
-
-    @Test
-    public void decodeHexadecimalPathFiveNibbles() {
-        byte[] encoded = new byte[] { 0x6d, (byte)0x82, 0x50 };
-
-        byte[] path = PathEncoder.decode(encoded, 16, 5);
-
-        Assert.assertNotNull(path);
-        Assert.assertArrayEquals(new byte[] { 0x06, 0x0d, 0x08, 0x02, 0x05 }, path);
     }
 }

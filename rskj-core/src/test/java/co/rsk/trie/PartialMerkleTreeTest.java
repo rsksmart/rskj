@@ -68,7 +68,7 @@ public class PartialMerkleTreeTest {
 
     @Test
     public void getTreeFromOneHundredKeyValues() {
-        Trie trie = new TrieImpl(16, false);
+        Trie trie = new TrieImpl(false);
 
         for (int k = 0; k < 100; k++)
             trie = trie.put(k + "", (k + "").getBytes());
@@ -113,28 +113,8 @@ public class PartialMerkleTreeTest {
     }
 
     @Test
-    public void toMessagefromMessagegetHashUsingOneHundredKeyValueHexadecimalTrie() {
-        Trie trie = new TrieImpl(16, false);
-
-        for (int k = 0; k < 100; k++)
-            trie = trie.put(k + "", (k + "").getBytes());
-
-        PartialMerkleTree tree = trie.getPartialMerkleTree("50".getBytes());
-
-        byte[] message = tree.toMessage();
-
-        PartialMerkleTree tree2 = PartialMerkleTree.fromMessage(message);
-
-        Assert.assertNotNull(tree2);
-        Assert.assertArrayEquals(tree.getHash("50".getBytes()), tree2.getHash("50".getBytes()));
-        Assert.assertArrayEquals(trie.getHash(), tree2.getHash("50".getBytes()));
-
-        Assert.assertArrayEquals(tree.toMessage(), tree2.toMessage());
-    }
-
-    @Test
-    public void toMessagefromMessagegetHashUsingOneHundredKeyValueBinaryTrie() {
-        Trie trie = new TrieImpl();
+    public void toMessagefromMessagegetHashUsingOneHundredKeyValue() {
+        Trie trie = new TrieImpl(false);
 
         for (int k = 0; k < 100; k++)
             trie = trie.put(k + "", (k + "").getBytes());

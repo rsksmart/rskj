@@ -196,11 +196,11 @@ public class SecureTrieImplStoreTest {
     }
 
     @Test
-    public void saveFullTrieUpdateAndSaveAgainUsingArity16() {
+    public void saveFullTrieUpdateAndSaveAgain() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(16, store, true)
+        Trie trie = new TrieImpl(store, true)
                 .put("foo", "bar".getBytes());
 
         trie.save();
@@ -215,11 +215,11 @@ public class SecureTrieImplStoreTest {
     }
 
     @Test
-    public void saveFullTrieWithLongValueUpdateAndSaveAgainUsingArity16() {
+    public void saveFullTrieWithLongValueUpdateAndSaveAgain() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(16, store, true)
+        Trie trie = new TrieImpl(store, true)
                 .put("foo", TrieImplValueTest.makeValue(100));
 
         trie.save();
