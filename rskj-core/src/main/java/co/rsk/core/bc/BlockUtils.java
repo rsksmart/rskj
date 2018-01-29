@@ -102,10 +102,9 @@ public class BlockUtils {
     }
 
     public static void addBlockToList(List<Block> blocks, Block block) {
-        byte[] hash = block.getHash().getBytes();
-
+        Keccak256 hash = block.getHash();
         for (Block b : blocks) {
-            if (Arrays.equals(b.getHash().getBytes(), hash)) {
+            if (b.getHash().equals(hash)) {
                 return;
             }
         }

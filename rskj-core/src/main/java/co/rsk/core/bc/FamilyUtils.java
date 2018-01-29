@@ -161,11 +161,11 @@ public class FamilyUtils {
                     continue;
                 }
 
-                if (!Arrays.equals(ancestorParent.getHash().getBytes(), uncle.getParentHash().getBytes())) {
+                if (!ancestorParent.getHash().equals(uncle.getParentHash())) {
                     continue;
                 }
 
-                if (Arrays.equals(ancestor.getHash().getBytes(), uncle.getHash().getBytes())) {
+                if (ancestor.getHash().equals(uncle.getHash())) {
                     continue;
                 }
 

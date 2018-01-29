@@ -11,9 +11,6 @@ import java.util.List;
 
 public class SelectionRule {
 
-    private static final int BYTE_ARRAY_OFFSET = 0;
-    private static final int BYTE_ARRAY_LENGTH = 32;
-
     private static final BigInteger PAID_FEES_MULTIPLIER_CRITERIA = BigInteger.valueOf(2);
 
     public static boolean shouldWeAddThisBlock(
@@ -65,8 +62,6 @@ public class SelectionRule {
     }
 
     public static boolean isThisBlockHashSmaller(Keccak256 thisBlockHash, Keccak256 compareBlockHash) {
-        return FastByteComparisons.compareTo(
-                thisBlockHash.getBytes(), BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH,
-                compareBlockHash.getBytes(), BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH) < 0;
+        return thisBlockHash.compareTo(compareBlockHash) < 0;
     }
 }

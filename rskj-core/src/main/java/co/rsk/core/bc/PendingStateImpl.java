@@ -456,7 +456,7 @@ public class PendingStateImpl implements PendingState {
                 if (nonceDiff != 0) {
                     return nonceDiff > 0 ? 1 : -1;
                 }
-                return FastByteComparisons.compareTo(tx1.getHash().getBytes(), 0, 32, tx2.getHash().getBytes(), 0, 32);
+                return tx1.getHash().compareTo(tx2.getHash());
             });
         }
     }

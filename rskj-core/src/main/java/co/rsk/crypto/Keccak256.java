@@ -23,7 +23,6 @@ import org.ethereum.util.RLP;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.Serializable;
-import java.math.BigInteger;
 import java.util.Arrays;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -47,8 +46,6 @@ public class Keccak256 implements Serializable, Comparable<Keccak256> {
     }
 
     public Keccak256(byte[] rawHashBytes) {
-        // If i check arguments validate transaction fails
-//        checkArgument(rawHashBytes.length == 32);
         this.bytes = rawHashBytes;
     }
 
@@ -84,13 +81,6 @@ public class Keccak256 implements Serializable, Comparable<Keccak256> {
     }
 
     /**
-     * Returns the bytes interpreted as a positive integer.
-     */
-    public BigInteger toBigInteger() {
-        return new BigInteger(1, bytes);
-    }
-
-    /**
      * Returns the internal byte array, without defensively copying. Therefore do NOT modify the returned array.
      */
     public byte[] getBytes() {
@@ -99,17 +89,16 @@ public class Keccak256 implements Serializable, Comparable<Keccak256> {
 
     @Override
     public int compareTo(Keccak256 o) {
-        for (int i = 32 - 1; i >= 0; i--) {
-            final int thisByte = this.bytes[i] & 0xff;
-            final int otherByte = o.bytes[i] & 0xff;
-            if (thisByte > otherByte) {
-                return 1;
-            }
-
-            if (thisByte < otherByte) {
-                return -1;
+        if (bytes == o.bytes && bytes.length == o.bytes.length) {
+            return 0;
+        }
+        for (int i = 0, j = 0; i < bytes.length && j < o.bytes.length; i++, j++) {
+            int a = (bytes[i] & 0xff);
+            int b = (o.bytes[j] & 0xff);
+            if (a != b) {
+                return a - b;
             }
         }
-        return 0;
+        return bytes.length - o.bytes.length;
     }
 }

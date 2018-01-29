@@ -546,7 +546,7 @@ public class Block {
     }
 
     public boolean isEqual(Block block) {
-        return Arrays.areEqual(this.getHash().getBytes(), block.getHash().getBytes());
+        return this.getHash().equals(block.getHash());
     }
 
     public boolean fastEquals(Block block) {

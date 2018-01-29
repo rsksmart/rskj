@@ -199,7 +199,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         if (blockStore.getBlockByHash(block.getHash()) != null &&
                 !BigInteger.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash()))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
-                    Hex.toHexString(block.getHash().getBytes()).substring(0, 6),
+                    HashUtil.shortHash(block.getHash()),
                     block.getNumber());
 
             return ImportResult.EXIST;

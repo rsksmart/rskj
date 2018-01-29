@@ -879,7 +879,7 @@ public class Web3Impl implements Web3 {
         try {
             Block block = getByJsonBlockId(blockId);
             return s = block == null ? null :
-                    eth_getUncleByBlockHashAndIndex(Hex.toHexString(block.getHash().getBytes()), uncleIdx);
+                    eth_getUncleByBlockHashAndIndex(HashUtil.shortHash(block.getHash()), uncleIdx);
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getUncleByBlockNumberAndIndex(" + blockId + ", " + uncleIdx + "): " + s);
