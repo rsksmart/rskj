@@ -193,6 +193,11 @@ public class TrieImpl implements Trie {
 
         try {
             int arity = istream.readByte();
+
+            if (arity != 2) {
+                throw new IllegalArgumentException(INVALID_ARITY);
+            }
+
             int flags = istream.readByte();
             boolean isSecure = (flags & 0x01) == 1;
             boolean hasLongVal = (flags & 0x02) == 2;
