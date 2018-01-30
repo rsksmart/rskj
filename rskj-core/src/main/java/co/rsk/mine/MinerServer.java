@@ -22,6 +22,7 @@ import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.Optional;
 
 
@@ -32,6 +33,11 @@ public interface MinerServer {
     void stop();
 
     boolean isRunning();
+
+    SubmitBlockResult submitBitcoinSolution(String blockHashForMergedMining,
+                                            co.rsk.bitcoinj.core.BtcBlock blockWithOnlyHeader,
+                                            co.rsk.bitcoinj.core.BtcTransaction coinbase,
+                                            List<String> txHashes);
 
     SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock);
 
