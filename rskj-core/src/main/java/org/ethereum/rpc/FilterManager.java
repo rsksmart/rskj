@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class FilterManager {
     private static final long filterTimeout = 5 * 60 * 1000; // 5 minutes in milliseconds
-    private static final long filterCleanupPeriod = 1 * 60 * 1000; // 1 minute in milliseconds
+    private static final long filterCleanupPeriod = 1 * 60 * 1000L; // 1 minute in milliseconds
 
     private long latestFilterCleanup = System.currentTimeMillis();
 
@@ -110,12 +110,14 @@ public class FilterManager {
         for (Integer id : installedFilters.keySet()) {
             Filter f = installedFilters.get(id);
 
-            if (f.hasExpired(filterTimeout))
+            if (f.hasExpired(filterTimeout)) {
                 toremove.add(id);
+            }
         }
 
-        for (Integer id : toremove)
+        for (Integer id : toremove) {
             installedFilters.remove(id);
+        }
 
         latestFilterCleanup = now;
     }

@@ -26,7 +26,6 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class AddressesTopicsFilter {
@@ -54,16 +53,18 @@ public class AddressesTopicsFilter {
         for (Topic[] toplist : topics) {
             byte[][] tops = new byte[toplist.length][];
 
-            for (int k = 0; k < tops.length; k++)
+            for (int k = 0; k < tops.length; k++) {
                 tops[k] = toplist[k].getBytes();
+            }
 
             addrAndTopics.add(tops);
         }
 
         byte[][] addrs = new byte[addresses.length][];
 
-        for (int k = 0; k < addresses.length; k++)
+        for (int k = 0; k < addresses.length; k++) {
             addrs[k] = addresses[k].getBytes();
+        }
 
         addrAndTopics.add(addrs);
 

@@ -21,7 +21,6 @@ package org.ethereum.rpc;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.*;
 import org.ethereum.db.TransactionInfo;
-import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 
 import java.util.Collection;
