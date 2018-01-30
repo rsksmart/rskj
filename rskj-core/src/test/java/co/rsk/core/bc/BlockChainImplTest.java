@@ -33,7 +33,6 @@ import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
@@ -906,9 +905,9 @@ public class BlockChainImplTest {
 
         Genesis genesis = GenesisLoader.loadGenesis(config, "rsk-unittests.json", BigInteger.ZERO, true);
 
-        for (ByteArrayWrapper key : genesis.getPremine().keySet()) {
-            repository.createAccount(new RskAddress(key.getData()));
-            repository.addBalance(new RskAddress(key.getData()), genesis.getPremine().get(key).getAccountState().getBalance());
+        for (RskAddress address : genesis.getPremine().keySet()) {
+            repository.createAccount(address);
+            repository.addBalance(address, genesis.getPremine().get(address).getAccountState().getBalance());
         }
 
         genesis.setStateRoot(repository.getRoot());

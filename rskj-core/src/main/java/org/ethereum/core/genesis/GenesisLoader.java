@@ -20,6 +20,7 @@
 package org.ethereum.core.genesis;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.trie.TrieImpl;
 import com.google.common.io.ByteStreams;
 import org.apache.commons.lang3.StringUtils;
@@ -40,7 +41,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.ethereum.crypto.SHA3Helper.sha3;
-import static org.ethereum.util.ByteUtil.wrap;
 
 public class GenesisLoader {
     private static final Logger logger = LoggerFactory.getLogger("genesisloader");
@@ -62,7 +62,7 @@ public class GenesisLoader {
 
             Genesis genesis = new GenesisMapper().mapFromJson(genesisJson, isRsk);
 
-            Map<ByteArrayWrapper, InitialAddressState> premine = generatePreMine(config, initialNonce, genesisJson.getAlloc());
+            Map<RskAddress, InitialAddressState> premine = generatePreMine(config, initialNonce, genesisJson.getAlloc());
             genesis.setPremine(premine);
 
             byte[] rootHash = generateRootHash(premine);
@@ -79,41 +79,47 @@ public class GenesisLoader {
         }
     }
 
-    private static Map<ByteArrayWrapper, InitialAddressState> generatePreMine(RskSystemProperties config, BigInteger initialNonce, Map<String, AllocatedAccount> alloc){
-        Map<ByteArrayWrapper, InitialAddressState> premine = new HashMap<>();
+    private static Map<RskAddress, InitialAddressState> generatePreMine(RskSystemProperties config, BigInteger initialNonce, Map<String, AllocatedAccount> alloc){
+        Map<RskAddress, InitialAddressState> premine = new HashMap<>();
         ContractDetailsMapper detailsMapper = new ContractDetailsMapper(config);
+
         for (Map.Entry<String, AllocatedAccount> accountEntry : alloc.entrySet()) {
             if(!StringUtils.equals("00", accountEntry.getKey())) {
                 BigInteger balance = new BigInteger(accountEntry.getValue().getBalance());
                 BigInteger nonce;
+
                 if (accountEntry.getValue().getNonce() != null) {
                     nonce = new BigInteger(accountEntry.getValue().getNonce());
                 } else {
                     nonce = initialNonce;
                 }
+
                 AccountState acctState = new AccountState(nonce, balance);
                 ContractDetails contractDetails = null;
                 Contract contract = accountEntry.getValue().getContract();
+
                 if (contract != null) {
                     contractDetails = detailsMapper.mapFromContract(contract);
+
                     if (contractDetails.getCode() != null) {
                         acctState.setCodeHash(sha3(contractDetails.getCode()));
                     }
+
                     acctState.setStateRoot(contractDetails.getStorageHash());
                 }
-                premine.put(wrap(Hex.decode(accountEntry.getKey())), new InitialAddressState(acctState, contractDetails));
+
+                premine.put(new RskAddress(Hex.decode(accountEntry.getKey())), new InitialAddressState(acctState, contractDetails));
             }
         }
 
         return premine;
     }
 
-    private static byte[] generateRootHash(Map<ByteArrayWrapper, InitialAddressState> premine){
-
+    private static byte[] generateRootHash(Map<RskAddress, InitialAddressState> premine){
         Trie state = new TrieImpl(null, true);
 
-        for (ByteArrayWrapper key : premine.keySet()) {
-            state = state.put(key.getData(), premine.get(key).getAccountState().getEncoded());
+        for (RskAddress address : premine.keySet()) {
+            state = state.put(address.getBytes(), premine.get(address).getAccountState().getEncoded());
         }
 
         return state.getHash();

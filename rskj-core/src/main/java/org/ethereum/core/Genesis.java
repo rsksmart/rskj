@@ -20,9 +20,9 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.genesis.InitialAddressState;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 
 import java.util.Arrays;
@@ -49,7 +49,7 @@ import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
  */
 public class Genesis extends Block {
 
-    private Map<ByteArrayWrapper, InitialAddressState> premine = new HashMap<>();
+    private Map<RskAddress, InitialAddressState> premine = new HashMap<>();
 
     private static final byte[] ZERO_HASH_2048 = new byte[256];
     protected static final long NUMBER = 0;
@@ -79,11 +79,11 @@ public class Genesis extends Block {
         return Arrays.copyOf(ZERO_HASH_2048, ZERO_HASH_2048.length);
     }
 
-    public Map<ByteArrayWrapper, InitialAddressState> getPremine() {
+    public Map<RskAddress, InitialAddressState> getPremine() {
         return premine;
     }
 
-    public void setPremine(Map<ByteArrayWrapper, InitialAddressState> premine) {
+    public void setPremine(Map<RskAddress, InitialAddressState> premine) {
         this.premine = premine;
     }
 }

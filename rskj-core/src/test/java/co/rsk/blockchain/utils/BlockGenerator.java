@@ -20,6 +20,7 @@ package co.rsk.blockchain.utils;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
@@ -32,7 +33,6 @@ import org.ethereum.core.*;
 import org.ethereum.core.genesis.InitialAddressState;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -48,7 +48,6 @@ import java.util.Map;
 
 import static org.ethereum.core.Genesis.getZeroHash;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.util.ByteUtil.wrap;
 
 /**
  * Created by ajlopez on 5/10/2016.
@@ -109,7 +108,7 @@ public class BlockGenerator {
                 bitcoinMergedMiningCoinbaseTransaction, BigInteger.valueOf(100L).toByteArray());
 
         if (preMineMap != null) {
-            Map<ByteArrayWrapper, InitialAddressState> preMineMap2 = generatePreMine(preMineMap);
+            Map<RskAddress, InitialAddressState> preMineMap2 = generatePreMine(preMineMap);
             genesis.setPremine(preMineMap2);
 
             byte[] rootHash = generateRootHash(preMineMap2);
@@ -119,21 +118,22 @@ public class BlockGenerator {
         return genesis;
     }
 
-    private byte[] generateRootHash(Map<ByteArrayWrapper, InitialAddressState> premine){
+    private byte[] generateRootHash(Map<RskAddress, InitialAddressState> premine){
         Trie state = new TrieImpl(null, true);
 
-        for (ByteArrayWrapper key : premine.keySet())
-            state = state.put(key.getData(), premine.get(key).getAccountState().getEncoded());
+        for (RskAddress address : premine.keySet()) {
+            state = state.put(address.getBytes(), premine.get(address).getAccountState().getEncoded());
+        }
 
         return state.getHash();
     }
 
-    private Map<ByteArrayWrapper, InitialAddressState> generatePreMine(Map<byte[], BigInteger> alloc){
-        Map<ByteArrayWrapper, InitialAddressState> premine = new HashMap<>();
+    private Map<RskAddress, InitialAddressState> generatePreMine(Map<byte[], BigInteger> alloc){
+        Map<RskAddress, InitialAddressState> premine = new HashMap<>();
 
         for (byte[] key : alloc.keySet()) {
             AccountState acctState = new AccountState(BigInteger.valueOf(0), alloc.get(key));
-            premine.put(wrap(key), new InitialAddressState(acctState, null));
+            premine.put(new RskAddress(key), new InitialAddressState(acctState, null));
         }
 
         return premine;

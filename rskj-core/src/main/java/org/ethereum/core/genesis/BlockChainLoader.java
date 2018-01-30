@@ -69,19 +69,20 @@ public class BlockChainLoader {
 
             BigInteger initialNonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
             Genesis genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), initialNonce, true);
-            for (ByteArrayWrapper address : genesis.getPremine().keySet()) {
-                RskAddress addr = new RskAddress(address.getData());
-                repository.createAccount(addr);
+            for (RskAddress address : genesis.getPremine().keySet()) {
+                repository.createAccount(address);
                 InitialAddressState initialAddressState = genesis.getPremine().get(address);
-                repository.addBalance(addr, initialAddressState.getAccountState().getBalance());
-                AccountState accountState = repository.getAccountState(addr);
+                repository.addBalance(address, initialAddressState.getAccountState().getBalance());
+                AccountState accountState = repository.getAccountState(address);
                 accountState.setNonce(initialAddressState.getAccountState().getNonce());
+
                 if (initialAddressState.getContractDetails()!=null) {
-                    repository.updateContractDetails(addr, initialAddressState.getContractDetails());
+                    repository.updateContractDetails(address, initialAddressState.getContractDetails());
                     accountState.setStateRoot(initialAddressState.getAccountState().getStateRoot());
                     accountState.setCodeHash(initialAddressState.getAccountState().getCodeHash());
                 }
-                repository.updateAccountState(addr, accountState);
+
+                repository.updateAccountState(address, accountState);
             }
 
             genesis.setStateRoot(repository.getRoot());
