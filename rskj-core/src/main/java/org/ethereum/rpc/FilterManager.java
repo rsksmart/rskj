@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created by ajlopez on 17/01/2018.
  */
 public class FilterManager {
-    private static final long filterTimeout = 5 * 60 * 1000; // 5 minutes in milliseconds
+    private static final long filterTimeout = 5 * 60 * 1000L; // 5 minutes in milliseconds
     private static final long filterCleanupPeriod = 1 * 60 * 1000L; // 1 minute in milliseconds
 
     private long latestFilterCleanup = System.currentTimeMillis();
@@ -102,8 +102,9 @@ public class FilterManager {
     private void filtersCleanup() {
         long now = System.currentTimeMillis();
 
-        if (latestFilterCleanup + filterCleanupPeriod > now)
+        if (latestFilterCleanup + filterCleanupPeriod > now) {
             return;
+        }
 
         List<Integer> toremove = new ArrayList<>();
 

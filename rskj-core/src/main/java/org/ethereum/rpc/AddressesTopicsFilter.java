@@ -48,7 +48,7 @@ public class AddressesTopicsFilter {
             return;
         }
 
-        List<byte[][]> addrAndTopics = new ArrayList<>();
+        List<byte[][]> addrAndTopics = new ArrayList<>(2);
 
         for (Topic[] toplist : topics) {
             byte[][] tops = new byte[toplist.length][];
@@ -125,25 +125,26 @@ public class AddressesTopicsFilter {
                 return false;
             }
 
+            DataWord logTopic = logTopics.get(i);
             Topic[] orTopics = topics.get(i);
 
             if (orTopics != null && orTopics.length > 0) {
-                boolean orMatches = false;
-                DataWord logTopic = logTopics.get(i);
-
-                for (Topic orTopic : orTopics) {
-                    if (new DataWord(orTopic.getBytes()).equals(logTopic)) {
-                        orMatches = true;
-                        break;
-                    }
-                }
-
-                if (!orMatches) {
+                if (!matchTopic(logTopic, orTopics)) {
                     return false;
                 }
             }
         }
 
         return true;
+    }
+
+    private boolean matchTopic(DataWord logTopic, Topic[] orTopics) {
+        for (Topic orTopic : orTopics) {
+            if (new DataWord(orTopic.getBytes()).equals(logTopic)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

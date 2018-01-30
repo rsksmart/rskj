@@ -152,12 +152,14 @@ public class LogFilter extends Filter {
         // when fromBlock and/or toBlock are "pending"
 
         // Default from block value
-        if (fr.fromBlock == null)
+        if (fr.fromBlock == null) {
             fr.fromBlock = "latest";
+        }
 
         // Default to block value
-        if (fr.toBlock == null)
+        if (fr.toBlock == null) {
             fr.toBlock = "latest";
+        }
 
         boolean fromLatestBlock = "latest".equalsIgnoreCase(fr.fromBlock);
         boolean toLatestBlock = "latest".equalsIgnoreCase(fr.toBlock);
