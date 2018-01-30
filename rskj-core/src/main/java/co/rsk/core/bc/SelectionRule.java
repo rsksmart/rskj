@@ -1,10 +1,9 @@
 package co.rsk.core.bc;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.remasc.Sibling;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.util.FastByteComparisons;
 
 import java.math.BigInteger;
 import java.util.List;

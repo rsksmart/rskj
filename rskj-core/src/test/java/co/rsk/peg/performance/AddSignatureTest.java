@@ -23,7 +23,7 @@ import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.peg.*;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;

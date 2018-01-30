@@ -18,7 +18,7 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.*;
 import co.rsk.net.messages.NewBlockHashesMessage;
 import org.ethereum.core.Block;

@@ -18,7 +18,7 @@
 
 package co.rsk.peg;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import org.ethereum.util.RLP;

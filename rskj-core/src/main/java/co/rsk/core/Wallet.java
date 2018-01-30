@@ -19,6 +19,7 @@
 package co.rsk.core;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.crypto.EncryptedData;
 import co.rsk.crypto.KeyCrypterAes;
 import org.ethereum.core.Account;

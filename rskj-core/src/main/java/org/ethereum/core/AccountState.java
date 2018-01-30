@@ -19,7 +19,7 @@
 
 package org.ethereum.core;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;

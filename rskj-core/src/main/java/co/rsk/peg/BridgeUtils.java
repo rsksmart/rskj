@@ -24,7 +24,7 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.SystemProperties;

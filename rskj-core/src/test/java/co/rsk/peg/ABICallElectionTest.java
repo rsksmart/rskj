@@ -18,7 +18,7 @@
 
 package co.rsk.peg;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.TestUtils;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;

@@ -19,7 +19,7 @@
 
 package org.ethereum.vm.program;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;

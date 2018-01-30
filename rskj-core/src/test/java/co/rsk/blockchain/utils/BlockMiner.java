@@ -1,6 +1,6 @@
 package co.rsk.blockchain.utils;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.mine.MinerUtils;
 import co.rsk.util.DifficultyUtils;
 import org.ethereum.core.Block;

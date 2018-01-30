@@ -20,10 +20,10 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Block;

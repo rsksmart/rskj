@@ -20,7 +20,7 @@
 package org.ethereum.vm;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Program.OutOfGasException;
 import org.ethereum.vm.program.Program.StackTooSmallException;

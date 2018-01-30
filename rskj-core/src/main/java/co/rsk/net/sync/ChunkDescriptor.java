@@ -18,7 +18,7 @@
 
 package co.rsk.net.sync;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 
 public class ChunkDescriptor {
     private final Keccak256 hash;

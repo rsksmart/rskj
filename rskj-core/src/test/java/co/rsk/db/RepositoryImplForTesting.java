@@ -19,7 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;

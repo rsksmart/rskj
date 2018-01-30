@@ -19,7 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.net.handler.TxHandler;

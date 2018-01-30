@@ -18,8 +18,8 @@
  */
 package org.ethereum.core;
 
-import co.rsk.crypto.Keccak256;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.Keccak256;
+import co.rsk.core.commons.RskAddress;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.HashUtil;

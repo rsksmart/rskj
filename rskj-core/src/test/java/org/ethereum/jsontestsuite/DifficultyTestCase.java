@@ -19,8 +19,8 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.crypto.Keccak256;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.Keccak256;
+import co.rsk.core.commons.RskAddress;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.ethereum.core.BlockHeader;
 

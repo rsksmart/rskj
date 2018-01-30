@@ -18,7 +18,7 @@
 
 package co.rsk.net;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 
 import javax.annotation.Nonnull;
 import java.util.*;

@@ -20,7 +20,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 

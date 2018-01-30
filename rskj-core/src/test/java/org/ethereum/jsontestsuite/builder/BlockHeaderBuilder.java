@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite.builder;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.jsontestsuite.model.BlockHeaderTck;
 

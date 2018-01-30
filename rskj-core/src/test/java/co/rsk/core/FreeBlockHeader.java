@@ -4,7 +4,7 @@ package co.rsk.core;
  * Created by SerAdmin on 12/5/2017.
  */
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;

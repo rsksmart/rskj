@@ -22,7 +22,7 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.core.bc.PendingStateImpl;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import com.google.common.collect.Lists;
 import org.ethereum.core.PendingState;

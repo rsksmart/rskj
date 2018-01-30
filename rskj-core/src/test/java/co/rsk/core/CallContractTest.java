@@ -19,6 +19,7 @@
 package co.rsk.core;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import org.ethereum.core.*;

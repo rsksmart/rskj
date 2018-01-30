@@ -18,7 +18,7 @@
 
 package co.rsk.validators;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.junit.Assert;

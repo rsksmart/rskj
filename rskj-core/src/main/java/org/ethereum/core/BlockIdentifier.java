@@ -18,7 +18,7 @@ package org.ethereum.core;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 

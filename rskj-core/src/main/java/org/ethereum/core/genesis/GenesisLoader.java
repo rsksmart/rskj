@@ -20,7 +20,7 @@
 package org.ethereum.core.genesis;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.trie.TrieImpl;
 import com.google.common.io.ByteStreams;
 import org.apache.commons.lang3.StringUtils;

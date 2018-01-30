@@ -18,7 +18,7 @@
 
 package co.rsk.config;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.net.eth.MessageFilter;
 import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.WriterMessageRecorder;

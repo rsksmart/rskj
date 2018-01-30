@@ -18,7 +18,7 @@
 
 package co.rsk.net.messages;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.Status;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.*;

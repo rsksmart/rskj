@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.*;

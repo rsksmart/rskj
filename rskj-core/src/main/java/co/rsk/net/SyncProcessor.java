@@ -3,7 +3,7 @@ package co.rsk.net;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.*;
 import co.rsk.scoring.EventType;

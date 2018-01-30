@@ -19,8 +19,8 @@
 
 package org.ethereum;
 
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.RskAddress;
+import co.rsk.core.commons.Keccak256;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.Block;
 import org.ethereum.db.IndexedBlockStore;

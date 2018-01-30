@@ -18,6 +18,7 @@
 
 package co.rsk.core;
 
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;

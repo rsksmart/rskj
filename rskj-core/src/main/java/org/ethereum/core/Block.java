@@ -18,8 +18,8 @@
  */
 
 package org.ethereum.core;
-import co.rsk.crypto.Keccak256;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.Keccak256;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.trie.Trie;

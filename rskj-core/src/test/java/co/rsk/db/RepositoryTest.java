@@ -19,7 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Repository;

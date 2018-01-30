@@ -19,7 +19,7 @@
 package co.rsk.test;
 
 import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;

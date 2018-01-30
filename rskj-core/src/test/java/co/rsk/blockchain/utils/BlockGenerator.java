@@ -21,7 +21,7 @@ package co.rsk.blockchain.utils;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleBlock;

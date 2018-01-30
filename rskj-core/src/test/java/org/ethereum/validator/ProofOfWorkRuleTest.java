@@ -23,7 +23,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.mine.MinerUtils;
 import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.ProofOfWorkRule;

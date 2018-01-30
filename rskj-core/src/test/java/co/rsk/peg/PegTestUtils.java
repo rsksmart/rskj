@@ -22,7 +22,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 
 /**
  * Created by oscar on 05/08/2016.

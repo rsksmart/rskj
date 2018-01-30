@@ -18,7 +18,7 @@
 
 package org.ethereum.rpc;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.util.ByteUtil;
 import org.spongycastle.util.encoders.Hex;
 

@@ -20,10 +20,10 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.crypto.ECKey;

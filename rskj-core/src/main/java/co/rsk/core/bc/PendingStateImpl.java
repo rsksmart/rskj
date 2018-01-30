@@ -19,8 +19,8 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Keccak256;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.Keccak256;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.net.handler.TxPendingValidator;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
@@ -30,7 +30,6 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.util.FastByteComparisons;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;

@@ -21,6 +21,7 @@ package co.rsk.core;
 import co.rsk.asm.EVMAssembler;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;

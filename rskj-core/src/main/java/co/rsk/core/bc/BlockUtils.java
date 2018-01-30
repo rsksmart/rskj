@@ -18,7 +18,7 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.BlockStore;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;

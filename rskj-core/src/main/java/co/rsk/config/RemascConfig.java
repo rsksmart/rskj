@@ -18,7 +18,7 @@
 
 package co.rsk.config;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 
 /**
  * Created by mario on 12/12/16.

@@ -1,6 +1,6 @@
 package co.rsk.core;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.ethereum.core.ImmutableTransaction;

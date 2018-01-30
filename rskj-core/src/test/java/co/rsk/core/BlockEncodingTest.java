@@ -19,7 +19,7 @@
 package co.rsk.core;
 
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;

@@ -20,7 +20,7 @@ package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.peg.Federation;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;

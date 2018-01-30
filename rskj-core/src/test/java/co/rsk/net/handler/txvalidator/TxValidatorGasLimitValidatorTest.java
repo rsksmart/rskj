@@ -18,7 +18,7 @@
 
 package co.rsk.net.handler.txvalidator;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;

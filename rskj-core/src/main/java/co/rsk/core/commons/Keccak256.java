@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.crypto;
+package co.rsk.core.commons;
 
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;

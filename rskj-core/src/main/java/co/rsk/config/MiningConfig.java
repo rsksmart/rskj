@@ -18,7 +18,7 @@
 
 package co.rsk.config;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 
 /**
  * Wraps configuration for Mining, which is usually derived from configuration files.

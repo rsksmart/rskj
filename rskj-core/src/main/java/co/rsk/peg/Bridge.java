@@ -21,7 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;

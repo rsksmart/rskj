@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite.validators;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ContractDetails;

@@ -18,8 +18,8 @@
 
 package co.rsk.remasc;
 
-import co.rsk.crypto.Keccak256;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.Keccak256;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;

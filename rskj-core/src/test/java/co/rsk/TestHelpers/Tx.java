@@ -19,8 +19,8 @@
 package co.rsk.TestHelpers;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.RskAddress;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.mockito.Mockito;

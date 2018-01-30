@@ -18,7 +18,7 @@
 
 package co.rsk.remasc;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.Repository;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;

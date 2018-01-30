@@ -19,8 +19,8 @@
 
 package org.ethereum.core;
 
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.RskAddress;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.DetailsDataStore;
 import org.ethereum.vm.DataWord;

@@ -19,7 +19,7 @@
 
 package org.ethereum.util;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.Repository;
 
 import java.math.BigInteger;

@@ -19,7 +19,7 @@
 package co.rsk.net.handler;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.listener.EthereumListenerAdapter;

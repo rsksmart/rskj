@@ -20,7 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;

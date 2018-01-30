@@ -1,6 +1,6 @@
 package co.rsk.net.sync;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.util.Optional;

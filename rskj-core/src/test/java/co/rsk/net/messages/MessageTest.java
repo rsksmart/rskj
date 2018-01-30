@@ -19,7 +19,7 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.Status;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.test.builders.AccountBuilder;

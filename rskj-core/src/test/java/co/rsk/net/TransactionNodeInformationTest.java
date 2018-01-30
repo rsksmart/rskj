@@ -18,7 +18,7 @@
 
 package co.rsk.net;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.junit.Assert;
 import org.junit.Test;
 

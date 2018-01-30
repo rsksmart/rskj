@@ -28,7 +28,7 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.Block;

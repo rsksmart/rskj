@@ -23,7 +23,7 @@ import co.rsk.core.NetworkStateExporter;
 import co.rsk.core.Rsk;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;

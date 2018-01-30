@@ -19,13 +19,12 @@
 package co.rsk.validators;
 
 import co.rsk.panic.PanicProcessor;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.HashMap;

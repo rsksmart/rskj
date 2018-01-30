@@ -20,7 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blocks.BlockRecorder;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.Metrics;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.Trie;
@@ -38,7 +38,6 @@ import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;

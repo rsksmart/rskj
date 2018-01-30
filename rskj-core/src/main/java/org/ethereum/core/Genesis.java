@@ -20,7 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.genesis.InitialAddressState;
 import org.ethereum.db.ByteArrayWrapper;

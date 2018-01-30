@@ -19,7 +19,7 @@
 
 package org.ethereum.core;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.InternalTransaction;

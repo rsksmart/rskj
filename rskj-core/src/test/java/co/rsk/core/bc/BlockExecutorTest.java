@@ -21,7 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockchainDummy;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieStoreImpl;

@@ -19,7 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.core.bc.BlockUtils;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.sync.SyncConfiguration;
 import org.ethereum.core.Block;

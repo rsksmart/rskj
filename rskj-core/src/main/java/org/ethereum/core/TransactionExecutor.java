@@ -20,7 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.Constants;
 import org.ethereum.db.BlockStore;
@@ -36,7 +36,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.trace.ProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -48,7 +47,6 @@ import static org.apache.commons.lang3.ArrayUtils.getLength;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
-import static org.ethereum.util.ByteUtil.toHexString;
 import static org.ethereum.vm.VMUtils.saveProgramTraceFile;
 
 /**

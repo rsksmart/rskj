@@ -20,7 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.config.blockchain.GenesisConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.core.genesis.GenesisLoader;

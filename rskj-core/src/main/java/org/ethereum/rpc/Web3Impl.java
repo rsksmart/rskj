@@ -19,9 +19,9 @@
 package org.ethereum.rpc;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.core.SnapshotManager;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerManager;
@@ -59,7 +59,6 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

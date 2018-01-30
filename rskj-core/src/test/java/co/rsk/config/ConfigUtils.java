@@ -1,6 +1,6 @@
 package co.rsk.config;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 
 public class ConfigUtils {
     public static MiningConfig getDefaultMiningConfig() {

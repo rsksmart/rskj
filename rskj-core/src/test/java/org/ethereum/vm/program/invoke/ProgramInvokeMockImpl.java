@@ -19,8 +19,8 @@
 
 package org.ethereum.vm.program.invoke;
 
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.RskAddress;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.db.RepositoryImplForTesting;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;

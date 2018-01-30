@@ -19,7 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.*;
 import com.google.common.annotations.VisibleForTesting;

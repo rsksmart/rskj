@@ -18,7 +18,7 @@
 
 package co.rsk.db;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;

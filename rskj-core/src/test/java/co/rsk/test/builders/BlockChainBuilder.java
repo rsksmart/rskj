@@ -20,7 +20,7 @@ package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.peg.RepositoryBlockStore;

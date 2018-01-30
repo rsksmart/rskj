@@ -20,7 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;

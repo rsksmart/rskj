@@ -19,7 +19,7 @@
 
 package org.ethereum.db;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.vm.DataWord;
 
 import javax.annotation.Nullable;

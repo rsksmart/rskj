@@ -20,7 +20,7 @@ package co.rsk.remasc;
 
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;

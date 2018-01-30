@@ -19,12 +19,11 @@
 
 package org.ethereum.jsontestsuite.validators;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.util.ByteUtil;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
 import java.util.List;

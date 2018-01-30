@@ -18,9 +18,9 @@
 
 package co.rsk.metrics;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.peg.PegTestUtils;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.util.RskCustomCache;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;

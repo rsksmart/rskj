@@ -18,7 +18,7 @@
 
 package org.ethereum.rpc.converters;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.rpc.Web3;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;

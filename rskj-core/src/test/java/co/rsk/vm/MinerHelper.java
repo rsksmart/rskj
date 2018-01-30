@@ -20,7 +20,7 @@ package co.rsk.vm;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;

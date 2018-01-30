@@ -20,7 +20,7 @@ package co.rsk.validators;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.FamilyUtils;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.ethereum.core.Block;

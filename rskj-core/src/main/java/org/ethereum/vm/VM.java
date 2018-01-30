@@ -20,7 +20,7 @@
 package org.ethereum.vm;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.MessageCall.MsgType;

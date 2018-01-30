@@ -19,7 +19,7 @@
 package co.rsk.mine;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.net.BlockProcessor;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;

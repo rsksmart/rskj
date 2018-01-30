@@ -4,7 +4,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.sync.DownloadingBodiesSyncState;

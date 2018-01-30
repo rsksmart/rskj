@@ -19,8 +19,8 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.crypto.Keccak256;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.Keccak256;
+import co.rsk.core.commons.RskAddress;
 import com.google.common.collect.Lists;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;

@@ -19,7 +19,7 @@
 
 package org.ethereum.net;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.net.eth.message.NewBlockHashesMessage;

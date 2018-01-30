@@ -19,7 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.BlockStore;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;

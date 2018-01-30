@@ -24,7 +24,7 @@ import co.rsk.config.MiningConfig;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.NetworkStateExporter;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.metrics.BlockHeaderElement;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.metrics.HashRateCalculatorMining;

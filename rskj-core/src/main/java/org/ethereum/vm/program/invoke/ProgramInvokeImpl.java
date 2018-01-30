@@ -19,7 +19,7 @@
 
 package org.ethereum.vm.program.invoke;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.DataWord;

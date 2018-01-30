@@ -25,7 +25,7 @@ import co.rsk.config.ConfigUtils;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.World;
 import co.rsk.validators.BlockUnclesValidationRule;

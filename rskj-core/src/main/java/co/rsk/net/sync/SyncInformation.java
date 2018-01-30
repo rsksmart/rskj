@@ -1,6 +1,6 @@
 package co.rsk.net.sync;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.BlockProcessResult;
 import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;

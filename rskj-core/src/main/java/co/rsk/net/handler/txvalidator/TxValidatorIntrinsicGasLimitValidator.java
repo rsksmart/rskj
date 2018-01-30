@@ -19,8 +19,8 @@
 package co.rsk.net.handler.txvalidator;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Keccak256;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.Keccak256;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.*;
 
 import java.math.BigInteger;

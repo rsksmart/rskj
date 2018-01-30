@@ -18,6 +18,7 @@
 
 package co.rsk.core;
 
+import co.rsk.core.commons.RskAddress;
 import org.junit.Assert;
 import org.junit.Test;
 import org.spongycastle.util.encoders.DecoderException;

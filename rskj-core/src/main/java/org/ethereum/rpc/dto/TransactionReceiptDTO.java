@@ -18,14 +18,12 @@
 
 package org.ethereum.rpc.dto;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.LogFilterElement;
 import org.ethereum.vm.LogInfo;
-
-import java.util.Arrays;
 
 import static org.ethereum.rpc.TypeConverter.toJsonHex;
 

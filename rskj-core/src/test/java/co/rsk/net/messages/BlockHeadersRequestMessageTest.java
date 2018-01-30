@@ -1,6 +1,6 @@
 package co.rsk.net.messages;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;

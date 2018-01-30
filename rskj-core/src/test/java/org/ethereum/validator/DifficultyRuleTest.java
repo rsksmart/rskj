@@ -20,7 +20,7 @@ package org.ethereum.validator;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.vm.DataWord;
 import org.junit.Ignore;

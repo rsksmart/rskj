@@ -18,7 +18,7 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.crypto.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
