@@ -49,8 +49,8 @@ public class JsonRpcNettyServer {
                 protected void initChannel(SocketChannel ch) throws Exception {
                     ChannelPipeline p = ch.pipeline();
                     p.addLast(new HttpRequestDecoder());
-                    p.addLast(new HttpObjectAggregator(1024 * 1024 * 5));
                     p.addLast(new HttpResponseEncoder());
+                    p.addLast(new HttpObjectAggregator(1024 * 1024 * 5));
                     p.addLast(new HttpContentCompressor());
                     if (corsConfiguration.hasHeader()) {
                         p.addLast(new CorsHandler(
