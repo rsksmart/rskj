@@ -49,7 +49,7 @@ public class OneNodeTest {
             node.receiveMessageFrom(null, new BlockMessage(block));
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
-        Assert.assertArrayEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
+        Assert.assertArrayEquals(blocks.get(blocks.size() - 1).getHash().getBytes(), node.getBestBlock().getHash().getBytes());
     }
 
     @Test
@@ -66,6 +66,6 @@ public class OneNodeTest {
             node.receiveMessageFrom(null, new BlockMessage(block));
 
         Assert.assertEquals(blocks.size(), node.getBestBlock().getNumber());
-        Assert.assertArrayEquals(blocks.get(blocks.size() - 1).getHash(), node.getBestBlock().getHash());
+        Assert.assertArrayEquals(blocks.get(blocks.size() - 1).getHash().getBytes(), node.getBestBlock().getHash().getBytes());
     }
 }

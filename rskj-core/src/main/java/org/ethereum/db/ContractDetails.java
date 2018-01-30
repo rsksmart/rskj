@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.vm.DataWord;
 
 import javax.annotation.Nullable;
@@ -41,7 +42,7 @@ public interface ContractDetails {
 
     void setCode(byte[] code);
 
-    byte[] getStorageHash();
+    Keccak256 getStorageHash();
 
     void decode(byte[] rlpCode);
 
@@ -75,7 +76,7 @@ public interface ContractDetails {
 
     void syncStorage();
 
-    ContractDetails getSnapshotTo(byte[] hash);
+    ContractDetails getSnapshotTo(Keccak256 hash);
 
     boolean isNullObject();
 }

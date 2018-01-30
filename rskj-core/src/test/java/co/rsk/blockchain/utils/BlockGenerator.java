@@ -21,6 +21,7 @@ package co.rsk.blockchain.utils;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleBlock;
@@ -56,7 +57,7 @@ import static org.ethereum.util.ByteUtil.wrap;
 public class BlockGenerator {
     private static final BlockGenerator INSTANCE = new BlockGenerator();
 
-    private static final byte[] EMPTY_LIST_HASH = HashUtil.sha3(RLP.encodeList());
+    private static final Keccak256 EMPTY_LIST_HASH = Keccak256.emptyListHash();
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
@@ -90,14 +91,14 @@ public class BlockGenerator {
         ecKey = new ECKey(rand);
         address = ecKey.getAddress();
         */
-        byte[] coinbase    = Hex.decode("e94aef644e428941ee0a3741f28d80255fddba7f");
+        byte[] coinbase = Hex.decode("e94aef644e428941ee0a3741f28d80255fddba7f");
 
-        long   timestamp         = 0; // predictable timeStamp
+        long   timestamp = 0; // predictable timeStamp
 
-        byte[] parentHash  = EMPTY_BYTE_ARRAY;
-        byte[] extraData   = EMPTY_BYTE_ARRAY;
+        Keccak256 parentHash = Keccak256.zeroHash();
+        byte[] extraData = EMPTY_BYTE_ARRAY;
 
-        long   gasLimit         = initialGasLimit;
+        long   gasLimit = initialGasLimit;
 
         byte[] bitcoinMergedMiningHeader = null;
         byte[] bitcoinMergedMiningMerkleProof = null;
@@ -112,20 +113,19 @@ public class BlockGenerator {
             Map<ByteArrayWrapper, InitialAddressState> preMineMap2 = generatePreMine(preMineMap);
             genesis.setPremine(preMineMap2);
 
-            byte[] rootHash = generateRootHash(preMineMap2);
-            genesis.setStateRoot(rootHash);
+            genesis.setStateRoot(generateRootHash(preMineMap2));
         }
 
         return genesis;
     }
 
-    private byte[] generateRootHash(Map<ByteArrayWrapper, InitialAddressState> premine){
+    private Keccak256 generateRootHash(Map<ByteArrayWrapper, InitialAddressState> premine){
         Trie state = new TrieImpl(null, true);
 
         for (ByteArrayWrapper key : premine.keySet())
             state = state.put(key.getData(), premine.get(key).getAccountState().getEncoded());
 
-        return state.getHash();
+        return new Keccak256(state.getHash());
     }
 
     private Map<ByteArrayWrapper, InitialAddressState> generatePreMine(Map<byte[], BigInteger> alloc){
@@ -166,11 +166,11 @@ public class BlockGenerator {
 
     public Block createChildBlock(Block parent, long fees, List<BlockHeader> uncles, byte[] difficulty) {
         List<Transaction> txs = new ArrayList<>();
-        byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
+        byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
         return new Block(
                 parent.getHash(), // parent hash
-                unclesListHash, // uncle hash
+                new Keccak256(unclesListHash), // uncle hash
                 parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
                 difficulty, // difficulty
@@ -183,7 +183,7 @@ public class BlockGenerator {
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
                 BlockChainImpl.calcTxTrie(txs),  // transaction root
-                ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
+                parent.getStateRoot(), //EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 uncles,        // uncle list
                 null,
@@ -192,11 +192,11 @@ public class BlockGenerator {
 //        return createChildBlock(parent, 0);
     }
 
-    public Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot) {
+    public Block createChildBlock(Block parent, List<Transaction> txs, Keccak256 stateRoot) {
         return createChildBlock(parent, txs, stateRoot, parent.getCoinbase().getBytes());
     }
 
-    public Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot, byte[] coinbase) {
+    public Block createChildBlock(Block parent, List<Transaction> txs, Keccak256 stateRoot, byte[] coinbase) {
         Bloom logBloom = new Bloom();
 
         if (txs == null) {
@@ -261,10 +261,10 @@ public class BlockGenerator {
             uncles = new ArrayList<>();
         }
 
-        byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
+        byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
         BlockHeader newHeader = new BlockHeader(parent.getHash(),
-                unclesListHash,
+                new Keccak256(unclesListHash),
                 parent.getCoinbase().getBytes(),
                 ByteUtils.clone(new Bloom().getData()),
                 new byte[]{1},
@@ -289,7 +289,7 @@ public class BlockGenerator {
 
         newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash());
 
-        newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
+        newHeader.setStateRoot(parent.getStateRoot());
 
         Block newBlock = new Block(newHeader, txs, uncles);
 
@@ -325,7 +325,7 @@ public class BlockGenerator {
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
                 EMPTY_TRIE_HASH,  // transaction receipts
-                EMPTY_TRIE_HASH,   // state root
+                new Keccak256(EMPTY_TRIE_HASH),   // state root
                 txs,       // transaction list
                 null,        // uncle list
                 minimumGasPrice.toByteArray(),
@@ -339,7 +339,7 @@ public class BlockGenerator {
         List<Transaction> txs = new ArrayList<>();
 
         for (int ntx = 0; ntx < ntxs; ntx++) {
-            txs.add(new SimpleRskTransaction(PegTestUtils.createHash3().getBytes()));
+            txs.add(new SimpleRskTransaction(PegTestUtils.createHash3()));
         }
 
         return new SimpleBlock(
@@ -357,7 +357,7 @@ public class BlockGenerator {
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
                 EMPTY_TRIE_HASH,  // transaction receipts
-                EMPTY_TRIE_HASH,   // state root
+                new Keccak256(EMPTY_TRIE_HASH),   // state root
                 txs,       // transaction list
                 null        // uncle list
         );
@@ -380,7 +380,7 @@ public class BlockGenerator {
                 BigInteger.ZERO.toByteArray(),  // provisory nonce
                 EMPTY_TRIE_HASH,   // receipts root
                 BlockChainImpl.calcTxTrie(txs),  // transaction root
-                ByteUtils.clone(parent.getStateRoot()), //EMPTY_TRIE_HASH,   // state root
+                parent.getStateRoot(), //EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 null,        // uncle list
                 null,
@@ -398,7 +398,7 @@ public class BlockGenerator {
             fallbackKey = fallbackMiningKey1;
         }
 
-        byte[] signature = fallbackSign(block.getHashForMergedMining(), fallbackKey);
+        byte[] signature = fallbackSign(block.getHashForMergedMining().getBytes(), fallbackKey);
 
         if (!goodSig) {
             // just make it a little bad

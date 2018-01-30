@@ -19,7 +19,8 @@
 
 package org.ethereum.vm.program.invoke;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -80,7 +81,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         byte[] data = tx.isContractCreation() ? ByteUtil.EMPTY_BYTE_ARRAY : nullToEmpty(tx.getData());
 
         /***    PREVHASH  op  ***/
-        byte[] lastHash = block.getParentHash();
+        Keccak256 lastHash = block.getParentHash();
 
         /***   COINBASE  op ***/
         byte[] coinbase = block.getCoinbase().getBytes();
@@ -123,7 +124,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     new BigInteger(1, gas).longValue(),
                     new BigInteger(1, callValue).longValue(),
                     Hex.toHexString(data),
-                    Hex.toHexString(lastHash),
+                    lastHash.toString(),
                     Hex.toHexString(coinbase),
                     timestamp,
                     number,
@@ -157,7 +158,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         DataWord callValue = inValue;
 
         byte[] data = dataIn;
-        DataWord lastHash = program.getPrevHash();
+        Keccak256 lastHash = program.getPrevHash();
         DataWord coinbase = program.getCoinbase();
         DataWord timestamp = program.getTimestamp();
         DataWord number = program.getNumber();
@@ -190,7 +191,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     agas,
                     Hex.toHexString(callValue.getNoLeadZeroesData()),
                     data == null ? "" : Hex.toHexString(data),
-                    Hex.toHexString(lastHash.getData()),
+                    lastHash.toString(),
                     Hex.toHexString(coinbase.getLast20Bytes()),
                     timestamp.longValue(),
                     number.longValue(),

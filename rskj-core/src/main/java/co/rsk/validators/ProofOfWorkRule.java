@@ -152,7 +152,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         System.arraycopy(bitcoinMergedMiningCoinbaseTransactionCompressed, RskMiningConstants.MIDSTATE_SIZE_TRIMMED,
                 bitcoinMergedMiningCoinbaseTransactionTail, 0, bitcoinMergedMiningCoinbaseTransactionTail.length);
 
-        byte[] expectedCoinbaseMessageBytes = org.spongycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, header.getHashForMergedMining());
+        byte[] expectedCoinbaseMessageBytes = org.spongycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, header.getHashForMergedMining().getBytes());
 
 
         List<Byte> bitcoinMergedMiningCoinbaseTransactionTailAsList = Arrays.asList(ArrayUtils.toObject(bitcoinMergedMiningCoinbaseTransactionTail));
@@ -241,6 +241,6 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
 
         ECKey.ECDSASignature signature = ECKey.ECDSASignature.fromComponents(r, s, v[0]);
 
-        return fallbackMiningPubKey.verify(header.getHashForMergedMining(), signature);
+        return fallbackMiningPubKey.verify(header.getHashForMergedMining().getBytes(), signature);
     }
 }

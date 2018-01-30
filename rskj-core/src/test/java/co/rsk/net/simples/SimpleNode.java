@@ -24,6 +24,8 @@ import co.rsk.net.messages.StatusMessage;
 import co.rsk.validators.DummyBlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.Utils;
+import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -32,7 +34,8 @@ import java.math.BigInteger;
  */
 public class SimpleNode {
     private MessageHandler handler;
-    private NodeID nodeID = new NodeID(HashUtil.randomPeerId());
+
+    private NodeID nodeID = new NodeID(randomPeerId());
 
     public SimpleNode(MessageHandler handler) {
         this.handler = handler;
@@ -81,4 +84,22 @@ public class SimpleNode {
         NodeMessageHandler handler = NodeMessageHandlerUtil.createHandler(new DummyBlockValidationRule());
         return new SimpleNode(handler);
     }
+
+    /**
+     * @return generates random peer id for the HelloMessage
+     */
+    private static byte[] randomPeerId() {
+
+        byte[] peerIdBytes = new BigInteger(512, Utils.getRandom()).toByteArray();
+
+        final String peerId;
+        if (peerIdBytes.length > 64) {
+            peerId = Hex.toHexString(peerIdBytes, 1, 64);
+        } else {
+            peerId = Hex.toHexString(peerIdBytes);
+        }
+
+        return Hex.decode(peerId);
+    }
+    
 }

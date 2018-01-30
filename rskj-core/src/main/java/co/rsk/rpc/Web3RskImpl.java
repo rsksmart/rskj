@@ -30,7 +30,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
-import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.manager.WorldManager;
@@ -99,7 +99,7 @@ public class Web3RskImpl extends Web3Impl {
         List<Byte> rskTagAsByteList = java.util.Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
 
         int rskTagPosition = Collections.lastIndexOfSubList(coinbaseAsByteList, rskTagAsByteList);
-        byte[] blockHashForMergedMiningArray = new byte[SHA3Helper.Size.S256.getValue()/8];
+        byte[] blockHashForMergedMiningArray = new byte[HashUtil.Size.S256.getValue()/8];
         System.arraycopy(coinbaseAsByteArray, rskTagPosition+ RskMiningConstants.RSK_TAG.length, blockHashForMergedMiningArray, 0, blockHashForMergedMiningArray.length);
         String blockHashForMergedMining = TypeConverter.toJsonHex(blockHashForMergedMiningArray);
 
@@ -114,7 +114,7 @@ public class Web3RskImpl extends Web3Impl {
 
     public void ext_dumpState()  {
         Block bestBlcock = blockStore.getBestBlock();
-        logger.info("Dumping state for block hash {}, block number {}", Hex.toHexString(bestBlcock.getHash()), bestBlcock.getNumber());
+        logger.info("Dumping state for block hash {}, block number {}", Hex.toHexString(bestBlcock.getHash().getBytes()), bestBlcock.getNumber());
         networkStateExporter.exportStatus(System.getProperty("user.dir") + "/" + "rskdump.json");
     }
 
@@ -140,14 +140,14 @@ public class Web3RskImpl extends Web3Impl {
                 result.addAll(blockStore.getChainBlocksByNumber(i));
             }
             for (Block block : result) {
-                writer.println(toSmallHash(block.getHash()) + " " + block.getNumber()+"-"+toSmallHash(block.getHash()));
+                writer.println(toSmallHash(block.getHash().getBytes()) + " " + block.getNumber()+"-"+toSmallHash(block.getHash().getBytes()));
             }
             writer.println("#");
             for (Block block : result) {
-                writer.println(toSmallHash(block.getHash()) + " " + toSmallHash(block.getParentHash()) + " P");
+                writer.println(toSmallHash(block.getHash().getBytes()) + " " + toSmallHash(block.getParentHash().getBytes()) + " P");
                 if (includeUncles) {
                     for (BlockHeader uncleHeader : block.getUncleList()) {
-                        writer.println(toSmallHash(block.getHash()) + " " + toSmallHash(uncleHeader.getHash()) + " U");
+                        writer.println(toSmallHash(block.getHash().getBytes()) + " " + toSmallHash(uncleHeader.getHash().getBytes()) + " U");
                     }
                 }
             }

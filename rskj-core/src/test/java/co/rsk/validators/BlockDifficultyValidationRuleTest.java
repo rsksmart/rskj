@@ -20,7 +20,7 @@ package co.rsk.validators;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;

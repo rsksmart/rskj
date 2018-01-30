@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blocks.BlockRecorder;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.Metrics;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.Trie;
@@ -37,7 +38,6 @@ import org.ethereum.manager.AdminInfo;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
@@ -167,7 +167,6 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         }
 
         if (!block.isSealed()) {
-            panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), Hex.toHexString(block.getHash())));
             block.seal();
         }
 
@@ -176,8 +175,9 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         }
 
         try {
+
             logger.trace("Try connect block hash: {}, number: {}",
-                    Hex.toHexString(block.getHash()).substring(0, 6),
+                    block.getShortHash(),
                     block.getNumber());
 
             synchronized (connectLock) {
@@ -198,7 +198,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         if (blockStore.getBlockByHash(block.getHash()) != null &&
                 !BigInteger.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash()))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
-                    Hex.toHexString(block.getHash()).substring(0, 6),
+                    HashUtil.shortHash(block.getHash()),
                     block.getNumber());
 
             return ImportResult.EXIST;
@@ -243,7 +243,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         if (!isValid(block)) {
             long blockNumber = block.getNumber();
             logger.warn("Invalid block with number: {}", blockNumber);
-            panicProcessor.panic("invalidblock", String.format("Invalid block %s %s", blockNumber, Hex.toHexString(block.getHash())));
+            panicProcessor.panic("invalidblock", String.format("Invalid block %s %s", blockNumber, block.getHash()));
             return ImportResult.INVALID_BLOCK;
         }
 
@@ -317,8 +317,11 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
         // It is not the new best block
         else {
             if (bestBlock != null && !bestBlock.isParentOf(block)) {
-                logger.trace("No rebranch: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
-                        bestBlock.getShortHash(), block.getShortHash(), bestBlock.getNumber(), block.getNumber(),
+                logger.info("No rebranch: {} ~> {} From block {} ~> {} Difficulty {} Challenger difficulty {}",
+                        bestBlock.getShortHash(),
+                        block.getShortHash(),
+                        bestBlock.getNumber(),
+                        block.getNumber(),
                         status.getTotalDifficulty().toString(), totalDifficulty.toString());
             }
 
@@ -362,7 +365,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public Block getBlockByHash(byte[] hash) {
+    public Block getBlockByHash(Keccak256 hash) {
         return blockStore.getBlockByHash(hash);
     }
 
@@ -372,7 +375,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public boolean isBlockExist(byte[] hash) {
+    public boolean isBlockExist(Keccak256 hash) {
         return blockStore.isBlockExist(hash);
     }
 
@@ -382,7 +385,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public List<byte[]> getListOfBodiesByHashes(List<byte[]> hashes) {
+    public List<byte[]> getListOfBodiesByHashes(List<Keccak256> hashes) {
         return null;
     }
 
@@ -399,7 +402,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public boolean hasBlockInSomeBlockchain(@Nonnull final byte[] hash) {
+    public boolean hasBlockInSomeBlockchain(@Nonnull final Keccak256 hash) {
         final Block block = this.getBlockByHash(hash);
         return block != null && this.blockIsInIndex(block);
     }
@@ -450,7 +453,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
      * @return transaction info, null if the transaction does not exist
      */
     @Override
-    public TransactionInfo getTransactionInfo(byte[] hash) {
+    public TransactionInfo getTransactionInfo(Keccak256 hash) {
         TransactionInfo txInfo = receiptStore.get(hash);
 
         if (txInfo == null) {
@@ -479,7 +482,7 @@ public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchai
     }
 
     @Override
-    public byte[] getBestBlockHash() {
+    public Keccak256 getBestBlockHash() {
         return status.getBestBlock().getHash();
     }
 

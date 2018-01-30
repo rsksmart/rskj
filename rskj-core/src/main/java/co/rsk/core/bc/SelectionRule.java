@@ -1,17 +1,14 @@
 package co.rsk.core.bc;
 
+import co.rsk.core.commons.Keccak256;
 import co.rsk.remasc.Sibling;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.util.FastByteComparisons;
 
 import java.math.BigInteger;
 import java.util.List;
 
 public class SelectionRule {
-
-    private static final int BYTE_ARRAY_OFFSET = 0;
-    private static final int BYTE_ARRAY_LENGTH = 32;
 
     private static final BigInteger PAID_FEES_MULTIPLIER_CRITERIA = BigInteger.valueOf(2);
 
@@ -63,9 +60,7 @@ public class SelectionRule {
         return maxUncleCount > processingBlockHeader.getUncleCount();
     }
 
-    public static boolean isThisBlockHashSmaller(byte[] thisBlockHash, byte[] compareBlockHash) {
-        return FastByteComparisons.compareTo(
-                thisBlockHash, BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH,
-                compareBlockHash, BYTE_ARRAY_OFFSET, BYTE_ARRAY_LENGTH) < 0;
+    public static boolean isThisBlockHashSmaller(Keccak256 thisBlockHash, Keccak256 compareBlockHash) {
+        return thisBlockHash.compareTo(compareBlockHash) < 0;
     }
 }

@@ -18,7 +18,7 @@
 
 package co.rsk.config;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.net.eth.MessageFilter;
 import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.WriterMessageRecorder;
@@ -107,7 +107,7 @@ public class RskSystemProperties extends SystemProperties {
         }
 
         String coinbaseSecret = configFromFiles.getString(MINER_COINBASE_SECRET_CONFIG);
-        return new Account(ECKey.fromPrivate(HashUtil.sha3(coinbaseSecret.getBytes(StandardCharsets.UTF_8))));
+        return new Account(ECKey.fromPrivate(HashUtil.keccak256(coinbaseSecret.getBytes(StandardCharsets.UTF_8))));
     }
 
     public boolean minerClientEnabled() {

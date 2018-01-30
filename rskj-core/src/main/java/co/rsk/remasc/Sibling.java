@@ -18,7 +18,8 @@
 
 package co.rsk.remasc;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.Keccak256;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -36,7 +37,7 @@ import java.util.ArrayList;
 public class Sibling {
 
     // Hash of the sibling block
-    private final byte[] hash;
+    private Keccak256 hash;
     // Coinbase address of the sibling block
     private final RskAddress coinbase;
     // Fees paid by the sibling block
@@ -58,7 +59,7 @@ public class Sibling {
                 blockHeader.getUncleCount());
     }
 
-    private Sibling(byte[] hash, RskAddress coinbase, RskAddress includedBlockCoinbase, BigInteger paidFees, long includedHeight, int uncleCount) {
+    private Sibling(Keccak256 hash, RskAddress coinbase, RskAddress includedBlockCoinbase, BigInteger  paidFees, long includedHeight, int uncleCount) {
         this.hash = hash;
         this.coinbase = coinbase;
         this.paidFees = paidFees;
@@ -67,7 +68,7 @@ public class Sibling {
         this.uncleCount = uncleCount;
     }
 
-    public byte[] getHash() {
+    public Keccak256 getHash() {
         return hash;
     }
 
@@ -90,7 +91,8 @@ public class Sibling {
     public int getUncleCount() { return uncleCount; }
 
     public byte[] getEncoded() {
-        byte[] rlpHash = RLP.encodeElement(this.hash);
+
+        byte[] rlpHash = RLP.encodeElement(this.hash.getBytes());
         byte[] rlpCoinbase = RLP.encodeRskAddress(this.coinbase);
         byte[] rlpIncludedBlockCoinbase = RLP.encodeRskAddress(this.includedBlockCoinbase);
 
@@ -105,7 +107,7 @@ public class Sibling {
         ArrayList<RLPElement> params = RLP.decode2(data);
         RLPList sibling = (RLPList) params.get(0);
 
-        byte[] hash = sibling.get(0).getRLPData();
+        Keccak256 hash = new Keccak256(sibling.get(0).getRLPData());
         RskAddress coinbase = RLP.parseRskAddress(sibling.get(1).getRLPData());
         RskAddress includedBlockCoinbase = RLP.parseRskAddress(sibling.get(2).getRLPData());
 

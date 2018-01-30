@@ -20,7 +20,7 @@ package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.rpc.TypeConverter;

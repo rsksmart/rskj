@@ -3,6 +3,7 @@ package co.rsk.net;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.net.sync.*;
 import co.rsk.scoring.EventType;
@@ -118,7 +119,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     public void processNewBlockHash(MessageChannel sender, NewBlockHashMessage message) {
         logger.trace("Process new block hash from node {} hash {}", sender.getPeerNodeID(), HashUtil.shortHash(message.getBlockHash()));
-        byte[] hash = message.getBlockHash();
+        Keccak256 hash = message.getBlockHash();
 
         if (syncState instanceof DecidingSyncState && blockSyncService.getBlockFromStoreOrBlockchain(hash) == null) {
             sendMessage(sender, new BlockRequestMessage(pendingMessages.getNextRequestId(), hash));
@@ -185,7 +186,7 @@ public class SyncProcessor implements SyncEventsHandler {
     public void startSyncing(MessageChannel peer) {
         selectedPeerId = peer.getPeerNodeID();
         logger.trace("Start syncing with node {}", peer.getPeerNodeID());
-        byte[] bestBlockHash = syncInformation.getPeerStatus(selectedPeerId).getStatus().getBestBlockHash();
+        Keccak256 bestBlockHash = syncInformation.getPeerStatus(selectedPeerId).getStatus().getBestBlockHash();
         setSyncState(new CheckingBestHeaderSyncState(this.syncConfiguration, this, syncInformation, bestBlockHash));
     }
 
@@ -305,7 +306,8 @@ public class SyncProcessor implements SyncEventsHandler {
             this.blockParentValidationRule = new DifficultyRule(difficultyCalculator);
         }
 
-        public boolean isKnownBlock(byte[] hash) {
+        @Override
+        public boolean isKnownBlock(Keccak256 hash) {
             return blockchain.getBlockByHash(hash) != null;
         }
 
@@ -332,7 +334,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
         @Override
         public boolean blockHeaderIsValid(@Nonnull BlockHeader header, @Nonnull BlockHeader parentHeader) {
-            if (!ByteUtil.fastEquals(parentHeader.getHash(), header.getParentHash())) {
+            if (!ByteUtil.fastEquals(parentHeader.getHash().getBytes(), header.getParentHash().getBytes())) {
                 return false;
             }
 

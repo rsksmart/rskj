@@ -19,13 +19,12 @@
 package co.rsk.validators;
 
 import co.rsk.panic.PanicProcessor;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -89,7 +88,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
                         txNonce, expectedNonce, parentRepo.getNonce(sender), tx);
 
                 panicProcessor.panic("invalidtransaction", String.format("Invalid transaction: Tx nonce %s != expected nonce %s (parent nonce: %s): %s",
-                        txNonce.toString(), expectedNonce.toString(), parentRepo.getNonce(sender).toString(), Hex.toHexString(tx.getHash())));
+                        txNonce.toString(), expectedNonce.toString(), parentRepo.getNonce(sender).toString(), tx.getHash()));
 
                 return false;
             }

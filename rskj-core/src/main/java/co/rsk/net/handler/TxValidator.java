@@ -20,7 +20,7 @@ package co.rsk.net.handler;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.handler.txvalidator.*;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
@@ -29,7 +29,6 @@ import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.BigIntegers;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.LinkedList;
@@ -100,7 +99,7 @@ class TxValidator {
 
             for (TxValidatorStep step : validatorSteps) {
                 if (!step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0)) {
-                    logger.info("Tx validation failed: validator {} tx {}", step.getClass().getName(), Hex.toHexString(tx.getHash()));
+                    logger.info("Tx validation failed: validator {} tx {}", step.getClass().getName(), tx.getHash());
                     valid = false;
                     break;
                 }

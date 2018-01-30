@@ -18,6 +18,7 @@
 
 package co.rsk.net;
 
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.messages.NewBlockHashesMessage;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -31,7 +32,7 @@ import java.util.List;
 public interface BlockProcessor {
     BlockProcessResult processBlock(MessageChannel sender, Block block);
 
-    void processGetBlock(MessageChannel sender, byte[] hash);
+    void processGetBlock(MessageChannel sender, Keccak256 hash);
 
     BlockNodeInformation getNodeInformation();
 
@@ -43,21 +44,21 @@ public interface BlockProcessor {
 
     void processBlockHeaders(MessageChannel sender, List<BlockHeader> blockHeaders);
 
-    boolean hasBlock(byte[] hash);
+    boolean hasBlock(Keccak256 hash);
 
-    boolean hasBlockInProcessorStore(byte[] hash);
+    boolean hasBlockInProcessorStore(Keccak256 hash);
 
-    boolean hasBlockInSomeBlockchain(byte[] hash);
+    boolean hasBlockInSomeBlockchain(Keccak256 hash);
 
     boolean hasBetterBlockToSync();
 
     // New messages for RSK's sync protocol
 
-    void processBlockRequest(MessageChannel sender, long requestId, byte[] hash);
+    void processBlockRequest(MessageChannel sender, long requestId, Keccak256 hash);
 
-    void processBlockHeadersRequest(MessageChannel sender, long requestId, byte[] hash, int count);
+    void processBlockHeadersRequest(MessageChannel sender, long requestId, Keccak256 hash, int count);
 
-    void processBodyRequest(MessageChannel sender, long requestId, byte[] hash);
+    void processBodyRequest(MessageChannel sender, long requestId, Keccak256 hash);
 
     void processBlockHashRequest(MessageChannel sender, long requestId, long height);
 

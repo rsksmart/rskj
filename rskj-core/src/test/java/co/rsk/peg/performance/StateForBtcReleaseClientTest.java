@@ -19,11 +19,7 @@
 package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.bitcoinj.crypto.TransactionSignature;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptChunk;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
@@ -64,7 +60,7 @@ public class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
         final int maxNumInputs = 10;
 
         return (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
-            Map<Sha3Hash, BtcTransaction> txsWaitingForSignatures;
+            Map<Keccak256, BtcTransaction> txsWaitingForSignatures;
             try {
                 txsWaitingForSignatures = provider.getRskTxsWaitingForSignatures();
             } catch (IOException e) {
@@ -95,7 +91,7 @@ public class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
                 }
 
 
-                Sha3Hash rskTxHash = new Sha3Hash(HashUtil.sha3(BigInteger.valueOf(new Random().nextLong()).toByteArray()));
+                Keccak256 rskTxHash = new Keccak256(HashUtil.keccak256(BigInteger.valueOf(new Random().nextLong()).toByteArray()));
                 txsWaitingForSignatures.put(rskTxHash, releaseTx);
             }
         };

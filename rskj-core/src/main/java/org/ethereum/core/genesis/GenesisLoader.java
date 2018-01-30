@@ -20,6 +20,7 @@
 package org.ethereum.core.genesis;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.trie.TrieImpl;
 import com.google.common.io.ByteStreams;
 import org.apache.commons.lang3.StringUtils;
@@ -27,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JavaType;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Genesis;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
 import co.rsk.trie.Trie;
@@ -39,7 +41,7 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.ethereum.crypto.SHA3Helper.sha3;
+import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.ByteUtil.wrap;
 
 public class GenesisLoader {
@@ -66,7 +68,7 @@ public class GenesisLoader {
             genesis.setPremine(premine);
 
             byte[] rootHash = generateRootHash(premine);
-            genesis.setStateRoot(rootHash);
+            genesis.setStateRoot(new Keccak256(rootHash));
 
             genesis.flushRLP();
 
@@ -97,7 +99,7 @@ public class GenesisLoader {
                 if (contract != null) {
                     contractDetails = detailsMapper.mapFromContract(contract);
                     if (contractDetails.getCode() != null) {
-                        acctState.setCodeHash(sha3(contractDetails.getCode()));
+                        acctState.setCodeHash(HashUtil.keccak256(contractDetails.getCode()));
                     }
                     acctState.setStateRoot(contractDetails.getStorageHash());
                 }

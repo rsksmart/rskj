@@ -18,6 +18,7 @@
 
 package co.rsk.db;
 
+import co.rsk.core.commons.Keccak256;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
@@ -199,7 +200,7 @@ public class ContractDetailsImplTest {
 
         Assert.assertNotNull(trie.getHash());
 
-        Assert.assertArrayEquals(trie.getHash(), details.getStorageHash());
+        Assert.assertArrayEquals(trie.getHash(), details.getStorageHash().getBytes());
     }
 
     @Test
@@ -427,7 +428,7 @@ public class ContractDetailsImplTest {
     public void getSnapshot() {
         ContractDetailsImpl details = new ContractDetailsImpl(config);
 
-        byte[] initialRoot = details.getStorageHash();
+        Keccak256 initialRoot = details.getStorageHash();
 
         List<DataWord> keys = new ArrayList<>();
 
@@ -441,7 +442,7 @@ public class ContractDetailsImplTest {
 
         details.setStorage(keys, values);
 
-        byte[] root = details.getStorageHash();
+        Keccak256 root = details.getStorageHash();
 
         List<DataWord> keys2 = new ArrayList<>();
 
@@ -486,7 +487,7 @@ public class ContractDetailsImplTest {
 
         details.setStorage(keys, values);
 
-        byte[] root = details.getStorageHash();
+        Keccak256 root = details.getStorageHash();
 
         byte[] encoded = details.getEncoded();
 

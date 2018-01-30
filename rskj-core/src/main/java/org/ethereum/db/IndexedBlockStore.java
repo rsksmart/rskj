@@ -20,6 +20,7 @@
 package org.ethereum.db;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.BlockCache;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
@@ -30,7 +31,6 @@ import org.mapdb.DataIO;
 import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -38,7 +38,6 @@ import java.util.*;
 
 import static java.math.BigInteger.ZERO;
 import static org.ethereum.crypto.HashUtil.shortHash;
-import static org.spongycastle.util.Arrays.areEqual;
 
 public class IndexedBlockStore extends AbstractBlockstore {
 
@@ -65,7 +64,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     public synchronized void removeBlock(Block block) {
         this.blockCache.removeBlock(block);
 
-        this.blocks.delete(block.getHash());
+        this.blocks.delete(block.getHash().getBytes());
 
         List<BlockInfo> binfos = this.index.get(block.getNumber());
 
@@ -76,7 +75,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         List<BlockInfo> toremove = new ArrayList<>();
 
         for (BlockInfo binfo : binfos) {
-            if (Arrays.equals(binfo.getHash(), block.getHash())) {
+            if (binfo.getHash().equals(block.getHash())) {
                 toremove.add(binfo);
             }
         }
@@ -109,7 +108,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized byte[] getBlockHashByNumber(long blockNumber){
+    public synchronized Keccak256 getBlockHashByNumber(long blockNumber){
         List<BlockInfo> infos = this.index.get(blockNumber);
         if (infos != null) {
             Optional<BlockInfo> info =  infos.stream().filter(BlockInfo::isMainChain).findAny();
@@ -143,7 +142,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
         BlockInfo blockInfo = null;
         for (BlockInfo bi : blockInfos) {
-            if (areEqual(bi.getHash(), block.getHash())) {
+            if (bi.getHash().equals(block.getHash())) {
                 blockInfo = bi;
             } else if (mainChain) {
                 bi.setMainChain(false);
@@ -158,8 +157,8 @@ public class IndexedBlockStore extends AbstractBlockstore {
         blockInfo.setHash(block.getHash());
         blockInfo.setMainChain(mainChain);
 
-        if (blocks.get(block.getHash()) == null) {
-            blocks.put(block.getHash(), block.getEncoded());
+        if (blocks.get(block.getHash().getBytes()) == null) {
+            blocks.put(block.getHash().getBytes(), block.getEncoded());
         }
         index.put(block.getNumber(), blockInfos);
         blockCache.addBlock(block);
@@ -176,7 +175,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         }
 
         for (BlockInfo blockInfo : blockInfos) {
-            byte[] hash = ByteUtils.clone(blockInfo.getHash());
+            Keccak256 hash = blockInfo.getHash();
             BigInteger totalDifficulty = blockInfo.getCummDifficulty();
             boolean isInBlockChain = blockInfo.isMainChain();
 
@@ -197,7 +196,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
             if (blockInfo.isMainChain()) {
 
-                byte[] hash = blockInfo.getHash();
+                Keccak256 hash = blockInfo.getHash();
                 return getBlockByHash(hash);
             }
         }
@@ -206,30 +205,30 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized Block getBlockByHash(byte[] hash) {
+    public synchronized Block getBlockByHash(Keccak256 hash) {
         Block block = this.blockCache.getBlockByHash(hash);
 
         if (block != null) {
             return block;
         }
 
-        byte[] blockRlp = blocks.get(hash);
+        byte[] blockRlp = blocks.get(hash.getBytes());
         if (blockRlp == null) {
             return null;
         }
 
         block = new Block(blockRlp);
-        this.blockCache.put(new ByteArrayWrapper(hash), block);
+        this.blockCache.put(hash, block);
         return block;
     }
 
     @Override
-    public synchronized boolean isBlockExist(byte[] hash) {
+    public synchronized boolean isBlockExist(Keccak256 hash) {
         return getBlockByHash(hash) != null;
     }
 
     @Override
-    public synchronized BigInteger getTotalDifficultyForHash(byte[] hash){
+    public synchronized BigInteger getTotalDifficultyForHash(Keccak256 hash){
         Block block = this.getBlockByHash(hash);
         if (block == null) {
             return ZERO;
@@ -243,7 +242,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
         }
 
         for (BlockInfo blockInfo : blockInfos) {
-            if (areEqual(blockInfo.getHash(), hash)) {
+            if (blockInfo.getHash().equals(hash)) {
                 return blockInfo.cummDifficulty;
             }
         }
@@ -257,10 +256,10 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized List<byte[]> getListHashesEndWith(byte[] hash, long number){
+    public synchronized List<Keccak256> getListHashesEndWith(Keccak256 hash, long number){
 
         List<Block> blocks = getListBlocksEndWith(hash, number);
-        List<byte[]> hashes = new ArrayList<>(blocks.size());
+        List<Keccak256> hashes = new ArrayList<>(blocks.size());
 
         for (Block b : blocks) {
             hashes.add(b.getHash());
@@ -270,7 +269,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized List<BlockHeader> getListHeadersEndWith(byte[] hash, long qty) {
+    public synchronized List<BlockHeader> getListHeadersEndWith(Keccak256 hash, long qty) {
 
         List<Block> blocks = getListBlocksEndWith(hash, qty);
         List<BlockHeader> headers = new ArrayList<>(blocks.size());
@@ -283,7 +282,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @Override
-    public synchronized List<Block> getListBlocksEndWith(byte[] hash, long qty) {
+    public synchronized List<Block> getListBlocksEndWith(Keccak256 hash, long qty) {
         Block block = getBlockByHash(hash);
 
         if (block == null) {
@@ -375,9 +374,9 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     @VisibleForTesting
-    public synchronized List<byte[]> getListHashesStartWith(long number, long maxBlocks) {
+    public synchronized List<Keccak256> getListHashesStartWith(long number, long maxBlocks) {
 
-        List<byte[]> result = new ArrayList<>();
+        List<Keccak256> result = new ArrayList<>();
 
         int i;
         for (i = 0; i < maxBlocks; ++i) {
@@ -400,15 +399,15 @@ public class IndexedBlockStore extends AbstractBlockstore {
     }
 
     public static class BlockInfo implements Serializable {
-        byte[] hash;
+        Keccak256 hash;
         BigInteger cummDifficulty;
         boolean mainChain;
 
-        public byte[] getHash() {
+        public Keccak256 getHash() {
             return hash;
         }
 
-        public void setHash(byte[] hash) {
+        public void setHash(Keccak256 hash) {
             this.hash = hash;
         }
 
@@ -484,13 +483,13 @@ public class IndexedBlockStore extends AbstractBlockstore {
         }
     }
 
-    private static BlockInfo getBlockInfoForHash(List<BlockInfo> blocks, byte[] hash){
+    private static BlockInfo getBlockInfoForHash(List<BlockInfo> blocks, Keccak256 hash){
         if (blocks == null) {
             return null;
         }
 
         for (BlockInfo blockInfo : blocks) {
-            if (areEqual(hash, blockInfo.getHash())) {
+            if (hash.equals(blockInfo.getHash())) {
                 return blockInfo;
             }
         }
@@ -514,7 +513,7 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
         for (BlockInfo blockInfo : blockInfos){
 
-            byte[] hash = blockInfo.getHash();
+            Keccak256 hash = blockInfo.getHash();
             Block block = getBlockByHash(hash);
 
             result.add(block);

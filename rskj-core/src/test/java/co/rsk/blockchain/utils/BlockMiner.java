@@ -1,6 +1,6 @@
 package co.rsk.blockchain.utils;
 
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.mine.MinerUtils;
 import co.rsk.util.DifficultyUtils;
 import org.ethereum.core.Block;
@@ -18,7 +18,7 @@ public class BlockMiner {
     private static long nextNonceToUse = 0L;
 
     public static Block mineBlock(Block block) {
-        Sha3Hash blockMergedMiningHash = new Sha3Hash(block.getHashForMergedMining());
+        Keccak256 blockMergedMiningHash = block.getHashForMergedMining();
 
         co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, blockMergedMiningHash.getBytes());

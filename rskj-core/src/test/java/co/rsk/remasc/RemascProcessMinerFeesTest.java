@@ -23,20 +23,19 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.test.builders.BlockChainBuilder;
 import com.google.common.collect.Lists;
-import co.rsk.blockchain.utils.BlockGenerator;
 import org.ethereum.TestUtils;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -59,7 +58,7 @@ public class RemascProcessMinerFeesTest {
     private long initialGasLimit = 10000000L;
     private long minerFee = 21000;
     private long txValue = 10000;
-    private ECKey cowKey = ECKey.fromPrivate(SHA3Helper.sha3("cow".getBytes()));
+    private ECKey cowKey = ECKey.fromPrivate(HashUtil.keccak256("cow".getBytes()));
     private byte[] cowAddress = cowKey.getAddress();
     private static RskAddress coinbaseA = TestUtils.randomAddress();
     private static RskAddress coinbaseB = TestUtils.randomAddress();
@@ -483,8 +482,8 @@ public class RemascProcessMinerFeesTest {
             blockWithOneTxB = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
                     PegTestUtils.createHash3(), coinbaseB, null, minerFee * 3, 0, txValue, cowKey);
         } else {
-            Sha3Hash blockWithOneTxBHash = PegTestUtils.createHash3();
-            Sha3Hash blockWithOneTxAHash = PegTestUtils.createHash3();
+            Keccak256 blockWithOneTxBHash = PegTestUtils.createHash3();
+            Keccak256 blockWithOneTxAHash = PegTestUtils.createHash3();
             blockWithOneTxA = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
                     blockWithOneTxAHash, coinbaseA, null, minerFee, 0, txValue, cowKey);
             blockWithOneTxB = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),

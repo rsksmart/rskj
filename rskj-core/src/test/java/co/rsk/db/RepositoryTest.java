@@ -19,7 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Repository;
@@ -412,7 +412,7 @@ public class RepositoryTest {
         track1.commit();
         // leaving level_1
 
-        Assert.assertEquals(Hex.toHexString(HashUtil.EMPTY_TRIE_HASH), Hex.toHexString(repository.getRoot()));
+        Assert.assertEquals(Hex.toHexString(HashUtil.EMPTY_TRIE_HASH), repository.getRoot().toString());
         repository.close();
     }
 

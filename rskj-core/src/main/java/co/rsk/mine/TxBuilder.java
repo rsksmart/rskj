@@ -19,7 +19,7 @@
 package co.rsk.mine;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.net.BlockProcessor;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -51,7 +51,7 @@ public class TxBuilder {
     private static final Logger logger = LoggerFactory.getLogger("txbuilder");
     private volatile boolean stop = false;
 
-    private byte[] privateKeyBytes  = HashUtil.sha3("this is a seed".getBytes(StandardCharsets.UTF_8));
+    private byte[] privateKeyBytes  = HashUtil.keccak256("this is a seed".getBytes(StandardCharsets.UTF_8));
     private ECKey key;
 
     public TxBuilder(RskSystemProperties config, Ethereum ethereum, BlockProcessor blockProcessor, Repository repository) {

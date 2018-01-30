@@ -19,6 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.core.bc.BlockUtils;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.sync.SyncConfiguration;
 import org.ethereum.core.Block;
@@ -43,7 +44,7 @@ public class BlockSyncService {
     public static final int CHUNK_PART_LIMIT = 8;
     public static final int PROCESSED_BLOCKS_TO_CHECK_STORE = 200;
     public static final int RELEASED_RANGE = 1000;
-    private Map<ByteArrayWrapper, Integer> unknownBlockHashes;
+    private Map<Keccak256, Integer> unknownBlockHashes;
     private long processedBlocksCounter;
     private long lastKnownBlockNumber = 0;
 
@@ -71,11 +72,11 @@ public class BlockSyncService {
         Instant start = Instant.now();
         long bestBlockNumber = this.getBestBlockNumber();
         long blockNumber = block.getNumber();
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
+        final Keccak256 blockHash = block.getHash();
         int syncMaxDistance = syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks();
 
         tryReleaseStore(bestBlockNumber);
-        store.removeHeader(block.getHeader());
+        store.removeHeader(block.getHeader().getHash());
         unknownBlockHashes.remove(blockHash);
 
         if (blockNumber > bestBlockNumber + syncMaxDistance) {
@@ -97,7 +98,7 @@ public class BlockSyncService {
         }
         trySaveStore(block);
 
-        Set<ByteArrayWrapper> unknownHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
+        Set<Keccak256> unknownHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
         // We can't add the block if there are missing ancestors or uncles. Request the missing blocks to the sender.
         if (!unknownHashes.isEmpty()) {
             if (!ignoreMissingHashes){
@@ -169,7 +170,7 @@ public class BlockSyncService {
         for (Block block : remainingBlocks) {
             logger.trace("Trying to add block {} {}", block.getNumber(), block.getShortHash());
 
-            Set<ByteArrayWrapper> missingHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
+            Set<Keccak256> missingHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
 
             if (!missingHashes.isEmpty()) {
                 if (!ignoreMissingHashes){
@@ -179,7 +180,7 @@ public class BlockSyncService {
                 continue;
             }
 
-            connectionsResult.put(new ByteArrayWrapper(block.getHash()), blockchain.tryToConnect(block));
+            connectionsResult.put(new ByteArrayWrapper(block.getHash().getBytes()), blockchain.tryToConnect(block));
 
             if (BlockUtils.blockInSomeBlockChain(block, blockchain)) {
                 this.store.removeBlock(block);
@@ -189,15 +190,15 @@ public class BlockSyncService {
         return connected;
     }
 
-    private void requestMissingHashes(MessageChannel sender, Set<ByteArrayWrapper> hashes) {
+    private void requestMissingHashes(MessageChannel sender, Set<Keccak256> hashes) {
         logger.trace("Missing blocks to process {}", hashes.size());
 
-        for (ByteArrayWrapper hash : hashes) {
+        for (Keccak256 hash : hashes) {
             this.requestMissingHash(sender, hash);
         }
     }
 
-    private void requestMissingHash(MessageChannel sender, ByteArrayWrapper hash) {
+    private void requestMissingHash(MessageChannel sender, Keccak256 hash) {
         if (sender == null) {
             return;
         }
@@ -206,7 +207,7 @@ public class BlockSyncService {
 
         logger.trace("Missing block {}", hash.toString().substring(0, 10));
 
-        sender.sendMessage(new GetBlockMessage(hash.getData()));
+        sender.sendMessage(new GetBlockMessage(hash));
     }
 
     /**
@@ -236,7 +237,7 @@ public class BlockSyncService {
      * BlockChain is coupled with the old org.ethereum.db.BlockStore.
      */
     @CheckForNull
-    public Block getBlockFromStoreOrBlockchain(@Nonnull final byte[] hash) {
+    public Block getBlockFromStoreOrBlockchain(@Nonnull final Keccak256 hash) {
         final Block block = store.getBlockByHash(hash);
 
         if (block != null) {

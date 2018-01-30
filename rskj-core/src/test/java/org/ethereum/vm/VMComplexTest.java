@@ -20,7 +20,7 @@
 package org.ethereum.vm;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
@@ -81,7 +81,7 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
+        byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         accountState.setCodeHash(codeKey);
 
@@ -467,7 +467,7 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
+        byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         accountState.setCodeHash(codeKey);
 
@@ -526,7 +526,7 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
+        byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         accountState.setCodeHash(codeKey);
 
@@ -585,7 +585,7 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
+        byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         accountState.setCodeHash(codeKey);
 
@@ -644,7 +644,7 @@ public class VMComplexTest {
         RskAddress callerAddrB = new RskAddress(callerAddr);
         byte[] codeB = Hex.decode(code);
 
-        byte[] codeKey = HashUtil.sha3(codeB);
+        byte[] codeKey = HashUtil.keccak256(codeB);
         AccountState accountState = new AccountState(BigInteger.ZERO, BigInteger.ZERO);
         accountState.setCodeHash(codeKey);
 

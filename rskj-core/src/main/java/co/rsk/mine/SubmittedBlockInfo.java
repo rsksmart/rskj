@@ -18,6 +18,7 @@
 
 package co.rsk.mine;
 
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.ImportResult;
 import org.ethereum.rpc.TypeConverter;
 
@@ -33,9 +34,9 @@ public class SubmittedBlockInfo {
     private final String blockHash;
     private final String blockIncludedHeight;
 
-    SubmittedBlockInfo(ImportResult blockImportedResult, byte[] blockHash, long blockIncludedHeight) {
+    SubmittedBlockInfo(ImportResult blockImportedResult, Keccak256 blockHash, long blockIncludedHeight) {
         this.blockImportedResult = TypeConverter.toJsonHex(TypeConverter.stringToByteArray(blockImportedResult.toString()));
-        this.blockHash = TypeConverter.toJsonHex(blockHash);
+        this.blockHash = TypeConverter.toJsonHex(blockHash.getBytes());
         this.blockIncludedHeight = TypeConverter.toJsonHex(blockIncludedHeight);
     }
 

@@ -18,7 +18,7 @@
 
 package co.rsk.config;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.remasc.RemascException;
 import org.junit.Assert;
 import org.junit.Test;

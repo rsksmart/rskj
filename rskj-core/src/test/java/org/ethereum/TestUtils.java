@@ -19,7 +19,8 @@
 
 package org.ethereum;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
+import co.rsk.core.commons.Keccak256;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.Block;
 import org.ethereum.db.IndexedBlockStore;
@@ -37,7 +38,7 @@ import java.util.Map;
 import java.util.Random;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.crypto.HashUtil.randomHash;
+import static org.ethereum.crypto.HashUtil.randomSha3Hash;
 import static org.ethereum.db.IndexedBlockStore.BLOCK_INFO_SERIALIZER;
 
 public final class TestUtils {
@@ -88,17 +89,17 @@ public final class TestUtils {
 
         List<Block> result = new ArrayList<>();
 
-        byte[] lastHash = startParentHash;
+        Keccak256 lastHash = new Keccak256(startParentHash);
         long lastIndex = startNumber;
 
 
         for (int i = 0; i < length; ++i){
 
             byte[] difficutly = BigIntegers.asUnsignedByteArray(new BigInteger(8, new Random()));
-            byte[] newHash = randomHash();
+            Keccak256 newHash = randomSha3Hash();
 
             Block block = new Block(lastHash, newHash,  RskAddress.nullAddress().getBytes(), null, difficutly, lastIndex, new byte[] {0}, 0, 0, null, null,
-                    null, null, EMPTY_TRIE_HASH, randomHash(), null, null, null, BigInteger.ZERO);
+                    null, null, EMPTY_TRIE_HASH, randomSha3Hash(), null, null, null, BigInteger.ZERO);
 
             ++lastIndex;
             lastHash = block.getHash();

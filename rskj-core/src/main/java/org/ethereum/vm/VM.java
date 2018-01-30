@@ -20,7 +20,8 @@
 package org.ethereum.vm;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.program.Program;
@@ -34,7 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.ethereum.crypto.HashUtil.sha3;
+import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 
@@ -614,7 +615,7 @@ public class VM {
         DataWord lengthData = program.stackPop();
         byte[] buffer = program.memoryChunk(memOffsetData.intValue(), lengthData.intValue());
 
-        byte[] encoded = sha3(buffer);
+        byte[] encoded = HashUtil.keccak256(buffer);
         DataWord word = program.newDataWord(encoded);
 
         if (isLogEnabled) {

@@ -43,7 +43,7 @@ public class BodyResponseMessageTest {
         Assert.assertEquals(transactions.size(), message.getTransactions().size());
 
         for (int k = 0; k < transactions.size(); k++)
-            Assert.assertArrayEquals(transactions.get(k).getHash(), message.getTransactions().get(k).getHash());
+            Assert.assertEquals(transactions.get(k).getHash(), message.getTransactions().get(k).getHash());
 
         Assert.assertNotNull(message.getUncles());
         Assert.assertEquals(uncles.size(), message.getUncles().size());

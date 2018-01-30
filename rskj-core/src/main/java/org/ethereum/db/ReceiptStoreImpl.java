@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -40,8 +41,8 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public void add(byte[] blockHash, int transactionIndex, TransactionReceipt receipt){
-        byte[] txHash = receipt.getTransaction().getHash();
+    public void add(Keccak256 blockHash, int transactionIndex, TransactionReceipt receipt){
+        Keccak256 txHash = receipt.getTransaction().getHash();
 
         TransactionInfo newTxInfo = new TransactionInfo(receipt, blockHash, transactionIndex);
 
@@ -57,11 +58,11 @@ public class ReceiptStoreImpl implements ReceiptStore {
 
         byte[][] txsBytes = encodedTxs.toArray(new byte[encodedTxs.size()][]);
 
-        receiptsDS.put(receipt.getTransaction().getHash(), RLP.encodeList(txsBytes));
+        receiptsDS.put(receipt.getTransaction().getHash().getBytes(), RLP.encodeList(txsBytes));
     }
 
     @Override
-    public TransactionInfo get(byte[] transactionHash){
+    public TransactionInfo get(Keccak256 transactionHash){
         List<TransactionInfo> txs = getAll(transactionHash);
 
         if (txs.isEmpty()) {
@@ -72,7 +73,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public TransactionInfo get(byte[] transactionHash, byte[] blockHash, BlockStore store) {
+    public TransactionInfo get(Keccak256 transactionHash, Keccak256 blockHash, BlockStore store) {
         List<TransactionInfo> txsInfo = getAll(transactionHash);
 
         if (txsInfo.isEmpty()) {
@@ -80,15 +81,14 @@ public class ReceiptStoreImpl implements ReceiptStore {
         }
 
         Block block = null;
-        Map<ByteArrayWrapper, Block> tiblocks = new HashMap();
+        Map<Keccak256, Block> tiblocks = new HashMap();
 
         if (store != null) {
             block = store.getBlockByHash(blockHash);
 
             for (TransactionInfo ti : txsInfo) {
-                byte[] bhash = ti.getBlockHash();
-                ByteArrayWrapper key = new ByteArrayWrapper(bhash);
-                tiblocks.put(key, store.getBlockByHash(bhash));
+                Keccak256 keccak256 = ti.getBlockHash();
+                tiblocks.put(keccak256, store.getBlockByHash(keccak256));
             }
         }
 
@@ -96,9 +96,8 @@ public class ReceiptStoreImpl implements ReceiptStore {
             int nless = 0;
 
             for (TransactionInfo ti : txsInfo) {
-                byte[] hash = ti.getBlockHash();
-                ByteArrayWrapper key = new ByteArrayWrapper(hash);
-                Block tiblock = tiblocks.get(key);
+                Keccak256 hash = ti.getBlockHash();
+                Block tiblock = tiblocks.get(hash);
 
                 if (tiblock != null && block != null) {
                     if (tiblock.getNumber() > block.getNumber()) {
@@ -111,7 +110,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
                     }
                 }
 
-                if (Arrays.equals(ti.getBlockHash(), blockHash)) {
+                if (ti.getBlockHash().equals(blockHash)) {
                     return ti;
                 }
             }
@@ -147,7 +146,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public TransactionInfo getInMainChain(byte[] transactionHash, BlockStore store) {
+    public TransactionInfo getInMainChain(Keccak256 transactionHash, BlockStore store) {
         List<TransactionInfo> tis = this.getAll(transactionHash);
 
         if (tis.isEmpty()) {
@@ -155,7 +154,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
         }
 
         for (TransactionInfo ti : tis) {
-            byte[] bhash = ti.getBlockHash();
+            Keccak256 bhash = ti.getBlockHash();
 
             Block block = store.getBlockByHash(bhash);
 
@@ -169,7 +168,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
                 continue;
             }
 
-            if (new ByteArrayWrapper(bhash).equals(new ByteArrayWrapper(mblock.getHash()))) {
+            if (bhash.equals(mblock.getHash())) {
                 return ti;
             }
         }
@@ -178,11 +177,11 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public List<TransactionInfo> getAll(byte[] transactionHash) {
-        byte[] txsBytes = receiptsDS.get(transactionHash);
+    public List<TransactionInfo> getAll(Keccak256 transactionHash) {
+        byte[] txsBytes = receiptsDS.get(transactionHash.getBytes());
 
         if (txsBytes == null || txsBytes.length == 0) {
-            return new ArrayList<TransactionInfo>();
+            return new ArrayList<>();
         }
 
         List<TransactionInfo> txsInfo = new ArrayList<>();
@@ -197,7 +196,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public void saveMultiple(byte[] blockHash, List<TransactionReceipt> receipts) {
+    public void saveMultiple(Keccak256 blockHash, List<TransactionReceipt> receipts) {
         int i = 0;
         for (TransactionReceipt receipt : receipts) {
             this.add(blockHash, i++, receipt);

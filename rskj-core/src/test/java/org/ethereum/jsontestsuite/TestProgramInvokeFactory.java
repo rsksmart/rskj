@@ -19,7 +19,8 @@
 
 package org.ethereum.jsontestsuite;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -92,7 +93,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
 //        byte[] data =  tx.getData() == null ? ByteUtil.EMPTY_BYTE_ARRAY : tx.getData() ;
 
         /***    PREVHASH  op  ***/
-        byte[] lastHash = env.getPreviousHash();
+        Keccak256 lastHash = new Keccak256(env.getPreviousHash());
 
         /***   COINBASE  op ***/
         byte[] coinbase = env.getCurrentCoinbase();

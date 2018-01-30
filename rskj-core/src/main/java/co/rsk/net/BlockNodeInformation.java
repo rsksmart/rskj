@@ -18,7 +18,7 @@
 
 package co.rsk.net;
 
-import org.ethereum.db.ByteArrayWrapper;
+import co.rsk.core.commons.Keccak256;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
@@ -35,8 +35,8 @@ import java.util.*;
  */
 @Component
 public class BlockNodeInformation {
-    private final Map<NodeID, Set<ByteArrayWrapper>> blocksByNode;
-    private final LinkedHashMap<ByteArrayWrapper, Set<NodeID>> nodesByBlock;
+    private final Map<NodeID, Set<Keccak256>> blocksByNode;
+    private final LinkedHashMap<Keccak256, Set<NodeID>> nodesByBlock;
     private final int maxBlocks;
     private final int maxPeers;
 
@@ -45,16 +45,16 @@ public class BlockNodeInformation {
         this.maxPeers = maxPeers;
 
         // Nodes are evicted in Least-recently-accessed order.
-        blocksByNode = new LinkedHashMap<NodeID, Set<ByteArrayWrapper>>(BlockNodeInformation.this.maxPeers, 0.75f, true) {
+        blocksByNode = new LinkedHashMap<NodeID, Set<Keccak256>>(BlockNodeInformation.this.maxPeers, 0.75f, true) {
             @Override
-            protected boolean removeEldestEntry(Map.Entry<NodeID, Set<ByteArrayWrapper>> eldest) {
+            protected boolean removeEldestEntry(Map.Entry<NodeID, Set<Keccak256>> eldest) {
                 return size() > BlockNodeInformation.this.maxPeers;
             }
         };
         // Blocks are evicted in Least-recently-accessed order.
-        nodesByBlock = new LinkedHashMap<ByteArrayWrapper, Set<NodeID>>(BlockNodeInformation.this.maxBlocks, 0.75f, true) {
+        nodesByBlock = new LinkedHashMap<Keccak256, Set<NodeID>>(BlockNodeInformation.this.maxBlocks, 0.75f, true) {
             @Override
-            protected boolean removeEldestEntry(Map.Entry<ByteArrayWrapper, Set<NodeID>> eldest) {
+            protected boolean removeEldestEntry(Map.Entry<Keccak256, Set<NodeID>> eldest) {
                 return size() > BlockNodeInformation.this.maxBlocks;
             }
         };
@@ -70,14 +70,14 @@ public class BlockNodeInformation {
      * @param blockHash the block hash.
      * @param nodeID    the node to add the block to.
      */
-    public void addBlockToNode(@Nonnull final ByteArrayWrapper blockHash, @Nonnull final NodeID nodeID) {
-        Set<ByteArrayWrapper> nodeBlocks = blocksByNode.get(nodeID);
+    public void addBlockToNode(@Nonnull final Keccak256 blockHash, @Nonnull final NodeID nodeID) {
+        Set<Keccak256> nodeBlocks = blocksByNode.get(nodeID);
         if (nodeBlocks == null) {
             // Create a new empty LRUCache for the blocks that a node know.
             // NodeBlocks are evicted in reverse insertion order.
             nodeBlocks = Collections.newSetFromMap(
-                    new LinkedHashMap<ByteArrayWrapper, Boolean>() {
-                        protected boolean removeEldestEntry(Map.Entry<ByteArrayWrapper, Boolean> eldest) {
+                    new LinkedHashMap<Keccak256, Boolean>() {
+                        protected boolean removeEldestEntry(Map.Entry<Keccak256, Boolean> eldest) {
                             return size() > maxBlocks;
                         }
                     }
@@ -104,8 +104,8 @@ public class BlockNodeInformation {
      * @return all the blocks known by the given nodeID.
      */
     @Nonnull
-    public Set<ByteArrayWrapper> getBlocksByNode(@Nonnull final NodeID nodeID) {
-        Set<ByteArrayWrapper> result = blocksByNode.get(nodeID);
+    public Set<Keccak256> getBlocksByNode(@Nonnull final NodeID nodeID) {
+        Set<Keccak256> result = blocksByNode.get(nodeID);
         if (result == null) {
             result = new HashSet<>();
         }
@@ -119,7 +119,7 @@ public class BlockNodeInformation {
      * @return A set containing all the nodes that have that block.
      */
     @Nonnull
-    public Set<NodeID> getNodesByBlock(@Nonnull final ByteArrayWrapper blockHash) {
+    public Set<NodeID> getNodesByBlock(@Nonnull final Keccak256 blockHash) {
         Set<NodeID> result = nodesByBlock.get(blockHash);
         if (result == null) {
             result = new HashSet<>();
@@ -128,14 +128,14 @@ public class BlockNodeInformation {
     }
 
     /**
-     * getNodesByBlock is a convenient function to avoid creating a ByteArrayWrapper.
+     * getNodesByBlock is a convenient function to avoid creating a Keccak256.
      *
      * @param blockHash the block hash.
      * @return all the nodeIDs that contain the given block.
      */
     @Nonnull
     public Set<NodeID> getNodesByBlock(@Nonnull final byte[] blockHash) {
-        return getNodesByBlock(new ByteArrayWrapper(blockHash));
+        return getNodesByBlock(new Keccak256(blockHash));
     }
 
     /**
@@ -145,7 +145,7 @@ public class BlockNodeInformation {
      * @return all the hashes of the blocks that the given node knows.
      */
     @Nonnull
-    public Set<ByteArrayWrapper> getBlocksByNode(@Nonnull final byte[] nodeID) {
+    public Set<Keccak256> getBlocksByNode(@Nonnull final byte[] nodeID) {
         return getBlocksByNode(new NodeID(nodeID));
     }
 }

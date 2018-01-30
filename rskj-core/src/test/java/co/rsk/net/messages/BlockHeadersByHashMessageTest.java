@@ -33,6 +33,6 @@ public class BlockHeadersByHashMessageTest {
         Assert.assertEquals(mblocks.size(), blocks.size());
 
         for (int i = 0; i < blocks.size(); i++)
-            Assert.assertArrayEquals(blocks.get(1).getHash(), mblocks.get(1).getHash());
+            Assert.assertArrayEquals(blocks.get(1).getHash().getBytes(), mblocks.get(1).getHash().getBytes());
     }
 }

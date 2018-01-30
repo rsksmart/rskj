@@ -19,7 +19,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import com.google.common.primitives.UnsignedBytes;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;

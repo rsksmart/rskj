@@ -58,7 +58,7 @@ public class RskMessageTest {
         Message resultMessage = result.getMessage();
 
         Assert.assertEquals(MessageType.GET_BLOCK_MESSAGE, resultMessage.getMessageType());
-        Assert.assertArrayEquals(block.getHash(), ((GetBlockMessage)resultMessage).getBlockHash());
+        Assert.assertEquals(block.getHash(), ((GetBlockMessage)resultMessage).getBlockHash());
     }
 
     @Test
@@ -84,7 +84,7 @@ public class RskMessageTest {
         Message resultMessage = result.getMessage();
 
         Assert.assertEquals(MessageType.STATUS_MESSAGE, resultMessage.getMessageType());
-        Assert.assertArrayEquals(block.getHash(), ((StatusMessage)resultMessage).getStatus().getBestBlockHash());
+        Assert.assertEquals(block.getHash(), ((StatusMessage)resultMessage).getStatus().getBestBlockHash());
         Assert.assertEquals(block.getNumber(), ((StatusMessage)resultMessage).getStatus().getBestBlockNumber());
     }
 
@@ -110,7 +110,7 @@ public class RskMessageTest {
         Message resultMessage = result.getMessage();
 
         Assert.assertEquals(MessageType.BLOCK_MESSAGE, resultMessage.getMessageType());
-        Assert.assertArrayEquals(block.getHash(), ((BlockMessage)resultMessage).getBlock().getHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), ((BlockMessage) resultMessage).getBlock().getHash().getBytes());
         Assert.assertArrayEquals(block.getEncoded(), ((BlockMessage)resultMessage).getBlock().getEncoded());
         Assert.assertEquals(block.getNumber(), ((BlockMessage)resultMessage).getBlock().getNumber());
     }

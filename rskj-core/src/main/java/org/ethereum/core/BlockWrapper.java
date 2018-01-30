@@ -85,7 +85,7 @@ public class BlockWrapper {
     }
 
     public byte[] getHash() {
-        return block.getHash();
+        return block.getHash().getBytes();
     }
 
     public long getNumber() {
@@ -101,7 +101,7 @@ public class BlockWrapper {
     }
 
     public byte[] getParentHash() {
-        return block.getParentHash();
+        return block.getParentHash().getBytes();
     }
 
     public long getReceivedAt() {
@@ -171,6 +171,11 @@ public class BlockWrapper {
         byte newBlock = newBlockBytes == null ? 0 : new BigInteger(1, newBlockBytes).byteValue();
         this.newBlock = newBlock == 1;
         this.nodeId = wrapper.get(4).getRLPData();
+    }
+
+    @Override
+    public int hashCode() {
+        return this.block.hashCode();
     }
 
     @Override

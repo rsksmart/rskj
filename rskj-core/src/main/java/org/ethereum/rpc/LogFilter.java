@@ -20,7 +20,7 @@
 package org.ethereum.rpc;
 
 import org.ethereum.core.Bloom;
-import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 
@@ -64,7 +64,7 @@ public class LogFilter {
             } else {
                 filterBlooms[i] = new Bloom[orTopics.length];
                 for (int j = 0; j < orTopics.length; j++) {
-                    filterBlooms[i][j] = Bloom.create(SHA3Helper.sha3(orTopics[j]));
+                    filterBlooms[i][j] = Bloom.create(HashUtil.keccak256(orTopics[j]));
                 }
             }
         }

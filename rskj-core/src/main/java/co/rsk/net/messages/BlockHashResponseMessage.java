@@ -18,6 +18,7 @@
 
 package co.rsk.net.messages;
 
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.util.RLP;
 
 /**
@@ -25,9 +26,9 @@ import org.ethereum.util.RLP;
  */
 public class BlockHashResponseMessage extends MessageWithId {
     private final long id;
-    private final byte[] hash;
+    private final Keccak256 hash;
 
-    public BlockHashResponseMessage(long id, byte[] hash) {
+    public BlockHashResponseMessage(long id, Keccak256 hash) {
         this.id = id;
         this.hash = hash;
     }
@@ -39,12 +40,12 @@ public class BlockHashResponseMessage extends MessageWithId {
 
     @Override
     public byte[] getEncodedMessageWithoutId() {
-        byte[] rlpHash = RLP.encodeElement(this.hash);
+        byte[] rlpHash = RLP.encodeElement(this.hash.getBytes());
 
         return RLP.encodeList(rlpHash);
     }
 
     public long getId() { return this.id; }
 
-    public byte[] getHash() { return this.hash; }
+    public Keccak256 getHash() { return this.hash; }
 }

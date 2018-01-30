@@ -41,7 +41,7 @@ public class StatusMessageTest {
         Assert.assertEquals(MessageType.STATUS_MESSAGE, message.getMessageType());
         Assert.assertSame(status, message.getStatus());
         Assert.assertEquals(1, message.getStatus().getBestBlockNumber());
-        Assert.assertArrayEquals(block.getHash(), message.getStatus().getBestBlockHash());
+        Assert.assertEquals(block.getHash(), message.getStatus().getBestBlockHash());
         Assert.assertNull(message.getStatus().getBestBlockParentHash());
         Assert.assertNull(message.getStatus().getTotalDifficulty());
     }
@@ -57,9 +57,9 @@ public class StatusMessageTest {
         Assert.assertEquals(MessageType.STATUS_MESSAGE, message.getMessageType());
         Assert.assertSame(status, message.getStatus());
         Assert.assertEquals(1, message.getStatus().getBestBlockNumber());
-        Assert.assertArrayEquals(block.getHash(), message.getStatus().getBestBlockHash());
+        Assert.assertEquals(block.getHash(), message.getStatus().getBestBlockHash());
         Assert.assertNotNull(message.getStatus().getBestBlockParentHash());
-        Assert.assertArrayEquals(block.getParentHash(), message.getStatus().getBestBlockParentHash());
+        Assert.assertEquals(block.getParentHash(), message.getStatus().getBestBlockParentHash());
         Assert.assertNotNull(message.getStatus().getTotalDifficulty());
         Assert.assertEquals(BigInteger.TEN, message.getStatus().getTotalDifficulty());
     }
@@ -74,6 +74,6 @@ public class StatusMessageTest {
         Assert.assertEquals(MessageType.STATUS_MESSAGE, message.getMessageType());
         Assert.assertSame(status, message.getStatus());
         Assert.assertEquals(0, message.getStatus().getBestBlockNumber());
-        Assert.assertArrayEquals(genesis.getHash(), message.getStatus().getBestBlockHash());
+        Assert.assertEquals(genesis.getHash(), message.getStatus().getBestBlockHash());
     }
 }

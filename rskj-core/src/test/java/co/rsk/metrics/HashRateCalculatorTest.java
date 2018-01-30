@@ -18,7 +18,9 @@
 
 package co.rsk.metrics;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.Keccak256;
+import co.rsk.peg.PegTestUtils;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.util.RskCustomCache;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
@@ -37,12 +39,10 @@ import java.time.Duration;
  */
 public class HashRateCalculatorTest {
 
-    private final byte[] FAKE_GENERIC_HASH = {12,31,43,12};
-    private final byte[] OHTER_FAKE_GENERIC_HASH = {14,34,44,14};
+    private final Keccak256 FAKE_GENERIC_HASH = PegTestUtils.createHash3();
+    private final Keccak256 OHTER_FAKE_GENERIC_HASH = PegTestUtils.createHash3();
     private final RskAddress FAKE_COINBASE = TestUtils.randomAddress();
     private final RskAddress NOT_MY_COINBASE = TestUtils.randomAddress();
-
-
 
     private BlockStore blockStore;
     private Block block;
@@ -56,12 +56,11 @@ public class HashRateCalculatorTest {
 
         Mockito.when(block.getHeader()).thenReturn(blockHeader);
         Mockito.when(block.getHash()).thenReturn(FAKE_GENERIC_HASH);
-        Mockito.when(blockHeader.getParentHash()).thenReturn(FAKE_GENERIC_HASH)
+        Mockito.when(blockHeader.getParentHash())
+                .thenReturn(FAKE_GENERIC_HASH)
                 .thenReturn(OHTER_FAKE_GENERIC_HASH)
                 .thenReturn(FAKE_GENERIC_HASH)
                 .thenReturn(null);
-
-        Mockito.when(blockHeader.getHash()).thenReturn(FAKE_GENERIC_HASH);
 
         Mockito.when(blockStore.getBlockByHash(Mockito.any())).thenReturn(block)
                 .thenReturn(block).thenReturn(block).thenReturn(null);

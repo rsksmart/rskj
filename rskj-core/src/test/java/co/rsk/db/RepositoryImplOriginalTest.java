@@ -20,7 +20,8 @@
 package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.Genesis;
@@ -708,7 +709,7 @@ public class RepositoryImplOriginalTest {
         track1.commit();
         // leaving level_1
 
-        Assert.assertEquals(Hex.toHexString(HashUtil.EMPTY_TRIE_HASH), Hex.toHexString(repository.getRoot()));
+        Assert.assertEquals(Hex.toHexString(HashUtil.EMPTY_TRIE_HASH), repository.getRoot().toString());
         repository.close();
     }
 
@@ -778,8 +779,9 @@ public class RepositoryImplOriginalTest {
     @Test // testing for snapshot
     public void test20() {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
+
         Repository repository = new RepositoryImpl(config, store);
-        byte[] root = repository.getRoot();
+        Keccak256 root = repository.getRoot();
 
         DataWord cowKey1 = new DataWord("c1");
         DataWord cowKey2 = new DataWord("c2");
@@ -796,14 +798,14 @@ public class RepositoryImplOriginalTest {
         track2.addStorageRow(HORSE, horseKey1, horseVal1);
         track2.commit();
 
-        byte[] root2 = repository.getRoot();
+        Keccak256 root2 = repository.getRoot();
 
         track2 = repository.startTracking(); //track
         track2.addStorageRow(COW, cowKey2, cowVal0);
         track2.addStorageRow(HORSE, horseKey2, horseVal0);
         track2.commit();
 
-        byte[] root3 = repository.getRoot();
+        Keccak256 root3 = repository.getRoot();
 
         Repository snapshot = repository.getSnapshotTo(root);
         ContractDetails cowDetails = snapshot.getContractDetails(COW);

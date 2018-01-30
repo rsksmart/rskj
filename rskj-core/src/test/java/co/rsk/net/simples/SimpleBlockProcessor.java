@@ -18,6 +18,7 @@
 
 package co.rsk.net.simples;
 
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.*;
 import co.rsk.net.messages.NewBlockHashesMessage;
 import org.ethereum.core.Block;
@@ -39,37 +40,37 @@ public class SimpleBlockProcessor implements BlockProcessor {
     public long lastKnownBlockNumber = 0;
     private List<Block> blocks = new ArrayList<Block>();
     private long requestId;
-    private byte[] hash;
+    private Keccak256 hash;
     private int count;
 
     @Override
     public BlockProcessResult processBlock(MessageChannel sender, Block block) {
         Map<ByteArrayWrapper, ImportResult> connectionsResult = new HashMap<>();
         this.blocks.add(block);
-        connectionsResult.put(new ByteArrayWrapper(block.getHash()), ImportResult.IMPORTED_BEST);
+        connectionsResult.put(new ByteArrayWrapper(block.getHash().getBytes()), ImportResult.IMPORTED_BEST);
         return new BlockProcessResult(false, connectionsResult, block.getShortHash(), Duration.ZERO);
     }
 
     @Override
-    public void processGetBlock(MessageChannel sender, byte[] hash) {
+    public void processGetBlock(MessageChannel sender, Keccak256 hash) {
 
     }
 
     @Override
-    public void processBlockRequest(MessageChannel sender, long requestId, byte[] hash) {
+    public void processBlockRequest(MessageChannel sender, long requestId, Keccak256 hash) {
         this.requestId = requestId;
         this.hash = hash;
     }
 
     @Override
-    public void processBlockHeadersRequest(MessageChannel sender, long requestId, byte[] hash, int count) {
+    public void processBlockHeadersRequest(MessageChannel sender, long requestId, Keccak256 hash, int count) {
         this.requestId = requestId;
         this.hash = hash;
         this.count = count;
     }
 
     @Override
-    public void processBodyRequest(MessageChannel sender, long requestId, byte[] hash) {
+    public void processBodyRequest(MessageChannel sender, long requestId, Keccak256 hash) {
     }
 
     @Override
@@ -110,17 +111,17 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public boolean hasBlock(byte[] hash) {
+    public boolean hasBlock(Keccak256 hash) {
         return false;
     }
 
     @Override
-    public boolean hasBlockInProcessorStore(byte[] hash) {
+    public boolean hasBlockInProcessorStore(Keccak256 hash) {
         return false;
     }
 
     @Override
-    public boolean hasBlockInSomeBlockchain(byte[] hash) {
+    public boolean hasBlockInSomeBlockchain(Keccak256 hash) {
         return false;
     }
 
@@ -129,5 +130,5 @@ public class SimpleBlockProcessor implements BlockProcessor {
 
     public long getRequestId() { return this.requestId; }
 
-    public byte[] getHash() { return this.hash; }
+    public Keccak256 getHash() { return this.hash; }
 }

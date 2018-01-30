@@ -18,6 +18,8 @@
 
 package co.rsk.net;
 
+import co.rsk.core.commons.Keccak256;
+
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 
@@ -26,16 +28,16 @@ import java.math.BigInteger;
  */
 public class Status {
     private long bestBlockNumber;
-    private byte[] bestBlockHash;
-    private byte[] bestBlockParentHash;
+    private Keccak256 bestBlockHash;
+    private Keccak256 bestBlockParentHash;
     private BigInteger totalDifficulty;
 
-    public Status(long bestBlockNumber, byte[] bestBlockHash) {
+    public Status(long bestBlockNumber, Keccak256 bestBlockHash) {
         this.bestBlockNumber = bestBlockNumber;
         this.bestBlockHash = bestBlockHash;
     }
 
-    public Status(long bestBlockNumber, byte[] bestBlockHash, byte[] bestBlockParentHash, BigInteger totalDifficulty) {
+    public Status(long bestBlockNumber, Keccak256 bestBlockHash, Keccak256 bestBlockParentHash, BigInteger totalDifficulty) {
         this.bestBlockNumber = bestBlockNumber;
         this.bestBlockHash = bestBlockHash;
         this.bestBlockParentHash = bestBlockParentHash;
@@ -46,12 +48,12 @@ public class Status {
         return this.bestBlockNumber;
     }
 
-    public byte[] getBestBlockHash() {
+    public Keccak256 getBestBlockHash() {
         return this.bestBlockHash;
     }
 
     @Nullable
-    public byte[] getBestBlockParentHash() { return this.bestBlockParentHash; }
+    public Keccak256 getBestBlockParentHash() { return this.bestBlockParentHash; }
 
     @Nullable
     public BigInteger getTotalDifficulty() { return this.totalDifficulty; }

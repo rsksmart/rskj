@@ -20,9 +20,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,12 +29,9 @@ import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -263,7 +258,7 @@ public class PendingFederationTest {
         PowerMockito.mockStatic(BridgeSerializationUtils.class);
         PowerMockito.when(BridgeSerializationUtils.serializePendingFederation(pendingFederation)).thenReturn(new byte[] { (byte) 0xaa });
 
-        Sha3Hash expectedHash = new Sha3Hash(HashUtil.sha3(new byte[] { (byte) 0xaa }));
+        Keccak256 expectedHash = new Keccak256(HashUtil.keccak256(new byte[] { (byte) 0xaa }));
 
         Assert.assertEquals(expectedHash, pendingFederation.getHash());
     }

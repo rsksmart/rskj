@@ -1,18 +1,19 @@
 package co.rsk.net.messages;
 
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.util.RLP;
 
 /**
  * Wrapper around an RSK NewBlockHash message.
  */
 public class NewBlockHashMessage extends Message {
-    private byte[] hash;
+    private Keccak256 hash;
 
-    public NewBlockHashMessage(byte[] hash) {
+    public NewBlockHashMessage(Keccak256 hash) {
         this.hash = hash;
     }
 
-    public byte[] getBlockHash() {
+    public Keccak256 getBlockHash() {
         return this.hash;
     }
 
@@ -23,7 +24,7 @@ public class NewBlockHashMessage extends Message {
 
     @Override
     public byte[] getEncodedMessage() {
-        byte[] elementHash = RLP.encodeElement(this.hash);
+        byte[] elementHash = RLP.encodeElement(this.hash.getBytes());
         return RLP.encodeList(elementHash);
     }
 }

@@ -1,12 +1,11 @@
 package co.rsk.net.sync;
 
-import co.rsk.net.NodeID;
+import co.rsk.core.commons.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nonnull;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public class ChunksDownloadHelper {
@@ -40,7 +39,7 @@ public class ChunksDownloadHelper {
     }
 
     private ChunkDescriptor getChunk(int linkIndex) {
-        byte[] hash = skeleton.get(linkIndex).getHash();
+        Keccak256 hash = skeleton.get(linkIndex).getHash();
         long height = skeleton.get(linkIndex).getNumber();
 
         long lastHeight = skeleton.get(linkIndex - 1).getNumber();

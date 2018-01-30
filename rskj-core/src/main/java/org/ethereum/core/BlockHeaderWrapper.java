@@ -69,7 +69,7 @@ public class BlockHeaderWrapper {
     }
 
     public byte[] getHash() {
-        return header.getHash();
+        return header.getHash().getBytes();
     }
 
     public long getNumber() {
@@ -81,7 +81,7 @@ public class BlockHeaderWrapper {
     }
 
     public String getHexStrShort() {
-        return Hex.toHexString(header.getHash()).substring(0, 6);
+        return Hex.toHexString(header.getHash().getBytes()).substring(0, 6);
     }
 
     public boolean sentBy(byte[] nodeId) {

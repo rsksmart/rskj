@@ -52,7 +52,7 @@ public class TransactionResultDTO {
             nonce = TypeConverter.toJsonHex(tx.getNonce());
         }
 
-        blockHash = b != null ? TypeConverter.toJsonHex(b.getHash()) : null;
+        blockHash = b != null ? TypeConverter.toJsonHex(b.getHash().getBytes()) : null;
         blockNumber = b != null ? TypeConverter.toJsonHex(b.getNumber()) : null;
         transactionIndex = index != null ? TypeConverter.toJsonHex(index) : null;
         from= TypeConverter.toJsonHex(tx.getSender().getBytes());

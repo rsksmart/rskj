@@ -1,7 +1,7 @@
 package co.rsk.net;
 
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.Block;
-import org.ethereum.db.ByteArrayWrapper;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * Created by ajlopez on 17/06/2017.
  */
-public class BlockCache extends LinkedHashMap<ByteArrayWrapper, Block> {
+public class BlockCache extends LinkedHashMap<Keccak256, Block> {
     private int cacheSize;
 
     public BlockCache(int cacheSize) {
@@ -18,25 +18,19 @@ public class BlockCache extends LinkedHashMap<ByteArrayWrapper, Block> {
     }
 
     @Override
-    protected boolean removeEldestEntry(Map.Entry<ByteArrayWrapper, Block> eldest) {
+    protected boolean removeEldestEntry(Map.Entry<Keccak256, Block> eldest) {
         return size() > this.cacheSize;
     }
 
     public void removeBlock(Block block) {
-        ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
-
-        this.remove(key);
+        this.remove(block.getHash());
     }
 
     public void addBlock(Block block) {
-        ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
-
-        this.put(key, block);
+        this.put(block.getHash(), block);
     }
 
-    public Block getBlockByHash(byte[] hash) {
-        ByteArrayWrapper key = new ByteArrayWrapper(hash);
-
-        return this.get(key);
+    public Block getBlockByHash(Keccak256 hash) {
+        return this.get(hash);
     }
 }

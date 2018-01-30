@@ -21,6 +21,7 @@ package co.rsk.core;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
@@ -39,7 +40,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class BlockTest {
-    private static final byte[] EMPTY_LIST_HASH = HashUtil.sha3(RLP.encodeList());
+    private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     @Test
     public void testParseRemascTransaction() {
@@ -69,8 +70,8 @@ public class BlockTest {
         txs.add(remascTx);
 
         Block block =  new Block(
-                PegTestUtils.createHash3().getBytes(),          // parent hash
-                EMPTY_LIST_HASH,       // uncle hash
+                PegTestUtils.createHash3(),          // parent hash
+                new Keccak256(EMPTY_LIST_HASH),       // uncle hash
                 TestUtils.randomAddress().getBytes(),            // coinbase
                 new Bloom().getData(),          // logs bloom
                 BigInteger.ONE.toByteArray(),    // difficulty
@@ -83,7 +84,7 @@ public class BlockTest {
                 new byte[]{0},         // provisory nonce
                 HashUtil.EMPTY_TRIE_HASH,       // receipts root
                 BlockChainImpl.calcTxTrie(txs), // transaction root
-                HashUtil.EMPTY_TRIE_HASH,    //EMPTY_TRIE_HASH,   // state root
+                new Keccak256(HashUtil.EMPTY_TRIE_HASH),    //EMPTY_TRIE_HASH,   // state root
                 txs,                            // transaction list
                 null,  // uncle list
                 BigInteger.TEN.toByteArray(),
@@ -128,7 +129,7 @@ public class BlockTest {
         block.seal();
 
         try {
-            block.setStateRoot(new byte[32]);
+            block.setStateRoot(new Keccak256(new byte[32]));
             Assert.fail();
         }
         catch (SealedBlockException ex) {
@@ -218,7 +219,7 @@ public class BlockTest {
         block.seal();
 
         try {
-            block.getHeader().setStateRoot(new byte[32]);
+            block.getHeader().setStateRoot(new Keccak256(new byte[32]));
             Assert.fail();
         }
         catch (SealedBlockHeaderException ex) {

@@ -41,13 +41,13 @@ public class StatusMessage extends Message {
     @Override
     public byte[] getEncodedMessage() {
         byte[] number = RLP.encodeBigInteger(BigInteger.valueOf(status.getBestBlockNumber()));
-        byte[] hash = RLP.encodeElement(status.getBestBlockHash());
+        byte[] hash = RLP.encodeElement(status.getBestBlockHash().getBytes());
 
         if (status.getBestBlockParentHash() == null) {
             return RLP.encodeList(number, hash);
         }
 
-        byte[] parentHash = RLP.encodeElement(status.getBestBlockParentHash());
+        byte[] parentHash = RLP.encodeElement(status.getBestBlockParentHash().getBytes());
         byte[] totalDifficulty = RLP.encodeBigInteger(status.getTotalDifficulty());
 
         return RLP.encodeList(number, hash, parentHash, totalDifficulty);

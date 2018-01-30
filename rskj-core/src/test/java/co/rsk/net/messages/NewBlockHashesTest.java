@@ -23,7 +23,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -50,6 +49,6 @@ public class NewBlockHashesTest {
         List<BlockIdentifier> identifiers = message.getBlockIdentifiers();
         Assert.assertEquals(1, identifiers.size());
         Assert.assertEquals(blockIdentifierList.get(0).getNumber(), identifiers.get(0).getNumber());
-        Assert.assertArrayEquals(blockIdentifierList.get(0).getHash(),identifiers.get(0).getHash());
+        Assert.assertEquals(blockIdentifierList.get(0).getHash(),identifiers.get(0).getHash());
     }
 }

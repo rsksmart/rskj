@@ -18,9 +18,9 @@ package org.ethereum.core;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -39,7 +39,7 @@ public class BlockIdentifier {
     /**
      * Block hash
      */
-    private byte[] hash;
+    private Keccak256 hash;
 
     /**
      * Block number
@@ -47,16 +47,16 @@ public class BlockIdentifier {
     private long number;
 
     public BlockIdentifier(RLPList rlp) {
-        this.hash = rlp.get(0).getRLPData();
+        this.hash = new Keccak256(rlp.get(0).getRLPData());
         this.number = byteArrayToLong(rlp.get(1).getRLPData());
     }
 
-    public BlockIdentifier(byte[] hash, long number) {
+    public BlockIdentifier(Keccak256 hash, long number) {
         this.hash = hash;
         this.number = number;
     }
 
-    public byte[] getHash() {
+    public Keccak256 getHash() {
         return hash;
     }
 
@@ -65,7 +65,7 @@ public class BlockIdentifier {
     }
 
     public byte[] getEncoded() {
-        byte[] hash = RLP.encodeElement(this.hash);
+        byte[] hash = RLP.encodeElement(this.hash.getBytes());
         byte[] number = RLP.encodeBigInteger(BigInteger.valueOf(this.number));
 
         return RLP.encodeList(hash, number);
@@ -74,7 +74,7 @@ public class BlockIdentifier {
     @Override
     public String toString() {
         return "BlockIdentifier {" +
-                "hash=" + Hex.toHexString(hash) +
+                "hash=" + hash +
                 ", number=" + number +
                 '}';
     }

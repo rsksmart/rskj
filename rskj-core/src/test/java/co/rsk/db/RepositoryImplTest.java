@@ -19,7 +19,8 @@
 package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.trie.TrieImplHashTest;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -61,7 +62,7 @@ public class RepositoryImplTest {
     public void hasEmptyHashAsRootWhenCreated() {
         RepositoryImpl repository = new RepositoryImpl(config);
 
-        Assert.assertArrayEquals(emptyHash, repository.getRoot());
+        Assert.assertArrayEquals(emptyHash, repository.getRoot().getBytes());
     }
 
     @Test
@@ -74,7 +75,7 @@ public class RepositoryImplTest {
         Assert.assertEquals(BigInteger.ZERO, accState.getNonce());
         Assert.assertEquals(BigInteger.ZERO, accState.getBalance());
 
-        Assert.assertFalse(Arrays.equals(emptyHash, repository.getRoot()));
+        Assert.assertFalse(Arrays.equals(emptyHash, repository.getRoot().getBytes()));
     }
 
     @Test
@@ -85,12 +86,12 @@ public class RepositoryImplTest {
         repository.flush();
 
         RskAddress accAddress = randomAccountAddress();
-        byte[] initialRoot = repository.getRoot();
+        Keccak256 initialRoot = repository.getRoot();
 
         repository.createAccount(accAddress);
         repository.flush();
 
-        byte[] newRoot = repository.getRoot();
+        Keccak256 newRoot = repository.getRoot();
 
         Assert.assertTrue(repository.isExist(accAddress));
 
@@ -449,7 +450,7 @@ public class RepositoryImplTest {
         repository.createAccount(accAddress1);
         repository.flush();
 
-        byte[] root = repository.getRoot();
+        Keccak256 root = repository.getRoot();
 
         repository.createAccount(accAddress2);
 
@@ -475,7 +476,7 @@ public class RepositoryImplTest {
         RepositoryImpl repository = new RepositoryImpl(config, store);
 
         RskAddress accAddress = randomAccountAddress();
-        byte[] initialRoot = repository.getRoot();
+        Keccak256 initialRoot = repository.getRoot();
 
         repository.createAccount(accAddress);
         repository.flushNoReconnect();

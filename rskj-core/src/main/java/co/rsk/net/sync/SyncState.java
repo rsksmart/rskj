@@ -1,5 +1,6 @@
 package co.rsk.net.sync;
 
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.messages.BodyResponseMessage;
 import org.ethereum.core.BlockHeader;
@@ -14,7 +15,7 @@ public interface SyncState {
     // TODO(mc) don't receive a full message
     void newBody(BodyResponseMessage message, MessageChannel peer);
 
-    void newConnectionPointData(byte[] hash);
+    void newConnectionPointData(Keccak256 hash);
 
     /**
      * should only be called when a new peer arrives

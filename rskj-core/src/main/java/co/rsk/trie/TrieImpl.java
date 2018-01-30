@@ -19,7 +19,7 @@
 package co.rsk.trie;
 
 import co.rsk.panic.PanicProcessor;
-import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
@@ -38,7 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.ethereum.crypto.SHA3Helper.sha3;
+import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -236,22 +236,22 @@ public class TrieImpl implements Trie {
                     continue;
                 }
 
-                hashes[k] = new byte[SHA3Helper.DEFAULT_SIZE_BYTES];
+                hashes[k] = new byte[HashUtil.DEFAULT_SIZE_BYTES];
 
-                if (istream.read(hashes[k]) != SHA3Helper.DEFAULT_SIZE_BYTES) {
+                if (istream.read(hashes[k]) != HashUtil.DEFAULT_SIZE_BYTES) {
                     throw new EOFException();
                 }
 
                 nhashes++;
             }
 
-            int offset = MESSAGE_HEADER_LENGTH + lencoded + nhashes * SHA3Helper.DEFAULT_SIZE_BYTES;
+            int offset = MESSAGE_HEADER_LENGTH + lencoded + nhashes * HashUtil.DEFAULT_SIZE_BYTES;
             byte[] value = null;
 
             if (hasLongVal) {
-                byte[] valueHash = new byte[SHA3Helper.DEFAULT_SIZE_BYTES];
+                byte[] valueHash = new byte[HashUtil.DEFAULT_SIZE_BYTES];
 
-                if (istream.read(valueHash) != SHA3Helper.DEFAULT_SIZE_BYTES) {
+                if (istream.read(valueHash) != HashUtil.DEFAULT_SIZE_BYTES) {
                     throw new EOFException();
                 }
 
@@ -317,7 +317,7 @@ public class TrieImpl implements Trie {
 
         byte[] message = this.toMessage();
 
-        this.hash = SHA3Helper.sha3(message);
+        this.hash = HashUtil.keccak256(message);
 
         return ByteUtils.clone(this.hash);
     }
@@ -331,13 +331,13 @@ public class TrieImpl implements Trie {
      */
     @Override
     public byte[] get(byte[] key) {
-        byte[] keyBytes = this.isSecure ? bytesToKey(sha3(key), this.arity) : bytesToKey(key, this.arity);
+        byte[] keyBytes = this.isSecure ? bytesToKey(HashUtil.keccak256(key), this.arity) : bytesToKey(key, this.arity);
         return get(keyBytes, keyBytes.length, 0);
     }
 
     @Override
     public PartialMerkleTree getPartialMerkleTree(byte[] key) {
-        byte[] keyBytes = this.isSecure ? bytesToKey(sha3(key), this.arity) : bytesToKey(key, this.arity);
+        byte[] keyBytes = this.isSecure ? bytesToKey(HashUtil.keccak256(key), this.arity) : bytesToKey(key, this.arity);
         return getPartialMerkleTree(keyBytes, keyBytes.length, 0);
     }
 
@@ -404,7 +404,7 @@ public class TrieImpl implements Trie {
      */
     @Override
     public Trie put(byte[] key, byte[] value) {
-        byte[] keyBytes = this.isSecure ? bytesToKey(sha3(key), this.arity) : bytesToKey(key, this.arity);
+        byte[] keyBytes = this.isSecure ? bytesToKey(HashUtil.keccak256(key), this.arity) : bytesToKey(key, this.arity);
         Trie trie = put(keyBytes, keyBytes.length, 0, value);
 
         return trie == null ? new TrieImpl(this.arity, this.store, this.isSecure) : trie;
@@ -483,7 +483,7 @@ public class TrieImpl implements Trie {
             bits |= 1 << k;
         }
 
-        ByteBuffer buffer = ByteBuffer.allocate(MESSAGE_HEADER_LENGTH + lencoded + nnodes * SHA3Helper.DEFAULT_SIZE_BYTES + (hasLongVal ? SHA3Helper.DEFAULT_SIZE_BYTES : lvalue));
+        ByteBuffer buffer = ByteBuffer.allocate(MESSAGE_HEADER_LENGTH + lencoded + nnodes * HashUtil.DEFAULT_SIZE_BYTES + (hasLongVal ? HashUtil.DEFAULT_SIZE_BYTES : lvalue));
 
         buffer.put((byte) this.arity);
 
@@ -738,7 +738,7 @@ public class TrieImpl implements Trie {
         byte[] bytes = this.store.serialize();
         byte[] root = this.getHash();
 
-        ByteBuffer buffer = ByteBuffer.allocate(Short.BYTES + SHA3Helper.DEFAULT_SIZE_BYTES + bytes.length);
+        ByteBuffer buffer = ByteBuffer.allocate(Short.BYTES + HashUtil.DEFAULT_SIZE_BYTES + bytes.length);
 
         buffer.putShort((short) 0);
         buffer.put(root);
@@ -794,13 +794,13 @@ public class TrieImpl implements Trie {
         try {
             dstream.readShort();
 
-            byte[] root = new byte[SHA3Helper.DEFAULT_SIZE_BYTES];
+            byte[] root = new byte[HashUtil.DEFAULT_SIZE_BYTES];
 
-            if (dstream.read(root) != SHA3Helper.DEFAULT_SIZE_BYTES) {
+            if (dstream.read(root) != HashUtil.DEFAULT_SIZE_BYTES) {
                 throw new EOFException();
             }
 
-            TrieStoreImpl store = TrieStoreImpl.deserialize(bytes, Short.BYTES + SHA3Helper.DEFAULT_SIZE_BYTES, bytes.length - Short.BYTES - SHA3Helper.DEFAULT_SIZE_BYTES, new HashMapDB());
+            TrieStoreImpl store = TrieStoreImpl.deserialize(bytes, Short.BYTES + HashUtil.DEFAULT_SIZE_BYTES, bytes.length - Short.BYTES - HashUtil.DEFAULT_SIZE_BYTES, new HashMapDB());
 
             Trie newTrie = store.retrieve(root);
 
@@ -1237,7 +1237,7 @@ public class TrieImpl implements Trie {
 
     public byte[] getValueHash() {
         if (this.hasLongValue()) {
-            return sha3(this.value);
+            return HashUtil.keccak256(this.value);
         }
 
         return null;
@@ -1263,6 +1263,6 @@ public class TrieImpl implements Trie {
      * @return a hash with zeroed bytes
      */
     private static byte[] makeEmptyHash() {
-        return sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
+        return HashUtil.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY));
     }
 }

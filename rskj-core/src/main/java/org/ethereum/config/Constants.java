@@ -21,7 +21,7 @@ package org.ethereum.config;
 
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeTestNetConstants;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigDecimal;

@@ -20,7 +20,7 @@ package co.rsk.vm;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.test.World;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;

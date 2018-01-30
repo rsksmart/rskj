@@ -19,7 +19,8 @@
 
 package org.ethereum.vm.program.invoke;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.db.RepositoryImplForTesting;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -86,7 +87,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     /*           ORIGIN op         */
     public DataWord getOriginAddress() {
 
-        byte[] cowPrivKey = HashUtil.sha3("horse".getBytes(StandardCharsets.UTF_8));
+        byte[] cowPrivKey = HashUtil.keccak256("horse".getBytes(StandardCharsets.UTF_8));
         byte[] addr = ECKey.fromPrivate(cowPrivKey).getAddress();
 
         return new DataWord(addr);
@@ -95,7 +96,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     /*           CALLER op         */
     public DataWord getCallerAddress() {
 
-        byte[] cowPrivKey = HashUtil.sha3("monkey".getBytes(StandardCharsets.UTF_8));
+        byte[] cowPrivKey = HashUtil.keccak256("monkey".getBytes(StandardCharsets.UTF_8));
         byte[] addr = ECKey.fromPrivate(cowPrivKey).getAddress();
 
         return new DataWord(addr);
@@ -173,9 +174,9 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     }
 
     @Override
-    public DataWord getPrevHash() {
+    public Keccak256 getPrevHash() {
         byte[] prevHash = Hex.decode("961CB117ABA86D1E596854015A1483323F18883C2D745B0BC03E87F146D2BB1C");
-        return new DataWord(prevHash);
+        return new Keccak256(prevHash);
     }
 
     @Override

@@ -19,7 +19,7 @@
 package co.rsk.mine;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.net.BlockProcessor;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -28,7 +28,6 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -65,7 +64,7 @@ public class TxBuilderEx {
     }
 
     public void simulateTxs() {
-        final byte[] privateKeyBytes = HashUtil.sha3(config.simulateTxsExAccountSeed().getBytes(StandardCharsets.UTF_8));
+        final byte[] privateKeyBytes = HashUtil.keccak256(config.simulateTxsExAccountSeed().getBytes(StandardCharsets.UTF_8));
         final ECKey key = ECKey.fromPrivate(privateKeyBytes);
         RskAddress addr = new RskAddress(key.getAddress());
 
@@ -162,7 +161,7 @@ public class TxBuilderEx {
     private void sendTransaction(Transaction tx) {
         //Adds created transaction to the local node's memory pool
         ethereum.submitTransaction(tx);
-        logger.info("Added pending tx: {}", Hex.decode(tx.getHash()));
+        logger.info("Added pending tx: {}", tx.getHash());
     }
 
     private Transaction createNewTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce) {

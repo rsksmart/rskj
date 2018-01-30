@@ -19,7 +19,7 @@
 package co.rsk.test.dsl;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.net.NodeBlockProcessor;
@@ -143,7 +143,7 @@ public class WorldDslProcessor {
 
         Block best = world.getBlockChain().getStatus().getBestBlock();
 
-        if (Arrays.equals(best.getHash(), block.getHash()))
+        if (Arrays.equals(best.getHash().getBytes(), block.getHash().getBytes()))
             return;
 
         throw new DslProcessorException(String.format("Expected best block '%s'", name));

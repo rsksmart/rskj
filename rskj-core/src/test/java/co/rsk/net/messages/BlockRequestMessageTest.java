@@ -19,6 +19,7 @@
 package co.rsk.net.messages;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.core.commons.Keccak256;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -28,11 +29,11 @@ import org.junit.Test;
 public class BlockRequestMessageTest {
     @Test
     public void createWithBlockHash() {
-        byte[] hash = BlockGenerator.getInstance().getGenesisBlock().getHash();
+        Keccak256 hash = BlockGenerator.getInstance().getGenesisBlock().getHash();
         BlockRequestMessage message = new BlockRequestMessage(100, hash);
 
         Assert.assertEquals(100, message.getId());
-        Assert.assertArrayEquals(hash, message.getBlockHash());
+        Assert.assertEquals(hash, message.getBlockHash());
         Assert.assertEquals(MessageType.BLOCK_REQUEST_MESSAGE, message.getMessageType());
     }
 }

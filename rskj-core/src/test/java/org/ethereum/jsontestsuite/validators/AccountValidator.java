@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite.validators;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ContractDetails;
@@ -32,7 +32,7 @@ import java.util.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class AccountValidator {
-    private static final byte[] EMPTY_DATA_HASH = HashUtil.sha3(EMPTY_BYTE_ARRAY);
+    private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
 
     public static List<String> valid(RskAddress address, AccountState expectedState, ContractDetails expectedDetails,
                                      AccountState currentState, ContractDetails currentDetails){

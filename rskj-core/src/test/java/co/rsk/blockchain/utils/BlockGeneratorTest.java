@@ -52,7 +52,7 @@ public class BlockGeneratorTest {
 
         for (Block b : chain) {
             Assert.assertNotNull(b);
-            Assert.assertArrayEquals(parent.getHash(), b.getParentHash());
+            Assert.assertArrayEquals(parent.getHash().getBytes(), b.getParentHash().getBytes());
             Assert.assertEquals(parent.getNumber() + 1, b.getNumber());
             parent = b;
         }

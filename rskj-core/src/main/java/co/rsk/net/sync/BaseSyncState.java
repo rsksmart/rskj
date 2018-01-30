@@ -1,5 +1,6 @@
 package co.rsk.net.sync;
 
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.MessageChannel;
 import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
@@ -48,7 +49,7 @@ public abstract class BaseSyncState implements SyncState {
     }
 
     @Override
-    public void newConnectionPointData(byte[] hash) {
+    public void newConnectionPointData(Keccak256 hash) {
     }
 
     @Override

@@ -19,6 +19,7 @@
 
 package co.rsk.net.messages;
 
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.BlockIdentifier;
 import org.junit.Test;
 
@@ -36,8 +37,8 @@ public class SkeletonResponseMessageTest {
 
         long someId = 42;
         List<BlockIdentifier> identifiers = Arrays.asList(
-            new BlockIdentifier(decode("4ee6424d776b3f59affc20bc2de59e67f36e22cc07897ff8df152242c921716b"), 1),
-            new BlockIdentifier(decode("7d2fe4df0dbbc9011da2b3bf177f0c6b7e71a11c509035c5d751efa5cf9b4817"), 2)
+            new BlockIdentifier(new Keccak256(decode("4ee6424d776b3f59affc20bc2de59e67f36e22cc07897ff8df152242c921716b")), 1),
+            new BlockIdentifier(new Keccak256(decode("7d2fe4df0dbbc9011da2b3bf177f0c6b7e71a11c509035c5d751efa5cf9b4817")), 2)
         );
 
         SkeletonResponseMessage skeletonMessage = new SkeletonResponseMessage(someId, identifiers);

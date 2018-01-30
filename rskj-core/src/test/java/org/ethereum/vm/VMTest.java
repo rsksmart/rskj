@@ -21,7 +21,7 @@ package org.ethereum.vm;
 
 import co.rsk.asm.EVMAssembler;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.Repository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.Program;

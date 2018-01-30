@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.util.RLP;
@@ -27,7 +28,6 @@ import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 import org.spongycastle.util.BigIntegers;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 
 /**
@@ -36,10 +36,10 @@ import java.util.ArrayList;
 public class TransactionInfo {
 
     TransactionReceipt receipt;
-    byte[] blockHash;
+    Keccak256 blockHash;
     int index;
 
-    public TransactionInfo(TransactionReceipt receipt, byte[] blockHash, int index) {
+    public TransactionInfo(TransactionReceipt receipt, Keccak256 blockHash, int index) {
         this.receipt = receipt;
         this.blockHash = blockHash;
         this.index = index;
@@ -53,7 +53,7 @@ public class TransactionInfo {
         RLPItem indexRLP = (RLPItem) txInfo.get(2);
 
         receipt = new TransactionReceipt(receiptRLP.getRLPData());
-        blockHash = blockHashRLP.getRLPData();
+        blockHash = new Keccak256(blockHashRLP.getRLPData());
         if (indexRLP.getRLPData() == null) {
             index = 0;
         } else {
@@ -69,7 +69,7 @@ public class TransactionInfo {
     public byte[] getEncoded() {
 
         byte[] receiptRLP = this.receipt.getEncoded();
-        byte[] blockHashRLP = RLP.encodeElement(blockHash);
+        byte[] blockHashRLP = RLP.encodeElement(blockHash.getBytes());
         byte[] indexRLP = RLP.encodeInt(index);
 
         byte[] rlpEncoded = RLP.encodeList(receiptRLP, blockHashRLP, indexRLP);
@@ -81,7 +81,7 @@ public class TransactionInfo {
         return receipt;
     }
 
-    public byte[] getBlockHash() { return blockHash; }
+    public Keccak256 getBlockHash() { return blockHash; }
 
     public int getIndex() { return index; }
 }

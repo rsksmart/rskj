@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.peg.simples.SimpleBlock;
 import co.rsk.remasc.RemascTransaction;
@@ -32,7 +33,6 @@ import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.IndexedBlockStore;
 import org.junit.Assert;
 import org.junit.Test;
@@ -177,7 +177,7 @@ public class BlockValidatorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
         Block block1 = blockGenerator.createChildBlock(genesis);
-        block1.getHeader().setUnclesHash(new byte[]{0x01});
+        block1.getHeader().setUnclesHash(new Keccak256(new byte[]{0x01}));
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockUnclesValidationRule(null)
@@ -226,10 +226,10 @@ public class BlockValidatorTest {
         store.saveBlock(genesis, BigInteger.ONE, true);
         Block block = new BlockGenerator().createChildBlock(genesis);
 
-        Set<ByteArrayWrapper> ancestors = FamilyUtils.getAncestors(store, block, 6);
+        Set<Keccak256> ancestors = FamilyUtils.getAncestors(store, block, 6);
         Assert.assertFalse(ancestors.isEmpty());
-        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(genesis.getHash())));
-        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(block.getHash())));
+        Assert.assertTrue(ancestors.contains(genesis.getHash()));
+        Assert.assertFalse(ancestors.contains(block.getHash()));
     }
 
     @Test
@@ -251,15 +251,15 @@ public class BlockValidatorTest {
         Block block5 = blockGenerator.createChildBlock(block4);
         store.saveBlock(block5, BigInteger.ONE, true);
 
-        Set<ByteArrayWrapper> ancestors = FamilyUtils.getAncestors(store, block5, 3);
+        Set<Keccak256> ancestors = FamilyUtils.getAncestors(store, block5, 3);
         Assert.assertFalse(ancestors.isEmpty());
         Assert.assertEquals(3, ancestors.size());
-        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(genesis.getHash())));
-        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(block1.getHash())));
-        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(block2.getHash())));
-        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(block3.getHash())));
-        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(block4.getHash())));
-        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(block5.getHash())));
+        Assert.assertFalse(ancestors.contains(genesis.getHash()));
+        Assert.assertFalse(ancestors.contains(block1.getHash()));
+        Assert.assertTrue(ancestors.contains(block2.getHash()));
+        Assert.assertTrue(ancestors.contains(block3.getHash()));
+        Assert.assertTrue(ancestors.contains(block4.getHash()));
+        Assert.assertFalse(ancestors.contains(block5.getHash()));
     }
 
     @Test
@@ -295,17 +295,17 @@ public class BlockValidatorTest {
         store.saveBlock(uncle2b, BigInteger.ONE, false);
         store.saveBlock(block2, BigInteger.ONE, true);
 
-        Set<ByteArrayWrapper> used = FamilyUtils.getUsedUncles(store, block3, 6);
+        Set<Keccak256> used = FamilyUtils.getUsedUncles(store, block3, 6);
 
         Assert.assertFalse(used.isEmpty());
-        Assert.assertFalse(used.contains(new ByteArrayWrapper(block3.getHash())));
-        Assert.assertFalse(used.contains(new ByteArrayWrapper(block2.getHash())));
-        Assert.assertTrue(used.contains(new ByteArrayWrapper(uncle2a.getHash())));
-        Assert.assertTrue(used.contains(new ByteArrayWrapper(uncle2b.getHash())));
-        Assert.assertFalse(used.contains(new ByteArrayWrapper(block1.getHash())));
-        Assert.assertTrue(used.contains(new ByteArrayWrapper(uncle1a.getHash())));
-        Assert.assertTrue(used.contains(new ByteArrayWrapper(uncle1b.getHash())));
-        Assert.assertFalse(used.contains(new ByteArrayWrapper(genesis.getHash())));
+        Assert.assertFalse(used.contains(block3.getHash()));
+        Assert.assertFalse(used.contains(block2.getHash()));
+        Assert.assertTrue(used.contains(uncle2a.getHash()));
+        Assert.assertTrue(used.contains(uncle2b.getHash()));
+        Assert.assertFalse(used.contains(block1.getHash()));
+        Assert.assertTrue(used.contains(uncle1a.getHash()));
+        Assert.assertTrue(used.contains(uncle1b.getHash()));
+        Assert.assertFalse(used.contains(genesis.getHash()));
     }
 
     @Test
@@ -876,13 +876,13 @@ public class BlockValidatorTest {
         }
 
         @Override
-        public byte[] getBlockHashByNumber(long blockNumber) {
-            return new byte[0];
+        public Keccak256 getBlockHashByNumber(long blockNumber) {
+            return new Keccak256(new byte[0]);
         }
 
         @Override
-        public byte[] getBlockHashByNumber(long blockNumber, byte[] branchBlockHash) {
-            return new byte[0];
+        public Keccak256 getBlockHashByNumber(long blockNumber, Keccak256 branchBlockHash) {
+            return new Keccak256(new byte[0]);
         }
 
         @Override
@@ -896,32 +896,32 @@ public class BlockValidatorTest {
         }
 
         @Override
-        public Block getBlockByHash(byte[] hash) {
+        public Block getBlockByHash(Keccak256 hash) {
             return block;
         }
 
         @Override
-        public Block getBlockByHashAndDepth(byte[] hash, long depth) {
+        public Block getBlockByHashAndDepth(Keccak256 hash, long depth) {
             return null;
         }
 
         @Override
-        public boolean isBlockExist(byte[] hash) {
+        public boolean isBlockExist(Keccak256 hash) {
             return false;
         }
 
         @Override
-        public List<byte[]> getListHashesEndWith(byte[] hash, long qty) {
+        public List<Keccak256> getListHashesEndWith(Keccak256 hash, long qty) {
             return null;
         }
 
         @Override
-        public List<BlockHeader> getListHeadersEndWith(byte[] hash, long qty) {
+        public List<BlockHeader> getListHeadersEndWith(Keccak256 hash, long qty) {
             return null;
         }
 
         @Override
-        public List<Block> getListBlocksEndWith(byte[] hash, long qty) {
+        public List<Block> getListBlocksEndWith(Keccak256 hash, long qty) {
             return null;
         }
 
@@ -931,7 +931,7 @@ public class BlockValidatorTest {
         }
 
         @Override
-        public BigInteger getTotalDifficultyForHash(byte[] hash) {
+        public BigInteger getTotalDifficultyForHash(Keccak256 hash) {
             return null;
         }
 

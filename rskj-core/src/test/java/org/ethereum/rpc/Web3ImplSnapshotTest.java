@@ -92,7 +92,7 @@ public class Web3ImplSnapshotTest {
 
         BlockChainStatus newStatus = blockchain.getStatus();
 
-        Assert.assertArrayEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
+        Assert.assertArrayEquals(status.getBestBlock().getHash().getBytes(), newStatus.getBestBlock().getHash().getBytes());
         Assert.assertEquals(status.getTotalDifficulty(), newStatus.getTotalDifficulty());
     }
 
@@ -114,7 +114,7 @@ public class Web3ImplSnapshotTest {
 
         BlockChainStatus newStatus = blockchain.getStatus();
 
-        Assert.assertArrayEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
+        Assert.assertArrayEquals(status.getBestBlock().getHash().getBytes(), newStatus.getBestBlock().getHash().getBytes());
         Assert.assertEquals(status.getTotalDifficulty(), newStatus.getTotalDifficulty());
     }
 

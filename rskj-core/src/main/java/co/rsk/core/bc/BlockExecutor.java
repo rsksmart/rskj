@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
@@ -125,8 +126,8 @@ public class BlockExecutor {
             return false;
         }
 
-        if (!Arrays.equals(result.getStateRoot(), block.getStateRoot()))  {
-            logger.error("Block's given State Root doesn't match: {} {} {} != {}", block.getNumber(), block.getShortHash(), Hex.toHexString(block.getStateRoot()), Hex.toHexString(result.getStateRoot()));
+        if (!result.getStateRoot().equals(block.getStateRoot()))  {
+            logger.error("Block's given State Root doesn't match: {} {} {} != {}", block.getNumber(), block.getShortHash(), block.getStateRoot(), result.getStateRoot());
             return false;
         }
 
@@ -177,20 +178,20 @@ public class BlockExecutor {
      * @param stateRoot    Initial state hash
      * @return BlockResult with the final state data.
      */
-    public BlockResult execute(Block block, byte[] stateRoot, boolean discardInvalidTxs) {
+    public BlockResult execute(Block block, Keccak256 stateRoot, boolean discardInvalidTxs) {
         return execute(block, stateRoot, discardInvalidTxs, false);
     }
 
-    public BlockResult executeAll(Block block, byte[] stateRoot) {
+    public BlockResult executeAll(Block block, Keccak256 stateRoot) {
         return execute(block, stateRoot, false, true);
     }
 
-    private BlockResult execute(Block block, byte[] stateRoot, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
+    private BlockResult execute(Block block, Keccak256 stateRoot, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
         Repository initialRepository = repository.getSnapshotTo(stateRoot);
 
-        byte[] lastStateRootHash = initialRepository.getRoot();
+        Keccak256 lastStateRootHash = initialRepository.getRoot();
 
         Repository track = initialRepository.startTracking();
         int i = 1;
@@ -209,11 +210,11 @@ public class BlockExecutor {
             boolean readyToExecute = txExecutor.init();
             if (!ignoreReadyToExecute && !readyToExecute) {
                 if (discardInvalidTxs) {
-                    logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()));
+                    logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
                     continue;
                 } else {
                     logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
-                            block.getNumber(), Hex.toHexString(tx.getHash()));
+                            block.getNumber(), tx.getHash());
                     return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
                 }
             }
@@ -246,8 +247,8 @@ public class BlockExecutor {
             receipt.setLogInfoList(txExecutor.getVMLogs());
             receipt.setStatus(txExecutor.getReceipt().getStatus());
 
-            logger.trace("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), Hex.toHexString(tx.getHash()),
-                    Hex.toHexString(lastStateRootHash));
+            logger.trace("block: [{}] executed tx: [{}] state: [{}]", block.getNumber(), tx.getHash(),
+                    lastStateRootHash);
 
             logger.trace("tx[{}].receipt", i);
 

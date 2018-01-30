@@ -33,7 +33,7 @@ public class BlockResponseMessageTest {
         BlockResponseMessage message = new BlockResponseMessage(100, block);
 
         Assert.assertEquals(100, message.getId());
-        Assert.assertArrayEquals(block.getHash(), message.getBlock().getHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), message.getBlock().getHash().getBytes());
         Assert.assertEquals(MessageType.BLOCK_RESPONSE_MESSAGE, message.getMessageType());
     }
 }

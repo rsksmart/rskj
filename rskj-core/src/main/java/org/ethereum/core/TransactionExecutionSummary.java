@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.InternalTransaction;
@@ -56,7 +57,7 @@ public class TransactionExecutionSummary {
         return tx;
     }
 
-    public byte[] getTransactionHash() {
+    public Keccak256 getTransactionHash() {
         return getTransaction().getHash() ;
     }
 

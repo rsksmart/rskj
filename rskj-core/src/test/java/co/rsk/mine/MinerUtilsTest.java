@@ -20,7 +20,8 @@ package co.rsk.mine;
 
 import co.rsk.TestHelpers.Tx;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -49,8 +50,8 @@ public class MinerUtilsTest {
         s1[0] = 0;
         s2[0] = 1;
 
-        Mockito.when(tx1.getHash()).thenReturn(s1);
-        Mockito.when(tx2.getHash()).thenReturn(s2);
+        Mockito.when(tx1.getHash()).thenReturn(new Keccak256(s1));
+        Mockito.when(tx2.getHash()).thenReturn(new Keccak256(s2));
 
         List<Transaction> txs1 = new LinkedList<>();
         List<Transaction> txs2 = new LinkedList<>();

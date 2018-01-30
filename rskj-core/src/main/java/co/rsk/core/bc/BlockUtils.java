@@ -18,12 +18,12 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.core.commons.Keccak256;
 import co.rsk.net.BlockStore;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.db.BlockInformation;
-import org.ethereum.db.ByteArrayWrapper;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -39,31 +39,30 @@ public class BlockUtils {
         return blockInSomeBlockChain(block.getHash(), block.getNumber(), blockChain);
     }
 
-    public static boolean blockInSomeBlockChain(byte[] blockHash, long blockNumber, Blockchain blockChain) {
-        final ByteArrayWrapper key = new ByteArrayWrapper(blockHash);
+    public static boolean blockInSomeBlockChain(Keccak256 blockHash, long blockNumber, Blockchain blockChain) {
         final List<BlockInformation> blocks = blockChain.getBlocksInformationByNumber(blockNumber);
 
-        return blocks.stream().anyMatch(bi -> key.equalsToByteArray(bi.getHash()));
+        return blocks.stream().anyMatch(bi -> blockHash.equals(bi.getHash()));
     }
 
-    public static Set<ByteArrayWrapper> unknownDirectAncestorsHashes(Block block, Blockchain blockChain, BlockStore store) {
-        Set<ByteArrayWrapper> hashes = new HashSet<>();
+    public static Set<Keccak256> unknownDirectAncestorsHashes(Block block, Blockchain blockChain, BlockStore store) {
+        Set<Keccak256> hashes = new HashSet<>();
 
-        hashes.add(new ByteArrayWrapper(block.getParentHash()));
+        hashes.add(block.getParentHash());
 
         return unknownAncestorsHashes(hashes, blockChain, store, false);
     }
 
-    public static Set<ByteArrayWrapper> unknownAncestorsHashes(byte[] blockHash, Blockchain blockChain, BlockStore store) {
-        Set<ByteArrayWrapper> hashes = new HashSet<>();
-        hashes.add(new ByteArrayWrapper(blockHash));
+    public static Set<Keccak256> unknownAncestorsHashes(Keccak256 blockHash, Blockchain blockChain, BlockStore store) {
+        Set<Keccak256> hashes = new HashSet<>();
+        hashes.add(blockHash);
 
         return unknownAncestorsHashes(hashes, blockChain, store, true);
     }
 
-    public static Set<ByteArrayWrapper> unknownAncestorsHashes(Set<ByteArrayWrapper> hashesToProcess, Blockchain blockChain, BlockStore store, boolean withUncles) {
-        Set<ByteArrayWrapper> unknown = new HashSet<>();
-        Set<ByteArrayWrapper> hashes = hashesToProcess;
+    public static Set<Keccak256> unknownAncestorsHashes(Set<Keccak256> hashesToProcess, Blockchain blockChain, BlockStore store, boolean withUncles) {
+        Set<Keccak256> unknown = new HashSet<>();
+        Set<Keccak256> hashes = hashesToProcess;
 
         while (!hashes.isEmpty()) {
             hashes = getNextHashes(hashes, unknown, blockChain, store, withUncles);
@@ -72,16 +71,16 @@ public class BlockUtils {
         return unknown;
     }
 
-    private static Set<ByteArrayWrapper> getNextHashes(Set<ByteArrayWrapper> previousHashes, Set<ByteArrayWrapper> unknown, Blockchain blockChain, BlockStore store, boolean withUncles) {
-        Set<ByteArrayWrapper> nextHashes = new HashSet<>();
-        for (ByteArrayWrapper hash : previousHashes) {
+    private static Set<Keccak256> getNextHashes(Set<Keccak256> previousHashes, Set<Keccak256> unknown, Blockchain blockChain, BlockStore store, boolean withUncles) {
+        Set<Keccak256> nextHashes = new HashSet<>();
+        for (Keccak256 hash : previousHashes) {
             if (unknown.contains(hash)) {
                 continue;
             }
 
-            Block block = blockChain.getBlockByHash(hash.getData());
+            Block block = blockChain.getBlockByHash(hash);
             if (block == null) {
-                block = store.getBlockByHash(hash.getData());
+                block = store.getBlockByHash(hash);
             }
 
             if (block == null) {
@@ -90,11 +89,11 @@ public class BlockUtils {
             }
 
             if (!block.isGenesis() && !blockInSomeBlockChain(block, blockChain)) {
-                nextHashes.add(new ByteArrayWrapper(block.getParentHash()));
+                nextHashes.add(block.getParentHash());
 
                 if (withUncles) {
                     for (BlockHeader uncleHeader : block.getUncleList()) {
-                        nextHashes.add(new ByteArrayWrapper(uncleHeader.getHash()));
+                        nextHashes.add(uncleHeader.getHash());
                     }
                 }
             }
@@ -103,10 +102,9 @@ public class BlockUtils {
     }
 
     public static void addBlockToList(List<Block> blocks, Block block) {
-        byte[] hash = block.getHash();
-
+        Keccak256 hash = block.getHash();
         for (Block b : blocks) {
-            if (Arrays.equals(b.getHash(), hash)) {
+            if (b.getHash().equals(hash)) {
                 return;
             }
         }

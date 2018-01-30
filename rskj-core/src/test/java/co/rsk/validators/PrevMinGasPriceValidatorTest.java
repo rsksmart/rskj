@@ -18,6 +18,7 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.junit.Assert;
@@ -38,8 +39,10 @@ public class PrevMinGasPriceValidatorTest {
     @Test
     public void noParentBlock() {
         Block block = Mockito.mock(Block.class);
+        Keccak256 blockParentHash = Mockito.mock(Keccak256.class);
 
-        Mockito.when(block.getParentHash()).thenReturn(PARENT_HASH);
+        Mockito.when(block.getParentHash()).thenReturn(blockParentHash);
+        Mockito.when(blockParentHash.getBytes()).thenReturn(PARENT_HASH);
         Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(BLOCK_MGP);
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
@@ -76,8 +79,10 @@ public class PrevMinGasPriceValidatorTest {
     public void outOfValidMGPRangeBlock() {
         Block block = Mockito.mock(Block.class);
         Block parent = Mockito.mock(Block.class);
+        Keccak256 blockParentHash = Mockito.mock(Keccak256.class);
 
-        Mockito.when(block.getParentHash()).thenReturn(PARENT_HASH);
+        Mockito.when(block.getParentHash()).thenReturn(blockParentHash);
+        Mockito.when(blockParentHash.getBytes()).thenReturn(PARENT_HASH);
         Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(BLOCK_MGP);
         Mockito.when(parent.getMinGasPriceAsInteger()).thenReturn(BigInteger.TEN);
 
@@ -92,8 +97,9 @@ public class PrevMinGasPriceValidatorTest {
         Block block = Mockito.mock(Block.class);
         Block parent = Mockito.mock(Block.class);
         BlockStore blockStore = Mockito.mock(BlockStore.class);
-
-        Mockito.when(block.getParentHash()).thenReturn(PARENT_HASH);
+        Keccak256 blockParentHash = Mockito.mock(Keccak256.class);
+        Mockito.when(block.getParentHash()).thenReturn(blockParentHash);
+        Mockito.when(blockParentHash.getBytes()).thenReturn(PARENT_HASH);
         Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(BLOCK_MGP);
         Mockito.when(parent.getMinGasPriceAsInteger()).thenReturn(PARENT_BLOCK_MGP);
 

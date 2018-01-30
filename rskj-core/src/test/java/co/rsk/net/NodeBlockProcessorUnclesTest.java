@@ -50,7 +50,7 @@ public class NodeBlockProcessorUnclesTest {
         processor.processBlock(null, block1);
 
         Assert.assertEquals(1, processor.getBlockchain().getBestBlock().getNumber());
-        Assert.assertArrayEquals(block1.getHash(), processor.getBlockchain().getBestBlockHash());
+        Assert.assertEquals(block1.getHash(), processor.getBlockchain().getBestBlockHash());
     }
 
     @Test
@@ -78,7 +78,7 @@ public class NodeBlockProcessorUnclesTest {
         processor.processBlock(sender, block2);
 
         Assert.assertEquals(2, processor.getBlockchain().getBestBlock().getNumber());
-        Assert.assertArrayEquals(block2.getHash(), processor.getBlockchain().getBestBlockHash());
+        Assert.assertEquals(block2.getHash(), processor.getBlockchain().getBestBlockHash());
         Assert.assertTrue(sender.getGetBlockMessages().isEmpty());
     }
 
@@ -105,7 +105,7 @@ public class NodeBlockProcessorUnclesTest {
         processor.processBlock(sender, block2);
 
         Assert.assertEquals(2, processor.getBlockchain().getBestBlock().getNumber());
-        Assert.assertArrayEquals(block2.getHash(), processor.getBlockchain().getBestBlockHash());
+        Assert.assertEquals(block2.getHash(), processor.getBlockchain().getBestBlockHash());
 
         Assert.assertEquals(0, sender.getGetBlockMessages().size());
     }
@@ -131,9 +131,9 @@ public class NodeBlockProcessorUnclesTest {
         processor.processBlock(sender, block2);
 
         Assert.assertEquals(0, processor.getBlockchain().getBestBlock().getNumber());
-        Assert.assertArrayEquals(genesis.getHash(), processor.getBlockchain().getBestBlockHash());
+        Assert.assertEquals(genesis.getHash(), processor.getBlockchain().getBestBlockHash());
         Assert.assertEquals(1, sender.getGetBlockMessages().size());
-        Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(new ByteArrayWrapper(block1.getHash())));
+        Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(block1.getHash()));
     }
 
     private static NodeBlockProcessor createNodeBlockProcessor() {

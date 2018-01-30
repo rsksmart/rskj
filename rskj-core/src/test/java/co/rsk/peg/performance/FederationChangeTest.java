@@ -19,7 +19,7 @@
 package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.peg.*;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
@@ -44,7 +44,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
             "auth-c",
             "auth-d",
             "auth-e",
-    }).map(generator -> ECKey.fromPrivate(HashUtil.sha3(generator.getBytes(StandardCharsets.UTF_8)))).collect(Collectors.toList());
+    }).map(generator -> ECKey.fromPrivate(HashUtil.keccak256(generator.getBytes(StandardCharsets.UTF_8)))).collect(Collectors.toList());
 
     private ECKey winnerKeyToTry;
     private PendingFederation pendingFederation;

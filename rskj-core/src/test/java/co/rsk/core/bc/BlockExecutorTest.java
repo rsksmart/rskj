@@ -21,6 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockchainDummy;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieStoreImpl;
@@ -28,7 +29,6 @@ import com.google.common.collect.Lists;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.crypto.cryptohash.Keccak256;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.eth.message.StatusMessage;
@@ -45,7 +45,6 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -69,7 +68,7 @@ public class BlockExecutorTest {
         Assert.assertTrue(account.getEcKey().hasPrivKey());
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assert.assertFalse(new Keccak256(EMPTY_TRIE_HASH).equals(repository.getRoot()));
 
         BlockExecutor executor = new BlockExecutor(config, repository, null, null, null);
 
@@ -79,7 +78,7 @@ public class BlockExecutorTest {
 
         Assert.assertNotNull(result.getTransactionReceipts());
         Assert.assertTrue(result.getTransactionReceipts().isEmpty());
-        Assert.assertArrayEquals(repository.getRoot(), result.getStateRoot());
+        Assert.assertEquals(repository.getRoot(), result.getStateRoot());
 
         AccountState accountState = repository.getAccountState(account.getAddress());
 
@@ -119,7 +118,7 @@ public class BlockExecutorTest {
         Assert.assertNotNull(result.getReceiptsRoot());
         Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
 
-        Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getStateRoot()));
+        Assert.assertFalse(repository.getRoot().equals(result.getStateRoot()));
 
         Assert.assertNotNull(result.getLogsBloom());
         Assert.assertEquals(256, result.getLogsBloom().length);
@@ -151,7 +150,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assert.assertFalse(repository.getRoot().equals(new Keccak256(EMPTY_TRIE_HASH)));
 
         BlockExecutor executor = new BlockExecutor(config, repository, new BlockchainDummy(), null, null);
 
@@ -190,7 +189,7 @@ public class BlockExecutorTest {
 
         Assert.assertNotNull(result.getReceiptsRoot());
         Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
-        Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getStateRoot()));
+        Assert.assertFalse(repository.getRoot().equals(result.getStateRoot()));
 
         Assert.assertNotNull(result.getLogsBloom());
         Assert.assertEquals(256, result.getLogsBloom().length);
@@ -221,7 +220,7 @@ public class BlockExecutorTest {
         executor.executeAndFill(block, parent);
 
         Assert.assertArrayEquals(result.getReceiptsRoot(), block.getReceiptsRoot());
-        Assert.assertArrayEquals(result.getStateRoot(), block.getStateRoot());
+        Assert.assertEquals(result.getStateRoot(), block.getStateRoot());
         Assert.assertEquals(result.getGasUsed(), block.getGasUsed());
         Assert.assertEquals(result.getPaidFees(), block.getFeesPaidToMiner());
         Assert.assertArrayEquals(result.getLogsBloom(), block.getLogBloom());
@@ -241,7 +240,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assert.assertFalse(repository.getRoot().equals(new Keccak256(EMPTY_TRIE_HASH)));
 
         BlockExecutor executor = new BlockExecutor(config, repository, new BlockchainDummy(), null, null);
 
@@ -279,7 +278,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assert.assertFalse(repository.getRoot().equals(new Keccak256(EMPTY_TRIE_HASH)));
 
         BlockExecutor executor = new BlockExecutor(config, repository, new BlockchainDummy(), null, null);
 
@@ -317,7 +316,7 @@ public class BlockExecutorTest {
         Block block = objects.getBlock();
         BlockExecutor executor = new BlockExecutor(config, objects.getRepository(), new BlockchainDummy(), null, null);
 
-        byte[] stateRoot = block.getStateRoot();
+        byte[] stateRoot = block.getStateRoot().getBytes();
         stateRoot[0] = (byte)((stateRoot[0] + 1) % 256);
 
         Assert.assertFalse(executor.executeAndValidate(block, parent));
@@ -384,7 +383,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assert.assertFalse( repository.getRoot().equals(new Keccak256(EMPTY_TRIE_HASH)));
 
         BlockExecutor executor = new BlockExecutor(config, repository, new BlockchainDummy(), null, null);
 
@@ -419,7 +418,7 @@ public class BlockExecutorTest {
     }
 
     public static Account createAccount(String seed) {
-        byte[] privateKeyBytes = HashUtil.sha3(seed.getBytes());
+        byte[] privateKeyBytes = HashUtil.keccak256(seed.getBytes());
         ECKey key = ECKey.fromPrivate(privateKeyBytes);
         Account account = new Account(key);
         return account;
@@ -482,7 +481,7 @@ public class BlockExecutorTest {
         Assert.assertEquals(tx, receipt.getTransaction());
         Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
         Assert.assertEquals(21000, new BigInteger(1, receipt.getCumulativeGas()).longValue());
-        Assert.assertArrayEquals(result.getStateRoot(), receipt.getPostTxState());
+        Assert.assertEquals(result.getStateRoot(), receipt.getPostTxState());
 
         Assert.assertEquals(21000, result.getGasUsed());
         Assert.assertEquals(21000, result.getPaidFees());
@@ -490,7 +489,7 @@ public class BlockExecutorTest {
         Assert.assertNotNull(result.getReceiptsRoot());
         Assert.assertArrayEquals(BlockChainImpl.calcReceiptsTrie(result.getTransactionReceipts()), result.getReceiptsRoot());
 
-        Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getStateRoot()));
+        Assert.assertFalse(repository.getRoot().equals(result.getStateRoot()));
 
         Assert.assertNotNull(result.getLogsBloom());
         Assert.assertEquals(256, result.getLogsBloom().length);
@@ -522,7 +521,7 @@ public class BlockExecutorTest {
 
         track.commit();
 
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
+        Assert.assertFalse(repository.getRoot().equals(new Keccak256(EMPTY_TRIE_HASH)));
 
         BlockExecutor executor = new BlockExecutor(config, repository, new BlockchainDummy(), null, null);
 
@@ -573,7 +572,7 @@ public class BlockExecutorTest {
     }
 
     private static byte[] sha3(byte[] input) {
-        Keccak256 digest =  new Keccak256();
+        org.ethereum.crypto.cryptohash.Keccak256 digest =  new org.ethereum.crypto.cryptohash.Keccak256();
         digest.update(input);
         return digest.digest();
     }

@@ -19,7 +19,8 @@
 
 package org.ethereum.core;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.DetailsDataStore;
 import org.ethereum.vm.DataWord;
@@ -198,7 +199,7 @@ public interface Repository {
      *
      * @param root - new root
      */
-    void syncToRoot(byte[] root);
+    void syncToRoot(Keccak256 root);
 
     /**
      * Check to see if the current repository has an open connection to the database
@@ -221,13 +222,13 @@ public interface Repository {
                      Map<RskAddress, ContractDetails> contractDetailes);
 
 
-    byte[] getRoot();
+    Keccak256 getRoot();
 
     void loadAccount(RskAddress addr,
                      Map<RskAddress, AccountState> cacheAccounts,
                      Map<RskAddress, ContractDetails> cacheDetails);
 
-    Repository getSnapshotTo(byte[] root);
+    Repository getSnapshotTo(Keccak256 root);
 
     DetailsDataStore getDetailsDataStore();
 

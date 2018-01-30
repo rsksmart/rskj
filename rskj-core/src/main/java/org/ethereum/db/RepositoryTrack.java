@@ -20,7 +20,8 @@
 package org.ethereum.db;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.db.ContractDetailsImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
@@ -38,7 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.ethereum.crypto.SHA3Helper.sha3;
+import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -46,7 +47,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @since 17.11.2014
  */
 public class RepositoryTrack implements Repository {
-    private static final byte[] EMPTY_DATA_HASH = HashUtil.sha3(EMPTY_BYTE_ARRAY);
+    private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
     private final Map<RskAddress, AccountState> cacheAccounts = new HashMap<>();
@@ -253,7 +254,7 @@ public class RepositoryTrack implements Repository {
         synchronized (repository) {
             getContractDetails(addr).setCode(code);
             getContractDetails(addr).setDirty(true);
-            getAccountState(addr).setCodeHash(sha3(code));
+            getAccountState(addr).setCodeHash(HashUtil.keccak256(code));
         }
     }
 
@@ -363,7 +364,7 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public void syncToRoot(byte[] root) {
+    public void syncToRoot(Keccak256 root) {
         throw new UnsupportedOperationException();
     }
 
@@ -417,7 +418,7 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override // that's the idea track is here not for root calculations
-    public byte[] getRoot() {
+    public Keccak256 getRoot() {
         throw new UnsupportedOperationException();
     }
 
@@ -437,7 +438,7 @@ public class RepositoryTrack implements Repository {
     }
 
     @Override
-    public Repository getSnapshotTo(byte[] root) {
+    public Repository getSnapshotTo(Keccak256 root) {
         throw new UnsupportedOperationException();
     }
 

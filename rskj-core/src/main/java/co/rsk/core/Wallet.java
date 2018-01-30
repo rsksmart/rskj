@@ -19,11 +19,12 @@
 package co.rsk.core;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.crypto.EncryptedData;
 import co.rsk.crypto.KeyCrypterAes;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.rpc.TypeConverter;
 import org.spongycastle.crypto.params.KeyParameter;
@@ -171,7 +172,7 @@ public class Wallet {
     }
 
     public byte[] addAccountWithSeed(String seed) {
-        return addAccountWithPrivateKey(SHA3Helper.sha3(seed.getBytes(StandardCharsets.UTF_8)));
+        return addAccountWithPrivateKey(HashUtil.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
     }
 
     public byte[] addAccountWithPrivateKey(byte[] privateKeyBytes) {

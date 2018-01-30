@@ -20,7 +20,7 @@
 package org.ethereum.db;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.db.ContractDetailsImpl;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.DataWord;

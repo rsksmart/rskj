@@ -19,7 +19,7 @@
 
 package org.ethereum.core;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.crypto.ECKey;
 
 /**

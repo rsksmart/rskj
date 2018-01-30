@@ -19,7 +19,8 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.Keccak256;
+import co.rsk.core.commons.RskAddress;
 import com.google.common.collect.Lists;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -39,7 +40,7 @@ public class BlockStoreTest {
     public void getUnknownBlockAsNull() {
         BlockStore store = new BlockStore();
 
-        Assert.assertNull(store.getBlockByHash(new byte[] { 0x01, 0x20 }));
+        Assert.assertNull(store.getBlockByHash(new Keccak256(new byte[] { 0x01, 0x20 })));
     }
 
     @Test
@@ -129,19 +130,19 @@ public class BlockStoreTest {
         Assert.assertNotNull(childrenByNumber);
         Assert.assertEquals(1, childrenByNumber.size());
 
-        Assert.assertArrayEquals(eve.getHash(), childrenByNumber.get(0).getHash());
+        Assert.assertEquals(eve.getHash(), childrenByNumber.get(0).getHash());
 
         List<Block> childrenByParent = store.getBlocksByParentHash(adam.getHash());
 
         Assert.assertNotNull(childrenByParent);
         Assert.assertEquals(1, childrenByParent.size());
 
-        Assert.assertArrayEquals(eve.getHash(), childrenByParent.get(0).getHash());
+        Assert.assertEquals(eve.getHash(), childrenByParent.get(0).getHash());
 
         Block daugther = store.getBlockByHash(eve.getHash());
 
         Assert.assertNotNull(daugther);
-        Assert.assertArrayEquals(eve.getHash(), daugther.getHash());
+        Assert.assertEquals(eve.getHash(), daugther.getHash());
     }
 
     @Test
@@ -214,8 +215,9 @@ public class BlockStoreTest {
     @Test
     public void saveHeader() {
         BlockStore store = new BlockStore();
-        BlockHeader blockHeader = new BlockHeader(new byte[]{},
-                new byte[]{},
+
+        BlockHeader blockHeader = new BlockHeader(new Keccak256(new byte[]{}),
+                new Keccak256(new byte[]{}),
                 RskAddress.nullAddress().getBytes(),
                 new Bloom().getData(),
                 new byte[]{},
@@ -238,8 +240,8 @@ public class BlockStoreTest {
     @Test
     public void removeHeader() {
         BlockStore store = new BlockStore();
-        BlockHeader blockHeader = new BlockHeader(new byte[]{},
-                new byte[]{},
+        BlockHeader blockHeader = new BlockHeader(new Keccak256(new byte[]{}),
+                new Keccak256(new byte[]{}),
                 RskAddress.nullAddress().getBytes(),
                 new Bloom().getData(),
                 new byte[]{},
@@ -256,7 +258,7 @@ public class BlockStoreTest {
         );
 
         store.saveHeader(blockHeader);
-        store.removeHeader(blockHeader);
+        store.removeHeader(blockHeader.getHash());
         Assert.assertFalse(store.hasHeader(blockHeader.getHash()));
     }
 }

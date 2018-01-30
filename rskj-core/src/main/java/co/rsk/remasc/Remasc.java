@@ -21,7 +21,7 @@ package co.rsk.remasc;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.core.bc.SelectionRule;
 import co.rsk.peg.BridgeSupport;
 import org.apache.commons.collections4.CollectionUtils;
@@ -125,7 +125,7 @@ public class Remasc {
 
         // Pay RSK labs cut
         BigInteger payToRskLabs = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
-        feesPayer.payMiningFees(processingBlockHeader.getHash(), payToRskLabs, remascConstants.getRskLabsAddress(), logs);
+        feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), payToRskLabs, remascConstants.getRskLabsAddress(), logs);
         fullBlockReward = fullBlockReward.subtract(payToRskLabs);
 
         // TODO to improve
@@ -149,7 +149,7 @@ public class Remasc {
 
         BigInteger payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
 
-        byte[] processingBlockHash = processingBlockHeader.getHash();
+        byte[] processingBlockHash = processingBlockHeader.getHash().getBytes();
         int nfederators = federationProvider.getFederationSize();
         BigInteger payToFederator = payToFederation.divide(BigInteger.valueOf(nfederators));
         BigInteger restToLastFederator = payToFederation.subtract(payToFederator.multiply(BigInteger.valueOf(nfederators)));
@@ -184,7 +184,7 @@ public class Remasc {
                 fullBlockReward = fullBlockReward.subtract(punishment);
                 provider.setBurnedBalance(provider.getBurnedBalance().add(punishment));
             }
-            feesPayer.payMiningFees(processingBlockHeader.getHash(), fullBlockReward, processingBlockHeader.getCoinbase(), logs);
+            feesPayer.payMiningFees(processingBlockHeader.getHash().getBytes(), fullBlockReward, processingBlockHeader.getCoinbase(), logs);
             provider.setBrokenSelectionRule(Boolean.FALSE);
         }
 
@@ -223,7 +223,7 @@ public class Remasc {
     private void payWithSiblings(BlockHeader processingBlockHeader, BigInteger fullBlockReward, List<Sibling> siblings, boolean previousBrokenSelectionRule) {
         SiblingPaymentCalculator paymentCalculator = new SiblingPaymentCalculator(fullBlockReward, previousBrokenSelectionRule, siblings.size(), this.remascConstants);
 
-        byte[] processingBlockHeaderHash = processingBlockHeader.getHash();
+        byte[] processingBlockHeaderHash = processingBlockHeader.getHash().getBytes();
         this.payPublishersWhoIncludedSiblings(processingBlockHeaderHash, siblings, paymentCalculator.getIndividualPublisherReward());
         provider.addToBurnBalance(paymentCalculator.getPublishersSurplus());
 

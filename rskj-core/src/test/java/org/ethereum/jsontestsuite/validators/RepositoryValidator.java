@@ -19,12 +19,11 @@
 
 package org.ethereum.jsontestsuite.validators;
 
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.util.ByteUtil;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,8 +66,8 @@ public class RepositoryValidator {
         }
 
         // Compare roots
-        String postRoot = Hex.toHexString(postRepository.getRoot());
-        String currRoot = Hex.toHexString(currentRepository.getRoot());
+        String postRoot = postRepository.getRoot().toString();
+        String currRoot = currentRepository.getRoot().toString();
 
         if (validateRootHash && !postRoot.equals(currRoot)) {
             String formattedString = String.format("Root hash doesn't match: expected: %s current: %s",

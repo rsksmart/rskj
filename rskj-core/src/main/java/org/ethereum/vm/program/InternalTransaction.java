@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program;
 
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
@@ -29,13 +30,13 @@ import static org.apache.commons.lang3.ArrayUtils.*;
 
 public class InternalTransaction extends Transaction {
 
-    private byte[] parentHash;
+    private Keccak256 parentHash;
     private int deep;
     private int index;
     private boolean rejected = false;
     private String note;
 
-    public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
+    public InternalTransaction(Keccak256 parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
                                byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
 
         super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data));
@@ -72,7 +73,7 @@ public class InternalTransaction extends Transaction {
         return note;
     }
 
-    public byte[] getParentHash() {
+    public Keccak256 getParentHash() {
         return parentHash;
     }
 
@@ -94,7 +95,7 @@ public class InternalTransaction extends Transaction {
         byte[] gasPrice = RLP.encodeElement(getGasPrice());
         byte[] gasLimit = RLP.encodeElement(getGasLimit());
         byte[] data = RLP.encodeElement(getData());
-        byte[] parentHash = RLP.encodeElement(this.parentHash);
+        byte[] parentHash = RLP.encodeSha3HashElement(this.parentHash);
         byte[] type = RLP.encodeString(this.note);
         byte[] deep = RLP.encodeInt(this.deep);
         byte[] index = RLP.encodeInt(this.index);

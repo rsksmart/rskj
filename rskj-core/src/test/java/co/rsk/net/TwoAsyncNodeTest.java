@@ -100,7 +100,7 @@ public class TwoAsyncNodeTest {
 
         Assert.assertEquals(100, node1.getBestBlock().getNumber());
         Assert.assertEquals(100, node2.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash().getBytes(), node2.getBestBlock().getHash().getBytes());
     }
 
     @Test @Ignore("This should be reviewed with sync processor or deleted")
@@ -125,7 +125,7 @@ public class TwoAsyncNodeTest {
 
         Assert.assertEquals(10, node1.getBestBlock().getNumber());
         Assert.assertEquals(10, node2.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash().getBytes(), node2.getBestBlock().getHash().getBytes());
     }
 
     @Test @Ignore("This should be reviewed with sync processor or deleted")
@@ -155,6 +155,6 @@ public class TwoAsyncNodeTest {
 
         Assert.assertEquals(10, node1.getBestBlock().getNumber());
         Assert.assertEquals(10, node2.getBestBlock().getNumber());
-        Assert.assertArrayEquals(node1.getBestBlock().getHash(), node2.getBestBlock().getHash());
+        Assert.assertArrayEquals(node1.getBestBlock().getHash().getBytes(), node2.getBestBlock().getHash().getBytes());
     }
 }

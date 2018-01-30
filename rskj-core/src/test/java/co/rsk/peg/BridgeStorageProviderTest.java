@@ -23,8 +23,8 @@ import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.core.commons.RskAddress;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.db.RepositoryImpl;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
@@ -83,7 +83,7 @@ public class BridgeStorageProviderTest {
         Assert.assertNotNull(releaseTransactionSet);
         Assert.assertEquals(0, releaseTransactionSet.getEntries().size());
 
-        SortedMap<Sha3Hash, BtcTransaction> signatures = provider.getRskTxsWaitingForSignatures();
+        SortedMap<Keccak256, BtcTransaction> signatures = provider.getRskTxsWaitingForSignatures();
 
         Assert.assertNotNull(signatures);
         Assert.assertTrue(signatures.isEmpty());
@@ -138,7 +138,7 @@ public class BridgeStorageProviderTest {
         Assert.assertNotNull(releaseTransactionSet);
         Assert.assertEquals(0, releaseTransactionSet.getEntries().size());
 
-        SortedMap<Sha3Hash, BtcTransaction> signatures = provider.getRskTxsWaitingForSignatures();
+        SortedMap<Keccak256, BtcTransaction> signatures = provider.getRskTxsWaitingForSignatures();
 
         Assert.assertNotNull(signatures);
         Assert.assertTrue(signatures.isEmpty());
@@ -184,9 +184,9 @@ public class BridgeStorageProviderTest {
         BtcTransaction tx1 = createTransaction();
         BtcTransaction tx2 = createTransaction();
         BtcTransaction tx3 = createTransaction();
-        Sha3Hash hash1 = PegTestUtils.createHash3();
-        Sha3Hash hash2 = PegTestUtils.createHash3();
-        Sha3Hash hash3 = PegTestUtils.createHash3();
+        Keccak256 hash1 = PegTestUtils.createHash3();
+        Keccak256 hash2 = PegTestUtils.createHash3();
+        Keccak256 hash3 = PegTestUtils.createHash3();
 
         Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
@@ -203,7 +203,7 @@ public class BridgeStorageProviderTest {
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        SortedMap<Sha3Hash, BtcTransaction> signatures = provider.getRskTxsWaitingForSignatures();
+        SortedMap<Keccak256, BtcTransaction> signatures = provider.getRskTxsWaitingForSignatures();
 
         Assert.assertNotNull(signatures);
 

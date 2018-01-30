@@ -30,7 +30,7 @@ public class ECKeyTest {
 
     @Test(expected = SignatureException.class)
     public void testSignedMessageToKeyThrowsSignatureException() throws SignatureException {
-        byte[] messageHash = HashUtil.sha3(exampleMessage.getBytes());
+        byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
         String signature = Base64.toBase64String(new byte[128]);
         ECKey key = ECKey.signatureToKey(messageHash, signature);
         assertNull(key);

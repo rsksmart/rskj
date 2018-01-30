@@ -20,6 +20,7 @@
 package co.rsk.core;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;

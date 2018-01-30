@@ -20,7 +20,7 @@ package co.rsk.remasc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.db.RepositoryImplForTesting;
 import org.ethereum.core.Block;
@@ -289,19 +289,19 @@ public class RemascStorageProviderTest {
         List<Sibling> list2 = map.get(Long.valueOf(2));
 
         Assert.assertEquals(1, list0.get(0).getIncludedHeight());
-        Assert.assertArrayEquals(genesis.getHeader().getHash(), list0.get(0).getHash());
+        Assert.assertEquals(genesis.getHeader().getHash(), list0.get(0).getHash());
         Assert.assertEquals(2, list0.get(1).getIncludedHeight());
-        Assert.assertArrayEquals(block1.getHeader().getHash(), list0.get(1).getHash());
+        Assert.assertEquals(block1.getHeader().getHash(), list0.get(1).getHash());
 
         Assert.assertEquals(3, list1.get(0).getIncludedHeight());
-        Assert.assertArrayEquals(block2.getHeader().getHash(), list1.get(0).getHash());
+        Assert.assertEquals(block2.getHeader().getHash(), list1.get(0).getHash());
         Assert.assertEquals(4, list1.get(1).getIncludedHeight());
-        Assert.assertArrayEquals(block3.getHeader().getHash(), list1.get(1).getHash());
+        Assert.assertEquals(block3.getHeader().getHash(), list1.get(1).getHash());
 
         Assert.assertEquals(5, list2.get(0).getIncludedHeight());
-        Assert.assertArrayEquals(block4.getHeader().getHash(), list2.get(0).getHash());
+        Assert.assertEquals(block4.getHeader().getHash(), list2.get(0).getHash());
         Assert.assertEquals(6, list2.get(1).getIncludedHeight());
-        Assert.assertArrayEquals(block5.getHeader().getHash(), list2.get(1).getHash());
+        Assert.assertEquals(block5.getHeader().getHash(), list2.get(1).getHash());
     }
 
     private RskAddress randomAddress() {

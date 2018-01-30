@@ -19,6 +19,7 @@
 package co.rsk.core;
 
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
@@ -71,7 +72,7 @@ public class BlockchainDummy implements Blockchain {
     }
 
     @Override
-    public TransactionInfo getTransactionInfo(byte[] hash) {
+    public TransactionInfo getTransactionInfo(Keccak256 hash) {
         return null;
     }
 
@@ -91,12 +92,12 @@ public class BlockchainDummy implements Blockchain {
     }
 
     @Override
-    public byte[] getBestBlockHash() {
-        return new byte[0];
+    public Keccak256 getBestBlockHash() {
+        return new Keccak256(new byte[0]);
     }
 
     @Override
-    public Block getBlockByHash(byte[] hash) {
+    public Block getBlockByHash(Keccak256 hash) {
         return null;
     }
 
@@ -106,7 +107,7 @@ public class BlockchainDummy implements Blockchain {
     }
 
     @Override
-    public boolean isBlockExist(byte[] hash) {
+    public boolean isBlockExist(Keccak256 hash) {
         return false;
     }
 
@@ -116,7 +117,7 @@ public class BlockchainDummy implements Blockchain {
     }
 
     @Override
-    public List<byte[]> getListOfBodiesByHashes(List<byte[]> hashes) {
+    public List<byte[]> getListOfBodiesByHashes(List<Keccak256> hashes) {
         return null;
     }
 
@@ -145,7 +146,7 @@ public class BlockchainDummy implements Blockchain {
     }
 
     @Override
-    public boolean hasBlockInSomeBlockchain(byte[] hash) {
+    public boolean hasBlockInSomeBlockchain(Keccak256 hash) {
         return false;
     }
 

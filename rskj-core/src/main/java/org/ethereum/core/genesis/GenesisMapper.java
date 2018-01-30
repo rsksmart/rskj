@@ -19,6 +19,7 @@
 
 package org.ethereum.core.genesis;
 
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.Genesis;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.json.Utils;
@@ -29,7 +30,7 @@ import org.ethereum.util.RLP;
  * Created by mario on 13/01/17.
  */
 public class GenesisMapper {
-    private static final byte[] EMPTY_LIST_HASH = HashUtil.sha3(RLP.encodeList());
+    private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     public Genesis mapFromJson(GenesisJson json, boolean rskFormat) {
         byte[] nonce = Utils.parseData(json.nonce);
@@ -40,7 +41,7 @@ public class GenesisMapper {
         byte[] timestampBytes = Utils.parseData(json.timestamp);
         long timestamp = ByteUtil.byteArrayToLong(timestampBytes);
 
-        byte[] parentHash = Utils.parseData(json.parentHash);
+        Keccak256 parentHash = new Keccak256(json.parentHash);
         byte[] extraData = Utils.parseData(json.extraData);
 
         byte[] gasLimitBytes = Utils.parseData(json.gasLimit);
@@ -58,9 +59,9 @@ public class GenesisMapper {
             minGasPrice = Utils.parseData(json.getMinimumGasPrice());
         }
 
-        return new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, Genesis.getZeroHash(),
-                difficulty, 0, gasLimit, 0, timestamp, extraData,
-                mixHash, nonce, bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof,
-                bitcoinMergedMiningCoinbaseTransaction, minGasPrice);
+        return new Genesis(parentHash, new Keccak256(EMPTY_LIST_HASH), coinbase,
+                Genesis.getZeroHash(), difficulty, 0, gasLimit, 0,
+                timestamp, extraData, mixHash, nonce, bitcoinMergedMiningHeader,
+                bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction, minGasPrice);
     }
 }

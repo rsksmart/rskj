@@ -18,7 +18,7 @@
 
 package co.rsk.net;
 
-import org.ethereum.db.ByteArrayWrapper;
+import co.rsk.core.commons.Keccak256;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -32,7 +32,7 @@ import java.util.*;
  * Peers will only remember the last maxTransactions transactions that were inserted.
  */
 public class TransactionNodeInformation {
-    private final LinkedHashMap<ByteArrayWrapper, Set<NodeID>> nodesByTransaction;
+    private final LinkedHashMap<Keccak256, Set<NodeID>> nodesByTransaction;
     private final int maxTransactions;
     private final int maxPeers;
 
@@ -41,9 +41,9 @@ public class TransactionNodeInformation {
         this.maxPeers = maxPeers;
 
         // Transactions are evicted in Least-recently-accessed order.
-        nodesByTransaction = new LinkedHashMap<ByteArrayWrapper, Set<NodeID>>(TransactionNodeInformation.this.maxTransactions, 0.75f, true) {
+        nodesByTransaction = new LinkedHashMap<Keccak256, Set<NodeID>>(TransactionNodeInformation.this.maxTransactions, 0.75f, true) {
             @Override
-            protected boolean removeEldestEntry(Map.Entry<ByteArrayWrapper, Set<NodeID>> eldest) {
+            protected boolean removeEldestEntry(Map.Entry<Keccak256, Set<NodeID>> eldest) {
                 return size() > TransactionNodeInformation.this.maxTransactions;
             }
         };
@@ -59,7 +59,7 @@ public class TransactionNodeInformation {
      * @param transactionHash the transaction hash.
      * @param nodeID    the node to add the block to.
      */
-    public void addTransactionToNode(@Nonnull final ByteArrayWrapper transactionHash, @Nonnull final NodeID nodeID) {
+    public void addTransactionToNode(@Nonnull final Keccak256 transactionHash, @Nonnull final NodeID nodeID) {
         Set<NodeID> transactionNodes = nodesByTransaction.get(transactionHash);
         if (transactionNodes == null) {
             // Create a new set for the nodes that know about a block.
@@ -78,7 +78,7 @@ public class TransactionNodeInformation {
      * @return A set containing all the nodes that have that block.
      */
     @Nonnull
-    public Set<NodeID> getNodesByTransaction(@Nonnull final ByteArrayWrapper transactionHash) {
+    public Set<NodeID> getNodesByTransaction(@Nonnull final Keccak256 transactionHash) {
         Set<NodeID> result = nodesByTransaction.get(transactionHash);
         if (result == null) {
             result = new HashSet<>();
@@ -87,13 +87,13 @@ public class TransactionNodeInformation {
     }
 
     /**
-     * getNodesByBlock is a convenient function to avoid creating a ByteArrayWrapper.
+     * getNodesByBlock is a convenient function to avoid creating a Keccak256.
      *
      * @param transactionHash the block hash.
      * @return all the nodeIDs that contain the given block.
      */
     @Nonnull
     public Set<NodeID> getNodesByTransaction(@Nonnull final byte[] transactionHash) {
-        return getNodesByTransaction(new ByteArrayWrapper(transactionHash));
+        return getNodesByTransaction(new Keccak256(transactionHash));
     }
 }

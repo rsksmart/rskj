@@ -1,6 +1,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.util.RskTestFactory;
@@ -15,8 +16,8 @@ public class SelectionRuleTest {
 
     @Test
     public void smallerBlockHashTest() {
-        byte[] lowerHash = new byte[]{0};
-        byte[] biggerHash = new byte[]{1};
+        Keccak256 lowerHash = new Keccak256(new byte[]{0});
+        Keccak256 biggerHash = new Keccak256(new byte[]{1});
 
         assertTrue(SelectionRule.isThisBlockHashSmaller(lowerHash, biggerHash));
         assertFalse(SelectionRule.isThisBlockHashSmaller(biggerHash, lowerHash));

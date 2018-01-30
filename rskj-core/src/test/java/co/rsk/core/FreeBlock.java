@@ -1,5 +1,6 @@
 package co.rsk.core;
 
+import co.rsk.core.commons.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.ethereum.core.ImmutableTransaction;
@@ -32,12 +33,12 @@ public class FreeBlock {
     private byte[] rlpEncoded;
     private boolean parsed = false;
 
-    public FreeBlock(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
-                 byte[] difficulty, byte[] number, byte[] gasLimit,
+    public FreeBlock(Keccak256 parentHash, Keccak256 unclesHash, byte[] coinbase, byte[] logsBloom,
+                     byte[] difficulty, byte[] number, byte[] gasLimit,
                      byte[] gasUsed, byte[] timestamp, byte[] extraData,
-                 byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
-                 byte[] transactionsRoot, byte[] stateRoot,
-                 List<Transaction> transactionsList,
+                     byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
+                     byte[] transactionsRoot, byte[] stateRoot,
+                     List<Transaction> transactionsList,
                      List<FreeBlockHeader> uncleList, byte[] minimumGasPrice,
                      byte[] paidFees) {
 
@@ -55,11 +56,11 @@ public class FreeBlock {
         this.flushRLP();
     }
 
-    public FreeBlock(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
-                 byte[] difficulty, byte[]  number, byte[] gasLimit,
-                 byte[] gasUsed, byte[] timestamp,
-                 byte[] extraData, byte[] mixHash, byte[] nonce,
-                 List<Transaction> transactionsList, List<FreeBlockHeader> uncleList, byte[] minimumGasPrice) {
+    public FreeBlock(Keccak256 parentHash, Keccak256 unclesHash, byte[] coinbase, byte[] logsBloom,
+                     byte[] difficulty, byte[]  number, byte[] gasLimit,
+                     byte[] gasUsed, byte[] timestamp,
+                     byte[] extraData, byte[] mixHash, byte[] nonce,
+                     List<Transaction> transactionsList, List<FreeBlockHeader> uncleList, byte[] minimumGasPrice) {
 
         if (transactionsList == null) {
             this.transactionsList = Collections.emptyList();
@@ -119,7 +120,7 @@ public class FreeBlock {
         return this.header.getHash();
     }
 
-    public byte[] getParentHash() {
+    public Keccak256 getParentHash() {
         if (!parsed) {
             parseRLP();
         }

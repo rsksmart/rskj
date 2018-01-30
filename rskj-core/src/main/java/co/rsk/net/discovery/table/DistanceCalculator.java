@@ -38,8 +38,8 @@ public class DistanceCalculator {
      * @return The distance between 2 nodes
      */
     public int calculateDistance(byte[] node1, byte[] node2) {
-        byte[] nodeId1 = HashUtil.sha3(HashUtil.sha3(node1));
-        byte[] nodeId2 = HashUtil.sha3(HashUtil.sha3(node2));
+        byte[] nodeId1 = HashUtil.keccak256(HashUtil.keccak256(node1));
+        byte[] nodeId2 = HashUtil.keccak256(HashUtil.keccak256(node2));
         byte[] result = new byte[nodeId1.length];
 
         for (int i = 0; i < result.length; i++) {

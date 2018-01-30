@@ -158,7 +158,7 @@ public class Value {
 
     public byte[] hash(){
         if (sha3 == null) {
-            sha3 = HashUtil.sha3(encode());
+            sha3 = HashUtil.keccak256(encode());
         }
         return sha3;
     }

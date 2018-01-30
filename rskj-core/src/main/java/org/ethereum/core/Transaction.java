@@ -20,9 +20,10 @@
 package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.crypto.ECKey;
@@ -43,7 +44,6 @@ import org.spongycastle.util.encoders.Hex;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.security.SignatureException;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -58,7 +58,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 
 // TODO review implements SerializableObejct
-public class Transaction implements SerializableObject {
+public class Transaction {
     private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
     private static final Logger logger = LoggerFactory.getLogger(Transaction.class);
@@ -68,7 +68,7 @@ public class Transaction implements SerializableObject {
     public static final int DATAWORD_LENGTH = 32;
 
     /* SHA3 hash of the RLP encoded transaction */
-    private byte[] hash;
+    private Keccak256 hash;
 
     /* a counter used to make sure each transaction can only be processed once */
     private byte[] nonce;
@@ -259,13 +259,13 @@ public class Transaction implements SerializableObject {
         return parsed;
     }
 
-    public byte[] getHash() {
+    public Keccak256 getHash() {
         if (!parsed) {
             rlpParse();
         }
 
         byte[] plainMsg = this.getEncoded();
-        return HashUtil.sha3(plainMsg);
+        return new Keccak256(HashUtil.keccak256(plainMsg));
     }
 
     public byte[] getRawHash() {
@@ -274,7 +274,7 @@ public class Transaction implements SerializableObject {
         }
 
         byte[] plainMsg = this.getEncodedRaw();
-        return HashUtil.sha3(plainMsg);
+        return HashUtil.keccak256(plainMsg);
     }
 
     public byte[] getNonce() {
@@ -442,7 +442,7 @@ public class Transaction implements SerializableObject {
             rlpParse();
         }
 
-        return "TransactionData [" + "hash=" + ByteUtil.toHexString(hash) +
+        return "TransactionData [" + "hash=" + hash +
                 "  nonce=" + ByteUtil.toHexString(nonce) +
                 ", gasPrice=" + ByteUtil.toHexString(gasPrice) +
                 ", gas=" + ByteUtil.toHexString(gasLimit) +
@@ -561,7 +561,7 @@ public class Transaction implements SerializableObject {
 
     @Override
     public int hashCode() {
-        return java.util.Arrays.hashCode(this.getHash());
+        return this.getHash().hashCode();
     }
 
     @Override
@@ -573,7 +573,7 @@ public class Transaction implements SerializableObject {
 
         Transaction tx = (Transaction) obj;
 
-        return Arrays.equals(this.getHash(), tx.getHash());
+        return this.getHash().equals(tx.getHash());
     }
 
     public static Transaction create(RskSystemProperties config, String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit){

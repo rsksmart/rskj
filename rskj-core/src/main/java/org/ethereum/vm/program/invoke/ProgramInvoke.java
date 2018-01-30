@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program.invoke;
 
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.DataWord;
@@ -49,7 +50,7 @@ public interface ProgramInvoke {
 
     byte[] getDataCopy(DataWord offsetData, DataWord lengthData);
 
-    DataWord getPrevHash();
+    Keccak256 getPrevHash();
 
     DataWord getCoinbase();
 

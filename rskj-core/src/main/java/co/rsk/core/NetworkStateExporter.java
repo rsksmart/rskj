@@ -18,6 +18,7 @@
 
 package co.rsk.core;
 
+import co.rsk.core.commons.RskAddress;
 import co.rsk.panic.PanicProcessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;

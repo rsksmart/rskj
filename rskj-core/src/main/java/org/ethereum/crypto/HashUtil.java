@@ -19,11 +19,11 @@
 
 package org.ethereum.crypto;
 
-import org.ethereum.crypto.cryptohash.Keccak256;
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.util.RLP;
-import org.ethereum.util.Utils;
 import org.spongycastle.crypto.Digest;
 import org.spongycastle.crypto.digests.RIPEMD160Digest;
+import org.spongycastle.crypto.digests.SHA3Digest;
 import org.spongycastle.util.encoders.Hex;
 
 import javax.annotation.Nonnull;
@@ -33,11 +33,15 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
 import static java.util.Arrays.copyOfRange;
-import static org.ethereum.crypto.SHA3Helper.Size.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class HashUtil {
-    public static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
+
+
+    public static final int DEFAULT_SIZE = 256;
+    public static final int DEFAULT_SIZE_BYTES = DEFAULT_SIZE / 8;
+
+    public static final byte[] EMPTY_TRIE_HASH = keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY));
 
     private static final MessageDigest sha256digest;
 
@@ -57,21 +61,49 @@ public class HashUtil {
         return sha256digest.digest(input);
     }
 
-    public static byte[] sha3(byte[] input) {
-        Keccak256 digest =  new Keccak256();
+    public static byte[] keccak256(byte[] input) {
+        org.ethereum.crypto.cryptohash.Keccak256 digest =  new org.ethereum.crypto.cryptohash.Keccak256();
         digest.update(input);
         return digest.digest();
     }
 
     /**
      * hashing chunk of the data
-     * @param input - data for hash
+     * @param message - data for hash
      * @param start - start of hashing chunk
      * @param length - length of hashing chunk
      * @return - sha3 hash of the chunk
      */
-    public static byte[] sha3(byte[] input, int start, int length) {
-        return SHA3Helper.sha3(input, start, length);
+    public static byte[] keccak256(byte[] message, int start, int length) {
+        return keccak256(message, start, length, new SHA3Digest(DEFAULT_SIZE));
+    }
+
+    private static byte[] keccak256(byte[] message, int start, int length, SHA3Digest digest) {
+        byte[] hash = new byte[digest.getDigestSize()];
+
+        if (message.length != 0) {
+            digest.update(message, start, length);
+        }
+        digest.doFinal(hash, 0);
+        return hash;
+    }
+
+    public static byte[] keccak256(String s) {
+        return keccak256(Hex.decode(s), new SHA3Digest(DEFAULT_SIZE));
+    }
+
+    private static byte[] keccak256(byte[] message, SHA3Digest digest) {
+        return doKeccak256(message, digest);
+    }
+
+    private static byte[] doKeccak256(byte[] message, SHA3Digest digest) {
+        byte[] hash = new byte[digest.getDigestSize()];
+
+        if (message.length != 0) {
+            digest.update(message, 0, message.length);
+        }
+        digest.doFinal(hash, 0);
+        return hash;
     }
 
 
@@ -97,8 +129,8 @@ public class HashUtil {
      * @param input - data
      * @return - 20 right bytes of the hash sha3 of the data
      */
-    public static byte[] sha3omit12(byte[] input) {
-        byte[] hash = sha3(input);
+    public static byte[] keccak256Omit12(byte[] input) {
+        byte[] hash = keccak256(input);
         return copyOfRange(hash, 12, hash.length);
     }
 
@@ -114,7 +146,7 @@ public class HashUtil {
         byte[] encSender = RLP.encodeElement(addr);
         byte[] encNonce = RLP.encodeBigInteger(new BigInteger(1, nonce));
 
-        return sha3omit12(RLP.encodeList(encSender, encNonce));
+        return keccak256Omit12(RLP.encodeList(encSender, encNonce));
     }
 
     /**
@@ -146,23 +178,6 @@ public class HashUtil {
     }
 
     /**
-     * @return generates random peer id for the HelloMessage
-     */
-    public static byte[] randomPeerId() {
-
-        byte[] peerIdBytes = new BigInteger(512, Utils.getRandom()).toByteArray();
-
-        final String peerId;
-        if (peerIdBytes.length > 64) {
-            peerId = Hex.toHexString(peerIdBytes, 1, 64);
-        } else {
-            peerId = Hex.toHexString(peerIdBytes);
-        }
-
-        return Hex.decode(peerId);
-    }
-
-    /**
      * @return - generate random 32 byte hash
      */
     public static byte[] randomHash(){
@@ -175,6 +190,64 @@ public class HashUtil {
 
     @Nonnull
     public static String shortHash(@Nonnull final byte[] hash){
-        return Hex.toHexString(hash).substring(0, Math.min(hash.length, 6));
+        String stringHash = Hex.toHexString(hash);
+        return tillIndex(stringHash, 6);
+    }
+
+    @Nonnull
+    public static String shortHash(@Nonnull final Keccak256 hash){
+        return getHashTillIndex(hash, 6);
+    }
+
+    @Nonnull
+    public static String getHashTillIndex(@Nonnull final Keccak256 hash, int end) {
+        String stringHash = hash.toString();
+        return tillIndex(stringHash, end);
+    }
+
+    private static String tillIndex(@Nonnull final String hash, int end) {
+        return hash.substring(0, Math.min(hash.length(), end));
+    }
+
+    public static Keccak256 randomSha3Hash() {
+        return new Keccak256(randomHash());
+    }
+
+    public static byte[] keccak256(byte[] m1, byte[] m2) {
+        return keccak256(m1, m2, new SHA3Digest(DEFAULT_SIZE));
+    }
+
+    private static byte[] keccak256(byte[] m1, byte[] m2, SHA3Digest digest) {
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.update(m1, 0, m1.length);
+        digest.update(m2, 0, m2.length);
+
+        digest.doFinal(hash, 0);
+        return hash;
+    }
+
+    //TODO: Search for an implementation of real SHA3, the test are already in HashUtilTest
+    //Note: this implementation should use another function of this lib that has signature
+    // sha3(byte[]);
+    public static byte[] sha3(String msg) {
+        return EMPTY_BYTE_ARRAY;
+    }
+
+    public enum Size {
+
+        S224(224),
+        S256(256),
+        S384(384),
+        S512(512);
+
+        int bits = 0;
+
+        Size(int bits) {
+            this.bits = bits;
+        }
+
+        public int getValue() {
+            return this.bits;
+        }
     }
 }

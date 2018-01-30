@@ -19,7 +19,8 @@
 package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.RskAddress;
+import co.rsk.core.commons.RskAddress;
+import co.rsk.core.commons.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
@@ -43,14 +44,14 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.crypto.SHA3Helper.sha3;
+import static org.ethereum.crypto.HashUtil.keccak256;
 
 /**
  * Created by ajlopez on 29/03/2017.
  */
 public class RepositoryImpl implements Repository {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
-    private static final byte[] EMPTY_DATA_HASH = HashUtil.sha3(EMPTY_BYTE_ARRAY);
+    private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
 
     private static final Logger logger = LoggerFactory.getLogger("repository");
 
@@ -141,7 +142,7 @@ public class RepositoryImpl implements Repository {
         // to sync details storage according the trie root
         // saved in the account
         AccountState accountState = getAccountState(addr);
-        byte[] storageRoot = EMPTY_TRIE_HASH;
+        Keccak256 storageRoot = new Keccak256(EMPTY_TRIE_HASH);
         if (accountState != null) {
             storageRoot = getAccountState(addr).getStateRoot();
         }
@@ -165,7 +166,7 @@ public class RepositoryImpl implements Repository {
         }
 
         details.setCode(code);
-        accountState.setCodeHash(sha3(code));
+        accountState.setCodeHash(HashUtil.keccak256(code));
 
         updateContractDetails(addr, details);
         updateAccountState(addr, accountState);
@@ -298,8 +299,8 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
-    public synchronized void syncToRoot(byte[] root) {
-        this.trie = this.trie.getSnapshotTo(root);
+    public synchronized void syncToRoot(Keccak256 root) {
+        this.trie = this.trie.getSnapshotTo(root.getBytes());
     }
 
     @Override
@@ -364,7 +365,7 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
-    public synchronized byte[] getRoot() {
+    public synchronized Keccak256 getRoot() {
         if (this.trie.hasStore()) {
             this.trie.save();
         }
@@ -373,7 +374,7 @@ public class RepositoryImpl implements Repository {
 
         logger.trace("getting repository root hash {}", Hex.toHexString(rootHash));
 
-        return rootHash;
+        return new Keccak256(rootHash);
     }
 
     @Override
@@ -391,7 +392,7 @@ public class RepositoryImpl implements Repository {
     }
 
     @Override
-    public synchronized Repository getSnapshotTo(byte[] root) {
+    public synchronized Repository getSnapshotTo(Keccak256 root) {
         RepositoryImpl snapshotRepository = new RepositoryImpl(this.config, this.store, this.detailsDataStore);
         snapshotRepository.syncToRoot(root);
         return snapshotRepository;

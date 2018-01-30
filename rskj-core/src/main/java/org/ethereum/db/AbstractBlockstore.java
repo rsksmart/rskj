@@ -19,6 +19,7 @@
 
 package org.ethereum.db;
 
+import co.rsk.core.commons.Keccak256;
 import org.ethereum.core.Block;
 
 /**
@@ -27,7 +28,7 @@ import org.ethereum.core.Block;
 public abstract class AbstractBlockstore implements BlockStore {
 
     @Override
-    public byte[] getBlockHashByNumber(long blockNumber, byte[] branchBlockHash) {
+    public Keccak256 getBlockHashByNumber(long blockNumber, Keccak256 branchBlockHash) {
         Block branchBlock = getBlockByHash(branchBlockHash);
         if (branchBlock.getNumber() < blockNumber) {
             throw new IllegalArgumentException("Requested block number > branch hash number: " + blockNumber + " < " + branchBlock.getNumber());
@@ -39,7 +40,7 @@ public abstract class AbstractBlockstore implements BlockStore {
     }
 
     @Override
-    public Block getBlockByHashAndDepth(byte[] hash, long depth) {
+    public Block getBlockByHashAndDepth(Keccak256 hash, long depth) {
         Block block = this.getBlockByHash(hash);
 
         for (long i = 0; i < depth; i++) {

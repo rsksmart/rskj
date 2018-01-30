@@ -19,6 +19,7 @@
 package co.rsk.core;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.commons.RskAddress;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -51,10 +52,10 @@ public class TransactionTest {
 
         BigInteger value = new BigInteger("1000000000000000000000");
 
-        byte[] privKey = HashUtil.sha3("cat".getBytes());
+        byte[] privKey = HashUtil.keccak256("cat".getBytes());
         ECKey ecKey = ECKey.fromPrivate(privKey);
 
-        byte[] senderPrivKey = HashUtil.sha3("cow".getBytes());
+        byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
 
         byte[] gasPrice = Hex.decode("09184e72a000");
         byte[] gas = Hex.decode("4255");
@@ -73,7 +74,7 @@ public class TransactionTest {
         System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
 
         // retrieve the signer/sender of the transaction
-        ECKey key = ECKey.signatureToKey(tx.getHash(), tx.getSignature().toBase64());
+        ECKey key = ECKey.signatureToKey(tx.getHash().getBytes(), tx.getSignature().toBase64());
 
         System.out.println("Tx unsigned RLP\t\t: " + Hex.toHexString(tx.getEncodedRaw()));
         System.out.println("Tx signed   RLP\t\t: " + Hex.toHexString(tx.getEncoded()));

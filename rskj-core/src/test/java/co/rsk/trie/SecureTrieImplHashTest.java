@@ -18,14 +18,14 @@
 
 package co.rsk.trie;
 
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Arrays;
 
-import static org.ethereum.crypto.HashUtil.sha3;
+import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -196,6 +196,6 @@ public class SecureTrieImplHashTest {
     }
 
     public static byte[] makeEmptyHash() {
-        return sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
+        return HashUtil.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY));
     }
 }
