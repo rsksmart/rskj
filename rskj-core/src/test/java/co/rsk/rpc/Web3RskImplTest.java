@@ -33,7 +33,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.rpc.LogFilterElement;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.Web3Mocks;
@@ -51,7 +50,6 @@ public class Web3RskImplTest {
     @Test
     public void web3_ext_dumpState() throws Exception {
         Rsk rsk = Mockito.mock(Rsk.class);
-        WorldManager worldManager = Mockito.mock(WorldManager.class);
         Blockchain blockchain = Mockito.mock(Blockchain.class);
 
         NetworkStateExporter networkStateExporter = Mockito.mock(NetworkStateExporter.class);
@@ -65,14 +63,13 @@ public class Web3RskImplTest {
         Mockito.when(blockStore.getBestBlock()).thenReturn(block);
         Mockito.when(networkStateExporter.exportStatus(Mockito.anyString())).thenReturn(true);
 
-        Mockito.when(worldManager.getBlockchain()).thenReturn(blockchain);
         Mockito.when(blockchain.getBestBlock()).thenReturn(block);
 
         Wallet wallet = WalletFactory.createWallet();
         RskSystemProperties config = new RskSystemProperties();
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
         EthModule em = new EthModule(config, rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, rsk, wallet, null));
-        Web3RskImpl web3 = new Web3RskImpl(rsk, worldManager, config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, networkStateExporter, blockStore, null);
+        Web3RskImpl web3 = new Web3RskImpl(rsk, blockchain, Web3Mocks.getMockPendingState(), config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, networkStateExporter, blockStore, null, null, null, null);
         web3.ext_dumpState();
     }
 

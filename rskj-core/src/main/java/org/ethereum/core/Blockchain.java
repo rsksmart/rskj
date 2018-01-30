@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.blocks.BlockRecorder;
 import co.rsk.core.bc.BlockChainStatus;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
@@ -29,11 +30,39 @@ import java.math.BigInteger;
 import java.util.List;
 
 public interface Blockchain {
+
+    /**
+     * Get block by number from the best chain
+     * @param number - number of the block
+     * @return block by that number
+     */
+    Block getBlockByNumber(long number);
+
+    /**
+     * Get block by hash
+     * @param hash - hash of the block
+     * @return - bloc by that hash
+     */
+    Block getBlockByHash(byte[] hash);
+
+    /**
+     * Get total difficulty from the start
+     * and until the head of the chain
+     *
+     * @return - total difficulty
+     */
+    BigInteger getTotalDifficulty();
+
+    /**
+     * @return - last added block from blockchain
+     */
+    Block getBestBlock();
+
+    void setBlockRecorder(BlockRecorder blockRecorder);
+
     long getSize();
 
     ImportResult tryToConnect(Block block);
-
-    Block getBlockByNumber(long blockNr);
 
     void setBestBlock(Block block);
 
@@ -43,19 +72,13 @@ public interface Blockchain {
 
     PendingState getPendingState();
 
-    Block getBestBlock();
-
     TransactionInfo getTransactionInfo(byte[] hash);
 
     void close();
 
-    BigInteger getTotalDifficulty();
-
     void setTotalDifficulty(BigInteger totalDifficulty);
 
     byte[] getBestBlockHash();
-
-    Block getBlockByHash(byte[] hash);
 
     void setExitOn(long exitOn);
 

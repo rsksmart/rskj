@@ -32,7 +32,6 @@ import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.Simples.SimpleEthereum;
-import org.ethereum.rpc.Simples.SimpleWorldManager;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -171,12 +170,10 @@ public class Web3ImplSnapshotTest {
         MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, config);
         PersonalModule pm = new PersonalModuleWalletDisabled();
 
-        SimpleWorldManager worldManager = new SimpleWorldManager();
-        worldManager.setBlockchain(world.getBlockChain());
         ethereum.repository = world.getRepository();
-        ethereum.worldManager = worldManager;
+        ethereum.blockchain = world.getBlockChain();
 
-        return new Web3Impl(ethereum, worldManager, Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, Web3Mocks.getMockChannelManager(), ethereum.repository, null, null);
+        return new Web3Impl(ethereum, world.getBlockChain(), null, world.getBlockChain().getBlockStore(), Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, Web3Mocks.getMockChannelManager(), ethereum.repository, null, null, null, null, null);
     }
 
     private static Web3Impl createWeb3(World world) {

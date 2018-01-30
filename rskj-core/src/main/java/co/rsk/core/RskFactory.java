@@ -22,6 +22,7 @@ import co.rsk.Start;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.*;
@@ -48,7 +49,6 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.manager.AdminInfo;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.net.EthereumChannelInitializerFactory;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.NodeManager;
@@ -131,13 +131,14 @@ public class RskFactory {
     }
 
     @Bean
-    public TxHandler getTxHandler(RskSystemProperties config, WorldManager worldManager, Repository repository, Blockchain blockchain) {
-        return new TxHandlerImpl(config, worldManager, repository, blockchain);
+    public TxHandler getTxHandler(RskSystemProperties config, CompositeEthereumListener compositeEthereumListener, Repository repository, Blockchain blockchain) {
+        return new TxHandlerImpl(config, compositeEthereumListener, repository, blockchain);
     }
 
     @Bean
     public Start.Web3Factory getWeb3Factory(Rsk rsk,
-                                            WorldManager worldManager,
+                                            Blockchain blockchain,
+                                            PendingState pendingState,
                                             RskSystemProperties config,
                                             MinerClient minerClient,
                                             MinerServer minerServer,
@@ -148,8 +149,11 @@ public class RskFactory {
                                             PeerScoringManager peerScoringManager,
                                             NetworkStateExporter networkStateExporter,
                                             org.ethereum.db.BlockStore blockStore,
-                                            PeerServer peerServer) {
-        return () -> new Web3RskImpl(rsk, worldManager, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, networkStateExporter, blockStore, peerServer);
+                                            PeerServer peerServer,
+                                            BlockProcessor nodeBlockProcessor,
+                                            HashRateCalculator hashRateCalculator,
+                                            ConfigCapabilities configCapabilities) {
+        return () -> new Web3RskImpl(rsk, blockchain, pendingState, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, networkStateExporter, blockStore, peerServer, nodeBlockProcessor, hashRateCalculator, configCapabilities);
     }
 
     @Bean

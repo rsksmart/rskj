@@ -76,7 +76,7 @@ import java.util.List;
  *
  */
 
-public class BlockChainImpl implements Blockchain, org.ethereum.facade.Blockchain {
+public class BlockChainImpl implements Blockchain {
     private static final Logger logger = LoggerFactory.getLogger("blockchain");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 

@@ -31,7 +31,6 @@ import org.awaitility.Duration;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.Simples.SimpleEthereum;
-import org.ethereum.rpc.Simples.SimpleWorldManager;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -360,14 +359,12 @@ public class MinerManagerTest {
 
     private static MinerServerImpl getMinerServer(Blockchain blockchain) {
         SimpleEthereum ethereum = new SimpleEthereum();
-        SimpleWorldManager worldManager = new SimpleWorldManager();
-        worldManager.setBlockchain(blockchain);
         ethereum.repository = blockchain.getRepository();
-        ethereum.worldManager = worldManager;
+        ethereum.blockchain = blockchain;
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
         return new MinerServerImpl(config, ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(),
                 blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
-                new BlockValidationRuleDummy(), worldManager.getNodeBlockProcessor(),
+                new BlockValidationRuleDummy(), null,
                 difficultyCalculator, new GasLimitCalculator(config),
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
     }
@@ -381,7 +378,7 @@ public class MinerManagerTest {
 
     private static class RskImplForTest extends RskImpl {
         public RskImplForTest() {
-            super(null, null, null,
+            super(null, null, null, null,
                     null, null, null, null, null, null, null);
         }
     }

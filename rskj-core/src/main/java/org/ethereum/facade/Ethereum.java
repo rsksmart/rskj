@@ -36,8 +36,6 @@ import java.util.concurrent.Future;
  */
 public interface Ethereum {
 
-    Blockchain getBlockchain();
-
     void addListener(EthereumListener listener);
 
     void removeListener(EthereumListener listener);

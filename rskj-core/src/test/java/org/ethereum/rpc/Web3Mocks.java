@@ -21,9 +21,11 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
+import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
-import org.ethereum.manager.WorldManager;
 import org.ethereum.net.server.ChannelManager;
 
 import static org.mockito.Mockito.*;
@@ -33,10 +35,10 @@ public class Web3Mocks {
         return mock(Ethereum.class);
     }
 
-    public static WorldManager getMockWorldManager() {
-        WorldManager mockWorldManager = mock(WorldManager.class, RETURNS_DEEP_STUBS);
-        when(mockWorldManager.getBlockchain().getBestBlock().getNumber()).thenReturn(0L);
-        return mockWorldManager;
+    public static Blockchain getMockBlockchain() {
+        Blockchain mockBlockchain = mock(Blockchain.class, RETURNS_DEEP_STUBS);
+        when(mockBlockchain.getBestBlock().getNumber()).thenReturn(0L);
+        return mockBlockchain;
     }
 
     public static RskSystemProperties getMockProperties() {
@@ -57,5 +59,13 @@ public class Web3Mocks {
 
     public static Repository getMockRepository() {
         return mock(Repository.class);
+    }
+
+    public static PendingState getMockPendingState() {
+        return mock(PendingState.class);
+    }
+
+    public static BlockStore getMockBlockStore() {
+        return mock(BlockStore.class);
     }
 }

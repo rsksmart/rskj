@@ -18,6 +18,7 @@
 
 package co.rsk.core;
 
+import co.rsk.blocks.BlockRecorder;
 import co.rsk.core.bc.BlockChainStatus;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockInformation;
@@ -53,6 +54,11 @@ public class BlockchainDummy implements Blockchain {
     @Override
     public Block getBestBlock() {
         return null;
+    }
+
+    @Override
+    public void setBlockRecorder(BlockRecorder blockRecorder) {
+
     }
 
     @Override

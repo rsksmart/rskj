@@ -34,7 +34,6 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.test.World;
 import org.ethereum.rpc.Simples.SimpleRsk;
-import org.ethereum.rpc.Simples.SimpleWorldManager;
 import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -350,15 +349,13 @@ public class Web3ImplScoringTest {
         SimpleRsk rsk = new SimpleRsk();
 
         World world = new World();
-        SimpleWorldManager worldManager = new SimpleWorldManager();
-        worldManager.setBlockchain(world.getBlockChain());
-        rsk.worldManager = worldManager;
+        rsk.blockchain = world.getBlockChain();
 
         Wallet wallet = WalletFactory.createWallet();
         RskSystemProperties config = new RskSystemProperties();
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
         EthModule em = new EthModule(config, rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, rsk, wallet, null));
-        return new Web3RskImpl(rsk, worldManager, config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), rsk.getRepository(), peerScoringManager, null, null, null);
+        return new Web3RskImpl(rsk, world.getBlockChain(), null, config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, Web3Mocks.getMockChannelManager(), rsk.getRepository(), peerScoringManager, null, null, null, null, null, null);
     }
 
     private static NodeID generateNodeID() {
