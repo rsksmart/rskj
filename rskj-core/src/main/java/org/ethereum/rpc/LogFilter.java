@@ -127,7 +127,7 @@ public class LogFilter extends Filter {
         if (fr.topics != null) {
             for (Object topic : fr.topics) {
                 if (topic == null) {
-                    topics = null;
+                    topics = new Topic[0];
                 } else if (topic instanceof String) {
                     topics = new Topic[] { new Topic((String) topic) };
                 } else if (topic instanceof Collection<?>) {

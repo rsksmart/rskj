@@ -120,11 +120,11 @@ public class AddressesTopicsFilter {
 
         List<DataWord> logTopics = logInfo.getTopics();
 
-        for (int i = 0; i < this.topics.size(); i++) {
-            if (i >= logTopics.size()) {
-                return false;
-            }
+        if (logTopics.size() < this.topics.size()) {
+            return false;
+        }
 
+        for (int i = 0; i < this.topics.size(); i++) {
             DataWord logTopic = logTopics.get(i);
             Topic[] orTopics = topics.get(i);
 

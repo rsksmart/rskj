@@ -21,10 +21,8 @@ package org.ethereum.rpc;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
+import javax.annotation.concurrent.GuardedBy;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -39,7 +37,9 @@ public class FilterManager {
     private final Object filterLock = new Object();
 
     AtomicInteger filterCounter = new AtomicInteger(1);
-    Map<Integer, Filter> installedFilters = new Hashtable<>();
+
+    @GuardedBy("filterLock")
+    Map<Integer, Filter> installedFilters = new HashMap<>();
 
     public int registerFilter(Filter filter) {
         synchronized (filterLock) {
@@ -108,11 +108,11 @@ public class FilterManager {
 
         List<Integer> toremove = new ArrayList<>();
 
-        for (Integer id : installedFilters.keySet()) {
-            Filter f = installedFilters.get(id);
+        for (Map.Entry<Integer, Filter> entry : installedFilters.entrySet()) {
+            Filter f = entry.getValue();
 
             if (f.hasExpired(filterTimeout)) {
-                toremove.add(id);
+                toremove.add(entry.getKey());
             }
         }
 
