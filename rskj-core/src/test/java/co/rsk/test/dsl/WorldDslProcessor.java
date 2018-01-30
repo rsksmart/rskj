@@ -45,9 +45,11 @@ public class WorldDslProcessor {
 
     private World world;
     private ImportResult latestImportResult;
+    private final BlockBuilder blockBuilder;
 
     public WorldDslProcessor(World world) {
         this.world = world;
+        this.blockBuilder = new BlockBuilder(world);
     }
 
     public World getWorld() { return this.world; }
@@ -221,7 +223,7 @@ public class WorldDslProcessor {
                 name = difficultyTokenizer.nextToken();
                 difficulty = difficultyTokenizer.hasMoreTokens()?parseDifficulty(difficultyTokenizer.nextToken(),k):k;
             }
-            Block block = new BlockBuilder().difficulty(difficulty).parent(parent).build();
+            Block block = blockBuilder.difficulty(difficulty).parent(parent).build();
             BlockExecutor executor = new BlockExecutor(new RskSystemProperties(), world.getRepository(),
                     world.getBlockChain(), world.getBlockChain().getBlockStore(), null);
             executor.executeAndFill(block, parent);

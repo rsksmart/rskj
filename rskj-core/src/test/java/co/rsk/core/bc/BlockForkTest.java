@@ -40,8 +40,9 @@ public class BlockForkTest {
     @Test
     public void calculateParentChild() {
         BlockStore store = createBlockStore();
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        Block block = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block block = blockGenerator.createChildBlock(genesis);
 
         store.saveBlock(genesis, BigInteger.ONE, true);
         store.saveBlock(block, BigInteger.ONE, true);
@@ -60,14 +61,15 @@ public class BlockForkTest {
     @Test
     public void calculateForkLengthTwo() {
         BlockStore store = createBlockStore();
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        Block parent = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block parent = blockGenerator.createChildBlock(genesis);
 
         store.saveBlock(genesis, BigInteger.ONE, true);
         store.saveBlock(parent, BigInteger.ONE, true);
 
-        List<Block> oldBranch = makeChain(parent, 2, store);
-        List<Block> newBranch = makeChain(parent, 2, store);
+        List<Block> oldBranch = makeChain(parent, 2, store, blockGenerator);
+        List<Block> newBranch = makeChain(parent, 2, store, blockGenerator);
 
         BlockFork fork = new BlockFork();
 
@@ -89,14 +91,15 @@ public class BlockForkTest {
     @Test
     public void calculateForkLengthTwoOldThreeNew() {
         BlockStore store = createBlockStore();
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        Block parent = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block parent = blockGenerator.createChildBlock(genesis);
 
         store.saveBlock(genesis, BigInteger.ONE, true);
         store.saveBlock(parent, BigInteger.ONE, true);
 
-        List<Block> oldBranch = makeChain(parent, 2, store);
-        List<Block> newBranch = makeChain(parent, 3, store);
+        List<Block> oldBranch = makeChain(parent, 2, store, blockGenerator);
+        List<Block> newBranch = makeChain(parent, 3, store, blockGenerator);
 
         BlockFork fork = new BlockFork();
 
@@ -119,14 +122,15 @@ public class BlockForkTest {
     @Test
     public void calculateForkLengthThreeOldTwoNew() {
         BlockStore store = createBlockStore();
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        Block parent = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block parent = blockGenerator.createChildBlock(genesis);
 
         store.saveBlock(genesis, BigInteger.ONE, true);
         store.saveBlock(parent, BigInteger.ONE, true);
 
-        List<Block> oldBranch = makeChain(parent, 3, store);
-        List<Block> newBranch = makeChain(parent, 2, store);
+        List<Block> oldBranch = makeChain(parent, 3, store, blockGenerator);
+        List<Block> newBranch = makeChain(parent, 2, store, blockGenerator);
 
         BlockFork fork = new BlockFork();
 
@@ -146,11 +150,11 @@ public class BlockForkTest {
         Assert.assertArrayEquals(newBranch.get(1).getHash(), fork.getNewBlocks().get(1).getHash());
     }
 
-    private static List<Block> makeChain(Block parent, int length, BlockStore store) {
+    private static List<Block> makeChain(Block parent, int length, BlockStore store, BlockGenerator blockGenerator) {
         List<Block> blocks = new ArrayList<>();
 
         for (int k = 0; k < length; k++) {
-            Block block = BlockGenerator.getInstance().createChildBlock(parent);
+            Block block = blockGenerator.createChildBlock(parent);
             blocks.add(block);
             store.saveBlock(block, BigInteger.ONE, false);
             parent = block;

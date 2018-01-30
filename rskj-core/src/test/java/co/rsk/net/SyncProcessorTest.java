@@ -440,7 +440,7 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
 
-        Block block = BlockGenerator.getInstance().createChildBlock(blockchain.getBlockByNumber(10));
+        Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
         Assert.assertEquals(11, block.getNumber());
         Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
@@ -484,7 +484,7 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
 
-        Block block = BlockGenerator.getInstance().createChildBlock(blockchain.getBlockByNumber(10));
+        Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
         Assert.assertEquals(11, block.getNumber());
         Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());
@@ -536,7 +536,7 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
 
-        Block block = BlockGenerator.getInstance().createChildBlock(blockchain.getBlockByNumber(10));
+        Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
         Blockchain extended = BlockChainBuilder.copy(blockchain);
         extended.tryToConnect(block);
@@ -606,7 +606,7 @@ public class SyncProcessorTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
 
-        Block block = BlockGenerator.getInstance().createChildBlock(genesis, txs, blockchain.getRepository().getRoot());
+        Block block = new BlockGenerator().createChildBlock(genesis, txs, blockchain.getRepository().getRoot());
 
         BlockExecutor blockExecutor = new BlockExecutor(config, blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
         Assert.assertEquals(1, block.getTransactionsList().size());
@@ -656,7 +656,7 @@ public class SyncProcessorTest {
 
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
 
-        Block block = BlockGenerator.getInstance().createChildBlock(blockchain.getBlockByNumber(10));
+        Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
 
         Assert.assertEquals(11, block.getNumber());
         Assert.assertArrayEquals(blockchain.getBestBlockHash(), block.getParentHash());

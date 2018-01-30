@@ -29,7 +29,7 @@ import org.junit.Test;
 public class SiblingTest {
     @Test
     public void siblingSerializeWithGenesis() {
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block genesis = new BlockGenerator().getGenesisBlock();
 
         Sibling sibling = new Sibling(genesis.getHeader(), genesis.getCoinbase(), 1);
 
@@ -51,8 +51,9 @@ public class SiblingTest {
 
     @Test
     public void siblingSerializeWithBlock() {
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
-        Block block = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block genesis = blockGenerator.getGenesisBlock();
+        Block block = blockGenerator.createChildBlock(genesis);
 
         Sibling sibling = new Sibling(block.getHeader(), block.getCoinbase(), 0);
 

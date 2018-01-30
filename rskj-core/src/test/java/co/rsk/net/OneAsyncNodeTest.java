@@ -66,7 +66,7 @@ public class OneAsyncNodeTest {
     public void buildBlockchain() throws InterruptedException {
         SimpleAsyncNode node = createNode();
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(getGenesis(), 10);
+        List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
 
         for (Block block : blocks)
             node.receiveMessageFrom(null, new BlockMessage(block));
@@ -82,7 +82,7 @@ public class OneAsyncNodeTest {
     public void buildBlockchainInReverse() throws InterruptedException {
         SimpleAsyncNode node = createNode();
 
-        List<Block> blocks = BlockGenerator.getInstance().getBlockChain(getGenesis(), 10);
+        List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
 
         List<Block> reverse = new ArrayList<>();
 

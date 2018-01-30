@@ -36,6 +36,7 @@ import java.util.List;
  */
 public class BlockBuilder {
     private BlockChainImpl blockChain;
+    private final BlockGenerator blockGenerator;
     private Block parent;
     private long difficulty;
     private List<Transaction> txs;
@@ -43,14 +44,17 @@ public class BlockBuilder {
     private BigInteger minGasPrice;
     private byte[] gasLimit;
 
-    public BlockBuilder() { }
-
-    public BlockBuilder(World world) {
-        this(world.getBlockChain());
+    public BlockBuilder() {
+        this.blockGenerator = new BlockGenerator();
     }
 
-    public BlockBuilder(BlockChainImpl blockChain) {
+    public BlockBuilder(World world) {
+        this(world.getBlockChain(), new BlockGenerator());
+    }
+
+    public BlockBuilder(BlockChainImpl blockChain, BlockGenerator blockGenerator) {
         this.blockChain = blockChain;
+        this.blockGenerator = blockGenerator;
         // sane defaults
         this.parent(blockChain.getBestBlock());
     }
@@ -90,7 +94,7 @@ public class BlockBuilder {
     }
 
     public Block build() {
-        Block block = BlockGenerator.getInstance().createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice, gasLimit);
+        Block block = blockGenerator.createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice, gasLimit);
 
         if (blockChain != null) {
             BlockExecutor executor = new BlockExecutor(new RskSystemProperties(), blockChain.getRepository(), blockChain, blockChain.getBlockStore(), blockChain.getListener());

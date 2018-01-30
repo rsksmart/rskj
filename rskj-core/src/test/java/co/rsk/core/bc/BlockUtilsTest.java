@@ -24,6 +24,7 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Genesis;
 import org.ethereum.core.ImportResult;
 import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Assert;
@@ -42,7 +43,7 @@ public class BlockUtilsTest {
     public void blockInSomeBlockChain() {
         BlockChainImpl blockChain = new BlockChainBuilder().build();
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block genesis = new BlockGenerator().getGenesisBlock();
         genesis.setStateRoot(blockChain.getRepository().getRoot());
         genesis.flushRLP();
 
@@ -68,7 +69,7 @@ public class BlockUtilsTest {
         BlockChainImpl blockChain = new BlockChainBuilder().build();
         BlockStore store = new BlockStore();
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block genesis = new BlockGenerator().getGenesisBlock();
         genesis.setStateRoot(blockChain.getRepository().getRoot());
         genesis.flushRLP();
 
@@ -115,22 +116,25 @@ public class BlockUtilsTest {
 
     @Test
     public void unknowAncestorsHashesUsingUncles() {
-        BlockChainImpl blockChain = new BlockChainBuilder().build();
+        BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Genesis genesis = blockGenerator.getGenesisBlock();
+        BlockChainImpl blockChain = blockChainBuilder.setGenesis(genesis).build();
         BlockStore store = new BlockStore();
 
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
         genesis.setStateRoot(blockChain.getRepository().getRoot());
         genesis.flushRLP();
 
-        Block block1 = new BlockBuilder().parent(genesis).build();
-        Block block1b = new BlockBuilder().parent(genesis).build();
-        Block block2 = new BlockBuilder().parent(block1).build();
-        Block uncle1 = new BlockBuilder().parent(block1).build();
-        Block uncle2 = new BlockBuilder().parent(block1).build();
+        BlockBuilder blockBuilder = new BlockBuilder(blockChain, blockGenerator);
+        Block block1 = blockBuilder.parent(genesis).build();
+        Block block1b = blockBuilder.parent(genesis).build();
+        Block block2 = blockBuilder.parent(block1).build();
+        Block uncle1 = blockBuilder.parent(block1).build();
+        Block uncle2 = blockBuilder.parent(block1).build();
         List<BlockHeader> uncles = new ArrayList<>();
         uncles.add(uncle1.getHeader());
         uncles.add(uncle2.getHeader());
-        Block block3 = new BlockBuilder().parent(block2).uncles(uncles).build();
+        Block block3 = blockBuilder.parent(block2).uncles(uncles).build();
 
         store.saveBlock(block3);
 

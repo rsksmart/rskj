@@ -273,7 +273,7 @@ public class WorldDslProcessorTest {
 
     @Test
     public void raiseIfUnknownCommand() {
-        WorldDslProcessor processor = new WorldDslProcessor(null);
+        WorldDslProcessor processor = new WorldDslProcessor(new World());
 
         try {
             processor.processCommands(new DslParser("foo"));

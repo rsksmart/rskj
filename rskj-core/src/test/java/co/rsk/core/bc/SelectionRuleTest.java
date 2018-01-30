@@ -27,9 +27,10 @@ public class SelectionRuleTest {
         Blockchain blockchain = createBlockchain();
 
 
-        Block lowDifficultyBlock = BlockGenerator.getInstance().createChildBlock(blockchain.getBestBlock(), 0, 1);
-        Block highDifficultyBlock = BlockGenerator.getInstance().createChildBlock(lowDifficultyBlock, 0, 5);
-        Block highDifficultyBlockWithMoreFees = BlockGenerator.getInstance().createChildBlock(lowDifficultyBlock, 10l, new ArrayList<>(), highDifficultyBlock.getDifficulty());
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block lowDifficultyBlock = blockGenerator.createChildBlock(blockchain.getBestBlock(), 0, 1);
+        Block highDifficultyBlock = blockGenerator.createChildBlock(lowDifficultyBlock, 0, 5);
+        Block highDifficultyBlockWithMoreFees = blockGenerator.createChildBlock(lowDifficultyBlock, 10l, new ArrayList<>(), highDifficultyBlock.getDifficulty());
 
         //diff test
         assertFalse(SelectionRule.shouldWeAddThisBlock(lowDifficultyBlock.getDifficultyBI(),

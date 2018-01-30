@@ -38,7 +38,7 @@ public class RskMessageTest {
 
     @Test
     public void encodeDecodeGetBlockMessage() {
-        Block block = BlockGenerator.getInstance().getBlock(1);
+        Block block = new BlockGenerator().getBlock(1);
         GetBlockMessage message = new GetBlockMessage(block.getHash());
         RskMessage rskmessage = new RskMessage(config, message);
 
@@ -63,7 +63,7 @@ public class RskMessageTest {
 
     @Test
     public void encodeDecodeStatusMessage() {
-        Block block = BlockGenerator.getInstance().getBlock(1);
+        Block block = new BlockGenerator().getBlock(1);
         Status status = new Status(block.getNumber(), block.getHash());
         StatusMessage message = new StatusMessage(status);
         RskMessage rskmessage = new RskMessage(config, message);
@@ -90,7 +90,7 @@ public class RskMessageTest {
 
     @Test
     public void encodeDecodeBlockMessage() {
-        Block block = BlockGenerator.getInstance().getBlock(1);
+        Block block = new BlockGenerator().getBlock(1);
         BlockMessage message = new BlockMessage(block);
         RskMessage rskmessage = new RskMessage(config, message);
 

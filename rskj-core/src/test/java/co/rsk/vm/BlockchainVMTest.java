@@ -42,7 +42,7 @@ public class BlockchainVMTest {
 
     @Test
     public void genesisTest() {
-        Block genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Block genesis = new BlockGenerator().getGenesisBlock();
         Assert.assertEquals(0, genesis.getNumber());
     }
 
@@ -65,7 +65,8 @@ public class BlockchainVMTest {
     public void testSEND_1() {
         NewBlockChainInfo binfo = createNewBlockchain();
         Blockchain blockchain = binfo.blockchain;
-        Block block1 = BlockGenerator.getInstance().createChildBlock(blockchain.getBestBlock(), null, binfo.repository.getRoot());
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(blockchain.getBestBlock(), null, binfo.repository.getRoot());
         List<Transaction> txs = new ArrayList<>();
         BigInteger transferAmount = new BigInteger("100");
         // Add a single transaction paying to a new address
@@ -82,7 +83,7 @@ public class BlockchainVMTest {
         t.sign(binfo.faucetKey.getPrivKeyBytes());
         txs.add(t);
 
-        Block block2 = BlockGenerator.getInstance().createChildBlock(block1, txs, binfo.repository.getRoot());
+        Block block2 = blockGenerator.createChildBlock(block1, txs, binfo.repository.getRoot());
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block1));
 
         MinerHelper mh = new MinerHelper(

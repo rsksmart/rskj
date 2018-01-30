@@ -37,7 +37,7 @@ public class RskTestFactory {
     private ProgramInvokeFactoryImpl programInvokeFactory;
 
     public RskTestFactory() {
-        Genesis genesis = BlockGenerator.getInstance().getGenesisBlock();
+        Genesis genesis = new BlockGenerator().getGenesisBlock();
         genesis.setStateRoot(getRepository().getRoot());
         genesis.flushRLP();
         getBlockchain().setBestBlock(genesis);

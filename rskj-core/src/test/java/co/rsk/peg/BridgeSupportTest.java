@@ -272,7 +272,8 @@ public class BridgeSupportTest {
     public void callUpdateCollectionsGenerateEventLog() throws IOException, BlockStoreException {
         Repository track = new RepositoryImpl(config).startTracking();
 
-        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
 
         List<LogInfo> eventLogs = new LinkedList<>();
@@ -329,7 +330,8 @@ public class BridgeSupportTest {
 
         track = repository.startTracking();
 
-        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         Transaction tx = Transaction.create(config, TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA);
@@ -381,7 +383,8 @@ public class BridgeSupportTest {
 
         track = repository.startTracking();
 
-        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
         BlockChainBuilder builder = new BlockChainBuilder();
 
         Blockchain blockchain = builder.setTesting(true).build();
@@ -439,7 +442,8 @@ public class BridgeSupportTest {
 
         track = repository.startTracking();
 
-        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
         BlockChainBuilder builder = new BlockChainBuilder();
 
         Blockchain blockchain = builder.setTesting(true).build();
@@ -551,9 +555,10 @@ public class BridgeSupportTest {
         Map<byte[], BigInteger> preMineMap = new HashMap<byte[], BigInteger>();
         preMineMap.put(PrecompiledContracts.BRIDGE_ADDR.getBytes(), Denomination.satoshisToWeis(BigInteger.valueOf(21000000)));
 
-        Genesis genesisBlock = (Genesis) BlockGenerator.getInstance().getNewGenesisBlock(0, preMineMap);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Genesis genesisBlock = (Genesis) blockGenerator.getNewGenesisBlock(0, preMineMap);
 
-        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(genesisBlock, 10);
+        List<Block> blocks = blockGenerator.getSimpleBlockChain(genesisBlock, 10);
 
         BlockChainBuilder builder = new BlockChainBuilder();
 
@@ -640,7 +645,8 @@ public class BridgeSupportTest {
         track = repository.startTracking();
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, config.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
-        List<Block> blocks = BlockGenerator.getInstance().getSimpleBlockChain(BlockGenerator.getInstance().getGenesisBlock(), 10);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
 
         BlockChainBuilder builder = new BlockChainBuilder();
         Blockchain blockchain = builder.setTesting(true).build();

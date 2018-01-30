@@ -176,7 +176,7 @@ public class BlockChainImplTest {
     public void addBlockOne() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block1 = new BlockGenerator().createChildBlock(genesis);
 
         SimpleAdminInfo adminInfo = (SimpleAdminInfo)blockChain.getAdminInfo();
         Assert.assertEquals(0, adminInfo.getCount());
@@ -219,7 +219,7 @@ public class BlockChainImplTest {
     public void rejectBlockOneUsingBlockHeaderValidator() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block1 = new BlockGenerator().createChildBlock(genesis);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
@@ -232,7 +232,7 @@ public class BlockChainImplTest {
     public void addInvalidBlockOneBadStateRoot() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block1 = new BlockGenerator().createChildBlock(genesis);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
@@ -245,7 +245,7 @@ public class BlockChainImplTest {
     public void addInvalidBlockOneBadReceiptsRoot() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block1 = new BlockGenerator().createChildBlock(genesis);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
@@ -258,7 +258,7 @@ public class BlockChainImplTest {
     public void addInvalidBlockOneBadLogsBloom() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block1 = new BlockGenerator().createChildBlock(genesis);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
 
@@ -271,7 +271,7 @@ public class BlockChainImplTest {
     public void addInvalidBlockOneBadGasUsed() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block1 = new BlockGenerator().createChildBlock(genesis);
 
         block1.getHeader().setGasUsed(block1.getHeader().getGasUsed() - 1);
 
@@ -283,7 +283,7 @@ public class BlockChainImplTest {
     public void addInvalidBlockOneBadPaidFees() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block1 = new BlockGenerator().createChildBlock(genesis);
 
         block1.getHeader().setPaidFees(block1.getHeader().getPaidFees().subtract(BigInteger.ONE));
 
@@ -295,7 +295,7 @@ public class BlockChainImplTest {
     public void addInvalidBlockBadStateRoot() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block1 = new BlockGenerator().createChildBlock(genesis);
 
         block1.getHeader().setTransactionsRoot(HashUtil.randomHash());
 
@@ -307,7 +307,7 @@ public class BlockChainImplTest {
     public void addInvalidBlockBadUnclesHash() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block1 = new BlockGenerator().createChildBlock(genesis);
 
         block1.getHeader().setUnclesHash(HashUtil.randomHash());
 
@@ -319,8 +319,9 @@ public class BlockChainImplTest {
     public void importNotBest() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block1b = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block block1b = blockGenerator.createChildBlock(genesis);
 
         boolean block1bBigger = SelectionRule.isThisBlockHashSmaller(block1.getHash(), block1b.getHash());
 
@@ -358,8 +359,9 @@ public class BlockChainImplTest {
     public void getBlocksByNumber() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis,0,2);
-        Block block1b = BlockGenerator.getInstance().createChildBlock(genesis,0,1);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(genesis,0,2);
+        Block block1b = blockGenerator.createChildBlock(genesis,0,1);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
@@ -383,9 +385,10 @@ public class BlockChainImplTest {
     public void getBlockByNumber() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
-        Block block3 = BlockGenerator.getInstance().createChildBlock(block2);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block block2 = blockGenerator.createChildBlock(block1);
+        Block block3 = blockGenerator.createChildBlock(block2);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
@@ -425,9 +428,10 @@ public class BlockChainImplTest {
     public void switchToOtherChain() throws InterruptedException {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis,0,2l);
-        Block block1b = BlockGenerator.getInstance().createChildBlock(genesis,0,1l);
-        Block block2b = BlockGenerator.getInstance().createChildBlock(block1b,0,2l);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(genesis,0,2l);
+        Block block1b = blockGenerator.createChildBlock(genesis,0,1l);
+        Block block2b = blockGenerator.createChildBlock(block1b,0,2l);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
@@ -455,9 +459,10 @@ public class BlockChainImplTest {
     public void rejectSwitchToOtherChainUsingBlockHeaderValidation() throws InterruptedException {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block1b = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block2b = BlockGenerator.getInstance().createChildBlock(block1b);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block block1b = blockGenerator.createChildBlock(genesis);
+        Block block2b = blockGenerator.createChildBlock(block1b);
         boolean block1bBigger = FastByteComparisons.compareTo(block1.getHash(), 0, 32,
                 block1b.getHash(), 0, 32) < 0;
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
@@ -475,9 +480,10 @@ public class BlockChainImplTest {
     public void switchToOtherChainInvalidBadBlockBadStateRoot() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis,0,2l);
-        Block block1b = BlockGenerator.getInstance().createChildBlock(genesis,0,1l);
-        Block block2b = BlockGenerator.getInstance().createChildBlock(block1b,0,2l);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(genesis,0,2l);
+        Block block1b = blockGenerator.createChildBlock(genesis,0,1l);
+        Block block2b = blockGenerator.createChildBlock(block1b,0,2l);
 
         block2b.getHeader().setStateRoot(cloneAlterBytes(block2b.getStateRoot()));
 
@@ -491,7 +497,7 @@ public class BlockChainImplTest {
             BlockChainImpl blockChain, Block genesis,
             Block firstBlock,
             Block secondBlock) {
-        Block thirdBlock = BlockGenerator.getInstance().createChildBlock(firstBlock);
+        Block thirdBlock = new BlockGenerator().createChildBlock(firstBlock);
         thirdBlock.getHeader().setReceiptsRoot(cloneAlterBytes(thirdBlock.getReceiptsRoot()));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(firstBlock));
@@ -503,8 +509,9 @@ public class BlockChainImplTest {
     public void switchToOtherChainInvalidBadBlockBadReceiptsRoot() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block1b = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block block1b = blockGenerator.createChildBlock(genesis);
         if (FastByteComparisons.compareTo(block1.getHash(), 0, 32,
                 block1b.getHash(), 0, 32) < 0) {
             switchToOtherChainInvalidBadBlockBadReceiptsRootHelper(blockChain,
@@ -519,14 +526,15 @@ public class BlockChainImplTest {
     public void switchToOtherChainInvalidBadBlockBadLogsBloom() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block1b = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block block1b = blockGenerator.createChildBlock(genesis);
 
         boolean block1bBigger = FastByteComparisons.compareTo(
                 block1.getHash(), 0, 32,
                 block1b.getHash(), 0, 32) < 0;
 
-        Block block2b = BlockGenerator.getInstance().createChildBlock(block1bBigger ? block1 : block1b);
+        Block block2b = blockGenerator.createChildBlock(block1bBigger ? block1 : block1b);
 
         block2b.getHeader().setLogsBloom(cloneAlterBytes(block2b.getLogBloom()));
 
@@ -542,9 +550,10 @@ public class BlockChainImplTest {
     public void switchToOtherChainInvalidBadGasUsed() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis,0,2);
-        Block block1b = BlockGenerator.getInstance().createChildBlock(genesis,0,1);
-        Block block2b = BlockGenerator.getInstance().createChildBlock(block1b);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(genesis,0,2);
+        Block block1b = blockGenerator.createChildBlock(genesis,0,1);
+        Block block2b = blockGenerator.createChildBlock(block1b);
 
         block2b.getHeader().setGasUsed(block2b.getGasUsed() + 1);
 
@@ -558,12 +567,13 @@ public class BlockChainImplTest {
     public void switchToOtherChainInvalidBadPaidFees() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block1b = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block block1b = blockGenerator.createChildBlock(genesis);
         boolean block1bBigger = FastByteComparisons.compareTo(
                 block1.getHash(), 0, 32,
                 block1b.getHash(), 0, 32) < 0;
-        Block block2b = BlockGenerator.getInstance().createChildBlock(block1b);
+        Block block2b = blockGenerator.createChildBlock(block1b);
 
         block2b.getHeader().setPaidFees(block2b.getHeader().getPaidFees().add(BigInteger.ONE));
 
@@ -579,9 +589,10 @@ public class BlockChainImplTest {
     public void switchToOtherChainByDifficulty() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(genesis);
         long difficulty = genesis.getDifficultyBI().longValue() + 1;
-        Block block1b = BlockGenerator.getInstance().createChildBlock(genesis, 0, difficulty);
+        Block block1b = blockGenerator.createChildBlock(genesis, 0, difficulty);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
@@ -604,8 +615,9 @@ public class BlockChainImplTest {
     public void rejectBlockWithoutParent() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block block2 = blockGenerator.createChildBlock(block1);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.NO_PARENT, blockChain.tryToConnect(block2));
@@ -628,7 +640,7 @@ public class BlockChainImplTest {
         BlockChainImpl blockChain = createBlockChain();
 
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block1 = new BlockGenerator().createChildBlock(genesis);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
@@ -651,14 +663,14 @@ public class BlockChainImplTest {
     public void getUnknownBlockByHash() {
         BlockChainImpl blockChain = createBlockChain();
 
-        Assert.assertNull(blockChain.getBlockByHash(BlockGenerator.getInstance().getBlock(1).getHash()));
+        Assert.assertNull(blockChain.getBlockByHash(new BlockGenerator().getBlock(1).getHash()));
     }
 
     @Test
     public void getKnownBlocksByHash() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block1 = new BlockGenerator().createChildBlock(genesis);
 
         blockChain.tryToConnect(genesis);
         blockChain.tryToConnect(block1);
@@ -678,7 +690,7 @@ public class BlockChainImplTest {
     public void validateMinedBlockOne() {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
-        Block block = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block = new BlockGenerator().createChildBlock(genesis);
 
         BlockExecutor executor = createExecutor(blockChain);
 
@@ -690,13 +702,14 @@ public class BlockChainImplTest {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
 
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
-        Block block3 = BlockGenerator.getInstance().createChildBlock(block2);
-        Block block4 = BlockGenerator.getInstance().createChildBlock(block3);
-        Block block5 = BlockGenerator.getInstance().createChildBlock(block4);
-        Block block6 = BlockGenerator.getInstance().createChildBlock(block5);
-        Block block7 = BlockGenerator.getInstance().createChildBlock(block6);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block block2 = blockGenerator.createChildBlock(block1);
+        Block block3 = blockGenerator.createChildBlock(block2);
+        Block block4 = blockGenerator.createChildBlock(block3);
+        Block block5 = blockGenerator.createChildBlock(block4);
+        Block block6 = blockGenerator.createChildBlock(block5);
+        Block block7 = blockGenerator.createChildBlock(block6);
 
         BlockExecutor executor = createExecutor(blockChain);
 
@@ -714,13 +727,14 @@ public class BlockChainImplTest {
         BlockChainImpl blockChain = createBlockChain();
         Block genesis = getGenesisBlock(blockChain);
 
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
-        Block block2 = BlockGenerator.getInstance().createChildBlock(block1);
-        Block block3 = BlockGenerator.getInstance().createChildBlock(block2);
-        Block block4 = BlockGenerator.getInstance().createChildBlock(block3);
-        Block block5 = BlockGenerator.getInstance().createChildBlock(block4);
-        Block block6 = BlockGenerator.getInstance().createChildBlock(block5);
-        Block block7 = BlockGenerator.getInstance().createChildBlock(block6);
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block block1 = blockGenerator.createChildBlock(genesis);
+        Block block2 = blockGenerator.createChildBlock(block1);
+        Block block3 = blockGenerator.createChildBlock(block2);
+        Block block4 = blockGenerator.createChildBlock(block3);
+        Block block5 = blockGenerator.createChildBlock(block4);
+        Block block6 = blockGenerator.createChildBlock(block5);
+        Block block7 = blockGenerator.createChildBlock(block6);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
@@ -768,7 +782,7 @@ public class BlockChainImplTest {
         BlockExecutorTest.SimpleEthereumListener listener = (BlockExecutorTest.SimpleEthereumListener)blockChain.getListener();
 
         Block genesis = getGenesisBlock(blockChain);
-        Block block1 = BlockGenerator.getInstance().createChildBlock(genesis);
+        Block block1 = new BlockGenerator().createChildBlock(genesis);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
