@@ -20,6 +20,7 @@
 package org.ethereum.net.server;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.net.NodeID;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
@@ -255,15 +256,15 @@ public class Channel {
         return node == null ? "<null>" : node.getHexIdShort();
     }
 
-    public byte[] getNodeId() {
-        return node == null ? null : node.getId();
-    }
-
     /**
      * Indicates whether this connection was initiated by our peer
      */
     public boolean isActive() {
         return isActive;
+    }
+
+    public NodeID getNodeId() {
+        return node == null ? null : node.getNodeId();
     }
 
     public ByteArrayWrapper getNodeIdWrapper() {
