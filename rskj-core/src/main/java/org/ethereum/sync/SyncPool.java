@@ -19,10 +19,9 @@
 
 package org.ethereum.sync;
 
-import co.rsk.panic.PanicProcessor;
+import co.rsk.net.NodeID;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.NodeHandler;
 import org.ethereum.net.NodeManager;
@@ -59,13 +58,12 @@ import static org.ethereum.util.TimeUtils.timeAfterMillis;
 public class SyncPool implements Iterable<Channel> {
 
     public static final Logger logger = LoggerFactory.getLogger("sync");
-    private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private static final long WORKER_TIMEOUT = 3; // 3 seconds
 
     private static final long CONNECTION_TIMEOUT = secondsToMillis(30);
 
-    private final Map<ByteArrayWrapper, Channel> peers = new HashMap<>();
+    private final Map<NodeID, Channel> peers = new HashMap<>();
     private final List<Channel> activePeers = Collections.synchronizedList(new ArrayList<Channel>());
     private final Map<String, Long> pendingConnections = new HashMap<>();
 
@@ -121,7 +119,7 @@ public class SyncPool implements Iterable<Channel> {
         }
 
         synchronized (peers) {
-            peers.put(peer.getNodeIdWrapper(), peer);
+            peers.put(peer.getNodeId(), peer);
         }
 
         synchronized (pendingConnections) {
@@ -157,10 +155,10 @@ public class SyncPool implements Iterable<Channel> {
     @Nullable
     public Channel getMasterCandidate() {
         synchronized (activePeers) {
-
             if (activePeers.isEmpty()) {
                 return null;
             }
+
             return activePeers.get(0);
         }
     }
@@ -186,6 +184,7 @@ public class SyncPool implements Iterable<Channel> {
         }
 
         boolean existed;
+
         synchronized (peers) {
             existed = peers.values().remove(peer);
             synchronized (activePeers) {
@@ -209,6 +208,7 @@ public class SyncPool implements Iterable<Channel> {
                 node.getHexIdShort()
             );
         }
+
         if (isInUse(node.getHexId())) {
             if (logger.isTraceEnabled()) {
                 logger.trace(
@@ -216,6 +216,7 @@ public class SyncPool implements Iterable<Channel> {
                     node.getHexIdShort()
                 );
             }
+
             return;
         }
 
@@ -233,14 +234,17 @@ public class SyncPool implements Iterable<Channel> {
 
     public Set<String> nodesInUse() {
         Set<String> ids = new HashSet<>();
+
         synchronized (peers) {
             for (Channel peer : peers.values()) {
                 ids.add(peer.getPeerId());
             }
         }
+
         synchronized (pendingConnections) {
             ids.addAll(pendingConnections.keySet());
         }
+
         return ids;
     }
 
@@ -270,6 +274,7 @@ public class SyncPool implements Iterable<Channel> {
             logger.info("\n");
             logger.info("Active peers");
             logger.info("============");
+
             for (Channel peer : activePeers) {
                 peer.logSyncStats();
             }
@@ -359,21 +364,25 @@ public class SyncPool implements Iterable<Channel> {
 
     private void logDiscoveredNodes(List<NodeHandler> nodes) {
         StringBuilder sb = new StringBuilder();
+
         for(NodeHandler n : nodes) {
             sb.append(Utils.getNodeIdShort(Hex.toHexString(n.getNode().getId())));
             sb.append(", ");
         }
+
         if(sb.length() > 0) {
             sb.delete(sb.length() - 2, sb.length());
         }
+
         logger.trace(
                 "Node list obtained from discovery: {}",
-                nodes.size() > 0 ? sb.toString() : "empty"
+                nodes.isEmpty() ? "empty" : sb.toString()
         );
     }
 
     public void updateLowerUsefulDifficulty() {
         BigInteger td = blockchain.getTotalDifficulty();
+
         if (td.compareTo(lowerUsefulDifficulty) > 0) {
             lowerUsefulDifficulty = td;
         }

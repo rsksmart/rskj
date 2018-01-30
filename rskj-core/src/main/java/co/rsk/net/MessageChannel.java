@@ -27,7 +27,7 @@ public interface MessageChannel {
 
     NodeID getPeerNodeID();
 
-    void setPeerNodeID(byte[] peerNodeId);
+    void setPeerNodeID(NodeID peerNodeId);
 
     InetAddress getAddress();
 

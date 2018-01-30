@@ -50,7 +50,7 @@ public class SimpleNodeChannel implements MessageChannel {
     }
 
     @Override
-    public void setPeerNodeID(byte[] peerNodeId) {
+    public void setPeerNodeID(NodeID peerNodeId) {
 
     }
 

@@ -86,8 +86,8 @@ public class SimpleMessageChannel implements MessageChannel {
     }
 
     @Override
-    public void setPeerNodeID(byte[] peerNodeId) {
-        this.nodeID = new NodeID(peerNodeId);
+    public void setPeerNodeID(NodeID peerNodeId) {
+        this.nodeID = peerNodeId;
     }
 
     @Override
