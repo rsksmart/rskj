@@ -771,9 +771,9 @@ public class NodeMessageHandlerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
-        sender.setPeerNodeID(new byte[] {1});
+        sender.setPeerNodeID(new NodeID(new byte[] {1}));
         final SimpleMessageChannel sender2 = new SimpleMessageChannel();
-        sender2.setPeerNodeID(new byte[] {2});
+        sender2.setPeerNodeID(new NodeID(new byte[] {2}));
 
         final List<Transaction> txs = TransactionUtils.getTransactions(10);
         Mockito.when(txmock.retrieveValidTxs(any(List.class))).thenReturn(txs);
@@ -919,9 +919,9 @@ public class NodeMessageHandlerTest {
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
-        sender.setPeerNodeID(new byte[] {1});
+        sender.setPeerNodeID(new NodeID(new byte[] {1}));
         final SimpleMessageChannel sender2 = new SimpleMessageChannel();
-        sender2.setPeerNodeID(new byte[] {2});
+        sender2.setPeerNodeID(new NodeID(new byte[] {2}));
 
         final List<Transaction> txs = TransactionUtils.getTransactions(10);
         Mockito.when(txmock.retrieveValidTxs(any(List.class))).thenReturn(txs);

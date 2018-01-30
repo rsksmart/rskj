@@ -19,6 +19,7 @@
 
 package org.ethereum.net.rlpx;
 
+import co.rsk.net.NodeID;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -92,6 +93,8 @@ public class Node implements Serializable {
     public byte[] getId() {
         return id;
     }
+
+    public NodeID getNodeId() { return new NodeID(id); }
 
     public String getHexId() {
         return Hex.toHexString(id);

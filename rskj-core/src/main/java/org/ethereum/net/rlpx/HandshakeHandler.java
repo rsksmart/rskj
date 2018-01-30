@@ -361,9 +361,8 @@ public class HandshakeHandler extends ByteToMessageDecoder {
 
         //TODO(mmarquez): what if it is not ??
         if (socketAddress instanceof InetSocketAddress) {
-            byte[] nid = channel.getNodeId();
+            NodeID nodeID = channel.getNodeId();
 
-            NodeID nodeID = nid != null ? new NodeID(nid) : null;
             InetAddress address = ((InetSocketAddress)socketAddress).getAddress();
 
             peerScoringManager.recordEvent(nodeID, address, event);

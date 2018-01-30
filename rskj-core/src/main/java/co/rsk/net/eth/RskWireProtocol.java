@@ -206,8 +206,7 @@ public class RskWireProtocol extends EthHandler {
                 return false;
             }
 
-            byte[] nid = channel.getNodeId();
-            NodeID nodeID = nid != null ? new NodeID(nid) : null;
+            NodeID nodeID = channel.getNodeId();
 
             if (nodeID != null && !peerScoringManager.hasGoodReputation(nodeID)) {
                 return false;

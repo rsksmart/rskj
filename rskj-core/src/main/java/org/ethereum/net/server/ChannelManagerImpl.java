@@ -194,14 +194,14 @@ public class ChannelManagerImpl implements ChannelManager {
             // Get a randomized list with all the peers that don't have the block yet.
             activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
             final Vector<Channel> peers = activePeers.values().stream()
-                    .filter(p -> skip == null || !skip.contains(new NodeID(p.getNodeId())))
+                    .filter(p -> skip == null || !skip.contains(p.getNodeId()))
                     .collect(Collectors.toCollection(() -> new Vector<>()));
             Collections.shuffle(peers);
 
             int sqrt = (int) Math.floor(Math.sqrt(peers.size()));
             for (int i = 0; i < sqrt; i++) {
                 Channel peer = peers.get(i);
-                res.add(new NodeID(peer.getNodeId()));
+                res.add(peer.getNodeId());
                 logger.trace("RSK propagate: {}", peer);
                 peer.sendMessage(newBlock);
             }
@@ -224,7 +224,7 @@ public class ChannelManagerImpl implements ChannelManager {
             activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
 
             activePeers.values().stream()
-                    .filter(p -> targets == null || targets.contains(new NodeID(p.getNodeId())))
+                    .filter(p -> targets == null || targets.contains(p.getNodeId()))
                     .forEach(peer -> {
                         logger.trace("RSK announce hash: {}", peer);
                         peer.sendMessage(newBlockHash);
@@ -253,14 +253,15 @@ public class ChannelManagerImpl implements ChannelManager {
 
         synchronized (activePeers) {
             final Vector<Channel> peers = activePeers.values().stream()
-                    .filter(p -> skip == null || !skip.contains(new NodeID(p.getNodeId())))
+                    .filter(p -> skip == null || !skip.contains(p.getNodeId()))
                     .collect(Collectors.toCollection(() -> new Vector<>()));
 
             for (Channel peer : peers) {
-                res.add(new NodeID(peer.getNodeId()));
+                res.add(peer.getNodeId());
                 peer.sendMessage(newTransactions);
             }
         }
+
         return res;
     }
 
