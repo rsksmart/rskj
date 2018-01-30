@@ -49,6 +49,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -141,7 +142,12 @@ public class Web3RskImpl extends Web3Impl {
         System.arraycopy(coinbaseAsByteArray, rskTagPosition+ RskMiningConstants.RSK_TAG.length, blockHashForMergedMiningArray, 0, blockHashForMergedMiningArray.length);
         String blockHashForMergedMining = TypeConverter.toJsonHex(blockHashForMergedMiningArray);
 
-        SubmitBlockResult result = minerServer.submitBitcoinBlock(blockHashForMergedMining, bitcoinBlock);
+        List<String> txnHashes = new ArrayList<>();
+        for (int start = 0; start < txnHashesHex.length(); start += 64) {
+            txnHashes.add(txnHashesHex.substring(start, Math.min(txnHashesHex.length(), start + 64)));
+        }
+
+        SubmitBlockResult result = minerServer.submitBitcoinSolution(blockHashForMergedMining, bitcoinBlock, coinbase, txnHashes);
 
         if("OK".equals(result.getStatus())) {
             return result.getBlockInfo();
