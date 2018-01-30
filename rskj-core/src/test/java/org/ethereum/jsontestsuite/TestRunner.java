@@ -283,23 +283,22 @@ public class TestRunner {
                 logger.info("--------- POST --------");
 
                 /* 5. Assert Post values */
-                for (ByteArrayWrapper key : testCase.getPost().keySet()) {
-                    RskAddress addr = new RskAddress(key.getData());
-
-                    AccountState accountState = testCase.getPost().get(key);
+                for (RskAddress addr : testCase.getPost().keySet()) {
+                    AccountState accountState = testCase.getPost().get(addr);
 
                     long expectedNonce = accountState.getNonceLong();
                     BigInteger expectedBalance = accountState.getBigIntegerBalance();
                     byte[] expectedCode = accountState.getCode();
 
                     boolean accountExist = (null != repository.getAccountState(addr));
-                    if (!accountExist) {
 
+                    if (!accountExist) {
                         String output =
                                 String.format("The expected account does not exist. key: [ %s ]",
-                                        Hex.toHexString(key.getData()));
+                                        addr);
                         logger.info(output);
                         results.add(output);
+
                         continue;
                     }
 
@@ -309,28 +308,25 @@ public class TestRunner {
                     if (actualCode == null) actualCode = "".getBytes();
 
                     if (expectedNonce != actualNonce) {
-
                         String output =
                                 String.format("The nonce result is different. key: [ %s ],  expectedNonce: [ %d ] is actualNonce: [ %d ] ",
-                                        Hex.toHexString(key.getData()), expectedNonce, actualNonce);
+                                        addr, expectedNonce, actualNonce);
                         logger.info(output);
                         results.add(output);
                     }
 
                     if (!expectedBalance.equals(actualBalance)) {
-
                         String output =
                                 String.format("The balance result is different. key: [ %s ],  expectedBalance: [ %s ] is actualBalance: [ %s ] ",
-                                        Hex.toHexString(key.getData()), expectedBalance.toString(), actualBalance.toString());
+                                        addr, expectedBalance.toString(), actualBalance.toString());
                         logger.info(output);
                         results.add(output);
                     }
 
                     if (!Arrays.equals(expectedCode, actualCode)) {
-
                         String output =
                                 String.format("The code result is different. account: [ %s ],  expectedCode: [ %s ] is actualCode: [ %s ] ",
-                                        Hex.toHexString(key.getData()),
+                                        addr,
                                         Hex.toHexString(expectedCode),
                                         Hex.toHexString(actualCode));
                         logger.info(output);
@@ -339,22 +335,23 @@ public class TestRunner {
 
                     // assert storage
                     Map<DataWord, DataWord> storage = accountState.getStorage();
-                    for (DataWord storageKey : storage.keySet()) {
 
+                    for (DataWord storageKey : storage.keySet()) {
                         byte[] expectedStValue = storage.get(storageKey).getData();
 
                         ContractDetails contractDetails =
                                 program.getStorage().getContractDetails(new RskAddress(accountState.getAddress()));
 
                         if (contractDetails == null) {
-
                             String output =
                                     String.format("Storage raw doesn't exist: key [ %s ], expectedValue: [ %s ]",
                                             Hex.toHexString(storageKey.getData()),
                                             Hex.toHexString(expectedStValue)
                                     );
+
                             logger.info(output);
                             results.add(output);
+
                             continue;
                         }
 
@@ -378,14 +375,17 @@ public class TestRunner {
                     List<LogInfo> logResult = program.getResult().getLogInfoList();
 
                     Iterator<LogInfo> postLogs = logs.getIterator();
-                    int i = 0;
-                    while (postLogs.hasNext()) {
 
+                    int i = 0;
+
+                    while (postLogs.hasNext()) {
                         LogInfo expectedLogInfo = postLogs.next();
 
                         LogInfo foundLogInfo = null;
-                        if (logResult.size() > i)
+
+                        if (logResult.size() > i) {
                             foundLogInfo = logResult.get(i);
+                        }
 
                         if (foundLogInfo == null) {
                             String output =
@@ -582,22 +582,21 @@ public class TestRunner {
         return transaction;
     }
 
-    public Repository loadRepository(Repository track, Map<ByteArrayWrapper, AccountState> pre) {
+    public Repository loadRepository(Repository track, Map<RskAddress, AccountState> pre) {
 
 
             /* 1. Store pre-exist accounts - Pre */
-        for (ByteArrayWrapper key : pre.keySet()) {
+        for (RskAddress address : pre.keySet()) {
 
-            AccountState accountState = pre.get(key);
-            RskAddress addr = new RskAddress(key.getData());
+            AccountState accountState = pre.get(address);
 
-            track.addBalance(addr, new BigInteger(1, accountState.getBalance()));
-            ((RepositoryTrack)track).setNonce(addr, new BigInteger(1, accountState.getNonce()));
+            track.addBalance(address, new BigInteger(1, accountState.getBalance()));
+            ((RepositoryTrack)track).setNonce(address, new BigInteger(1, accountState.getNonce()));
 
-            track.saveCode(addr, accountState.getCode());
+            track.saveCode(address, accountState.getCode());
 
             for (DataWord storageKey : accountState.getStorage().keySet()) {
-                track.addStorageRow(addr, storageKey, accountState.getStorage().get(storageKey));
+                track.addStorageRow(address, storageKey, accountState.getStorage().get(storageKey));
             }
         }
 
