@@ -76,6 +76,7 @@ public abstract class SystemProperties {
     public static final String PROPERTY_RPC_ENABLED = "rpc.enabled";
     public static final String PROPERTY_RPC_PORT = "rpc.port";
     public static final String PROPERTY_RPC_CORS = "rpc.cors";
+    public static final String PROPERTY_EXTERNAL_IP = "external.ip";
 
     /* Testing */
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
@@ -578,12 +579,12 @@ public abstract class SystemProperties {
             return externalIp;
         }
 
-        if (configFromFiles.hasPath("peer.discovery.external.ip")) {
-            String externalIpFromConfig = configFromFiles.getString("peer.discovery.external.ip").trim();
+        if (configFromFiles.hasPath(PROPERTY_EXTERNAL_IP)) {
+            String externalIpFromConfig = configFromFiles.getString(PROPERTY_EXTERNAL_IP).trim();
             if (!externalIpFromConfig.isEmpty()){
                 try {
-                    InetAddress addr = InetAddress.getByName(externalIpFromConfig);
-                    externalIp = addr.getHostAddress();
+                    InetAddress address = tryParseIpOrThrow(externalIpFromConfig);
+                    externalIp = address.getHostAddress();
                     logger.info("External address identified {}", externalIp);
                     return externalIp;
                 } catch (IOException e) {
@@ -597,7 +598,7 @@ public abstract class SystemProperties {
         return externalIp;
     }
 
-    public String getMyPublicIpFromRemoteService(){
+    private String getMyPublicIpFromRemoteService(){
         logger.info("External IP wasn't set or resolved, using checkip.amazonaws.com to identify it...");
         try {
             try (BufferedReader in = new BufferedReader(new InputStreamReader(new URL("http://checkip.amazonaws.com").openStream()))) {
@@ -608,7 +609,7 @@ public abstract class SystemProperties {
                 throw new IOException("Invalid address: '" + externalIp + "'");
             }
 
-            tryParseIpOrThrow();
+            tryParseIpOrThrow(externalIp);
             logger.info("External address identified: {}", externalIp);
         } catch (IOException e) {
             logger.error("Can't get external IP. " + e);
@@ -742,11 +743,11 @@ public abstract class SystemProperties {
         return configFromFiles.hasPath(propertyName) ? configFromFiles.getBoolean(propertyName) : defaultValue;
     }
 
-    private void tryParseIpOrThrow() throws IOException {
+    private InetAddress tryParseIpOrThrow(String ipToParse) throws IOException {
         try {
-            InetAddress.getByName(externalIp);
+            return InetAddress.getByName(ipToParse);
         } catch (Exception e) {
-            throw new IOException("Invalid address: '" + externalIp + "'");
+            throw new IOException("Invalid address: '" + ipToParse + "'");
         }
     }
 }
