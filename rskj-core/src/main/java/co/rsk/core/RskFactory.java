@@ -66,6 +66,7 @@ import org.ethereum.sync.SyncPool;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -121,7 +122,11 @@ public class RskFactory {
     }
 
     @Bean
-    public SyncPool getSyncPool(EthereumListener ethereumListener, Blockchain blockchain, RskSystemProperties config, NodeManager nodeManager, SyncPool.PeerClientFactory peerClientFactory) {
+    public SyncPool getSyncPool(@Qualifier("compositeEthereumListener") EthereumListener ethereumListener,
+                                Blockchain blockchain,
+                                RskSystemProperties config,
+                                NodeManager nodeManager,
+                                SyncPool.PeerClientFactory peerClientFactory) {
         return new SyncPool(ethereumListener, blockchain, config, nodeManager, peerClientFactory);
     }
 
@@ -151,7 +156,7 @@ public class RskFactory {
     public BlockChainImpl getBlockchain(org.ethereum.core.Repository repository,
                                         org.ethereum.db.BlockStore blockStore,
                                         ReceiptStore receiptStore,
-                                        EthereumListener listener,
+                                        @Qualifier("compositeEthereumListener") EthereumListener listener,
                                         AdminInfo adminInfo,
                                         BlockValidator blockValidator,
                                         RskSystemProperties config) {
@@ -173,7 +178,7 @@ public class RskFactory {
                                         org.ethereum.core.Repository repository,
                                         RskSystemProperties config,
                                         ProgramInvokeFactory programInvokeFactory,
-                                        EthereumListener listener) {
+                                        @Qualifier("compositeEthereumListener") EthereumListener listener) {
         PendingStateImpl pendingState = new PendingStateImpl(
                 blockchain,
                 blockStore,
@@ -189,7 +194,7 @@ public class RskFactory {
 
     @Bean
     public SyncPool.PeerClientFactory getPeerClientFactory(SystemProperties config,
-                                                           EthereumListener ethereumListener,
+                                                           @Qualifier("compositeEthereumListener") EthereumListener ethereumListener,
                                                            EthereumChannelInitializerFactory ethereumChannelInitializerFactory) {
         return () -> new PeerClient(config, ethereumListener, ethereumChannelInitializerFactory);
     }
@@ -201,7 +206,7 @@ public class RskFactory {
 
     @Bean
     public EthereumChannelInitializer.ChannelFactory getChannelFactory(RskSystemProperties config,
-                                                                       EthereumListener ethereumListener,
+                                                                       @Qualifier("compositeEthereumListener") EthereumListener ethereumListener,
                                                                        ConfigCapabilities configCapabilities,
                                                                        NodeManager nodeManager,
                                                                        EthHandlerFactory ethHandlerFactory,
@@ -228,7 +233,7 @@ public class RskFactory {
 
     @Bean
     public PeerServer getPeerServer(SystemProperties config,
-                                    EthereumListener ethereumListener,
+                                    @Qualifier("compositeEthereumListener") EthereumListener ethereumListener,
                                     EthereumChannelInitializerFactory ethereumChannelInitializerFactory) {
         return new PeerServerImpl(config, ethereumListener, ethereumChannelInitializerFactory);
     }

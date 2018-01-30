@@ -35,7 +35,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author Roman Mandeleil
  * @since 12.11.2014
  */
-@Component(value = "EthereumListener")
+@Component(value = "compositeEthereumListener")
 public class CompositeEthereumListener implements EthereumListener {
 
     // Using a concurrent list
