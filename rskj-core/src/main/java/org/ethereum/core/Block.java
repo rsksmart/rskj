@@ -634,6 +634,14 @@ public class Block {
         return header.getShortHash();
     }
 
+    public String getParentShortHash() {
+        if (!parsed) {
+            parseRLP();
+        }
+
+        return header.getParentShortHash();
+    }
+
     public String getShortHashForMergedMining() {
         if (!parsed) {
             parseRLP();
@@ -651,8 +659,8 @@ public class Block {
     }
 
     public String getShortDescr() {
-        return "#" + getNumber() + " (" + Hex.toHexString(getHash()).substring(0,6) + " <~ "
-                + Hex.toHexString(getParentHash()).substring(0,6) + ") Txs:" + getTransactionsList().size() +
+        return "#" + getNumber() + " (" + getShortHash() + " <~ "
+                + getParentShortHash() + ") Txs:" + getTransactionsList().size() +
                 ", Unc: " + getUncleList().size();
     }
 

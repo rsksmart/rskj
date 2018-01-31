@@ -177,8 +177,8 @@ public class BlockChainImpl implements Blockchain {
 
         try {
             logger.trace("Try connect block hash: {}, number: {}",
-                    Hex.toHexString(block.getHash()).substring(0, 6),
-                    block.getNumber());
+                         block.getShortHash(),
+                         block.getNumber());
 
             synchronized (connectLock) {
                 logger.trace("Start try connect");
@@ -198,8 +198,8 @@ public class BlockChainImpl implements Blockchain {
         if (blockStore.getBlockByHash(block.getHash()) != null &&
                 !BigInteger.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash()))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
-                    Hex.toHexString(block.getHash()).substring(0, 6),
-                    block.getNumber());
+                         block.getShortHash(),
+                         block.getNumber());
 
             return ImportResult.EXIST;
         }
