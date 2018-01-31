@@ -24,8 +24,8 @@ import com.typesafe.config.*;
 import org.ethereum.config.blockchain.DevNetConfig;
 import org.ethereum.config.blockchain.FallbackMainNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
+import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.config.net.TestNetConfig;
-import org.ethereum.config.net.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.rlpx.MessageCodec;
@@ -66,6 +66,8 @@ import static org.ethereum.crypto.SHA3Helper.sha3;
  * @since 22.05.2014
  */
 public abstract class SystemProperties {
+    private static final String DEFAULT_BIND_ADDRESS = "::";
+    public static final int DEFAULT_RPC_PORT = 4444;
     private static Logger logger = LoggerFactory.getLogger("general");
 
     public static final String PROPERTY_DB_DIR = "database.dir";
@@ -76,7 +78,9 @@ public abstract class SystemProperties {
     public static final String PROPERTY_RPC_ENABLED = "rpc.enabled";
     public static final String PROPERTY_RPC_PORT = "rpc.port";
     public static final String PROPERTY_RPC_CORS = "rpc.cors";
+    public static final String PROPERTY_RPC_ADDRESS = "rpc.address";
     public static final String PROPERTY_EXTERNAL_IP = "external.ip";
+    public static final String PROPERTY_BIND_ADDRESS = "bind.address";
 
     /* Testing */
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
@@ -559,15 +563,19 @@ public abstract class SystemProperties {
     }
 
     public InetAddress getBindAddress() {
-        if (!configFromFiles.hasPath("bind.ip")) {
+        if (!configFromFiles.hasPath(PROPERTY_BIND_ADDRESS)) {
             return InetAddress.getLoopbackAddress();
         }
-        String host = configFromFiles.getString("bind.ip");
+        String host = configFromFiles.getString(PROPERTY_BIND_ADDRESS);
         try {
             return InetAddress.getByName(host);
         } catch (UnknownHostException e) {
-            logger.warn("Unable to bind to {}. Using loopback instead", e);
-            return InetAddress.getLoopbackAddress();
+            logger.warn("Unable to parse bind address {}. Using DEFAULT instead", e);
+            try {
+                return InetAddress.getByName(DEFAULT_BIND_ADDRESS);
+            } catch (UnknownHostException err) {
+                throw new RuntimeException("Unable to parse DEFAULT BIND ADDRESS", err);
+            }
         }
     }
 
@@ -588,9 +596,10 @@ public abstract class SystemProperties {
                     logger.info("External address identified {}", externalIp);
                     return externalIp;
                 } catch (IOException e) {
-                    externalIp = null;
-                    logger.warn("Can't resolve external address");
+                } catch (IllegalArgumentException e) {
                 }
+                externalIp = null;
+                logger.warn("Can't resolve external address");
             }
         }
 
@@ -599,22 +608,33 @@ public abstract class SystemProperties {
     }
 
     private String getMyPublicIpFromRemoteService(){
-        logger.info("External IP wasn't set or resolved, using checkip.amazonaws.com to identify it...");
         try {
+            logger.info("External IP wasn't set or resolved, using checkip.amazonaws.com to identify it...");
+
             try (BufferedReader in = new BufferedReader(new InputStreamReader(new URL("http://checkip.amazonaws.com").openStream()))) {
                 externalIp = in.readLine();
             }
 
             if (externalIp == null || externalIp.trim().isEmpty()) {
+                logger.warn("Unable to retrieve external ip from checkip.amazonaws.com {}.", externalIp);
                 throw new IOException("Invalid address: '" + externalIp + "'");
             }
 
             tryParseIpOrThrow(externalIp);
             logger.info("External address identified: {}", externalIp);
+            return externalIp;
         } catch (IOException e) {
             logger.error("Can't get external IP. " + e);
-            externalIp = getBindAddress().toString();
+        } catch (IllegalArgumentException e) {
+            logger.error("Can't get external IP. " + e);
         }
+
+        String bindAddress = getBindAddress().toString();
+        if (getBindAddress().isAnyLocalAddress()){
+            throw new RuntimeException("Fallback on bind address for external IP doesn't allow wildcard " + bindAddress);
+        }
+        externalIp = getBindAddress().toString();
+
         return externalIp;
     }
 
@@ -728,7 +748,20 @@ public abstract class SystemProperties {
 
     public int rpcPort() {
         return configFromFiles.hasPath(PROPERTY_RPC_PORT) ?
-                configFromFiles.getInt(PROPERTY_RPC_PORT) : 4444;
+                configFromFiles.getInt(PROPERTY_RPC_PORT) : DEFAULT_RPC_PORT;
+    }
+
+    public InetAddress rpcAddress() {
+        if (!configFromFiles.hasPath(PROPERTY_RPC_ADDRESS)) {
+            return InetAddress.getLoopbackAddress();
+        }
+        String host = configFromFiles.getString(PROPERTY_RPC_ADDRESS);
+        try {
+            return InetAddress.getByName(host);
+        } catch (UnknownHostException e) {
+            logger.warn("Unable to bind to {}. Using loopback instead", e);
+            return InetAddress.getLoopbackAddress();
+        }
     }
 
     public String corsDomains() {
@@ -746,8 +779,8 @@ public abstract class SystemProperties {
     private InetAddress tryParseIpOrThrow(String ipToParse) throws IOException {
         try {
             return InetAddress.getByName(ipToParse);
-        } catch (Exception e) {
-            throw new IOException("Invalid address: '" + ipToParse + "'");
+        } catch (UnknownHostException e) {
+            throw new IllegalArgumentException("Invalid address: '" + ipToParse + "'", e);
         }
     }
 }

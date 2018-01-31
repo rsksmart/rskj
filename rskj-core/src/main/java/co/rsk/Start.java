@@ -196,7 +196,7 @@ public class Start {
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, rskSystemProperties.getRpcModules());
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler(rskSystemProperties.corsDomains());
         new JsonRpcNettyServer(
-            rskSystemProperties.getBindAddress(),
+            rskSystemProperties.rpcAddress(),
             rskSystemProperties.rpcPort(),
             rskSystemProperties.soLingerTime(),
             true,
