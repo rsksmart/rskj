@@ -9,7 +9,6 @@ import io.netty.handler.codec.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URISyntaxException;
 
 /**
  * Created by ajlopez on 18/10/2017.
@@ -33,11 +32,11 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
         if (HttpMethod.POST.equals(httpMethod)) {
             HttpHeaders headers = request.headers();
 
-            String contentType = headers.get(HttpHeaders.Names.CONTENT_TYPE);
+            String mimeType = HttpUtils.getMimeType(headers.get(HttpHeaders.Names.CONTENT_TYPE));
             String origin = headers.get(HttpHeaders.Names.ORIGIN);
             String referer = headers.get(HttpHeaders.Names.REFERER);
 
-            if (!"application/json".equals(contentType) && !"application/json-rpc".equals(contentType)) {
+            if (!"application/json".equals(mimeType) && !"application/json-rpc".equals(mimeType)) {
                 LOGGER.error("Unsupported content type");
                 response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE);
             } else if (origin != null && !this.originValidator.isValidOrigin(origin)) {
