@@ -609,8 +609,8 @@ public class Web3ImplTest {
         Assert.assertNotNull(bresult);
 
         org.junit.Assert.assertEquals(2, bresult.length);
-        org.junit.Assert.assertEquals(TypeConverter.toJsonHex(block1.getHash()), bresult[0].hash);
-        org.junit.Assert.assertEquals(TypeConverter.toJsonHex(block1b.getHash()), bresult[1].hash);
+        org.junit.Assert.assertEquals(block1.getHashJsonString(), bresult[0].hash);
+        org.junit.Assert.assertEquals(block1b.getHashJsonString(), bresult[1].hash);
     }
 
     @Test
@@ -646,7 +646,7 @@ public class Web3ImplTest {
         Web3.BlockResult blockResult = web3.eth_getBlockByNumber("earliest", false);
 
         Assert.assertNotNull(blockResult);
-        String blockHash = TypeConverter.toJsonHex(genesis.getHash());
+        String blockHash = genesis.getHashJsonString();
         org.junit.Assert.assertEquals(blockHash, blockResult.hash);
     }
 
@@ -718,7 +718,7 @@ public class Web3ImplTest {
         block1.setBitcoinMergedMiningHeader(new byte[]{0x01});
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        String block1HashString = TypeConverter.toJsonHex(block1.getHash());
+        String block1HashString = block1.getHashJsonString();
 
         Web3.BlockResult bresult = web3.eth_getBlockByHash(block1HashString, true);
 
@@ -746,7 +746,7 @@ public class Web3ImplTest {
         block1.setBitcoinMergedMiningHeader(new byte[] { 0x01 });
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        String block1HashString = TypeConverter.toJsonHex(block1.getHash());
+        String block1HashString = block1.getHashJsonString();
 
         Web3.BlockResult bresult = web3.eth_getBlockByHash(block1HashString, false);
 

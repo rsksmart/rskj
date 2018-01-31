@@ -20,6 +20,7 @@ package co.rsk.crypto;
 
 import co.rsk.bitcoinj.core.Utils;
 import com.google.common.primitives.Ints;
+import org.ethereum.rpc.TypeConverter;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -42,6 +43,10 @@ public class Sha3Hash implements Serializable, Comparable<Sha3Hash> {
     public Sha3Hash(String hexString) {
         checkArgument(hexString.length() == 64);
         this.bytes = Utils.HEX.decode(hexString);
+    }
+
+    public String toJsonString() {
+        return TypeConverter.toJsonHex(this.bytes);
     }
 
     @Override

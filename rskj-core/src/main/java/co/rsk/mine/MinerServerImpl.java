@@ -583,7 +583,7 @@ public class MinerServerImpl implements MinerServer {
         System.arraycopy(targetUnknownLengthArray, 0, targetArray, 32 - targetUnknownLengthArray.length, targetUnknownLengthArray.length);
 
         logger.debug("Sending work for merged mining. Hash: {}", block.getShortHashForMergedMining());
-        return new MinerWork(TypeConverter.toJsonHex(blockMergedMiningHash.getBytes()), TypeConverter.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, TypeConverter.toJsonHex(block.getParentHash()));
+        return new MinerWork(blockMergedMiningHash.toJsonString(), TypeConverter.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, block.getParentHashJsonString());
     }
 
     public void setExtraData(byte[] extraData) {
@@ -751,7 +751,7 @@ public class MinerServerImpl implements MinerServer {
             logger.trace("Start onBlock");
             Block bestBlock = blockchain.getBestBlock();
             MinerWork work = currentWork;
-            String bestBlockHash = TypeConverter.toJsonHex(bestBlock.getHash());
+            String bestBlockHash = bestBlock.getHashJsonString();
 
             if (work == null || !work.getParentBlockHash().equals(bestBlockHash)) {
                 logger.debug("There is a new best block: {}, number: {}", bestBlock.getShortHashForMergedMining(), bestBlock.getNumber());
