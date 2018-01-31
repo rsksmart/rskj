@@ -109,11 +109,11 @@ public class BlockChainImpl implements Blockchain {
         this.repository = repository;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
-        this.pendingState = pendingState;
         this.listener = listener;
         this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
         this.blockExecutor = new BlockExecutor(config, repository, this, blockStore, listener);
+        this.pendingState = pendingState;
     }
 
     @Override

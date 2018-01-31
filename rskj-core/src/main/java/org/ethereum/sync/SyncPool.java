@@ -73,26 +73,24 @@ public class SyncPool implements Iterable<Channel> {
     private final Blockchain blockchain;
     private final SystemProperties config;
     private final NodeManager nodeManager;
-    private final PeerClientFactory peerClientFactory;
     private final ScheduledExecutorService syncPoolExecutor;
 
-    public SyncPool(EthereumListener ethereumListener, Blockchain blockchain, SystemProperties config, NodeManager nodeManager, PeerClientFactory peerClientFactory) {
+    public SyncPool(EthereumListener ethereumListener, Blockchain blockchain, SystemProperties config, NodeManager nodeManager) {
         this.ethereumListener = ethereumListener;
         this.blockchain = blockchain;
         this.config = config;
         this.nodeManager = nodeManager;
-        this.peerClientFactory = peerClientFactory;
         this.syncPoolExecutor = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "syncPool"));
     }
 
-    public void start() {
+    public void start(PeerClientFactory peerClientFactory) {
         syncPoolExecutor.scheduleWithFixedDelay(
             () -> {
                 try {
                     heartBeat();
                     processConnections();
                     updateLowerUsefulDifficulty();
-                    fillUp();
+                    fillUp(peerClientFactory);
                     prepareActive();
                 } catch (Throwable t) {
                     logger.error("Unhandled exception", t);
@@ -201,7 +199,7 @@ public class SyncPool implements Iterable<Channel> {
         logger.info("Peer {}: disconnected", peer.getPeerIdShort());
     }
 
-    private void connect(Node node) {
+    private void connect(Node node, PeerClientFactory peerClientFactory) {
         if (logger.isTraceEnabled()) {
             logger.trace(
                 "Peer {}: initiate connection",
@@ -221,15 +219,14 @@ public class SyncPool implements Iterable<Channel> {
         }
 
         synchronized (pendingConnections) {
-            connect(node.getHost(), node.getPort(), Hex.toHexString(node.getId()));
+            String ip = node.getHost();
+            int port = node.getPort();
+            String remoteId = Hex.toHexString(node.getId());
+            logger.info("Connecting to: {}:{}", ip, port);
+            PeerClient peerClient = peerClientFactory.newInstance();
+            peerClient.connectAsync(ip, port, remoteId, false);
             pendingConnections.put(node.getHexId(), timeAfterMillis(CONNECTION_TIMEOUT));
         }
-    }
-
-    private void connect(final String ip, final int port, final String remoteId) {
-        logger.info("Connecting to: {}:{}", ip, port);
-        PeerClient peerClient = peerClientFactory.newInstance();
-        peerClient.connectAsync(ip, port, remoteId, false);
     }
 
     public Set<String> nodesInUse() {
@@ -299,7 +296,7 @@ public class SyncPool implements Iterable<Channel> {
         return exceeded;
     }
 
-    private void fillUp() {
+    private void fillUp(PeerClientFactory peerClientFactory) {
         int lackSize = config.maxActivePeers() - peers.size();
         if(lackSize <= 0) {
             return;
@@ -314,7 +311,7 @@ public class SyncPool implements Iterable<Channel> {
         }
 
         for(NodeHandler n : newNodes) {
-            connect(n.getNode());
+            connect(n.getNode(), peerClientFactory);
         }
     }
 

@@ -47,7 +47,7 @@ public class PendingStateImplTest {
 
     @Test
     public void usingRepository() {
-        PendingStateImpl pendingState = createSampleNewPendingState();
+        PendingStateImpl pendingState = createSampleNewPendingState(createBlockchain());
 
         Repository repository = pendingState.getRepository();
 
@@ -57,7 +57,7 @@ public class PendingStateImplTest {
 
     @Test
     public void usingInit() {
-        PendingStateImpl pendingState = createSampleNewPendingState();
+        PendingStateImpl pendingState = createSampleNewPendingState(createBlockchain());
 
         Assert.assertFalse(pendingState.hasCleanerFuture());
         Assert.assertNotEquals(0, pendingState.getOutdatedThreshold());
@@ -66,7 +66,7 @@ public class PendingStateImplTest {
 
     @Test
     public void usingCleanUp() {
-        PendingStateImpl pendingState = createSampleNewPendingState();
+        PendingStateImpl pendingState = createSampleNewPendingState(createBlockchain());
 
         pendingState.cleanUp();
 
@@ -75,9 +75,10 @@ public class PendingStateImplTest {
 
     @Test
     public void usingStart() {
-        PendingStateImpl pendingState = createSampleNewPendingState();
+        BlockChainImpl blockchain = createBlockchain();
+        PendingStateImpl pendingState = createSampleNewPendingState(blockchain);
 
-        pendingState.start();
+        pendingState.start(blockchain.getBestBlock());
 
         Assert.assertTrue(pendingState.hasCleanerFuture());
 
@@ -88,7 +89,7 @@ public class PendingStateImplTest {
 
     @Test
     public void usingAccountsWithInitialBalance() {
-        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, BigInteger.TEN);
+        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, BigInteger.TEN, createBlockchain());
 
         Repository repository = pendingState.getRepository();
 
@@ -103,7 +104,7 @@ public class PendingStateImplTest {
 
     @Test
     public void getEmptyPendingTransactionList() {
-        PendingStateImpl pendingState = createSampleNewPendingState();
+        PendingStateImpl pendingState = createSampleNewPendingState(createBlockchain());
 
         List<Transaction> transactions = pendingState.getPendingTransactions();
 
@@ -113,7 +114,7 @@ public class PendingStateImplTest {
 
     @Test
     public void addAndGetPendingTransaction() {
-        PendingStateImpl pendingState = createSampleNewPendingState();
+        PendingStateImpl pendingState = createSampleNewPendingState(createBlockchain());
         Transaction tx = createSampleTransaction();
 
         pendingState.addPendingTransaction(tx);
@@ -126,7 +127,9 @@ public class PendingStateImplTest {
 
     @Test
     public void addAndExecutePendingTransaction() {
-        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"));
+        BlockChainImpl blockchain = createBlockchain();
+        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"), blockchain);
+        pendingState.processBest(blockchain.getBestBlock());
         Transaction tx = createSampleTransaction(1, 2, 1000, 0);
         Account receiver = createAccount(2);
 
@@ -138,7 +141,9 @@ public class PendingStateImplTest {
 
     @Test
     public void addAndExecuteTwoPendingTransaction() {
-        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"));
+        BlockChainImpl blockchain = createBlockchain();
+        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"), blockchain);
+        pendingState.processBest(blockchain.getBestBlock());
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
         Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
         Account receiver = createAccount(2);
@@ -152,7 +157,9 @@ public class PendingStateImplTest {
 
     @Test
     public void rejectPendingStateTransaction() {
-        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"));
+        BlockChainImpl blockchain = createBlockchain();
+        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"), blockchain);
+        pendingState.processBest(blockchain.getBestBlock());
         Transaction tx = createSampleTransaction(1, 2, 1000, 0);
         tx.setGasLimit(BigInteger.valueOf(3000001).toByteArray());
         Account receiver = createAccount(2);
@@ -165,7 +172,9 @@ public class PendingStateImplTest {
 
     @Test
     public void removeObsoletePendingTransactionsByBlock() {
-        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"));
+        BlockChainImpl blockchain = createBlockchain();
+        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"), blockchain);
+        pendingState.processBest(blockchain.getBestBlock());
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
         Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
 
@@ -198,7 +207,9 @@ public class PendingStateImplTest {
 
     @Test
     public void removeObsoletePendingTransactionsByTimeout() throws InterruptedException {
-        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"));
+        BlockChainImpl blockchain = createBlockchain();
+        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"), blockchain);
+        pendingState.processBest(blockchain.getBestBlock());
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
         Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
 
@@ -225,7 +236,9 @@ public class PendingStateImplTest {
 
     @Test
     public void removeObsoleteWireTransactions() {
-        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"));
+        BlockChainImpl blockchain = createBlockchain();
+        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"), blockchain);
+        pendingState.processBest(blockchain.getBestBlock());
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
         Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
         List<Transaction> txs = new ArrayList<>();
@@ -260,7 +273,9 @@ public class PendingStateImplTest {
 
     @Test
     public void getAllPendingTransactions() {
-        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"));
+        BlockChainImpl blockchain = createBlockchain();
+        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"), blockchain);
+        pendingState.processBest(blockchain.getBestBlock());
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
         Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
 
@@ -280,7 +295,9 @@ public class PendingStateImplTest {
 
     @Test
     public void processBestBlockRemovesTransactionsInBlock() {
-        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(3, new BigInteger("1000000"));
+        BlockChainImpl blockchain = createBlockchain();
+        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(3, new BigInteger("1000000"), blockchain);
+        pendingState.processBest(blockchain.getBestBlock());
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
         Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
         Transaction tx3 = createSampleTransaction(2, 3, 1000, 0);
@@ -297,7 +314,7 @@ public class PendingStateImplTest {
         btxs.add(tx1);
         btxs.add(tx3);
 
-        Block genesis = pendingState.getBlockChain().getBestBlock();
+        Block genesis = blockchain.getBestBlock();
         Block block = new BlockBuilder().parent(genesis).transactions(btxs).build();
 
         pendingState.getBlockStore().saveBlock(genesis, BigInteger.ONE, true);
@@ -318,7 +335,9 @@ public class PendingStateImplTest {
 
     @Test
     public void retractBlockAddsTransactionsAsWired() {
-        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(3, new BigInteger("1000000"));
+        BlockChainImpl blockchain = createBlockchain();
+        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(3, new BigInteger("1000000"), blockchain);
+        pendingState.processBest(blockchain.getBestBlock());
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
         Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
         Transaction tx3 = createSampleTransaction(2, 3, 1000, 0);
@@ -356,7 +375,9 @@ public class PendingStateImplTest {
 
     @Test
     public void updatePendingState() {
-        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"));
+        BlockChainImpl blockchain = createBlockchain();
+        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"), blockchain);
+        pendingState.processBest(blockchain.getBestBlock());
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
         Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
         Account receiver = createAccount(2);
@@ -372,7 +393,7 @@ public class PendingStateImplTest {
 
     @Test
     public void addTwiceAndGetPendingTransaction() {
-        PendingStateImpl pendingState = createSampleNewPendingState();
+        PendingStateImpl pendingState = createSampleNewPendingState(createBlockchain());
         Transaction tx = createSampleTransaction();
 
         pendingState.addPendingTransaction(tx);
@@ -387,7 +408,7 @@ public class PendingStateImplTest {
 
     @Test
     public void getEmptyWireTransactionList() {
-        PendingStateImpl pendingState = createSampleNewPendingState();
+        PendingStateImpl pendingState = createSampleNewPendingState(createBlockchain());
 
         List<Transaction> transactions = pendingState.getWireTransactions();
 
@@ -397,7 +418,7 @@ public class PendingStateImplTest {
 
     @Test
     public void addAndGetWireTransaction() {
-        PendingStateImpl pendingState = createSampleNewPendingState();
+        PendingStateImpl pendingState = createSampleNewPendingState(createBlockchain());
         Transaction tx = createSampleTransaction();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
@@ -412,7 +433,7 @@ public class PendingStateImplTest {
 
     @Test
     public void addTwiceAndGetWireTransaction() {
-        PendingStateImpl pendingState = createSampleNewPendingState();
+        PendingStateImpl pendingState = createSampleNewPendingState(createBlockchain());
         Transaction tx = createSampleTransaction();
 
         List<Transaction> txs = new ArrayList<>();
@@ -431,7 +452,7 @@ public class PendingStateImplTest {
 
     @Test
     public void addWireTransactionThatAlreadyExistsAsPendingTransaction() {
-        PendingStateImpl pendingState = createSampleNewPendingState();
+        PendingStateImpl pendingState = createSampleNewPendingState(createBlockchain());
         Transaction tx = createSampleTransaction();
 
         pendingState.addPendingTransaction(tx);
@@ -446,7 +467,9 @@ public class PendingStateImplTest {
 
     @Test
     public void executeContractWithFakeBlock() {
-        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"));
+        BlockChainImpl blockchain = createBlockchain();
+        PendingStateImpl pendingState = createSampleNewPendingStateWithAccounts(2, new BigInteger("1000000"), blockchain);
+        pendingState.processBest(blockchain.getBestBlock());
         // "NUMBER PUSH1 0x00 SSTORE" compiled to bytecodes
         String code = "43600055";
         Transaction tx = createSampleTransactionWithData(1, 0, code);
@@ -458,14 +481,13 @@ public class PendingStateImplTest {
         Assert.assertEquals(DataWord.ONE, pendingState.getRepository().getStorageValue(tx.getContractAddress(), DataWord.ZERO));
     }
 
-    private static PendingStateImpl createSampleNewPendingState() {
-        BlockChainImpl blockChain = createBlockchain();
-
-        return new PendingStateImpl(config, blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+    private static PendingStateImpl createSampleNewPendingState(BlockChainImpl blockChain) {
+        PendingStateImpl pendingState = new PendingStateImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+        pendingState.processBest(blockChain.getBestBlock());
+        return pendingState;
     }
 
-    private static PendingStateImpl createSampleNewPendingStateWithAccounts(int naccounts, BigInteger balance) {
-        BlockChainImpl blockChain = createBlockchain();
+    private static PendingStateImpl createSampleNewPendingStateWithAccounts(int naccounts, BigInteger balance, BlockChainImpl blockChain) {
 
         Block best = blockChain.getStatus().getBestBlock();
         Repository repository = blockChain.getRepository();
@@ -483,7 +505,7 @@ public class PendingStateImplTest {
         best.setStateRoot(repository.getRoot());
         best.flushRLP();
 
-        PendingStateImpl pendingState = new PendingStateImpl(config, blockChain, blockChain.getRepository(), blockChain.getBlockStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+        PendingStateImpl pendingState = new PendingStateImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         blockChain.setPendingState(pendingState);
 
         return pendingState;

@@ -21,6 +21,7 @@ package org.ethereum.rpc;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
+import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.eth.EthModule;
@@ -109,7 +110,8 @@ public class Web3ImplLogsTest {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
 
-        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        BlockChainImpl blockChain = world.getBlockChain();
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
 
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = world.getBlockChain().getRepository();
@@ -117,7 +119,7 @@ public class Web3ImplLogsTest {
         Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createPersistentWallet("wallet"));
 
         // TODO tricky link to listener
-        world.getBlockChain().setListener(web3.setupListener());
+        blockChain.setListener(web3.setupListener());
 
         web3.personal_newAccountWithSeed("notDefault");
 
@@ -132,7 +134,7 @@ public class Web3ImplLogsTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        world.getBlockChain().tryToConnect(block1);
+        blockChain.tryToConnect(block1);
 
         Object[] logs = web3.eth_getFilterChanges(id);
 
@@ -312,7 +314,8 @@ public class Web3ImplLogsTest {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
 
-        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        BlockChainImpl blockChain = world.getBlockChain();
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
 
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = world.getBlockChain().getRepository();
@@ -320,7 +323,7 @@ public class Web3ImplLogsTest {
         Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createPersistentWallet("testwallet"));
 
         // TODO tricky link to listener
-        world.getBlockChain().setListener(web3.setupListener());
+        blockChain.setListener(web3.setupListener());
 
         web3.personal_newAccountWithSeed("notDefault");
 
@@ -335,7 +338,7 @@ public class Web3ImplLogsTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        world.getBlockChain().tryToConnect(block1);
+        blockChain.tryToConnect(block1);
 
         Object[] logs = web3.eth_getFilterChanges(id);
 
@@ -349,7 +352,8 @@ public class Web3ImplLogsTest {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
 
-        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        BlockChainImpl blockChain = world.getBlockChain();
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
 
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = world.getBlockChain().getRepository();
@@ -357,7 +361,7 @@ public class Web3ImplLogsTest {
         Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createPersistentWallet("testwallet2"));
 
         // TODO tricky link to listener
-        world.getBlockChain().setListener(web3.setupListener());
+        blockChain.setListener(web3.setupListener());
 
         web3.personal_newAccountWithSeed("notDefault");
 
@@ -372,7 +376,7 @@ public class Web3ImplLogsTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        world.getBlockChain().tryToConnect(block1);
+        blockChain.tryToConnect(block1);
 
         String mainAddress = tx.getContractAddress().toString();
 
@@ -383,7 +387,7 @@ public class Web3ImplLogsTest {
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
         Block block2 = new BlockBuilder(world).parent(block1).transactions(txs2).build();
-        world.getBlockChain().tryToConnect(block2);
+        blockChain.tryToConnect(block2);
 
         Object[] logs = web3.eth_getFilterChanges(id);
 
@@ -400,7 +404,8 @@ public class Web3ImplLogsTest {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
 
-        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        BlockChainImpl blockChain = world.getBlockChain();
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
 
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = world.getBlockChain().getRepository();
@@ -408,7 +413,7 @@ public class Web3ImplLogsTest {
         Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createPersistentWallet("testwallet3"));
 
         // TODO tricky link to listener
-        world.getBlockChain().setListener(web3.setupListener());
+        blockChain.setListener(web3.setupListener());
 
         web3.personal_newAccountWithSeed("notDefault");
 
@@ -423,7 +428,7 @@ public class Web3ImplLogsTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        world.getBlockChain().tryToConnect(block1);
+        blockChain.tryToConnect(block1);
 
         String mainAddress = tx.getContractAddress().toString();
 
@@ -434,7 +439,7 @@ public class Web3ImplLogsTest {
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
         Block block2 = new BlockBuilder(world).parent(block1).transactions(txs2).build();
-        world.getBlockChain().tryToConnect(block2);
+        blockChain.tryToConnect(block2);
 
         Transaction tx3;
         tx3 = getCallerContractTransactionWithInvoke(acc1, tx2.getContractAddress().getBytes(), mainAddress);
@@ -442,7 +447,7 @@ public class Web3ImplLogsTest {
         List<Transaction> txs3 = new ArrayList<>();
         txs3.add(tx3);
         Block block3 = new BlockBuilder(world).parent(block2).transactions(txs3).build();
-        world.getBlockChain().tryToConnect(block3);
+        blockChain.tryToConnect(block3);
 
         Object[] logs = web3.eth_getFilterChanges(id);
 
@@ -515,10 +520,11 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
+        BlockChainImpl blockChain = world.getBlockChain();
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        world.getBlockChain().tryToConnect(block1);
+        blockChain.tryToConnect(block1);
 
-        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
 
         Web3Impl web3 = createWeb3(world.getBlockChain(), pendingState);
         web3.personal_newAccountWithSeed("notDefault");
@@ -536,10 +542,11 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
+        BlockChainImpl blockChain = world.getBlockChain();
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        world.getBlockChain().tryToConnect(block1);
+        blockChain.tryToConnect(block1);
 
-        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
 
         Web3Impl web3 = createWeb3(world.getBlockChain(), pendingState);
         web3.personal_newAccountWithSeed("notDefault");
@@ -556,8 +563,9 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
+        BlockChainImpl blockChain = world.getBlockChain();
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         byte[] contractAddress = tx.getContractAddress().getBytes();
 
@@ -565,9 +573,9 @@ public class Web3ImplLogsTest {
         List<Transaction> tx2s = new ArrayList<>();
         tx2s.add(tx2);
         Block block2 = new BlockBuilder(world).parent(block1).transactions(tx2s).build();
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
-        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
 
         Web3Impl web3 = createWeb3(world.getBlockChain(), pendingState);
         web3.personal_newAccountWithSeed("default");
@@ -586,8 +594,9 @@ public class Web3ImplLogsTest {
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
+        BlockChainImpl blockChain = world.getBlockChain();
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         byte[] contractAddress = tx.getContractAddress().getBytes();
 
@@ -596,15 +605,15 @@ public class Web3ImplLogsTest {
         List<Transaction> tx2s = new ArrayList<>();
         tx2s.add(tx2);
         Block block2 = new BlockBuilder(world).parent(block1).transactions(tx2s).build();
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block2));
 
         Transaction tx3 = getContractTransactionWithCall(acc1, contractAddress);
         List<Transaction> tx3s = new ArrayList<>();
         tx3s.add(tx3);
         Block block3 = new BlockBuilder(world).parent(block2).transactions(tx3s).build();
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block3));
+        Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block3));
 
-        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
 
         Web3Impl web3 = createWeb3(world.getBlockChain(), pendingState);
         web3.personal_newAccountWithSeed("default");

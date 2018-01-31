@@ -138,8 +138,8 @@ public class RskTestFactory {
     public PendingState getPendingState() {
         if (pendingState == null) {
             pendingState = new PendingStateImpl(
-                    getBlockchain(),
                     getBlockStore(),
+                    getReceiptStore(),
                     null,
                     getProgramInvokeFactory(),
                     getRepository(),

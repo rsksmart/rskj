@@ -34,7 +34,7 @@ public class SimplePendingState implements PendingState {
     private List<Transaction> wireTransactions = new ArrayList<>();
 
     @Override
-    public void start() {
+    public void start(Block initialBestBlock) {
 
     }
 

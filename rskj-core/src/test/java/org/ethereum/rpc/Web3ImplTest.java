@@ -22,6 +22,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
+import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
@@ -212,7 +213,8 @@ public class Web3ImplTest {
     @Test
     public void getBalanceWithAccountAndBlockWithTransaction() throws Exception {
         World world = new World();
-        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        BlockChainImpl blockChain = world.getBlockChain();
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
         Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(10000000)).build();
         Account acc2 = new AccountBuilder(world).name("acc2").build();
         Block genesis = world.getBlockByName("g00");
@@ -221,7 +223,7 @@ public class Web3ImplTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
-        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Web3Impl web3 = createWeb3(world, pendingState);
         web3.repository = world.getBlockChain().getRepository();
@@ -392,7 +394,9 @@ public class Web3ImplTest {
     @Test
     public void getPendingTransactionByHash() throws Exception {
         World world = new World();
-        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        BlockChainImpl blockChain = world.getBlockChain();
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
+        pendingState.processBest(blockChain.getBestBlock());
         Web3Impl web3 = createWeb3(world, pendingState);
 
         Account acc1 = new AccountBuilder(world).name("acc1").balance(BigInteger.valueOf(2000000)).build();
@@ -1208,7 +1212,8 @@ public class Web3ImplTest {
     }
 
     private Web3Impl createWeb3(Ethereum eth, World world) {
-        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
+        BlockChainImpl blockChain = world.getBlockChain();
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
         return createWeb3(eth, world, pendingState);
     }
 
@@ -1217,8 +1222,9 @@ public class Web3ImplTest {
     }
 
     private Web3Impl createWeb3(World world, BlockProcessor blockProcessor) {
-        PendingState pendingState = new PendingStateImpl(config, world.getBlockChain(), world.getRepository(), world.getBlockChain().getBlockStore(), null, null, 10, 100);
-        return createWeb3(Web3Mocks.getMockEthereum(), world.getBlockChain(), pendingState, world.getBlockChain().getBlockStore(), blockProcessor, new SimpleConfigCapabilities());
+        BlockChainImpl blockChain = world.getBlockChain();
+        PendingState pendingState = new PendingStateImpl(config, world.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), null, null, 10, 100);
+        return createWeb3(Web3Mocks.getMockEthereum(), blockChain, pendingState, blockChain.getBlockStore(), blockProcessor, new SimpleConfigCapabilities());
     }
 
     private Web3Impl createWeb3(Ethereum eth, Blockchain blockchain, PendingState pendingState, BlockStore blockStore, BlockProcessor nodeBlockProcessor, ConfigCapabilities configCapabilities) {

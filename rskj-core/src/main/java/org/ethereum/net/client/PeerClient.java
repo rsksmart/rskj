@@ -33,7 +33,6 @@ import org.ethereum.net.server.EthereumChannelInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -65,38 +64,6 @@ public class PeerClient {
         }
     });
 
-
-    public void connect(String host, int port, String remoteId) {
-        connect(host, port, remoteId, false);
-    }
-
-    /**
-     *  Connects to the node and returns only upon connection close
-     */
-    public void connect(String host, int port, String remoteId, boolean discoveryMode) {
-        try {
-            ChannelFuture f = connectAsync(host, port, remoteId, discoveryMode);
-
-            f.sync();
-
-            // Wait until the connection is closed.
-            f.channel().closeFuture().sync();
-
-            logger.debug("Connection is closed");
-
-        } catch (Exception e) {
-            if (discoveryMode) {
-                logger.debug("Exception:", e);
-            } else {
-                if (e instanceof IOException) {
-                    logger.info("PeerClient: Can't connect to " + host + ":" + port + " (" + e.getMessage() + ")");
-                    logger.debug("PeerClient.connect(" + host + ":" + port + ") exception:", e);
-                } else {
-                    logger.error("Exception:", e);
-                }
-            }
-        }
-    }
 
     public ChannelFuture connectAsync(String host, int port, String remoteId, boolean discoveryMode) {
         ethereumListener.trace("Connecting to: " + host + ":" + port);

@@ -27,7 +27,7 @@ import java.util.List;
  */
 public interface PendingState extends org.ethereum.facade.PendingState {
 
-    void start();
+    void start(Block initialBestBlock);
 
     /**
      * Adds transactions received from the net to the list of wire transactions <br>
