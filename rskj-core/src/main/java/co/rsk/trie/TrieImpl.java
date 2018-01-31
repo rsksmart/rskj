@@ -194,7 +194,7 @@ public class TrieImpl implements Trie {
         try {
             int arity = istream.readByte();
 
-            if (arity != 2) {
+            if (arity != TrieConstants.ARITY) {
                 throw new IllegalArgumentException(INVALID_ARITY);
             }
 
