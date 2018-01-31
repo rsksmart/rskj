@@ -84,7 +84,7 @@ public class Chain {
     }
 
     public boolean isParentOnTheChain(Block block) {
-        return (index.get(new ByteArrayWrapper(block.getParentHash())) != null);
+        return (index.get(block.getWrappedParentHash()) != null);
     }
 
     public long getSize() {

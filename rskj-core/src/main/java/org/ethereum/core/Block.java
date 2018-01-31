@@ -269,6 +269,10 @@ public class Block {
         return this.header.getParentHash();
     }
 
+    public ByteArrayWrapper getWrappedParentHash() {
+        return new ByteArrayWrapper(getParentHash());
+    }
+
     public byte[] getUnclesHash() {
         if (!parsed) {
             parseRLP();

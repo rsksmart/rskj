@@ -38,7 +38,7 @@ public class BlockStore {
 
     public synchronized void saveBlock(Block block) {
         ByteArrayWrapper key = block.getWrappedHash();
-        ByteArrayWrapper pkey = new ByteArrayWrapper(block.getParentHash());
+        ByteArrayWrapper pkey = block.getWrappedParentHash();
         Long nkey = Long.valueOf(block.getNumber());
         this.blocks.put(key, block);
 
@@ -67,7 +67,7 @@ public class BlockStore {
         }
 
         ByteArrayWrapper key = block.getWrappedHash();
-        ByteArrayWrapper pkey = new ByteArrayWrapper(block.getParentHash());
+        ByteArrayWrapper pkey = block.getWrappedParentHash();
         Long nkey = Long.valueOf(block.getNumber());
 
         this.blocks.remove(key);
