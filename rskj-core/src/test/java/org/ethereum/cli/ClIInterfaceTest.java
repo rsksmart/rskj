@@ -47,7 +47,7 @@ public class ClIInterfaceTest {
         Map<String, String> result = CLIInterface.call(config, inputParams);
 
         Assert.assertEquals(result.get(SystemProperties.PROPERTY_DB_DIR), "java");
-        Assert.assertEquals(result.get(SystemProperties.PROPERTY_LISTEN_PORT), "3332");
+        Assert.assertEquals(result.get(SystemProperties.PROPERTY_PEER_PORT), "3332");
         Assert.assertEquals(result.get(SystemProperties.PROPERTY_DB_RESET), "true");
         Assert.assertEquals(result.get(SystemProperties.PROPERTY_RPC_PORT), "4444");
         Assert.assertEquals(result.get(SystemProperties.PROPERTY_RPC_ENABLED), "true");
