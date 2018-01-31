@@ -660,8 +660,7 @@ public class Web3ImplLogsTest {
     }
 
     private Web3Impl createWeb3(Blockchain blockchain, PendingState pendingState) {
-        PersonalModule personalModule = new PersonalModuleWalletEnabled(config, Web3Mocks.getMockEthereum(), WalletFactory.createWallet(), pendingState);
-        return new Web3RskImpl(Web3Mocks.getMockEthereum(), blockchain, pendingState, config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), personalModule, null, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, blockchain.getBlockStore(), null, null, null, new SimpleConfigCapabilities());
+        return createWeb3(Web3Mocks.getMockEthereum(), blockchain, pendingState, WalletFactory.createWallet());
     }
 
     private Web3Impl createWeb3(Ethereum eth, Blockchain blockchain, PendingState pendingState, Wallet wallet) {
