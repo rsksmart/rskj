@@ -37,7 +37,7 @@ public class BlockStore {
     private final Map<ByteArrayWrapper, BlockHeader> headers = new HashMap<>();
 
     public synchronized void saveBlock(Block block) {
-        ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
+        ByteArrayWrapper key = block.getWrappedHash();
         ByteArrayWrapper pkey = new ByteArrayWrapper(block.getParentHash());
         Long nkey = Long.valueOf(block.getNumber());
         this.blocks.put(key, block);
@@ -66,7 +66,7 @@ public class BlockStore {
             return;
         }
 
-        ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
+        ByteArrayWrapper key = block.getWrappedHash();
         ByteArrayWrapper pkey = new ByteArrayWrapper(block.getParentHash());
         Long nkey = Long.valueOf(block.getNumber());
 
@@ -83,7 +83,7 @@ public class BlockStore {
             Block toremove = null;
 
             for (Block blk : byparent) {
-                if (new ByteArrayWrapper(blk.getHash()).equals(key)) {
+                if (blk.getWrappedHash().equals(key)) {
                     toremove = blk;
                     break;
                 }
@@ -106,7 +106,7 @@ public class BlockStore {
             Block toremove = null;
 
             for (Block blk : bynumber) {
-                if (new ByteArrayWrapper(blk.getHash()).equals(key)) {
+                if (blk.getWrappedHash().equals(key)) {
                     toremove = blk;
                     break;
                 }
@@ -165,7 +165,7 @@ public class BlockStore {
     }
 
     public synchronized boolean hasBlock(Block block) {
-        return this.blocks.containsKey(new ByteArrayWrapper(block.getHash()));
+        return this.blocks.containsKey(block.getWrappedHash());
     }
 
     public synchronized boolean hasBlock(byte[] hash) {

@@ -57,7 +57,7 @@ public class FamilyUtils {
         Block it = blockStore.getBlockByHash(parentHash);
 
         while(it != null && it.getNumber() >= limit) {
-            ret.add(new ByteArrayWrapper(it.getHash()));
+            ret.add(it.getWrappedHash());
             it = blockStore.getBlockByHash(it.getParentHash());
         }
 
@@ -147,7 +147,7 @@ public class FamilyUtils {
         }
 
         for (Block b : ancestors) {
-            family.add(new ByteArrayWrapper(b.getHash()));
+            family.add(b.getWrappedHash());
         }
 
         for (int k = 1; k < ancestors.size(); k++) {
@@ -169,7 +169,7 @@ public class FamilyUtils {
                     continue;
                 }
 
-                family.add(new ByteArrayWrapper(uncle.getHash()));
+                family.add(uncle.getWrappedHash());
             }
         }
 

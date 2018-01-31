@@ -64,7 +64,7 @@ public class Chain {
         totalDifficulty = totalDifficulty.add(block.getCumulativeDifficulty());
         logger.info("total difficulty on alt chain is: [{}] ", totalDifficulty);
         chain.add(block);
-        index.put(new ByteArrayWrapper(block.getHash()), block);
+        index.put(block.getWrappedHash(), block);
     }
 
     public Block get(int i) {

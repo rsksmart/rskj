@@ -25,6 +25,7 @@ import co.rsk.remasc.RemascTransaction;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -255,6 +256,10 @@ public class Block {
             parseRLP();
         }
         return this.header.getHash();
+    }
+
+    public ByteArrayWrapper getWrappedHash() {
+        return new ByteArrayWrapper(getHash());
     }
 
     public byte[] getParentHash() {

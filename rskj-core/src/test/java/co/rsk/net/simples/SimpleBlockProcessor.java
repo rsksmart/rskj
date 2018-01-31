@@ -46,7 +46,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
     public BlockProcessResult processBlock(MessageChannel sender, Block block) {
         Map<ByteArrayWrapper, ImportResult> connectionsResult = new HashMap<>();
         this.blocks.add(block);
-        connectionsResult.put(new ByteArrayWrapper(block.getHash()), ImportResult.IMPORTED_BEST);
+        connectionsResult.put(block.getWrappedHash(), ImportResult.IMPORTED_BEST);
         return new BlockProcessResult(false, connectionsResult, block.getShortHash(), Duration.ZERO);
     }
 

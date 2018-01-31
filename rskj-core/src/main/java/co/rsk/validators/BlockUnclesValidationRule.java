@@ -187,7 +187,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         String uhashString = Hex.toHexString(uncle.getHash());
         Block parent = blockStore.getBlockByHash(uncle.getParentHash());
 
-        if (ancestors != null && (parent == null || !ancestors.contains(new ByteArrayWrapper(parent.getHash())))) {
+        if (ancestors != null && (parent == null || !ancestors.contains(parent.getWrappedHash()))) {
             logger.error("Uncle has no common parent: {}", uhashString);
             panicProcessor.panic(INVALIDUNCLE, String.format("Uncle has no common parent: %s", uhashString));
             return false;

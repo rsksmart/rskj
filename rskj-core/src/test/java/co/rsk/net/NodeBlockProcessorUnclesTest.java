@@ -26,9 +26,7 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
-import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -138,7 +136,7 @@ public class NodeBlockProcessorUnclesTest {
         Assert.assertEquals(0, processor.getBlockchain().getBestBlock().getNumber());
         Assert.assertArrayEquals(genesis.getHash(), processor.getBlockchain().getBestBlockHash());
         Assert.assertEquals(1, sender.getGetBlockMessages().size());
-        Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(new ByteArrayWrapper(block1.getHash())));
+        Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(block1.getWrappedHash()));
     }
 
     private static NodeBlockProcessor createNodeBlockProcessor(BlockChainImpl blockChain) {
