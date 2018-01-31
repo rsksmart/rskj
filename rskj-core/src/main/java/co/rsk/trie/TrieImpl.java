@@ -60,6 +60,8 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * Created by ajlopez on 22/08/2016.
  */
 public class TrieImpl implements Trie {
+    private static final int ARITY = 2;
+
     private static final Logger logger = LoggerFactory.getLogger("newtrie");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private static final String PANIC_TOPIC = "newtrie";
@@ -194,7 +196,7 @@ public class TrieImpl implements Trie {
         try {
             int arity = istream.readByte();
 
-            if (arity != TrieConstants.ARITY) {
+            if (arity != ARITY) {
                 throw new IllegalArgumentException(INVALID_ARITY);
             }
 
@@ -216,7 +218,7 @@ public class TrieImpl implements Trie {
                 }
             }
 
-            byte[][] hashes = new byte[TrieConstants.ARITY][];
+            byte[][] hashes = new byte[ARITY][];
 
             for (int k = 0; k < arity; k++) {
                 if ((bhashes & (1 << k)) == 0) {
@@ -450,7 +452,7 @@ public class TrieImpl implements Trie {
 
         int bits = 0;
 
-        for (int k = 0; k < TrieConstants.ARITY; k++) {
+        for (int k = 0; k < ARITY; k++) {
             byte[] nodeHash = this.getHash(k);
 
             if (nodeHash == null) {
@@ -462,7 +464,7 @@ public class TrieImpl implements Trie {
 
         ByteBuffer buffer = ByteBuffer.allocate(MESSAGE_HEADER_LENGTH + lencoded + nnodes * SHA3Helper.DEFAULT_SIZE_BYTES + (hasLongVal ? SHA3Helper.DEFAULT_SIZE_BYTES : lvalue));
 
-        buffer.put((byte) TrieConstants.ARITY);
+        buffer.put((byte) ARITY);
 
         byte flags = 0;
 
@@ -482,7 +484,7 @@ public class TrieImpl implements Trie {
             buffer.put(encodedSharedPath);
         }
 
-        for (int k = 0; k < TrieConstants.ARITY; k++) {
+        for (int k = 0; k < ARITY; k++) {
             byte[] nodeHash = this.getHash(k);
 
             if (nodeHash == null) {
@@ -535,7 +537,7 @@ public class TrieImpl implements Trie {
     public int trieSize() {
         int size = 1;
 
-        for (int k = 0; k < TrieConstants.ARITY; k++) {
+        for (int k = 0; k < ARITY; k++) {
             Trie node = this.retrieveNode(k);
 
             if (node != null) {
@@ -602,7 +604,7 @@ public class TrieImpl implements Trie {
     private int getNodeCount() {
         int count = 0;
 
-        for (int k = 0; k < TrieConstants.ARITY; k++) {
+        for (int k = 0; k < ARITY; k++) {
             TrieImpl node = this.getNode(k);
             byte[] localHash = this.getHash(k);
 
@@ -649,7 +651,7 @@ public class TrieImpl implements Trie {
         }
 
         if (this.nodes == null) {
-            this.nodes = new TrieImpl[TrieConstants.ARITY];
+            this.nodes = new TrieImpl[ARITY];
         }
 
         this.nodes[n] = (TrieImpl)node;
@@ -697,7 +699,7 @@ public class TrieImpl implements Trie {
     @Override
     public void setHash(int n, byte[] hash) {
         if (this.hashes == null) {
-            this.hashes = new byte[TrieConstants.ARITY][];
+            this.hashes = new byte[ARITY][];
         }
 
         this.hashes[n] = hash;
@@ -729,7 +731,7 @@ public class TrieImpl implements Trie {
 
         List<byte[]> subnodes = new ArrayList<>();
 
-        for (int k = 0; k < TrieConstants.ARITY; k++) {
+        for (int k = 0; k < ARITY; k++) {
             TrieImpl subnode = this.getNode(k);
 
             if (subnode != null) {
@@ -839,10 +841,10 @@ public class TrieImpl implements Trie {
         int subnodeOffset = messageOffset + messageLength;
 
         if (trie.nodes == null) {
-            trie.nodes = new TrieImpl[TrieConstants.ARITY];
+            trie.nodes = new TrieImpl[ARITY];
         }
 
-        for (int k = 0; k < TrieConstants.ARITY; k++) {
+        for (int k = 0; k < ARITY; k++) {
             if (trie.hashes[k] == null) {
                 continue;
             }
@@ -920,7 +922,7 @@ public class TrieImpl implements Trie {
         TrieImpl firstChild = null;
         int firstChildPosition = 0;
 
-        for (int k = 0; firstChild == null && k < TrieConstants.ARITY; k++) {
+        for (int k = 0; firstChild == null && k < ARITY; k++) {
             firstChildPosition = k;
             firstChild = (TrieImpl)trie.retrieveNode(k);
         }
@@ -1045,7 +1047,7 @@ public class TrieImpl implements Trie {
         }
 
         TrieImpl newTrie = new TrieImpl(this.store, this.isSecure);
-        TrieImpl[] newNodes = new TrieImpl[TrieConstants.ARITY];
+        TrieImpl[] newNodes = new TrieImpl[ARITY];
         int pos = sharedPath[nshared];
         newNodes[pos] = newChildTrie;
         newTrie.nodes = newNodes;
@@ -1094,10 +1096,10 @@ public class TrieImpl implements Trie {
             return null;
         }
 
-        TrieImpl[] newnodes = new TrieImpl[TrieConstants.ARITY];
+        TrieImpl[] newnodes = new TrieImpl[ARITY];
 
         if (nodes != null) {
-            for (int k = 0; k < TrieConstants.ARITY; k++) {
+            for (int k = 0; k < ARITY; k++) {
                 newnodes[k] = nodes[k];
             }
         }
