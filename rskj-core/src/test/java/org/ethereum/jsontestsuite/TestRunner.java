@@ -71,7 +71,6 @@ public class TestRunner {
     private Logger logger = LoggerFactory.getLogger("TCK-Test");
     private ProgramTrace trace = null;
     private boolean setNewStateRoot;
-    private String bestStateRoot;
     private boolean validateGasUsed = false; // until EIP150 test cases are ready.
 
     public List<String> runTestSuite(TestSuite testSuite) {
@@ -586,23 +585,22 @@ public class TestRunner {
 
 
             /* 1. Store pre-exist accounts - Pre */
-        for (RskAddress address : pre.keySet()) {
+        for (RskAddress addr : pre.keySet()) {
 
-            AccountState accountState = pre.get(address);
+            AccountState accountState = pre.get(addr);
 
-            track.addBalance(address, new BigInteger(1, accountState.getBalance()));
-            ((RepositoryTrack)track).setNonce(address, new BigInteger(1, accountState.getNonce()));
+            track.addBalance(addr, new BigInteger(1, accountState.getBalance()));
+            ((RepositoryTrack)track).setNonce(addr, new BigInteger(1, accountState.getNonce()));
 
-            track.saveCode(address, accountState.getCode());
+            track.saveCode(addr, accountState.getCode());
 
             for (DataWord storageKey : accountState.getStorage().keySet()) {
-                track.addStorageRow(address, storageKey, accountState.getStorage().get(storageKey));
+                track.addStorageRow(addr, storageKey, accountState.getStorage().get(storageKey));
             }
         }
 
         return track;
     }
-
 
     public ProgramTrace getTrace() {
         return trace;
