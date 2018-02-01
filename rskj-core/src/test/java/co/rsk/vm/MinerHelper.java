@@ -23,13 +23,10 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
-import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListenerAdapter;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -42,32 +39,20 @@ public class MinerHelper {
     private static final Logger logger = LoggerFactory.getLogger("minerhelper");
     private static final PanicProcessor panicProcessor = new PanicProcessor();
     private final RskSystemProperties config = new RskSystemProperties();
-    @Autowired
-    private BlockStore blockStore;
 
-    @Autowired
-    protected Blockchain blockchain;
+    private final Blockchain blockchain;
+    private final Repository repository;
+    private final GasLimitCalculator gasLimitCalculator;
 
-    @Autowired
-    protected Repository repository;
+    private byte[] latestStateRootHash;
+    private long totalGasUsed;
+    private BigInteger totalPaidFees = BigInteger.ZERO;
+    private List<TransactionReceipt> txReceipts;
 
-    @Autowired
-    ProgramInvokeFactory programInvokeFactory;
-
-
-
-    byte[] latestStateRootHash = null;
-    long totalGasUsed = 0;
-    BigInteger totalPaidFees = BigInteger.ZERO;
-    List<TransactionReceipt> txReceipts;
-    private GasLimitCalculator gasLimitCalculator;
-
-    public MinerHelper(Repository repository , Blockchain blockchain) // , BlockStore blockStore)
-    {
+    public MinerHelper(Repository repository , Blockchain blockchain) {
         this.repository = repository;
         this.blockchain = blockchain;
-       // this.blockStore =blockStore;
-        gasLimitCalculator = new GasLimitCalculator(config);
+        this.gasLimitCalculator = new GasLimitCalculator(config);
     }
 
     public void processBlock( Block block, Block parent) {
@@ -101,8 +86,8 @@ public class MinerHelper {
         for (Transaction tx : block.getTransactionsList()) {
 
             TransactionExecutor executor = new TransactionExecutor(config, tx, txindex++, block.getCoinbase(),
-                    track, blockStore, blockchain.getReceiptStore(),
-                    programInvokeFactory, block, new EthereumListenerAdapter(), totalGasUsed);
+                    track, null, blockchain.getReceiptStore(),
+                    null, block, new EthereumListenerAdapter(), totalGasUsed);
 
             executor.init();
             executor.execute();
@@ -127,7 +112,6 @@ public class MinerHelper {
             receipt.setLogInfoList(executor.getVMLogs());
 
             txReceipts.add(receipt);
-
         }
     }
 
@@ -139,9 +123,7 @@ public class MinerHelper {
         newBlock.getHeader().setGasUsed(totalGasUsed);
 
         Bloom logBloom = new Bloom();
-        for (TransactionReceipt receipt : txReceipts) {
-            logBloom.or(receipt.getBloomFilter());
-        }
+        txReceipts.stream().map(TransactionReceipt::getBloomFilter).forEach(logBloom::or);
 
         newBlock.getHeader().setLogsBloom(logBloom.getData());
 
