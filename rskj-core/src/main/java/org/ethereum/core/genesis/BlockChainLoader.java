@@ -24,7 +24,6 @@ import co.rsk.core.RskAddress;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.listener.EthereumListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,20 +68,20 @@ public class BlockChainLoader {
 
             BigInteger initialNonce = config.getBlockchainConfig().getCommonConstants().getInitialNonce();
             Genesis genesis = GenesisLoader.loadGenesis(config, config.genesisInfo(), initialNonce, true);
-            for (RskAddress address : genesis.getPremine().keySet()) {
-                repository.createAccount(address);
-                InitialAddressState initialAddressState = genesis.getPremine().get(address);
-                repository.addBalance(address, initialAddressState.getAccountState().getBalance());
-                AccountState accountState = repository.getAccountState(address);
+            for (RskAddress addr : genesis.getPremine().keySet()) {
+                repository.createAccount(addr);
+                InitialAddressState initialAddressState = genesis.getPremine().get(addr);
+                repository.addBalance(addr, initialAddressState.getAccountState().getBalance());
+                AccountState accountState = repository.getAccountState(addr);
                 accountState.setNonce(initialAddressState.getAccountState().getNonce());
 
                 if (initialAddressState.getContractDetails()!=null) {
-                    repository.updateContractDetails(address, initialAddressState.getContractDetails());
+                    repository.updateContractDetails(addr, initialAddressState.getContractDetails());
                     accountState.setStateRoot(initialAddressState.getAccountState().getStateRoot());
                     accountState.setCodeHash(initialAddressState.getAccountState().getCodeHash());
                 }
 
-                repository.updateAccountState(address, accountState);
+                repository.updateAccountState(addr, accountState);
             }
 
             genesis.setStateRoot(repository.getRoot());

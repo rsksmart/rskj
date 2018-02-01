@@ -108,7 +108,7 @@ public class GenesisLoader {
                     acctState.setStateRoot(contractDetails.getStorageHash());
                 }
 
-                premine.put(new RskAddress(Hex.decode(accountEntry.getKey())), new InitialAddressState(acctState, contractDetails));
+                premine.put(new RskAddress(accountEntry.getKey()), new InitialAddressState(acctState, contractDetails));
             }
         }
 
