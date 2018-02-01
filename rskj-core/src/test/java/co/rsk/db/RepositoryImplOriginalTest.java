@@ -27,7 +27,6 @@ import org.ethereum.core.Genesis;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
@@ -374,9 +373,9 @@ public class RepositoryImplOriginalTest {
         Repository track = repository.startTracking();
 
         Genesis genesis = (Genesis)Genesis.getInstance(config);
-        for (ByteArrayWrapper key : genesis.getPremine().keySet()) {
-            repository.createAccount(new RskAddress(key.getData()));
-            repository.addBalance(new RskAddress(key.getData()), genesis.getPremine().get(key).getAccountState().getBalance());
+        for (RskAddress addr : genesis.getPremine().keySet()) {
+            repository.createAccount(addr);
+            repository.addBalance(addr, genesis.getPremine().get(addr).getAccountState().getBalance());
         }
 
         track.commit();

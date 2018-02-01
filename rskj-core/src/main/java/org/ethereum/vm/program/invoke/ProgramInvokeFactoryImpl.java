@@ -52,7 +52,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
 
         /***         ADDRESS op       ***/
         // YP: Get address of currently executing account.
-        RskAddress address = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
+        RskAddress addr = tx.isContractCreation() ? tx.getContractAddress() : tx.getReceiveAddress();
 
         /***         ORIGIN op       ***/
         // YP: This is the sender of original transaction; it is never a contract.
@@ -63,7 +63,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         byte[] caller = tx.getSender().getBytes();
 
         /***         BALANCE op       ***/
-        byte[] balance = repository.getBalance(address).toByteArray();
+        byte[] balance = repository.getBalance(addr).toByteArray();
 
         /***         GASPRICE op       ***/
         byte[] gasPrice = tx.getGasPrice();
@@ -115,7 +115,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             "difficulty={}\n" +
                             "gaslimit={}\n",
 
-                    address,
+                    addr,
                     Hex.toHexString(origin),
                     Hex.toHexString(caller),
                     new BigInteger(1, balance).longValue(),
@@ -132,7 +132,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     gaslimit);
         }
 
-        return new ProgramInvokeImpl(address.getBytes(), origin, caller, balance, gasPrice, gas, callValue, data,
+        return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance, gasPrice, gas, callValue, data,
                 lastHash, coinbase, timestamp, number, txindex,difficulty, gaslimit,
                 repository, blockStore);
     }

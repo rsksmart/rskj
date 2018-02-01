@@ -136,9 +136,9 @@ public class BlockChainBuilder {
         blockChain.setPendingState(pendingState);
 
         if (this.genesis != null) {
-            for (ByteArrayWrapper key : this.genesis.getPremine().keySet()) {
-                this.repository.createAccount(new RskAddress(key.getData()));
-                this.repository.addBalance(new RskAddress(key.getData()), this.genesis.getPremine().get(key).getAccountState().getBalance());
+            for (RskAddress addr : this.genesis.getPremine().keySet()) {
+                this.repository.createAccount(addr);
+                this.repository.addBalance(addr, this.genesis.getPremine().get(addr).getAccountState().getBalance());
             }
 
             Repository track = this.repository.startTracking();

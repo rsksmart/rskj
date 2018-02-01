@@ -21,10 +21,10 @@ package org.ethereum.core;
 
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -130,8 +130,9 @@ public class StateTest {
         Trie trie = new TrieImpl();
         Genesis genesis = (Genesis)Genesis.getInstance(new RskSystemProperties());
 
-        for (ByteArrayWrapper key : genesis.getPremine().keySet())
-            trie = trie.put(key.getData(), genesis.getPremine().get(key).getAccountState().getEncoded());
+        for (RskAddress addr : genesis.getPremine().keySet()) {
+            trie = trie.put(addr.getBytes(), genesis.getPremine().get(addr).getAccountState().getEncoded());
+        }
 
         return trie;
     }

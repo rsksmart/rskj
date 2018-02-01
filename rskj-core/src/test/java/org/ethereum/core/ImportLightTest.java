@@ -80,9 +80,10 @@ public class ImportLightTest {
         blockchain.setPendingState(pendingState);
 
         Repository track = repository.startTracking();
-        for (ByteArrayWrapper key : genesis.getPremine().keySet()) {
-            track.createAccount(new RskAddress(key.getData()));
-            track.addBalance(new RskAddress(key.getData()), genesis.getPremine().get(key).getAccountState().getBalance());
+
+        for (RskAddress addr : genesis.getPremine().keySet()) {
+            track.createAccount(addr);
+            track.addBalance(addr, genesis.getPremine().get(addr).getAccountState().getBalance());
         }
 
         track.commit();
