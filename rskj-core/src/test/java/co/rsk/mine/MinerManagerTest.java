@@ -362,7 +362,7 @@ public class MinerManagerTest {
         ethereum.repository = blockchain.getRepository();
         ethereum.blockchain = blockchain;
         DifficultyCalculator difficultyCalculator = new DifficultyCalculator(config);
-        return new MinerServerImpl(config, ethereum, blockchain, blockchain.getBlockStore(), blockchain.getPendingState(),
+        return new MinerServerImpl(config, ethereum, blockchain, blockchain.getBlockStore(), blockchain.getReceiptStore(), blockchain.getPendingState(),
                 blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
                 new BlockValidationRuleDummy(), null,
                 difficultyCalculator, new GasLimitCalculator(config),

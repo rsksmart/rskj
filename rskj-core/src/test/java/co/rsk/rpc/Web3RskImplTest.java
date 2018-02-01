@@ -73,8 +73,27 @@ public class Web3RskImplTest {
         PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
         EthModule em = new EthModule(config, rsk, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, rsk, wallet, null));
         TxPoolModule tpm = new TxPoolModuleImpl();
-        Web3RskImpl web3 = new Web3RskImpl(rsk, blockchain, Web3Mocks.getMockPendingState(), config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(), pm, em, tpm,
-                Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, networkStateExporter, blockStore, null, null, null, null);
+        Web3RskImpl web3 = new Web3RskImpl(
+                rsk,
+                blockchain,
+                Web3Mocks.getMockPendingState(),
+                config,
+                Web3Mocks.getMockMinerClient(),
+                Web3Mocks.getMockMinerServer(),
+                pm,
+                em,
+                tpm,
+                Web3Mocks.getMockChannelManager(),
+                Web3Mocks.getMockRepository(),
+                null,
+                networkStateExporter,
+                blockStore,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
         web3.ext_dumpState();
     }
 

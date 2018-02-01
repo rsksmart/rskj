@@ -176,7 +176,26 @@ public class Web3ImplSnapshotTest {
         ethereum.repository = world.getRepository();
         ethereum.blockchain = world.getBlockChain();
 
-        return new Web3Impl(ethereum, world.getBlockChain(), null, world.getBlockChain().getBlockStore(), Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, tpm, Web3Mocks.getMockChannelManager(), ethereum.repository, null, null, null, null, null);
+        return new Web3Impl(
+                ethereum,
+                world.getBlockChain(),
+                null,
+                world.getBlockChain().getBlockStore(),
+                null,
+                Web3Mocks.getMockProperties(),
+                minerClient,
+                minerServer,
+                pm,
+                null,
+                tpm,
+                Web3Mocks.getMockChannelManager(),
+                ethereum.repository,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
     }
 
     private static Web3Impl createWeb3(World world) {
@@ -187,7 +206,7 @@ public class Web3ImplSnapshotTest {
     static MinerServer getMinerServerForTest(World world, SimpleEthereum ethereum) {
         BlockValidationRule rule = new MinerManagerTest.BlockValidationRuleDummy();
         return new MinerServerImpl(config, ethereum, world.getBlockChain(), world.getBlockChain().getBlockStore(),
-                world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), ConfigUtils.getDefaultMiningConfig(), rule, world.getBlockProcessor(), new DifficultyCalculator(config), new GasLimitCalculator(config),
+                world.getBlockChain().getReceiptStore(), world.getBlockChain().getPendingState(), world.getBlockChain().getRepository(), ConfigUtils.getDefaultMiningConfig(), rule, world.getBlockProcessor(), new DifficultyCalculator(config), new GasLimitCalculator(config),
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
     }
 

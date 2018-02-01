@@ -39,6 +39,7 @@ import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -94,6 +95,7 @@ public class Web3Impl implements Web3 {
     private final PeerServer peerServer;
 
     private final Blockchain blockchain;
+    private final ReceiptStore receiptStore;
     private final BlockProcessor nodeBlockProcessor;
     private final HashRateCalculator hashRateCalculator;
     private final ConfigCapabilities configCapabilities;
@@ -111,6 +113,7 @@ public class Web3Impl implements Web3 {
                        Blockchain blockchain,
                        PendingState pendingState,
                        BlockStore blockStore,
+                       ReceiptStore receiptStore,
                        RskSystemProperties config,
                        MinerClient minerClient,
                        MinerServer minerServer,
@@ -127,6 +130,7 @@ public class Web3Impl implements Web3 {
         this.eth = eth;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
+        this.receiptStore = receiptStore;
         this.repository = repository;
         this.pendingState = pendingState;
         this.minerClient = minerClient;
@@ -839,7 +843,7 @@ public class Web3Impl implements Web3 {
         logger.trace("eth_getTransactionReceipt(" + transactionHash + ")");
 
         byte[] hash = stringHexToByteArray(transactionHash);
-        TransactionInfo txInfo = blockchain.getReceiptStore().getInMainChain(hash, blockStore);
+        TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore);
 
         if (txInfo == null) {
             logger.trace("No transaction info for " + transactionHash);
