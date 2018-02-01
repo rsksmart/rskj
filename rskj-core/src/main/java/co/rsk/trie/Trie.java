@@ -28,8 +28,6 @@ public interface Trie {
 
     byte[] get(byte[] key);
 
-    PartialMerkleTree getPartialMerkleTree(byte[] key);
-
     byte[] get(String key);
 
     Trie put(byte[] key, byte[] value);
