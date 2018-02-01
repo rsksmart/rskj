@@ -71,7 +71,7 @@ public class BlockSyncService {
         Instant start = Instant.now();
         long bestBlockNumber = this.getBestBlockNumber();
         long blockNumber = block.getNumber();
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
+        final ByteArrayWrapper blockHash = block.getWrappedHash();
         int syncMaxDistance = syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks();
 
         tryReleaseStore(bestBlockNumber);
@@ -179,7 +179,7 @@ public class BlockSyncService {
                 continue;
             }
 
-            connectionsResult.put(new ByteArrayWrapper(block.getHash()), blockchain.tryToConnect(block));
+            connectionsResult.put(block.getWrappedHash(), blockchain.tryToConnect(block));
 
             if (BlockUtils.blockInSomeBlockChain(block, blockchain)) {
                 this.store.removeBlock(block);

@@ -467,7 +467,7 @@ public class NodeBlockProcessorTest {
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         final Block block = blockchain.getBestBlock();
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
+        final ByteArrayWrapper blockHash = block.getWrappedHash();
 
 //        final Status status = new Status(block.getNumber(), block.getHash());
 
@@ -491,7 +491,7 @@ public class NodeBlockProcessorTest {
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
         final Block block = blockchain.getBlockByNumber(1);
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
+        final ByteArrayWrapper blockHash = block.getWrappedHash();
 
         store.saveBlock(block);
 //        final Status status = new Status(block.getNumber(), block.getHash());
@@ -585,7 +585,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processGetBlockMessageUsingBlockInStore() throws UnknownHostException {
         final Block block = new BlockGenerator().getBlock(3);
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
+        final ByteArrayWrapper blockHash = block.getWrappedHash();
 
         final BlockStore store = new BlockStore();
         store.saveBlock(block);
@@ -642,7 +642,7 @@ public class NodeBlockProcessorTest {
     public void processGetBlockMessageUsingBlockInBlockchain() throws UnknownHostException {
         final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
+        final ByteArrayWrapper blockHash = block.getWrappedHash();
         final BlockStore store = new BlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
@@ -673,7 +673,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processBlockRequestMessageUsingBlockInStore() throws UnknownHostException {
         final Block block = new BlockGenerator().getBlock(3);
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
+        final ByteArrayWrapper blockHash = block.getWrappedHash();
 
         final BlockStore store = new BlockStore();
         store.saveBlock(block);
@@ -736,7 +736,7 @@ public class NodeBlockProcessorTest {
     @Test
     public void processBlockHashRequestMessageUsingEmptyStore() throws UnknownHostException {
         final Block block = new BlockGenerator().getBlock(3);
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
+        final ByteArrayWrapper blockHash = block.getWrappedHash();
         final BlockStore store = new BlockStore();
         final Blockchain blockchain = BlockChainBuilder.ofSize(0);
 
@@ -760,7 +760,7 @@ public class NodeBlockProcessorTest {
     public void processBlockHashRequestMessageUsingBlockInBlockchain() throws UnknownHostException {
         final Blockchain blockchain = BlockChainBuilder.ofSize(10);
         final Block block = blockchain.getBlockByNumber(5);
-        final ByteArrayWrapper blockHash = new ByteArrayWrapper(block.getHash());
+        final ByteArrayWrapper blockHash = block.getWrappedHash();
         final BlockStore store = new BlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();

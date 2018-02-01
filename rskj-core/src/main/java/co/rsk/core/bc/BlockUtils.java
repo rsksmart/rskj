@@ -49,7 +49,7 @@ public class BlockUtils {
     public static Set<ByteArrayWrapper> unknownDirectAncestorsHashes(Block block, Blockchain blockChain, BlockStore store) {
         Set<ByteArrayWrapper> hashes = new HashSet<>();
 
-        hashes.add(new ByteArrayWrapper(block.getParentHash()));
+        hashes.add(block.getWrappedParentHash());
 
         return unknownAncestorsHashes(hashes, blockChain, store, false);
     }
@@ -90,7 +90,7 @@ public class BlockUtils {
             }
 
             if (!block.isGenesis() && !blockInSomeBlockChain(block, blockChain)) {
-                nextHashes.add(new ByteArrayWrapper(block.getParentHash()));
+                nextHashes.add(block.getWrappedParentHash());
 
                 if (withUncles) {
                     for (BlockHeader uncleHeader : block.getUncleList()) {

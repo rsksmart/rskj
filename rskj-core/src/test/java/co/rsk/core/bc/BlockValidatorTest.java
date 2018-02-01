@@ -228,8 +228,8 @@ public class BlockValidatorTest {
 
         Set<ByteArrayWrapper> ancestors = FamilyUtils.getAncestors(store, block, 6);
         Assert.assertFalse(ancestors.isEmpty());
-        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(genesis.getHash())));
-        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(block.getHash())));
+        Assert.assertTrue(ancestors.contains(genesis.getWrappedHash()));
+        Assert.assertFalse(ancestors.contains(block.getWrappedHash()));
     }
 
     @Test
@@ -254,12 +254,12 @@ public class BlockValidatorTest {
         Set<ByteArrayWrapper> ancestors = FamilyUtils.getAncestors(store, block5, 3);
         Assert.assertFalse(ancestors.isEmpty());
         Assert.assertEquals(3, ancestors.size());
-        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(genesis.getHash())));
-        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(block1.getHash())));
-        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(block2.getHash())));
-        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(block3.getHash())));
-        Assert.assertTrue(ancestors.contains(new ByteArrayWrapper(block4.getHash())));
-        Assert.assertFalse(ancestors.contains(new ByteArrayWrapper(block5.getHash())));
+        Assert.assertFalse(ancestors.contains(genesis.getWrappedHash()));
+        Assert.assertFalse(ancestors.contains(block1.getWrappedHash()));
+        Assert.assertTrue(ancestors.contains(block2.getWrappedHash()));
+        Assert.assertTrue(ancestors.contains(block3.getWrappedHash()));
+        Assert.assertTrue(ancestors.contains(block4.getWrappedHash()));
+        Assert.assertFalse(ancestors.contains(block5.getWrappedHash()));
     }
 
     @Test
@@ -298,14 +298,14 @@ public class BlockValidatorTest {
         Set<ByteArrayWrapper> used = FamilyUtils.getUsedUncles(store, block3, 6);
 
         Assert.assertFalse(used.isEmpty());
-        Assert.assertFalse(used.contains(new ByteArrayWrapper(block3.getHash())));
-        Assert.assertFalse(used.contains(new ByteArrayWrapper(block2.getHash())));
-        Assert.assertTrue(used.contains(new ByteArrayWrapper(uncle2a.getHash())));
-        Assert.assertTrue(used.contains(new ByteArrayWrapper(uncle2b.getHash())));
-        Assert.assertFalse(used.contains(new ByteArrayWrapper(block1.getHash())));
-        Assert.assertTrue(used.contains(new ByteArrayWrapper(uncle1a.getHash())));
-        Assert.assertTrue(used.contains(new ByteArrayWrapper(uncle1b.getHash())));
-        Assert.assertFalse(used.contains(new ByteArrayWrapper(genesis.getHash())));
+        Assert.assertFalse(used.contains(block3.getWrappedHash()));
+        Assert.assertFalse(used.contains(block2.getWrappedHash()));
+        Assert.assertTrue(used.contains(uncle2a.getWrappedHash()));
+        Assert.assertTrue(used.contains(uncle2b.getWrappedHash()));
+        Assert.assertFalse(used.contains(block1.getWrappedHash()));
+        Assert.assertTrue(used.contains(uncle1a.getWrappedHash()));
+        Assert.assertTrue(used.contains(uncle1b.getWrappedHash()));
+        Assert.assertFalse(used.contains(genesis.getWrappedHash()));
     }
 
     @Test

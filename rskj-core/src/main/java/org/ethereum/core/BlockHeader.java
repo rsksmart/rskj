@@ -591,6 +591,10 @@ public class BlockHeader implements SerializableObject {
         return HashUtil.shortHash(getHash());
     }
 
+    public String getParentShortHash() {
+        return HashUtil.shortHash(getParentHash());
+    }
+
     private static BigInteger parseBigInteger(byte[] bytes) {
         return bytes == null ? BigInteger.ZERO : BigIntegers.fromUnsignedByteArray(bytes);
     }

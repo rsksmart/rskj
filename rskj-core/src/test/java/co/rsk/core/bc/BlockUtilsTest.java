@@ -104,14 +104,14 @@ public class BlockUtilsTest {
         Assert.assertNotNull(hashes);
         Assert.assertFalse(hashes.isEmpty());
         Assert.assertEquals(1, hashes.size());
-        Assert.assertTrue(hashes.contains(new ByteArrayWrapper(block2.getHash())));
+        Assert.assertTrue(hashes.contains(block2.getWrappedHash()));
 
         hashes = BlockUtils.unknownAncestorsHashes(block3.getHash(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertFalse(hashes.isEmpty());
         Assert.assertEquals(1, hashes.size());
-        Assert.assertTrue(hashes.contains(new ByteArrayWrapper(block2.getHash())));
+        Assert.assertTrue(hashes.contains(block2.getWrappedHash()));
     }
 
     @Test
@@ -163,15 +163,15 @@ public class BlockUtilsTest {
         Assert.assertNotNull(hashes);
         Assert.assertFalse(hashes.isEmpty());
         Assert.assertEquals(1, hashes.size());
-        Assert.assertTrue(hashes.contains(new ByteArrayWrapper(block2.getHash())));
+        Assert.assertTrue(hashes.contains(block2.getWrappedHash()));
 
         hashes = BlockUtils.unknownAncestorsHashes(block3.getHash(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertFalse(hashes.isEmpty());
         Assert.assertEquals(3, hashes.size());
-        Assert.assertTrue(hashes.contains(new ByteArrayWrapper(block2.getHash())));
-        Assert.assertTrue(hashes.contains(new ByteArrayWrapper(uncle1.getHash())));
-        Assert.assertTrue(hashes.contains(new ByteArrayWrapper(uncle2.getHash())));
+        Assert.assertTrue(hashes.contains(block2.getWrappedHash()));
+        Assert.assertTrue(hashes.contains(uncle1.getWrappedHash()));
+        Assert.assertTrue(hashes.contains(uncle2.getWrappedHash()));
     }
 }

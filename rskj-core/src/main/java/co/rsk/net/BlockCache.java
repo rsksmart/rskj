@@ -23,13 +23,13 @@ public class BlockCache extends LinkedHashMap<ByteArrayWrapper, Block> {
     }
 
     public void removeBlock(Block block) {
-        ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
+        ByteArrayWrapper key = block.getWrappedHash();
 
         this.remove(key);
     }
 
     public void addBlock(Block block) {
-        ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
+        ByteArrayWrapper key = block.getWrappedHash();
 
         this.put(key, block);
     }

@@ -18,11 +18,11 @@
 
 package co.rsk.crypto;
 
-import com.google.common.primitives.Ints;
 import co.rsk.bitcoinj.core.Utils;
+import com.google.common.primitives.Ints;
+import org.ethereum.rpc.TypeConverter;
 
 import java.io.Serializable;
-import java.math.BigInteger;
 import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -45,6 +45,10 @@ public class Sha3Hash implements Serializable, Comparable<Sha3Hash> {
         this.bytes = Utils.HEX.decode(hexString);
     }
 
+    public String toJsonString() {
+        return TypeConverter.toJsonHex(this.bytes);
+    }
+
     @Override
     public boolean equals(Object o) {
         return this == o || o != null && getClass() == o.getClass() && Arrays.equals(bytes, ((Sha3Hash) o).bytes);
@@ -64,13 +68,6 @@ public class Sha3Hash implements Serializable, Comparable<Sha3Hash> {
     @Override
     public String toString() {
         return Utils.HEX.encode(bytes);
-    }
-
-    /**
-     * Returns the bytes interpreted as a positive integer.
-     */
-    public BigInteger toBigInteger() {
-        return new BigInteger(1, bytes);
     }
 
     /**

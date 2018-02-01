@@ -25,6 +25,8 @@ import co.rsk.remasc.RemascTransaction;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -256,11 +258,19 @@ public class Block {
         return this.header.getHash();
     }
 
+    public ByteArrayWrapper getWrappedHash() {
+        return new ByteArrayWrapper(getHash());
+    }
+
     public byte[] getParentHash() {
         if (!parsed) {
             parseRLP();
         }
         return this.header.getParentHash();
+    }
+
+    public ByteArrayWrapper getWrappedParentHash() {
+        return new ByteArrayWrapper(getParentHash());
     }
 
     public byte[] getUnclesHash() {
@@ -634,6 +644,14 @@ public class Block {
         return header.getShortHash();
     }
 
+    public String getParentShortHash() {
+        if (!parsed) {
+            parseRLP();
+        }
+
+        return header.getParentShortHash();
+    }
+
     public String getShortHashForMergedMining() {
         if (!parsed) {
             parseRLP();
@@ -651,9 +669,17 @@ public class Block {
     }
 
     public String getShortDescr() {
-        return "#" + getNumber() + " (" + Hex.toHexString(getHash()).substring(0,6) + " <~ "
-                + Hex.toHexString(getParentHash()).substring(0,6) + ") Txs:" + getTransactionsList().size() +
+        return "#" + getNumber() + " (" + getShortHash() + " <~ "
+                + getParentShortHash() + ") Txs:" + getTransactionsList().size() +
                 ", Unc: " + getUncleList().size();
+    }
+
+    public String getHashJsonString() {
+        return TypeConverter.toJsonHex(getHash());
+    }
+
+    public String getParentHashJsonString() {
+        return TypeConverter.toJsonHex(getParentHash());
     }
 
     public byte[] getBitcoinMergedMiningHeader() {

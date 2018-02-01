@@ -659,8 +659,8 @@ public class Web3Impl implements Web3 {
 
         BlockResult br = new BlockResult();
         br.number = isPending ? null : TypeConverter.toJsonHex(b.getNumber());
-        br.hash = isPending ? null : TypeConverter.toJsonHex(b.getHash());
-        br.parentHash = TypeConverter.toJsonHex(b.getParentHash());
+        br.hash = isPending ? null : b.getHashJsonString();
+        br.parentHash = b.getParentHashJsonString();
         br.sha3Uncles= TypeConverter.toJsonHex(b.getUnclesHash());
         br.logsBloom = isPending ? null : TypeConverter.toJsonHex(b.getLogBloom());
         br.transactionsRoot = TypeConverter.toJsonHex(b.getTxTrieRoot());

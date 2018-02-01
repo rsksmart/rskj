@@ -37,8 +37,8 @@ public class BlockStore {
     private final Map<ByteArrayWrapper, BlockHeader> headers = new HashMap<>();
 
     public synchronized void saveBlock(Block block) {
-        ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
-        ByteArrayWrapper pkey = new ByteArrayWrapper(block.getParentHash());
+        ByteArrayWrapper key = block.getWrappedHash();
+        ByteArrayWrapper pkey = block.getWrappedParentHash();
         Long nkey = Long.valueOf(block.getNumber());
         this.blocks.put(key, block);
 
@@ -66,8 +66,8 @@ public class BlockStore {
             return;
         }
 
-        ByteArrayWrapper key = new ByteArrayWrapper(block.getHash());
-        ByteArrayWrapper pkey = new ByteArrayWrapper(block.getParentHash());
+        ByteArrayWrapper key = block.getWrappedHash();
+        ByteArrayWrapper pkey = block.getWrappedParentHash();
         Long nkey = Long.valueOf(block.getNumber());
 
         this.blocks.remove(key);
@@ -83,7 +83,7 @@ public class BlockStore {
             Block toremove = null;
 
             for (Block blk : byparent) {
-                if (new ByteArrayWrapper(blk.getHash()).equals(key)) {
+                if (blk.getWrappedHash().equals(key)) {
                     toremove = blk;
                     break;
                 }
@@ -106,7 +106,7 @@ public class BlockStore {
             Block toremove = null;
 
             for (Block blk : bynumber) {
-                if (new ByteArrayWrapper(blk.getHash()).equals(key)) {
+                if (blk.getWrappedHash().equals(key)) {
                     toremove = blk;
                     break;
                 }
@@ -159,13 +159,13 @@ public class BlockStore {
      */
     public List<Block> getChildrenOf(Set<Block> blocks) {
         return blocks.stream()
-                .flatMap(b-> getBlocksByParentHash(new ByteArrayWrapper(b.getHash()).getData()).stream())
+                .flatMap(b -> getBlocksByParentHash(b.getHash()).stream())
                 .distinct()
                 .collect(Collectors.toList());
     }
 
     public synchronized boolean hasBlock(Block block) {
-        return this.blocks.containsKey(new ByteArrayWrapper(block.getHash()));
+        return this.blocks.containsKey(block.getWrappedHash());
     }
 
     public synchronized boolean hasBlock(byte[] hash) {
