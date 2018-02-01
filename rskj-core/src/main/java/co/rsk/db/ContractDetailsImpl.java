@@ -19,6 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.trie.*;
 import com.google.common.annotations.VisibleForTesting;
@@ -192,7 +193,8 @@ public class ContractDetailsImpl implements ContractDetails {
         this.originalExternalStorage = this.externalStorage;
 
         if (this.externalStorage) {
-            this.trie = new TrieImpl(new TrieStoreImpl(levelDbByName(config, getDataSourceName())), true).getSnapshotTo(rlpStorage.getRLPData());
+            Keccak256 snapshotHash = new Keccak256(rlpStorage.getRLPData());
+            this.trie = new TrieImpl(new TrieStoreImpl(levelDbByName(config, getDataSourceName())), true).getSnapshotTo(snapshotHash);
         } else {
             this.trie = TrieImpl.deserialize(rlpStorage.getRLPData());
         }
@@ -366,7 +368,7 @@ public class ContractDetailsImpl implements ContractDetails {
 
         this.trie.save();
 
-        ContractDetailsImpl details = new ContractDetailsImpl(this.config, this.address, this.trie.getSnapshotTo(hash), this.code);
+        ContractDetailsImpl details = new ContractDetailsImpl(this.config, this.address, this.trie.getSnapshotTo(new Keccak256(hash)), this.code);
         details.keys = new HashSet<>();
         details.keys.addAll(this.keys);
         details.externalStorage = this.externalStorage;

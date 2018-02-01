@@ -21,6 +21,7 @@ package co.rsk.db;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import co.rsk.trie.TrieStore;
@@ -45,7 +46,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.crypto.Keccak256Helper.keccak256;
 
 /**
  * Created by ajlopez on 29/03/2017.
@@ -301,7 +301,7 @@ public class RepositoryImpl implements Repository {
 
     @Override
     public synchronized void syncToRoot(byte[] root) {
-        this.trie = this.trie.getSnapshotTo(root);
+        this.trie = this.trie.getSnapshotTo(new Keccak256(root));
     }
 
     @Override

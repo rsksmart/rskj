@@ -1177,17 +1177,17 @@ public class TrieImpl implements Trie {
         return keyBytes;
     }
 
-    public Trie getSnapshotTo(byte[] hash) {
+    public Trie getSnapshotTo(Keccak256 hash) {
         this.save();
 
-        if (emptyHash.equals(new Keccak256(hash))) {
+        if (emptyHash.equals(hash)) {
             return new TrieImpl(this.store, this.isSecure);
         }
 
-        Trie newTrie = this.store.retrieve(hash);
+        Trie newTrie = this.store.retrieve(hash.getBytes());
 
         if (newTrie == null) {
-            String strHash = Hex.toHexString(hash);
+            String strHash = Hex.toHexString(hash.getBytes());
             logger.error(ERROR_NON_EXISTENT_TRIE_LOGGER, strHash);
             panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_TRIE + " " + strHash);
             throw new TrieSerializationException(ERROR_CREATING_TRIE + " " + strHash, null);

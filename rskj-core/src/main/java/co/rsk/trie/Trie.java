@@ -56,7 +56,7 @@ public interface Trie {
 
     void setHash(int n, Keccak256 hash);
 
-    Trie getSnapshotTo(byte[] hash);
+    Trie getSnapshotTo(Keccak256 hash);
 
     byte[] serialize();
 

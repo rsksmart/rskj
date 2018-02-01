@@ -38,7 +38,7 @@ public class TrieImplSnapshotTest {
         TrieStore store = new TrieStoreImpl(new HashMapDB());
         Trie trie = new TrieImpl(store, false);
 
-        Trie snapshot = trie.getSnapshotTo(trie.getHash().getBytes());
+        Trie snapshot = trie.getSnapshotTo(trie.getHash());
 
         Assert.assertNotNull(snapshot);
         Assert.assertEquals(trie.trieSize(), snapshot.trieSize());
@@ -61,7 +61,7 @@ public class TrieImplSnapshotTest {
         Assert.assertNotNull(trie.get("foo".getBytes()));
         Assert.assertNotNull(trie.get("bar".getBytes()));
 
-        Trie snapshot = trie.getSnapshotTo(hash.getBytes());
+        Trie snapshot = trie.getSnapshotTo(hash);
 
         Assert.assertNotNull(snapshot);
         Assert.assertEquals(hash, snapshot.getHash());
@@ -87,7 +87,7 @@ public class TrieImplSnapshotTest {
         Assert.assertNotNull(trie.get("foo".getBytes()));
         Assert.assertNotNull(trie.get("bar".getBytes()));
 
-        Trie snapshot = trie.getSnapshotTo(hash.getBytes());
+        Trie snapshot = trie.getSnapshotTo(hash);
 
         Assert.assertNotNull(snapshot);
         Assert.assertEquals(hash, snapshot.getHash());
@@ -112,7 +112,7 @@ public class TrieImplSnapshotTest {
         Assert.assertNotNull(trie.get("foo".getBytes()));
         Assert.assertNotNull(trie.get("bar".getBytes()));
 
-        Trie snapshot = TrieImpl.deserialize(trie.serialize()).getSnapshotTo(hash.getBytes());
+        Trie snapshot = TrieImpl.deserialize(trie.serialize()).getSnapshotTo(hash);
 
         Assert.assertNotNull(snapshot);
         Assert.assertEquals(hash, snapshot.getHash());
@@ -142,7 +142,7 @@ public class TrieImplSnapshotTest {
         Assert.assertNotNull(trie.get("bar".getBytes()));
         Assert.assertArrayEquals(value2, trie.get("bar".getBytes()));
 
-        Trie snapshot = TrieImpl.deserialize(trie.serialize()).getSnapshotTo(hash.getBytes());
+        Trie snapshot = TrieImpl.deserialize(trie.serialize()).getSnapshotTo(hash);
 
         Assert.assertNotNull(snapshot);
         Assert.assertEquals(hash, snapshot.getHash());
