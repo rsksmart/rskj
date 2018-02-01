@@ -88,7 +88,7 @@ public class BlockExecutor {
     private void fill(Block block, BlockResult result) {
         block.setTransactionsList(result.getExecutedTransactions());
         BlockHeader header = block.getHeader();
-        header.setTransactionsRoot(Block.getTxTrie(block.getTransactionsList()).getHash());
+        header.setTransactionsRoot(Block.getTxTrie(block.getTransactionsList()).getHash().getBytes());
         header.setReceiptsRoot(result.getReceiptsRoot());
         header.setGasUsed(result.getGasUsed());
         header.setPaidFees(result.getPaidFees());

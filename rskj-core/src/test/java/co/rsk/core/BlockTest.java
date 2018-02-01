@@ -436,7 +436,7 @@ public class BlockTest {
     public void checkTxTrieShouldBeEqualForHeaderAndBody() {
         Block block = new BlockGenerator().createBlock(10, 5);
         String trieHash = Hex.toHexString(block.getTxTrieRoot());
-        String trieListHash = Hex.toHexString(Block.getTxTrie(block.getTransactionsList()).getHash());
+        String trieListHash = Hex.toHexString(Block.getTxTrie(block.getTransactionsList()).getHash().getBytes());
         Assert.assertEquals(trieHash, trieListHash);
     }
 }

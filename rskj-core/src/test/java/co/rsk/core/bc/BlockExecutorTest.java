@@ -266,7 +266,7 @@ public class BlockExecutorTest {
         // Check tx2 was excluded
         Assert.assertEquals(1, block.getTransactionsList().size());
         Assert.assertEquals(tx, block.getTransactionsList().get(0));
-        Assert.assertArrayEquals(Block.getTxTrie(Lists.newArrayList(tx)).getHash(), block.getTxTrieRoot());
+        Assert.assertArrayEquals(Block.getTxTrie(Lists.newArrayList(tx)).getHash().getBytes(), block.getTxTrieRoot());
         
         Assert.assertEquals(3141592, new BigInteger(1, block.getGasLimit()).longValue());
     }

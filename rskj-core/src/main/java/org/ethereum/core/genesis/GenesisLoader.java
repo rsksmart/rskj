@@ -40,8 +40,6 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.ethereum.crypto.Keccak256Helper.keccak256;
-
 public class GenesisLoader {
     private static final Logger logger = LoggerFactory.getLogger("genesisloader");
 
@@ -122,7 +120,7 @@ public class GenesisLoader {
             state = state.put(addr.getBytes(), premine.get(addr).getAccountState().getEncoded());
         }
 
-        return state.getHash();
+        return state.getHash().getBytes();
     }
 
 }

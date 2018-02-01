@@ -39,7 +39,7 @@ public class BlockRootValidationRule implements BlockValidationRule {
     @Override
     public boolean isValid(Block block) {
         String trieHash = Hex.toHexString(block.getTxTrieRoot());
-        String trieListHash = Hex.toHexString(Block.getTxTrie(block.getTransactionsList()).getHash());
+        String trieListHash = Hex.toHexString(Block.getTxTrie(block.getTransactionsList()).getHash().getBytes());
 
         boolean isValid = true;
 

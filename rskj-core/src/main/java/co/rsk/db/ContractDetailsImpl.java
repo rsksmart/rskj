@@ -171,7 +171,7 @@ public class ContractDetailsImpl implements ContractDetails {
         checkDataSourceIsOpened();
 
         this.trie.save();
-        byte[] trieHash = this.trie.getHash();
+        byte[] trieHash = this.trie.getHash().getBytes();
         logger.trace("getting contract details trie hash {}, address {}", getHashAsString(trieHash), this.getAddressAsString());
         return trieHash;
     }
@@ -234,7 +234,7 @@ public class ContractDetailsImpl implements ContractDetails {
         byte[] rlpIsExternalStorage = RLP.encodeByte((byte) (externalStorage ? 1 : 0));
 
         // Serialize the full trie, or only the root hash if external storage is used
-        byte[] rlpStorage = RLP.encodeElement(externalStorage ? this.trie.getHash() : this.trie.serialize());
+        byte[] rlpStorage = RLP.encodeElement(externalStorage ? this.trie.getHash().getBytes() : this.trie.serialize());
 
         byte[] rlpCode = RLP.encodeElement(this.code);
         byte[] rlpKeys = RLP.encodeSet(this.keys);
@@ -336,7 +336,7 @@ public class ContractDetailsImpl implements ContractDetails {
                 TrieStoreImpl newStore = new TrieStoreImpl(ds);
                 TrieStoreImpl originalStore = (TrieStoreImpl)((TrieImpl) this.trie).getStore();
                 newStore.copyFrom(originalStore);
-                Trie newTrie = newStore.retrieve(this.trie.getHash());
+                Trie newTrie = newStore.retrieve(this.trie.getHash().getBytes());
                 this.trie = newTrie;
 
                 // checking the trie it's OK
@@ -433,13 +433,13 @@ public class ContractDetailsImpl implements ContractDetails {
         logger.trace("reopening contract details data source");
         KeyValueDataSource ds = levelDbByName(config, this.getDataSourceName());
         TrieStoreImpl newStore = new TrieStoreImpl(ds);
-        Trie newTrie = newStore.retrieve(this.trie.getHash());
+        Trie newTrie = newStore.retrieve(this.trie.getHash().getBytes());
         this.trie = newTrie;
         this.closed = false;
     }
 
     private String getStorageHashAsString() {
-        return getHashAsString(this.trie.getHash());
+        return getHashAsString(this.trie.getHash().getBytes());
     }
 
     private static String getHashAsString(byte[] hash) {

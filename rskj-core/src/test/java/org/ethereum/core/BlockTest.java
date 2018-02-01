@@ -91,8 +91,8 @@ public class BlockTest {
             Assert.assertArrayEquals(encodedAccountState, state.get(accountKey));
         }
 
-        logger.info("root: " + Hex.toHexString(state.getHash()));
-        assertEquals(GENESIS_STATE_ROOT, Hex.toHexString(state.getHash()));
+        logger.info("root: " + Hex.toHexString(state.getHash().getBytes()));
+        assertEquals(GENESIS_STATE_ROOT, Hex.toHexString(state.getHash().getBytes()));
     }
 
 }

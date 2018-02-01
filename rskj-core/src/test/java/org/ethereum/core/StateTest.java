@@ -48,7 +48,7 @@ public class StateTest {
     @Test
     public void testGenesisAccounts() {
         Trie trie = generateGenesisState();
-        assertEquals(GENESIS_STATE_ROOT, Hex.toHexString(trie.getHash()));
+        assertEquals(GENESIS_STATE_ROOT, Hex.toHexString(trie.getHash().getBytes()));
     }
 
     @Ignore
@@ -90,7 +90,7 @@ public class StateTest {
         AccountState account_3 = new AccountState(BigInteger.ZERO, new Coin(bigInteger));
         trie = trie.put(minerAddress, account_3.getEncoded());
 
-        assertEquals(expected, Hex.toHexString(trie.getHash()));
+        assertEquals(expected, Hex.toHexString(trie.getHash().getBytes()));
 
         /* *** GROSS DATA ***
 
@@ -126,7 +126,7 @@ public class StateTest {
          *   cd2a3d9f938e13cd947ec05abc7fe734df8dd826: #1 1606938044258990275541962092341162602522202987522792835300376 (-6260000000001000)
           */
 
-        assertEquals(expected, Hex.toHexString(trie.getHash()));
+        assertEquals(expected, Hex.toHexString(trie.getHash().getBytes()));
     }
 
     private Trie generateGenesisState() {

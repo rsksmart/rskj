@@ -421,7 +421,7 @@ public class PendingStateImpl implements PendingState {
                             new byte[0],
                             new byte[0],
                             new byte[32],  // receiptsRoot
-                            txsTrie.getHash(),  // TransactionsRoot-
+                            txsTrie.getHash().getBytes(),  // TransactionsRoot-
                             new byte[32],  // stateRoot
                             Collections.<Transaction>emptyList(), // tx list
                             Collections.<BlockHeader>emptyList(), // uncle list

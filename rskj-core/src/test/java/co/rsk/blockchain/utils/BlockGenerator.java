@@ -116,7 +116,7 @@ public class BlockGenerator {
             state = state.put(addr.getBytes(), premine.get(addr).getAccountState().getEncoded());
         }
 
-        return state.getHash();
+        return state.getHash().getBytes();
     }
 
     private Map<RskAddress, InitialAddressState> generatePreMine(Map<byte[], BigInteger> alloc){
@@ -278,7 +278,7 @@ public class BlockGenerator {
             newHeader.setDifficulty(new BlockDifficulty(BigInteger.valueOf(difficulty)));
         }
 
-        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash());
+        newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash().getBytes());
 
         newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
 

@@ -56,8 +56,8 @@ public class TrieStoreImplTest {
         store.save(trie);
 
         Assert.assertEquals(1, map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
 
         Assert.assertEquals(1, store.getSaveCount());
     }
@@ -72,12 +72,12 @@ public class TrieStoreImplTest {
         store.save(trie);
 
         Assert.assertEquals(1, map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
 
         Assert.assertEquals(1, store.getSaveCount());
 
-        Trie newTrie = store.retrieve(trie.getHash());
+        Trie newTrie = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(newTrie);
         Assert.assertEquals(1, newTrie.trieSize());
@@ -97,12 +97,12 @@ public class TrieStoreImplTest {
         store.save(trie);
 
         Assert.assertEquals(2, map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
 
         Assert.assertEquals(2, store.getSaveCount());
 
-        Trie newTrie = store.retrieve(trie.getHash());
+        Trie newTrie = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertNotNull(newTrie);
         Assert.assertEquals(1, newTrie.trieSize());
@@ -120,8 +120,8 @@ public class TrieStoreImplTest {
         trie.save();
 
         Assert.assertEquals(trie.trieSize(), map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
 
         Assert.assertEquals(trie.trieSize(), store.getSaveCount());
     }
@@ -136,8 +136,8 @@ public class TrieStoreImplTest {
         trie.save();
 
         Assert.assertEquals(trie.trieSize() + 1, map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
 
         Assert.assertEquals(trie.trieSize() + 1, store.getSaveCount());
     }
@@ -154,8 +154,8 @@ public class TrieStoreImplTest {
         trie.save();
 
         Assert.assertEquals(trie.trieSize() + 2, map.keys().size());
-        Assert.assertNotNull(map.get(trie.getHash()));
-        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash()));
+        Assert.assertNotNull(map.get(trie.getHash().getBytes()));
+        Assert.assertArrayEquals(trie.toMessage(), map.get(trie.getHash().getBytes()));
 
         Assert.assertEquals(trie.trieSize() + 2, store.getSaveCount());
     }
@@ -231,7 +231,7 @@ public class TrieStoreImplTest {
         trie.save();
         int size = trie.trieSize();
 
-        Trie trie2 = store.retrieve(trie.getHash());
+        Trie trie2 = store.retrieve(trie.getHash().getBytes());
 
         Assert.assertEquals(1, store.getRetrieveCount());
 
@@ -249,7 +249,7 @@ public class TrieStoreImplTest {
                 .put("foo", "bar".getBytes())
                 .put("bar", "foo".getBytes());
 
-        byte[] root = trie.getHash();
+        byte[] root = trie.getHash().getBytes();
 
         trie.save();
 

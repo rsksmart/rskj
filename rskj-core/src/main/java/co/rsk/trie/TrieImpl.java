@@ -19,7 +19,6 @@
 package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
-import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
@@ -285,20 +284,20 @@ public class TrieImpl implements Trie {
      * @return  a byte array with the node serialized to bytes
      */
     @Override
-    public byte[] getHash() {
+    public Keccak256 getHash() {
         if (this.hash != null) {
-            return this.hash.copy().getBytes();
+            return this.hash.copy();
         }
 
         if (isEmptyTrie(this.value, this.nodes, this.hashes)) {
-            return emptyHash.copy().getBytes();
+            return emptyHash.copy();
         }
 
         byte[] message = this.toMessage();
 
         this.hash = new Keccak256(Keccak256Helper.keccak256(message));
 
-        return this.hash.copy().getBytes();
+        return this.hash.copy();
     }
 
     /**
@@ -683,7 +682,7 @@ public class TrieImpl implements Trie {
             return null;
         }
 
-        byte[] localHash = node.getHash();
+        byte[] localHash = node.getHash().getBytes();
 
         this.setHash(n, localHash);
 
@@ -715,7 +714,7 @@ public class TrieImpl implements Trie {
         this.save();
 
         byte[] bytes = this.store.serialize();
-        byte[] root = this.getHash();
+        byte[] root = this.getHash().getBytes();
 
         ByteBuffer buffer = ByteBuffer.allocate(Short.BYTES + Keccak256Helper.DEFAULT_SIZE_BYTES + bytes.length);
 

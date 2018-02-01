@@ -560,7 +560,7 @@ public class BlockChainImpl implements Blockchain {
     }
 
     public static byte[] calcTxTrie(List<Transaction> transactions) {
-        return Block.getTxTrie(transactions).getHash();
+        return Block.getTxTrie(transactions).getHash().getBytes();
     }
 
     public static byte[] calcReceiptsTrie(List<TransactionReceipt> receipts) {
@@ -574,6 +574,6 @@ public class BlockChainImpl implements Blockchain {
             receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
         }
 
-        return receiptsTrie.getHash();
+        return receiptsTrie.getHash().getBytes();
     }
 }

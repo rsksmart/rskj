@@ -371,7 +371,7 @@ public class RepositoryImpl implements Repository {
             this.trie.save();
         }
 
-        byte[] rootHash = this.trie.getHash();
+        byte[] rootHash = this.trie.getHash().getBytes();
 
         logger.trace("getting repository root hash {}", Hex.toHexString(rootHash));
 
