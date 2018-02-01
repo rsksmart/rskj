@@ -54,7 +54,7 @@ public class NodeManagerTest {
 
         Mockito.when(config.nodeId()).thenReturn(Hex.decode(NODE_ID_1));
         Mockito.when(config.getPublicIp()).thenReturn("127.0.0.1");
-        Mockito.when(config.peerPort()).thenReturn(8080);
+        Mockito.when(config.getPeerPort()).thenReturn(8080);
     }
 
     @Test

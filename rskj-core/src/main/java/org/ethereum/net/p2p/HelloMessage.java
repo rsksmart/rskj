@@ -194,7 +194,7 @@ public class HelloMessage extends P2pMessage {
         return "[" + this.getCommand().name() + " p2pVersion="
                 + this.p2pVersion + " clientId=" + this.clientId
                 + " capabilities=[" + Joiner.on(" ").join(this.capabilities)
-                + "]" + " peerPort=" + this.listenPort + " peerId="
+                + "]" + " getPeerPort=" + this.listenPort + " peerId="
                 + this.peerId + "]";
     }
 }

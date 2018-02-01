@@ -558,7 +558,7 @@ public abstract class SystemProperties {
     }
 
     @ValidateMe
-    public int peerPort() {
+    public int getPeerPort() {
         return configFromFiles.getInt(PROPERTY_PEER_PORT);
     }
 

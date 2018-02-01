@@ -92,7 +92,7 @@ public class EthereumImpl implements Ethereum {
 
     @Override
     public void init() {
-        if (config.peerPort() > 0) {
+        if (config.getPeerPort() > 0) {
             peerServiceExecutor = Executors.newSingleThreadExecutor(runnable -> {
                 Thread thread = new Thread(runnable, "Peer Server");
                 thread.setUncaughtExceptionHandler((exceptionThread, exception) ->
@@ -100,11 +100,11 @@ public class EthereumImpl implements Ethereum {
                 );
                 return thread;
             });
-            peerServiceExecutor.execute(() -> peerServer.start(config.getBindAddress(), config.peerPort()));
+            peerServiceExecutor.execute(() -> peerServer.start(config.getBindAddress(), config.getPeerPort()));
         }
         compositeEthereumListener.addListener(gasPriceTracker);
 
-        gLogger.info("RskJ node started: enode://{}@{}:{}" , Hex.toHexString(config.nodeId()), config.getPublicIp(), config.peerPort());
+        gLogger.info("RskJ node started: enode://{}@{}:{}" , Hex.toHexString(config.nodeId()), config.getPublicIp(), config.getPeerPort());
     }
 
     @Override
