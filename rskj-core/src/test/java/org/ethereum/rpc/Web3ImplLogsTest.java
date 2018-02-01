@@ -115,7 +115,7 @@ public class Web3ImplLogsTest {
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = world.getBlockChain().getRepository();
         eth.blockchain = world.getBlockChain();
-        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState , WalletFactory.createPersistentWallet("wallet0"));
+        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState , WalletFactory.createWallet());
 
         // TODO tricky link to listener
         world.getBlockChain().setListener(web3.setupListener());
@@ -154,7 +154,7 @@ public class Web3ImplLogsTest {
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = world.getBlockChain().getRepository();
         eth.blockchain = world.getBlockChain();
-        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createPersistentWallet("wallet1"));
+        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createWallet());
 
         // TODO tricky link to listener
         world.getBlockChain().setListener(web3.setupListener());
@@ -194,7 +194,7 @@ public class Web3ImplLogsTest {
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = world.getBlockChain().getRepository();
         eth.blockchain = world.getBlockChain();
-        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createPersistentWallet("wallet2"));
+        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createWallet());
 
         // TODO tricky link to listener
         world.getBlockChain().setListener(web3.setupListener());
@@ -248,7 +248,7 @@ public class Web3ImplLogsTest {
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = world.getBlockChain().getRepository();
         eth.blockchain = world.getBlockChain();
-        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createPersistentWallet("wallet"));
+        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createWallet());
 
         // TODO tricky link to listener
         blockChain.setListener(web3.setupListener());
@@ -461,7 +461,7 @@ public class Web3ImplLogsTest {
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = world.getBlockChain().getRepository();
         eth.blockchain = world.getBlockChain();
-        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createPersistentWallet("testwallet"));
+        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createWallet());
 
         // TODO tricky link to listener
         blockChain.setListener(web3.setupListener());
@@ -499,7 +499,7 @@ public class Web3ImplLogsTest {
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = world.getBlockChain().getRepository();
         eth.blockchain = world.getBlockChain();
-        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createPersistentWallet("testwallet2"));
+        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createWallet());
 
         // TODO tricky link to listener
         blockChain.setListener(web3.setupListener());
@@ -551,7 +551,7 @@ public class Web3ImplLogsTest {
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = world.getBlockChain().getRepository();
         eth.blockchain = world.getBlockChain();
-        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createPersistentWallet("testwallet3"));
+        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createWallet());
 
         // TODO tricky link to listener
         blockChain.setListener(web3.setupListener());
@@ -611,7 +611,7 @@ public class Web3ImplLogsTest {
         SimpleEthereum eth = new SimpleEthereum();
         eth.repository = world.getBlockChain().getRepository();
         eth.blockchain = world.getBlockChain();
-        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createPersistentWallet("testwallet3b"));
+        Web3Impl web3 = createWeb3(eth, world.getBlockChain(), pendingState, WalletFactory.createWallet());
 
         // TODO tricky link to listener
         world.getBlockChain().setListener(web3.setupListener());
