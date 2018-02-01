@@ -194,11 +194,11 @@ public class TrieStoreImplTest {
     }
 
     @Test
-    public void saveFullTrieUpdateAndSaveAgainUsingArity16() {
+    public void saveFullTrieUpdateAndSaveAgain() {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(16, store, false).put("foo", "bar".getBytes());
+        Trie trie = new TrieImpl(store, false).put("foo", "bar".getBytes());
 
         trie.save();
 

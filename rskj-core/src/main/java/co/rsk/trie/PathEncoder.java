@@ -24,43 +24,24 @@ import javax.annotation.Nonnull;
  * Created by martin.medina on 5/04/17.
  */
 class PathEncoder {
-
-    private static final String INVALID_ARITY = "Invalid arity";
-
     private PathEncoder() { }
 
     @Nonnull
-    static byte[] encode(byte[] path, int arity) {
+    static byte[] encode(byte[] path) {
         if (path == null) {
             throw new IllegalArgumentException("path");
         }
 
-        if (arity == 2) {
-            return encodeBinaryPath(path);
-        }
-
-        if (arity == 16) {
-            return encodeHexadecimalPath(path);
-        }
-
-        throw new IllegalArgumentException(INVALID_ARITY);
+        return encodeBinaryPath(path);
     }
 
     @Nonnull
-    static byte[] decode(byte[] encoded, int arity, int length) {
+    static byte[] decode(byte[] encoded, int length) {
         if (encoded == null) {
             throw new IllegalArgumentException("encoded");
         }
 
-        if (arity == 2) {
-            return decodeBinaryPath(encoded, length);
-        }
-
-        if (arity == 16) {
-            return decodeHexadecimalPath(encoded, length);
-        }
-
-        throw new IllegalArgumentException(INVALID_ARITY);
+        return decodeBinaryPath(encoded, length);
     }
 
     @Nonnull
@@ -98,43 +79,6 @@ class PathEncoder {
             if (((encoded[nbyte] >> (7 - offset)) & 0x01) != 0) {
                 path[k] = 1;
             }
-        }
-
-        return path;
-    }
-
-    private static byte[] encodeHexadecimalPath(byte[] path) {
-        int lpath = path.length;
-        int lencoded = lpath / 2 + (lpath % 2 == 0 ? 0 : 1);
-
-        byte[] encoded = new byte[lencoded];
-        int nbyte = 0;
-
-        for (int k = 0; k < lpath; k++) {
-            if (k > 0 && k % 2 == 0) {
-                nbyte++;
-            }
-
-            if (path[k] == 0) {
-                continue;
-            }
-            
-            int offset = k % 2;
-            encoded[nbyte] |= (path[k] & 0x0f) << ((1 - offset) * 4);
-        }
-
-        return encoded;
-    }
-
-    private static byte[] decodeHexadecimalPath(byte[] encoded, int length) {
-        byte[] path = new byte[length];
-
-        for (int k = 0; k < length; k++) {
-            int nbyte = k / 2;
-            int offset = k % 2;
-
-            int value = (encoded[nbyte] >> ((1 - offset) * 4)) & 0x0f;
-            path[k] = (byte)value;
         }
 
         return path;
