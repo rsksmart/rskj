@@ -118,8 +118,8 @@ public class GenesisLoader {
     private static byte[] generateRootHash(Map<RskAddress, InitialAddressState> premine){
         Trie state = new TrieImpl(null, true);
 
-        for (RskAddress address : premine.keySet()) {
-            state = state.put(address.getBytes(), premine.get(address).getAccountState().getEncoded());
+        for (RskAddress addr : premine.keySet()) {
+            state = state.put(addr.getBytes(), premine.get(addr).getAccountState().getEncoded());
         }
 
         return state.getHash();

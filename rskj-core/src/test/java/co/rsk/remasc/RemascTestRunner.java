@@ -158,8 +158,8 @@ class RemascTestRunner {
         return getAccountBalance(this.blockchain.getRepository(), address);
     }
 
-    public BigInteger getAccountBalance(RskAddress address) {
-        return getAccountBalance(this.blockchain.getRepository(), address);
+    public BigInteger getAccountBalance(RskAddress addr) {
+        return getAccountBalance(this.blockchain.getRepository(), addr);
     }
 
     public static BigInteger getAccountBalance(Repository repository, byte[] address) {

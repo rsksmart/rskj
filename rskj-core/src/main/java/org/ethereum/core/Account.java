@@ -28,11 +28,11 @@ import org.ethereum.crypto.ECKey;
 public class Account {
 
     private final ECKey ecKey;
-    private final RskAddress address;
+    private final RskAddress addr;
 
     public Account(ECKey ecKey) {
         this.ecKey = ecKey;
-        this.address = new RskAddress(this.ecKey.getAddress());
+        this.addr = new RskAddress(this.ecKey.getAddress());
     }
 
     public ECKey getEcKey() {
@@ -40,6 +40,6 @@ public class Account {
     }
 
     public RskAddress getAddress() {
-        return address;
+        return addr;
     }
 }

@@ -905,9 +905,9 @@ public class BlockChainImplTest {
 
         Genesis genesis = GenesisLoader.loadGenesis(config, "rsk-unittests.json", BigInteger.ZERO, true);
 
-        for (RskAddress address : genesis.getPremine().keySet()) {
-            repository.createAccount(address);
-            repository.addBalance(address, genesis.getPremine().get(address).getAccountState().getBalance());
+        for (RskAddress addr : genesis.getPremine().keySet()) {
+            repository.createAccount(addr);
+            repository.addBalance(addr, genesis.getPremine().get(addr).getAccountState().getBalance());
         }
 
         genesis.setStateRoot(repository.getRoot());

@@ -373,9 +373,9 @@ public class RepositoryImplOriginalTest {
         Repository track = repository.startTracking();
 
         Genesis genesis = (Genesis)Genesis.getInstance(config);
-        for (RskAddress address : genesis.getPremine().keySet()) {
-            repository.createAccount(address);
-            repository.addBalance(address, genesis.getPremine().get(address).getAccountState().getBalance());
+        for (RskAddress addr : genesis.getPremine().keySet()) {
+            repository.createAccount(addr);
+            repository.addBalance(addr, genesis.getPremine().get(addr).getAccountState().getBalance());
         }
 
         track.commit();

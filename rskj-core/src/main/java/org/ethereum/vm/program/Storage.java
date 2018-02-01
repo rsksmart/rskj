@@ -42,11 +42,11 @@ import java.util.Set;
 public class Storage implements Repository, ProgramListenerAware {
 
     private final Repository repository;
-    private final RskAddress address;
+    private final RskAddress addr;
     private ProgramListener traceListener;
 
     public Storage(ProgramInvoke programInvoke) {
-        this.address = new RskAddress(programInvoke.getOwnerAddress());
+        this.addr = new RskAddress(programInvoke.getOwnerAddress());
         this.repository = programInvoke.getRepository();
     }
 
@@ -124,8 +124,8 @@ public class Storage implements Repository, ProgramListenerAware {
         repository.addStorageBytes(addr, key, value);
     }
 
-    private boolean canListenTrace(RskAddress address) {
-        return this.address.equals(address) && traceListener != null;
+    private boolean canListenTrace(RskAddress addr) {
+        return this.addr.equals(addr) && traceListener != null;
     }
 
     @Override
@@ -206,12 +206,12 @@ public class Storage implements Repository, ProgramListenerAware {
 
     @Override
     public void updateBatch(Map<RskAddress, AccountState> accountStates, Map<RskAddress, ContractDetails> contractDetails) {
-        for (RskAddress address : contractDetails.keySet()) {
-            if (!canListenTrace(address)) {
+        for (RskAddress addr : contractDetails.keySet()) {
+            if (!canListenTrace(addr)) {
                 return;
             }
 
-            ContractDetails details = contractDetails.get(address);
+            ContractDetails details = contractDetails.get(addr);
             if (details.isDeleted()) {
                 traceListener.onStorageClear();
             } else if (details.isDirty()) {

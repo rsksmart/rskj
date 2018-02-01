@@ -130,8 +130,8 @@ public class StateTest {
         Trie trie = new TrieImpl();
         Genesis genesis = (Genesis)Genesis.getInstance(new RskSystemProperties());
 
-        for (RskAddress address : genesis.getPremine().keySet()) {
-            trie = trie.put(address.getBytes(), genesis.getPremine().get(address).getAccountState().getEncoded());
+        for (RskAddress addr : genesis.getPremine().keySet()) {
+            trie = trie.put(addr.getBytes(), genesis.getPremine().get(addr).getAccountState().getEncoded());
         }
 
         return trie;

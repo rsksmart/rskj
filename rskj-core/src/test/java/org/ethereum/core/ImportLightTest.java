@@ -81,9 +81,9 @@ public class ImportLightTest {
 
         Repository track = repository.startTracking();
 
-        for (RskAddress address : genesis.getPremine().keySet()) {
-            track.createAccount(address);
-            track.addBalance(address, genesis.getPremine().get(address).getAccountState().getBalance());
+        for (RskAddress addr : genesis.getPremine().keySet()) {
+            track.createAccount(addr);
+            track.addBalance(addr, genesis.getPremine().get(addr).getAccountState().getBalance());
         }
 
         track.commit();
