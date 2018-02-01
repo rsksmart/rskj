@@ -51,7 +51,7 @@ public class PartialMerkleTree {
 
         for (int k = 1; k < ntries; k++) {
             Trie clone = this.tries.get(k).cloneTrie();
-            clone.setHash(this.insertions.get(k - 1).intValue(), trie.getHash().getBytes());
+            clone.setHash(this.insertions.get(k - 1).intValue(), trie.getHash());
             trie = clone;
         }
 
