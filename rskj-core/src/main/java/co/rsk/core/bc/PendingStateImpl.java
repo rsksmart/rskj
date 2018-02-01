@@ -45,7 +45,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.BIUtil.toBI;
 
 /**
