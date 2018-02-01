@@ -488,9 +488,6 @@ public class BlockChainImpl implements Blockchain {
         this.blockRecorder = blockRecorder;
     }
 
-    @Override
-    public ReceiptStore getReceiptStore() { return receiptStore; }
-
     private void switchToBlockChain(Block block, BlockDifficulty totalDifficulty) {
         synchronized (accessLock) {
             storeBlock(block, totalDifficulty, true);

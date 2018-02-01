@@ -495,7 +495,7 @@ public class PendingStateImplTest {
     }
 
     private static PendingStateImpl createSampleNewPendingState(BlockChainImpl blockChain) {
-        PendingStateImpl pendingState = new PendingStateImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+        PendingStateImpl pendingState = new PendingStateImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), null, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         pendingState.processBest(blockChain.getBestBlock());
         return pendingState;
     }
@@ -518,7 +518,7 @@ public class PendingStateImplTest {
         best.setStateRoot(repository.getRoot());
         best.flushRLP();
 
-        PendingStateImpl pendingState = new PendingStateImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+        PendingStateImpl pendingState = new PendingStateImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), null, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
         blockChain.setPendingState(pendingState);
 
         return pendingState;

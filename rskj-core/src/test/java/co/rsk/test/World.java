@@ -29,6 +29,7 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
 import org.ethereum.core.*;
+import org.ethereum.db.ReceiptStore;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,6 +47,10 @@ public class World {
 
     public World() {
         this(new BlockChainBuilder().build());
+    }
+
+    public World(ReceiptStore receiptStore) {
+        this(new BlockChainBuilder().setReceiptStore(receiptStore).build());
     }
 
     public World(BlockChainImpl blockChain) {
@@ -72,7 +77,7 @@ public class World {
 
     public BlockExecutor getBlockExecutor() {
         if (this.blockExecutor == null)
-            this.blockExecutor = new BlockExecutor(new RskSystemProperties(), this.getRepository(), this.getBlockChain().getReceiptStore(), this.getBlockChain().getBlockStore(), null);
+            this.blockExecutor = new BlockExecutor(new RskSystemProperties(), this.getRepository(), null, this.getBlockChain().getBlockStore(), null);
 
         return this.blockExecutor;
     }

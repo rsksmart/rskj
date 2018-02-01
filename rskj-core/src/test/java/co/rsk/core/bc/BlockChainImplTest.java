@@ -874,7 +874,7 @@ public class BlockChainImplTest {
         Block block = new BlockBuilder().minGasPrice(BigInteger.ZERO).transactions(txs)
                 .parent(genesis).build();
 
-        BlockExecutor executor = new BlockExecutor(config, repository, blockChain.getReceiptStore(), null, null);
+        BlockExecutor executor = new BlockExecutor(config, repository, null, null, null);
         executor.executeAndFill(block, genesis);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
@@ -930,7 +930,7 @@ public class BlockChainImplTest {
     }
 
     private static BlockExecutor createExecutor(BlockChainImpl blockChain) {
-        return new BlockExecutor(config, blockChain.getRepository(), blockChain.getReceiptStore(), blockChain.getBlockStore(), blockChain.getListener());
+        return new BlockExecutor(config, blockChain.getRepository(), null, blockChain.getBlockStore(), blockChain.getListener());
     }
 
     private static void alterBytes(byte[] bytes) {

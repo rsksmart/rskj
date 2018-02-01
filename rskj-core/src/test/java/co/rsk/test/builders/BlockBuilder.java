@@ -97,7 +97,7 @@ public class BlockBuilder {
         Block block = blockGenerator.createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice, gasLimit);
 
         if (blockChain != null) {
-            BlockExecutor executor = new BlockExecutor(new RskSystemProperties(), blockChain.getRepository(), blockChain.getReceiptStore(), blockChain.getBlockStore(), blockChain.getListener());
+            BlockExecutor executor = new BlockExecutor(new RskSystemProperties(), blockChain.getRepository(), null, blockChain.getBlockStore(), blockChain.getListener());
             executor.executeAndFill(block, parent);
         }
 

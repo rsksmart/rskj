@@ -163,8 +163,8 @@ public class MainNetMinerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(tempConfig, ethereumImpl, blockchain, null,
-                blockchain.getReceiptStore(), blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
+        MinerServer minerServer = new MinerServerImpl(tempConfig, ethereumImpl, blockchain, null, null,
+                blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
                 unclesValidationRule, null, DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(config),
                 new ProofOfWorkRule(tempConfig).setFallbackMiningEnabled(true)

@@ -112,7 +112,7 @@ public class TestRunner {
 
         blockchain.setNoValidation(true);
 
-        PendingStateImpl pendingState = new PendingStateImpl(config, repository, null, blockchain.getReceiptStore(), null, listener, 10, 100);
+        PendingStateImpl pendingState = new PendingStateImpl(config, repository, null, null, null, listener, 10, 100);
 
         blockchain.setBestBlock(genesis);
         blockchain.setTotalDifficulty(genesis.getCumulativeDifficulty());

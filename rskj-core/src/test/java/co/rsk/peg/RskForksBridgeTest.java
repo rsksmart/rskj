@@ -342,7 +342,7 @@ public class RskForksBridgeTest {
         rskTx.sign(new byte[32]);
 
         TransactionExecutor executor = new TransactionExecutor(config, rskTx, 0, blockChain.getBestBlock().getCoinbase(), repository,
-                        blockChain.getBlockStore(), blockChain.getReceiptStore(), new ProgramInvokeFactoryImpl(), blockChain.getBestBlock())
+                        blockChain.getBlockStore(), null, new ProgramInvokeFactoryImpl(), blockChain.getBestBlock())
                 .setLocalCall(true);
 
         executor.init();

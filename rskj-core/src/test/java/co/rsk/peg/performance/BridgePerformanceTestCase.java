@@ -273,7 +273,7 @@ public abstract class BridgePerformanceTestCase {
                 blockchain.getBestBlock(),
                 benchmarkerTrack,
                 blockchain.getBlockStore(),
-                blockchain.getReceiptStore(),
+                null,
                 logs
         );
 

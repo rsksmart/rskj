@@ -55,6 +55,7 @@ public class BlockChainBuilder {
     private Repository repository;
     private BlockStore blockStore;
     private Genesis genesis;
+    private ReceiptStore receiptStore;
 
     public BlockChainBuilder setAdminInfo(AdminInfo adminInfo) {
         this.adminInfo = adminInfo;
@@ -86,6 +87,11 @@ public class BlockChainBuilder {
         return this;
     }
 
+    public BlockChainBuilder setReceiptStore(ReceiptStore receiptStore) {
+        this.receiptStore = receiptStore;
+        return this;
+    }
+
     public BlockChainImpl build() {
         return build(false);
     }
@@ -98,9 +104,11 @@ public class BlockChainBuilder {
             blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         }
 
-        KeyValueDataSource ds = new HashMapDB();
-        ds.init();
-        ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
+        if (receiptStore == null) {
+            KeyValueDataSource ds = new HashMapDB();
+            ds.init();
+            receiptStore = new ReceiptStoreImpl(ds);
+        }
 
         if (txinfos != null && !txinfos.isEmpty())
             for (TransactionInfo txinfo : txinfos)
