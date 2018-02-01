@@ -160,7 +160,7 @@ public class MinerServerImpl implements MinerServer {
         this.gasLimitCalculator = gasLimitCalculator;
         this.powRule = powRule;
 
-        executor = new BlockExecutor(config, repository, blockchain, blockStore, null);
+        executor = new BlockExecutor(config, repository, blockchain.getReceiptStore(), blockStore, null);
 
         blocksWaitingforPoW = createNewBlocksWaitingList();
 

@@ -112,7 +112,7 @@ public class BlockChainImpl implements Blockchain {
         this.listener = listener;
         this.adminInfo = adminInfo;
         this.blockValidator = blockValidator;
-        this.blockExecutor = new BlockExecutor(config, repository, this, blockStore, listener);
+        this.blockExecutor = new BlockExecutor(config, repository, receiptStore, blockStore, listener);
         this.pendingState = pendingState;
     }
 

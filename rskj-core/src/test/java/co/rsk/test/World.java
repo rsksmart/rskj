@@ -72,7 +72,7 @@ public class World {
 
     public BlockExecutor getBlockExecutor() {
         if (this.blockExecutor == null)
-            this.blockExecutor = new BlockExecutor(new RskSystemProperties(), this.getRepository(), this.getBlockChain(), this.getBlockChain().getBlockStore(), null);
+            this.blockExecutor = new BlockExecutor(new RskSystemProperties(), this.getRepository(), this.getBlockChain().getReceiptStore(), this.getBlockChain().getBlockStore(), null);
 
         return this.blockExecutor;
     }

@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.panic.PanicProcessor;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -48,16 +49,22 @@ public class BlockExecutor {
 
     private final RskSystemProperties config;
     private final Repository repository;
-    private final Blockchain blockChain;
+    private final ReceiptStore receiptStore;
     private final BlockStore blockStore;
     private final EthereumListener listener;
 
     private final ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
 
-    public BlockExecutor(RskSystemProperties config, Repository repository, Blockchain blockChain, BlockStore blockStore, EthereumListener listener) {
+    public BlockExecutor(
+        RskSystemProperties config,
+        Repository repository,
+        ReceiptStore receiptStore,
+        BlockStore blockStore,
+        EthereumListener listener) {
+
         this.config = config;
         this.repository = repository;
-        this.blockChain = blockChain;
+        this.receiptStore = receiptStore;
         this.blockStore = blockStore;
         this.listener = listener;
     }
@@ -204,7 +211,7 @@ public class BlockExecutor {
         for (Transaction tx : block.getTransactionsList()) {
             logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
 
-            TransactionExecutor txExecutor = new TransactionExecutor(config, tx, txindex++, block.getCoinbase(), track, blockStore, blockChain.getReceiptStore(), programInvokeFactory, block, listener, totalGasUsed);
+            TransactionExecutor txExecutor = new TransactionExecutor(config, tx, txindex++, block.getCoinbase(), track, blockStore, receiptStore, programInvokeFactory, block, listener, totalGasUsed);
 
             boolean readyToExecute = txExecutor.init();
             if (!ignoreReadyToExecute && !readyToExecute) {

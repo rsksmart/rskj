@@ -151,7 +151,7 @@ public class BlockChainBuilder {
         }
 
         if (this.blocks != null) {
-            BlockExecutor blockExecutor = new BlockExecutor(config, repository, blockChain, blockStore, listener);
+            BlockExecutor blockExecutor = new BlockExecutor(config, repository, receiptStore, blockStore, listener);
 
             for (Block b : this.blocks) {
                 blockExecutor.executeAndFillAll(b, blockChain.getBestBlock());
