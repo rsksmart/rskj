@@ -124,7 +124,6 @@ run {
 }
 
 dependencies {
-    compile "junit:junit:${junitVersion}"
     compile "io.netty:netty-all:4.0.30.Final"
     compile "com.madgag.spongycastle:core:${scastleVersion}" // for SHA3 and SECP256K1
     compile "com.madgag.spongycastle:prov:${scastleVersion}" // for SHA3 and SECP256K1
@@ -192,7 +191,6 @@ dependencyVerification {
         'commons-io:commons-io:a10418348d234968600ccb1d988efcbbd08716e1d96936ccc1880e7d22513474',
         'commons-logging:commons-logging:daddea1ea0be0f56978ab3006b8ac92834afeefbd9b7e4e6316fca57df0fa636',
         'io.netty:netty-all:1578cbb1354f02951c6ce5d374962e703afb882321164db9e3a2cfb141a1ebeb',
-        'junit:junit:59721f0805e223d84b90677887d9ff567dc534d7c502ca903c0c2b17f05c116a',
         'net.iharder:base64:f1a0e359eee29a5939c35e5fdedc574dd7e8ca065b056fc14b2b29e3ed3cd54d',
         'net.jcip:jcip-annotations:be5805392060c71474bf6c9a67a099471274d30b83eef84bfc4e0889a4f1dcc0',
         'org.apache.commons:commons-collections4:b1fe8b5968b57d8465425357ed2d9dc695504518bed2df5b565c4b8e68c1c8a5',
@@ -201,7 +199,6 @@ dependencyVerification {
         'org.ethereum:leveldbjni-all:18da00444c77080d4422b16c9d4750c4addabda350b702b4a6d628b86658e585',
         'org.fusesource.hawtjni:hawtjni-runtime:74fe9764e1fb1ef20b159dbca2d29abd6de292082ce3fcf538f81ac912390416',
         'org.fusesource.leveldbjni:leveldbjni:05fe3a006d030aaf8d1e43f6c640a85f9f6b967c4499ce1ad5055ac236c3b944',
-        'org.hamcrest:hamcrest-core:66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9',
         'org.hamcrest:hamcrest-library:711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c',
         'org.iq80.leveldb:leveldb-api:279e3a5649cde0bf0d4e09fd1369ec0e9ee80344ec06527c37148c9a58684140',
         'org.iq80.leveldb:leveldb:0dcc623fcb8450e736b9d2b1b8d91b980e44920d6a22cec8c00f703548b3747f',
