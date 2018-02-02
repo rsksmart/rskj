@@ -89,7 +89,7 @@ public class BlockCacheTest {
     public void addAndRetrieveBlock() {
         BlockCache store = getSubject();
         Block block = Mockito.mock(Block.class);
-        when(block.getHash()).thenReturn(HASH_1);
+        when(block.getWrappedHash()).thenReturn(new ByteArrayWrapper(HASH_1));
         store.addBlock(block);
 
         assertThat(store.getBlockByHash(HASH_1), is(block));
