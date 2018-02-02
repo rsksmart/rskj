@@ -53,8 +53,8 @@ public class NodeManagerTest {
         nodeManager = new NodeManager(peerExplorer, config);
 
         Mockito.when(config.nodeId()).thenReturn(Hex.decode(NODE_ID_1));
-        Mockito.when(config.getExternalIp()).thenReturn("127.0.0.1");
-        Mockito.when(config.listenPort()).thenReturn(8080);
+        Mockito.when(config.getPublicIp()).thenReturn("127.0.0.1");
+        Mockito.when(config.getPeerPort()).thenReturn(8080);
     }
 
     @Test
@@ -67,7 +67,7 @@ public class NodeManagerTest {
 
         Mockito.when(config.peerActive()).thenReturn(activePeers);
         Mockito.when(peerExplorer.getNodes()).thenReturn(bootNodes);
-        Mockito.when(config.peerDiscovery()).thenReturn(false);
+        Mockito.when(config.isPeerDiscoveryEnabled()).thenReturn(false);
 
         nodeManager.init();
 
@@ -92,7 +92,7 @@ public class NodeManagerTest {
 
         Mockito.when(config.peerActive()).thenReturn(activePeers);
         Mockito.when(peerExplorer.getNodes()).thenReturn(bootNodes);
-        Mockito.when(config.peerDiscovery()).thenReturn(true);
+        Mockito.when(config.isPeerDiscoveryEnabled()).thenReturn(true);
 
         nodeManager.init();
 
@@ -114,7 +114,7 @@ public class NodeManagerTest {
 
         Mockito.when(config.peerActive()).thenReturn(activePeers);
         Mockito.when(peerExplorer.getNodes()).thenReturn(bootNodes);
-        Mockito.when(config.peerDiscovery()).thenReturn(true);
+        Mockito.when(config.isPeerDiscoveryEnabled()).thenReturn(true);
 
         nodeManager.init();
 

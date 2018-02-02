@@ -34,6 +34,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 
+import java.net.InetAddress;
+
 /**
  * This class establishes a listener for incoming connections.
  * See <a href="http://netty.io">http://netty.io</a>.
@@ -55,7 +57,7 @@ public class PeerServerImpl implements PeerServer {
         this.ethereumChannelInitializerFactory = ethereumChannelInitializerFactory;
     }
 
-    public void start(int port) {
+    public void start(InetAddress host, int port) {
         // TODO review listening use
         listening = true;
 

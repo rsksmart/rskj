@@ -55,7 +55,7 @@ public class StaticMessages {
     }
 
     public HelloMessage createHelloMessage(String peerId) {
-        return createHelloMessage(peerId, config.listenPort());
+        return createHelloMessage(peerId, config.getPeerPort());
     }
     public HelloMessage createHelloMessage(String peerId, int listenPort) {
 

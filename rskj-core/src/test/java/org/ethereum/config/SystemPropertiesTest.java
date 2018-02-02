@@ -23,6 +23,8 @@ import co.rsk.config.RskSystemProperties;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.net.InetAddress;
+
 /**
  * Created by Anton Nashatyrev on 26.08.2015.
  */
@@ -30,21 +32,21 @@ public class SystemPropertiesTest {
     @Test
     public void punchBindIpTest() {
         RskSystemProperties config = new RskSystemProperties();
-        config.overrideParams("peer.bind.ip", "");
+        config.overrideParams("bind.address", "");
         long st = System.currentTimeMillis();
-        String ip = config.getPeerDiscoveryBindAddress();
+        InetAddress ip = config.getBindAddress();
         long t = System.currentTimeMillis() - st;
         System.out.println(ip + " in " + t + " msec");
         Assert.assertTrue(t < 10 * 1000);
-        Assert.assertFalse(ip.isEmpty());
+        Assert.assertFalse(ip.toString().isEmpty());
     }
 
     @Test
     public void externalIpTest() {
         RskSystemProperties config = new RskSystemProperties();
-        config.overrideParams("peer.discovery.external.ip", "");
+        config.overrideParams("public.ip", "");
         long st = System.currentTimeMillis();
-        String ip = config.getExternalIp();
+        String ip = config.getPublicIp();
         long t = System.currentTimeMillis() - st;
         System.out.println(ip + " in " + t + " msec");
         Assert.assertTrue(t < 10 * 1000);

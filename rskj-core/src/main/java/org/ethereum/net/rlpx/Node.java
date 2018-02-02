@@ -22,18 +22,13 @@ package org.ethereum.net.rlpx;
 import co.rsk.net.NodeID;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPList;
 import org.ethereum.util.Utils;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.Serializable;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -62,8 +57,8 @@ public class Node implements Serializable {
 
     public Node(byte[] id, String host, int port) {
         this.id = id;
-        this.host = host;
         this.port = port;
+        this.host = host;
     }
 
     public Node(byte[] rlp) {
@@ -84,9 +79,9 @@ public class Node implements Serializable {
         String host = new String(hostB, Charset.forName("UTF-8"));
         int port = byteArrayToInt(portB);
 
-        this.host = host;
         this.port = port;
         this.id = idB;
+        this.host = host;
     }
 
 

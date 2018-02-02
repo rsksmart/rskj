@@ -37,7 +37,7 @@ public class ConfigTest {
         Config config = ConfigFactory.parseResources("test-rskj.conf");
         System.out.println(config.root().render(ConfigRenderOptions.defaults().setComments(false)));
 
-        System.out.println("peer.listen.port: " + config.getInt("peer.listen.port"));
+        System.out.println("peer.port: " + config.getInt("peer.port"));
         System.out.println("peer.discovery.ip.list: " + config.getAnyRefList("peer.discovery.ip.list"));
         System.out.println("peer.discovery.ip.list: " + config.getAnyRefList("peer.active"));
 

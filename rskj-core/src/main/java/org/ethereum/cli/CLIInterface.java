@@ -66,7 +66,7 @@ public class CLIInterface {
                 if (i + 1 < args.length && "-listen".equals(args[i])) {
                     String port = args[i + 1];
                     logger.info("Listen port set to [{}]", port);
-                    cliOptions.put(SystemProperties.PROPERTY_LISTEN_PORT, port);
+                    cliOptions.put(SystemProperties.PROPERTY_PEER_PORT, port);
                 }
 
                 // override the connect host:port directory
