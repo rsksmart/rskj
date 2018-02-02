@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import org.ethereum.vm.program.Program;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.ethereum.rpc.Web3;
@@ -21,10 +20,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -82,21 +78,21 @@ public class Web3HttpServerTest {
 
     @Test
     public void smokeTestUsingValidHostAndHostName() throws Exception {
-        smokeTest(APPLICATION_JSON, "www.google.com", InetAddress.getByName("www.google.com"));
+        smokeTest(APPLICATION_JSON, "www.google.com", InetAddress.getByName("www.google.com"), new ArrayList<>());
     }
 
     @Test(expected = IOException.class)
     public void smokeTestUsingInvalidHostAndHostName() throws Exception {
         InetAddress google = InetAddress.getByName("www.google.com");
-        smokeTest(APPLICATION_JSON, google.getHostAddress(), google);
+        smokeTest(APPLICATION_JSON, google.getHostAddress(), google, new ArrayList<>());
     }
 
 
     private void smokeTest(String contentType, String host) throws Exception {
-        smokeTest(contentType, host, InetAddress.getLocalHost());
+        smokeTest(contentType, host, InetAddress.getLocalHost(), new ArrayList<>());
     }
 
-    private void smokeTest(String contentType, String host, InetAddress rpcHost) throws Exception {
+    private void smokeTest(String contentType, String host, InetAddress rpcAddress, List<String> rpcHost) throws Exception {
         Web3 web3Mock = Mockito.mock(Web3.class);
         String mockResult = "output";
         Mockito.when(web3Mock.web3_sha3(Mockito.anyString())).thenReturn(mockResult);
@@ -107,7 +103,7 @@ public class Web3HttpServerTest {
         int randomPort = 9999;//new ServerSocket(0).getLocalPort();
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
-        JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", rpcHost);
+        JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*", rpcAddress, rpcHost);
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules);
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler);
         server.start();

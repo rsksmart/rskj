@@ -19,7 +19,7 @@ import java.net.InetAddress;
 
 public class Web3HttpServer {
 
-    private final InetAddress host;
+    private final InetAddress bindAddress;
     private int port;
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
@@ -37,6 +37,7 @@ public class Web3HttpServer {
                           JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler,
                           JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler) {
         this.host = host;
+        this.bindAddress = bindAddress;
         this.port = port;
         this.socketLinger = socketLinger;
         this.reuseAddress = reuseAddress;
@@ -75,7 +76,7 @@ public class Web3HttpServer {
                     p.addLast(jsonRpcWeb3ServerHandler);
                 }
             });
-        b.bind(host, port).sync();
+        b.bind(bindAddress, port).sync();
     }
 
     public void stop() {

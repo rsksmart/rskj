@@ -78,6 +78,7 @@ public abstract class SystemProperties {
     // TODO review rpc properties
     public static final String PROPERTY_RPC_ENABLED = "rpc.enabled";
     public static final String PROPERTY_RPC_PORT = "rpc.port";
+    public static final String PROPERTY_RPC_HOST = "rpc.host";
     public static final String PROPERTY_RPC_CORS = "rpc.cors";
     public static final String PROPERTY_RPC_ADDRESS = "rpc.address";
     public static final String PROPERTY_PUBLIC_IP = "public.ip";
@@ -751,6 +752,11 @@ public abstract class SystemProperties {
     public int rpcPort() {
         return configFromFiles.hasPath(PROPERTY_RPC_PORT) ?
                 configFromFiles.getInt(PROPERTY_RPC_PORT) : DEFAULT_RPC_PORT;
+    }
+
+    public List<String> rpcHost() {
+        return !configFromFiles.hasPath(PROPERTY_RPC_HOST) ? new ArrayList<>() :
+                configFromFiles.getStringList(PROPERTY_RPC_HOST);
     }
 
     public InetAddress rpcAddress() {
