@@ -21,7 +21,7 @@ package co.rsk.crypto;
 import co.rsk.bitcoinj.core.Utils;
 import com.google.common.primitives.Ints;
 import org.ethereum.rpc.TypeConverter;
-import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
+import org.ethereum.util.ByteUtil;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -82,7 +82,7 @@ public class Keccak256 implements Serializable, Comparable<Keccak256> {
      * Returns an identical Sha3Hash with a copy of the the internal byte array.
      */
     public Keccak256 copy() {
-        return new Keccak256(ByteUtils.clone(bytes));
+        return new Keccak256(ByteUtil.cloneBytes(bytes));
     }
 
     @Override
