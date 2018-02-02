@@ -329,10 +329,6 @@ public class HandshakeHandler extends ByteToMessageDecoder {
         myKey = new ECKey();
     }
 
-    public byte[] getRemoteId() {
-        return remoteId;
-    }
-
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         recordFailedHandshake(ctx);

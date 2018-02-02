@@ -20,6 +20,7 @@ package co.rsk.validators;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -113,6 +114,7 @@ public class TxsMinGasPriceValidatorTest {
             Transaction tx = Mockito.mock(Transaction.class);
             Mockito.when(tx.getGasPrice()).thenReturn(blockGasPrice.subtract(BigInteger.ONE).toByteArray());
             Mockito.when(tx.getGasPriceAsInteger()).thenReturn(blockGasPrice.subtract(BigInteger.ONE));
+            Mockito.when(tx.getHash()).thenReturn(ByteUtil.EMPTY_BYTE_ARRAY);
             ret.add(tx);
         }
         return ret;

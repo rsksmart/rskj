@@ -21,8 +21,8 @@ package co.rsk.mine;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.RskMiningConstants;
-import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.remasc.RemascTransaction;
 import com.google.common.collect.Lists;
 import org.ethereum.core.PendingState;
@@ -41,8 +41,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import static org.ethereum.util.BIUtil.toBI;
 
 /**
  * Created by oscar on 26/09/2016.
@@ -133,8 +131,7 @@ public class MinerUtils {
         co.rsk.bitcoinj.core.Sha256Hash prevBlockHash = co.rsk.bitcoinj.core.Sha256Hash.ZERO_HASH;
         long time = System.currentTimeMillis() / 1000;
         long difficultyTarget = co.rsk.bitcoinj.core.Utils.encodeCompactBits(params.getMaxTarget());
-        co.rsk.bitcoinj.core.BtcBlock bitcoinBlock = new co.rsk.bitcoinj.core.BtcBlock(params, params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.CURRENT), prevBlockHash, null, time, difficultyTarget, 0, transactions);
-        return bitcoinBlock;
+        return new co.rsk.bitcoinj.core.BtcBlock(params, params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.CURRENT), prevBlockHash, null, time, difficultyTarget, 0, transactions);
     }
 
     public List<org.ethereum.core.Transaction> getAllTransactions(PendingState pendingState) {
@@ -154,12 +151,12 @@ public class MinerUtils {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
-                logger.debug("Pending transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
-                RskAddress txSender = tx.getSender();
-
-                logger.debug("Examining transaction {} sender: {} value: {} nonce: {}", Hex.toHexString(tx.getHash()), txSender, Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
-
+                String hexHash = Hex.toHexString(tx.getHash());
+                String hexValue = Hex.toHexString(tx.getValue());
                 BigInteger txNonce = new BigInteger(1, tx.getNonce());
+                RskAddress txSender = tx.getSender();
+                logger.debug("Examining tx={} sender: {} value: {} nonce: {}", hexHash, txSender, hexValue, txNonce);
+
 
                 BigInteger expectedNonce;
 
@@ -170,24 +167,24 @@ public class MinerUtils {
                 }
 
                 if (!(tx instanceof RemascTransaction) && tx.getGasPriceAsInteger().compareTo(minGasPrice) < 0) {
-                    logger.warn("Rejected transaction {} because of low gas account {}, removing tx from pending state.", Hex.toHexString(tx.getHash()), txSender);
+                    logger.warn("Rejected tx={} because of low gas account {}, removing tx from pending state.", hexHash, txSender);
 
                     txsToRemove.add(tx);
                     continue;
                 }
 
                 if (!expectedNonce.equals(txNonce)) {
-                    logger.warn("Invalid nonce, expected {}, found {}, tx {}", expectedNonce.toString(), txNonce.toString(), Hex.toHexString(tx.getHash()));
+                    logger.warn("Invalid nonce, expected {}, found {}, tx={}", expectedNonce, txNonce, hexHash);
                     continue;
                 }
 
                 accountNonces.put(txSender, txNonce);
 
-                logger.debug("Accepted transaction {} sender: {} value: {} nonce: {}", Hex.toHexString(tx.getHash()), txSender, Hex.toHexString(tx.getValue()), Hex.toHexString(tx.getNonce()));
+                logger.debug("Accepted tx={} sender: {} value: {} nonce: {}", hexHash, txSender, hexValue, txNonce);
             } catch (Exception e) {
                 // Txs that can't be selected by any reason should be removed from pending state
                 String hash = null == tx.getHash() ? "" : Hex.toHexString(tx.getHash());
-                logger.warn("Error when processing transaction: " + hash, e);
+                logger.warn(String.format("Error when processing tx=%s", hash), e);
                 if (txsToRemove != null) {
                     txsToRemove.add(tx);
                 } else {
