@@ -140,13 +140,26 @@ public class Web3ImplSnapshotTest {
     }
 
     @Test
-    public void increaseTime() {
+    public void increaseTimeUsingHexadecimalValue() {
         World world = new World();
         SimpleEthereum ethereum = new SimpleEthereum();
         MinerServer minerServer = getMinerServerForTest(world, ethereum);
         Web3Impl web3 = createWeb3(world, ethereum, minerServer);
 
         String result = web3.evm_increaseTime("0x10");
+
+        Assert.assertEquals("0x10", result);
+        Assert.assertEquals(16, minerServer.increaseTime(0));
+    }
+
+    @Test
+    public void increaseTimeUsingDecimalValue() {
+        World world = new World();
+        SimpleEthereum ethereum = new SimpleEthereum();
+        MinerServer minerServer = getMinerServerForTest(world, ethereum);
+        Web3Impl web3 = createWeb3(world, ethereum, minerServer);
+
+        String result = web3.evm_increaseTime("16");
 
         Assert.assertEquals("0x10", result);
         Assert.assertEquals(16, minerServer.increaseTime(0));
@@ -161,6 +174,20 @@ public class Web3ImplSnapshotTest {
 
         web3.evm_increaseTime("0x10");
         String result = web3.evm_increaseTime("0x10");
+
+        Assert.assertEquals("0x20", result);
+        Assert.assertEquals(32, minerServer.increaseTime(0));
+    }
+
+    @Test
+    public void increaseTimeTwiceUsingDecimalValues() {
+        World world = new World();
+        SimpleEthereum ethereum = new SimpleEthereum();
+        MinerServer minerServer = getMinerServerForTest(world, ethereum);
+        Web3Impl web3 = createWeb3(world, ethereum, minerServer);
+
+        web3.evm_increaseTime("16");
+        String result = web3.evm_increaseTime("16");
 
         Assert.assertEquals("0x20", result);
         Assert.assertEquals(32, minerServer.increaseTime(0));
