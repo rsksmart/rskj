@@ -37,18 +37,17 @@ import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
-import co.rsk.validators.BlockValidator;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
+import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.manager.AdminInfo;
 import org.ethereum.net.EthereumChannelInitializerFactory;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.NodeManager;
@@ -155,24 +154,8 @@ public class RskFactory {
     }
 
     @Bean
-    public BlockChainImpl getBlockchain(org.ethereum.core.Repository repository,
-                                        org.ethereum.db.BlockStore blockStore,
-                                        ReceiptStore receiptStore,
-                                        PendingState pendingState,
-                                        @Qualifier("compositeEthereumListener") EthereumListener listener,
-                                        AdminInfo adminInfo,
-                                        BlockValidator blockValidator,
-                                        RskSystemProperties config) {
-        return new BlockChainImpl(
-                config,
-                repository,
-                blockStore,
-                receiptStore,
-                pendingState,
-                listener,
-                adminInfo,
-                blockValidator
-        );
+    public BlockChainImpl getBlockchain(BlockChainLoader blockChainLoader) {
+        return blockChainLoader.loadBlockchain();
     }
 
     @Bean

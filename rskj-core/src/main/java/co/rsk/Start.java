@@ -37,7 +37,6 @@ import co.rsk.rpc.CorsConfiguration;
 import org.ethereum.cli.CLIInterface;
 import org.ethereum.config.DefaultConfig;
 import org.ethereum.core.*;
-import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.server.ChannelManager;
 import co.rsk.rpc.netty.Web3HttpServer;
@@ -66,7 +65,6 @@ public class Start {
     private final MinerClient minerClient;
     private final RskSystemProperties rskSystemProperties;
     private final Web3Factory web3Factory;
-    private final BlockChainLoader loader;
     private final Repository repository;
     private final Blockchain blockchain;
     private final ChannelManager channelManager;
@@ -93,7 +91,6 @@ public class Start {
                  MinerClient minerClient,
                  RskSystemProperties rskSystemProperties,
                  Web3Factory web3Factory,
-                 BlockChainLoader loader,
                  Repository repository,
                  Blockchain blockchain,
                  ChannelManager channelManager,
@@ -109,7 +106,6 @@ public class Start {
         this.minerClient = minerClient;
         this.rskSystemProperties = rskSystemProperties;
         this.web3Factory = web3Factory;
-        this.loader = loader;
         this.repository = repository;
         this.blockchain = blockchain;
         this.channelManager = channelManager;
@@ -128,7 +124,6 @@ public class Start {
         logger.info("Running {},  core version: {}-{}", rskSystemProperties.genesisInfo(), rskSystemProperties.projectVersion(), rskSystemProperties.projectVersionModifier());
         BuildInfo.printInfo();
 
-        loader.loadBlockchain();
         // this should be the genesis block at this point
         pendingState.start(blockchain.getBestBlock());
         channelManager.start();
