@@ -32,6 +32,7 @@ import co.rsk.net.MessageHandler;
 import co.rsk.net.Metrics;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.rpc.netty.Web3HttpServer;
+import co.rsk.rpc.netty.Web3WebSocketServer;
 import org.ethereum.core.*;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.server.ChannelManager;
@@ -57,6 +58,7 @@ public class FullNodeRunner implements NodeRunner {
     private final MinerClient minerClient;
     private final RskSystemProperties rskSystemProperties;
     private final Web3HttpServer web3HttpServer;
+    private final Web3WebSocketServer web3WebSocketServer;
     private final Repository repository;
     private final Blockchain blockchain;
     private final ChannelManager channelManager;
@@ -78,6 +80,7 @@ public class FullNodeRunner implements NodeRunner {
             RskSystemProperties rskSystemProperties,
             Web3 web3Service,
             Web3HttpServer web3HttpServer,
+            Web3WebSocketServer web3WebSocketServer,
             Repository repository,
             Blockchain blockchain,
             ChannelManager channelManager,
@@ -94,6 +97,7 @@ public class FullNodeRunner implements NodeRunner {
         this.rskSystemProperties = rskSystemProperties;
         this.web3HttpServer = web3HttpServer;
         this.web3Service = web3Service;
+        this.web3WebSocketServer = web3WebSocketServer;
         this.repository = repository;
         this.blockchain = blockchain;
         this.channelManager = channelManager;
@@ -147,12 +151,7 @@ public class FullNodeRunner implements NodeRunner {
             enableSimulateTxsEx();
         }
 
-        if (rskSystemProperties.isRpcHttpEnabled()) {
-            logger.info("RPC HTTP enabled");
-            startRpcHttpServer();
-        } else {
-            logger.info("RPC HTTP disabled");
-        }
+        startWeb3(rskSystemProperties);
 
         if (rskSystemProperties.isPeerDiscoveryEnabled()) {
             udpServer.start();
@@ -176,9 +175,27 @@ public class FullNodeRunner implements NodeRunner {
 
     }
 
-    private void startRpcHttpServer() throws InterruptedException {
-        web3Service.start();
-        web3HttpServer.start();
+    private void startWeb3(RskSystemProperties rskSystemProperties) throws InterruptedException {
+        boolean rpcHttpEnabled = rskSystemProperties.isRpcHttpEnabled();
+        boolean rpcWebSocketEnabled = rskSystemProperties.isRpcWebSocketEnabled();
+
+        if (rpcHttpEnabled || rpcWebSocketEnabled) {
+            web3Service.start();
+        }
+
+        if (rpcHttpEnabled) {
+            logger.info("RPC HTTP enabled");
+            web3HttpServer.start();
+        } else {
+            logger.info("RPC HTTP disabled");
+        }
+
+        if (rpcWebSocketEnabled) {
+            logger.info("RPC WebSocket enabled");
+            web3WebSocketServer.start();
+        } else {
+            logger.info("RPC WebSocket disabled");
+        }
     }
 
     private void enableSimulateTxs() {
@@ -204,9 +221,23 @@ public class FullNodeRunner implements NodeRunner {
     public void stop() {
         logger.info("Shutting down RSK node");
         syncPool.stop();
-        if (rskSystemProperties.isRpcHttpEnabled()) {
-            web3Service.stop();
+
+        boolean rpcHttpEnabled = rskSystemProperties.isRpcHttpEnabled();
+        boolean rpcWebSocketEnabled = rskSystemProperties.isRpcWebSocketEnabled();
+        if (rpcHttpEnabled) {
             web3HttpServer.stop();
+        }
+        if (rpcWebSocketEnabled) {
+            try {
+                web3WebSocketServer.stop();
+            } catch (InterruptedException e) {
+                logger.error("Couldn't stop the WebSocket server", e);
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        if (rpcHttpEnabled || rpcWebSocketEnabled) {
+            web3Service.stop();
         }
 
         if (rskSystemProperties.isMinerServerEnabled()) {
