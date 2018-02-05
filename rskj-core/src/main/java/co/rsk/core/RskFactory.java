@@ -18,7 +18,6 @@
 
 package co.rsk.core;
 
-import co.rsk.Start;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
@@ -30,11 +29,15 @@ import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.eth.*;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
+import co.rsk.rpc.netty.JsonRpcWeb3FilterHandler;
+import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
+import co.rsk.rpc.netty.Web3HttpServer;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.validators.ProofOfWorkRule;
@@ -60,6 +63,7 @@ import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.rlpx.HandshakeHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.server.*;
+import org.ethereum.rpc.Web3;
 import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
@@ -133,24 +137,49 @@ public class RskFactory {
     }
 
     @Bean
-    public Start.Web3Factory getWeb3Factory(Rsk rsk,
-                                            Blockchain blockchain,
-                                            PendingState pendingState,
-                                            RskSystemProperties config,
-                                            MinerClient minerClient,
-                                            MinerServer minerServer,
-                                            PersonalModule personalModule,
-                                            EthModule ethModule,
-                                            ChannelManager channelManager,
-                                            Repository repository,
-                                            PeerScoringManager peerScoringManager,
-                                            NetworkStateExporter networkStateExporter,
-                                            org.ethereum.db.BlockStore blockStore,
-                                            PeerServer peerServer,
-                                            BlockProcessor nodeBlockProcessor,
-                                            HashRateCalculator hashRateCalculator,
-                                            ConfigCapabilities configCapabilities) {
-        return () -> new Web3RskImpl(rsk, blockchain, pendingState, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, networkStateExporter, blockStore, peerServer, nodeBlockProcessor, hashRateCalculator, configCapabilities);
+    public Web3 getWeb3Factory(Rsk rsk,
+                               Blockchain blockchain,
+                               PendingState pendingState,
+                               RskSystemProperties config,
+                               MinerClient minerClient,
+                               MinerServer minerServer,
+                               PersonalModule personalModule,
+                               EthModule ethModule,
+                               ChannelManager channelManager,
+                               Repository repository,
+                               PeerScoringManager peerScoringManager,
+                               NetworkStateExporter networkStateExporter,
+                               org.ethereum.db.BlockStore blockStore,
+                               PeerServer peerServer,
+                               BlockProcessor nodeBlockProcessor,
+                               HashRateCalculator hashRateCalculator,
+                               ConfigCapabilities configCapabilities) {
+        return new Web3RskImpl(rsk, blockchain, pendingState, config, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, networkStateExporter, blockStore, peerServer, nodeBlockProcessor, hashRateCalculator, configCapabilities);
+    }
+
+    @Bean
+    public JsonRpcWeb3FilterHandler getJsonRpcWeb3FilterHandler(RskSystemProperties rskSystemProperties) {
+        return new JsonRpcWeb3FilterHandler(rskSystemProperties.corsDomains());
+    }
+
+    @Bean
+    public JsonRpcWeb3ServerHandler getJsonRpcWeb3ServerHandler(Web3 web3Service, RskSystemProperties rskSystemProperties) {
+        return new JsonRpcWeb3ServerHandler(web3Service, rskSystemProperties.getRpcModules());
+    }
+
+    @Bean
+    public Web3HttpServer getWeb3HttpServer(RskSystemProperties rskSystemProperties,
+                                            JsonRpcWeb3FilterHandler filterHandler,
+                                            JsonRpcWeb3ServerHandler serverHandler) {
+        return new Web3HttpServer(
+            rskSystemProperties.rpcAddress(),
+            rskSystemProperties.rpcPort(),
+            rskSystemProperties.soLingerTime(),
+            true,
+            new CorsConfiguration(rskSystemProperties.corsDomains()),
+            filterHandler,
+            serverHandler
+        );
     }
 
     @Bean
