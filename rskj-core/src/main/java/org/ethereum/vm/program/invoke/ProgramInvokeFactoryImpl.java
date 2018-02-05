@@ -92,7 +92,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         long number = block.getNumber();
 
         /*** DIFFICULTY  op  ***/
-        byte[] difficulty = block.getDifficulty();
+        byte[] difficulty = block.getDifficulty().getBytes();
 
         /*** GASLIMIT op ***/
         byte[] gaslimit = block.getGasLimit();

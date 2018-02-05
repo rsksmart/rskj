@@ -116,13 +116,12 @@ public class BlockHeaderValidator {
             outputSummary.add(output);
         }
 
-        if (!toHexString(orig.getDifficulty())
-                .equals(toHexString(valid.getDifficulty()))) {
+        if (!orig.getDifficulty().equals(valid.getDifficulty())) {
 
             String output =
                     String.format("wrong block.difficulty: \n expected: %s \n got: %s",
-                            toHexString(valid.getDifficulty()),
-                            toHexString(orig.getDifficulty())
+                            valid.getDifficulty(),
+                            orig.getDifficulty()
                     );
 
             outputSummary.add(output);

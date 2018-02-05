@@ -470,7 +470,7 @@ public class Transaction {
         // parse null as 0 for nonce
         byte[] toEncodeNonce = null;
         if (this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 0) {
-            toEncodeNonce = RLP.encodeElement(null);
+            toEncodeNonce = RLP.encodeElement((byte[]) null);
         } else {
             toEncodeNonce = RLP.encodeElement(this.nonce);
         }
@@ -505,7 +505,7 @@ public class Transaction {
         // parse null as 0 for nonce
         byte[] toEncodeNonce = null;
         if (this.nonce == null || this.nonce.length == 1 && this.nonce[0] == 0) {
-            toEncodeNonce = RLP.encodeElement(null);
+            toEncodeNonce = RLP.encodeElement((byte[]) null);
         } else {
             toEncodeNonce = RLP.encodeElement(this.nonce);
         }

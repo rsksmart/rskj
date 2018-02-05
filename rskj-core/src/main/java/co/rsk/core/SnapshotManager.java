@@ -24,7 +24,6 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.PendingState;
 import org.ethereum.db.BlockStore;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -50,7 +49,7 @@ public class SnapshotManager {
         BlockStore store = blockchain.getBlockStore();
 
         Block block = store.getChainBlockByNumber(0);
-        BigInteger difficulty = blockchain.getBlockStore().getTotalDifficultyForHash(block.getHash());
+        BlockDifficulty difficulty = blockchain.getBlockStore().getTotalDifficultyForHash(block.getHash());
 
         blockchain.setStatus(block, difficulty);
 
@@ -90,7 +89,7 @@ public class SnapshotManager {
         BlockStore store = blockchain.getBlockStore();
 
         Block block = store.getChainBlockByNumber(newBestBlockNumber);
-        BigInteger difficulty = blockchain.getBlockStore().getTotalDifficultyForHash(block.getHash());
+        BlockDifficulty difficulty = blockchain.getBlockStore().getTotalDifficultyForHash(block.getHash());
 
         blockchain.setStatus(block, difficulty);
 

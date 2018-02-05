@@ -19,6 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.net.handler.TxHandler;
 import co.rsk.net.messages.*;
@@ -41,7 +42,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.math.BigInteger;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -242,7 +242,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private synchronized void sendStatusToAll() {
         BlockChainStatus blockChainStatus = this.blockProcessor.getBlockchain().getStatus();
         Block block = blockChainStatus.getBestBlock();
-        BigInteger totalDifficulty = blockChainStatus.getTotalDifficulty();
+        BlockDifficulty totalDifficulty = blockChainStatus.getTotalDifficulty();
 
         Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), totalDifficulty);
         logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(), Hex.toHexString(status.getBestBlockHash()).substring(0, 8));
@@ -253,7 +253,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         return this.blockProcessor.getBlockchain().getBestBlock();
     }
 
-    public synchronized BigInteger getTotalDifficulty() {
+    public synchronized BlockDifficulty getTotalDifficulty() {
         return this.blockProcessor.getBlockchain().getTotalDifficulty();
     }
 

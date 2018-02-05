@@ -20,13 +20,13 @@
 package org.ethereum.core;
 
 import co.rsk.blocks.BlockRecorder;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 
-import java.math.BigInteger;
 import java.util.List;
 
 public interface Blockchain {
@@ -51,7 +51,7 @@ public interface Blockchain {
      *
      * @return - total difficulty
      */
-    BigInteger getTotalDifficulty();
+    BlockDifficulty getTotalDifficulty();
 
     /**
      * @return - last added block from blockchain
@@ -66,7 +66,7 @@ public interface Blockchain {
 
     void setBestBlock(Block block);
 
-    void setStatus(Block block, BigInteger totalDifficulty);
+    void setStatus(Block block, BlockDifficulty totalDifficulty);
 
     BlockChainStatus getStatus();
 
@@ -76,7 +76,7 @@ public interface Blockchain {
 
     void close();
 
-    void setTotalDifficulty(BigInteger totalDifficulty);
+    void setTotalDifficulty(BlockDifficulty totalDifficulty);
 
     byte[] getBestBlockHash();
 

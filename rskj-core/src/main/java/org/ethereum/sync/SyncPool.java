@@ -20,6 +20,7 @@
 package org.ethereum.sync;
 
 import co.rsk.net.NodeID;
+import co.rsk.core.BlockDifficulty;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Blockchain;
 import org.ethereum.listener.EthereumListener;
@@ -67,7 +68,7 @@ public class SyncPool implements Iterable<Channel> {
     private final List<Channel> activePeers = Collections.synchronizedList(new ArrayList<Channel>());
     private final Map<String, Long> pendingConnections = new HashMap<>();
 
-    private BigInteger lowerUsefulDifficulty = BigInteger.ZERO;
+    private BlockDifficulty lowerUsefulDifficulty = BlockDifficulty.ZERO;
 
     private final EthereumListener ethereumListener;
     private final Blockchain blockchain;
@@ -378,7 +379,7 @@ public class SyncPool implements Iterable<Channel> {
     }
 
     public void updateLowerUsefulDifficulty() {
-        BigInteger td = blockchain.getTotalDifficulty();
+        BlockDifficulty td = blockchain.getTotalDifficulty();
 
         if (td.compareTo(lowerUsefulDifficulty) > 0) {
             lowerUsefulDifficulty = td;

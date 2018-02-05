@@ -19,6 +19,7 @@
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.BlockDifficulty;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.HashUtil;
@@ -63,10 +64,15 @@ public class BlockHeader {
     private byte[] receiptTrieRoot;
     /* The bloom filter for the logs of the block */
     private byte[] logsBloom;
-    /* A scalar value corresponding to the difficulty level of this block.
+    /**
+     * A scalar value corresponding to the difficulty level of this block.
      * This can be calculated from the previous block’s difficulty level
-     * and the timestamp */
-    private byte[] difficulty;
+     * and the timestamp.
+     * Note that difficultyRaw is saved to perform {@link #getEncoded()},
+     * but for other uses you should only rely on difficulty.
+     */
+    private byte[] difficultyRaw;
+    private BlockDifficulty difficulty;
     /* A scalar value equalBytes to the reasonable output of Unix's time()
      * at this block's inception */
     private long timestamp;
@@ -121,7 +127,8 @@ public class BlockHeader {
         }
 
         this.logsBloom = rlpHeader.get(6).getRLPData();
-        this.difficulty = rlpHeader.get(7).getRLPData();
+        this.difficultyRaw = rlpHeader.get(7).getRLPData();
+        this.difficulty = new BlockDifficulty(difficultyRaw);
 
         byte[] nrBytes = rlpHeader.get(8).getRLPData();
         byte[] glBytes = rlpHeader.get(9).getRLPData();
@@ -179,7 +186,8 @@ public class BlockHeader {
         this.unclesHash = unclesHash;
         this.coinbase = new RskAddress(coinbase);
         this.logsBloom = logsBloom;
-        this.difficulty = difficulty;
+        this.difficultyRaw = difficulty;
+        this.difficulty = new BlockDifficulty(difficultyRaw);
         this.number = number;
         this.gasLimit = gasLimit;
         this.gasUsed = gasUsed;
@@ -281,20 +289,17 @@ public class BlockHeader {
         return logsBloom;
     }
 
-    public byte[] getDifficulty() {
+    public BlockDifficulty getDifficulty() {
         return difficulty;
     }
 
-    public BigInteger getDifficultyBI() {
-        return new BigInteger(1, difficulty);
-    }
-
-    public void setDifficulty(byte[] difficulty) {
+    public void setDifficulty(BlockDifficulty difficulty) {
         /* A sealed block header is immutable, cannot be changed */
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter difficulty");
         }
 
+        this.difficultyRaw = difficulty.getBytes();
         this.difficulty = difficulty;
     }
 
@@ -431,7 +436,7 @@ public class BlockHeader {
         byte[] receiptTrieRoot = RLP.encodeElement(this.receiptTrieRoot);
 
         byte[] logsBloom = RLP.encodeElement(this.logsBloom);
-        byte[] difficulty = RLP.encodeElement(this.difficulty);
+        byte[] difficulty = RLP.encodeElement(this.difficultyRaw);
         byte[] number = RLP.encodeBigInteger(BigInteger.valueOf(this.number));
         byte[] gasLimit = RLP.encodeElement(this.gasLimit);
         byte[] gasUsed = RLP.encodeBigInteger(BigInteger.valueOf(this.gasUsed));
@@ -498,7 +503,7 @@ public class BlockHeader {
     }
 
     public byte[] getPowBoundary() {
-        return BigIntegers.asUnsignedByteArray(32, BigInteger.ONE.shiftLeft(256).divide(getDifficultyBI()));
+        return BigIntegers.asUnsignedByteArray(32, BigInteger.ONE.shiftLeft(256).divide(getDifficulty().asBigInteger()));
     }
 
     public String toString() {
@@ -513,7 +518,7 @@ public class BlockHeader {
         toStringBuff.append("  stateRoot=").append(toHexString(stateRoot)).append(suffix);
         toStringBuff.append("  txTrieHash=").append(toHexString(txTrieRoot)).append(suffix);
         toStringBuff.append("  receiptsTrieHash=").append(toHexString(receiptTrieRoot)).append(suffix);
-        toStringBuff.append("  difficulty=").append(toHexString(difficulty)).append(suffix);
+        toStringBuff.append("  difficulty=").append(difficulty).append(suffix);
         toStringBuff.append("  number=").append(number).append(suffix);
         toStringBuff.append("  gasLimit=").append(toHexString(gasLimit)).append(suffix);
         toStringBuff.append("  gasUsed=").append(gasUsed).append(suffix);

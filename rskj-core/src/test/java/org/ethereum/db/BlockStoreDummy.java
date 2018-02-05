@@ -19,11 +19,10 @@
 
 package org.ethereum.db;
 
+import co.rsk.core.BlockDifficulty;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.HashUtil;
-
-import java.math.BigInteger;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -83,7 +82,7 @@ public class BlockStoreDummy implements BlockStore {
     }
 
     @Override
-    public void saveBlock(Block block, BigInteger cummDifficulty, boolean mainChain) {
+    public void saveBlock(Block block, BlockDifficulty cummDifficulty, boolean mainChain) {
 
     }
 
@@ -117,7 +116,7 @@ public class BlockStoreDummy implements BlockStore {
     }
 
     @Override
-    public BigInteger getTotalDifficultyForHash(byte[] hash) {
+    public BlockDifficulty getTotalDifficultyForHash(byte[] hash) {
         return null;
     }
 

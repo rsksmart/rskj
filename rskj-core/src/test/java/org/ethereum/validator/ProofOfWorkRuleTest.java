@@ -132,7 +132,7 @@ public class ProofOfWorkRuleTest {
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, blockMergedMiningHash.getBytes());
         co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
 
-        BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficultyBI());
+        BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficulty());
 
         BlockMiner.findNonce(bitcoinMergedMiningBlock, targetBI);
 

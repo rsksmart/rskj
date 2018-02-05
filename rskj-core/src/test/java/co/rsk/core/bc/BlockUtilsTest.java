@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.net.BlockStore;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -51,7 +52,7 @@ public class BlockUtilsTest {
         Block block1b = new BlockBuilder().parent(genesis).build();
         Block block2 = new BlockBuilder().parent(block1).build();
         Block block3 = new BlockBuilder().parent(block2).build();
-        blockChain.getBlockStore().saveBlock(block3, BigInteger.ONE, false);
+        blockChain.getBlockStore().saveBlock(block3, new BlockDifficulty(BigInteger.ONE), false);
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(genesis));
         blockChain.tryToConnect(block1);

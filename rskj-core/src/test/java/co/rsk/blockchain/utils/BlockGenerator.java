@@ -19,6 +19,7 @@
 package co.rsk.blockchain.utils;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
@@ -33,7 +34,6 @@ import org.ethereum.core.*;
 import org.ethereum.core.genesis.InitialAddressState;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.BIUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -41,8 +41,10 @@ import org.spongycastle.pqc.math.linearalgebra.ByteUtils;
 import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
-import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.ethereum.core.Genesis.getZeroHash;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
@@ -196,7 +198,7 @@ public class BlockGenerator {
                 EMPTY_LIST_HASH, // uncle hash
                 coinbase, // coinbase
                 logBloom.getData(), // logs bloom
-                parent.getDifficulty(), // difficulty
+                parent.getDifficulty().getBytes(), // difficulty
                 parent.getNumber() + 1,
                 parent.getGasLimit(),
                 parent.getGasUsed(),
@@ -215,7 +217,7 @@ public class BlockGenerator {
     }
 
     public Block createChildBlock(Block parent, int ntxs) {
-        return createChildBlock(parent, ntxs, BIUtil.toBI(parent.getDifficulty()).longValue());
+        return createChildBlock(parent, ntxs, parent.getDifficulty().asBigInteger().longValue());
     }
 
     public Block createChildBlock(Block parent, int ntxs, long difficulty) {
@@ -231,7 +233,7 @@ public class BlockGenerator {
     }
 
     public Block createChildBlock(Block parent, List<Transaction> txs) {
-        return createChildBlock(parent, txs, new ArrayList<>(), BIUtil.toBI(parent.getDifficulty()).longValue(), null);
+        return createChildBlock(parent, txs, new ArrayList<>(), parent.getDifficulty().asBigInteger().longValue(), null);
     }
 
     public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
@@ -269,10 +271,10 @@ public class BlockGenerator {
         );
 
         if (difficulty == 0) {
-            newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader()).toByteArray());
+            newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader()));
         }
         else {
-            newHeader.setDifficulty(BigInteger.valueOf(difficulty).toByteArray());
+            newHeader.setDifficulty(new BlockDifficulty(BigInteger.valueOf(difficulty)));
         }
 
         newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash());
@@ -303,7 +305,7 @@ public class BlockGenerator {
                 EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase().getBytes(), // coinbase
                 logBloom.getData(), // logs bloom
-                parent.getDifficulty(), // difficulty
+                parent.getDifficulty().getBytes(), // difficulty
                 number,
                 parent.getGasLimit(),
                 parent.getGasUsed(),
@@ -335,7 +337,7 @@ public class BlockGenerator {
                 EMPTY_LIST_HASH, // uncle hash
                 parent.getCoinbase().getBytes(), // coinbase
                 logBloom.getData(), // logs bloom
-                parent.getDifficulty(), // difficulty
+                parent.getDifficulty().getBytes(), // difficulty
                 parent.getNumber() + 1,
                 parent.getGasLimit(),
                 parent.getGasUsed(),

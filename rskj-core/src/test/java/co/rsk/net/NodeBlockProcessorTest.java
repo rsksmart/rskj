@@ -19,6 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleMessageChannel;
 import co.rsk.net.sync.SyncConfiguration;
@@ -256,7 +257,7 @@ public class NodeBlockProcessorTest {
         Assert.assertTrue(processor.hasBetterBlockToSync());
 
         blockchain.setBestBlock(block);
-        blockchain.setTotalDifficulty(BigInteger.valueOf(30));
+        blockchain.setTotalDifficulty(new BlockDifficulty(BigInteger.valueOf(30)));
 
         Assert.assertFalse(processor.hasBetterBlockToSync());
         Assert.assertFalse(processor.hasBetterBlockToSync());

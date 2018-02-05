@@ -19,6 +19,7 @@
 package co.rsk.validators;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -57,9 +58,9 @@ public class GasLimitRuleTests {
     private static Block getBlock(long gasLimitValue) {
         byte[] gasLimit = new DataWord(gasLimitValue).getData();
 
-        BlockHeader header = new BlockHeader(null, null, RskAddress.nullAddress().getBytes(), null, null, 0,
-                gasLimit, 0,
-                0, null, null,0);
+        BlockHeader header = new BlockHeader(null, null, RskAddress.nullAddress().getBytes(),
+                null, BlockDifficulty.ZERO.getBytes(), 0, gasLimit, 0,
+                0, null, null, 0);
 
         return new Block(header);
     }

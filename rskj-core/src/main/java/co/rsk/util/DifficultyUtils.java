@@ -18,6 +18,8 @@
 
 package co.rsk.util;
 
+import co.rsk.core.BlockDifficulty;
+
 import java.math.BigInteger;
 
 /**
@@ -25,18 +27,18 @@ import java.math.BigInteger;
  */
 public class DifficultyUtils {
 
-    public static BigInteger difficultyToTarget(BigInteger difficulty) {
+    public static final BigInteger MAX = BigInteger.valueOf(2).pow(256);
 
-        BigInteger resultDifficulty = difficulty;
+    public static BigInteger difficultyToTarget(BlockDifficulty difficulty) {
 
-        if(difficulty.compareTo(BigInteger.valueOf(2)) < 1) {
+        BigInteger resultDifficulty = difficulty.asBigInteger();
+
+        if (resultDifficulty.compareTo(BigInteger.valueOf(2)) < 1) {
             // minDifficulty is 3 because target needs to be of length 256
             // and not have 1 in the position 255 (count start from 0)
             resultDifficulty = BigInteger.valueOf(3);
         }
 
-        BigInteger max = BigInteger.valueOf(2).pow(256);
-
-        return max.divide(resultDifficulty);
+        return MAX.divide(resultDifficulty);
     }
 }

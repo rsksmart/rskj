@@ -20,6 +20,7 @@
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.trie.Trie;
@@ -98,7 +99,7 @@ public class Block {
                 header.getUnclesHash(),
                 header.getCoinbase().getBytes(),
                 header.getLogsBloom(),
-                header.getDifficulty(),
+                header.getDifficulty().getBytes(),
                 header.getNumber(),
                 header.getGasLimit(),
                 header.getGasUsed(),
@@ -328,18 +329,11 @@ public class Block {
         return this.header.getLogsBloom();
     }
 
-    public byte[] getDifficulty() {
+    public BlockDifficulty getDifficulty() {
         if (!parsed) {
             parseRLP();
         }
         return this.header.getDifficulty();
-    }
-
-    public BigInteger getDifficultyBI() {
-        if (!parsed) {
-            parseRLP();
-        }
-        return this.header.getDifficultyBI();
     }
 
     public BigInteger getFeesPaidToMiner() {
@@ -349,13 +343,13 @@ public class Block {
         return this.header.getPaidFees();
     }
 
-    public BigInteger getCumulativeDifficulty() {
+    public BlockDifficulty getCumulativeDifficulty() {
         if (!parsed) {
             parseRLP();
         }
-        BigInteger calcDifficulty = new BigInteger(1, this.header.getDifficulty());
+        BlockDifficulty calcDifficulty = this.header.getDifficulty();
         for (BlockHeader uncle : uncleList) {
-            calcDifficulty = calcDifficulty.add(new BigInteger(1, uncle.getDifficulty()));
+            calcDifficulty = calcDifficulty.add(uncle.getDifficulty());
         }
         return calcDifficulty;
     }

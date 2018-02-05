@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
@@ -317,7 +318,7 @@ public class PendingStateImplTest {
         Block genesis = blockchain.getBestBlock();
         Block block = new BlockBuilder().parent(genesis).transactions(btxs).build();
 
-        pendingState.getBlockStore().saveBlock(genesis, BigInteger.ONE, true);
+        pendingState.getBlockStore().saveBlock(genesis, new BlockDifficulty(BigInteger.ONE), true);
         pendingState.processBest(block);
 
         List<Transaction> alltxs = pendingState.getAllPendingTransactions();

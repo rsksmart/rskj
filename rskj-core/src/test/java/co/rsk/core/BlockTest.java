@@ -264,7 +264,7 @@ public class BlockTest {
         block.seal();
 
         try {
-            block.getHeader().setDifficulty(new byte[32]);
+            block.getHeader().setDifficulty(new BlockDifficulty(new byte[32]));
             Assert.fail();
         }
         catch (SealedBlockHeaderException ex) {

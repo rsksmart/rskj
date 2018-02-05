@@ -21,6 +21,7 @@ package co.rsk.mine;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
@@ -179,7 +180,7 @@ public class MinerServerImpl implements MinerServer {
         if (secsBetweenFallbackMinedBlocks==0) {
             secsBetweenFallbackMinedBlocks = (config.getBlockchainConfig().getCommonConstants().getDurationLimit());
         }
-        autoSwitchBetweenNormalAndFallbackMining = !config.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BigInteger.ZERO);
+        autoSwitchBetweenNormalAndFallbackMining = !config.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BlockDifficulty.ZERO);
     }
 
     // This method is used for tests
@@ -370,7 +371,7 @@ public class MinerServerImpl implements MinerServer {
         newHeader.setTimestamp(this.getCurrentTimeInSeconds());
         Block parentBlock =blockchain.getBlockByHash(newHeader.getParentHash());
         newHeader.setDifficulty(
-                difficultyCalculator.calcDifficulty(newHeader, parentBlock.getHeader()).toByteArray());
+                difficultyCalculator.calcDifficulty(newHeader, parentBlock.getHeader()));
 
         // fallback mining marker
         newBlock.setExtraData(new byte[]{42});
@@ -577,7 +578,7 @@ public class MinerServerImpl implements MinerServer {
     public MinerWork updateGetWork(@Nonnull final Block block, @Nonnull final boolean notify) {
         Sha3Hash blockMergedMiningHash = new Sha3Hash(block.getHashForMergedMining());
 
-        BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficultyBI());
+        BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficulty());
         byte[] targetUnknownLengthArray = targetBI.toByteArray();
         byte[] targetArray = new byte[32];
         System.arraycopy(targetUnknownLengthArray, 0, targetArray, 32 - targetUnknownLengthArray.length, targetUnknownLengthArray.length);
@@ -798,7 +799,7 @@ public class MinerServerImpl implements MinerServer {
                 minimumGasPrice.toByteArray(),
                 CollectionUtils.size(uncles)
         );
-        newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()).toByteArray());
+        newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParent.getHeader()));
         newHeader.setTransactionsRoot(Block.getTxTrie(txs).getHash());
         return newHeader;
     }
