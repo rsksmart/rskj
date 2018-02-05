@@ -33,16 +33,13 @@ import co.rsk.net.MessageHandler;
 import co.rsk.net.Metrics;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.handler.TxHandler;
-import co.rsk.rpc.CorsConfiguration;
 import org.ethereum.cli.CLIInterface;
 import org.ethereum.config.DefaultConfig;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.rpc.JsonRpcNettyServer;
-import org.ethereum.rpc.JsonRpcWeb3FilterHandler;
-import org.ethereum.rpc.JsonRpcWeb3ServerHandler;
+import org.ethereum.rpc.Web3HttpServer;
 import org.ethereum.rpc.Web3;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
@@ -65,7 +62,7 @@ public class Start {
     private final MinerServer minerServer;
     private final MinerClient minerClient;
     private final RskSystemProperties rskSystemProperties;
-    private final Web3Factory web3Factory;
+    private final Web3HttpServer web3HttpServer;
     private final BlockChainLoader loader;
     private final Repository repository;
     private final Blockchain blockchain;
@@ -74,7 +71,7 @@ public class Start {
     private final MessageHandler messageHandler;
     private final TxHandler txHandler;
 
-    private Web3 web3Service;
+    private final Web3 web3Service;
     private final BlockProcessor nodeBlockProcessor;
     private final PendingState pendingState;
     private final SyncPool.PeerClientFactory peerClientFactory;
@@ -92,7 +89,8 @@ public class Start {
                  MinerServer minerServer,
                  MinerClient minerClient,
                  RskSystemProperties rskSystemProperties,
-                 Web3Factory web3Factory,
+                 Web3 web3Service,
+                 Web3HttpServer web3HttpServer,
                  BlockChainLoader loader,
                  Repository repository,
                  Blockchain blockchain,
@@ -108,7 +106,8 @@ public class Start {
         this.minerServer = minerServer;
         this.minerClient = minerClient;
         this.rskSystemProperties = rskSystemProperties;
-        this.web3Factory = web3Factory;
+        this.web3HttpServer = web3HttpServer;
+        this.web3Service = web3Service;
         this.loader = loader;
         this.repository = repository;
         this.blockchain = blockchain;
@@ -191,19 +190,8 @@ public class Start {
     }
 
     private void startRPCServer() throws InterruptedException {
-        web3Service = web3Factory.newInstance();
         web3Service.start();
-        JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, rskSystemProperties.getRpcModules());
-        JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler(rskSystemProperties.corsDomains());
-        new JsonRpcNettyServer(
-            rskSystemProperties.rpcAddress(),
-            rskSystemProperties.rpcPort(),
-            rskSystemProperties.soLingerTime(),
-            true,
-            new CorsConfiguration(rskSystemProperties.corsDomains()),
-            filterHandler,
-            serverHandler
-        ).start();
+        web3HttpServer.start();
     }
 
     private void enableSimulateTxs() {
@@ -268,9 +256,5 @@ public class Start {
                 cm.broadcastBlock(block, null);
             }
         }
-    }
-
-    public interface Web3Factory {
-        Web3 newInstance();
     }
 }
