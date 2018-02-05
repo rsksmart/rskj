@@ -40,7 +40,7 @@ import org.ethereum.core.*;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.rpc.JsonRpcNettyServer;
+import org.ethereum.rpc.Web3HttpServer;
 import org.ethereum.rpc.JsonRpcWeb3FilterHandler;
 import org.ethereum.rpc.JsonRpcWeb3ServerHandler;
 import org.ethereum.rpc.Web3;
@@ -195,7 +195,7 @@ public class Start {
         web3Service.start();
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Service, rskSystemProperties.getRpcModules());
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler(rskSystemProperties.corsDomains());
-        new JsonRpcNettyServer(
+        new Web3HttpServer(
             rskSystemProperties.rpcAddress(),
             rskSystemProperties.rpcPort(),
             rskSystemProperties.soLingerTime(),
