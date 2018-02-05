@@ -109,7 +109,7 @@ public class Web3ImplLogsTest {
     @Test
     public void newFilterGetLogsAfterBlock() throws Exception {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         PendingState pendingState = new PendingStateImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null, null, 10, 100);
 
@@ -148,7 +148,7 @@ public class Web3ImplLogsTest {
     @Test
     public void newFilterWithAccountAndTopicsCreatedAfterBlockAndGetLogs() throws Exception {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         PendingState pendingState = new PendingStateImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null, null, 10, 100);
 
@@ -188,7 +188,7 @@ public class Web3ImplLogsTest {
     @Test
     public void newFilterGetLogsTwiceAfterBlock() throws Exception {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         PendingState pendingState = new PendingStateImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null, null, 10, 100);
 
@@ -605,7 +605,7 @@ public class Web3ImplLogsTest {
     @Test
     public void createCallerContractWithEventsOnInvokeUsingGetFilterLogs() throws Exception {
         World world = new World();
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
 
         PendingState pendingState = new PendingStateImpl(config, world.getRepository(), world.getBlockChain().getBlockStore(), world.getBlockChain().getReceiptStore(), null, null, 10, 100);
 
@@ -791,7 +791,7 @@ public class Web3ImplLogsTest {
     }
 
     private Web3Impl getWeb3WithContractCall(World world) {
-        Account acc1 = new AccountBuilder(world).name("notDefault").balance(BigInteger.valueOf(10000000)).build();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
         // acc1 Account created address should be 661b05ca9eb621164906671efd2731ce0d7dd8b4
 
         Block genesis = world.getBlockByName("g00");
