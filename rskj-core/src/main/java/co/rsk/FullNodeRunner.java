@@ -109,7 +109,12 @@ public class FullNodeRunner implements NodeRunner {
     public void run() throws Exception {
         logger.info("Starting RSK");
 
-        logger.info("Running {},  core version: {}-{}", rskSystemProperties.genesisInfo(), rskSystemProperties.projectVersion(), rskSystemProperties.projectVersionModifier());
+        logger.info(
+                "Running {},  core version: {}-{}",
+                rskSystemProperties.genesisInfo(),
+                rskSystemProperties.projectVersion(),
+                rskSystemProperties.projectVersionModifier()
+        );
         BuildInfo.printInfo();
 
         // this should be the genesis block at this point
@@ -142,12 +147,11 @@ public class FullNodeRunner implements NodeRunner {
             enableSimulateTxsEx();
         }
 
-        if (rskSystemProperties.isRpcEnabled()) {
-            logger.info("RPC enabled");
-            startRPCServer();
-        }
-        else {
-            logger.info("RPC disabled");
+        if (rskSystemProperties.isRpcHttpEnabled()) {
+            logger.info("RPC HTTP enabled");
+            startRpcHttpServer();
+        } else {
+            logger.info("RPC HTTP disabled");
         }
 
         if (rskSystemProperties.isPeerDiscoveryEnabled()) {
@@ -172,7 +176,7 @@ public class FullNodeRunner implements NodeRunner {
 
     }
 
-    private void startRPCServer() throws InterruptedException {
+    private void startRpcHttpServer() throws InterruptedException {
         web3Service.start();
         web3HttpServer.start();
     }
@@ -200,7 +204,7 @@ public class FullNodeRunner implements NodeRunner {
     public void stop() {
         logger.info("Shutting down RSK node");
         syncPool.stop();
-        if (rskSystemProperties.isRpcEnabled()) {
+        if (rskSystemProperties.isRpcHttpEnabled()) {
             web3Service.stop();
             web3HttpServer.stop();
         }

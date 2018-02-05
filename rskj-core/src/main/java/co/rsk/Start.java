@@ -15,7 +15,6 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 package co.rsk;
 
 import org.ethereum.config.DefaultConfig;
@@ -35,7 +34,7 @@ public class Start {
             runner.run();
             Runtime.getRuntime().addShutdownHook(new Thread(runner::stop));
         } catch (Exception e) {
-            logger.error(e.getMessage(), e);
+            logger.error("The RSK node main thread failed, closing program", e);
             runner.stop();
             System.exit(1);
         }

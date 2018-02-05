@@ -200,7 +200,7 @@ public class RskFactory {
 
     @Bean
     public JsonRpcWeb3FilterHandler getJsonRpcWeb3FilterHandler(RskSystemProperties rskSystemProperties) {
-        return new JsonRpcWeb3FilterHandler(rskSystemProperties.corsDomains(), rskSystemProperties.rpcAddress(), rskSystemProperties.rpcHost());
+        return new JsonRpcWeb3FilterHandler(rskSystemProperties.corsDomains(), rskSystemProperties.rpcHttpBindAddress(), rskSystemProperties.rpcHttpHost());
     }
 
     @Bean
@@ -213,8 +213,8 @@ public class RskFactory {
                                             JsonRpcWeb3FilterHandler filterHandler,
                                             JsonRpcWeb3ServerHandler serverHandler) {
         return new Web3HttpServer(
-            rskSystemProperties.rpcAddress(),
-            rskSystemProperties.rpcPort(),
+            rskSystemProperties.rpcHttpBindAddress(),
+            rskSystemProperties.rpcHttpPort(),
             rskSystemProperties.soLingerTime(),
             true,
             new CorsConfiguration(rskSystemProperties.corsDomains()),
