@@ -27,14 +27,13 @@ import java.util.Arrays;
 import java.util.Map;
 
 public interface Web3 {
-
-    public class SyncingResult {
+    class SyncingResult {
         public String startingBlock;
         public String currentBlock;
         public String highestBlock;
     }
 
-    public class CallArguments {
+    class CallArguments {
         public String from;
         public String to;
         public String gas;

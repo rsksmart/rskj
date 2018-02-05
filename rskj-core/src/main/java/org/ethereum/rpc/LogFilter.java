@@ -1,7 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
- * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ * Copyright (C) 2018 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,111 +18,181 @@
 
 package org.ethereum.rpc;
 
-import org.ethereum.core.Bloom;
-import org.ethereum.crypto.SHA3Helper;
-import org.ethereum.vm.DataWord;
+import co.rsk.core.RskAddress;
+import org.ethereum.core.*;
+import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.LogInfo;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
+
+import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
 /**
- * Created by Anton Nashatyrev on 12.04.2016.
+ * Created by ajlopez on 17/01/2018.
  */
-public class LogFilter {
+public class LogFilter extends Filter {
+    class LogFilterEvent extends FilterEvent {
+        private final LogFilterElement el;
 
-    private List<byte[][]> topics = new ArrayList<>();  //  [[addr1, addr2], null, [A, B], [C]]
-    private byte[][] contractAddresses = new byte[0][];
-    private Bloom[][] filterBlooms;
-
-    public LogFilter withContractAddress(byte[] ... orAddress) {
-        contractAddresses = orAddress;
-        return this;
-    }
-
-    public LogFilter withTopic(byte[] ... orTopic) {
-        topics.add(orTopic);
-        return this;
-    }
-
-    private void initBlooms() {
-        if (filterBlooms != null) {
-            return;
+        LogFilterEvent(LogFilterElement el) {
+            this.el = el;
         }
 
-        List<byte[][]> addrAndTopics = new ArrayList<>(topics);
+        @Override
+        public LogFilterElement getJsonEventObject() {
+            return el;
+        }
+    }
 
-        addrAndTopics.add(contractAddresses);
+    private AddressesTopicsFilter addressesTopicsFilter;
+    private boolean fromLatestBlock;
+    private boolean toLatestBlock;
+    private final Blockchain blockchain;
 
-        filterBlooms = new Bloom[addrAndTopics.size()][];
-        for (int i = 0; i < addrAndTopics.size(); i++) {
-            byte[][] orTopics = addrAndTopics.get(i);
-            if (orTopics == null || orTopics.length == 0) {
-                filterBlooms[i] = new Bloom[] {new Bloom()}; // always matches
-            } else {
-                filterBlooms[i] = new Bloom[orTopics.length];
-                for (int j = 0; j < orTopics.length; j++) {
-                    filterBlooms[i][j] = Bloom.create(SHA3Helper.sha3(orTopics[j]));
+    public LogFilter(AddressesTopicsFilter addressesTopicsFilter, Blockchain blockchain, boolean fromLatestBlock, boolean toLatestBlock) {
+        this.addressesTopicsFilter = addressesTopicsFilter;
+        this.blockchain = blockchain;
+        this.fromLatestBlock = fromLatestBlock;
+        this.toLatestBlock = toLatestBlock;
+    }
+
+    void onLogMatch(LogInfo logInfo, Block b, int txIndex, Transaction tx, int logIdx) {
+        add(new LogFilterEvent(new LogFilterElement(logInfo, b, txIndex, tx, logIdx)));
+    }
+
+    void onTransaction(Transaction tx, Block b, int txIndex) {
+        TransactionInfo txInfo = blockchain.getTransactionInfo(tx.getHash());
+        TransactionReceipt receipt = txInfo.getReceipt();
+
+        LogFilterElement[] logs = new LogFilterElement[receipt.getLogInfoList().size()];
+
+        for (int i = 0; i < logs.length; i++) {
+            LogInfo logInfo = receipt.getLogInfoList().get(i);
+
+            if (addressesTopicsFilter.matchesExactly(logInfo)) {
+                onLogMatch(logInfo, b, txIndex, receipt.getTransaction(), i);
+            }
+        }
+    }
+
+    void onBlock(Block b) {
+        if (addressesTopicsFilter.matchBloom(new Bloom(b.getLogBloom()))) {
+            int txIdx = 0;
+
+            for (Transaction tx : b.getTransactionsList()) {
+                onTransaction(tx, b, txIdx);
+                txIdx++;
+            }
+        }
+    }
+
+    @Override
+    public void newBlockReceived(Block b) {
+        if (this.fromLatestBlock) {
+            this.clearEvents();
+            onBlock(b);
+        }
+        else if (this.toLatestBlock) {
+            onBlock(b);
+        }
+    }
+
+    @Override
+    public void newPendingTx(Transaction tx) {
+        //empty method
+    }
+
+    public static LogFilter fromFilterRequest(Web3.FilterRequest fr, Blockchain blockchain) throws Exception {
+        RskAddress[] addresses;
+
+        // TODO get array of topics, with topics, and array of topics inside (the OR operation over topics)
+        Topic[] topics = null;
+
+        if (fr.address instanceof String) {
+            addresses = new RskAddress[] { new RskAddress(stringHexToByteArray((String) fr.address)) };
+        } else if (fr.address instanceof Collection<?>) {
+            Collection<?> iterable = (Collection<?>)fr.address;
+
+            addresses = iterable.stream()
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .map(TypeConverter::stringHexToByteArray)
+                    .map(RskAddress::new)
+                    .toArray(RskAddress[]::new);
+        }
+        else {
+            addresses = new RskAddress[0];
+        }
+
+        if (fr.topics != null) {
+            for (Object topic : fr.topics) {
+                if (topic == null) {
+                    topics = new Topic[0];
+                } else if (topic instanceof String) {
+                    topics = new Topic[] { new Topic((String) topic) };
+                } else if (topic instanceof Collection<?>) {
+                    Collection<?> iterable = (Collection<?>)topic;
+
+                    topics = iterable.stream()
+                            .filter(String.class::isInstance)
+                            .map(String.class::cast)
+                            .map(TypeConverter::stringHexToByteArray)
+                            .map(Topic::new)
+                            .toArray(Topic[]::new);
                 }
             }
         }
+        else {
+            topics = null;
+        }
+
+        AddressesTopicsFilter addressesTopicsFilter = new AddressesTopicsFilter(addresses, topics);
+
+        // TODO review pending transaction processing
+        // when fromBlock and/or toBlock are "pending"
+
+        // Default from block value
+        if (fr.fromBlock == null) {
+            fr.fromBlock = "latest";
+        }
+
+        // Default to block value
+        if (fr.toBlock == null) {
+            fr.toBlock = "latest";
+        }
+
+        boolean fromLatestBlock = "latest".equalsIgnoreCase(fr.fromBlock);
+        boolean toLatestBlock = "latest".equalsIgnoreCase(fr.toBlock);
+
+        LogFilter filter = new LogFilter(addressesTopicsFilter, blockchain, fromLatestBlock, toLatestBlock);
+
+        retrieveHistoricalData(fr, blockchain, filter);
+
+        return filter;
     }
 
-    public boolean matchBloom(Bloom blockBloom) {
-        initBlooms();
-        for (Bloom[] andBloom : filterBlooms) {
-            boolean orMatches = false;
-            for (Bloom orBloom : andBloom) {
-                if (blockBloom.matches(orBloom)) {
-                    orMatches = true;
-                    break;
-                }
-            }
-            if (!orMatches) {
-                return false;
+    private static void retrieveHistoricalData(Web3.FilterRequest fr, Blockchain blockchain, LogFilter filter) throws Exception {
+        Block blockFrom = isBlockWord(fr.fromBlock) ? null : Web3Impl.getBlockByNumberOrStr(fr.fromBlock, blockchain);
+        Block blockTo = isBlockWord(fr.toBlock) ? null : Web3Impl.getBlockByNumberOrStr(fr.toBlock, blockchain);
+
+        if (blockFrom == null && "earliest".equalsIgnoreCase(fr.fromBlock)) {
+            blockFrom = blockchain.getBlockByNumber(0);
+        }
+
+        if (blockFrom != null) {
+            // need to add historical data
+            blockTo = blockTo == null ? blockchain.getBestBlock() : blockTo;
+
+            for (long blockNum = blockFrom.getNumber(); blockNum <= blockTo.getNumber(); blockNum++) {
+                filter.onBlock(blockchain.getBlockByNumber(blockNum));
             }
         }
-        return true;
+        else if ("latest".equalsIgnoreCase(fr.fromBlock)) {
+            filter.onBlock(blockchain.getBestBlock());
+        }
     }
 
-    boolean matchesContractAddress(byte[] toAddr) {
-        initBlooms();
-        for (byte[] address : contractAddresses) {
-            if (Arrays.equals(address, toAddr)) {
-                return true;
-            }
-        }
-        return contractAddresses.length == 0;
-    }
-
-    public boolean matchesExactly(LogInfo logInfo) {
-        initBlooms();
-        if (!matchesContractAddress(logInfo.getAddress())) {
-            return false;
-        }
-
-        List<DataWord> logTopics = logInfo.getTopics();
-        for (int i = 0; i < this.topics.size(); i++) {
-            if (i >= logTopics.size()) {
-                return false;
-            }
-
-            byte[][] orTopics = topics.get(i);
-            if (orTopics != null && orTopics.length > 0) {
-                boolean orMatches = false;
-                DataWord logTopic = logTopics.get(i);
-                for (byte[] orTopic : orTopics) {
-                    if (new DataWord(orTopic).equals(logTopic)) {
-                        orMatches = true;
-                        break;
-                    }
-                }
-                if (!orMatches) {
-                    return false;
-                }
-            }
-        }
-        return true;
+    private static boolean isBlockWord(String id) {
+        return "latest".equalsIgnoreCase(id) || "pending".equalsIgnoreCase(id) || "earliest".equalsIgnoreCase(id);
     }
 }
