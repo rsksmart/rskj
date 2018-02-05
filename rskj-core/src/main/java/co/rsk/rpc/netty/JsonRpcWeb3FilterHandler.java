@@ -10,10 +10,7 @@ import org.ethereum.rpc.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,6 +23,7 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
     private static final Logger logger = LoggerFactory.getLogger("jsonrpc");
     private final List<String> rpcHost;
     private final InetAddress rpcAddress;
+    private final List<String> acceptedHosts;
 
     private OriginValidator originValidator;
 
@@ -33,16 +31,11 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
         this.originValidator = new OriginValidator(corsDomains);
         this.rpcHost = rpcHost;
         this.rpcAddress = rpcAddress;
+        this.acceptedHosts = getAcceptedHosts();
     }
 
-    @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
-        HttpResponse response;
-        HttpMethod httpMethod = request.getMethod();
-        HttpHeaders headers = request.headers();
-        String hostHeader = headers.get(HttpHeaders.Names.HOST).split(":")[0];
+    private List<String> getAcceptedHosts() {
         List<String> hosts = new ArrayList<>();
-
         if (isAcceptedAddress(rpcAddress)) {
             hosts.add(rpcAddress.getHostName());
             hosts.add(rpcAddress.getHostAddress());
@@ -61,9 +54,23 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
                 }
             }
         }
+        return hosts;
+    }
 
-        if (!hosts.contains(hostHeader)) {
-            logger.error("Invalid hostHeader");
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
+        HttpResponse response;
+        HttpMethod httpMethod = request.getMethod();
+        HttpHeaders headers = request.headers();
+
+        // when a request has multiple host fields declared it would be equivalent to a comma separated list
+        // the request will be inmediately rejected since it won't be parsed as a valid URI
+        // and won't work to match an item on rpc.host
+        String hostHeader = headers.get(HttpHeaders.Names.HOST);
+        String parsedHeader = parseHostHeader(hostHeader);
+
+        if (!acceptedHosts.contains(parsedHeader)) {
+            logger.trace("Invalid header HOST {}", hostHeader);
             response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST);
             ctx.write(response).addListener(ChannelFutureListener.CLOSE);
             return;
@@ -75,8 +82,8 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
             String origin = headers.get(HttpHeaders.Names.ORIGIN);
             String referer = headers.get(HttpHeaders.Names.REFERER);
 
-                logger.error("Unsupported content type");
             if (!"application/json".equals(mimeType) && !"application/json-rpc".equals(mimeType)) {
+                logger.error("Unsupported content type");
                 response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.UNSUPPORTED_MEDIA_TYPE);
             } else if (origin != null && !this.originValidator.isValidOrigin(origin)) {
                 logger.error("Invalid origin");
@@ -94,6 +101,16 @@ public class JsonRpcWeb3FilterHandler extends SimpleChannelInboundHandler<FullHt
         }
 
         ctx.write(response).addListener(ChannelFutureListener.CLOSE);
+    }
+
+    private String parseHostHeader(String hostHeader) {
+        try {
+            // WORKAROUND: add any scheme to make the resulting URI valid.
+            URI uri = new URI("my://" + hostHeader); // may throw URISyntaxException
+            return uri.getHost();
+        } catch (URISyntaxException e) {
+            return hostHeader;
+        }
     }
 
     private boolean isAcceptedAddress(final InetAddress address) {

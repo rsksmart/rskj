@@ -78,7 +78,10 @@ public class Web3HttpServerTest {
 
     @Test
     public void smokeTestUsingValidHostAndHostName() throws Exception {
-        smokeTest(APPLICATION_JSON, "www.google.com", InetAddress.getByName("www.google.com"), new ArrayList<>());
+        String domain = "www.google.com";
+        List<String> rpcHost = new ArrayList<>();
+        rpcHost.add(domain);
+        smokeTest(APPLICATION_JSON, domain, InetAddress.getByName(domain), rpcHost);
     }
 
     @Test(expected = IOException.class)
@@ -89,7 +92,7 @@ public class Web3HttpServerTest {
 
 
     private void smokeTest(String contentType, String host) throws Exception {
-        smokeTest(contentType, host, InetAddress.getLocalHost(), new ArrayList<>());
+        smokeTest(contentType, host, InetAddress.getLoopbackAddress(), new ArrayList<>());
     }
 
     private void smokeTest(String contentType, String host, InetAddress rpcAddress, List<String> rpcHost) throws Exception {
