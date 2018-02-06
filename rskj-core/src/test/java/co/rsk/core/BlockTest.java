@@ -87,7 +87,7 @@ public class BlockTest {
                 txs,                            // transaction list
                 null,  // uncle list
                 BigInteger.TEN.toByteArray(),
-                BigInteger.ZERO
+                Coin.ZERO
         );
 
         Block parsedBlock = new Block(block.getEncoded());
@@ -324,7 +324,7 @@ public class BlockTest {
         block.seal();
 
         try {
-            block.getHeader().setPaidFees(BigInteger.TEN);
+            block.getHeader().setPaidFees(Coin.valueOf(10L));
             Assert.fail();
         }
         catch (SealedBlockHeaderException ex) {
@@ -374,21 +374,6 @@ public class BlockTest {
         }
         catch (SealedBlockHeaderException ex) {
             Assert.assertEquals("Sealed block header: trying to alter extra data", ex.getMessage());
-        }
-    }
-
-    @Test
-    public void sealedBlockHeaderSetMinimumGasPrice() {
-        Block block = new BlockGenerator().createBlock(10, 0);
-
-        block.seal();
-
-        try {
-            block.getHeader().setMinimumGasPrice(new byte[32]);
-            Assert.fail();
-        }
-        catch (SealedBlockHeaderException ex) {
-            Assert.assertEquals("Sealed block header: trying to alter minimum gas price", ex.getMessage());
         }
     }
 

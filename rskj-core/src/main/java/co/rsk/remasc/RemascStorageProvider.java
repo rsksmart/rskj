@@ -18,6 +18,7 @@
 
 package co.rsk.remasc;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Repository;
 import org.ethereum.util.RLP;
@@ -45,8 +46,8 @@ class RemascStorageProvider {
     private RskAddress contractAddress;
 
     // Values retrieved / to be stored on the contract state
-    private BigInteger rewardBalance;
-    private BigInteger burnedBalance;
+    private Coin rewardBalance;
+    private Coin burnedBalance;
     private SortedMap<Long, List<Sibling>> siblings;
     private Boolean brokenSelectionRule;
 
@@ -55,8 +56,8 @@ class RemascStorageProvider {
         this.contractAddress = contractAddress;
     }
 
-    public BigInteger getRewardBalance() {
-        if (rewardBalance!= null) {
+    public Coin getRewardBalance() {
+        if (rewardBalance != null) {
             return rewardBalance;
         }
 
@@ -65,13 +66,13 @@ class RemascStorageProvider {
         DataWord value = this.repository.getStorageValue(this.contractAddress, address);
 
         if (value == null) {
-            return BigInteger.ZERO;
+            return Coin.ZERO;
         }
 
-        return BigIntegers.fromUnsignedByteArray(value.getData());
+        return new Coin(value.getData());
     }
 
-    public void setRewardBalance(BigInteger rewardBalance) {
+    public void setRewardBalance(Coin rewardBalance) {
         this.rewardBalance = rewardBalance;
     }
 
@@ -82,11 +83,11 @@ class RemascStorageProvider {
 
         DataWord address = new DataWord(REWARD_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
 
-        this.repository.addStorageRow(this.contractAddress, address, new DataWord(this.rewardBalance.toByteArray()));
+        this.repository.addStorageRow(this.contractAddress, address, new DataWord(this.rewardBalance.getBytes()));
     }
 
-    public BigInteger getBurnedBalance() {
-        if (burnedBalance!= null) {
+    public Coin getBurnedBalance() {
+        if (burnedBalance != null) {
             return burnedBalance;
         }
 
@@ -95,17 +96,17 @@ class RemascStorageProvider {
         DataWord value = this.repository.getStorageValue(this.contractAddress, address);
 
         if (value == null) {
-            return BigInteger.ZERO;
+            return Coin.ZERO;
         }
 
-        return BigIntegers.fromUnsignedByteArray(value.getData());
+        return new Coin(value.getData());
     }
 
-    public void setBurnedBalance(BigInteger burnedBalance) {
+    public void setBurnedBalance(Coin burnedBalance) {
         this.burnedBalance = burnedBalance;
     }
 
-    public void addToBurnBalance(BigInteger amountToBurn) {
+    public void addToBurnBalance(Coin amountToBurn) {
         this.burnedBalance = this.getBurnedBalance().add(amountToBurn);
     }
 
@@ -116,7 +117,7 @@ class RemascStorageProvider {
 
         DataWord address = new DataWord(BURNED_BALANCE_KEY.getBytes(StandardCharsets.UTF_8));
 
-        this.repository.addStorageRow(this.contractAddress, address, new DataWord(this.burnedBalance.toByteArray()));
+        this.repository.addStorageRow(this.contractAddress, address, new DataWord(this.burnedBalance.getBytes()));
     }
 
     public SortedMap<Long, List<Sibling>> getSiblings() {

@@ -20,6 +20,7 @@ package co.rsk.net.handler;
 
 import co.rsk.TestHelpers.Tx;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.Federation;
 import org.ethereum.config.blockchain.RegTestConfig;
@@ -60,7 +61,7 @@ public class TxValidatorTest {
         Block block = Mockito.mock(Block.class);
         Mockito.when(blockchain.getBestBlock()).thenReturn(block);
         Mockito.when(block.getGasLimit()).thenReturn(BigInteger.valueOf(blockGasLimit).toByteArray());
-        Mockito.when(block.getMinimumGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
+        Mockito.when(block.getMinimumGasPrice()).thenReturn(Coin.valueOf(1L));
         times = new HashMap<>();
         txmap = new HashMap<>();
 
@@ -147,7 +148,7 @@ public class TxValidatorTest {
         Block block = Mockito.mock(Block.class);
         Mockito.when(blockchain.getBestBlock()).thenReturn(block);
         Mockito.when(block.getGasLimit()).thenReturn(BigInteger.valueOf(blockGasLimit).toByteArray());
-        Mockito.when(block.getMinimumGasPrice()).thenReturn(BigInteger.valueOf(1).toByteArray());
+        Mockito.when(block.getMinimumGasPrice()).thenReturn(Coin.valueOf(1L));
         createAccountState(txs.get(0), repository, 0, 0);
         times = new HashMap<>();
         txmap = new HashMap<>();
@@ -164,7 +165,7 @@ public class TxValidatorTest {
 
     private void createAccountState(Transaction tx, Repository repository, long balance, long nonce) {
         AccountState as = Mockito.mock(AccountState.class);
-        Mockito.when(as.getBalance()).thenReturn(BigInteger.valueOf(balance));
+        Mockito.when(as.getBalance()).thenReturn(Coin.valueOf(balance));
         Mockito.when(as.getNonce()).thenReturn(BigInteger.valueOf(nonce));
         Mockito.when(repository.getAccountState(tx.getSender())).thenReturn(as);
     }

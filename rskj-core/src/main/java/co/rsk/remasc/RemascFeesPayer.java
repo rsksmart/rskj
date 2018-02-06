@@ -18,13 +18,13 @@
 
 package co.rsk.remasc;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Repository;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
@@ -44,21 +44,21 @@ class RemascFeesPayer {
         this.contractAddress = contractAddress;
     }
 
-    public void payMiningFees(byte[] blockHash, BigInteger value, RskAddress toAddress, List<LogInfo> logs) {
+    public void payMiningFees(byte[] blockHash, Coin value, RskAddress toAddress, List<LogInfo> logs) {
         this.transferPayment(value, toAddress);
         this.logPayment(blockHash, value, toAddress, logs);
     }
 
-    private void transferPayment(BigInteger value, RskAddress toAddress) {
+    private void transferPayment(Coin value, RskAddress toAddress) {
         this.repository.addBalance(contractAddress, value.negate());
         this.repository.addBalance(toAddress, value);
     }
 
-    private void logPayment(byte[] blockHash, BigInteger value, RskAddress toAddress, List<LogInfo> logs) {
+    private void logPayment(byte[] blockHash, Coin value, RskAddress toAddress, List<LogInfo> logs) {
 
         byte[] loggerContractAddress = this.contractAddress.getBytes();
         List<DataWord> topics = Arrays.asList(RemascContract.MINING_FEE_TOPIC, new DataWord(toAddress.getBytes()));
-        byte[] data = RLP.encodeList(RLP.encodeElement(blockHash), RLP.encodeBigInteger(value));
+        byte[] data = RLP.encodeList(RLP.encodeElement(blockHash), RLP.encodeCoin(value));
 
         logs.add(new LogInfo(loggerContractAddress, topics, data));
     }

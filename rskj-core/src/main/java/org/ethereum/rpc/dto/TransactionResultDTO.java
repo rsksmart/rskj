@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc.dto;
 
+import co.rsk.core.Coin;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.rpc.TypeConverter;
@@ -59,12 +60,12 @@ public class TransactionResultDTO {
         to = TypeConverter.toJsonHex(tx.getReceiveAddress().getBytes());
         gas = TypeConverter.toJsonHex(tx.getGasLimit()); // Todo: unclear if it's the gas limit or gas consumed what is asked
 
-        gasPrice = TypeConverter.toJsonHex(tx.getGasPrice());
+        gasPrice = TypeConverter.toJsonHex(tx.getGasPrice().getBytes());
 
-        if (Arrays.equals(tx.getValue(), ByteUtil.EMPTY_BYTE_ARRAY)) {
+        if (Coin.ZERO.equals(tx.getValue())) {
             value = "0";
         } else {
-            value = TypeConverter.toJsonHex(tx.getValue());
+            value = TypeConverter.toJsonHex(tx.getValue().getBytes());
         }
 
         input = TypeConverter.toJsonHex(tx.getData());

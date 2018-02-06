@@ -18,13 +18,12 @@
 
 package co.rsk.test.builderstest;
 
+import co.rsk.core.Coin;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import org.ethereum.core.Account;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
 
 /**
  * Created by ajlopez on 8/7/2016.
@@ -43,10 +42,10 @@ public class AccountBuilderTest {
         World world = new World();
 
         byte[] code = new byte[] { 0x01, 0x02, 0x03 };
-        BigInteger balance = BigInteger.TEN;
+        Coin balance = Coin.valueOf(10);
 
         Account account = new AccountBuilder(world).name("acc1")
-                .balance(BigInteger.TEN)
+                .balance(balance)
                 .code(code)
                 .build();
 

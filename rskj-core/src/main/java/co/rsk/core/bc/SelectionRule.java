@@ -1,6 +1,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
 import co.rsk.remasc.Sibling;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -32,13 +33,13 @@ public class SelectionRule {
             return false;
         }
 
-        BigInteger pfm = currentBlock.getHeader().getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
+        Coin pfm = currentBlock.getHeader().getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
         // fees over PAID_FEES_MULTIPLIER_CRITERIA times higher
         if (block.getHeader().getPaidFees().compareTo(pfm) > 0) {
             return true;
         }
 
-        BigInteger blockFeesCriteria = block.getHeader().getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
+        Coin blockFeesCriteria = block.getHeader().getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
 
         // As a last resort, choose the block with the lower hash. We ask that
         // the fees are at least bigger than the half of current block.
@@ -51,11 +52,11 @@ public class SelectionRule {
         int maxUncleCount = 0;
         for (Sibling sibling : siblings) {
             maxUncleCount = Math.max(maxUncleCount, sibling.getUncleCount());
-            BigInteger pfm = processingBlockHeader.getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
+            Coin pfm = processingBlockHeader.getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
             if (sibling.getPaidFees().compareTo(pfm) > 0) {
                 return true;
             }
-            BigInteger blockFeesCriteria = sibling.getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
+            Coin blockFeesCriteria = sibling.getPaidFees().multiply(PAID_FEES_MULTIPLIER_CRITERIA);
             if (processingBlockHeader.getPaidFees().compareTo(blockFeesCriteria) < 0 &&
                     isThisBlockHashSmaller(sibling.getHash(), processingBlockHeader.getHash())) {
                 return true;

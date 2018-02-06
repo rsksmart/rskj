@@ -20,7 +20,7 @@ package co.rsk.net.handler.txvalidator;
 
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.RskSystemProperties;
-import org.ethereum.config.BlockchainNetConfig;
+import org.spongycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
@@ -29,13 +29,11 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
 public class TxValidatorIntrinsicGasLimitValidatorTest {
 
-    BlockchainNetConfig originalConfig;
     private RskSystemProperties config;
 
     @Before
@@ -85,10 +83,10 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
 
         TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator(config);
 
-        Assert.assertTrue(tvigpv.validate(tx1, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
-        Assert.assertTrue(tvigpv.validate(tx2, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
-        Assert.assertTrue(tvigpv.validate(tx3, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
-        Assert.assertTrue(tvigpv.validate(tx4, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
+        Assert.assertTrue(tvigpv.validate(tx1, new AccountState(), null, null, Long.MAX_VALUE, false));
+        Assert.assertTrue(tvigpv.validate(tx2, new AccountState(), null, null, Long.MAX_VALUE, false));
+        Assert.assertTrue(tvigpv.validate(tx3, new AccountState(), null, null, Long.MAX_VALUE, false));
+        Assert.assertTrue(tvigpv.validate(tx4, new AccountState(), null, null, Long.MAX_VALUE, false));
     }
 
 
@@ -133,9 +131,9 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
 
         TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator(config);
 
-        Assert.assertFalse(tvigpv.validate(tx1, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
-        Assert.assertFalse(tvigpv.validate(tx2, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
-        Assert.assertFalse(tvigpv.validate(tx3, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
-        Assert.assertFalse(tvigpv.validate(tx4, new AccountState(BigInteger.ZERO, BigInteger.ZERO), null, null, Long.MAX_VALUE, false));
+        Assert.assertFalse(tvigpv.validate(tx1, new AccountState(), null, null, Long.MAX_VALUE, false));
+        Assert.assertFalse(tvigpv.validate(tx2, new AccountState(), null, null, Long.MAX_VALUE, false));
+        Assert.assertFalse(tvigpv.validate(tx3, new AccountState(), null, null, Long.MAX_VALUE, false));
+        Assert.assertFalse(tvigpv.validate(tx4, new AccountState(), null, null, Long.MAX_VALUE, false));
     }
 }

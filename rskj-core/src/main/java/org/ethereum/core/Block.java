@@ -19,6 +19,7 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.panic.PanicProcessor;
@@ -115,7 +116,7 @@ public class Block {
                 header.getStateRoot(),
                 transactionsList,
                 uncleList,
-                header.getMinimumGasPrice());
+                header.getMinimumGasPrice() == null ? null : header.getMinimumGasPrice().getBytes());
     }
 
     public Block(byte[] parentHash, byte[] unclesHash, byte[] coinbase, byte[] logsBloom,
@@ -129,7 +130,7 @@ public class Block {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
                 gasUsed, timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot,
-                stateRoot, transactionsList, uncleList, minimumGasPrice, BigInteger.ZERO);
+                stateRoot, transactionsList, uncleList, minimumGasPrice, Coin.ZERO);
 
         this.header.setBitcoinMergedMiningCoinbaseTransaction(bitcoinMergedMiningCoinbaseTransaction);
         this.header.setBitcoinMergedMiningHeader(bitcoinMergedMiningHeader);
@@ -143,7 +144,7 @@ public class Block {
                  long gasUsed, long timestamp, byte[] extraData,
                  byte[] mixHash, byte[] nonce, byte[] receiptsRoot,
                  byte[] transactionsRoot, byte[] stateRoot,
-                 List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, BigInteger paidFees) {
+                 List<Transaction> transactionsList, List<BlockHeader> uncleList, byte[] minimumGasPrice, Coin paidFees) {
 
         this(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit,
                 gasUsed, timestamp, extraData, mixHash, nonce, transactionsList, uncleList, minimumGasPrice);
@@ -336,7 +337,7 @@ public class Block {
         return this.header.getDifficulty();
     }
 
-    public BigInteger getFeesPaidToMiner() {
+    public Coin getFeesPaidToMiner() {
         if (!parsed) {
             parseRLP();
         }
@@ -415,7 +416,7 @@ public class Block {
         return Collections.unmodifiableList(this.uncleList);
     }
 
-    public byte[] getMinimumGasPrice() {
+    public Coin getMinimumGasPrice() {
         if (!parsed) {
             parseRLP();
         }
@@ -518,9 +519,9 @@ public class Block {
             return false;
         }
 
-        return BigInteger.ZERO.equals(new BigInteger(1, tx.getValue())) &&
+        return Coin.ZERO.equals(tx.getValue()) &&
                 BigInteger.ZERO.equals(new BigInteger(1, tx.getGasLimit())) &&
-                BigInteger.ZERO.equals(new BigInteger(1, tx.getGasPrice()));
+                Coin.ZERO.equals(tx.getGasPrice());
 
     }
 
@@ -745,10 +746,6 @@ public class Block {
         }
 
         return txsState;
-    }
-
-    public BigInteger getMinGasPriceAsInteger() {
-        return (this.getMinimumGasPrice() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getMinimumGasPrice());
     }
 
     public BigInteger getGasLimitAsInteger() {

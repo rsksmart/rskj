@@ -19,6 +19,7 @@
 package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.TrieImplHashTest;
 import co.rsk.trie.TrieStore;
@@ -72,7 +73,7 @@ public class RepositoryImplTest {
 
         Assert.assertNotNull(accState);
         Assert.assertEquals(BigInteger.ZERO, accState.getNonce());
-        Assert.assertEquals(BigInteger.ZERO, accState.getBalance());
+        Assert.assertEquals(BigInteger.ZERO, accState.getBalance().asBigInteger());
 
         Assert.assertFalse(Arrays.equals(emptyHash, repository.getRoot()));
     }
@@ -112,14 +113,14 @@ public class RepositoryImplTest {
         AccountState accState = repository.createAccount(accAddress);
 
         accState.incrementNonce();
-        accState.addToBalance(BigInteger.ONE);
+        accState.addToBalance(Coin.valueOf(1L));
 
         repository.updateAccountState(accAddress, accState);
 
         AccountState newAccState = repository.getAccountState(accAddress);
         Assert.assertNotNull(newAccState);
         Assert.assertEquals(BigInteger.ONE, newAccState.getNonce());
-        Assert.assertEquals(BigInteger.ONE, newAccState.getBalance());
+        Assert.assertEquals(BigInteger.ONE, newAccState.getBalance().asBigInteger());
     }
 
     @Test
@@ -164,9 +165,9 @@ public class RepositoryImplTest {
 
         RepositoryImpl repository = new RepositoryImpl(config);
 
-        Assert.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, BigInteger.ONE));
+        Assert.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
 
-        Assert.assertEquals(BigInteger.ONE, repository.getBalance(accAddress));
+        Assert.assertEquals(BigInteger.ONE, repository.getBalance(accAddress).asBigInteger());
     }
 
     @Test
@@ -176,9 +177,9 @@ public class RepositoryImplTest {
         RepositoryImpl repository = new RepositoryImpl(config);
 
         repository.createAccount(accAddress);
-        Assert.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, BigInteger.ONE));
+        Assert.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
 
-        Assert.assertEquals(BigInteger.ONE, repository.getBalance(accAddress));
+        Assert.assertEquals(BigInteger.ONE, repository.getBalance(accAddress).asBigInteger());
     }
 
     @Test
@@ -188,10 +189,10 @@ public class RepositoryImplTest {
         RepositoryImpl repository = new RepositoryImpl(config);
 
         repository.createAccount(accAddress);
-        Assert.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, BigInteger.ONE));
-        Assert.assertEquals(2, repository.addBalance(accAddress, BigInteger.ONE).longValue());
+        Assert.assertEquals(BigInteger.ONE, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger());
+        Assert.assertEquals(2, repository.addBalance(accAddress, Coin.valueOf(1L)).asBigInteger().longValue());
 
-        Assert.assertEquals(2, repository.getBalance(accAddress).longValue());
+        Assert.assertEquals(2, repository.getBalance(accAddress).asBigInteger().longValue());
     }
 
     @Test

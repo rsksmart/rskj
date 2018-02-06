@@ -19,7 +19,6 @@
 
 package org.ethereum.db;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.net.BlockCache;
 import com.google.common.annotations.VisibleForTesting;
@@ -44,18 +43,13 @@ public class IndexedBlockStore extends AbstractBlockstore {
 
     private static final Logger logger = LoggerFactory.getLogger("general");
 
-    private final RskSystemProperties config;
     private final BlockCache blockCache = new BlockCache(5000);
-    Map<Long, List<BlockInfo>> index;
-    KeyValueDataSource blocks;
 
-    DB indexDB;
+    private final Map<Long, List<BlockInfo>> index;
+    private final DB indexDB;
+    private final KeyValueDataSource blocks;
 
-    public IndexedBlockStore(RskSystemProperties config){
-        this.config = config;
-    }
-
-    public void init(Map<Long, List<BlockInfo>> index, KeyValueDataSource blocks, DB indexDB) {
+    public IndexedBlockStore(Map<Long, List<BlockInfo>> index, KeyValueDataSource blocks, DB indexDB) {
         this.index = index;
         this.blocks = blocks;
         this.indexDB  = indexDB;

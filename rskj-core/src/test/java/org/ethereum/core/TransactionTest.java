@@ -182,10 +182,10 @@ public class TransactionTest {
         assertEquals(RLP_ENCODED_SIGNED_TX, Hex.toHexString(txSigned.getEncoded()));
 
         assertEquals(BigInteger.ZERO, new BigInteger(1, txSigned.getNonce()));
-        assertEquals(new BigInteger(1, testGasPrice), new BigInteger(1, txSigned.getGasPrice()));
+        assertEquals(new BigInteger(1, testGasPrice), txSigned.getGasPrice().asBigInteger());
         assertEquals(new BigInteger(1, testGasLimit), new BigInteger(1, txSigned.getGasLimit()));
         assertEquals(Hex.toHexString(testReceiveAddress), Hex.toHexString(txSigned.getReceiveAddress().getBytes()));
-        assertEquals(new BigInteger(1, testValue), new BigInteger(1, txSigned.getValue()));
+        assertEquals(new BigInteger(1, testValue), txSigned.getValue().asBigInteger());
         assertNull(txSigned.getData());
         assertEquals(27, txSigned.getSignature().v);
         assertEquals("eab47c1a49bf2fe5d40e01d313900e19ca485867d462fe06e139e3a536c6d4f4", Hex.toHexString(BigIntegers.asUnsignedByteArray(txSigned.getSignature().r)));
@@ -203,10 +203,10 @@ public class TransactionTest {
         assertEquals(RLP_ENCODED_SIGNED_TX, Hex.toHexString(txUnsigned.getEncoded()));
 
         assertEquals(BigInteger.ZERO, new BigInteger(1, txUnsigned.getNonce()));
-        assertEquals(new BigInteger(1, testGasPrice), new BigInteger(1, txUnsigned.getGasPrice()));
+        assertEquals(new BigInteger(1, testGasPrice), txUnsigned.getGasPrice().asBigInteger());
         assertEquals(new BigInteger(1, testGasLimit), new BigInteger(1, txUnsigned.getGasLimit()));
         assertEquals(Hex.toHexString(testReceiveAddress), Hex.toHexString(txUnsigned.getReceiveAddress().getBytes()));
-        assertEquals(new BigInteger(1, testValue), new BigInteger(1, txUnsigned.getValue()));
+        assertEquals(new BigInteger(1, testValue), txUnsigned.getValue().asBigInteger());
         assertNull(txUnsigned.getData());
         assertEquals(27, txUnsigned.getSignature().v);
         assertEquals("eab47c1a49bf2fe5d40e01d313900e19ca485867d462fe06e139e3a536c6d4f4", Hex.toHexString(BigIntegers.asUnsignedByteArray(txUnsigned.getSignature().r)));
@@ -219,10 +219,10 @@ public class TransactionTest {
         Transaction txNew = new Transaction(testNonce, testGasPrice, testGasLimit, testReceiveAddress, testValue, testData);
 
         assertEquals("", Hex.toHexString(txNew.getNonce()));
-        assertEquals(new BigInteger(1, testGasPrice), new BigInteger(1, txNew.getGasPrice()));
+        assertEquals(new BigInteger(1, testGasPrice), txNew.getGasPrice().asBigInteger());
         assertEquals(new BigInteger(1, testGasLimit), new BigInteger(1, txNew.getGasLimit()));
         assertEquals(Hex.toHexString(testReceiveAddress), Hex.toHexString(txNew.getReceiveAddress().getBytes()));
-        assertEquals(new BigInteger(1, testValue), new BigInteger(1, txNew.getValue()));
+        assertEquals(new BigInteger(1, testValue), txNew.getValue().asBigInteger());
         assertEquals("", Hex.toHexString(txNew.getData()));
         assertNull(txNew.getSignature());
 

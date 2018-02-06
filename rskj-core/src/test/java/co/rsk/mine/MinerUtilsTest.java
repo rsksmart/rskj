@@ -20,6 +20,7 @@ package co.rsk.mine;
 
 import co.rsk.TestHelpers.Tx;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
@@ -75,7 +76,7 @@ public class MinerUtilsTest {
         Map<RskAddress, BigInteger> accountNounces = new HashMap();
         Repository repository = Mockito.mock(Repository.class);
         Mockito.when(repository.getNonce(tx.getSender())).thenReturn(BigInteger.valueOf(0));
-        BigInteger minGasPrice = BigInteger.valueOf(1);
+        Coin minGasPrice = Coin.valueOf(1L);
 
         List<Transaction> res = new MinerUtils().filterTransactions(new LinkedList<>(), txs, accountNounces, repository, minGasPrice);
         Assert.assertEquals(1, res.size());
@@ -90,7 +91,7 @@ public class MinerUtilsTest {
         Map<RskAddress, BigInteger> accountNounces = new HashMap();
         accountNounces.put(tx.getSender(), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
-        BigInteger minGasPrice = BigInteger.valueOf(1);
+        Coin minGasPrice = Coin.valueOf(1L);
 
         List<Transaction> res = new MinerUtils().filterTransactions(new LinkedList<>(), txs, accountNounces, repository, minGasPrice);
         Assert.assertEquals(1, res.size());
@@ -104,7 +105,7 @@ public class MinerUtilsTest {
         Map<RskAddress, BigInteger> accountNounces = new HashMap();
         accountNounces.put(tx.getSender(), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
-        BigInteger minGasPrice = BigInteger.valueOf(1);
+        Coin minGasPrice = Coin.valueOf(1L);
 
         List<Transaction> txsToRemove = new LinkedList<>();
         List<Transaction> res = new MinerUtils().filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice);
@@ -121,7 +122,7 @@ public class MinerUtilsTest {
         byte[] addressBytes = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
         accountNounces.put(new RskAddress(addressBytes), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
-        BigInteger minGasPrice = BigInteger.valueOf(2);
+        Coin minGasPrice = Coin.valueOf(2L);
 
         LinkedList<Transaction> txsToRemove = new LinkedList<>();
         List<Transaction> res = new MinerUtils().filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice);
@@ -139,7 +140,7 @@ public class MinerUtilsTest {
         byte[] addressBytes = ByteUtil.leftPadBytes(BigInteger.valueOf(new Random(0).nextLong()).toByteArray(), 20);
         accountNounces.put(new RskAddress(addressBytes), BigInteger.valueOf(0));
         Repository repository = Mockito.mock(Repository.class);
-        BigInteger minGasPrice = BigInteger.valueOf(2);
+        Coin minGasPrice = Coin.valueOf(2L);
 
         LinkedList<Transaction> txsToRemove = new LinkedList<>();
         List<Transaction> res = new MinerUtils().filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice);

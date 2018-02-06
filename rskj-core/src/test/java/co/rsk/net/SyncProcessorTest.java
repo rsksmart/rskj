@@ -3,6 +3,7 @@ package co.rsk.net;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.net.messages.*;
@@ -588,12 +589,12 @@ public class SyncProcessorTest {
         Account receiverAccount = createAccount("receiver");
 
         List<Account> accounts = new ArrayList<Account>();
-        List<BigInteger> balances = new ArrayList<BigInteger>();
+        List<Coin> balances = new ArrayList<>();
 
         accounts.add(senderAccount);
-        balances.add(BigInteger.valueOf(20000000));
+        balances.add(Coin.valueOf(20000000));
         accounts.add(receiverAccount);
-        balances.add(BigInteger.ZERO);
+        balances.add(Coin.ZERO);
 
         final BlockStore store = new BlockStore();
         Blockchain blockchain = BlockChainBuilder.ofSize(0, false, accounts, balances);
@@ -612,7 +613,7 @@ public class SyncProcessorTest {
         BlockExecutor blockExecutor = new BlockExecutor(config, blockchain.getRepository(), blockchain, blockchain.getBlockStore(), null);
         Assert.assertEquals(1, block.getTransactionsList().size());
         blockExecutor.executeAndFillAll(block, genesis);
-        Assert.assertEquals(21000, block.getFeesPaidToMiner().intValueExact());
+        Assert.assertEquals(21000, block.getFeesPaidToMiner().asBigInteger().intValueExact());
         Assert.assertEquals(1, block.getTransactionsList().size());
 
         Assert.assertEquals(1, block.getNumber());

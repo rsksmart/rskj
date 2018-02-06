@@ -2,6 +2,7 @@ package org.ethereum.util;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.PendingStateImpl;
@@ -47,7 +48,7 @@ public class RskTestFactory {
     public ContractDetails addContract(String runtimeBytecode) {
         Account contractAccount = new AccountBuilder(getBlockchain())
                 .name(runtimeBytecode)
-                .balance(BigInteger.TEN)
+                .balance(Coin.valueOf(10))
                 .code(TypeConverter.stringHexToByteArray(runtimeBytecode))
                 .build();
 
@@ -58,7 +59,7 @@ public class RskTestFactory {
         Account sender = new AccountBuilder(getBlockchain())
                 .name("sender")
                 // a large balance will allow running any contract
-                .balance(BigInteger.valueOf(10000000))
+                .balance(Coin.valueOf(10000000L))
                 .build();
         BigInteger nonceCreate = getRepository().getNonce(sender.getAddress());
         Transaction creationTx = new TransactionBuilder()
@@ -127,9 +128,7 @@ public class RskTestFactory {
 
     public BlockStore getBlockStore() {
         if (blockStore == null) {
-            blockStore = new IndexedBlockStore(config);
-            HashMapDB blockStore = new HashMapDB();
-            this.blockStore.init(new HashMap<>(), blockStore, null);
+            this.blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         }
 
         return blockStore;

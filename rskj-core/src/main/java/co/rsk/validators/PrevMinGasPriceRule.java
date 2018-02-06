@@ -39,18 +39,18 @@ public class PrevMinGasPriceRule implements BlockParentDependantValidationRule {
             return true;
         }
 
-        if(block.getMinGasPriceAsInteger() == null || parent == null) {
+        if (block.getMinimumGasPrice() == null || parent == null) {
             logger.warn("PrevMinGasPriceRule - blockmingasprice or parent are null");
             return false;
         }
 
-        BlockGasPriceRange range = new BlockGasPriceRange(parent.getMinGasPriceAsInteger());
-        boolean result = range.inRange(block.getMinGasPriceAsInteger());
+        BlockGasPriceRange range = new BlockGasPriceRange(parent.getMinimumGasPrice());
+        boolean result = range.inRange(block.getMinimumGasPrice());
         if(!result) {
             logger.warn("Error validating Min Gas Price.");
             panicProcessor.panic("invalidmingasprice", "Error validating Min Gas Price.");
         }
 
-        return range.inRange(block.getMinGasPriceAsInteger());
+        return range.inRange(block.getMinimumGasPrice());
     }
 }

@@ -20,6 +20,7 @@ package co.rsk.test.builders;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryImpl;
@@ -37,7 +38,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.List;
 
@@ -95,9 +95,7 @@ public class BlockChainBuilder {
             repository = new RepositoryImpl(config, new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));
 
         if (blockStore == null) {
-            IndexedBlockStore indexedBlockStore = new IndexedBlockStore(config);
-            indexedBlockStore.init(new HashMap<>(), new HashMapDB(), null);
-            blockStore = indexedBlockStore;
+            blockStore = new IndexedBlockStore(new HashMap<>(), new HashMapDB(), null);
         }
 
         KeyValueDataSource ds = new HashMapDB();
@@ -180,11 +178,11 @@ public class BlockChainBuilder {
         return ofSize(size, mining, null, null, withoutCleaner);
     }
 
-    public static Blockchain ofSize(int size, boolean mining, List<Account> accounts, List<BigInteger> balances) {
+    public static Blockchain ofSize(int size, boolean mining, List<Account> accounts, List<Coin> balances) {
         return ofSize(size, mining, accounts, balances, false);
     }
 
-    public static Blockchain ofSize(int size, boolean mining, List<Account> accounts, List<BigInteger> balances, boolean withoutCleaner) {
+    public static Blockchain ofSize(int size, boolean mining, List<Account> accounts, List<Coin> balances, boolean withoutCleaner) {
         BlockChainBuilder builder = new BlockChainBuilder();
         BlockChainImpl blockChain = builder.build(withoutCleaner);
 
@@ -194,7 +192,7 @@ public class BlockChainBuilder {
         if (accounts != null)
             for (int k = 0; k < accounts.size(); k++) {
                 Account account = accounts.get(k);
-                BigInteger balance = balances.get(k);
+                Coin balance = balances.get(k);
                 blockChain.getRepository().createAccount(account.getAddress());
                 blockChain.getRepository().addBalance(account.getAddress(), balance);
             }

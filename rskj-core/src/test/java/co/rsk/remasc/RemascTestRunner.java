@@ -20,6 +20,7 @@ package co.rsk.remasc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -155,19 +156,15 @@ class RemascTestRunner {
         return this.blockchain;
     }
 
-    public BigInteger getAccountBalance(byte[] address) {
-        return getAccountBalance(this.blockchain.getRepository(), address);
-    }
-
-    public BigInteger getAccountBalance(RskAddress addr) {
+    public Coin getAccountBalance(RskAddress addr) {
         return getAccountBalance(this.blockchain.getRepository(), addr);
     }
 
-    public static BigInteger getAccountBalance(Repository repository, byte[] address) {
+    public static Coin getAccountBalance(Repository repository, byte[] address) {
         return getAccountBalance(repository, new RskAddress(address));
     }
 
-    public static BigInteger getAccountBalance(Repository repository, RskAddress addr) {
+    public static Coin getAccountBalance(Repository repository, RskAddress addr) {
         AccountState accountState = repository.getAccountState(addr);
 
         return accountState == null ? null : repository.getAccountState(addr).getBalance();
@@ -216,11 +213,11 @@ class RemascTestRunner {
 
         byte[] diffBytes = BigInteger.valueOf(difficultyAsLong).toByteArray();
 
-        BigInteger paidFees = BigInteger.ZERO;
+        Coin paidFees = Coin.ZERO;
         for (Transaction tx : txs) {
-            BigInteger gasLimit = BigIntegers.fromUnsignedByteArray(tx.getGasLimit());
-            BigInteger gasPrice = BigIntegers.fromUnsignedByteArray(tx.getGasPrice());
-            paidFees = paidFees.add(gasLimit.multiply(gasPrice));
+            BigInteger gasLimit = new BigInteger(1, tx.getGasLimit());
+            Coin gasPrice = tx.getGasPrice();
+            paidFees = paidFees.add(gasPrice.multiply(gasLimit));
         }
 
         Block block =  new Block(

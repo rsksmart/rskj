@@ -21,12 +21,14 @@ package co.rsk.mine;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.RskMiningConstants;
-import co.rsk.core.RskAddress;
+import co.rsk.core.Coin;
 import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import com.google.common.collect.Lists;
 import org.ethereum.core.PendingState;
 import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
 import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -147,26 +149,26 @@ public class MinerUtils {
         return new LinkedList<>(ret);
     }
 
-    public List<org.ethereum.core.Transaction> filterTransactions(List<org.ethereum.core.Transaction> txsToRemove, List<org.ethereum.core.Transaction> txs, Map<RskAddress, BigInteger> accountNonces, Repository originalRepo, BigInteger minGasPrice) {
+    public List<org.ethereum.core.Transaction> filterTransactions(List<Transaction> txsToRemove, List<Transaction> txs, Map<RskAddress, BigInteger> accountNonces, Repository originalRepo, Coin minGasPrice) {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
                 String hexHash = Hex.toHexString(tx.getHash());
-                String hexValue = Hex.toHexString(tx.getValue());
+                Coin txValue = tx.getValue();
                 BigInteger txNonce = new BigInteger(1, tx.getNonce());
                 RskAddress txSender = tx.getSender();
-                logger.debug("Examining tx={} sender: {} value: {} nonce: {}", hexHash, txSender, hexValue, txNonce);
+                logger.debug("Examining tx={} sender: {} value: {} nonce: {}", hexHash, txSender, txValue, txNonce);
 
 
                 BigInteger expectedNonce;
 
                 if (accountNonces.containsKey(txSender)) {
-                    expectedNonce = new BigInteger(1, accountNonces.get(txSender).toByteArray()).add(BigInteger.ONE);
+                    expectedNonce = accountNonces.get(txSender).add(BigInteger.ONE);
                 } else {
                     expectedNonce = originalRepo.getNonce(txSender);
                 }
 
-                if (!(tx instanceof RemascTransaction) && tx.getGasPriceAsInteger().compareTo(minGasPrice) < 0) {
+                if (!(tx instanceof RemascTransaction) && tx.getGasPrice().compareTo(minGasPrice) < 0) {
                     logger.warn("Rejected tx={} because of low gas account {}, removing tx from pending state.", hexHash, txSender);
 
                     txsToRemove.add(tx);
@@ -180,7 +182,7 @@ public class MinerUtils {
 
                 accountNonces.put(txSender, txNonce);
 
-                logger.debug("Accepted tx={} sender: {} value: {} nonce: {}", hexHash, txSender, hexValue, txNonce);
+                logger.debug("Accepted tx={} sender: {} value: {} nonce: {}", hexHash, txSender, txValue, txNonce);
             } catch (Exception e) {
                 // Txs that can't be selected by any reason should be removed from pending state
                 String hash = null == tx.getHash() ? "" : Hex.toHexString(tx.getHash());

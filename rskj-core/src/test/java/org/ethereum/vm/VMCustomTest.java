@@ -20,6 +20,7 @@
 package org.ethereum.vm;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Program.OutOfGasException;
@@ -28,8 +29,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.*;
 import org.junit.runners.MethodSorters;
 import org.spongycastle.util.encoders.Hex;
-
-import java.math.BigInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -55,7 +54,7 @@ public class VMCustomTest {
         invoke.setOwnerAddress(ownerAddress);
 
         invoke.getRepository().createAccount(ownerAddress);
-        invoke.getRepository().addBalance(ownerAddress, BigInteger.valueOf(1000L));
+        invoke.getRepository().addBalance(ownerAddress, Coin.valueOf(1000L));
     }
 
     @After

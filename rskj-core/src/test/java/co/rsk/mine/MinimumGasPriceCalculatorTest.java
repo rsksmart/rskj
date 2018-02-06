@@ -18,10 +18,9 @@
 
 package co.rsk.mine;
 
+import co.rsk.core.Coin;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.math.BigInteger;
 
 /**
  * Created by mario on 22/12/16.
@@ -32,69 +31,69 @@ public class MinimumGasPriceCalculatorTest {
     public void increaseMgp() {
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator();
 
-        BigInteger prev = BigInteger.valueOf(1000L);
-        BigInteger target = BigInteger.valueOf(2000L);
+        Coin prev = Coin.valueOf(1000L);
+        Coin target = Coin.valueOf(2000L);
 
-        BigInteger mgp = mgpCalculator.calculate(prev, target);
+        Coin mgp = mgpCalculator.calculate(prev, target);
 
-        Assert.assertTrue(BigInteger.valueOf(1010).compareTo(mgp) == 0);
+        Assert.assertEquals(Coin.valueOf(1010), mgp);
     }
 
     @Test
     public void decreaseMGP() {
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator();
 
-        BigInteger prev = BigInteger.valueOf(1000L);
-        BigInteger target = BigInteger.valueOf(900L);
+        Coin prev = Coin.valueOf(1000L);
+        Coin target = Coin.valueOf(900L);
 
-        BigInteger mgp = mgpCalculator.calculate(prev, target);
+        Coin mgp = mgpCalculator.calculate(prev, target);
 
-        Assert.assertTrue(BigInteger.valueOf(990).compareTo(mgp) == 0);
+        Assert.assertEquals(Coin.valueOf(990), mgp);
     }
 
     @Test
     public void mgpOnRage() {
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator();
 
-        BigInteger prev = BigInteger.valueOf(1000L);
-        BigInteger target = BigInteger.valueOf(995L);
+        Coin prev = Coin.valueOf(1000L);
+        Coin target = Coin.valueOf(995L);
 
-        BigInteger mgp = mgpCalculator.calculate(prev, target);
+        Coin mgp = mgpCalculator.calculate(prev, target);
 
-        Assert.assertTrue(target.compareTo(mgp) == 0);
+        Assert.assertEquals(target, mgp);
     }
 
     @Test
     public void previousMgpEqualsTarget() {
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator();
 
-        BigInteger prev = BigInteger.valueOf(1000L);
-        BigInteger target = BigInteger.valueOf(1000L);
+        Coin prev = Coin.valueOf(1000L);
+        Coin target = Coin.valueOf(1000L);
 
-        BigInteger mgp = mgpCalculator.calculate(prev, target);
+        Coin mgp = mgpCalculator.calculate(prev, target);
 
-        Assert.assertTrue(target.compareTo(mgp) == 0);
+        Assert.assertEquals(target, mgp);
     }
 
     @Test
     public void previousValueIsZero() {
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator();
 
-        BigInteger target = BigInteger.valueOf(1000L);
+        Coin target = Coin.valueOf(1000L);
 
-        BigInteger mgp = mgpCalculator.calculate(BigInteger.ZERO, target);
+        Coin mgp = mgpCalculator.calculate(Coin.ZERO, target);
 
-        Assert.assertTrue(BigInteger.ONE.compareTo(mgp) == 0);
+        Assert.assertEquals(Coin.valueOf(1L), mgp);
     }
 
     @Test
     public void previousValueIsSmallTargetIsZero() {
         MinimumGasPriceCalculator mgpCalculator = new MinimumGasPriceCalculator();
 
-        BigInteger target = BigInteger.valueOf(0L);
+        Coin target = Coin.ZERO;
 
-        BigInteger mgp = mgpCalculator.calculate(BigInteger.ONE, target);
+        Coin mgp = mgpCalculator.calculate(Coin.valueOf(1L), target);
 
-        Assert.assertTrue(BigInteger.ZERO.compareTo(mgp) == 0);
+        Assert.assertEquals(Coin.ZERO, mgp);
     }
 }

@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
@@ -139,12 +140,12 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public BigInteger getBalance(RskAddress addr) {
+    public Coin getBalance(RskAddress addr) {
         return repository.getBalance(addr);
     }
 
     @Override
-    public BigInteger addBalance(RskAddress addr, BigInteger value) {
+    public Coin addBalance(RskAddress addr, Coin value) {
         return repository.addBalance(addr, value);
     }
 

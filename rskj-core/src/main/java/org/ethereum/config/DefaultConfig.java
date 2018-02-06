@@ -92,9 +92,7 @@ public class DefaultConfig {
         KeyValueDataSource blocksDB = new LevelDbDataSource(config, "blocks");
         blocksDB.init();
 
-        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(config);
-
-        indexedBlockStore.init(indexMap, blocksDB, indexDB);
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(indexMap, blocksDB, indexDB);
 
         return indexedBlockStore;
     }

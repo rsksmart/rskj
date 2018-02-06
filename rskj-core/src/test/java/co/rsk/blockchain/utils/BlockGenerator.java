@@ -20,6 +20,7 @@ package co.rsk.blockchain.utils;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
@@ -122,7 +123,7 @@ public class BlockGenerator {
         Map<RskAddress, InitialAddressState> premine = new HashMap<>();
 
         for (byte[] key : alloc.keySet()) {
-            AccountState acctState = new AccountState(BigInteger.valueOf(0), alloc.get(key));
+            AccountState acctState = new AccountState(BigInteger.valueOf(0), new Coin(alloc.get(key)));
             premine.put(new RskAddress(key), new InitialAddressState(acctState, null));
         }
 
@@ -177,7 +178,7 @@ public class BlockGenerator {
                 txs,       // transaction list
                 uncles,        // uncle list
                 null,
-                BigInteger.valueOf(fees)
+                Coin.valueOf(fees)
         );
 //        return createChildBlock(parent, 0);
     }
@@ -212,7 +213,7 @@ public class BlockGenerator {
                 txs,       // transaction list
                 null,        // uncle list
                 null,
-                BigInteger.ZERO
+                Coin.ZERO
         );
     }
 
@@ -296,9 +297,8 @@ public class BlockGenerator {
             txs.add(new SimpleRskTransaction(null));
         }
 
-        byte[] parentMGP = (parent.getMinimumGasPrice() != null) ? parent.getMinimumGasPrice() : BigInteger.valueOf(10L).toByteArray();
-        BigInteger minimumGasPrice = new MinimumGasPriceCalculator().calculate(new BigInteger(1, parentMGP)
-                , BigInteger.valueOf(100L));
+        Coin previousMGP = parent.getMinimumGasPrice() != null ? parent.getMinimumGasPrice() : Coin.valueOf(10L);
+        Coin minimumGasPrice = new MinimumGasPriceCalculator().calculate(previousMGP, Coin.valueOf(100L));
 
         return new Block(
                 parent.getHash(), // parent hash
@@ -318,8 +318,8 @@ public class BlockGenerator {
                 EMPTY_TRIE_HASH,   // state root
                 txs,       // transaction list
                 null,        // uncle list
-                minimumGasPrice.toByteArray(),
-                BigInteger.ZERO
+                minimumGasPrice.getBytes(),
+                Coin.ZERO
         );
     }
 
@@ -374,7 +374,7 @@ public class BlockGenerator {
                 txs,       // transaction list
                 null,        // uncle list
                 null,
-                BigInteger.ZERO
+                Coin.ZERO
         );
 
         ECKey fallbackMiningKey0 = ECKey.fromPrivate(BigInteger.TEN);

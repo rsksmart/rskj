@@ -21,6 +21,7 @@ package co.rsk.remasc;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.RemascConfig;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.SelectionRule;
 import co.rsk.peg.BridgeSupport;
@@ -108,8 +109,8 @@ public class Remasc {
         BlockHeader processingBlockHeader = processingBlock.getHeader();
 
         // Adds current block fees to accumulated rewardBalance
-        BigInteger processingBlockReward = processingBlockHeader.getPaidFees();
-        BigInteger rewardBalance = provider.getRewardBalance();
+        Coin processingBlockReward = processingBlockHeader.getPaidFees();
+        Coin rewardBalance = provider.getRewardBalance();
         rewardBalance = rewardBalance.add(processingBlockReward);
         provider.setRewardBalance(rewardBalance);
 
@@ -119,12 +120,12 @@ public class Remasc {
         }
 
         // Takes from rewardBalance this block's height reward.
-        BigInteger fullBlockReward = rewardBalance.divide(BigInteger.valueOf(remascConstants.getSyntheticSpan()));
+        Coin fullBlockReward = rewardBalance.divide(BigInteger.valueOf(remascConstants.getSyntheticSpan()));
         rewardBalance = rewardBalance.subtract(fullBlockReward);
         provider.setRewardBalance(rewardBalance);
 
         // Pay RSK labs cut
-        BigInteger payToRskLabs = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
+        Coin payToRskLabs = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getRskLabsDivisor()));
         feesPayer.payMiningFees(processingBlockHeader.getHash(), payToRskLabs, remascConstants.getRskLabsAddress(), logs);
         fullBlockReward = fullBlockReward.subtract(payToRskLabs);
 
@@ -147,18 +148,18 @@ public class Remasc {
         );
         RemascFederationProvider federationProvider = new RemascFederationProvider(bridgeSupport);
 
-        BigInteger payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
+        Coin payToFederation = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getFederationDivisor()));
 
         byte[] processingBlockHash = processingBlockHeader.getHash();
         int nfederators = federationProvider.getFederationSize();
-        BigInteger payToFederator = payToFederation.divide(BigInteger.valueOf(nfederators));
-        BigInteger restToLastFederator = payToFederation.subtract(payToFederator.multiply(BigInteger.valueOf(nfederators)));
-        BigInteger paidToFederation = BigInteger.ZERO;
+        Coin payToFederator = payToFederation.divide(BigInteger.valueOf(nfederators));
+        Coin restToLastFederator = payToFederation.subtract(payToFederator.multiply(BigInteger.valueOf(nfederators)));
+        Coin paidToFederation = Coin.ZERO;
 
         for (int k = 0; k < nfederators; k++) {
             RskAddress federatorAddress = federationProvider.getFederatorAddress(k);
 
-            if (k == nfederators - 1 && restToLastFederator.compareTo(BigInteger.ZERO) > 0) {
+            if (k == nfederators - 1 && restToLastFederator.compareTo(Coin.ZERO) > 0) {
                 feesPayer.payMiningFees(processingBlockHash, payToFederator.add(restToLastFederator), federatorAddress, logs);
             } else {
                 feesPayer.payMiningFees(processingBlockHash, payToFederator, federatorAddress, logs);
@@ -180,7 +181,7 @@ public class Remasc {
         } else {
             if (provider.getBrokenSelectionRule()) {
                 // broken selection rule, apply punishment, ie burn part of the reward.
-                BigInteger punishment = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getPunishmentDivisor()));
+                Coin punishment = fullBlockReward.divide(BigInteger.valueOf(remascConstants.getPunishmentDivisor()));
                 fullBlockReward = fullBlockReward.subtract(punishment);
                 provider.setBurnedBalance(provider.getBurnedBalance().add(punishment));
             }
@@ -220,7 +221,7 @@ public class Remasc {
     /**
      * Pay the mainchain block miner, its siblings miners and the publisher miners
      */
-    private void payWithSiblings(BlockHeader processingBlockHeader, BigInteger fullBlockReward, List<Sibling> siblings, boolean previousBrokenSelectionRule) {
+    private void payWithSiblings(BlockHeader processingBlockHeader, Coin fullBlockReward, List<Sibling> siblings, boolean previousBrokenSelectionRule) {
         SiblingPaymentCalculator paymentCalculator = new SiblingPaymentCalculator(fullBlockReward, previousBrokenSelectionRule, siblings.size(), this.remascConstants);
 
         byte[] processingBlockHeaderHash = processingBlockHeader.getHash();
@@ -238,18 +239,18 @@ public class Remasc {
         feesPayer.payMiningFees(processingBlockHeaderHash, paymentCalculator.getIndividualMinerReward(), processingBlockHeader.getCoinbase(), logs);
     }
 
-    private void payPublishersWhoIncludedSiblings(byte[] blockHash, List<Sibling> siblings, BigInteger minerReward) {
+    private void payPublishersWhoIncludedSiblings(byte[] blockHash, List<Sibling> siblings, Coin minerReward) {
         for (Sibling sibling : siblings) {
             feesPayer.payMiningFees(blockHash, minerReward, sibling.getIncludedBlockCoinbase(), logs);
         }
     }
 
-    private void payIncludedSiblings(byte[] blockHash, List<Sibling> siblings, BigInteger topReward) {
+    private void payIncludedSiblings(byte[] blockHash, List<Sibling> siblings, Coin topReward) {
         long perLateBlockPunishmentDivisor = remascConstants.getLateUncleInclusionPunishmentDivisor();
         for (Sibling sibling : siblings) {
             long processingBlockNumber = executionBlock.getNumber() - remascConstants.getMaturity();
             long numberOfBlocksLate = sibling.getIncludedHeight() - processingBlockNumber - 1L;
-            BigInteger lateInclusionPunishment = topReward.multiply(BigInteger.valueOf(numberOfBlocksLate)).divide(BigInteger.valueOf(perLateBlockPunishmentDivisor));
+            Coin lateInclusionPunishment = topReward.multiply(BigInteger.valueOf(numberOfBlocksLate)).divide(BigInteger.valueOf(perLateBlockPunishmentDivisor));
             feesPayer.payMiningFees(blockHash, topReward.subtract(lateInclusionPunishment), sibling.getCoinbase(), logs);
             provider.addToBurnBalance(lateInclusionPunishment);
         }

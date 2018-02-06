@@ -126,7 +126,7 @@ public class TransactionTest {
                 "                    '0x00' : '0x0400' " +
                 "                } " +
                 "            }, " +
-                "            '" + PrecompiledContracts.REMASC_ADDR + "' : { " +
+                "            '" + PrecompiledContracts.REMASC_ADDR_STR + "' : { " +
                 "                'balance' : '0x67EB', " +
                 "                'code' : '0x', " +
                 "                'nonce' : '0x00', " +

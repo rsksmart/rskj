@@ -21,6 +21,7 @@ package org.ethereum.core;
 
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
@@ -68,13 +69,14 @@ public class StateTest {
         byte[] cowAddress = Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826");
         byte[] rlpEncodedState = trie.get(cowAddress);
         AccountState account_1 = new AccountState(rlpEncodedState);
-        account_1.addToBalance(new BigInteger("-6260000000001000"));
+        final BigInteger value = new BigInteger("-6260000000001000");
+        account_1.addToBalance(new Coin(value));
         account_1.incrementNonce();
         trie = trie.put(cowAddress, account_1.getEncoded());
 
         // Add contract to world state
         byte[] codeData = Hex.decode("61778e600054");
-        AccountState account_2 = new AccountState(BigInteger.ZERO, BigInteger.valueOf(1000));
+        AccountState account_2 = new AccountState(BigInteger.ZERO, Coin.valueOf(1000));
         account_2.setCodeHash(HashUtil.sha3(codeData));
         byte[] contractAddress = Hex.decode("77045e71a7a2c50903d88e564cd72fab11e82051"); // generated based on sender + nonce
         trie = trie.put(contractAddress, account_2.getEncoded());
@@ -84,7 +86,8 @@ public class StateTest {
 
         // Update miner in world state
         byte[] minerAddress = Hex.decode("4c5f4d519dff3c16f0d54b6866e256fbbbc1a600");
-        AccountState account_3 = new AccountState(BigInteger.ZERO, new BigInteger("1506260000000000000"));
+        final BigInteger bigInteger = new BigInteger("1506260000000000000");
+        AccountState account_3 = new AccountState(BigInteger.ZERO, new Coin(bigInteger));
         trie = trie.put(minerAddress, account_3.getEncoded());
 
         assertEquals(expected, Hex.toHexString(trie.getHash()));

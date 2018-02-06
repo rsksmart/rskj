@@ -19,6 +19,7 @@
 
 package org.ethereum.facade;
 
+import co.rsk.core.Coin;
 import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
 import org.ethereum.core.Transaction;
@@ -87,7 +88,7 @@ public interface Ethereum {
      * If the transaction is wanted to be executed promptly with higher chances the returned price might
      * be increased at some ratio (e.g. * 1.2)
      */
-    long getGasPrice();
+    Coin getGasPrice();
 
     // TODO added method, to review
     ProgramResult callConstant(Web3.CallArguments args);

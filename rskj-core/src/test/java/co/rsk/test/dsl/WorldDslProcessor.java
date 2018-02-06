@@ -19,6 +19,7 @@
 package co.rsk.test.dsl;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
@@ -106,7 +107,7 @@ public class WorldDslProcessor {
         builder.name(name);
 
         if (cmd.getArity() > 1)
-            builder.balance(new BigInteger(cmd.getArgument(1)));
+            builder.balance(new Coin(new BigInteger(cmd.getArgument(1))));
 
         Account account = builder.build();
 
@@ -115,7 +116,7 @@ public class WorldDslProcessor {
 
     private void processAssertBalanceCommand(DslCommand cmd) throws DslProcessorException {
         String accountName = cmd.getArgument(0);
-        BigInteger expected = new BigInteger(cmd.getArgument(1));
+        Coin expected = new Coin(new BigInteger(cmd.getArgument(1)));
 
         RskAddress accountAddress;
 
@@ -132,7 +133,7 @@ public class WorldDslProcessor {
                 accountAddress = new RskAddress(accountName);
         }
 
-        BigInteger accountBalance = world.getRepository().getBalance(accountAddress);
+        Coin accountBalance = world.getRepository().getBalance(accountAddress);
         if (expected.equals(accountBalance))
             return;
 

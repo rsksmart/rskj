@@ -18,12 +18,12 @@
 
 package co.rsk.peg.simples;
 
+import co.rsk.core.Coin;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
 
 import javax.annotation.Nullable;
-import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,7 +42,7 @@ public class SimpleBlock extends Block {
                        List<Transaction> transactionsList, List<BlockHeader> uncleList) {
         super(parentHash, unclesHash, coinbase, logsBloom, difficulty, number, gasLimit, gasUsed,
                 timestamp, extraData, mixHash, nonce, receiptsRoot, transactionsRoot, stateRoot,
-                    transactionsList, uncleList, BigInteger.TEN.toByteArray(), BigInteger.ZERO);
+                    transactionsList, uncleList, Coin.valueOf(10).getBytes(), Coin.ZERO);
 
         if (transactionsList != null) {
             this.transactionList = Collections.unmodifiableList(transactionsList);

@@ -19,10 +19,10 @@
 
 package org.ethereum.listener;
 
+import co.rsk.core.Coin;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
-import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,12 +40,12 @@ import java.util.List;
 public class GasPriceTracker extends EthereumListenerAdapter {
     private static final Logger logger = LoggerFactory.getLogger("gaspricetracker");
 
-    private long[] window = new long[512];
+    private final Coin[] window = new Coin[512];
+    private final Coin defaultPrice = Coin.valueOf(20_000_000_000L);
     private int idx = window.length - 1;
     private boolean filled = false;
-    private long defaultPrice = 20_000_000_000L;
 
-    private long lastVal;
+    private Coin lastVal;
 
     @Override
     public void onBlock(Block block, List<TransactionReceipt> receipts) {
@@ -62,19 +62,19 @@ public class GasPriceTracker extends EthereumListenerAdapter {
         if (idx == -1) {
             idx = window.length - 1;
             filled = true;
-            lastVal = 0;  // recalculate only 'sometimes'
+            lastVal = null;  // recalculate only 'sometimes'
         }
-        window[idx--] = ByteUtil.byteArrayToLong(tx.getGasPrice());
+        window[idx--] = tx.getGasPrice();
     }
 
-    public long getGasPrice() {
+    public Coin getGasPrice() {
         if (!filled) {
             return defaultPrice;
         } else {
-            if (lastVal == 0) {
-                long[] longs = Arrays.copyOf(window, window.length);
-                Arrays.sort(longs);
-                lastVal = longs[longs.length / 4];  // 25% percentile
+            if (lastVal == null) {
+                Coin[] values = Arrays.copyOf(window, window.length);
+                Arrays.sort(values);
+                lastVal = values[values.length / 4];  // 25% percentile
             }
             return lastVal;
         }

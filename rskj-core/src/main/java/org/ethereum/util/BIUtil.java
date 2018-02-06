@@ -19,8 +19,7 @@
 
 package org.ethereum.util;
 
-import co.rsk.core.RskAddress;
-import org.ethereum.core.Repository;
+import co.rsk.core.Coin;
 
 import java.math.BigInteger;
 
@@ -103,19 +102,14 @@ public class BIUtil {
         return value.signum() > 0;
     }
 
-    public static boolean isCovers(BigInteger covers, BigInteger value){
+    public static boolean isCovers(Coin covers, Coin value){
         return !isNotCovers(covers, value);
     }
 
-    public static boolean isNotCovers(BigInteger covers, BigInteger value){
+    public static boolean isNotCovers(Coin covers, Coin value){
         return covers.compareTo(value) < 0;
     }
 
-
-    public static void transfer(Repository repository, RskAddress fromAddr, RskAddress toAddr, BigInteger value){
-        repository.addBalance(fromAddr, value.negate());
-        repository.addBalance(toAddr, value);
-    }
 
     public static boolean isIn20PercentRange(BigInteger first, BigInteger second) {
         BigInteger five = BigInteger.valueOf(5);

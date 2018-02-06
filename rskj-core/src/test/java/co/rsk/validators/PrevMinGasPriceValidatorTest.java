@@ -18,21 +18,20 @@
 
 package co.rsk.validators;
 
+import co.rsk.core.Coin;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.math.BigInteger;
-
 /**
  * Created by mario on 26/12/16.
  */
 public class PrevMinGasPriceValidatorTest {
 
-    private static final BigInteger BLOCK_MGP = BigInteger.valueOf(1050);
-    private static final BigInteger PARENT_BLOCK_MGP = BigInteger.valueOf(1000);
+    private static final Coin BLOCK_MGP = Coin.valueOf(1050L);
+    private static final Coin PARENT_BLOCK_MGP = Coin.valueOf(1000L);
     private static final byte[] PARENT_HASH = {00, 01, 02, 03};
 
     @Test
@@ -40,7 +39,7 @@ public class PrevMinGasPriceValidatorTest {
         Block block = Mockito.mock(Block.class);
 
         Mockito.when(block.getParentHash()).thenReturn(PARENT_HASH);
-        Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(BLOCK_MGP);
+        Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
@@ -52,7 +51,7 @@ public class PrevMinGasPriceValidatorTest {
         Block block = Mockito.mock(Block.class);
 
         Mockito.when(block.isGenesis()).thenReturn(true);
-        Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(BLOCK_MGP);
+        Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
@@ -65,7 +64,7 @@ public class PrevMinGasPriceValidatorTest {
         Block parent = Mockito.mock(Block.class);
 
         Mockito.when(block.isGenesis()).thenReturn(false);
-        Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(null);
+        Mockito.when(block.getMinimumGasPrice()).thenReturn(null);
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
@@ -78,8 +77,8 @@ public class PrevMinGasPriceValidatorTest {
         Block parent = Mockito.mock(Block.class);
 
         Mockito.when(block.getParentHash()).thenReturn(PARENT_HASH);
-        Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(BLOCK_MGP);
-        Mockito.when(parent.getMinGasPriceAsInteger()).thenReturn(BigInteger.TEN);
+        Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
+        Mockito.when(parent.getMinimumGasPrice()).thenReturn(Coin.valueOf(10L));
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 
@@ -94,8 +93,8 @@ public class PrevMinGasPriceValidatorTest {
         BlockStore blockStore = Mockito.mock(BlockStore.class);
 
         Mockito.when(block.getParentHash()).thenReturn(PARENT_HASH);
-        Mockito.when(block.getMinGasPriceAsInteger()).thenReturn(BLOCK_MGP);
-        Mockito.when(parent.getMinGasPriceAsInteger()).thenReturn(PARENT_BLOCK_MGP);
+        Mockito.when(block.getMinimumGasPrice()).thenReturn(BLOCK_MGP);
+        Mockito.when(parent.getMinimumGasPrice()).thenReturn(PARENT_BLOCK_MGP);
 
         PrevMinGasPriceRule pmgpv = new PrevMinGasPriceRule();
 

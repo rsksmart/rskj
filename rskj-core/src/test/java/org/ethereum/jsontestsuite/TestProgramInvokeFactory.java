@@ -19,6 +19,7 @@
 
 package org.ethereum.jsontestsuite;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -30,8 +31,6 @@ import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.ethereum.vm.program.invoke.ProgramInvokeImpl;
-
-import java.math.BigInteger;
 
 /**
  * @author Roman Mandeleil
@@ -54,7 +53,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
     @Override
     public ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
                                              DataWord inValue, long  inGas,
-                                             BigInteger balanceInt, byte[] dataIn,
+                                             Coin balanceInt, byte[] dataIn,
                                              Repository repository, BlockStore blockStore, boolean byTestingSuite) {
         return null;
     }
@@ -67,23 +66,23 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
 
         /***         ORIGIN op       ***/
         // YP: This is the sender of original transaction; it is never a contract.
-        byte[] origin = tx.getSender().getBytes();
+        RskAddress origin = tx.getSender();
 
         /***         CALLER op       ***/
         // YP: This is the address of the account that is directly responsible for this execution.
-        byte[] caller = tx.getSender().getBytes();
+        RskAddress caller = tx.getSender();
 
         /***         BALANCE op       ***/
-        byte[] balance = repository.getBalance(addr).toByteArray();
+        Coin balance = repository.getBalance(addr);
 
         /***         GASPRICE op       ***/
-        byte[] gasPrice = tx.getGasPrice();
+        Coin gasPrice = tx.getGasPrice();
 
         /*** GAS op ***/
         byte[] gas = tx.getGasLimit();
 
         /***        CALLVALUE op      ***/
-        byte[] callValue = tx.getValue() == null ? new byte[]{0} : tx.getValue();
+        Coin callValue = tx.getValue() == null ? Coin.ZERO : tx.getValue();
 
         /***     CALLDATALOAD  op   ***/
         /***     CALLDATACOPY  op   ***/
@@ -109,8 +108,8 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
         /*** GASLIMIT op ***/
         byte[] gaslimit = env.getCurrentGasLimit();
 
-        return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance,
-                gasPrice, gas, callValue, data, lastHash, coinbase,
+        return new ProgramInvokeImpl(addr.getBytes(), origin.getBytes(), caller.getBytes(), balance.getBytes(),
+                gasPrice.getBytes(), gas, callValue.getBytes(), data, lastHash, coinbase,
                 timestamp, number, txindex, difficulty, gaslimit, repository, blockStore);
     }
 

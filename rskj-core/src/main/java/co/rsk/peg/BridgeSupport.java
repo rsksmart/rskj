@@ -36,7 +36,6 @@ import co.rsk.peg.utils.BridgeEventLogger;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.core.Block;
-import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.PrecompiledContracts;
@@ -52,9 +51,6 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static org.ethereum.util.BIUtil.toBI;
-import static org.ethereum.util.BIUtil.transfer;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
@@ -352,11 +348,10 @@ public class BridgeSupport {
                 org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);
                 RskAddress sender = new RskAddress(key.getAddress());
 
-                transfer(
-                        rskRepository,
+                rskRepository.transfer(
                         PrecompiledContracts.BRIDGE_ADDR,
                         sender,
-                        Denomination.satoshisToWeis(BigInteger.valueOf(totalAmount.getValue()))
+                        co.rsk.core.Coin.fromBitcoin(totalAmount)
                 );
                 lockWhitelist.remove(senderBtcAddress);
             }
@@ -435,8 +430,7 @@ public class BridgeSupport {
         Context.propagate(btcContext);
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
-        BigInteger valueInWeis = toBI(rskTx.getValue());
-        Coin value = Coin.valueOf(Denomination.weisToSatoshis(valueInWeis).longValue());
+        Coin value = rskTx.getValue().toBitcoin();
         boolean addResult = requestRelease(btcDestinationAddress, value);
 
         if (addResult) {
@@ -735,7 +729,7 @@ public class BridgeSupport {
         if (spentByFederation.isLessThan(sentByUser)) {
             Coin coinsToBurn = sentByUser.subtract(spentByFederation);
             RskAddress burnAddress = config.getBlockchainConfig().getCommonConstants().getBurnAddress();
-            transfer(rskRepository, PrecompiledContracts.BRIDGE_ADDR, burnAddress, Denomination.satoshisToWeis(BigInteger.valueOf(coinsToBurn.getValue())));
+            rskRepository.transfer(PrecompiledContracts.BRIDGE_ADDR, burnAddress, co.rsk.core.Coin.fromBitcoin(coinsToBurn));
         }
     }
 

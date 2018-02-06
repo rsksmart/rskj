@@ -19,13 +19,13 @@
 
 package org.ethereum.core;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.DetailsDataStore;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
-
 import java.util.Map;
 import java.util.Set;
 
@@ -141,7 +141,7 @@ public interface Repository {
      * @param addr of the account
      * @return balance of the account as a <code>BigInteger</code> value
      */
-    BigInteger getBalance(RskAddress addr);
+    Coin getBalance(RskAddress addr);
 
     /**
      * Add value to the balance of an account
@@ -150,7 +150,7 @@ public interface Repository {
      * @param value to be added
      * @return new balance of the account
      */
-    BigInteger addBalance(RskAddress addr, BigInteger value);
+    Coin addBalance(RskAddress addr, Coin value);
 
     /**
      * @return Returns set of all the account addresses
@@ -234,4 +234,9 @@ public interface Repository {
     void updateContractDetails(RskAddress addr, final ContractDetails contractDetails);
 
     void updateAccountState(RskAddress addr, AccountState accountState);
+
+    default void transfer(RskAddress fromAddr, RskAddress toAddr, Coin value) {
+        addBalance(fromAddr, value.negate());
+        addBalance(toAddr, value);
+    }
 }

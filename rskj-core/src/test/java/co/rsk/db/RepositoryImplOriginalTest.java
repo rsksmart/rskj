@@ -20,6 +20,7 @@
 package co.rsk.db;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -72,11 +73,11 @@ public class RepositoryImplOriginalTest {
     public void test2() {
         Repository repository = new RepositoryImpl(config);
 
-        repository.addBalance(COW, BigInteger.TEN);
-        repository.addBalance(HORSE, BigInteger.ONE);
+        repository.addBalance(COW, Coin.valueOf(10L));
+        repository.addBalance(HORSE, Coin.valueOf(1L));
 
-        assertEquals(BigInteger.TEN, repository.getBalance(COW));
-        assertEquals(BigInteger.ONE, repository.getBalance(HORSE));
+        assertEquals(BigInteger.TEN, repository.getBalance(COW).asBigInteger());
+        assertEquals(BigInteger.ONE, repository.getBalance(HORSE).asBigInteger());
 
         repository.close();
     }
@@ -179,16 +180,16 @@ public class RepositoryImplOriginalTest {
         Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        track.addBalance(COW, BigInteger.TEN);
-        track.addBalance(HORSE, BigInteger.ONE);
+        track.addBalance(COW, Coin.valueOf(10L));
+        track.addBalance(HORSE, Coin.valueOf(1L));
 
-        assertEquals(BigInteger.TEN, track.getBalance(COW));
-        assertEquals(BigInteger.ONE, track.getBalance(HORSE));
+        assertEquals(BigInteger.TEN, track.getBalance(COW).asBigInteger());
+        assertEquals(BigInteger.ONE, track.getBalance(HORSE).asBigInteger());
 
         track.commit();
 
-        assertEquals(BigInteger.TEN, repository.getBalance(COW));
-        assertEquals(BigInteger.ONE, repository.getBalance(HORSE));
+        assertEquals(BigInteger.TEN, repository.getBalance(COW).asBigInteger());
+        assertEquals(BigInteger.ONE, repository.getBalance(HORSE).asBigInteger());
 
         repository.close();
     }
@@ -198,16 +199,16 @@ public class RepositoryImplOriginalTest {
         Repository repository = new RepositoryImpl(config);
         Repository track = repository.startTracking();
 
-        track.addBalance(COW, BigInteger.TEN);
-        track.addBalance(HORSE, BigInteger.ONE);
+        track.addBalance(COW, Coin.valueOf(10L));
+        track.addBalance(HORSE, Coin.valueOf(1L));
 
-        assertEquals(BigInteger.TEN, track.getBalance(COW));
-        assertEquals(BigInteger.ONE, track.getBalance(HORSE));
+        assertEquals(BigInteger.TEN, track.getBalance(COW).asBigInteger());
+        assertEquals(BigInteger.ONE, track.getBalance(HORSE).asBigInteger());
 
         track.rollback();
 
-        assertEquals(BigInteger.ZERO, repository.getBalance(COW));
-        assertEquals(BigInteger.ZERO, repository.getBalance(HORSE));
+        assertEquals(BigInteger.ZERO, repository.getBalance(COW).asBigInteger());
+        assertEquals(BigInteger.ZERO, repository.getBalance(HORSE).asBigInteger());
 
         repository.close();
     }
@@ -217,27 +218,27 @@ public class RepositoryImplOriginalTest {
         Repository repository = new RepositoryImpl(config);
         Repository track1 = repository.startTracking();
 
-        track1.addBalance(COW, BigInteger.TEN);
-        track1.addBalance(HORSE, BigInteger.ONE);
+        track1.addBalance(COW, Coin.valueOf(10L));
+        track1.addBalance(HORSE, Coin.valueOf(1L));
 
-        assertEquals(BigInteger.TEN, track1.getBalance(COW));
-        assertEquals(BigInteger.ONE, track1.getBalance(HORSE));
+        assertEquals(BigInteger.TEN, track1.getBalance(COW).asBigInteger());
+        assertEquals(BigInteger.ONE, track1.getBalance(HORSE).asBigInteger());
 
         Repository track2 = track1.startTracking();
 
-        assertEquals(BigInteger.TEN, track2.getBalance(COW));
-        assertEquals(BigInteger.ONE, track2.getBalance(HORSE));
+        assertEquals(BigInteger.TEN, track2.getBalance(COW).asBigInteger());
+        assertEquals(BigInteger.ONE, track2.getBalance(HORSE).asBigInteger());
 
-        track2.addBalance(COW, BigInteger.TEN);
-        track2.addBalance(COW, BigInteger.TEN);
-        track2.addBalance(COW, BigInteger.TEN);
+        track2.addBalance(COW, Coin.valueOf(10L));
+        track2.addBalance(COW, Coin.valueOf(10L));
+        track2.addBalance(COW, Coin.valueOf(10L));
 
         track2.commit();
 
         track1.commit();
 
-        assertEquals(new BigInteger("40"), repository.getBalance(COW));
-        assertEquals(BigInteger.ONE, repository.getBalance(HORSE));
+        assertEquals(new BigInteger("40"), repository.getBalance(COW).asBigInteger());
+        assertEquals(BigInteger.ONE, repository.getBalance(HORSE).asBigInteger());
 
         repository.close();
     }
@@ -247,27 +248,27 @@ public class RepositoryImplOriginalTest {
         Repository repository = new RepositoryImpl(config);
         Repository track1 = repository.startTracking();
 
-        track1.addBalance(COW, BigInteger.TEN);
-        track1.addBalance(HORSE, BigInteger.ONE);
+        track1.addBalance(COW, Coin.valueOf(10L));
+        track1.addBalance(HORSE, Coin.valueOf(1L));
 
-        assertEquals(BigInteger.TEN, track1.getBalance(COW));
-        assertEquals(BigInteger.ONE, track1.getBalance(HORSE));
+        assertEquals(BigInteger.TEN, track1.getBalance(COW).asBigInteger());
+        assertEquals(BigInteger.ONE, track1.getBalance(HORSE).asBigInteger());
 
         Repository track2 = track1.startTracking();
 
-        assertEquals(BigInteger.TEN, track2.getBalance(COW));
-        assertEquals(BigInteger.ONE, track2.getBalance(HORSE));
+        assertEquals(BigInteger.TEN, track2.getBalance(COW).asBigInteger());
+        assertEquals(BigInteger.ONE, track2.getBalance(HORSE).asBigInteger());
 
-        track2.addBalance(COW, BigInteger.TEN);
-        track2.addBalance(COW, BigInteger.TEN);
-        track2.addBalance(COW, BigInteger.TEN);
+        track2.addBalance(COW, Coin.valueOf(10L));
+        track2.addBalance(COW, Coin.valueOf(10L));
+        track2.addBalance(COW, Coin.valueOf(10L));
 
         track2.commit();
 
         track1.rollback();
 
-        assertEquals(BigInteger.ZERO, repository.getBalance(COW));
-        assertEquals(BigInteger.ZERO, repository.getBalance(HORSE));
+        assertEquals(BigInteger.ZERO, repository.getBalance(COW).asBigInteger());
+        assertEquals(BigInteger.ZERO, repository.getBalance(HORSE).asBigInteger());
 
         repository.close();
     }
@@ -395,26 +396,26 @@ public class RepositoryImplOriginalTest {
 
         // changes level_1
         Repository track1 = repository.startTracking();
-        track1.addBalance(COW, BigInteger.TEN);
-        track1.addBalance(HORSE, BigInteger.ONE);
+        track1.addBalance(COW, Coin.valueOf(10L));
+        track1.addBalance(HORSE, Coin.valueOf(1L));
 
-        assertEquals(BigInteger.TEN, track1.getBalance(COW));
-        assertEquals(BigInteger.ONE, track1.getBalance(HORSE));
+        assertEquals(BigInteger.TEN, track1.getBalance(COW).asBigInteger());
+        assertEquals(BigInteger.ONE, track1.getBalance(HORSE).asBigInteger());
 
 
         // changes level_2
         Repository track2 = track1.startTracking();
-        track2.addBalance(COW, BigInteger.ONE);
-        track2.addBalance(HORSE, BigInteger.TEN);
+        track2.addBalance(COW, Coin.valueOf(1L));
+        track2.addBalance(HORSE, Coin.valueOf(10L));
 
-        assertEquals(ELEVEN, track2.getBalance(COW));
-        assertEquals(ELEVEN, track2.getBalance(HORSE));
+        assertEquals(ELEVEN, track2.getBalance(COW).asBigInteger());
+        assertEquals(ELEVEN, track2.getBalance(HORSE).asBigInteger());
 
         track2.commit();
         track1.commit();
 
-        assertEquals(ELEVEN, repository.getBalance(COW));
-        assertEquals(ELEVEN, repository.getBalance(HORSE));
+        assertEquals(ELEVEN, repository.getBalance(COW).asBigInteger());
+        assertEquals(ELEVEN, repository.getBalance(HORSE).asBigInteger());
 
         repository.close();
     }
@@ -428,25 +429,25 @@ public class RepositoryImplOriginalTest {
 
         // changes level_1
         Repository track1 = repository.startTracking();
-        track1.addBalance(COW, BigInteger.TEN);
-        track1.addBalance(HORSE, BigInteger.ONE);
+        track1.addBalance(COW, Coin.valueOf(10L));
+        track1.addBalance(HORSE, Coin.valueOf(1L));
 
-        assertEquals(BigInteger.TEN, track1.getBalance(COW));
-        assertEquals(BigInteger.ONE, track1.getBalance(HORSE));
+        assertEquals(BigInteger.TEN, track1.getBalance(COW).asBigInteger());
+        assertEquals(BigInteger.ONE, track1.getBalance(HORSE).asBigInteger());
 
         // changes level_2
         Repository track2 = track1.startTracking();
-        track2.addBalance(COW, BigInteger.ONE);
-        track2.addBalance(HORSE, BigInteger.TEN);
+        track2.addBalance(COW, Coin.valueOf(1L));
+        track2.addBalance(HORSE, Coin.valueOf(10L));
 
-        assertEquals(ELEVEN, track2.getBalance(COW));
-        assertEquals(ELEVEN, track2.getBalance(HORSE));
+        assertEquals(ELEVEN, track2.getBalance(COW).asBigInteger());
+        assertEquals(ELEVEN, track2.getBalance(HORSE).asBigInteger());
 
         track2.rollback();
         track1.commit();
 
-        assertEquals(BigInteger.TEN, repository.getBalance(COW));
-        assertEquals(BigInteger.ONE, repository.getBalance(HORSE));
+        assertEquals(BigInteger.TEN, repository.getBalance(COW).asBigInteger());
+        assertEquals(BigInteger.ONE, repository.getBalance(HORSE).asBigInteger());
 
         repository.close();
     }
@@ -855,7 +856,7 @@ public class RepositoryImplOriginalTest {
                     int cnt = 1;
                     while (running) {
                         Repository snap = repository.getSnapshotTo(repository.getRoot()).startTracking();
-                        snap.addBalance(COW, BigInteger.TEN);
+                        snap.addBalance(COW, Coin.valueOf(10L));
                         snap.addStorageRow(COW, cowKey1, new DataWord(cnt));
                         snap.rollback();
                         cnt++;
@@ -874,10 +875,10 @@ public class RepositoryImplOriginalTest {
                     Repository track21 = repository.startTracking();
                     DataWord cVal = new DataWord(cnt);
                     track21.addStorageRow(COW, cowKey1, cVal);
-                    track21.addBalance(COW, BigInteger.ONE);
+                    track21.addBalance(COW, Coin.valueOf(1L));
                     track21.commit();
 
-                    assertEquals(BigInteger.valueOf(cnt), repository.getBalance(COW));
+                    assertEquals(BigInteger.valueOf(cnt), repository.getBalance(COW).asBigInteger());
                     assertEquals(cVal, repository.getStorageValue(COW, cowKey1));
                     assertEquals(cowVal0, repository.getStorageValue(COW, cowKey2));
                     cnt++;
