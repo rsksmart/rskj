@@ -25,6 +25,11 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
+<<<<<<< 13e30355b6aa6cbaee004919fd0eb800a4e0cbce
+=======
+import static org.ethereum.crypto.HashUtil.keccak256;
+
+>>>>>>> Rename sha3 too keccak256
 /**
  * Created by martin.medina on 11/01/2017.
  */
