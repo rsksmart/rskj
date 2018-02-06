@@ -49,7 +49,7 @@ public class TransactionUtils {
     }
 
     public static byte[] getPrivateKeyBytes() {
-        return HashUtil.sha3("this is a seed".getBytes());
+        return HashUtil.keccak256("this is a seed".getBytes());
     }
 
     public static Transaction createTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce) {

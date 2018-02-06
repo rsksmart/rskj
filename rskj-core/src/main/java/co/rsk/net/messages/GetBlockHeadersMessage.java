@@ -27,7 +27,7 @@ import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 
-import static org.ethereum.crypto.SHA3Helper.DEFAULT_SIZE_BYTES;
+import static org.ethereum.crypto.Keccak256Helper.DEFAULT_SIZE_BYTES;
 import static org.ethereum.util.ByteUtil.byteArrayToInt;
 import static org.ethereum.util.ByteUtil.byteArrayToLong;
 

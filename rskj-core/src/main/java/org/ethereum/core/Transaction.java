@@ -277,7 +277,7 @@ public class Transaction {
         }
 
         byte[] plainMsg = this.getEncoded();
-        return HashUtil.sha3(plainMsg);
+        return HashUtil.keccak256(plainMsg);
     }
 
     public byte[] getRawHash() {
@@ -286,7 +286,7 @@ public class Transaction {
         }
 
         byte[] plainMsg = this.getEncodedRaw();
-        return HashUtil.sha3(plainMsg);
+        return HashUtil.keccak256(plainMsg);
     }
 
     public byte[] getNonce() {

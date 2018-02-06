@@ -65,7 +65,7 @@ public class TxBuilderEx {
     }
 
     public void simulateTxs() {
-        final byte[] privateKeyBytes = HashUtil.sha3(config.simulateTxsExAccountSeed().getBytes(StandardCharsets.UTF_8));
+        final byte[] privateKeyBytes = HashUtil.keccak256(config.simulateTxsExAccountSeed().getBytes(StandardCharsets.UTF_8));
         final ECKey key = ECKey.fromPrivate(privateKeyBytes);
         RskAddress addr = new RskAddress(key.getAddress());
 

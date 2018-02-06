@@ -38,7 +38,7 @@ import java.util.List;
  * Created by SDL on 12/5/2017.
  */
 public class BlockEncodingTest {
-    private static final byte[] EMPTY_LIST_HASH = HashUtil.sha3(RLP.encodeList());
+    private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     @Test(expected = ArithmeticException.class)
     public void testBadBlockEncoding1() {

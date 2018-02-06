@@ -24,68 +24,68 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
-public class SHA3Helper {
+public class Keccak256Helper {
 
     public static final int DEFAULT_SIZE = 256;
     public static final int DEFAULT_SIZE_BYTES = DEFAULT_SIZE / 8;
 
-    public static String sha3String(String message) {
-        return sha3String(message, new SHA3Digest(DEFAULT_SIZE), true);
+    public static String keccak256String(String message) {
+        return keccak256String(message, new SHA3Digest(DEFAULT_SIZE), true);
     }
 
-    public static String sha3String(byte[] message) {
-        return sha3String(message, new SHA3Digest(DEFAULT_SIZE), true);
+    public static String keccak256String(byte[] message) {
+        return keccak256String(message, new SHA3Digest(DEFAULT_SIZE), true);
     }
 
-    public static byte[] sha3(String message) {
-        return sha3(Hex.decode(message), new SHA3Digest(DEFAULT_SIZE), true);
+    public static byte[] keccak256(String message) {
+        return keccak256(Hex.decode(message), new SHA3Digest(DEFAULT_SIZE), true);
     }
 
-    public static byte[] sha3(byte[] message) {
-        return sha3(message, new SHA3Digest(DEFAULT_SIZE), true);
+    public static byte[] keccak256(byte[] message) {
+        return keccak256(message, new SHA3Digest(DEFAULT_SIZE), true);
     }
 
-    public static byte[] sha3(byte[] message, Size sz) {
-        return sha3(message, new SHA3Digest(sz.bits), true);
+    public static byte[] keccak256(byte[] message, Size sz) {
+        return keccak256(message, new SHA3Digest(sz.bits), true);
     }
 
-    public static byte[] sha3(byte[] m1, byte[] m2) {
-        return sha3(m1, m2, new SHA3Digest(DEFAULT_SIZE), true);
+    public static byte[] keccak256(byte[] m1, byte[] m2) {
+        return keccak256(m1, m2, new SHA3Digest(DEFAULT_SIZE), true);
     }
 
-    public static byte[] sha3(byte[] message, int start, int length) {
-        return sha3(message, start, length, new SHA3Digest(DEFAULT_SIZE), true);
+    public static byte[] keccak256(byte[] message, int start, int length) {
+        return keccak256(message, start, length, new SHA3Digest(DEFAULT_SIZE), true);
     }
 
-    protected static String sha3String(String message, Size bitSize) {
+    protected static String keccak256String(String message, Size bitSize) {
         SHA3Digest digest = new SHA3Digest(bitSize.bits);
-        return sha3String(message, digest, true);
+        return keccak256String(message, digest, true);
     }
 
-    protected static String sha3String(byte[] message, Size bitSize) {
+    protected static String keccak256String(byte[] message, Size bitSize) {
         SHA3Digest digest = new SHA3Digest(bitSize.bits);
-        return sha3String(message, digest, true);
+        return keccak256String(message, digest, true);
     }
 
-    protected static String sha3String(String message, Size bitSize, boolean bouncyencoder) {
+    protected static String keccak256String(String message, Size bitSize, boolean bouncyencoder) {
         SHA3Digest digest = new SHA3Digest(bitSize.bits);
-        return sha3String(message, digest, bouncyencoder);
+        return keccak256String(message, digest, bouncyencoder);
     }
 
-    protected static String sha3string(byte[] message, Size bitSize, boolean bouncyencoder) {
+    protected static String keccak256String(byte[] message, Size bitSize, boolean bouncyencoder) {
         SHA3Digest digest = new SHA3Digest(bitSize.bits);
-        return sha3String(message, digest, bouncyencoder);
+        return keccak256String(message, digest, bouncyencoder);
     }
 
-    private static String sha3String(String message, SHA3Digest digest, boolean bouncyencoder) {
+    private static String keccak256String(String message, SHA3Digest digest, boolean bouncyencoder) {
         if (message != null) {
-            return sha3String(Hex.decode(message), digest, bouncyencoder);
+            return keccak256String(Hex.decode(message), digest, bouncyencoder);
         }
         throw new NullPointerException("Can't hash a NULL value");
     }
 
-    private static String sha3String(byte[] message, SHA3Digest digest, boolean bouncyencoder) {
-        byte[] hash = doSha3(message, digest, bouncyencoder);
+    private static String keccak256String(byte[] message, SHA3Digest digest, boolean bouncyencoder) {
+        byte[] hash = doKeccak256(message, digest, bouncyencoder);
         if (bouncyencoder) {
             return Hex.toHexString(hash);
         } else {
@@ -94,15 +94,15 @@ public class SHA3Helper {
         }
     }
 
-    private static byte[] sha3(byte[] message, SHA3Digest digest, boolean bouncyencoder) {
-        return doSha3(message, digest, bouncyencoder);
+    private static byte[] keccak256(byte[] message, SHA3Digest digest, boolean bouncyencoder) {
+        return doKeccak256(message, digest, bouncyencoder);
     }
 
-    private static byte[] sha3(byte[] m1, byte[] m2, SHA3Digest digest, boolean bouncyencoder) {
-        return doSha3(m1, m2, digest, bouncyencoder);
+    private static byte[] keccak256(byte[] m1, byte[] m2, SHA3Digest digest, boolean bouncyencoder) {
+        return doKeccak256(m1, m2, digest, bouncyencoder);
     }
 
-    private static byte[] sha3(byte[] message, int start, int length, SHA3Digest digest, boolean bouncyencoder) {
+    private static byte[] keccak256(byte[] message, int start, int length, SHA3Digest digest, boolean bouncyencoder) {
         byte[] hash = new byte[digest.getDigestSize()];
 
         if (message.length != 0) {
@@ -113,7 +113,7 @@ public class SHA3Helper {
     }
 
 
-    private static byte[] doSha3(byte[] message, SHA3Digest digest, boolean bouncyencoder) {
+    private static byte[] doKeccak256(byte[] message, SHA3Digest digest, boolean bouncyencoder) {
         byte[] hash = new byte[digest.getDigestSize()];
 
         if (message.length != 0) {
@@ -123,7 +123,7 @@ public class SHA3Helper {
         return hash;
     }
 
-    private static byte[] doSha3(byte[] m1, byte[] m2, SHA3Digest digest, boolean bouncyencoder) {
+    private static byte[] doKeccak256(byte[] m1, byte[] m2, SHA3Digest digest, boolean bouncyencoder) {
         byte[] hash = new byte[digest.getDigestSize()];
         digest.update(m1, 0, m1.length);
         digest.update(m2, 0, m2.length);

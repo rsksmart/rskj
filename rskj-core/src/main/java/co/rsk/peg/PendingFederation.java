@@ -20,7 +20,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 
@@ -115,9 +115,9 @@ public final class PendingFederation {
                 Arrays.equals(thisPublicKeys, otherPublicKeys);
     }
 
-    public Sha3Hash getHash() {
+    public Keccak256 getHash() {
         byte[] encoded = BridgeSerializationUtils.serializePendingFederation(this);
-        return new Sha3Hash(HashUtil.sha3(encoded));
+        return new Keccak256(HashUtil.keccak256(encoded));
     }
 
     @Override

@@ -182,7 +182,7 @@ public class TransactionsMessageTest {
 
         BigInteger value = new BigInteger("1000000000000000000000000");
 
-        byte[] privKey = HashUtil.sha3("cat".getBytes());
+        byte[] privKey = HashUtil.keccak256("cat".getBytes());
         ECKey ecKey = ECKey.fromPrivate(privKey);
 
         byte[] gasPrice = Hex.decode("09184e72a000");

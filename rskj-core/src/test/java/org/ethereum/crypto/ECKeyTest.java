@@ -128,7 +128,7 @@ public class ECKeyTest {
         System.out.println("Secret\t: " + Hex.toHexString(key.getPrivKeyBytes()));
         System.out.println("Pubkey\t: " + Hex.toHexString(key.getPubKey()));
         System.out.println("Data\t: " + exampleMessage);
-        byte[] messageHash = HashUtil.sha3(exampleMessage.getBytes());
+        byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
         ECDSASignature signature = key.sign(messageHash);
         String output = signature.toBase64();
         System.out.println("Signtr\t: " + output + " (Base64, length: " + output.length() + ")");
@@ -141,7 +141,7 @@ public class ECKeyTest {
         BigInteger r = new BigInteger("28157690258821599598544026901946453245423343069728565040002908283498585537001");
         BigInteger s = new BigInteger("30212485197630673222315826773656074299979444367665131281281249560925428307087");
         ECDSASignature sig = ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), (byte) 28);
-        key.verify(HashUtil.sha3(exampleMessage.getBytes()), sig);
+        key.verify(HashUtil.keccak256(exampleMessage.getBytes()), sig);
     }
 
     @Test
@@ -151,11 +151,11 @@ public class ECKeyTest {
         ECDSASignature sig = ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), (byte) 0x1b);
         byte[] rawtx = Hex.decode("f82804881bc16d674ec8000094cd2a3d9f938e13cd947ec05abc7fe734df8dd8268609184e72a0006480");
         try {
-            ECKey key = ECKey.signatureToKey(HashUtil.sha3(rawtx), sig.toBase64());
+            ECKey key = ECKey.signatureToKey(HashUtil.keccak256(rawtx), sig.toBase64());
             System.out.println("Signature public key\t: " + Hex.toHexString(key.getPubKey()));
             System.out.println("Sender is\t\t: " + Hex.toHexString(key.getAddress()));
             assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", Hex.toHexString(key.getAddress()));
-            key.verify(HashUtil.sha3(rawtx), sig);
+            key.verify(HashUtil.keccak256(rawtx), sig);
         } catch (SignatureException e) {
             fail();
         }
@@ -168,7 +168,7 @@ public class ECKeyTest {
         byte[] rawtx = Hex.decode("f86e80893635c9adc5dea000008609184e72a00082109f9479b08ad8787060333663d19704909ee7b1903e58801ba0899b92d0c76cbf18df24394996beef19c050baa9823b4a9828cd9b260c97112ea0c9e62eb4cf0a9d95ca35c8830afac567619d6b3ebee841a3c8be61d35acd8049");
 
         Transaction tx = new ImmutableTransaction(rawtx);
-        ECKey key = ECKey.signatureToKey(HashUtil.sha3(rawtx), tx.getSignature().toBase64());
+        ECKey key = ECKey.signatureToKey(HashUtil.keccak256(rawtx), tx.getSignature().toBase64());
 
         System.out.println("Signature public key\t: " + Hex.toHexString(key.getPubKey()));
         System.out.println("Sender is\t\t: " + Hex.toHexString(key.getAddress()));
@@ -187,7 +187,7 @@ public class ECKeyTest {
         List<ListenableFuture<ECKey.ECDSASignature>> sigFutures = Lists.newArrayList();
         final ECKey key = new ECKey();
         for (byte i = 0; i < ITERATIONS; i++) {
-            final byte[] hash = HashUtil.sha3(new byte[]{i});
+            final byte[] hash = HashUtil.keccak256(new byte[]{i});
             sigFutures.add(executor.submit(new Callable<ECDSASignature>() {
                 @Override
                 public ECKey.ECDSASignature call() throws Exception {
@@ -278,7 +278,7 @@ public class ECKeyTest {
 
     @Test
     public void testSignedMessageToKey() throws SignatureException {
-        byte[] messageHash = HashUtil.sha3(exampleMessage.getBytes());
+        byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
         ECKey key = ECKey.signatureToKey(messageHash, sigBase64);
         assertNotNull(key);
         assertArrayEquals(pubKey, key.getPubKey());

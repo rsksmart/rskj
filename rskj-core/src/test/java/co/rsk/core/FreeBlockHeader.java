@@ -328,7 +328,7 @@ public class FreeBlockHeader {
     }
 
     public byte[] getHash() {
-        return HashUtil.sha3(getEncoded());
+        return HashUtil.keccak256(getEncoded());
     }
 
     public byte[] getEncoded() {
@@ -497,7 +497,7 @@ public class FreeBlockHeader {
     }
 
     public byte[] getHashForMergedMining() {
-        return HashUtil.sha3(getEncoded(false));
+        return HashUtil.keccak256(getEncoded(false));
     }
 
     public String getShortHash() {

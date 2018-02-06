@@ -32,14 +32,14 @@ public class DistanceCalculator {
 
     /**
      * The distance is calculated as the Most Significant Bit (MSB) position
-     * of the XOR between the sha3(sha3(nodeId)) of the 2 nodes
+     * of the XOR between the keccak256(keccak256(nodeId)) of the 2 nodes
      * @param node1 id
      * @param node2 id
      * @return The distance between 2 nodes
      */
     public int calculateDistance(byte[] node1, byte[] node2) {
-        byte[] nodeId1 = HashUtil.sha3(HashUtil.sha3(node1));
-        byte[] nodeId2 = HashUtil.sha3(HashUtil.sha3(node2));
+        byte[] nodeId1 = HashUtil.keccak256(HashUtil.keccak256(node1));
+        byte[] nodeId2 = HashUtil.keccak256(HashUtil.keccak256(node2));
         byte[] result = new byte[nodeId1.length];
 
         for (int i = 0; i < result.length; i++) {

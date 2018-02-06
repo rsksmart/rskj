@@ -41,7 +41,7 @@ public class GenNodeKeyId {
         if (generator.equals("")) {
             key = new ECKey();
         } else {
-            key = ECKey.fromPrivate(HashUtil.sha3(generator.getBytes(StandardCharsets.UTF_8)));
+            key = ECKey.fromPrivate(HashUtil.keccak256(generator.getBytes(StandardCharsets.UTF_8)));
         }
 
         String keybytes = Hex.toHexString(key.getPrivKeyBytes());

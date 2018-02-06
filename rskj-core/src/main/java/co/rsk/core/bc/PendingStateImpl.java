@@ -25,6 +25,7 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ReceiptStore;
@@ -44,7 +45,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static org.ethereum.crypto.HashUtil.sha3;
+import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.BIUtil.toBI;
 
 /**
@@ -52,7 +53,7 @@ import static org.ethereum.util.BIUtil.toBI;
  */
 public class PendingStateImpl implements PendingState {
     private static final Logger logger = LoggerFactory.getLogger("pendingstate");
-    private static final byte[] emptyUncleHashList = sha3(RLP.encodeList(new byte[0]));
+    private static final byte[] emptyUncleHashList = HashUtil.keccak256(RLP.encodeList(new byte[0]));
 
     private final Map<ByteArrayWrapper, Transaction> pendingTransactions = new HashMap<>();
     private final Map<ByteArrayWrapper, Transaction> wireTransactions = new HashMap<>();

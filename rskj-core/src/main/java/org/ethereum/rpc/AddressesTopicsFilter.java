@@ -21,7 +21,7 @@ package org.ethereum.rpc;
 
 import co.rsk.core.RskAddress;
 import org.ethereum.core.Bloom;
-import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 
@@ -78,7 +78,7 @@ public class AddressesTopicsFilter {
             } else {
                 filterBlooms[i] = new Bloom[orTopics.length];
                 for (int j = 0; j < orTopics.length; j++) {
-                    filterBlooms[i][j] = Bloom.create(SHA3Helper.sha3(orTopics[j]));
+                    filterBlooms[i][j] = Bloom.create(Keccak256Helper.keccak256(orTopics[j]));
                 }
             }
         }

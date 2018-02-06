@@ -23,7 +23,7 @@ import co.rsk.crypto.EncryptedData;
 import co.rsk.crypto.KeyCrypterAes;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.rpc.TypeConverter;
 import org.spongycastle.crypto.params.KeyParameter;
@@ -171,7 +171,7 @@ public class Wallet {
     }
 
     public byte[] addAccountWithSeed(String seed) {
-        return addAccountWithPrivateKey(SHA3Helper.sha3(seed.getBytes(StandardCharsets.UTF_8)));
+        return addAccountWithPrivateKey(Keccak256Helper.keccak256(seed.getBytes(StandardCharsets.UTF_8)));
     }
 
     public byte[] addAccountWithPrivateKey(byte[] privateKeyBytes) {

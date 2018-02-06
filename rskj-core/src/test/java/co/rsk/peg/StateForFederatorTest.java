@@ -21,7 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.RskSystemProperties;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Test;
@@ -44,23 +44,23 @@ public class StateForFederatorTest {
 
     @Test
     public void serialize() {
-        Sha3Hash sha3Hash1 = new Sha3Hash(SHA3_1);
-        Sha3Hash sha3Hash2 = new Sha3Hash(SHA3_2);
-        Sha3Hash sha3Hash3 = new Sha3Hash(SHA3_3);
-        Sha3Hash sha3Hash4 = new Sha3Hash(SHA3_4);
+        Keccak256 keccak2561 = new Keccak256(SHA3_1);
+        Keccak256 keccak2562 = new Keccak256(SHA3_2);
+        Keccak256 sha3Hash3 = new Keccak256(SHA3_3);
+        Keccak256 keccak2564 = new Keccak256(SHA3_4);
 
         BtcTransaction tx1 = new BtcTransaction(NETWORK_PARAMETERS);
         BtcTransaction tx2 = new BtcTransaction(NETWORK_PARAMETERS);
         BtcTransaction tx3 = new BtcTransaction(NETWORK_PARAMETERS);
         BtcTransaction tx4 = new BtcTransaction(NETWORK_PARAMETERS);
 
-        SortedMap<Sha3Hash, BtcTransaction> rskTxsWaitingForSignatures = new TreeMap<>();
-        rskTxsWaitingForSignatures.put(sha3Hash1, tx1);
-        rskTxsWaitingForSignatures.put(sha3Hash2, tx2);
+        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures = new TreeMap<>();
+        rskTxsWaitingForSignatures.put(keccak2561, tx1);
+        rskTxsWaitingForSignatures.put(keccak2562, tx2);
 
-        SortedMap<Sha3Hash, Pair<BtcTransaction, Long>> rskTxsWaitingForBroadcasting = new TreeMap<>();
+        SortedMap<Keccak256, Pair<BtcTransaction, Long>> rskTxsWaitingForBroadcasting = new TreeMap<>();
         rskTxsWaitingForBroadcasting.put(sha3Hash3, Pair.of(tx3, 3L));
-        rskTxsWaitingForBroadcasting.put(sha3Hash4, Pair.of(tx4, 4L));
+        rskTxsWaitingForBroadcasting.put(keccak2564, Pair.of(tx4, 4L));
 
         StateForFederator stateForFederator = new StateForFederator(rskTxsWaitingForSignatures);
 
@@ -73,15 +73,15 @@ public class StateForFederatorTest {
         Assert.assertNotNull(reverseResult);
         Assert.assertEquals(2, reverseResult.getRskTxsWaitingForSignatures().size());
 
-        Assert.assertEquals(tx1, reverseResult.getRskTxsWaitingForSignatures().get(sha3Hash1));
-        Assert.assertEquals(tx2, reverseResult.getRskTxsWaitingForSignatures().get(sha3Hash2));
+        Assert.assertEquals(tx1, reverseResult.getRskTxsWaitingForSignatures().get(keccak2561));
+        Assert.assertEquals(tx2, reverseResult.getRskTxsWaitingForSignatures().get(keccak2562));
 
-        Assert.assertTrue(checkKeys(reverseResult.getRskTxsWaitingForSignatures().keySet(), sha3Hash1, sha3Hash2));
+        Assert.assertTrue(checkKeys(reverseResult.getRskTxsWaitingForSignatures().keySet(), keccak2561, keccak2562));
     }
 
-    private boolean checkKeys(Set<Sha3Hash> sha3Hashes, Sha3Hash ... keys) {
-        for(Sha3Hash sha3 : keys)
-            if(!sha3Hashes.contains(sha3))
+    private boolean checkKeys(Set<Keccak256> keccak256s, Keccak256... keys) {
+        for(Keccak256 sha3 : keys)
+            if(!keccak256s.contains(sha3))
                 return false;
         return true;
     }
