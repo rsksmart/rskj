@@ -288,6 +288,7 @@ public class Transaction {
 
         byte[] plainMsg = this.getEncodedRaw();
         return new Keccak256(HashUtil.keccak256(plainMsg));
+
     }
 
     public byte[] getNonce() {
