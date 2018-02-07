@@ -20,6 +20,7 @@
 package org.ethereum.vm.program;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
@@ -180,11 +181,15 @@ public class Program {
     private static Boolean useDataWordPool = true;
 
     private final RskSystemProperties config;
+    private final VmConfig vmConfig;
+    private final PrecompiledContracts precompiledContracts;
     boolean isLogEnabled;
     boolean isGasLogEnabled;
 
     public Program(RskSystemProperties config, byte[] ops, ProgramInvoke programInvoke) {
         this.config = config;
+        this.vmConfig = config.getVmConfig();
+        this.precompiledContracts = new PrecompiledContracts(config);
         isLogEnabled = logger.isInfoEnabled();
         isGasLogEnabled = gasLogger.isInfoEnabled();
 
@@ -204,7 +209,7 @@ public class Program {
         this.stack = setupProgramListener(new Stack());
         this.stack.ensureCapacity(1024); // faster?
         this.storage = setupProgramListener(new Storage(programInvoke));
-        this.trace = new ProgramTrace(config, programInvoke);
+        this.trace = new ProgramTrace(vmConfig, programInvoke);
 
         if (useDataWordPool) {
             this.dataWordPool = new java.util.Stack<>();
@@ -214,7 +219,7 @@ public class Program {
         }
 
         precompile();
-        traceListener = new ProgramTraceListener(config);
+        traceListener = new ProgramTraceListener(vmConfig);
     }
 
     public Program(RskSystemProperties config, byte[] ops, ProgramInvoke programInvoke, Transaction transaction) {
@@ -650,7 +655,7 @@ public class Program {
         ProgramResult programResult = ProgramResult.empty();
         returnDataBuffer = null; // reset return buffer right before the call
         if (isNotEmpty(programCode)) {
-            VM vm = new VM(config);
+            VM vm = new VM(vmConfig, precompiledContracts);
             Program program = new Program(config, programCode, programInvoke, internalTx);
             vm.play(program);
             programResult = program.getResult();
@@ -876,7 +881,7 @@ public class Program {
                 msg.getType() == MsgType.DELEGATECALL ? getCallValue() : msg.getEndowment(),
                 limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(), byTestingSuite());
 
-        VM vm = new VM(config);
+        VM vm = new VM(vmConfig, precompiledContracts);
         Program program = new Program(config, programCode, programInvoke, internalTx);
         vm.play(program);
         childResult  = program.getResult();

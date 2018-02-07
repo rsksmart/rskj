@@ -21,6 +21,7 @@ package co.rsk.vm;
 import co.rsk.config.RskSystemProperties;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
@@ -166,7 +167,7 @@ public class VMPerformanceTest {
 
         Boolean old = thread.isThreadCpuTimeEnabled();
         thread.setThreadCpuTimeEnabled(true);
-        vm = new VM(config);
+        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config));
         if (useProfiler)
             waitForProfiler();
 
@@ -475,7 +476,7 @@ public class VMPerformanceTest {
 } // contract
         */
 
-        vm = new VM(config);
+        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config));
         // Strip the first 16 bytes which are added by Solidity to store the contract.
         byte[] codePlusPrefix = Hex.decode(
                 //---------------------------------------------------------------------------------------------------------------------nn
@@ -561,7 +562,7 @@ public class VMPerformanceTest {
          }
          } // contract
          ********************************************************************************************/
-        vm = new VM(config);
+        vm = new VM(config.getVmConfig(), new PrecompiledContracts(config));
         /////////////////////////////////////////////////////////////////////////////////////////////////
         // To increase precesion of the measurement, the maximum k value was increased
         // until the contract took more than 30 seconds

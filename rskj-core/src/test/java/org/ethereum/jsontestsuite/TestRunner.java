@@ -42,6 +42,7 @@ import org.ethereum.listener.EthereumListener;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
@@ -228,7 +229,7 @@ public class TestRunner {
 
             /* 3. Create Program - exec.code */
             /* 4. run VM */
-            VM vm = new VM(config);
+            VM vm = new VM(config.getVmConfig(), new PrecompiledContracts(config));
             Program program = new Program(config, exec.getCode(), programInvoke);
             boolean vmDidThrowAnEception = false;
             Exception e = null;

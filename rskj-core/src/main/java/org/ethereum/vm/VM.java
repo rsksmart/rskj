@@ -19,7 +19,6 @@
 
 package org.ethereum.vm;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import org.ethereum.crypto.HashUtil;
@@ -105,9 +104,9 @@ public class VM {
     int stepBefore; // only for debugging
     boolean isLogEnabled;
 
-    public VM(RskSystemProperties config) {
-        this.vmConfig = config.getVmConfig();
-        this.precompiledContracts = new PrecompiledContracts(config);
+    public VM(VmConfig vmConfig, PrecompiledContracts precompiledContracts) {
+        this.vmConfig = vmConfig;
+        this.precompiledContracts = precompiledContracts;
         isLogEnabled = logger.isInfoEnabled();
     }
 

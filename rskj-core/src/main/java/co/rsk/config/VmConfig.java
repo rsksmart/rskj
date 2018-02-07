@@ -24,14 +24,17 @@ package co.rsk.config;
 public class VmConfig {
 
     private final boolean vmTrace;
+    private final int vmTraceInitStorageLimit;
     private final int dumpBlock;
     private final String dumpStyle;
 
     public VmConfig(
             boolean vmTrace,
+            int vmTraceInitStorageLimit,
             int dumpBlock,
             String dumpStyle) {
         this.vmTrace = vmTrace;
+        this.vmTraceInitStorageLimit = vmTraceInitStorageLimit;
         this.dumpBlock = dumpBlock;
         this.dumpStyle = dumpStyle;
     }
@@ -46,5 +49,9 @@ public class VmConfig {
 
     public boolean vmTrace() {
         return vmTrace;
+    }
+
+    public int vmTraceInitStorageLimit() {
+        return vmTraceInitStorageLimit;
     }
 }

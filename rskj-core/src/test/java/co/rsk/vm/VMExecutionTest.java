@@ -20,6 +20,7 @@ package co.rsk.vm;
 
 import co.rsk.config.RskSystemProperties;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
@@ -357,7 +358,7 @@ public class VMExecutionTest {
     }
 
     private Program executeCode(byte[] code, int nsteps) {
-        VM vm = new VM(config);
+        VM vm = new VM(config.getVmConfig(), new PrecompiledContracts(config));
 
         Program program = new Program(config, code, invoke);
 

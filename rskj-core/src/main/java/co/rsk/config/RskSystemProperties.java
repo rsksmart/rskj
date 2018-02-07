@@ -392,7 +392,7 @@ public class RskSystemProperties extends SystemProperties {
 
     public VmConfig getVmConfig() {
         if (vmConfig == null) {
-            vmConfig = new VmConfig(vmTrace(), dumpBlock(), dumpStyle());
+            vmConfig = new VmConfig(vmTrace(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle());
         }
 
         return vmConfig;
