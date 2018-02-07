@@ -68,6 +68,7 @@ public class TransactionExecutor {
     private final Repository cacheTrack;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
+    private final PrecompiledContracts precompiledContracts;
     private String executionError = "";
     private final long gasUsedInTheBlock;
     private Coin paidFees;
@@ -113,6 +114,7 @@ public class TransactionExecutor {
         this.executionBlock = executionBlock;
         this.listener = listener;
         this.gasUsedInTheBlock = gasUsedInTheBlock;
+        this.precompiledContracts = new PrecompiledContracts(config);
     }
 
 
@@ -245,7 +247,7 @@ public class TransactionExecutor {
         // java.lang.RuntimeException: Data word can't exceed 32 bytes:
         // if targetAddress size is greater than 32 bytes.
         // But init() will detect this earlier
-        precompiledContract = PrecompiledContracts.getContractForAddress(config, new DataWord(targetAddress.getBytes()));
+        precompiledContract = precompiledContracts.getContractForAddress(new DataWord(targetAddress.getBytes()));
 
         if (precompiledContract != null) {
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());

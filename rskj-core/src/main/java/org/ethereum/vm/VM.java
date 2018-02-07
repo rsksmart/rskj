@@ -88,8 +88,8 @@ public class VM {
 
     private static VMHook vmHook;
 
-    private final RskSystemProperties config;
     private final VmConfig vmConfig;
+    private final PrecompiledContracts precompiledContracts;
 
     // Execution variables
     Program program;
@@ -106,8 +106,8 @@ public class VM {
     boolean isLogEnabled;
 
     public VM(RskSystemProperties config) {
-        this.config = config;
         this.vmConfig = config.getVmConfig();
+        this.precompiledContracts = new PrecompiledContracts(config);
         isLogEnabled = logger.isInfoEnabled();
     }
 
@@ -1470,7 +1470,7 @@ public class VM {
     }
 
     private void callToAddress(DataWord codeAddress, MessageCall msg) {
-        PrecompiledContracts.PrecompiledContract contract = PrecompiledContracts.getContractForAddress(config, codeAddress);
+        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(codeAddress);
 
         if (contract != null) {
             program.callToPrecompiledAddress(msg, contract);
