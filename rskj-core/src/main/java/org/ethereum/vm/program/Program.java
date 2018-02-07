@@ -19,7 +19,6 @@
 
 package org.ethereum.vm.program;
 
-import co.rsk.config.RskSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
@@ -87,7 +86,7 @@ public class Program {
     //Max size for stack checks
     private static final int MAX_STACKSIZE = 1024;
 
-    private Transaction transaction;
+    private final Transaction transaction;
 
     private final ProgramInvoke invoke;
     private final ProgramInvokeFactory programInvokeFactory = new ProgramInvokeFactoryImpl();
@@ -180,16 +179,20 @@ public class Program {
 
     private static Boolean useDataWordPool = true;
 
-    private final RskSystemProperties config;
-    private final VmConfig vmConfig;
+    private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
     boolean isLogEnabled;
     boolean isGasLogEnabled;
 
-    public Program(RskSystemProperties config, byte[] ops, ProgramInvoke programInvoke) {
+    public Program(
+            VmConfig config,
+            PrecompiledContracts precompiledContracts,
+            byte[] ops,
+            ProgramInvoke programInvoke,
+            Transaction transaction) {
         this.config = config;
-        this.vmConfig = config.getVmConfig();
-        this.precompiledContracts = new PrecompiledContracts(config);
+        this.precompiledContracts = precompiledContracts;
+        this.transaction = transaction;
         isLogEnabled = logger.isInfoEnabled();
         isGasLogEnabled = gasLogger.isInfoEnabled();
 
@@ -209,7 +212,7 @@ public class Program {
         this.stack = setupProgramListener(new Stack());
         this.stack.ensureCapacity(1024); // faster?
         this.storage = setupProgramListener(new Storage(programInvoke));
-        this.trace = new ProgramTrace(vmConfig, programInvoke);
+        this.trace = new ProgramTrace(config, programInvoke);
 
         if (useDataWordPool) {
             this.dataWordPool = new java.util.Stack<>();
@@ -219,12 +222,7 @@ public class Program {
         }
 
         precompile();
-        traceListener = new ProgramTraceListener(vmConfig);
-    }
-
-    public Program(RskSystemProperties config, byte[] ops, ProgramInvoke programInvoke, Transaction transaction) {
-        this(config, ops, programInvoke);
-        this.transaction = transaction;
+        traceListener = new ProgramTraceListener(config);
     }
 
     public static void setUseDataWordPool(Boolean value) {
@@ -655,8 +653,8 @@ public class Program {
         ProgramResult programResult = ProgramResult.empty();
         returnDataBuffer = null; // reset return buffer right before the call
         if (isNotEmpty(programCode)) {
-            VM vm = new VM(vmConfig, precompiledContracts);
-            Program program = new Program(config, programCode, programInvoke, internalTx);
+            VM vm = new VM(config, precompiledContracts);
+            Program program = new Program(config, precompiledContracts, programCode, programInvoke, internalTx);
             vm.play(program);
             programResult = program.getResult();
         }
@@ -881,8 +879,8 @@ public class Program {
                 msg.getType() == MsgType.DELEGATECALL ? getCallValue() : msg.getEndowment(),
                 limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(), byTestingSuite());
 
-        VM vm = new VM(vmConfig, precompiledContracts);
-        Program program = new Program(config, programCode, programInvoke, internalTx);
+        VM vm = new VM(config, precompiledContracts);
+        Program program = new Program(config, precompiledContracts, programCode, programInvoke, internalTx);
         vm.play(program);
         childResult  = program.getResult();
 

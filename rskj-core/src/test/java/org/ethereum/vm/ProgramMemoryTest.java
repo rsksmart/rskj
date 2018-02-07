@@ -37,7 +37,8 @@ public class ProgramMemoryTest {
 
     @Before
     public void createProgram() {
-        program = new Program(new RskSystemProperties(), ByteUtil.EMPTY_BYTE_ARRAY, pi);
+        RskSystemProperties config = new RskSystemProperties();
+        program = new Program(config.getVmConfig(), new PrecompiledContracts(config), ByteUtil.EMPTY_BYTE_ARRAY, pi, null);
     }
 
     @Test

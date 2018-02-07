@@ -19,6 +19,7 @@
 package co.rsk.vm;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.config.VmConfig;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.PrecompiledContracts;
@@ -52,6 +53,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class VMPerformanceTest {
     private final RskSystemProperties config = new RskSystemProperties();
+    private final VmConfig vmConfig = config.getVmConfig();
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config);
     private ProgramInvokeMockImpl invoke;
     private Program program;
     ThreadMXBean thread;
@@ -296,7 +299,7 @@ public class VMPerformanceTest {
             baos.write(code, 0, code.length);
         byte[] newCode = baos.toByteArray();
 
-        program = new Program(config, newCode, invoke);
+        program = new Program(vmConfig, precompiledContracts, newCode, invoke, null);
         int sa = program.getStartAddr();
 
         long myLoops = maxLoops / cloneCount;
@@ -503,7 +506,7 @@ public class VMPerformanceTest {
         ------------------------------------------------------------------------------------------------------------------------------------------------------*/
         byte[] code = Arrays.copyOfRange(codePlusPrefix,16,codePlusPrefix.length);
 
-        program =new Program(config, code, invoke);
+        program =new Program(vmConfig, precompiledContracts, code, invoke, null);
 
         //String s_expected_1 = "000000000000000000000000000000000000000000000000000000033FFC1244"; // 55
         //String s_expected_1 = "00000000000000000000000000000000000000000000000000000002EE333961";// 50
@@ -618,7 +621,7 @@ public class VMPerformanceTest {
     -----------------------------------------------------------------------------*/
 
     public void testRunTime(byte[] code, String s_expected) {
-        program = new Program(config, code, invoke);
+        program = new Program(vmConfig, precompiledContracts, code, invoke, null);
         System.out.println("-----------------------------------------------------------------------------");
         System.out.println("Starting test....");
         System.out.println("Configuration: Program.useDataWordPool =  " + Program.getUseDataWordPool().toString());
