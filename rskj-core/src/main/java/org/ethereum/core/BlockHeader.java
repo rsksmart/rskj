@@ -97,7 +97,12 @@ public class BlockHeader {
     private byte[] bitcoinMergedMiningMerkleProof;
     /* The bitcoin protobuf serialized coinbase tx for merged mining */
     private byte[] bitcoinMergedMiningCoinbaseTransaction;
-    /*The mgp for a tx to be included in the block*/
+    /**
+     * The mgp for a tx to be included in the block.
+     * Note that minimumGasPriceRaw is saved to perform {@link #getEncoded()},
+     * but for other uses you should only rely on minimumGasPrice.
+     */
+    private byte[] minimumGasPriceRaw;
     private Coin minimumGasPrice;
     private int uncleCount;
 
@@ -145,7 +150,8 @@ public class BlockHeader {
         this.extraData = rlpHeader.get(12).getRLPData();
 
         this.paidFees = RLP.parseCoin(rlpHeader.get(13).getRLPData());
-        this.minimumGasPrice = RLP.parseCoin(rlpHeader.get(14).getRLPData());
+        this.minimumGasPriceRaw = rlpHeader.get(14).getRLPData();
+        this.minimumGasPrice = RLP.parseCoin(this.minimumGasPriceRaw);
 
         int r = 15;
 
@@ -194,7 +200,8 @@ public class BlockHeader {
         this.timestamp = timestamp;
         this.extraData = extraData;
         this.stateRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
-        this.minimumGasPrice = minimumGasPrice == null ? null : new Coin(minimumGasPrice);
+        this.minimumGasPriceRaw = minimumGasPrice;
+        this.minimumGasPrice = minimumGasPriceRaw == null ? null : new Coin(minimumGasPriceRaw);
         this.receiptTrieRoot = ByteUtils.clone(EMPTY_TRIE_HASH);
         this.uncleCount = uncleCount;
         this.paidFees = Coin.ZERO;
@@ -434,7 +441,7 @@ public class BlockHeader {
         byte[] timestamp = RLP.encodeBigInteger(BigInteger.valueOf(this.timestamp));
         byte[] extraData = RLP.encodeElement(this.extraData);
         byte[] paidFees = RLP.encodeCoin(this.paidFees);
-        byte[] mgp = RLP.encodeCoin(this.minimumGasPrice);
+        byte[] mgp = RLP.encodeElement(this.minimumGasPriceRaw);
         List<byte[]> fieldToEncodeList = Lists.newArrayList(parentHash, unclesHash, coinbase,
                 stateRoot, txTrieRoot, receiptTrieRoot, logsBloom, difficulty, number,
                 gasLimit, gasUsed, timestamp, extraData, paidFees, mgp);
