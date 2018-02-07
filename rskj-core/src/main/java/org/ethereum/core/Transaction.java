@@ -246,7 +246,7 @@ public class Transaction {
         this.gasPrice = RLP.parseCoin(this.gasPriceRaw);
         this.gasLimit = transaction.get(2).getRLPData();
         this.receiveAddress = RLP.parseRskAddress(transaction.get(3).getRLPData());
-        this.valueRaw = nullToZeroArray(transaction.get(4).getRLPData());
+        this.valueRaw = transaction.get(4).getRLPData();
         this.value = RLP.parseCoin(this.valueRaw);
         this.data = transaction.get(5).getRLPData();
         // only parse signature in case tx is signed
