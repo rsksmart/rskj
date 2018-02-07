@@ -1,11 +1,15 @@
-package org.ethereum.rpc;
+package co.rsk.rpc.netty;
 
 import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.ModuleDescription;
+import co.rsk.rpc.netty.JsonRpcWeb3FilterHandler;
+import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
+import co.rsk.rpc.netty.Web3HttpServer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import org.ethereum.rpc.Web3;
 import org.junit.Test;
 import org.mockito.Mockito;
 

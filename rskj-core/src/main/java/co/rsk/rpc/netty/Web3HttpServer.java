@@ -1,4 +1,4 @@
-package org.ethereum.rpc;
+package co.rsk.rpc.netty;
 
 import co.rsk.rpc.CorsConfiguration;
 import io.netty.bootstrap.ServerBootstrap;
