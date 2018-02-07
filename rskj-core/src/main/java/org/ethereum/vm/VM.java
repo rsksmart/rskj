@@ -20,6 +20,7 @@
 package org.ethereum.vm;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ContractDetails;
@@ -35,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 
@@ -89,6 +89,7 @@ public class VM {
     private static VMHook vmHook;
 
     private final RskSystemProperties config;
+    private final VmConfig vmConfig;
 
     // Execution variables
     Program program;
@@ -106,6 +107,7 @@ public class VM {
 
     public VM(RskSystemProperties config) {
         this.config = config;
+        this.vmConfig = config.getVmConfig();
         isLogEnabled = logger.isInfoEnabled();
     }
 
@@ -1872,7 +1874,7 @@ public class VM {
                     break;
                 }
 
-                if (this.config.vmTrace()) {
+                if (vmConfig.vmTrace()) {
                     program.saveOpTrace();
                 }
 
@@ -1895,14 +1897,14 @@ public class VM {
 
                 gasCost = op.getTier().asInt();
 
-                if (this.config.dumpBlock() >= 0) {
+                if (vmConfig.dumpBlock() >= 0) {
                     gasBefore = program.getRemainingGas();
                     stepBefore = program.getPC();
                     memWords = 0; // parameters for logging
                 }
 
                 // Log debugging line for VM
-                if (this.config.dumpBlock() >= 0 && program.getNumber().intValue() == this.config.dumpBlock()) {
+                if (vmConfig.dumpBlock() >= 0 && program.getNumber().intValue() == vmConfig.dumpBlock()) {
                     this.dumpLine(op, gasBefore, gasCost , memWords, program);
                 }
 
@@ -1981,7 +1983,7 @@ public class VM {
                     gasBefore, gasCost, memWords)
      */
     private void dumpLine(OpCode op, long gasBefore, long gasCost, long memWords, Program program) {
-        if ("standard+".equals(config.dumpStyle())) {
+        if ("standard+".equals(vmConfig.dumpStyle())) {
             switch (op) {
                 case STOP:
                 case RETURN:
@@ -2005,7 +2007,7 @@ public class VM {
             String gasString = Long.toHexString(program.getRemainingGas());
 
             dumpLogger.trace("{} {} {} {}", addressString, pcString, opString, gasString);
-        } else if ("pretty".equals(config.dumpStyle())) {
+        } else if ("pretty".equals(vmConfig.dumpStyle())) {
             dumpLogger.trace("-------------------------------------------------------------------------");
             dumpLogger.trace("    STACK");
             program.getStack().forEach(item -> dumpLogger.trace("{}", item));

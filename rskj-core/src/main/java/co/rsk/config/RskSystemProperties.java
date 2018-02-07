@@ -63,6 +63,7 @@ public class RskSystemProperties extends SystemProperties {
     private MessageRecorder messageRecorder;
 
     private List<ModuleDescription> moduleDescriptions;
+    private VmConfig vmConfig;
 
     @Nullable
     public RskAddress coinbaseAddress() {
@@ -387,5 +388,13 @@ public class RskSystemProperties extends SystemProperties {
     // its fixed, cannot be set by config file
     public int getChunkSize() {
         return CHUNK_SIZE;
+    }
+
+    public VmConfig getVmConfig() {
+        if (vmConfig == null) {
+            vmConfig = new VmConfig(vmTrace(), dumpBlock(), dumpStyle());
+        }
+
+        return vmConfig;
     }
 }
