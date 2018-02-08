@@ -207,7 +207,7 @@ public class Web3Impl implements Web3 {
     public String web3_sha3(String data) throws Exception {
         String s = null;
         try {
-            byte[] result = HashUtil.sha3(data.getBytes(StandardCharsets.UTF_8));
+            byte[] result = HashUtil.keccak256(data.getBytes(StandardCharsets.UTF_8));
             return s = TypeConverter.toJsonHex(result);
         } finally {
             if (logger.isDebugEnabled()) {

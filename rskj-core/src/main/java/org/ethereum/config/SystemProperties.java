@@ -27,6 +27,7 @@ import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.config.net.MainNetConfig;
 import org.ethereum.config.net.TestNetConfig;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.rlpx.Node;
@@ -48,7 +49,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.ethereum.crypto.SHA3Helper.sha3;
+import static org.ethereum.crypto.Keccak256Helper.keccak256;
 
 /**
  * Utility class to retrieve property values from the rskj.conf files
@@ -359,7 +360,7 @@ public abstract class SystemProperties {
             if (configObject.toConfig().hasPath("nodeName")) {
                 String nodeName = configObject.toConfig().getString("nodeName").trim();
                 // FIXME should be sha3-512 here ?
-                byte[] nodeId = ECKey.fromPrivate(sha3(nodeName.getBytes(StandardCharsets.UTF_8))).getNodeId();
+                byte[] nodeId = ECKey.fromPrivate(Keccak256Helper.keccak256(nodeName.getBytes(StandardCharsets.UTF_8))).getNodeId();
                 return new Node(nodeId, ip, port);
             }
 

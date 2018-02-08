@@ -45,7 +45,7 @@ import co.rsk.util.TestContract;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.SHA3Helper;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.net.client.ConfigCapabilities;
@@ -945,7 +945,7 @@ public class Web3ImplTest {
         String addr1 = web3.personal_newAccountWithSeed("sampleSeed1");
         String addr2 = web3.personal_newAccountWithSeed("sampleSeed2");
 
-        byte[] hash = SHA3Helper.sha3("this is the data to hash".getBytes());
+        byte[] hash = Keccak256Helper.keccak256("this is the data to hash".getBytes());
 
         String signature = "";
         try {

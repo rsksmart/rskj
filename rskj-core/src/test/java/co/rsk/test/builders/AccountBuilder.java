@@ -64,7 +64,7 @@ public class AccountBuilder {
     }
 
     public Account build() {
-        byte[] privateKeyBytes = HashUtil.sha3(name.getBytes());
+        byte[] privateKeyBytes = HashUtil.keccak256(name.getBytes());
         ECKey key = ECKey.fromPrivate(privateKeyBytes);
         Account account = new Account(key);
 

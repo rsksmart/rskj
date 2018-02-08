@@ -30,6 +30,7 @@ import com.google.common.io.ByteStreams;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Genesis;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ContractDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +40,7 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.ethereum.crypto.SHA3Helper.sha3;
+import static org.ethereum.crypto.Keccak256Helper.keccak256;
 
 public class GenesisLoader {
     private static final Logger logger = LoggerFactory.getLogger("genesisloader");
@@ -101,7 +102,7 @@ public class GenesisLoader {
                     contractDetails = detailsMapper.mapFromContract(contract);
 
                     if (contractDetails.getCode() != null) {
-                        acctState.setCodeHash(sha3(contractDetails.getCode()));
+                        acctState.setCodeHash(Keccak256Helper.keccak256(contractDetails.getCode()));
                     }
 
                     acctState.setStateRoot(contractDetails.getStorageHash());

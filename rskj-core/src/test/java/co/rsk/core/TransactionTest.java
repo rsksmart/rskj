@@ -51,10 +51,10 @@ public class TransactionTest {
 
         BigInteger value = new BigInteger("1000000000000000000000");
 
-        byte[] privKey = HashUtil.sha3("cat".getBytes());
+        byte[] privKey = HashUtil.keccak256("cat".getBytes());
         ECKey ecKey = ECKey.fromPrivate(privKey);
 
-        byte[] senderPrivKey = HashUtil.sha3("cow".getBytes());
+        byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
 
         byte[] gasPrice = Hex.decode("09184e72a000");
         byte[] gas = Hex.decode("4255");

@@ -22,7 +22,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 
 /**
  * Created by oscar on 05/08/2016.
@@ -33,17 +33,17 @@ public class PegTestUtils {
         for (int i = 0; i < 257; i++) {
             createHash3();
         }
-        Sha3Hash hash = createHash3();
+        Keccak256 hash = createHash3();
     }
 
     private static int nhash = 0;
 
-    public static Sha3Hash createHash3() {
+    public static Keccak256 createHash3() {
         byte[] bytes = new byte[32];
         nhash++;
         bytes[0] = (byte) (nhash & 0xFF);
         bytes[1] = (byte) (nhash>>8 & 0xFF);
-        Sha3Hash hash = new Sha3Hash(bytes);
+        Keccak256 hash = new Keccak256(bytes);
         return hash;
     }
 

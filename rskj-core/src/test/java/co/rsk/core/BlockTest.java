@@ -39,7 +39,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class BlockTest {
-    private static final byte[] EMPTY_LIST_HASH = HashUtil.sha3(RLP.encodeList());
+    private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     @Test
     public void testParseRemascTransaction() {

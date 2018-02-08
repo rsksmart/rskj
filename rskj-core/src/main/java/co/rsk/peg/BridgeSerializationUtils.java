@@ -20,7 +20,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.spongycastle.util.BigIntegers;
@@ -48,13 +48,13 @@ public class BridgeSerializationUtils {
 
     private BridgeSerializationUtils(){}
 
-    public static byte[] serializeMap(SortedMap<Sha3Hash, BtcTransaction> map) {
+    public static byte[] serializeMap(SortedMap<Keccak256, BtcTransaction> map) {
         int ntxs = map.size();
 
         byte[][] bytes = new byte[ntxs * 2][];
         int n = 0;
 
-        for (Map.Entry<Sha3Hash, BtcTransaction> entry : map.entrySet()) {
+        for (Map.Entry<Keccak256, BtcTransaction> entry : map.entrySet()) {
             bytes[n++] = RLP.encodeElement(entry.getKey().getBytes());
             bytes[n++] = RLP.encodeElement(entry.getValue().bitcoinSerialize());
         }
@@ -62,8 +62,8 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    public static SortedMap<Sha3Hash, BtcTransaction> deserializeMap(byte[] data, NetworkParameters networkParameters, boolean noInputsTxs) {
-        SortedMap<Sha3Hash, BtcTransaction> map = new TreeMap<>();
+    public static SortedMap<Keccak256, BtcTransaction> deserializeMap(byte[] data, NetworkParameters networkParameters, boolean noInputsTxs) {
+        SortedMap<Keccak256, BtcTransaction> map = new TreeMap<>();
 
         if (data == null || data.length == 0) {
             return map;
@@ -74,7 +74,7 @@ public class BridgeSerializationUtils {
         int ntxs = rlpList.size() / 2;
 
         for (int k = 0; k < ntxs; k++) {
-            Sha3Hash hash = new Sha3Hash(rlpList.get(k * 2).getRLPData());
+            Keccak256 hash = new Keccak256(rlpList.get(k * 2).getRLPData());
             byte[] payload = rlpList.get(k * 2 + 1).getRLPData();
             BtcTransaction tx;
             if (!noInputsTxs) {

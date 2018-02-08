@@ -20,14 +20,12 @@ package co.rsk.trie.delete;
 
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieImpl;
-import org.ethereum.util.RLP;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
 
-import static org.ethereum.crypto.HashUtil.sha3;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.ethereum.crypto.HashUtil.keccak256;
 
 /**
  * Created by martin.medina on 11/01/2017.

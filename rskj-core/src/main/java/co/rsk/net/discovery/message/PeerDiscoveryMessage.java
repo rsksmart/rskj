@@ -20,6 +20,7 @@ package co.rsk.net.discovery.message;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.BigIntegers;
@@ -27,7 +28,7 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.security.SignatureException;
 
-import static org.ethereum.crypto.HashUtil.sha3;
+import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.ByteUtil.merge;
 
 public abstract class PeerDiscoveryMessage {
@@ -54,7 +55,7 @@ public abstract class PeerDiscoveryMessage {
         byte[] payload = new byte[type.length + data.length];
         payload[0] = type[0];
         System.arraycopy(data, 0, payload, 1, data.length);
-        byte[] forSig = sha3(payload);
+        byte[] forSig = HashUtil.keccak256(payload);
 
         /* [2] Crate signature*/
         ECKey.ECDSASignature ecdsaSignature = privKey.sign(forSig);
@@ -69,7 +70,7 @@ public abstract class PeerDiscoveryMessage {
         byte[] forSha = merge(sigBytes, type, data);
 
         // wrap all the data in to the packet
-        this.mdc = sha3(forSha);
+        this.mdc = HashUtil.keccak256(forSha);
         this.signature = sigBytes;
         this.type = type;
         this.data = data;
@@ -96,7 +97,7 @@ public abstract class PeerDiscoveryMessage {
         System.arraycopy(signature, 0, r, 0, 32);
         System.arraycopy(signature, 32, s, 0, 32);
 
-        byte[] msgHash = sha3(wire, 97, wire.length - 97);
+        byte[] msgHash = keccak256(wire, 97, wire.length - 97);
 
         ECKey outKey = null;
         try {

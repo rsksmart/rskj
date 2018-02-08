@@ -27,7 +27,7 @@ import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.FamilyUtils;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockProcessor;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.remasc.RemascTransaction;
@@ -102,12 +102,12 @@ public class MinerServerImpl implements MinerServer {
     private byte[] extraData;
 
     @GuardedBy("lock")
-    private LinkedHashMap<Sha3Hash, Block> blocksWaitingforPoW;
+    private LinkedHashMap<Keccak256, Block> blocksWaitingforPoW;
 
     @GuardedBy("lock")
-    private Sha3Hash latestblockHashWaitingforPoW;
+    private Keccak256 latestblockHashWaitingforPoW;
     @GuardedBy("lock")
-    private Sha3Hash latestParentHash;
+    private Keccak256 latestParentHash;
     @GuardedBy("lock")
     private Block latestBlock;
     @GuardedBy("lock")
@@ -189,11 +189,11 @@ public class MinerServerImpl implements MinerServer {
         secsBetweenFallbackMinedBlocks = m;
     }
 
-    private LinkedHashMap<Sha3Hash, Block> createNewBlocksWaitingList() {
-        return new LinkedHashMap<Sha3Hash, Block>(CACHE_SIZE)
+    private LinkedHashMap<Keccak256, Block> createNewBlocksWaitingList() {
+        return new LinkedHashMap<Keccak256, Block>(CACHE_SIZE)
         {
             @Override
-            protected boolean removeEldestEntry(Map.Entry<Sha3Hash, Block> eldest) {
+            protected boolean removeEldestEntry(Map.Entry<Keccak256, Block> eldest) {
                 return size() > CACHE_SIZE;
             }
         };
@@ -258,7 +258,7 @@ public class MinerServerImpl implements MinerServer {
     }
 
     @VisibleForTesting
-    public Map<Sha3Hash, Block> getBlocksWaitingforPoW() {
+    public Map<Keccak256, Block> getBlocksWaitingforPoW() {
         return blocksWaitingforPoW;
     }
 
@@ -422,7 +422,7 @@ public class MinerServerImpl implements MinerServer {
         co.rsk.bitcoinj.core.PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(bitcoinMergedMiningBlock);
 
         Block newBlock;
-        Sha3Hash key = new Sha3Hash(TypeConverter.removeZeroX(blockHashForMergedMining));
+        Keccak256 key = new Keccak256(TypeConverter.removeZeroX(blockHashForMergedMining));
 
         synchronized (lock) {
             Block workingBlock = blocksWaitingforPoW.get(key);
@@ -577,7 +577,7 @@ public class MinerServerImpl implements MinerServer {
     }
 
     public MinerWork updateGetWork(@Nonnull final Block block, @Nonnull final boolean notify) {
-        Sha3Hash blockMergedMiningHash = new Sha3Hash(block.getHashForMergedMining());
+        Keccak256 blockMergedMiningHash = new Keccak256(block.getHashForMergedMining());
 
         BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficulty());
         byte[] targetUnknownLengthArray = targetBI.toByteArray();
@@ -643,7 +643,7 @@ public class MinerServerImpl implements MinerServer {
         executor.executeAndFill(newBlock, newBlockParent);
 
         synchronized (lock) {
-            Sha3Hash parentHash = new Sha3Hash(newBlockParent.getHash());
+            Keccak256 parentHash = new Keccak256(newBlockParent.getHash());
             boolean notify = this.getNotify(newBlock, parentHash);
 
             if (notify) {
@@ -655,7 +655,7 @@ public class MinerServerImpl implements MinerServer {
 
 
             currentWork = updateGetWork(newBlock, notify);
-            latestblockHashWaitingforPoW = new Sha3Hash(newBlock.getHashForMergedMining());
+            latestblockHashWaitingforPoW = new Keccak256(newBlock.getHashForMergedMining());
 
             blocksWaitingforPoW.put(latestblockHashWaitingforPoW, latestBlock);
             logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
@@ -675,7 +675,7 @@ public class MinerServerImpl implements MinerServer {
      * @return true if miners should be notified about this new block to mine.
      */
     @GuardedBy("lock")
-    private boolean getNotify(Block block, Sha3Hash parentHash) {
+    private boolean getNotify(Block block, Keccak256 parentHash) {
         if (!parentHash.equals(latestParentHash)) {
             return true;
         }
@@ -771,7 +771,7 @@ public class MinerServerImpl implements MinerServer {
     }
 
     private BlockHeader createHeader(Block newBlockParent, List<BlockHeader> uncles, List<Transaction> txs, Coin minimumGasPrice) {
-        final byte[] unclesListHash = HashUtil.sha3(BlockHeader.getUnclesEncodedEx(uncles));
+        final byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
         final long timestampSeconds = this.getCurrentTimeInSeconds();
 

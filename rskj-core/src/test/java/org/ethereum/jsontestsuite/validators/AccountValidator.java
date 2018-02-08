@@ -33,7 +33,7 @@ import java.util.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 public class AccountValidator {
-    private static final byte[] EMPTY_DATA_HASH = HashUtil.sha3(EMPTY_BYTE_ARRAY);
+    private static final byte[] EMPTY_DATA_HASH = HashUtil.keccak256(EMPTY_BYTE_ARRAY);
 
     public static List<String> valid(RskAddress addr, AccountState expectedState, ContractDetails expectedDetails,
                                      AccountState currentState, ContractDetails currentDetails){

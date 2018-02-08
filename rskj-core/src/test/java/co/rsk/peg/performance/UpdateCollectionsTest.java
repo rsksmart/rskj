@@ -21,13 +21,12 @@ package co.rsk.peg.performance;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.crypto.Sha3Hash;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.ReleaseRequestQueue;
 import co.rsk.peg.ReleaseTransactionSet;
 import org.ethereum.core.Repository;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -142,7 +141,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex) -> {
             Random rnd = new Random();
-            SortedMap<Sha3Hash, BtcTransaction> txsWaitingForSignatures;
+            SortedMap<Keccak256, BtcTransaction> txsWaitingForSignatures;
             ReleaseTransactionSet txSet;
 
             try {
@@ -160,7 +159,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
             // Generate some txs waiting for signatures
             Script genesisFederationScript = bridgeConstants.getGenesisFederation().getP2SHScript();
             for (int i = 0; i < Helper.randomInRange(minTxsWaitingForSigs, maxTxsWaitingForSigs); i++) {
-                Sha3Hash rskHash = new Sha3Hash(HashUtil.sha3(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
+                Keccak256 rskHash = new Keccak256(HashUtil.keccak256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
                 BtcTransaction btcTx = new BtcTransaction(networkParameters);
                 Sha256Hash inputHash = Sha256Hash.wrap(HashUtil.sha256(BigInteger.valueOf(rnd.nextLong()).toByteArray()));
                 btcTx.addInput(inputHash, 0, genesisFederationScript);

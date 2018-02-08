@@ -18,11 +18,12 @@
 
 package co.rsk.trie;
 
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.ethereum.crypto.SHA3Helper.sha3;
+import static org.ethereum.crypto.Keccak256Helper.keccak256;
 
 /**
  * Created by ajlopez on 08/01/2017.
@@ -66,7 +67,7 @@ public class TrieStoreImplTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        Trie trie = new TrieImpl(store, false).put(sha3("foo".getBytes()), "bar".getBytes());
+        Trie trie = new TrieImpl(store, false).put(Keccak256Helper.keccak256("foo".getBytes()), "bar".getBytes());
 
         store.save(trie);
 
@@ -80,7 +81,7 @@ public class TrieStoreImplTest {
 
         Assert.assertNotNull(newTrie);
         Assert.assertEquals(1, newTrie.trieSize());
-        Assert.assertNotNull(newTrie.get(sha3("foo".getBytes())));
+        Assert.assertNotNull(newTrie.get(Keccak256Helper.keccak256("foo".getBytes())));
     }
 
     @Test
@@ -88,7 +89,7 @@ public class TrieStoreImplTest {
         HashMapDB map = new HashMapDB();
         TrieStoreImpl store = new TrieStoreImpl(map);
 
-        byte[] key = sha3("foo".getBytes());
+        byte[] key = Keccak256Helper.keccak256("foo".getBytes());
         byte[] value = new byte[33];
 
         Trie trie = new TrieImpl(store, false).put(key, value);

@@ -51,7 +51,7 @@ public class TxBuilder {
     private static final Logger logger = LoggerFactory.getLogger("txbuilder");
     private volatile boolean stop = false;
 
-    private byte[] privateKeyBytes  = HashUtil.sha3("this is a seed".getBytes(StandardCharsets.UTF_8));
+    private byte[] privateKeyBytes  = HashUtil.keccak256("this is a seed".getBytes(StandardCharsets.UTF_8));
     private ECKey key;
 
     public TxBuilder(RskSystemProperties config, Ethereum ethereum, BlockProcessor blockProcessor, Repository repository) {

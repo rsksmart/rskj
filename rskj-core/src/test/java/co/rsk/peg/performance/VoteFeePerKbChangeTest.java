@@ -40,7 +40,7 @@ public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
 
         TxBuilder txBuilder = (int executionIndex) -> {
             String generator = "auth-fee-per-kb";
-            ECKey sender = ECKey.fromPrivate(HashUtil.sha3(generator.getBytes(StandardCharsets.UTF_8)));
+            ECKey sender = ECKey.fromPrivate(HashUtil.keccak256(generator.getBytes(StandardCharsets.UTF_8)));
 
             return Helper.buildTx(sender);
         };
