@@ -5,7 +5,7 @@
 Please **don't file an issue** to ask a question. You'll get faster results by using the resources below.
 
 * We have a [Gitter channel](https://gitter.im/rsksmart/rskj) for technical questions about RSK
-* We have a [Telegram channel](https://t.me/RSKsmartcontracts) for general questions or discussion about RSK
+* We have a [Telegram channel](https://t.me/RSKsmartcontracts) for general questions or discussions about RSK
 
 ## How to contribute to RSK
 
@@ -33,6 +33,20 @@ These are mostly guidelines, not rules. Use your best judgment, and feel free to
 
 #### General
 
+**Naming**
+
+* **Identifiers** use only ASCII letters and digits.
+* **Package names** are all lowercase, with consecutive words simply concatenated together (no underscores).
+* **Class names** are written in `UpperCamelCase`.
+* **Method names** are written in `lowerCamelCase`.
+* **Non-constant** field names (static or otherwise) are written in `lowerCamelCase`.
+* **Parameter names** are written in `lowerCamelCase`.
+* **Local variable names** are written in `lowerCamelCase`.
+* **Constant names** use `CONSTANT_CASE`: all uppercase letters, with each word separated from the next by a single underscore. But what is a constant, exactly?
+
+Constants are static final fields whose contents are deeply immutable and whose methods have no detectable side effects. This includes primitives, Strings, immutable types, and immutable collections of immutable types. If any of the instance's observable state can change, it is not a constant. Merely intending to never mutate the object is not enough.
+
+
 **Prefer readonly accessors and injection over setters**
 
 An object’s dependencies might be injected during construction or later on with setters.
@@ -56,7 +70,7 @@ public class BlockChainImpl {
 ```
 
 
-**Prefer private final fields**
+**Prefer private final fields for dependencies**
 
 `private final` fields guarantee they are only assigned once, at object construction time.
 This ensures that the injected dependency will always be in a consistent state as long as the object was properly injected.
@@ -126,9 +140,9 @@ public PendingStateImpl(
 
 **Unused code should be deleted**
 
-Unless there's a good reason to keep it around, in which case you should add comments explaining why.
+Unless there's a good reason to keep it around, in which case you should add comments explaining why. Comments are not needed in cases in which the underlying reason for having the (unused) method is trivial enough (e.g., a method `add` on a `Calculator` class).
 
-This includes code with tests but no usages in production.
+This guideline includes code with tests but no usages in production.
 
 
 #### Formatting
