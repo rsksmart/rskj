@@ -1566,7 +1566,7 @@ public class Program {
             this.refundGas(msg.getGas().longValue() - requiredGas, "call pre-compiled");
 
             // Special initialization for Bridge and Remasc contracts
-            if (contract.getClass() == Bridge.class || contract.getClass() == RemascContract.class) {
+            if (contract instanceof Bridge || contract instanceof RemascContract) {
                 // CREATE CALL INTERNAL TRANSACTION
                 InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, EMPTY_BYTE_ARRAY, "call");
 
