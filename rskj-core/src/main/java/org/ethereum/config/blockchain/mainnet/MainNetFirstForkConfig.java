@@ -1,5 +1,6 @@
 package org.ethereum.config.blockchain.mainnet;
 
+// TODO: find a proper name for the "FirstFork"
 public class MainNetFirstForkConfig extends MainNetAfterBridgeSyncConfig {
     @Override
     public boolean isRfs55() {
