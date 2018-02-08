@@ -44,10 +44,10 @@ public class StateForFederatorTest {
 
     @Test
     public void serialize() {
-        Keccak256 keccak2561 = new Keccak256(SHA3_1);
-        Keccak256 keccak2562 = new Keccak256(SHA3_2);
-        Keccak256 sha3Hash3 = new Keccak256(SHA3_3);
-        Keccak256 keccak2564 = new Keccak256(SHA3_4);
+        Keccak256 hash1 = new Keccak256(SHA3_1);
+        Keccak256 hash2 = new Keccak256(SHA3_2);
+        Keccak256 hash3 = new Keccak256(SHA3_3);
+        Keccak256 hash4 = new Keccak256(SHA3_4);
 
         BtcTransaction tx1 = new BtcTransaction(NETWORK_PARAMETERS);
         BtcTransaction tx2 = new BtcTransaction(NETWORK_PARAMETERS);
@@ -55,12 +55,12 @@ public class StateForFederatorTest {
         BtcTransaction tx4 = new BtcTransaction(NETWORK_PARAMETERS);
 
         SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures = new TreeMap<>();
-        rskTxsWaitingForSignatures.put(keccak2561, tx1);
-        rskTxsWaitingForSignatures.put(keccak2562, tx2);
+        rskTxsWaitingForSignatures.put(hash1, tx1);
+        rskTxsWaitingForSignatures.put(hash2, tx2);
 
         SortedMap<Keccak256, Pair<BtcTransaction, Long>> rskTxsWaitingForBroadcasting = new TreeMap<>();
-        rskTxsWaitingForBroadcasting.put(sha3Hash3, Pair.of(tx3, 3L));
-        rskTxsWaitingForBroadcasting.put(keccak2564, Pair.of(tx4, 4L));
+        rskTxsWaitingForBroadcasting.put(hash3, Pair.of(tx3, 3L));
+        rskTxsWaitingForBroadcasting.put(hash4, Pair.of(tx4, 4L));
 
         StateForFederator stateForFederator = new StateForFederator(rskTxsWaitingForSignatures);
 
@@ -73,10 +73,10 @@ public class StateForFederatorTest {
         Assert.assertNotNull(reverseResult);
         Assert.assertEquals(2, reverseResult.getRskTxsWaitingForSignatures().size());
 
-        Assert.assertEquals(tx1, reverseResult.getRskTxsWaitingForSignatures().get(keccak2561));
-        Assert.assertEquals(tx2, reverseResult.getRskTxsWaitingForSignatures().get(keccak2562));
+        Assert.assertEquals(tx1, reverseResult.getRskTxsWaitingForSignatures().get(hash1));
+        Assert.assertEquals(tx2, reverseResult.getRskTxsWaitingForSignatures().get(hash2));
 
-        Assert.assertTrue(checkKeys(reverseResult.getRskTxsWaitingForSignatures().keySet(), keccak2561, keccak2562));
+        Assert.assertTrue(checkKeys(reverseResult.getRskTxsWaitingForSignatures().keySet(), hash1, hash2));
     }
 
     private boolean checkKeys(Set<Keccak256> keccak256s, Keccak256... keys) {
