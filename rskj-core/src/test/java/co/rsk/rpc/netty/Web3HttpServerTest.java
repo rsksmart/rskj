@@ -13,11 +13,14 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.ethereum.rpc.Web3;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.Whitebox;
+import sun.net.www.protocol.http.HttpURLConnection;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
 import java.util.*;
@@ -31,14 +34,28 @@ public class Web3HttpServerTest {
     private static JsonNodeFactory JSON_NODE_FACTORY = JsonNodeFactory.instance;
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    private static Set<String> restrictedHeaderSetBackup;
+
     @BeforeClass
-    public static void init() {
-        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+    public static void setup() throws Exception {
+        Set<String> original = getRestrictedHeaderSet();
+        restrictedHeaderSetBackup = new HashSet<>(original);
+        original.clear();
     }
 
     @AfterClass
-    public static void tearDown() {
-        System.setProperty("sun.net.http.allowRestrictedHeaders", "false");
+    public static void tearDown() throws Exception {
+        Set<String> modified = getRestrictedHeaderSet();
+        modified.addAll(restrictedHeaderSetBackup);
+    }
+
+    private static Set<String> getRestrictedHeaderSet() throws Exception {
+        return (Set<String>) Whitebox.getAllStaticFields(HttpURLConnection.class)
+                .stream()
+                .filter(f -> f.getName().equals("restrictedHeaderSet"))
+                .findFirst()
+                .get()
+                .get(HttpURLConnection.class);
     }
 
     @Test
