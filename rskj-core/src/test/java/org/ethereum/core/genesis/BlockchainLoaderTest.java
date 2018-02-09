@@ -23,10 +23,13 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImplTest;
+import co.rsk.db.RepositoryImpl;
+import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.vm.DataWord;
@@ -42,8 +45,6 @@ public class BlockchainLoaderTest {
     @Test
     public void testLoadBlockchainEmptyBlockchain() throws IOException {
         String jsonFile = "blockchain_loader_genesis.json";
-
-        Blockchain blockchain = BlockChainImplTest.createBlockChain();
 
         RskSystemProperties systemProperties = Mockito.mock(RskSystemProperties.class);
 
@@ -62,9 +63,9 @@ public class BlockchainLoaderTest {
 
         EthereumListener ethereumListener = Mockito.mock(EthereumListener.class);
 
-        Repository repository = blockchain.getRepository();
+        Repository repository = new RepositoryImpl(systemProperties, new TrieStoreImpl(new HashMapDB().setClearOnClose(false)));;
 
-        BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, blockchain, blockStore, repository, ethereumListener);
+        BlockChainLoader blockChainLoader = new BlockChainLoader(systemProperties, repository, blockStore, null, null, ethereumListener, null, null);
 
         blockChainLoader.loadBlockchain();
 

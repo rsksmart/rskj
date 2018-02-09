@@ -1,11 +1,15 @@
-package org.ethereum.rpc;
+package co.rsk.rpc.netty;
 
 import co.rsk.rpc.CorsConfiguration;
 import co.rsk.rpc.ModuleDescription;
+import co.rsk.rpc.netty.JsonRpcWeb3FilterHandler;
+import co.rsk.rpc.netty.JsonRpcWeb3ServerHandler;
+import co.rsk.rpc.netty.Web3HttpServer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import org.ethereum.rpc.Web3;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -22,7 +26,7 @@ import java.util.Map;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
-public class JsonRpcNettyServerTest {
+public class Web3HttpServerTest {
 
     private static JsonNodeFactory JSON_NODE_FACTORY = JsonNodeFactory.instance;
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -65,7 +69,7 @@ public class JsonRpcNettyServerTest {
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
         JsonRpcWeb3FilterHandler filterHandler = new JsonRpcWeb3FilterHandler("*");
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules);
-        JsonRpcNettyServer server = new JsonRpcNettyServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler);
+        Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler);
         server.start();
 
         HttpURLConnection conn = sendJsonRpcMessage(randomPort, contentType);

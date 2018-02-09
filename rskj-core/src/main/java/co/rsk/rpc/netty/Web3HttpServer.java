@@ -1,4 +1,4 @@
-package org.ethereum.rpc;
+package co.rsk.rpc.netty;
 
 import co.rsk.rpc.CorsConfiguration;
 import io.netty.bootstrap.ServerBootstrap;
@@ -17,7 +17,7 @@ import io.netty.handler.logging.LoggingHandler;
 
 import java.net.InetAddress;
 
-public class JsonRpcNettyServer {
+public class Web3HttpServer {
 
     private final InetAddress host;
     private int port;
@@ -29,13 +29,13 @@ public class JsonRpcNettyServer {
     private final JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler;
     private final JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler;
 
-    public JsonRpcNettyServer(InetAddress host,
-                              int port,
-                              int socketLinger,
-                              boolean reuseAddress,
-                              CorsConfiguration corsConfiguration,
-                              JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler,
-                              JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler) {
+    public Web3HttpServer(InetAddress host,
+                          int port,
+                          int socketLinger,
+                          boolean reuseAddress,
+                          CorsConfiguration corsConfiguration,
+                          JsonRpcWeb3FilterHandler jsonRpcWeb3FilterHandler,
+                          JsonRpcWeb3ServerHandler jsonRpcWeb3ServerHandler) {
         this.host = host;
         this.port = port;
         this.socketLinger = socketLinger;
