@@ -477,6 +477,7 @@ public class TransactionPoolImplTest {
         Assert.assertTrue(transactions.isEmpty());
     }
 
+    
     @Test
     public void executeContractWithFakeBlock() {
         BlockChainImpl blockchain = createBlockchain();
