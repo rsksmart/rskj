@@ -221,7 +221,7 @@ public class PendingStateImpl implements PendingState {
             return;
         }
 
-        logger.trace("add pending transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash().getBytes()));
+        logger.trace("add pending transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         ByteArrayWrapper hash = new ByteArrayWrapper(tx.getHash().getBytes());
         Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
@@ -380,7 +380,7 @@ public class PendingStateImpl implements PendingState {
     }
 
     private void executeTransaction(Transaction tx) {
-        logger.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash().getBytes()));
+        logger.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), tx.getHash());
 
         TransactionExecutor executor = new TransactionExecutor(
                 config, tx, 0, bestBlock.getCoinbase(), pendingStateRepository,

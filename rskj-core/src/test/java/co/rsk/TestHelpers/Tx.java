@@ -21,6 +21,8 @@ package co.rsk.TestHelpers;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.mockito.Mockito;
@@ -35,7 +37,14 @@ import static org.mockito.Matchers.eq;
 
 public class Tx {
 
-    public static Transaction create(RskSystemProperties config, long value, long gaslimit, long gasprice, long nonce, long data, long sender, Random hashes) {
+    public static Transaction create(
+            RskSystemProperties config,
+            long value,
+            long gaslimit,
+            long gasprice,
+            long nonce,
+            long data,
+            long sender) {
         Random r = new Random(sender);
         Transaction transaction = Mockito.mock(Transaction.class);
         Mockito.when(transaction.getValue()).thenReturn(new Coin(BigInteger.valueOf(value)));
@@ -54,7 +63,7 @@ public class Tx {
         RskAddress returnReceiveAddress = new RskAddress(returnReceiveAddressBytes);
 
         Mockito.when(transaction.getSender()).thenReturn(returnSender);
-        Mockito.when(transaction.getHash().getBytes()).thenReturn(BigInteger.valueOf(hashes.nextLong()).toByteArray());
+        Mockito.when(transaction.getHash()).thenReturn(new Keccak256(TestUtils.randomBytes(32)));
         Mockito.when(transaction.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId())).thenReturn(Boolean.TRUE);
         Mockito.when(transaction.getReceiveAddress()).thenReturn(returnReceiveAddress);
         ArrayList<Byte> bytes = new ArrayList();

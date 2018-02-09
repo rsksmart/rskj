@@ -25,7 +25,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -88,9 +87,9 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
                 logger.warn("Invalid transaction: Tx nonce {} != expected nonce {} (parent nonce: {}): {}",
                         txNonce, expectedNonce, parentRepo.getNonce(sender), tx);
 
-                panicProcessor.panic("invalidtransaction", String.format("Invalid transaction: Tx nonce %s != expected nonce %s (parent nonce: %s): %s",
-                        txNonce.toString(), expectedNonce.toString(), parentRepo.getNonce(sender).toString(), Hex.toHexString(
-                                tx.getHash().getBytes())));
+                panicProcessor.panic("invalidtransaction",
+                                     String.format("Invalid transaction: Tx nonce %s != expected nonce %s (parent nonce: %s): %s",
+                                                   txNonce, expectedNonce, parentRepo.getNonce(sender), tx.getHash()));
 
                 return false;
             }

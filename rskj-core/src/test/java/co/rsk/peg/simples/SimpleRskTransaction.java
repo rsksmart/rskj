@@ -29,16 +29,16 @@ import org.ethereum.crypto.Keccak256Helper;
  * Created by ajlopez on 6/8/2016.
  */
 public class SimpleRskTransaction extends Transaction {
-    private byte[] hash;
+    private final Keccak256 hash;
 
     public SimpleRskTransaction(byte[] hash) {
         super(null);
-        this.hash = hash;
+        this.hash = hash == null ? null : new Keccak256(hash);
         this.sender = new RskAddress(ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes())).getAddress());
     }
 
     @Override
-    public Keccak256 getHash() { return new Keccak256(hash); }
+    public Keccak256 getHash() { return hash; }
 
     @Override
     public Coin getValue() {

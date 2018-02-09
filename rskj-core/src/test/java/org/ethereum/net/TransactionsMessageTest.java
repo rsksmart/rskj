@@ -61,7 +61,7 @@ public class TransactionsMessageTest {
 
         Transaction tx = transactionsMessage.getTransactions().iterator().next();
 
-        assertEquals("5d2aee0490a9228024158433d650335116b4af5a30b8abb10e9b7f9f7e090fd8", Hex.toHexString(tx.getHash().getBytes()));
+        assertEquals("5d2aee0490a9228024158433d650335116b4af5a30b8abb10e9b7f9f7e090fd8", tx.getHash().toHexString());
         assertEquals("04", Hex.toHexString(tx.getNonce()));
         assertEquals("1bc16d674ec80000", Hex.toHexString(tx.getValue().getBytes()));
         assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", tx.getReceiveAddress().toString());
@@ -112,8 +112,7 @@ public class TransactionsMessageTest {
         txIter.next(); // skip one
         Transaction tx3 = txIter.next();
 
-        assertEquals("1b9d9456293cbcbc2f28a0fdc67028128ea571b033fb0e21d0ee00bcd6167e5d",
-                Hex.toHexString(tx3.getHash().getBytes()));
+        assertEquals("1b9d9456293cbcbc2f28a0fdc67028128ea571b033fb0e21d0ee00bcd6167e5d", tx3.getHash().toHexString());
 
         assertEquals("00",
                 Hex.toHexString(tx3.getNonce()));
@@ -143,8 +142,7 @@ public class TransactionsMessageTest {
 
         // Transaction #2
 
-        assertEquals("dde9543921850f41ca88e5401322cd7651c78a1e4deebd5ee385af8ac343f0ad",
-                Hex.toHexString(tx1.getHash().getBytes()));
+        assertEquals("dde9543921850f41ca88e5401322cd7651c78a1e4deebd5ee385af8ac343f0ad", tx1.getHash().toHexString());
 
         assertEquals("02",
                 Hex.toHexString(tx1.getNonce()));

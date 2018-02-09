@@ -555,7 +555,8 @@ public class Transaction {
         this.rlpEncoded = RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
                 toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s);
 
-        this.hash = this.getHash().getBytes();
+        Keccak256 hash = this.getHash();
+        this.hash = hash == null ? null : hash.getBytes();
 
         return rlpEncoded;
     }

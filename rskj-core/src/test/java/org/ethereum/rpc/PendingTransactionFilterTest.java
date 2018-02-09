@@ -24,7 +24,6 @@ import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -61,7 +60,7 @@ public class PendingTransactionFilterTest {
 
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.length);
-        Assert.assertEquals("0x" + Hex.toHexString(tx.getHash().getBytes()), result[0]);
+        Assert.assertEquals("0x" + tx.getHash().toHexString(), result[0]);
     }
 
     @Test
@@ -90,7 +89,7 @@ public class PendingTransactionFilterTest {
 
         Assert.assertNotNull(result);
         Assert.assertEquals(2, result.length);
-        Assert.assertEquals("0x" + Hex.toHexString(tx1.getHash().getBytes()), result[0]);
-        Assert.assertEquals("0x" + Hex.toHexString(tx2.getHash().getBytes()), result[1]);
+        Assert.assertEquals("0x" + tx1.getHash().toHexString(), result[0]);
+        Assert.assertEquals("0x" + tx2.getHash().toHexString(), result[1]);
     }
 }

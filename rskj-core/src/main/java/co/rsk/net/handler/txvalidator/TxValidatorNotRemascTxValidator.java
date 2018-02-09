@@ -24,7 +24,6 @@ import org.ethereum.core.AccountState;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -42,7 +41,7 @@ public class TxValidatorNotRemascTxValidator implements TxValidatorStep {
             return true;
         }
 
-        logger.warn("Invalid transaction {}: it is a Remasc transaction", Hex.toHexString(tx.getHash().getBytes()));
+        logger.warn("Invalid transaction {}: it is a Remasc transaction", tx.getHash());
 
         return false;
     }

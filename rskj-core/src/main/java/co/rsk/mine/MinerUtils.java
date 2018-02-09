@@ -24,6 +24,7 @@ import co.rsk.config.RskMiningConstants;
 import co.rsk.core.Coin;
 import co.rsk.core.bc.PendingStateImpl;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
 import com.google.common.collect.Lists;
 import org.ethereum.core.PendingState;
@@ -33,7 +34,6 @@ import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.Arrays;
-import org.spongycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -153,11 +153,11 @@ public class MinerUtils {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
-                String hexHash = Hex.toHexString(tx.getHash().getBytes());
+                Keccak256 hash = tx.getHash();
                 Coin txValue = tx.getValue();
                 BigInteger txNonce = new BigInteger(1, tx.getNonce());
                 RskAddress txSender = tx.getSender();
-                logger.debug("Examining tx={} sender: {} value: {} nonce: {}", hexHash, txSender, txValue, txNonce);
+                logger.debug("Examining tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
 
 
                 BigInteger expectedNonce;
@@ -169,24 +169,23 @@ public class MinerUtils {
                 }
 
                 if (!(tx instanceof RemascTransaction) && tx.getGasPrice().compareTo(minGasPrice) < 0) {
-                    logger.warn("Rejected tx={} because of low gas account {}, removing tx from pending state.", hexHash, txSender);
+                    logger.warn("Rejected tx={} because of low gas account {}, removing tx from pending state.", hash, txSender);
 
                     txsToRemove.add(tx);
                     continue;
                 }
 
                 if (!expectedNonce.equals(txNonce)) {
-                    logger.warn("Invalid nonce, expected {}, found {}, tx={}", expectedNonce, txNonce, hexHash);
+                    logger.warn("Invalid nonce, expected {}, found {}, tx={}", expectedNonce, txNonce, hash);
                     continue;
                 }
 
                 accountNonces.put(txSender, txNonce);
 
-                logger.debug("Accepted tx={} sender: {} value: {} nonce: {}", hexHash, txSender, txValue, txNonce);
+                logger.debug("Accepted tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
             } catch (Exception e) {
                 // Txs that can't be selected by any reason should be removed from pending state
-                String hash = null == tx.getHash().getBytes() ? "" : Hex.toHexString(tx.getHash().getBytes());
-                logger.warn(String.format("Error when processing tx=%s", hash), e);
+                logger.warn(String.format("Error when processing tx=%s", tx.getHash()), e);
                 if (txsToRemove != null) {
                     txsToRemove.add(tx);
                 } else {

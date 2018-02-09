@@ -156,8 +156,9 @@ public class BridgeState {
     private List<String> toStringList(Set<Keccak256> keys) {
         List<String> hashes = new ArrayList<>();
         if(keys != null) {
-            keys.forEach(s -> hashes.add(s.toString()));
+            keys.forEach(s -> hashes.add(s.toHexString()));
         }
+
         return hashes;
     }
 }

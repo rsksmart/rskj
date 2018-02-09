@@ -19,9 +19,9 @@
 package co.rsk.validators;
 
 import co.rsk.core.Coin;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
-import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -112,7 +112,7 @@ public class TxsMinGasPriceValidatorTest {
         for(int i = 0; i < invalidTxNbr; i++) {
             Transaction tx = Mockito.mock(Transaction.class);
             Mockito.when(tx.getGasPrice()).thenReturn(blockGasPrice.subtract(Coin.valueOf(1)));
-            Mockito.when(tx.getHash().getBytes()).thenReturn(ByteUtil.EMPTY_BYTE_ARRAY);
+            Mockito.when(tx.getHash()).thenReturn(Keccak256.ZERO_HASH);
             ret.add(tx);
         }
         return ret;

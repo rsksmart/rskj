@@ -26,7 +26,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.List;
 
@@ -50,7 +49,7 @@ public class TxsMinGasPriceRule implements BlockValidationRule {
         if(CollectionUtils.isNotEmpty(block.getTransactionsList())) {
             for (Transaction tx : txs) {
                 if (!(tx instanceof RemascTransaction) && tx.getGasPrice().compareTo(blockMgp) < 0) {
-                    logger.warn("Tx gas price is under the Min gas Price of the block tx={}", Hex.toHexString(tx.getHash().getBytes()));
+                    logger.warn("Tx gas price is under the Min gas Price of the block tx={}", tx.getHash());
                     return false;
                 }
             }

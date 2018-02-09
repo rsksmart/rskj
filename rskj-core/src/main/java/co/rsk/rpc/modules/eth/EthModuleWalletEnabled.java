@@ -79,7 +79,7 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
                 Transaction tx = Transaction.create(config, toAddress, value, accountNonce, gasPrice, gasLimit, args.data);
                 tx.sign(account.getEcKey().getPrivKeyBytes());
                 eth.submitTransaction(tx.toImmutableTransaction());
-                s = TypeConverter.toJsonHex(tx.getHash().getBytes());
+                s = tx.getHash().toJsonString();
             }
             return s;
         } finally {
