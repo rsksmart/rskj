@@ -198,6 +198,10 @@ public interface Web3 {
     boolean personal_lockAccount(String key);
     String personal_dumpRawKey(String address) throws Exception;
 
+    String txpool_content();
+    String txpool_inspect();
+    String txpool_status();
+
     String eth_netHashrate();
     String[] net_peerList();
     Map<String, Object> eth_bridgeState() throws Exception;

@@ -30,6 +30,7 @@ import co.rsk.net.BlockProcessor;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
+import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.InvalidInetAddressException;
 import co.rsk.scoring.PeerScoringInformation;
 import co.rsk.scoring.PeerScoringManager;
@@ -103,6 +104,7 @@ public class Web3Impl implements Web3 {
     private final EthModule ethModule;
 
     private FilterManager filterManager = new FilterManager();
+    private TxPoolModule txPoolModule;
 
     protected Web3Impl(Ethereum eth,
                        Blockchain blockchain,
@@ -113,6 +115,7 @@ public class Web3Impl implements Web3 {
                        MinerServer minerServer,
                        PersonalModule personalModule,
                        EthModule ethModule,
+                       TxPoolModule txPoolModule,
                        ChannelManager channelManager,
                        Repository repository,
                        PeerScoringManager peerScoringManager,
@@ -129,6 +132,7 @@ public class Web3Impl implements Web3 {
         this.minerServer = minerServer;
         this.personalModule = personalModule;
         this.ethModule = ethModule;
+        this.txPoolModule = txPoolModule;
         this.channelManager = channelManager;
         this.peerScoringManager = peerScoringManager;
         this.peerServer = peerServer;
@@ -1154,6 +1158,21 @@ public class Web3Impl implements Web3 {
     @Override
     public boolean personal_lockAccount(String address) {
         return personalModule.lockAccount(address);
+    }
+
+    @Override
+    public String txpool_content() {
+        return txPoolModule.content();
+    }
+
+    @Override
+    public String txpool_inspect() {
+        return txPoolModule.inspect();
+    }
+
+    @Override
+    public String txpool_status() {
+        return txPoolModule.status();
     }
 
     @Override

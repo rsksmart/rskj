@@ -27,6 +27,7 @@ import co.rsk.net.BlockProcessor;
 import co.rsk.rpc.exception.JsonRpcSubmitBlockException;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
+import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.*;
@@ -66,6 +67,7 @@ public class Web3RskImpl extends Web3Impl {
                        MinerServer minerServer,
                        PersonalModule personalModule,
                        EthModule ethModule,
+                       TxPoolModule txPoolModule,
                        ChannelManager channelManager,
                        Repository repository,
                        PeerScoringManager peerScoringManager,
@@ -75,7 +77,7 @@ public class Web3RskImpl extends Web3Impl {
                        BlockProcessor nodeBlockProcessor,
                        HashRateCalculator hashRateCalculator,
                        ConfigCapabilities configCapabilities) {
-        super(eth, blockchain, pendingState, blockStore, properties, minerClient, minerServer, personalModule, ethModule, channelManager, repository, peerScoringManager, peerServer, nodeBlockProcessor, hashRateCalculator, configCapabilities);
+        super(eth, blockchain, pendingState, blockStore, properties, minerClient, minerServer, personalModule, ethModule, txPoolModule, channelManager, repository, peerScoringManager, peerServer, nodeBlockProcessor, hashRateCalculator, configCapabilities);
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;
     }
