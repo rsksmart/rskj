@@ -129,4 +129,14 @@ public abstract class AbstractConfig implements BlockchainConfig, BlockchainNetC
     public boolean areBridgeTxsFree() {
         return false;
     }
+
+    @Override
+    public boolean isRfs55() {
+        return false;
+    }
+
+    @Override
+    public boolean isRfs90() {
+        return false;
+    }
 }
