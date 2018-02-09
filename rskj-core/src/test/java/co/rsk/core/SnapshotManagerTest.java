@@ -165,10 +165,11 @@ public class SnapshotManagerTest {
         TransactionPool transactionPool = blockchain.getTransactionPool();
 
         Assert.assertNotNull(transactionPool);
-        transactionPool.addPendingTransaction(createSampleTransaction());
+
         List<Transaction> txs = new ArrayList<>();
         txs.add(createSampleTransaction());
-        transactionPool.addWireTransactions(txs);
+        txs.add(createSampleTransaction());
+        transactionPool.addPendingTransactions(txs);
         Assert.assertFalse(transactionPool.getAllPendingTransactions().isEmpty());
         Assert.assertFalse(transactionPool.getAllPendingTransactions().isEmpty());
 
@@ -183,7 +184,6 @@ public class SnapshotManagerTest {
         Assert.assertEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
 
         Assert.assertTrue(blockchain.getTransactionPool().getAllPendingTransactions().isEmpty());
-        Assert.assertTrue(blockchain.getTransactionPool().getWireTransactions().isEmpty());
 
         Assert.assertEquals(1, manager.getSnapshots().size());
 
@@ -206,10 +206,10 @@ public class SnapshotManagerTest {
         TransactionPool transactionPool = blockchain.getTransactionPool();
 
         Assert.assertNotNull(transactionPool);
-        transactionPool.addPendingTransaction(createSampleTransaction());
         List<Transaction> txs = new ArrayList<>();
         txs.add(createSampleTransaction());
-        transactionPool.addWireTransactions(txs);
+        txs.add(createSampleTransaction());
+        transactionPool.addPendingTransactions(txs);
         Assert.assertFalse(transactionPool.getAllPendingTransactions().isEmpty());
         Assert.assertFalse(transactionPool.getAllPendingTransactions().isEmpty());
 
@@ -229,7 +229,6 @@ public class SnapshotManagerTest {
         Assert.assertEquals(genesis.getHash(), newStatus.getBestBlock().getHash());
 
         Assert.assertTrue(blockchain.getTransactionPool().getAllPendingTransactions().isEmpty());
-        Assert.assertTrue(blockchain.getTransactionPool().getWireTransactions().isEmpty());
 
         Assert.assertTrue(manager.getSnapshots().isEmpty());
 

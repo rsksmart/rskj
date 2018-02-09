@@ -35,22 +35,24 @@ public interface TransactionPool extends org.ethereum.facade.TransactionPool {
      *
      * @param tx transaction
      */
-    void addPendingTransaction(Transaction tx);
+    boolean addPendingTransaction(Transaction tx);
 
     /**
      * Adds a list of transactions to the list of pending state txs  <br>
      * Triggers an update of pending state
      *
-     * @param tx transaction
+     * @param txs transaction list
+     *
+     * @return the list of added transactions
      */
-    void addPendingTransactions(List<Transaction> txs);
+    List<Transaction> addPendingTransactions(List<Transaction> txs);
 
     /**
      * It should be called on each block imported as <b>BEST</b> <br>
      * Does several things:
      * <ul>
      *     <li>removes block's txs from pending state and wire lists</li>
-     *     <li>removes outdated wire txs</li>
+     *     <li>removes outdated pending txs</li>
      *     <li>updates pending state</li>
      * </ul>
      *
@@ -59,8 +61,6 @@ public interface TransactionPool extends org.ethereum.facade.TransactionPool {
     void processBest(Block block);
 
     void clearPendingState(List<Transaction> txs);
-
-    void clearWire(List<Transaction> txs);
 
     // Returns a list of pending txs
     List<Transaction> getAllPendingTransactions();

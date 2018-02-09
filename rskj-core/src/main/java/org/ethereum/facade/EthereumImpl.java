@@ -154,11 +154,6 @@ public class EthereumImpl implements Ethereum {
     }
 
     @Override
-    public List<Transaction> getWireTransactions() {
-        return transactionPool.getWireTransactions();
-    }
-
-    @Override
     public Coin getGasPrice() {
         return gasPriceTracker.getGasPrice();
     }

@@ -157,13 +157,6 @@ public class TransactionPoolImpl implements TransactionPool {
     public synchronized Repository getRepository() { return this.pendingStateRepository; }
 
     @Override
-    public synchronized List<Transaction> getWireTransactions() {
-        List<Transaction> txs = new ArrayList<>();
-        txs.addAll(wireTransactions.values());
-        return txs;
-    }
-
-    @Override
     public synchronized List<Transaction> getPendingTransactions() {
         List<Transaction> txs = new ArrayList<>();
 
@@ -173,16 +166,22 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     @Override
-    public synchronized void addPendingTransactions(final List<Transaction> txs) {
+    public synchronized List<Transaction> addPendingTransactions(final List<Transaction> txs) {
+        List<Transaction> added = new ArrayList<>();
+
         for (Transaction tx : txs) {
-            this.addPendingTransaction(tx);
+            if (this.addPendingTransaction(tx)) {
+                added.add(tx);
+            }
         }
+
+        return added;
     }
 
     @Override
-    public synchronized void addPendingTransaction(final Transaction tx) {
+    public synchronized boolean addPendingTransaction(final Transaction tx) {
         if (!shouldAcceptTx(tx)) {
-            return;
+            return false;
         }
 
         Keccak256 hash = tx.getHash();
@@ -191,7 +190,7 @@ public class TransactionPoolImpl implements TransactionPool {
         logger.trace("add pending transaction {} {}", toBI(tx.getNonce()), hash);
 
         if (pendingTransactions.containsKey(hash)) {
-            return;
+            return false;
         }
 
         pendingTransactions.put(hash, tx);
@@ -207,6 +206,8 @@ public class TransactionPoolImpl implements TransactionPool {
                 listener.onPendingStateChanged(TransactionPoolImpl.this);
             });
         }
+
+        return true;
     }
 
     @Override
@@ -241,7 +242,6 @@ public class TransactionPoolImpl implements TransactionPool {
         List<Transaction> txs = block.getTransactionsList();
 
         clearPendingState(txs);
-        clearWire(txs);
     }
 
     @VisibleForTesting
@@ -309,14 +309,6 @@ public class TransactionPoolImpl implements TransactionPool {
         for (Transaction tx : txs) {
             pendingTransactions.remove(tx.getHash());
             logger.trace("Clear pending transaction, hash: [{}]", tx.getHash());
-        }
-    }
-
-    @Override
-    public synchronized void clearWire(List<Transaction> txs) {
-        for (Transaction tx: txs) {
-            wireTransactions.remove(tx.getHash());
-            logger.trace("Clear wire transaction, hash: [{}]", tx.getHash());
         }
     }
 

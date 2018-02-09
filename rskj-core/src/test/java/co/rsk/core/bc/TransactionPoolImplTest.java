@@ -242,44 +242,6 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void removeObsoleteWireTransactions() {
-        BlockChainImpl blockchain = createBlockchain();
-        Coin balance = Coin.valueOf(1000000);
-        TransactionPoolImpl pendingState = createSampleNewPendingStateWithAccounts(2, balance, blockchain);
-        pendingState.processBest(blockchain.getBestBlock());
-        Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
-        Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
-        List<Transaction> txs = new ArrayList<>();
-        txs.add(tx1);
-        txs.add(tx2);
-
-        pendingState.addWireTransactions(txs);
-
-        Assert.assertEquals(10, pendingState.getOutdatedThreshold());
-
-        List<Transaction> list = pendingState.getWireTransactions();
-
-        Assert.assertNotNull(list);
-        Assert.assertFalse(list.isEmpty());
-        Assert.assertEquals(2, list.size());
-
-        pendingState.removeObsoleteTransactions(1, 1, 0);
-
-        list = pendingState.getWireTransactions();
-
-        Assert.assertNotNull(list);
-        Assert.assertFalse(list.isEmpty());
-        Assert.assertEquals(2, list.size());
-
-        pendingState.removeObsoleteTransactions(20, pendingState.getOutdatedThreshold(), pendingState.getOutdatedTimeout());
-
-        list = pendingState.getWireTransactions();
-
-        Assert.assertNotNull(list);
-        Assert.assertTrue(list.isEmpty());
-    }
-
-    @Test
     public void getAllPendingTransactions() {
         BlockChainImpl blockchain = createBlockchain();
         Coin balance = Coin.valueOf(1000000);
@@ -288,10 +250,10 @@ public class TransactionPoolImplTest {
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
         Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
 
-        pendingState.addPendingTransaction(tx1);
         List<Transaction> txs = new ArrayList<>();
+        txs.add(tx1);
         txs.add(tx2);
-        pendingState.addWireTransactions(txs);
+        pendingState.addPendingTransactions(txs);
 
         List<Transaction> alltxs = pendingState.getAllPendingTransactions();
 
@@ -313,12 +275,13 @@ public class TransactionPoolImplTest {
         Transaction tx3 = createSampleTransaction(2, 3, 1000, 0);
         Transaction tx4 = createSampleTransaction(2, 3, 3000, 1);
 
-        pendingState.addPendingTransaction(tx1);
-        pendingState.addPendingTransaction(tx2);
         List<Transaction> txs = new ArrayList<>();
+        txs.add(tx1);
+        txs.add(tx2);
         txs.add(tx3);
         txs.add(tx4);
-        pendingState.addWireTransactions(txs);
+
+        pendingState.addPendingTransactions(txs);
 
         List<Transaction> btxs = new ArrayList<>();
         btxs.add(tx1);
@@ -344,7 +307,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void retractBlockAddsTransactionsAsWired() {
+    public void retractBlockAddsTransactionsAsPending() {
         BlockChainImpl blockchain = createBlockchain();
         Coin balance = Coin.valueOf(1000000);
         TransactionPoolImpl pendingState = createSampleNewPendingStateWithAccounts(3, balance, blockchain);
@@ -375,13 +338,15 @@ public class TransactionPoolImplTest {
         Assert.assertTrue(alltxs.contains(tx3));
         Assert.assertTrue(alltxs.contains(tx4));
 
-        List<Transaction> wtxs = pendingState.getWireTransactions();
+        List<Transaction> ptxs = pendingState.getAllPendingTransactions();
 
-        Assert.assertNotNull(wtxs);
-        Assert.assertFalse(wtxs.isEmpty());
-        Assert.assertEquals(2, wtxs.size());
-        Assert.assertTrue(wtxs.contains(tx3));
-        Assert.assertTrue(wtxs.contains(tx4));
+        Assert.assertNotNull(ptxs);
+        Assert.assertFalse(ptxs.isEmpty());
+        Assert.assertEquals(4, ptxs.size());
+        Assert.assertTrue(ptxs.contains(tx1));
+        Assert.assertTrue(ptxs.contains(tx2));
+        Assert.assertTrue(ptxs.contains(tx3));
+        Assert.assertTrue(ptxs.contains(tx4));
     }
 
     @Test
@@ -419,59 +384,10 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void getEmptyWireTransactionList() {
+    public void getEmptyTransactionList() {
         TransactionPoolImpl pendingState = createSampleNewPendingState(createBlockchain());
 
-        List<Transaction> transactions = pendingState.getWireTransactions();
-
-        Assert.assertNotNull(transactions);
-        Assert.assertTrue(transactions.isEmpty());
-    }
-
-    @Test
-    public void addAndGetWireTransaction() {
-        TransactionPoolImpl pendingState = createSampleNewPendingState(createBlockchain());
-        Transaction tx = createSampleTransaction();
-        List<Transaction> txs = new ArrayList<>();
-        txs.add(tx);
-
-        pendingState.addWireTransactions(txs);
-        List<Transaction> transactions = pendingState.getWireTransactions();
-
-        Assert.assertNotNull(transactions);
-        Assert.assertFalse(transactions.isEmpty());
-        Assert.assertTrue(transactions.contains(tx));
-    }
-
-    @Test
-    public void addTwiceAndGetWireTransaction() {
-        TransactionPoolImpl pendingState = createSampleNewPendingState(createBlockchain());
-        Transaction tx = createSampleTransaction();
-
-        List<Transaction> txs = new ArrayList<>();
-        txs.add(tx);
-        txs.add(tx);
-
-        pendingState.addWireTransactions(txs);
-
-        List<Transaction> transactions = pendingState.getWireTransactions();
-
-        Assert.assertNotNull(transactions);
-        Assert.assertFalse(transactions.isEmpty());
-        Assert.assertEquals(1, transactions.size());
-        Assert.assertTrue(transactions.contains(tx));
-    }
-
-    @Test
-    public void addWireTransactionThatAlreadyExistsAsPendingTransaction() {
-        TransactionPoolImpl pendingState = createSampleNewPendingState(createBlockchain());
-        Transaction tx = createSampleTransaction();
-
-        pendingState.addPendingTransaction(tx);
-        List<Transaction> txs = new ArrayList<>();
-        txs.add(tx);
-        pendingState.addWireTransactions(txs);
-        List<Transaction> transactions = pendingState.getWireTransactions();
+        List<Transaction> transactions = pendingState.getAllPendingTransactions();
 
         Assert.assertNotNull(transactions);
         Assert.assertTrue(transactions.isEmpty());

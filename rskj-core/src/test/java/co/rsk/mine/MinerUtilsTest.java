@@ -54,14 +54,12 @@ public class MinerUtilsTest {
         Mockito.when(tx1.getHash()).thenReturn(new Keccak256(s1));
         Mockito.when(tx2.getHash()).thenReturn(new Keccak256(s2));
 
-        List<Transaction> txs1 = new LinkedList<>();
-        List<Transaction> txs2 = new LinkedList<>();
+        List<Transaction> txs = new LinkedList<>();
 
-        txs1.add(tx1);
-        txs2.add(tx2);
+        txs.add(tx1);
+        txs.add(tx2);
 
-        Mockito.when(transactionPool.getPendingTransactions()).thenReturn(txs1);
-        Mockito.when(transactionPool.getWireTransactions()).thenReturn(txs2);
+        Mockito.when(transactionPool.getPendingTransactions()).thenReturn(txs);
 
         List<Transaction> res = new MinerUtils().getAllTransactions(transactionPool);
 

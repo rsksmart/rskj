@@ -57,7 +57,6 @@ public class SnapshotManager {
         blockchain.getTransactionPool().processBest(block);
         // then, clear any reverted transaction
         transactionPool.clearPendingState(transactionPool.getAllPendingTransactions());
-        transactionPool.clearWire(transactionPool.getWireTransactions());
 
         // Remove removed blocks from store
         for (long nb = blockchain.getBestBlock().getNumber() + 1; nb <= bestNumber; nb++) {
@@ -97,7 +96,6 @@ public class SnapshotManager {
         blockchain.getTransactionPool().processBest(block);
         // then, clear any reverted transaction
         transactionPool.clearPendingState(transactionPool.getAllPendingTransactions());
-        transactionPool.clearWire(transactionPool.getWireTransactions());
 
         // Remove removed blocks from store
         for (long nb = blockchain.getBestBlock().getNumber() + 1; nb <= currentBestBlockNumber; nb++) {

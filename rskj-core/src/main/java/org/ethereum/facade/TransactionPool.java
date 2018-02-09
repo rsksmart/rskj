@@ -35,11 +35,6 @@ public interface TransactionPool {
     org.ethereum.core.Repository getRepository();
 
     /**
-     * @return currently pending transactions received from the net
-     */
-    List<Transaction> getWireTransactions();
-
-    /**
      * @return list of pending transactions
      */
     List<Transaction> getPendingTransactions();

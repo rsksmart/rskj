@@ -304,12 +304,10 @@ public class MinerManagerTest {
         Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
 
         snapshotManager.resetSnapshots(blockchain);
-        Assert.assertTrue(blockchain.getTransactionPool().getWireTransactions().isEmpty());
         Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
 
         manager.mineBlock(blockchain, minerClient, minerServer);
 
-        Assert.assertTrue(blockchain.getTransactionPool().getWireTransactions().isEmpty());
         Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
     }
 
