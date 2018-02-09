@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
@@ -27,6 +28,8 @@ import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
+import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
@@ -82,10 +85,18 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_STATE_FOR_DEBUGGING = CallTransaction.Function.fromSignature("getStateForDebugging", new String[]{}, new String[]{"bytes"});
     // Return the bitcoin blockchain best chain height know by the bridge contract
     public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT = CallTransaction.Function.fromSignature("getBtcBlockchainBestChainHeight", new String[]{}, new String[]{"int"});
-    // Returns an array of block hashes known by the bridge contract. Federators can use this to find what is the latest block in the mainchain the bridge has.
-    // The goal of this function is to help synchronize bridge and federators blockchains.
+    // Return the height of the initial block stored in the bridge's bitcoin blockchain
+    public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT = CallTransaction.Function.fromSignature("getBtcBlockchainInitialBlockHeight", new String[]{}, new String[]{"int"});
+    // Returns an array of block hashes known by the bridge contract.
     // Protocol inspired by bitcoin sync protocol, see block locator in https://en.bitcoin.it/wiki/Protocol_documentation#getheaders
+    // Method now deprecated in favor of getBtcBlockchainBlockHashAtDepth
     public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR = CallTransaction.Function.fromSignature("getBtcBlockchainBlockLocator", new String[]{}, new String[]{"string[]"});
+    // Returns the block hash of the bridge contract's best chain at the given depth, meaning depth zero will
+    // yield the best chain head hash and depth one will yield its parent hash, and so on and so forth.
+    // Federators use this to find what is the latest block in the mainchain the bridge has
+    // (replacing the need for getBtcBlockchainBlockLocator).
+    // The goal of this function is to help synchronize bridge and federators blockchains.
+    public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH = CallTransaction.Function.fromSignature("getBtcBlockchainBlockHashAtDepth", new String[]{"int256"}, new String[]{"bytes"});
     // Returns the minimum amount of satoshis a user should send to the federation.
     public static final CallTransaction.Function GET_MINIMUM_LOCK_TX_VALUE = CallTransaction.Function.fromSignature("getMinimumLockTxValue", new String[]{}, new String[]{"int"});
 
@@ -161,8 +172,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private Map<ByteArrayWrapper, CallTransaction.Function> functions = new HashMap<>();
     private static Map<CallTransaction.Function, Long> functionCostMap = new HashMap<>();
 
-    private final RskSystemProperties config;
-    private final BridgeConstants bridgeConstants;
+    private RskSystemProperties config;
+    private BlockchainNetConfig blockchainNetConfig;
+    private BlockchainConfig blockchainConfig;
+    private BridgeConstants bridgeConstants;
 
     private org.ethereum.core.Transaction rskTx;
     private org.ethereum.core.Block rskExecutionBlock;
@@ -172,60 +185,24 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private BridgeSupport bridgeSupport;
 
     public Bridge(RskSystemProperties config, RskAddress contractAddress) {
-        this.config = config;
-        this.bridgeConstants = this.config.getBlockchainConfig().getCommonConstants().getBridgeConstants();
         this.contractAddress = contractAddress;
 
-        Arrays.stream(new Object[]{
-            Pair.of(UPDATE_COLLECTIONS, 48000L),
-            Pair.of(RECEIVE_HEADERS, 22000L),
-            Pair.of(REGISTER_BTC_TRANSACTION, 22000L),
-            Pair.of(RELEASE_BTC, 23000L),
-            Pair.of(ADD_SIGNATURE, 70000L),
-            Pair.of(GET_STATE_FOR_BTC_RELEASE_CLIENT, 4000L),
-            Pair.of(GET_STATE_FOR_DEBUGGING, 3_000_000L),
-            Pair.of(GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT, 19000L),
-            Pair.of(GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR, 76000L),
-            Pair.of(GET_MINIMUM_LOCK_TX_VALUE, 2000L),
-            Pair.of(IS_BTC_TX_HASH_ALREADY_PROCESSED, 23000L),
-            Pair.of(GET_BTC_TX_HASH_PROCESSED_HEIGHT, 22000L),
-            Pair.of(GET_FEDERATION_ADDRESS, 11000L),
-            Pair.of(GET_FEDERATION_SIZE, 10000L),
-            Pair.of(GET_FEDERATION_THRESHOLD, 11000L),
-            Pair.of(GET_FEDERATOR_PUBLIC_KEY, 10000L),
-            Pair.of(GET_FEDERATION_CREATION_TIME, 10000L),
-            Pair.of(GET_FEDERATION_CREATION_BLOCK_NUMBER, 10000L),
-            Pair.of(GET_RETIRING_FEDERATION_ADDRESS, 3000L),
-            Pair.of(GET_RETIRING_FEDERATION_SIZE, 3000L),
-            Pair.of(GET_RETIRING_FEDERATION_THRESHOLD, 3000L),
-            Pair.of(GET_RETIRING_FEDERATOR_PUBLIC_KEY, 3000L),
-            Pair.of(GET_RETIRING_FEDERATION_CREATION_TIME, 3000L),
-            Pair.of(GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER, 3000L),
-            Pair.of(CREATE_FEDERATION, 11000L),
-            Pair.of(ADD_FEDERATOR_PUBLIC_KEY, 13000L),
-            Pair.of(COMMIT_FEDERATION, 38000L),
-            Pair.of(ROLLBACK_FEDERATION, 12000L),
-            Pair.of(GET_PENDING_FEDERATION_HASH, 3000L),
-            Pair.of(GET_PENDING_FEDERATION_SIZE, 3000L),
-            Pair.of(GET_PENDING_FEDERATOR_PUBLIC_KEY, 3000L),
-            Pair.of(GET_LOCK_WHITELIST_SIZE, 16000L),
-            Pair.of(GET_LOCK_WHITELIST_ADDRESS, 16000L),
-            Pair.of(ADD_LOCK_WHITELIST_ADDRESS, 25000L),
-            Pair.of(REMOVE_LOCK_WHITELIST_ADDRESS, 24000L),
-            Pair.of(SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY, 24000L),
-            Pair.of(GET_FEE_PER_KB, 2000L),
-            Pair.of(VOTE_FEE_PER_KB, 10000L)
-        }).forEach((Object obj) -> {
-            Pair<CallTransaction.Function, Long> spec = (Pair<CallTransaction.Function, Long>) obj;
-            CallTransaction.Function func = spec.getLeft();
-            Long cost = spec.getRight();
-            this.functions.put(new ByteArrayWrapper(func.encodeSignature()),  func);
-            functionCostMap.put(func, cost);
-        });
+        this.config = config;
+        this.blockchainNetConfig = config.getBlockchainConfig();
+        this.bridgeConstants = blockchainNetConfig.getCommonConstants().getBridgeConstants();
     }
 
     @Override
     public long getGasForData(byte[] data) {
+        // If being called from a contract pre the RFS-90 fork, this would throw a null pointer exception
+        // Mimic the same behavior
+        if (!blockchainConfig.isRfs90()) {
+            byte[] senderCode = repository.getCode(rskTx.getSender());
+            if (senderCode != null && senderCode.length > 0) {
+                throw new RuntimeException("Trying to estimate gas from contract pre RFS-90 fork");
+            }
+        }
+
         if (BridgeUtils.isFreeBridgeTx(config, rskTx, rskExecutionBlock.getNumber())) {
             return 0;
         }
@@ -293,6 +270,64 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         this.rskExecutionBlock = rskExecutionBlock;
         this.repository = repository;
         this.logs = logs;
+        this.blockchainConfig = blockchainNetConfig.getConfigForBlock(rskExecutionBlock.getNumber());
+        configureFunctions();
+    }
+
+    private void configureFunctions() {
+        List<Pair<CallTransaction.Function, Long>> functionsAndCosts = new ArrayList<>(Arrays.asList(
+            Pair.of(UPDATE_COLLECTIONS, 48000L),
+            Pair.of(RECEIVE_HEADERS, 22000L),
+            Pair.of(REGISTER_BTC_TRANSACTION, 22000L),
+            Pair.of(RELEASE_BTC, 23000L),
+            Pair.of(ADD_SIGNATURE, 70000L),
+            Pair.of(GET_STATE_FOR_BTC_RELEASE_CLIENT, 4000L),
+            Pair.of(GET_STATE_FOR_DEBUGGING, 3_000_000L),
+            Pair.of(GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT, 19000L),
+            Pair.of(GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR, 76000L),
+            Pair.of(GET_MINIMUM_LOCK_TX_VALUE, 2000L),
+            Pair.of(IS_BTC_TX_HASH_ALREADY_PROCESSED, 23000L),
+            Pair.of(GET_BTC_TX_HASH_PROCESSED_HEIGHT, 22000L),
+            Pair.of(GET_FEDERATION_ADDRESS, 11000L),
+            Pair.of(GET_FEDERATION_SIZE, 10000L),
+            Pair.of(GET_FEDERATION_THRESHOLD, 11000L),
+            Pair.of(GET_FEDERATOR_PUBLIC_KEY, 10000L),
+            Pair.of(GET_FEDERATION_CREATION_TIME, 10000L),
+            Pair.of(GET_FEDERATION_CREATION_BLOCK_NUMBER, 10000L),
+            Pair.of(GET_RETIRING_FEDERATION_ADDRESS, 3000L),
+            Pair.of(GET_RETIRING_FEDERATION_SIZE, 3000L),
+            Pair.of(GET_RETIRING_FEDERATION_THRESHOLD, 3000L),
+            Pair.of(GET_RETIRING_FEDERATOR_PUBLIC_KEY, 3000L),
+            Pair.of(GET_RETIRING_FEDERATION_CREATION_TIME, 3000L),
+            Pair.of(GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER, 3000L),
+            Pair.of(CREATE_FEDERATION, 11000L),
+            Pair.of(ADD_FEDERATOR_PUBLIC_KEY, 13000L),
+            Pair.of(COMMIT_FEDERATION, 38000L),
+            Pair.of(ROLLBACK_FEDERATION, 12000L),
+            Pair.of(GET_PENDING_FEDERATION_HASH, 3000L),
+            Pair.of(GET_PENDING_FEDERATION_SIZE, 3000L),
+            Pair.of(GET_PENDING_FEDERATOR_PUBLIC_KEY, 3000L),
+            Pair.of(GET_LOCK_WHITELIST_SIZE, 16000L),
+            Pair.of(GET_LOCK_WHITELIST_ADDRESS, 16000L),
+            Pair.of(ADD_LOCK_WHITELIST_ADDRESS, 25000L),
+            Pair.of(REMOVE_LOCK_WHITELIST_ADDRESS, 24000L),
+            Pair.of(SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY, 24000L),
+            Pair.of(GET_FEE_PER_KB, 2000L),
+            Pair.of(VOTE_FEE_PER_KB, 10000L)
+        ));
+
+        if (blockchainConfig.isRfs55()) {
+            functionsAndCosts.add(Pair.of(GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT, 20000L));
+            functionsAndCosts.add(Pair.of(GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH, 20000L));
+        }
+
+        functionsAndCosts.stream().forEach((Object obj) -> {
+            Pair<CallTransaction.Function, Long> spec = (Pair<CallTransaction.Function, Long>) obj;
+            CallTransaction.Function func = spec.getLeft();
+            Long cost = spec.getRight();
+            functions.put(new ByteArrayWrapper(func.encodeSignature()),  func);
+            functionCostMap.put(func, cost);
+        });
     }
 
     @Override
@@ -505,6 +540,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
+    public Integer getBtcBlockchainInitialBlockHeight(Object[] args)
+    {
+        logger.trace("getBtcBlockchainInitialBlockHeight");
+
+        return bridgeSupport.getBtcBlockchainInitialBlockHeight();
+    }
+
+    @Deprecated
     public Object[] getBtcBlockchainBlockLocator(Object[] args)
     {
         logger.trace("getBtcBlockchainBlockLocator");
@@ -522,6 +565,22 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             logger.warn("Exception in getBtcBlockchainBlockLocator", e);
             throw new RuntimeException("Exception in getBtcBlockchainBlockLocator", e);
         }
+    }
+
+    public byte[] getBtcBlockchainBlockHashAtDepth(Object[] args)
+    {
+        logger.trace("getBtcBlockchainBlockHashAtDepth");
+
+        int depth = ((BigInteger) args[0]).intValue();
+        Sha256Hash blockHash = null;
+        try {
+            blockHash = bridgeSupport.getBtcBlockchainBlockHashAtDepth(depth);
+        } catch (BlockStoreException e) {
+            logger.warn("Exception in getBtcBlockchainBlockHashAtDepth", e);
+            throw new RuntimeException("Exception in getBtcBlockchainBlockHashAtDepth", e);
+        }
+
+        return blockHash.getBytes();
     }
 
     public Long getMinimumLockTxValue(Object[] args)
