@@ -437,9 +437,9 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private void relayTransactions(@Nonnull MessageChannel sender, List<Transaction> acceptedTxs) {
         for (Transaction tx : acceptedTxs) {
-            final ByteArrayWrapper txHash = new ByteArrayWrapper(tx.getHash());
+            final ByteArrayWrapper txHash = new ByteArrayWrapper(tx.getHash().getBytes());
             transactionNodeInformation.addTransactionToNode(txHash, sender.getPeerNodeID());
-            final Set<NodeID> nodesToSkip = new HashSet<>(transactionNodeInformation.getNodesByTransaction(tx.getHash()));
+            final Set<NodeID> nodesToSkip = new HashSet<>(transactionNodeInformation.getNodesByTransaction(tx.getHash().getBytes()));
             final Set<NodeID> newNodes = channelManager.broadcastTransaction(tx, nodesToSkip);
 
             newNodes.forEach(nodeID -> transactionNodeInformation.addTransactionToNode(txHash, nodeID));

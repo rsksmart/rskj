@@ -61,7 +61,7 @@ public class LogFilter extends Filter {
     }
 
     void onTransaction(Transaction tx, Block b, int txIndex) {
-        TransactionInfo txInfo = blockchain.getTransactionInfo(tx.getHash());
+        TransactionInfo txInfo = blockchain.getTransactionInfo(tx.getHash().getBytes());
         TransactionReceipt receipt = txInfo.getReceipt();
 
         LogFilterElement[] logs = new LogFilterElement[receipt.getLogInfoList().size()];

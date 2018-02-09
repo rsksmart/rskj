@@ -153,7 +153,7 @@ public class MinerUtils {
         List<org.ethereum.core.Transaction> txsResult = new ArrayList<>();
         for (org.ethereum.core.Transaction tx : txs) {
             try {
-                String hexHash = Hex.toHexString(tx.getHash());
+                String hexHash = Hex.toHexString(tx.getHash().getBytes());
                 Coin txValue = tx.getValue();
                 BigInteger txNonce = new BigInteger(1, tx.getNonce());
                 RskAddress txSender = tx.getSender();
@@ -185,7 +185,7 @@ public class MinerUtils {
                 logger.debug("Accepted tx={} sender: {} value: {} nonce: {}", hexHash, txSender, txValue, txNonce);
             } catch (Exception e) {
                 // Txs that can't be selected by any reason should be removed from pending state
-                String hash = null == tx.getHash() ? "" : Hex.toHexString(tx.getHash());
+                String hash = null == tx.getHash().getBytes() ? "" : Hex.toHexString(tx.getHash().getBytes());
                 logger.warn(String.format("Error when processing tx=%s", hash), e);
                 if (txsToRemove != null) {
                     txsToRemove.add(tx);

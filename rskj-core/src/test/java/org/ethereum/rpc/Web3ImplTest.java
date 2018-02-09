@@ -300,7 +300,7 @@ public class Web3ImplTest {
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
 
-        String hashString = Hex.toHexString(tx.getHash());
+        String hashString = Hex.toHexString(tx.getHash().getBytes());
 
         Assert.assertNull(web3.eth_getTransactionReceipt(hashString));
     }
@@ -319,7 +319,7 @@ public class Web3ImplTest {
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        String hashString = Hex.toHexString(tx.getHash());
+        String hashString = Hex.toHexString(tx.getHash().getBytes());
 
         TransactionReceiptDTO tr = web3.eth_getTransactionReceipt(hashString);
 
@@ -356,7 +356,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
 
-        String hashString = Hex.toHexString(tx.getHash());
+        String hashString = Hex.toHexString(tx.getHash().getBytes());
 
         TransactionReceiptDTO tr = web3.eth_getTransactionReceipt(hashString);
 
@@ -378,7 +378,7 @@ public class Web3ImplTest {
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        String hashString = Hex.toHexString(tx.getHash());
+        String hashString = Hex.toHexString(tx.getHash().getBytes());
 
         TransactionResultDTO tr = web3.eth_getTransactionByHash(hashString);
 
@@ -405,7 +405,7 @@ public class Web3ImplTest {
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         pendingState.addPendingTransaction(tx);
 
-        String hashString = Hex.toHexString(tx.getHash());
+        String hashString = Hex.toHexString(tx.getHash().getBytes());
 
         TransactionResultDTO tr = web3.eth_getTransactionByHash(hashString);
 
@@ -438,7 +438,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
 
-        String hashString = Hex.toHexString(tx.getHash());
+        String hashString = Hex.toHexString(tx.getHash().getBytes());
 
         TransactionResultDTO tr = web3.eth_getTransactionByHash(hashString);
 
@@ -460,7 +460,7 @@ public class Web3ImplTest {
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        String hashString = Hex.toHexString(tx.getHash());
+        String hashString = Hex.toHexString(tx.getHash().getBytes());
         String blockHashString = Hex.toHexString(block1.getHash());
 
         TransactionResultDTO tr = web3.eth_getTransactionByBlockHashAndIndex(blockHashString, "0x0");
@@ -503,7 +503,7 @@ public class Web3ImplTest {
         Block block1 = new BlockBuilder(world).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        String hashString = Hex.toHexString(tx.getHash());
+        String hashString = Hex.toHexString(tx.getHash().getBytes());
         String blockHashString = Hex.toHexString(block1.getHash());
 
         TransactionResultDTO tr = web3.eth_getTransactionByBlockNumberAndIndex("0x01", "0x0");
@@ -754,7 +754,7 @@ public class Web3ImplTest {
         Assert.assertNotNull(bresult);
         org.junit.Assert.assertEquals(block1HashString, bresult.hash);
         org.junit.Assert.assertEquals(1, bresult.transactions.length);
-        org.junit.Assert.assertEquals(TypeConverter.toJsonHex(tx.getHash()), bresult.transactions[0]);
+        org.junit.Assert.assertEquals(TypeConverter.toJsonHex(tx.getHash().getBytes()), bresult.transactions[0]);
         org.junit.Assert.assertEquals(0, bresult.uncles.length );
     }
 
@@ -1074,7 +1074,7 @@ public class Web3ImplTest {
         Account account = wallet.getAccount(new RskAddress(addr1), "passphrase1");
         tx.sign(account.getEcKey().getPrivKeyBytes());
 
-        String expectedHash = TypeConverter.toJsonHex(tx.getHash());
+        String expectedHash = TypeConverter.toJsonHex(tx.getHash().getBytes());
 
         Assert.assertTrue("Method is not creating the expected transaction", expectedHash.compareTo(txHash) == 0);
     }
@@ -1176,7 +1176,7 @@ public class Web3ImplTest {
         Transaction tx = Transaction.create(config, toAddress.substring(2), value, nonce, gasPrice, gasLimit, args.data);
         tx.sign(wallet.getAccount(new RskAddress(addr1)).getEcKey().getPrivKeyBytes());
 
-        String expectedHash = TypeConverter.toJsonHex(tx.getHash());
+        String expectedHash = TypeConverter.toJsonHex(tx.getHash().getBytes());
 
         Assert.assertTrue("Method is not creating the expected transaction", expectedHash.compareTo(txHash) == 0);
     }

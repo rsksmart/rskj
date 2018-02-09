@@ -41,7 +41,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
 
     @Override
     public void add(byte[] blockHash, int transactionIndex, TransactionReceipt receipt){
-        byte[] txHash = receipt.getTransaction().getHash();
+        byte[] txHash = receipt.getTransaction().getHash().getBytes();
 
         TransactionInfo newTxInfo = new TransactionInfo(receipt, blockHash, transactionIndex);
 
@@ -57,7 +57,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
 
         byte[][] txsBytes = encodedTxs.toArray(new byte[encodedTxs.size()][]);
 
-        receiptsDS.put(receipt.getTransaction().getHash(), RLP.encodeList(txsBytes));
+        receiptsDS.put(receipt.getTransaction().getHash().getBytes(), RLP.encodeList(txsBytes));
     }
 
     @Override

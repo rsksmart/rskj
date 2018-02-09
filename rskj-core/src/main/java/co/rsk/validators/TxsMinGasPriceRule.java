@@ -50,7 +50,7 @@ public class TxsMinGasPriceRule implements BlockValidationRule {
         if(CollectionUtils.isNotEmpty(block.getTransactionsList())) {
             for (Transaction tx : txs) {
                 if (!(tx instanceof RemascTransaction) && tx.getGasPrice().compareTo(blockMgp) < 0) {
-                    logger.warn("Tx gas price is under the Min gas Price of the block tx={}", Hex.toHexString(tx.getHash()));
+                    logger.warn("Tx gas price is under the Min gas Price of the block tx={}", Hex.toHexString(tx.getHash().getBytes()));
                     return false;
                 }
             }

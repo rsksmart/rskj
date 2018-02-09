@@ -44,7 +44,7 @@ public class TxValidatorGasLimitValidator implements TxValidatorStep {
             return true;
         }
 
-        logger.warn("Invalid transaction {}: its gas limit {} is higher than the block gas limit {}", Hex.toHexString(tx.getHash()), txGasLimit.toString(), gasLimit.toString());
+        logger.warn("Invalid transaction {}: its gas limit {} is higher than the block gas limit {}", Hex.toHexString(tx.getHash().getBytes()), txGasLimit.toString(), gasLimit.toString());
 
         return false;
     }

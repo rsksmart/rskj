@@ -21,9 +21,10 @@ package org.ethereum.core;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
-import co.rsk.core.RskAddress;
 import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.crypto.ECKey;
@@ -44,8 +45,8 @@ import org.spongycastle.util.encoders.Hex;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.security.SignatureException;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -264,20 +265,20 @@ public class Transaction {
             logger.trace("RLP encoded tx is not signed!");
         }
         this.parsed = true;
-        this.hash = getHash();
+        this.hash = getHash().getBytes();
     }
 
     public boolean isParsed() {
         return parsed;
     }
 
-    public byte[] getHash() {
+    public Keccak256 getHash() {
         if (!parsed) {
             rlpParse();
         }
 
         byte[] plainMsg = this.getEncoded();
-        return HashUtil.keccak256(plainMsg);
+        return new Keccak256(HashUtil.keccak256(plainMsg));
     }
 
     public byte[] getRawHash() {
@@ -554,7 +555,7 @@ public class Transaction {
         this.rlpEncoded = RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
                 toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s);
 
-        this.hash = this.getHash();
+        this.hash = this.getHash().getBytes();
 
         return rlpEncoded;
     }
@@ -569,7 +570,7 @@ public class Transaction {
 
     @Override
     public int hashCode() {
-        return java.util.Arrays.hashCode(this.getHash());
+        return this.getHash().hashCode();
     }
 
     @Override
@@ -581,7 +582,7 @@ public class Transaction {
 
         Transaction tx = (Transaction) obj;
 
-        return Arrays.equals(this.getHash(), tx.getHash());
+        return Objects.equals(this.getHash(), tx.getHash());
     }
 
     public static Transaction create(RskSystemProperties config, String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit){

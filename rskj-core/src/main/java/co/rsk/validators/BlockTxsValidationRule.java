@@ -89,7 +89,8 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
                         txNonce, expectedNonce, parentRepo.getNonce(sender), tx);
 
                 panicProcessor.panic("invalidtransaction", String.format("Invalid transaction: Tx nonce %s != expected nonce %s (parent nonce: %s): %s",
-                        txNonce.toString(), expectedNonce.toString(), parentRepo.getNonce(sender).toString(), Hex.toHexString(tx.getHash())));
+                        txNonce.toString(), expectedNonce.toString(), parentRepo.getNonce(sender).toString(), Hex.toHexString(
+                                tx.getHash().getBytes())));
 
                 return false;
             }

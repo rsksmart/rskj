@@ -80,7 +80,7 @@ class TxValidator {
 
 
         for (Transaction tx : txs) {
-            String hash = TypeConverter.toJsonHex(tx.getHash());
+            String hash = TypeConverter.toJsonHex(tx.getHash().getBytes());
 
             if (knownTxs.containsKey(hash)) {
                 continue;
@@ -101,7 +101,8 @@ class TxValidator {
 
             for (TxValidatorStep step : validatorSteps) {
                 if (!step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0)) {
-                    logger.info("Tx validation failed: validator {} tx={}", step.getClass().getName(), Hex.toHexString(tx.getHash()));
+                    logger.info("Tx validation failed: validator {} tx={}", step.getClass().getName(), Hex.toHexString(
+                            tx.getHash().getBytes()));
                     valid = false;
                     break;
                 }

@@ -139,7 +139,7 @@ public class TxHandlerImpl implements TxHandler {
                 knownTxsLock.lock();
                 for (TransactionReceipt txReceipt : receipts) {
                     Transaction tx = txReceipt.getTransaction();
-                    String txHash = TypeConverter.toJsonHex(tx.getHash());
+                    String txHash = TypeConverter.toJsonHex(tx.getHash().getBytes());
 
                     if (!knownTxs.containsKey(txHash)) {
                         continue;

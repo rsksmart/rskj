@@ -610,7 +610,7 @@ public class Web3Impl implements Web3 {
 
             eth.submitTransaction(tx);
 
-            return s = TypeConverter.toJsonHex(tx.getHash());
+            return s = TypeConverter.toJsonHex(tx.getHash().getBytes());
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_sendRawTransaction(" + rawData + "): " + s);
@@ -674,7 +674,7 @@ public class Web3Impl implements Web3 {
             }
         } else {
             for (Transaction tx : b.getTransactionsList()) {
-                txes.add(toJsonHex(tx.getHash()));
+                txes.add(tx.getHash().toJsonString());
             }
         }
 
@@ -756,7 +756,7 @@ public class Web3Impl implements Web3 {
                 List<Transaction> txs = this.getTransactionsByJsonBlockId("pending");
 
                 for (Transaction tx : txs) {
-                    if (Hex.toHexString(tx.getHash()).equals(transactionHash))
+                    if (Hex.toHexString(tx.getHash().getBytes()).equals(transactionHash))
                     {
                         return s = new TransactionResultDTO(null, null, tx);
                     }

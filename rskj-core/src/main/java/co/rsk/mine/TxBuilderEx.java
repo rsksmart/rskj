@@ -28,7 +28,6 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -162,7 +161,7 @@ public class TxBuilderEx {
     private void sendTransaction(Transaction tx) {
         //Adds created transaction to the local node's memory pool
         ethereum.submitTransaction(tx);
-        logger.info("Added pending tx: {}", Hex.decode(tx.getHash()));
+        logger.info("Added pending tx={}", tx.getHash());
     }
 
     private Transaction createNewTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce) {

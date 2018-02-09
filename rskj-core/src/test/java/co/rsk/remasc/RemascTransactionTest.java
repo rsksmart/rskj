@@ -29,7 +29,7 @@ public class RemascTransactionTest {
         byte[] encoded = tx.getEncoded();
         RemascTransaction tx2 = new RemascTransaction(encoded);
         Assert.assertEquals(tx, tx2);
-        Assert.assertArrayEquals(tx.getHash(), tx2.getHash());
+        Assert.assertEquals(tx.getHash(), tx2.getHash());
     }
 
 }

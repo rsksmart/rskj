@@ -167,9 +167,9 @@ public class PendingStateImpl implements PendingState {
                 continue;
             }
 
-            logger.trace("Trying add wire transaction nonce {} hash {}", tx.getHash(), toBI(tx.getNonce()));
+            logger.trace("Trying add wire transaction nonce {} hash {}", tx.getHash().getBytes(), toBI(tx.getNonce()));
 
-            ByteArrayWrapper hash = new ByteArrayWrapper(tx.getHash());
+            ByteArrayWrapper hash = new ByteArrayWrapper(tx.getHash().getBytes());
 
             if (pendingTransactions.containsKey(hash) || wireTransactions.containsKey(hash)) {
                 logger.trace("TX already exists: {} ", tx);
@@ -221,9 +221,9 @@ public class PendingStateImpl implements PendingState {
             return;
         }
 
-        logger.trace("add pending transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+        logger.trace("add pending transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash().getBytes()));
 
-        ByteArrayWrapper hash = new ByteArrayWrapper(tx.getHash());
+        ByteArrayWrapper hash = new ByteArrayWrapper(tx.getHash().getBytes());
         Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
 
         if (pendingTransactions.containsKey(hash)) {
@@ -341,7 +341,7 @@ public class PendingStateImpl implements PendingState {
     @Override
     public synchronized void clearPendingState(List<Transaction> txs) {
         for (Transaction tx : txs) {
-            byte[] bhash = tx.getHash();
+            byte[] bhash = tx.getHash().getBytes();
             ByteArrayWrapper hash = new ByteArrayWrapper(bhash);
             pendingTransactions.remove(hash);
             logger.trace("Clear pending transaction, hash: [{}]", Hex.toHexString(bhash));
@@ -351,7 +351,7 @@ public class PendingStateImpl implements PendingState {
     @Override
     public synchronized void clearWire(List<Transaction> txs) {
         for (Transaction tx: txs) {
-            byte[] bhash = tx.getHash();
+            byte[] bhash = tx.getHash().getBytes();
             ByteArrayWrapper hash = new ByteArrayWrapper(bhash);
             wireTransactions.remove(hash);
             logger.trace("Clear wire transaction, hash: [{}]", Hex.toHexString(bhash));
@@ -380,7 +380,7 @@ public class PendingStateImpl implements PendingState {
     }
 
     private void executeTransaction(Transaction tx) {
-        logger.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
+        logger.trace("Apply pending state tx: {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash().getBytes()));
 
         TransactionExecutor executor = new TransactionExecutor(
                 config, tx, 0, bestBlock.getCoinbase(), pendingStateRepository,
@@ -444,7 +444,7 @@ public class PendingStateImpl implements PendingState {
                 if (nonceDiff != 0) {
                     return nonceDiff > 0 ? 1 : -1;
                 }
-                return FastByteComparisons.compareTo(tx1.getHash(), 0, 32, tx2.getHash(), 0, 32);
+                return FastByteComparisons.compareTo(tx1.getHash().getBytes(), 0, 32, tx2.getHash().getBytes(), 0, 32);
             });
         }
     }

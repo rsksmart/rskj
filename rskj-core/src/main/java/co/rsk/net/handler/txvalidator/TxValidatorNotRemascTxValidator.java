@@ -42,7 +42,7 @@ public class TxValidatorNotRemascTxValidator implements TxValidatorStep {
             return true;
         }
 
-        logger.warn("Invalid transaction {}: it is a Remasc transaction", Hex.toHexString(tx.getHash()));
+        logger.warn("Invalid transaction {}: it is a Remasc transaction", Hex.toHexString(tx.getHash().getBytes()));
 
         return false;
     }

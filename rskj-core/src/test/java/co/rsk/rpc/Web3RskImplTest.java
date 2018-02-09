@@ -86,7 +86,7 @@ public class Web3RskImplTest {
         Mockito.when(block.getNumber()).thenReturn(1L);
         int txIndex = 1;
         Transaction tx = Mockito.mock(Transaction.class);
-        Mockito.when(tx.getHash()).thenReturn(new byte[]{2});
+        Mockito.when(tx.getHash().getBytes()).thenReturn(new byte[]{2});
         int logIdx = 5;
 
         LogFilterElement logFilterElement = new LogFilterElement(logInfo, block, txIndex, tx, logIdx);

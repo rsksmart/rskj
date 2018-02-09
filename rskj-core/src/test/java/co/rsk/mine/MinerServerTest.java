@@ -76,7 +76,7 @@ public class MinerServerTest {
         byte[] s2 = new byte[32];
         s1[0] = 0;
         s2[0] = 1;
-        Mockito.when(tx1.getHash()).thenReturn(s1);
+        Mockito.when(tx1.getHash().getBytes()).thenReturn(s1);
         Mockito.when(tx1.getEncoded()).thenReturn(new byte[32]);
 
         Mockito.when(repository.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);

@@ -73,7 +73,7 @@ public class DslFilesTest {
 
         Assert.assertNotNull(transaction);
 
-        TransactionInfo txinfo = world.getBlockChain().getTransactionInfo(transaction.getHash());
+        TransactionInfo txinfo = world.getBlockChain().getTransactionInfo(transaction.getHash().getBytes());
 
         Assert.assertNotNull(txinfo);
         BigInteger gasUsed = BigIntegers.fromUnsignedByteArray(txinfo.getReceipt().getGasUsed());
@@ -145,7 +145,7 @@ public class DslFilesTest {
         Block block = status.getBestBlock();
 
         Assert.assertEquals(1, block.getTransactionsList().size());
-        byte[] txhash = block.getTransactionsList().get(0).getHash();
+        byte[] txhash = block.getTransactionsList().get(0).getHash().getBytes();
         TransactionInfo txinfo = world.getBlockChain().getTransactionInfo(txhash);
 
         // only three events, raised by

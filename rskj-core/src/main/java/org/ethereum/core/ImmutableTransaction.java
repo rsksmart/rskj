@@ -12,12 +12,12 @@ public class ImmutableTransaction extends Transaction {
 
     @Override
     public void sign(byte[] privKeyBytes) {
-        throw new ImmutableTransactionException(String.format("trying to sign tx=%s", Hex.toHexString(this.getHash())));
+        throw new ImmutableTransactionException(String.format("trying to sign tx=%s", Hex.toHexString(this.getHash().getBytes())));
     }
 
     @Override
     public void setGasLimit(byte[] gasLimit) {
-        throw new ImmutableTransactionException(String.format("trying to set gas limit tx=%s", Hex.toHexString(this.getHash())));
+        throw new ImmutableTransactionException(String.format("trying to set gas limit tx=%s", Hex.toHexString(this.getHash().getBytes())));
     }
 
     public static class ImmutableTransactionException extends RuntimeException {

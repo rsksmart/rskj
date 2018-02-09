@@ -20,6 +20,7 @@ package co.rsk.peg.simples;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
@@ -37,13 +38,10 @@ public class SimpleRskTransaction extends Transaction {
     }
 
     @Override
-    public byte[] getHash() { return hash; }
+    public Keccak256 getHash() { return new Keccak256(hash); }
 
     @Override
     public Coin getValue() {
         return Coin.valueOf(10000000);
     }
-
-    @Override
-    public String toString() { return "Tx " + this.getHash().toString(); }
 }

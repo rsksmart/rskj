@@ -112,7 +112,7 @@ public class TxsMinGasPriceValidatorTest {
         for(int i = 0; i < invalidTxNbr; i++) {
             Transaction tx = Mockito.mock(Transaction.class);
             Mockito.when(tx.getGasPrice()).thenReturn(blockGasPrice.subtract(Coin.valueOf(1)));
-            Mockito.when(tx.getHash()).thenReturn(ByteUtil.EMPTY_BYTE_ARRAY);
+            Mockito.when(tx.getHash().getBytes()).thenReturn(ByteUtil.EMPTY_BYTE_ARRAY);
             ret.add(tx);
         }
         return ret;
