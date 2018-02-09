@@ -51,7 +51,7 @@ public interface EthereumListener {
 
     void onPendingTransactionsReceived(List<Transaction> transactions);
 
-    void onPendingStateChanged(PendingState pendingState);
+    void onPendingStateChanged(TransactionPool transactionPool);
 
     /**
      * @deprecated Check Rsk.hasBetterBlockToSync() and isPlayingBlocks()

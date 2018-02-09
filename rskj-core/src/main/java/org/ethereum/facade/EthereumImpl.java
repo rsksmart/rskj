@@ -22,7 +22,7 @@ package org.ethereum.facade;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import org.ethereum.core.*;
-import org.ethereum.core.PendingState;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.GasPriceTracker;
@@ -50,7 +50,7 @@ public class EthereumImpl implements Ethereum {
 
     private final ChannelManager channelManager;
     private final PeerServer peerServer;
-    private final PendingState pendingState;
+    private final TransactionPool transactionPool;
     private final RskSystemProperties config;
     private final CompositeEthereumListener compositeEthereumListener;
     private final Blockchain blockchain;
@@ -62,12 +62,13 @@ public class EthereumImpl implements Ethereum {
             RskSystemProperties config,
             ChannelManager channelManager,
             PeerServer peerServer,
-            PendingState pendingState,
+            TransactionPool transactionPool,
             CompositeEthereumListener compositeEthereumListener,
             Blockchain blockchain) {
         this.channelManager = channelManager;
         this.peerServer = peerServer;
-        this.pendingState = pendingState;
+        this.transactionPool = transactionPool;
+
         this.config = config;
         this.compositeEthereumListener = compositeEthereumListener;
         this.blockchain = blockchain;
@@ -142,7 +143,7 @@ public class EthereumImpl implements Ethereum {
         final Future<List<Transaction>> listFuture =
                 TransactionExecutor.getInstance().submitTransaction(transactionTask);
 
-        pendingState.addPendingTransaction(transaction);
+        transactionPool.addPendingTransaction(transaction);
 
         return new FutureAdapter<Transaction, List<Transaction>>(listFuture) {
             @Override
@@ -154,7 +155,7 @@ public class EthereumImpl implements Ethereum {
 
     @Override
     public List<Transaction> getWireTransactions() {
-        return pendingState.getWireTransactions();
+        return transactionPool.getWireTransactions();
     }
 
     @Override

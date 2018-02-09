@@ -59,8 +59,7 @@ public class BlockchainDummy implements Blockchain {
 
     }
 
-    @Override
-    public PendingState getPendingState() {
+    public TransactionPool getTransactionPool() {
         return null;
     }
 

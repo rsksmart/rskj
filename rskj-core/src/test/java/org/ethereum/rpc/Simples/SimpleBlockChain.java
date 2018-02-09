@@ -54,8 +54,7 @@ public class SimpleBlockChain implements org.ethereum.core.Blockchain {
 
     }
 
-    @Override
-    public PendingState getPendingState() {
+    public TransactionPool getTransactionPool() {
         return null;
     }
 

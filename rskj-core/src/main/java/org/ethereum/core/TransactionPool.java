@@ -25,7 +25,7 @@ import java.util.List;
  * @author Mikhail Kalinin
  * @since 28.09.2015
  */
-public interface PendingState extends org.ethereum.facade.PendingState {
+public interface TransactionPool extends org.ethereum.facade.TransactionPool {
 
     void start(Block initialBestBlock);
 

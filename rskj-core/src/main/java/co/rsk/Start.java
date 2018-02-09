@@ -71,7 +71,7 @@ public class Start {
 
     private final Web3 web3Service;
     private final BlockProcessor nodeBlockProcessor;
-    private final PendingState pendingState;
+    private final TransactionPool transactionPool;
     private final SyncPool.PeerClientFactory peerClientFactory;
 
     public static void main(String[] args) throws Exception {
@@ -96,7 +96,7 @@ public class Start {
                  MessageHandler messageHandler,
                  TxHandler txHandler,
                  BlockProcessor nodeBlockProcessor,
-                 PendingState pendingState,
+                 TransactionPool transactionPool,
                  SyncPool.PeerClientFactory peerClientFactory) {
         this.rsk = rsk;
         this.udpServer = udpServer;
@@ -112,7 +112,7 @@ public class Start {
         this.messageHandler = messageHandler;
         this.txHandler = txHandler;
         this.nodeBlockProcessor = nodeBlockProcessor;
-        this.pendingState = pendingState;
+        this.transactionPool = transactionPool;
         this.peerClientFactory = peerClientFactory;
     }
 
@@ -124,7 +124,7 @@ public class Start {
         BuildInfo.printInfo();
 
         // this should be the genesis block at this point
-        pendingState.start(blockchain.getBestBlock());
+        transactionPool.start(blockchain.getBestBlock());
         channelManager.start();
         txHandler.start();
         messageHandler.start();
@@ -194,7 +194,7 @@ public class Start {
     }
 
     private void enableSimulateTxsEx() {
-        new TxBuilderEx(rskSystemProperties, rsk, repository, nodeBlockProcessor, pendingState).simulateTxs();
+        new TxBuilderEx(rskSystemProperties, rsk, repository, nodeBlockProcessor, transactionPool).simulateTxs();
     }
 
     private void waitRskSyncDone() throws InterruptedException {

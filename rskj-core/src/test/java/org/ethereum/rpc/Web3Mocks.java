@@ -22,7 +22,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import org.ethereum.core.Blockchain;
-import org.ethereum.core.PendingState;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.Ethereum;
@@ -61,8 +61,8 @@ public class Web3Mocks {
         return mock(Repository.class);
     }
 
-    public static PendingState getMockPendingState() {
-        return mock(PendingState.class);
+    public static TransactionPool getMockTransactionPool() {
+        return mock(TransactionPool.class);
     }
 
     public static BlockStore getMockBlockStore() {

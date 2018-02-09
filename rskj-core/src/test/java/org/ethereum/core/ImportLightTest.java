@@ -23,7 +23,7 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainImpl;
-import co.rsk.core.bc.PendingStateImpl;
+import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryImpl;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
@@ -74,9 +74,9 @@ public class ImportLightTest {
 
         blockchain.setNoValidation(true);
 
-        PendingStateImpl pendingState = new PendingStateImpl(config, repository, null, null, null, listener, 10, 100);
+        TransactionPoolImpl pendingState = new TransactionPoolImpl(config, repository, null, receiptStore, null, listener, 10, 100);
 
-        blockchain.setPendingState(pendingState);
+        blockchain.setTransactionPool(pendingState);
 
         Repository track = repository.startTracking();
 

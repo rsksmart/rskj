@@ -100,7 +100,7 @@ public class Web3Impl implements Web3 {
     private final HashRateCalculator hashRateCalculator;
     private final ConfigCapabilities configCapabilities;
     private final BlockStore blockStore;
-    private final PendingState pendingState;
+    private final TransactionPool transactionPool;
     private final RskSystemProperties config;
 
     private final PersonalModule personalModule;
@@ -111,7 +111,7 @@ public class Web3Impl implements Web3 {
 
     protected Web3Impl(Ethereum eth,
                        Blockchain blockchain,
-                       PendingState pendingState,
+                       TransactionPool transactionPool,
                        BlockStore blockStore,
                        ReceiptStore receiptStore,
                        RskSystemProperties config,
@@ -132,7 +132,7 @@ public class Web3Impl implements Web3 {
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.repository = repository;
-        this.pendingState = pendingState;
+        this.transactionPool = transactionPool;
         this.minerClient = minerClient;
         this.minerServer = minerServer;
         this.personalModule = personalModule;
@@ -1051,7 +1051,7 @@ public class Web3Impl implements Web3 {
 
     private List<Transaction> getTransactionsByJsonBlockId(String id) {
         if ("pending".equalsIgnoreCase(id)) {
-            return pendingState.getAllPendingTransactions();
+            return transactionPool.getAllPendingTransactions();
         } else {
             Block block = getByJsonBlockId(id);
             return block != null ? block.getTransactionsList() : null;
@@ -1077,7 +1077,7 @@ public class Web3Impl implements Web3 {
 
     private Repository getRepoByJsonBlockId(String id) {
         if ("pending".equalsIgnoreCase(id)) {
-            return pendingState.getRepository();
+            return transactionPool.getRepository();
         } else {
             Block block = getByJsonBlockId(id);
             if (block != null) {

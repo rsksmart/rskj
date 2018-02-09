@@ -30,7 +30,7 @@ import co.rsk.validators.BlockValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
-import org.ethereum.core.PendingState;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
@@ -59,7 +59,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
     private final ChannelManager channelManager;
-    private final PendingState pendingState;
+    private final TransactionPool transactionPool;
     private final PeerScoringManager peerScoringManager;
     private volatile long lastStatusSent = System.currentTimeMillis();
     private volatile long lastTickSent = System.currentTimeMillis();
@@ -81,7 +81,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
                               @Nonnull final BlockProcessor blockProcessor,
                               final SyncProcessor syncProcessor,
                               @Nullable final ChannelManager channelManager,
-                              @Nullable final PendingState pendingState,
+                              @Nullable final TransactionPool transactionPool,
                               final TxHandler txHandler,
                               @Nullable final PeerScoringManager peerScoringManager,
                               @Nonnull BlockValidationRule blockValidationRule) {
@@ -89,7 +89,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         this.channelManager = channelManager;
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
-        this.pendingState = pendingState;
+        this.transactionPool = transactionPool;
         this.blockValidationRule = blockValidationRule;
         this.transactionNodeInformation = new TransactionNodeInformation();
         this.txHandler = txHandler;
@@ -423,7 +423,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Metrics.processTxsMessage("txsValidated", acceptedTxs, sender.getPeerNodeID());
 
         // TODO(mmarquez): Add all this logic to the TxHandler
-        acceptedTxs = pendingState.addWireTransactions(acceptedTxs);
+        acceptedTxs = transactionPool.addWireTransactions(acceptedTxs);
 
         Metrics.processTxsMessage("validTxsAddedToPendingState", acceptedTxs, sender.getPeerNodeID());
         /* Relay all transactions to peers that don't have them */

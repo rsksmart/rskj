@@ -28,7 +28,7 @@ import co.rsk.net.handler.TxHandlerImpl;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimpleBlockProcessor;
 import co.rsk.net.simples.SimpleMessageChannel;
-import co.rsk.net.simples.SimplePendingState;
+import co.rsk.net.simples.SimpleTransactionPool;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.scoring.EventType;
@@ -769,7 +769,7 @@ public class NodeMessageHandlerTest {
         PeerScoringManager scoring = createPeerScoringManager();
         final SimpleChannelManager channelManager = new SimpleChannelManager();
         TxHandler txmock = mock(TxHandler.class);
-        PendingState state = mock(PendingState.class);
+        TransactionPool state = mock(TransactionPool.class);
         Mockito.when(state.addWireTransactions(any())).thenAnswer(i -> i.getArguments()[0]);
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
@@ -827,7 +827,7 @@ public class NodeMessageHandlerTest {
         PeerScoringManager scoring = createPeerScoringManager();
         final SimpleChannelManager channelManager = new SimpleChannelManager();
         TxHandler txmock = mock(TxHandler.class);
-        PendingState state = mock(PendingState.class);
+        TransactionPool state = mock(TransactionPool.class);
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 
@@ -861,7 +861,7 @@ public class NodeMessageHandlerTest {
         final SimpleChannelManager channelManager = new SimpleChannelManager();
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        PendingState state = mock(PendingState.class);
+        TransactionPool state = mock(TransactionPool.class);
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
         TxHandler txHandler = new TxHandlerImpl(config, mock(CompositeEthereumListener.class), mock(RepositoryImpl.class), blockchain);
@@ -916,7 +916,7 @@ public class NodeMessageHandlerTest {
 
     @Test
     public void processTransactionsMessageUsingPendingState() throws UnknownHostException {
-        final SimplePendingState pendingState = new SimplePendingState();
+        final SimpleTransactionPool pendingState = new SimpleTransactionPool();
         final SimpleChannelManager channelManager = new SimpleChannelManager();
         TxHandler txmock = mock(TxHandler.class);
         BlockProcessor blockProcessor = mock(BlockProcessor.class);

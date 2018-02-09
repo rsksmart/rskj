@@ -24,7 +24,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.Account;
-import org.ethereum.core.PendingState;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Transaction;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.TypeConverter;
@@ -44,14 +44,14 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
 
     private final Ethereum eth;
     private final Wallet wallet;
-    private final PendingState pendingState;
+    private final TransactionPool transactionPool;
     private final RskSystemProperties config;
 
-    public PersonalModuleWalletEnabled(RskSystemProperties config, Ethereum eth, Wallet wallet, PendingState pendingState) {
+    public PersonalModuleWalletEnabled(RskSystemProperties config, Ethereum eth, Wallet wallet, TransactionPool transactionPool) {
         this.config = config;
         this.eth = eth;
         this.wallet = wallet;
-        this.pendingState = pendingState;
+        this.transactionPool = transactionPool;
     }
 
     @Override
@@ -182,7 +182,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
 
         String toAddress = args.to != null ? Hex.toHexString(TypeConverter.stringHexToByteArray(args.to)) : null;
 
-        BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : pendingState.getRepository().getNonce(account.getAddress());
+        BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getRepository().getNonce(account.getAddress());
         BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;
         BigInteger gasPrice = args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
         BigInteger gasLimit = args.gas != null ? TypeConverter.stringNumberAsBigInt(args.gas) : BigInteger.valueOf(GasCost.TRANSACTION);

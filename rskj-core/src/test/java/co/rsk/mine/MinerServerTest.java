@@ -87,8 +87,8 @@ public class MinerServerTest {
 
         List<Transaction> txs = new ArrayList<>(Collections.singletonList(tx1));
 
-        PendingState localPendingState = Mockito.mock(PendingState.class);
-        Mockito.when(localPendingState.getPendingTransactions()).thenReturn(txs);
+        TransactionPool localTransactionPool = Mockito.mock(TransactionPool.class);
+        Mockito.when(localTransactionPool.getPendingTransactions()).thenReturn(txs);
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
@@ -103,7 +103,7 @@ public class MinerServerTest {
                         ConfigUtils.getDefaultMiningConfig(),
                         repository,
                         this.blockchain.getBlockStore(),
-                        localPendingState,
+                        localTransactionPool,
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -142,7 +142,7 @@ public class MinerServerTest {
                         ConfigUtils.getDefaultMiningConfig(),
                         blockchain.getRepository(),
                         blockchain.getBlockStore(),
-                        blockchain.getPendingState(),
+                        blockchain.getTransactionPool(),
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -205,7 +205,7 @@ public class MinerServerTest {
                         ConfigUtils.getDefaultMiningConfig(),
                         blockchain.getRepository(),
                         blockchain.getBlockStore(),
-                        blockchain.getPendingState(),
+                        blockchain.getTransactionPool(),
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -253,7 +253,7 @@ public class MinerServerTest {
                         ConfigUtils.getDefaultMiningConfig(),
                         blockchain.getRepository(),
                         blockchain.getBlockStore(),
-                        blockchain.getPendingState(),
+                        blockchain.getTransactionPool(),
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -304,7 +304,7 @@ public class MinerServerTest {
                         ConfigUtils.getDefaultMiningConfig(),
                         blockchain.getRepository(),
                         blockchain.getBlockStore(),
-                        blockchain.getPendingState(),
+                        blockchain.getTransactionPool(),
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -362,7 +362,7 @@ public class MinerServerTest {
                         ConfigUtils.getDefaultMiningConfig(),
                         blockchain.getRepository(),
                         blockchain.getBlockStore(),
-                        blockchain.getPendingState(),
+                        blockchain.getTransactionPool(),
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -412,7 +412,7 @@ public class MinerServerTest {
                         ConfigUtils.getDefaultMiningConfig(),
                         blockchain.getRepository(),
                         blockchain.getBlockStore(),
-                        blockchain.getPendingState(),
+                        blockchain.getTransactionPool(),
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -467,7 +467,7 @@ public class MinerServerTest {
                         ConfigUtils.getDefaultMiningConfig(),
                         blockchain.getRepository(),
                         this.blockchain.getBlockStore(),
-                        this.blockchain.getPendingState(),
+                        this.blockchain.getTransactionPool(),
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -504,7 +504,7 @@ public class MinerServerTest {
                         ConfigUtils.getDefaultMiningConfig(),
                         blockchain.getRepository(),
                         this.blockchain.getBlockStore(),
-                        this.blockchain.getPendingState(),
+                        this.blockchain.getTransactionPool(),
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -541,7 +541,7 @@ public class MinerServerTest {
                         ConfigUtils.getDefaultMiningConfig(),
                         blockchain.getRepository(),
                         this.blockchain.getBlockStore(),
-                        this.blockchain.getPendingState(),
+                        this.blockchain.getTransactionPool(),
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -582,7 +582,7 @@ public class MinerServerTest {
                         ConfigUtils.getDefaultMiningConfig(),
                         blockchain.getRepository(),
                         blockchain.getBlockStore(),
-                        blockchain.getPendingState(),
+                        blockchain.getTransactionPool(),
                         DIFFICULTY_CALCULATOR,
                         new GasLimitCalculator(config),
                         unclesValidationRule,
@@ -720,7 +720,7 @@ public class MinerServerTest {
                 ConfigUtils.getDefaultMiningConfig(),
                 Mockito.mock(Repository.class),
                 Mockito.mock(BlockStore.class),
-                Mockito.mock(PendingState.class),
+                Mockito.mock(TransactionPool.class),
                 DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(config),
                 Mockito.mock(BlockValidationRule.class),

@@ -19,7 +19,7 @@
 package co.rsk.net.simples;
 
 import org.ethereum.core.Block;
-import org.ethereum.core.PendingState;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 
@@ -30,7 +30,7 @@ import java.util.List;
  * Created by usuario on 25/07/2016.
  */
 
-public class SimplePendingState implements PendingState {
+public class SimpleTransactionPool implements TransactionPool {
     private List<Transaction> wireTransactions = new ArrayList<>();
 
     @Override

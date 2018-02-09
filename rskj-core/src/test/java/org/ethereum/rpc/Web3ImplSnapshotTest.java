@@ -244,7 +244,7 @@ public class Web3ImplSnapshotTest {
                         ConfigUtils.getDefaultMiningConfig(),
                         world.getBlockChain().getRepository(),
                         world.getBlockChain().getBlockStore(),
-                        world.getBlockChain().getPendingState(),
+                        world.getBlockChain().getTransactionPool(),
                         difficultyCalculator,
                         new GasLimitCalculator(config),
                         rule,

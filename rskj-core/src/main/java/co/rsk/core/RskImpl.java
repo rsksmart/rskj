@@ -21,7 +21,7 @@ package co.rsk.core;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.net.NodeBlockProcessor;
 import org.ethereum.core.Blockchain;
-import org.ethereum.core.PendingState;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.server.ChannelManager;
@@ -39,7 +39,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
     public RskImpl(
             ChannelManager channelManager,
             PeerServer peerServer,
-            PendingState pendingState,
+            TransactionPool transactionPool,
             RskSystemProperties config,
             CompositeEthereumListener compositeEthereumListener,
             NodeBlockProcessor nodeBlockProcessor,
@@ -49,7 +49,7 @@ public class RskImpl extends EthereumImpl implements Rsk {
                 config,
                 channelManager,
                 peerServer,
-                pendingState,
+                transactionPool,
                 compositeEthereumListener,
                 blockchain
         );

@@ -300,7 +300,7 @@ public class MainNetMinerTest {
                 ConfigUtils.getDefaultMiningConfig(),
                 blockchain.getRepository(),
                 this.blockchain.getBlockStore(),
-                this.blockchain.getPendingState(),
+                this.blockchain.getTransactionPool(),
                 DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(config),
                 unclesValidationRule,

@@ -48,8 +48,8 @@ import static org.ethereum.util.BIUtil.toBI;
 /**
  * Created by ajlopez on 08/08/2016.
  */
-public class PendingStateImpl implements PendingState {
-    private static final Logger logger = LoggerFactory.getLogger("pendingstate");
+public class TransactionPoolImpl implements TransactionPool {
+    private static final Logger logger = LoggerFactory.getLogger("txpool");
     private static final byte[] emptyUncleHashList = HashUtil.keccak256(RLP.encodeList(new byte[0]));
 
     private final Map<Keccak256, Transaction> pendingTransactions = new HashMap<>();
@@ -74,12 +74,12 @@ public class PendingStateImpl implements PendingState {
     private Repository pendingStateRepository;
     private final TxPendingValidator validator = new TxPendingValidator();
 
-    public PendingStateImpl(BlockStore blockStore,
-                            ReceiptStore receiptStore,
-                            EthereumListener listener,
-                            ProgramInvokeFactory programInvokeFactory,
-                            Repository repository,
-                            RskSystemProperties config) {
+    public TransactionPoolImpl(BlockStore blockStore,
+                               ReceiptStore receiptStore,
+                               EthereumListener listener,
+                               ProgramInvokeFactory programInvokeFactory,
+                               Repository repository,
+                               RskSystemProperties config) {
         this(config,
                 repository,
                 blockStore,
@@ -90,14 +90,14 @@ public class PendingStateImpl implements PendingState {
                 config.txOutdatedTimeout());
     }
 
-    public PendingStateImpl(RskSystemProperties config,
-                            Repository repository,
-                            BlockStore blockStore,
-                            ReceiptStore receiptStore,
-                            ProgramInvokeFactory programInvokeFactory,
-                            EthereumListener listener,
-                            int outdatedThreshold,
-                            int outdatedTimeout) {
+    public TransactionPoolImpl(RskSystemProperties config,
+                               Repository repository,
+                               BlockStore blockStore,
+                               ReceiptStore receiptStore,
+                               ProgramInvokeFactory programInvokeFactory,
+                               EthereumListener listener,
+                               int outdatedThreshold,
+                               int outdatedTimeout) {
         this.config = config;
         this.blockStore = blockStore;
         this.repository = repository;
@@ -185,7 +185,7 @@ public class PendingStateImpl implements PendingState {
         if (listener != null && !added.isEmpty()) {
             EventDispatchThread.invokeLater(() -> {
                 listener.onPendingTransactionsReceived(added);
-                listener.onPendingStateChanged(PendingStateImpl.this);
+                listener.onPendingStateChanged(TransactionPoolImpl.this);
             });
         }
 
@@ -238,7 +238,7 @@ public class PendingStateImpl implements PendingState {
         if (listener != null) {
             EventDispatchThread.invokeLater(() -> {
                 listener.onPendingTransactionsReceived(Collections.singletonList(tx));
-                listener.onPendingStateChanged(PendingStateImpl.this);
+                listener.onPendingStateChanged(TransactionPoolImpl.this);
             });
         }
     }
@@ -266,7 +266,7 @@ public class PendingStateImpl implements PendingState {
         bestBlock = block;
 
         if (listener != null) {
-            EventDispatchThread.invokeLater(() -> listener.onPendingStateChanged(PendingStateImpl.this));
+            EventDispatchThread.invokeLater(() -> listener.onPendingStateChanged(TransactionPoolImpl.this));
         }
     }
 

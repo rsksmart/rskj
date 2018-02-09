@@ -77,7 +77,7 @@ public class Web3RskImplTest {
         Web3RskImpl web3 = new Web3RskImpl(
                 rsk,
                 blockchain,
-                Web3Mocks.getMockPendingState(),
+                Web3Mocks.getMockTransactionPool(),
                 config,
                 Web3Mocks.getMockMinerClient(),
                 Web3Mocks.getMockMinerServer(),

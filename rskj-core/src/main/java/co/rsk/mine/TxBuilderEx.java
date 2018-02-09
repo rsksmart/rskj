@@ -45,7 +45,7 @@ public class TxBuilderEx {
     private final Ethereum ethereum;
     private final Repository repository;
     private final BlockProcessor nodeBlockProcessor;
-    private final PendingState pendingState;
+    private final TransactionPool transactionPool;
 
     private final SecureRandom random = new SecureRandom();
 
@@ -55,12 +55,12 @@ public class TxBuilderEx {
                        Ethereum ethereum,
                        Repository repository,
                        BlockProcessor nodeBlockProcessor,
-                       PendingState pendingState) {
+                       TransactionPool transactionPool) {
         this.config = config;
         this.ethereum = ethereum;
         this.repository = repository;
         this.nodeBlockProcessor = nodeBlockProcessor;
-        this.pendingState = pendingState;
+        this.transactionPool = transactionPool;
     }
 
     public void simulateTxs() {
@@ -128,7 +128,7 @@ public class TxBuilderEx {
                         SecureRandom r = new SecureRandom();
                         Thread.sleep(10000 + (long)r.nextInt(20000));
 
-                        Repository prepository = pendingState.getRepository();
+                        Repository prepository = transactionPool.getRepository();
                         AccountState accountState;
 
                         accountState = prepository.getAccountState(targetAcc.getAddress());

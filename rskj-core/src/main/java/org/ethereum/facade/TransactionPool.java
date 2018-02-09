@@ -27,7 +27,7 @@ import java.util.List;
  * @author Mikhail Kalinin
  * @since 28.09.2015
  */
-public interface PendingState {
+public interface TransactionPool {
 
     /**
      * @return pending state repository
