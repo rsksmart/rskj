@@ -409,6 +409,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Metrics.processTxsMessage("start", messageTxs, sender.getPeerNodeID());
 
         List<Transaction> txs = new LinkedList();
+
         for (Transaction tx : messageTxs) {
             if (!tx.acceptTransactionSignature(config.getBlockchainConfig().getCommonConstants().getChainId())) {
                 recordEvent(sender, EventType.INVALID_TRANSACTION);
@@ -423,7 +424,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Metrics.processTxsMessage("txsValidated", acceptedTxs, sender.getPeerNodeID());
 
         // TODO(mmarquez): Add all this logic to the TxHandler
-        acceptedTxs = transactionPool.addWireTransactions(acceptedTxs);
+        acceptedTxs = transactionPool.addPendingTransactions(acceptedTxs);
 
         Metrics.processTxsMessage("validTxsAddedToPendingState", acceptedTxs, sender.getPeerNodeID());
         /* Relay all transactions to peers that don't have them */

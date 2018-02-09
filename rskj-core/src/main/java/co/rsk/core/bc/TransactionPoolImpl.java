@@ -154,47 +154,6 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     @Override
-    public synchronized List<Transaction> addWireTransactions(List<Transaction> transactions) {
-        List<Transaction> added = new ArrayList<>();
-        Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
-
-        logger.trace("Trying add {} wire transactions using block {} {}", transactions.size(), bnumber, bestBlock.getShortHash());
-
-        for (Transaction tx : transactions) {
-            if (!shouldAcceptTx(tx)) {
-                continue;
-            }
-
-            Keccak256 hash = tx.getHash();
-
-            logger.trace("Trying add wire transaction nonce {} hash {}", hash, toBI(tx.getNonce()));
-
-            if (pendingTransactions.containsKey(hash) || wireTransactions.containsKey(hash)) {
-                logger.trace("TX already exists: {} ", tx);
-                continue;
-            }
-
-            wireTransactions.put(hash, tx);
-            transactionBlocks.put(hash, bnumber);
-            final long timestampSeconds = this.getCurrentTimeInSeconds();
-            transactionTimes.put(hash, timestampSeconds);
-
-            added.add(tx);
-        }
-
-        if (listener != null && !added.isEmpty()) {
-            EventDispatchThread.invokeLater(() -> {
-                listener.onPendingTransactionsReceived(added);
-                listener.onPendingStateChanged(TransactionPoolImpl.this);
-            });
-        }
-
-        logger.trace("Wire transaction list added: {} new, {} valid of received {}, #of known txs: {}", added.size(), added.size(), transactions.size(), transactions.size());
-
-        return added;
-    }
-
-    @Override
     public synchronized Repository getRepository() { return this.pendingStateRepository; }
 
     @Override
@@ -211,6 +170,13 @@ public class TransactionPoolImpl implements TransactionPool {
         txs.addAll(pendingTransactions.values());
 
         return txs;
+    }
+
+    @Override
+    public synchronized void addPendingTransactions(final List<Transaction> txs) {
+        for (Transaction tx : txs) {
+            this.addPendingTransaction(tx);
+        }
     }
 
     @Override
@@ -282,7 +248,9 @@ public class TransactionPoolImpl implements TransactionPool {
     public void retractBlock(Block block) {
         List<Transaction> txs = block.getTransactionsList();
 
-        addWireTransactions(txs);
+        for (Transaction tx : txs) {
+            this.addPendingTransaction(tx);
+        }
     }
 
     @VisibleForTesting

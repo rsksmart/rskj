@@ -30,22 +30,20 @@ public interface TransactionPool extends org.ethereum.facade.TransactionPool {
     void start(Block initialBestBlock);
 
     /**
-     * Adds transactions received from the net to the list of wire transactions <br>
-     * Don't have an impact on pending state
-     *
-     * @param transactions txs received from the net
-     * @return A list with the accepted transactions
-     */
-    List<Transaction> addWireTransactions(List<Transaction> transactions);
-
-    /**
      * Adds transaction to the list of pending state txs  <br>
-     * For the moment this list is populated with txs sent by our peer only <br>
      * Triggers an update of pending state
      *
      * @param tx transaction
      */
     void addPendingTransaction(Transaction tx);
+
+    /**
+     * Adds a list of transactions to the list of pending state txs  <br>
+     * Triggers an update of pending state
+     *
+     * @param tx transaction
+     */
+    void addPendingTransactions(List<Transaction> txs);
 
     /**
      * It should be called on each block imported as <b>BEST</b> <br>
