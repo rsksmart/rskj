@@ -1081,7 +1081,7 @@ public class Web3Impl implements Web3 {
         } else {
             Block block = getByJsonBlockId(id);
             if (block != null) {
-                return ((Repository) this.repository).getSnapshotTo(block.getStateRoot());
+                return this.repository.getSnapshotTo(block.getStateRoot());
             } else {
                 return null;
             }
