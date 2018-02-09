@@ -1,6 +1,7 @@
-package org.ethereum.config.blockchain;
+package org.ethereum.config.blockchain.mainnet;
 
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.mainnet.MainNetAfterBridgeSyncConfig;
 
 public class MainNetBeforeBridgeSyncConfig extends MainNetAfterBridgeSyncConfig {
 
