@@ -182,6 +182,13 @@ public class TransactionPoolImpl implements TransactionPool {
             }
         }
 
+        if (listener != null && !added.isEmpty()) {
+            EventDispatchThread.invokeLater(() -> {
+                listener.onPendingTransactionsReceived(added);
+                listener.onPendingStateChanged(TransactionPoolImpl.this);
+            });
+        }
+
         return added;
     }
 

@@ -279,7 +279,6 @@ public class Web3ImplTest {
             minerClient.mine();
 
             Assert.assertTrue("Node is mining", web3.eth_mining());
-
         } finally {
             minerClient.stop();
         }
