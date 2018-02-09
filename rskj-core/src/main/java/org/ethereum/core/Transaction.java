@@ -281,13 +281,13 @@ public class Transaction {
         return new Keccak256(HashUtil.keccak256(plainMsg));
     }
 
-    public byte[] getRawHash() {
+    public Keccak256 getRawHash() {
         if (!parsed) {
             rlpParse();
         }
 
         byte[] plainMsg = this.getEncodedRaw();
-        return HashUtil.keccak256(plainMsg);
+        return new Keccak256(HashUtil.keccak256(plainMsg));
     }
 
     public byte[] getNonce() {
@@ -392,7 +392,7 @@ public class Transaction {
     }
 
     public void sign(byte[] privKeyBytes) throws MissingPrivateKeyException {
-        byte[] rawHash = this.getRawHash();
+        byte[] rawHash = this.getRawHash().getBytes();
         ECKey key = ECKey.fromPrivate(privKeyBytes).decompress();
         this.signature = key.sign(rawHash);
         this.rlpEncoded = null;
@@ -420,7 +420,7 @@ public class Transaction {
      */
 
     public ECKey getKey() {
-        byte[] rawHash = getRawHash();
+        byte[] rawHash = getRawHash().getBytes();
         //We clear the 4th bit, the compress bit, in case a signature is using compress in true
         return ECKey.recoverFromSignature((signature.v - 27) & ~4, signature, rawHash, true);
     }
@@ -431,7 +431,7 @@ public class Transaction {
         }
 
         try {
-            ECKey key = ECKey.signatureToKey(getRawHash(), getSignature().toBase64());
+            ECKey key = ECKey.signatureToKey(getRawHash().getBytes(), getSignature().toBase64());
             sender = new RskAddress(key.getAddress());
         } catch (SignatureException e) {
             logger.error(e.getMessage(), e);

@@ -224,7 +224,7 @@ public class TransactionTest {
         byte chainId = 1;
         Transaction tx = new Transaction(nonce, gasPrice, gas, to, value, data, chainId);
         byte[] encoded = tx.getEncodedRaw();
-        byte[] hash = tx.getRawHash();
+        byte[] hash = tx.getRawHash().getBytes();
         String strenc = Hex.toHexString(encoded);
         Assert.assertEquals("ec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080", strenc);
         String strhash = Hex.toHexString(hash);
