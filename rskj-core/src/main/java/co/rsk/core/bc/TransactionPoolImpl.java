@@ -53,7 +53,6 @@ public class TransactionPoolImpl implements TransactionPool {
     private static final byte[] emptyUncleHashList = HashUtil.keccak256(RLP.encodeList(new byte[0]));
 
     private final Map<Keccak256, Transaction> pendingTransactions = new HashMap<>();
-    private final Map<Keccak256, Transaction> wireTransactions = new HashMap<>();
     private final Map<Keccak256, Long> transactionBlocks = new HashMap<>();
     private final Map<Keccak256, Long> transactionTimes = new HashMap<>();
 
@@ -298,7 +297,6 @@ public class TransactionPoolImpl implements TransactionPool {
     private void removeTransactionList(List<Keccak256> toremove) {
         for (Keccak256 key : toremove) {
             pendingTransactions.remove(key);
-            wireTransactions.remove(key);
             transactionBlocks.remove(key);
             transactionTimes.remove(key);
         }
@@ -317,7 +315,6 @@ public class TransactionPoolImpl implements TransactionPool {
         removeObsoleteTransactions(this.getCurrentBestBlockNumber(), this.outdatedThreshold, this.outdatedTimeout);
         List<Transaction> ret = new ArrayList<>();
         ret.addAll(pendingTransactions.values());
-        ret.addAll(wireTransactions.values());
         return ret;
     }
 
