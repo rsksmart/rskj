@@ -383,6 +383,7 @@ public class TransactionPoolImpl implements TransactionPool {
         removeObsoleteTransactions(this.getCurrentBestBlockNumber(), this.outdatedThreshold, this.outdatedTimeout);
         List<Transaction> ret = new ArrayList<>();
         ret.addAll(queuedTransactions.getTransactions());
+
         return ret;
     }
 
