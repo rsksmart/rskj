@@ -21,6 +21,7 @@ package co.rsk.core;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
@@ -435,8 +436,8 @@ public class BlockTest {
     @Test
     public void checkTxTrieShouldBeEqualForHeaderAndBody() {
         Block block = new BlockGenerator().createBlock(10, 5);
-        String trieHash = Hex.toHexString(block.getTxTrieRoot());
-        String trieListHash = Hex.toHexString(Block.getTxTrie(block.getTransactionsList()).getHash().getBytes());
+        Keccak256 trieHash = new Keccak256(block.getTxTrieRoot());
+        Keccak256 trieListHash = Block.getTxTrie(block.getTransactionsList()).getHash();
         Assert.assertEquals(trieHash, trieListHash);
     }
 }

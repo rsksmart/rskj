@@ -644,7 +644,7 @@ public class TrieImpl implements Trie {
         node = this.store.retrieve(localHash.getBytes());
 
         if (node == null) {
-            String strHash = Hex.toHexString(localHash.getBytes());
+            String strHash = localHash.toHexString();
             logger.error(ERROR_NON_EXISTENT_TRIE_LOGGER, strHash);
             panicProcessor.panic(PANIC_TOPIC, ERROR_NON_EXISTENT_TRIE + " " + strHash);
             throw new TrieSerializationException(ERROR_NON_EXISTENT_TRIE + " " + strHash, null);
@@ -1187,7 +1187,7 @@ public class TrieImpl implements Trie {
         Trie newTrie = this.store.retrieve(hash.getBytes());
 
         if (newTrie == null) {
-            String strHash = Hex.toHexString(hash.getBytes());
+            String strHash = hash.toHexString();
             logger.error(ERROR_NON_EXISTENT_TRIE_LOGGER, strHash);
             panicProcessor.panic(PANIC_TOPIC, ERROR_CREATING_TRIE + " " + strHash);
             throw new TrieSerializationException(ERROR_CREATING_TRIE + " " + strHash, null);

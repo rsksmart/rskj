@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.Utils;
 import com.google.common.primitives.Ints;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
+import org.spongycastle.util.encoders.Hex;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -48,6 +49,10 @@ public class Keccak256 implements Serializable, Comparable<Keccak256> {
 
     public String toJsonString() {
         return TypeConverter.toJsonHex(this.bytes);
+    }
+
+    public String toHexString() {
+        return Hex.toHexString(bytes);
     }
 
     @Override
