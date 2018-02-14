@@ -143,7 +143,68 @@ public class TransactionPoolImplTest {
 
         Assert.assertNotNull(queuedTransactions);
         Assert.assertFalse(queuedTransactions.isEmpty());
+        Assert.assertEquals(1, queuedTransactions.size());
         Assert.assertTrue(queuedTransactions.contains(tx));
+    }
+
+    @Test
+    public void addAndGetTwoQueuedTransaction() {
+        TransactionPoolImpl transactionPool = createSampleNewTransactionPool(createBlockchain());
+        Transaction tx1 = createSampleTransaction(1);
+        Transaction tx2 = createSampleTransaction(2);
+
+        transactionPool.addTransaction(tx1);
+        transactionPool.addTransaction(tx2);
+
+        List<Transaction> pendingTransactions = transactionPool.getPendingTransactions();
+
+        Assert.assertNotNull(pendingTransactions);
+        Assert.assertTrue(pendingTransactions.isEmpty());
+
+        List<Transaction> queuedTransactions = transactionPool.getQueuedTransactions();
+
+        Assert.assertNotNull(queuedTransactions);
+        Assert.assertFalse(queuedTransactions.isEmpty());
+        Assert.assertEquals(2, queuedTransactions.size());
+        Assert.assertTrue(queuedTransactions.contains(tx1));
+        Assert.assertTrue(queuedTransactions.contains(tx2));
+    }
+
+    @Test
+    public void addAndGetTwoQueuedTransactionAsPendingOnes() {
+        TransactionPoolImpl transactionPool = createSampleNewTransactionPool(createBlockchain());
+        Transaction tx1 = createSampleTransaction(1);
+        Transaction tx2 = createSampleTransaction(2);
+        Transaction tx0 = createSampleTransaction(0);
+
+        Assert.assertFalse(transactionPool.addTransaction(tx1));
+        Assert.assertFalse(transactionPool.addTransaction(tx2));
+
+        List<Transaction> transactionsToProcess = new ArrayList<>();
+        transactionsToProcess.add(tx0);
+
+        List<Transaction> processedTransactions = transactionPool.addTransactions(transactionsToProcess);
+
+        Assert.assertNotNull(processedTransactions);
+        Assert.assertFalse(processedTransactions.isEmpty());
+        Assert.assertEquals(3, processedTransactions.size());
+        Assert.assertTrue(processedTransactions.contains(tx0));
+        Assert.assertTrue(processedTransactions.contains(tx1));
+        Assert.assertTrue(processedTransactions.contains(tx2));
+
+        List<Transaction> pendingTransactions = transactionPool.getPendingTransactions();
+
+        Assert.assertNotNull(pendingTransactions);
+        Assert.assertFalse(pendingTransactions.isEmpty());
+        Assert.assertEquals(3, pendingTransactions.size());
+        Assert.assertTrue(pendingTransactions.contains(tx0));
+        Assert.assertTrue(pendingTransactions.contains(tx1));
+        Assert.assertTrue(pendingTransactions.contains(tx2));
+
+        List<Transaction> queuedTransactions = transactionPool.getQueuedTransactions();
+
+        Assert.assertNotNull(queuedTransactions);
+        Assert.assertTrue(queuedTransactions.isEmpty());
     }
 
     @Test

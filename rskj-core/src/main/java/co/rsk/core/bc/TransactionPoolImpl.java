@@ -163,10 +163,34 @@ public class TransactionPoolImpl implements TransactionPool {
         for (Transaction tx : txs) {
             if (this.addTransaction(tx)) {
                 added.add(tx);
+
+                Optional<Transaction> succesor = this.getQueuedSuccesor(tx);
+
+                while (succesor.isPresent()) {
+                    Transaction found = succesor.get();
+                    this.queuedTransactions.remove(new ByteArrayWrapper(found.getHash()));
+
+                    if (!this.addTransaction(found)) {
+                        break;
+                    }
+
+                    added.add(found);
+
+                    succesor = this.getQueuedSuccesor(found);
+                }
             }
         }
 
         return added;
+    }
+
+    private Optional<Transaction> getQueuedSuccesor(Transaction tx) {
+        BigInteger next = tx.getNonceAsInteger().add(BigInteger.ONE);
+
+        return this.queuedTransactions.values()
+                .stream()
+                .filter(t -> t.getSender().equals(tx.getSender()) && t.getNonceAsInteger().equals(next))
+                .findFirst();
     }
 
     @Override
@@ -194,7 +218,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
         BigInteger txnonce = tx.getNonceAsInteger();
 
-        if (!txnonce.equals(pendingStateRepository.getNonce(tx.getSender()))) {
+        if (!txnonce.equals(this.getNextNonceByAccount(tx.getSender()))) {
             queuedTransactions.put(hash, tx);
             return false;
         }
@@ -211,6 +235,24 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         return true;
+    }
+
+    private BigInteger getNextNonceByAccount(RskAddress account) {
+        BigInteger nextNonce = this.repository.getNonce(account);
+
+        for (Transaction tx : this.pendingTransactions.values()) {
+            if (!tx.getSender().equals(account)) {
+                continue;
+            }
+
+            BigInteger txNonce = tx.getNonceAsInteger();
+
+            if (txNonce.compareTo(nextNonce) >= 0) {
+                nextNonce = txNonce.add(BigInteger.ONE);
+            }
+        }
+
+        return nextNonce;
     }
 
     @Override
