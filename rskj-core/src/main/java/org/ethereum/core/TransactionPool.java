@@ -60,7 +60,7 @@ public interface TransactionPool extends org.ethereum.facade.TransactionPool {
      */
     void processBest(Block block);
 
-    void clearPendingState(List<Transaction> txs);
+    void removeTransactions(List<Transaction> txs);
 
     // Returns a list of pending txs
     List<Transaction> getPendingTransactions();

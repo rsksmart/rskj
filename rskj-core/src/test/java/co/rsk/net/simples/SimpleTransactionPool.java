@@ -62,7 +62,7 @@ public class SimpleTransactionPool implements TransactionPool {
     }
 
     @Override
-    public void clearPendingState(List<Transaction> txs) {
+    public void removeTransactions(List<Transaction> txs) {
 
     }
 

@@ -148,7 +148,7 @@ public class BlockToMineBuilder {
     }
 
     private void removePendingTransactions(List<Transaction> transactions) {
-        transactionPool.clearPendingState(transactions);
+        transactionPool.removeTransactions(transactions);
     }
 
     private Block createBlock(
