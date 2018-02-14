@@ -343,6 +343,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private void removeTransactionList(List<Keccak256> toremove) {
         for (Keccak256 key : toremove) {
             pendingTransactions.remove(key);
+            queuedTransactions.remove(key);
             transactionBlocks.remove(key);
             transactionTimes.remove(key);
         }
