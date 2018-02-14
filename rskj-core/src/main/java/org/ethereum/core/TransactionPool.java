@@ -30,12 +30,12 @@ public interface TransactionPool extends org.ethereum.facade.TransactionPool {
     void start(Block initialBestBlock);
 
     /**
-     * Adds transaction to the list of pending state txs  <br>
+     * Adds transaction to the list of pending or queued state txs  <br>
      * Triggers an update of pending state
      *
      * @param tx transaction
      */
-    boolean addPendingTransaction(Transaction tx);
+    boolean addTransaction(Transaction tx);
 
     /**
      * Adds a list of transactions to the list of pending state txs  <br>
@@ -45,7 +45,7 @@ public interface TransactionPool extends org.ethereum.facade.TransactionPool {
      *
      * @return the list of added transactions
      */
-    List<Transaction> addPendingTransactions(List<Transaction> txs);
+    List<Transaction> addTransactions(List<Transaction> txs);
 
     /**
      * It should be called on each block imported as <b>BEST</b> <br>
@@ -63,5 +63,8 @@ public interface TransactionPool extends org.ethereum.facade.TransactionPool {
     void clearPendingState(List<Transaction> txs);
 
     // Returns a list of pending txs
-    List<Transaction> getAllPendingTransactions();
+    List<Transaction> getPendingTransactions();
+
+    // Returns a list of queued txs
+    List<Transaction> getQueuedTransactions();
 }

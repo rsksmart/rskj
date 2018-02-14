@@ -39,7 +39,7 @@ public class SimpleTransactionPool implements TransactionPool {
     }
 
     @Override
-    public List<Transaction> addPendingTransactions(List<Transaction> transactions) {
+    public List<Transaction> addTransactions(List<Transaction> transactions) {
         List<Transaction> newTxs = new ArrayList<>();
 
         for (Transaction tx : transactions)
@@ -52,7 +52,7 @@ public class SimpleTransactionPool implements TransactionPool {
     }
 
     @Override
-    public boolean addPendingTransaction(Transaction tx) {
+    public boolean addTransaction(Transaction tx) {
         return true;
     }
 
@@ -67,17 +67,17 @@ public class SimpleTransactionPool implements TransactionPool {
     }
 
     @Override
-    public List<Transaction> getAllPendingTransactions() {
+    public List<Transaction> getPendingTransactions() {
+        return null;
+    }
+
+    @Override
+    public List<Transaction> getQueuedTransactions() {
         return null;
     }
 
     @Override
     public Repository getRepository() {
-        return null;
-    }
-
-    @Override
-    public List<Transaction> getPendingTransactions() {
         return null;
     }
 }

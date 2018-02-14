@@ -1051,7 +1051,7 @@ public class Web3Impl implements Web3 {
 
     private List<Transaction> getTransactionsByJsonBlockId(String id) {
         if ("pending".equalsIgnoreCase(id)) {
-            return transactionPool.getAllPendingTransactions();
+            return transactionPool.getPendingTransactions();
         } else {
             Block block = getByJsonBlockId(id);
             return block != null ? block.getTransactionsList() : null;

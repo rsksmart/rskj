@@ -56,7 +56,7 @@ public class SnapshotManager {
         // To clean pending state, first process the fork
         blockchain.getTransactionPool().processBest(block);
         // then, clear any reverted transaction
-        transactionPool.clearPendingState(transactionPool.getAllPendingTransactions());
+        transactionPool.clearPendingState(transactionPool.getPendingTransactions());
 
         // Remove removed blocks from store
         for (long nb = blockchain.getBestBlock().getNumber() + 1; nb <= bestNumber; nb++) {
@@ -95,7 +95,7 @@ public class SnapshotManager {
         // To clean pending state, first process the fork
         blockchain.getTransactionPool().processBest(block);
         // then, clear any reverted transaction
-        transactionPool.clearPendingState(transactionPool.getAllPendingTransactions());
+        transactionPool.clearPendingState(transactionPool.getPendingTransactions());
 
         // Remove removed blocks from store
         for (long nb = blockchain.getBestBlock().getNumber() + 1; nb <= currentBestBlockNumber; nb++) {

@@ -431,7 +431,7 @@ public class Web3ImplTest {
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
-        transactionPool.addPendingTransaction(tx);
+        transactionPool.addTransaction(tx);
 
         String hashString = tx.getHash().toHexString();
 

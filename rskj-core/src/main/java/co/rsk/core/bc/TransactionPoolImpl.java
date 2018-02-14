@@ -53,6 +53,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private static final byte[] emptyUncleHashList = HashUtil.keccak256(RLP.encodeList(new byte[0]));
 
     private final Map<Keccak256, Transaction> pendingTransactions = new HashMap<>();
+    private final Map<Keccak256, Transaction> queuedTransactions = new HashMap<>();
     private final Map<Keccak256, Long> transactionBlocks = new HashMap<>();
     private final Map<Keccak256, Long> transactionTimes = new HashMap<>();
 
@@ -156,20 +157,11 @@ public class TransactionPoolImpl implements TransactionPool {
     public synchronized Repository getRepository() { return this.pendingStateRepository; }
 
     @Override
-    public synchronized List<Transaction> getPendingTransactions() {
-        List<Transaction> txs = new ArrayList<>();
-
-        txs.addAll(pendingTransactions.values());
-
-        return txs;
-    }
-
-    @Override
-    public synchronized List<Transaction> addPendingTransactions(final List<Transaction> txs) {
+    public synchronized List<Transaction> addTransactions(final List<Transaction> txs) {
         List<Transaction> added = new ArrayList<>();
 
         for (Transaction tx : txs) {
-            if (this.addPendingTransaction(tx)) {
+            if (this.addTransaction(tx)) {
                 added.add(tx);
             }
         }
@@ -178,24 +170,36 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     @Override
-    public synchronized boolean addPendingTransaction(final Transaction tx) {
+    public synchronized boolean addTransaction(final Transaction tx) {
         if (!shouldAcceptTx(tx)) {
             return false;
         }
 
         Keccak256 hash = tx.getHash();
-        Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
+        logger.trace("add transaction {} {}", toBI(tx.getNonce()), Hex.toHexString(tx.getHash()));
 
-        logger.trace("add pending transaction {} {}", toBI(tx.getNonce()), hash);
+        Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
 
         if (pendingTransactions.containsKey(hash)) {
             return false;
         }
 
-        pendingTransactions.put(hash, tx);
+        if (queuedTransactions.containsKey(hash)) {
+            return false;
+        }
+
         transactionBlocks.put(hash, bnumber);
         final long timestampSeconds = this.getCurrentTimeInSeconds();
         transactionTimes.put(hash, timestampSeconds);
+
+        BigInteger txnonce = tx.getNonceAsInteger();
+
+        if (!txnonce.equals(pendingStateRepository.getNonce(tx.getSender()))) {
+            queuedTransactions.put(hash, tx);
+            return false;
+        }
+
+        pendingTransactions.put(hash, tx);
 
         executeTransaction(tx);
 
@@ -248,7 +252,7 @@ public class TransactionPoolImpl implements TransactionPool {
         List<Transaction> txs = block.getTransactionsList();
 
         for (Transaction tx : txs) {
-            this.addPendingTransaction(tx);
+            this.addTransaction(tx);
         }
     }
 
@@ -311,10 +315,18 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     @Override
-    public synchronized List<Transaction> getAllPendingTransactions() {
+    public synchronized List<Transaction> getPendingTransactions() {
         removeObsoleteTransactions(this.getCurrentBestBlockNumber(), this.outdatedThreshold, this.outdatedTimeout);
         List<Transaction> ret = new ArrayList<>();
         ret.addAll(pendingTransactions.values());
+        return ret;
+    }
+
+    @Override
+    public synchronized List<Transaction> getQueuedTransactions() {
+        removeObsoleteTransactions(this.getCurrentBestBlockNumber(), this.outdatedThreshold, this.outdatedTimeout);
+        List<Transaction> ret = new ArrayList<>();
+        ret.addAll(queuedTransactions.values());
         return ret;
     }
 

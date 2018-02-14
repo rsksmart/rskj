@@ -49,9 +49,9 @@ public class TransactionPoolImplTest {
 
     @Test
     public void usingRepository() {
-        TransactionPoolImpl pendingState = createSampleNewPendingState(createBlockchain());
+        TransactionPoolImpl transactionPool = createSampleNewTransactionPool(createBlockchain());
 
-        Repository repository = pendingState.getRepository();
+        Repository repository = transactionPool.getRepository();
 
         Assert.assertNotNull(repository);
         Assert.assertTrue(repository instanceof RepositoryTrack);
@@ -59,16 +59,16 @@ public class TransactionPoolImplTest {
 
     @Test
     public void usingInit() {
-        TransactionPoolImpl pendingState = createSampleNewPendingState(createBlockchain());
+        TransactionPoolImpl transactionPool = createSampleNewTransactionPool(createBlockchain());
 
-        Assert.assertFalse(pendingState.hasCleanerFuture());
-        Assert.assertNotEquals(0, pendingState.getOutdatedThreshold());
-        Assert.assertNotEquals(0, pendingState.getOutdatedTimeout());
+        Assert.assertFalse(transactionPool.hasCleanerFuture());
+        Assert.assertNotEquals(0, transactionPool.getOutdatedThreshold());
+        Assert.assertNotEquals(0, transactionPool.getOutdatedTimeout());
     }
 
     @Test
     public void usingCleanUp() {
-        TransactionPoolImpl pendingState = createSampleNewPendingState(createBlockchain());
+        TransactionPoolImpl pendingState = createSampleNewTransactionPool(createBlockchain());
 
         pendingState.cleanUp();
 
@@ -78,7 +78,7 @@ public class TransactionPoolImplTest {
     @Test
     public void usingStart() {
         BlockChainImpl blockchain = createBlockchain();
-        TransactionPoolImpl pendingState = createSampleNewPendingState(blockchain);
+        TransactionPoolImpl pendingState = createSampleNewTransactionPool(blockchain);
 
         pendingState.start(blockchain.getBestBlock());
 
@@ -106,7 +106,7 @@ public class TransactionPoolImplTest {
 
     @Test
     public void getEmptyPendingTransactionList() {
-        TransactionPoolImpl pendingState = createSampleNewPendingState(createBlockchain());
+        TransactionPoolImpl pendingState = createSampleNewTransactionPool(createBlockchain());
 
         List<Transaction> transactions = pendingState.getPendingTransactions();
 
@@ -116,11 +116,11 @@ public class TransactionPoolImplTest {
 
     @Test
     public void addAndGetPendingTransaction() {
-        TransactionPoolImpl pendingState = createSampleNewPendingState(createBlockchain());
+        TransactionPoolImpl transactionPool = createSampleNewTransactionPool(createBlockchain());
         Transaction tx = createSampleTransaction();
 
-        pendingState.addPendingTransaction(tx);
-        List<Transaction> transactions = pendingState.getPendingTransactions();
+        transactionPool.addTransaction(tx);
+        List<Transaction> transactions = transactionPool.getPendingTransactions();
 
         Assert.assertNotNull(transactions);
         Assert.assertFalse(transactions.isEmpty());
@@ -128,17 +128,36 @@ public class TransactionPoolImplTest {
     }
 
     @Test
+    public void addAndGetQueuedTransaction() {
+        TransactionPoolImpl transactionPool = createSampleNewTransactionPool(createBlockchain());
+        Transaction tx = createSampleTransaction(10);
+
+        transactionPool.addTransaction(tx);
+
+        List<Transaction> pendingTransactions = transactionPool.getPendingTransactions();
+
+        Assert.assertNotNull(pendingTransactions);
+        Assert.assertTrue(pendingTransactions.isEmpty());
+
+        List<Transaction> queuedTransactions = transactionPool.getQueuedTransactions();
+
+        Assert.assertNotNull(queuedTransactions);
+        Assert.assertFalse(queuedTransactions.isEmpty());
+        Assert.assertTrue(queuedTransactions.contains(tx));
+    }
+
+    @Test
     public void addAndExecutePendingTransaction() {
         BlockChainImpl blockchain = createBlockchain();
         Coin balance = Coin.valueOf(1000000);
-        TransactionPoolImpl pendingState = createSampleNewPendingStateWithAccounts(2, balance, blockchain);
-        pendingState.processBest(blockchain.getBestBlock());
+        TransactionPoolImpl transactionPool = createSampleNewPendingStateWithAccounts(2, balance, blockchain);
+        transactionPool.processBest(blockchain.getBestBlock());
         Transaction tx = createSampleTransaction(1, 2, 1000, 0);
         Account receiver = createAccount(2);
 
-        pendingState.addPendingTransaction(tx);
+        transactionPool.addTransaction(tx);
 
-        Repository repository = pendingState.getRepository();
+        Repository repository = transactionPool.getRepository();
         Assert.assertEquals(BigInteger.valueOf(1001000), repository.getBalance(receiver.getAddress()).asBigInteger());
     }
 
@@ -152,8 +171,8 @@ public class TransactionPoolImplTest {
         Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
         Account receiver = createAccount(2);
 
-        pendingState.addPendingTransaction(tx1);
-        pendingState.addPendingTransaction(tx2);
+        pendingState.addTransaction(tx1);
+        pendingState.addTransaction(tx2);
 
         Repository repository = pendingState.getRepository();
         Assert.assertEquals(BigInteger.valueOf(1004000), repository.getBalance(receiver.getAddress()).asBigInteger());
@@ -169,7 +188,7 @@ public class TransactionPoolImplTest {
         tx.setGasLimit(BigInteger.valueOf(3000001).toByteArray());
         Account receiver = createAccount(2);
 
-        pendingState.addPendingTransaction(tx);
+        pendingState.addTransaction(tx);
 
         Repository repository = pendingState.getRepository();
         Assert.assertEquals(BigInteger.valueOf(1000000), repository.getBalance(receiver.getAddress()).asBigInteger());
@@ -184,8 +203,8 @@ public class TransactionPoolImplTest {
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
         Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
 
-        pendingState.addPendingTransaction(tx1);
-        pendingState.addPendingTransaction(tx2);
+        pendingState.addTransaction(tx1);
+        pendingState.addTransaction(tx2);
 
         Assert.assertEquals(10, pendingState.getOutdatedThreshold());
 
@@ -220,8 +239,8 @@ public class TransactionPoolImplTest {
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
         Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
 
-        pendingState.addPendingTransaction(tx1);
-        pendingState.addPendingTransaction(tx2);
+        pendingState.addTransaction(tx1);
+        pendingState.addTransaction(tx2);
 
         Assert.assertEquals(10, pendingState.getOutdatedThreshold());
 
@@ -253,9 +272,9 @@ public class TransactionPoolImplTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx1);
         txs.add(tx2);
-        pendingState.addPendingTransactions(txs);
+        pendingState.addTransactions(txs);
 
-        List<Transaction> alltxs = pendingState.getAllPendingTransactions();
+        List<Transaction> alltxs = pendingState.getPendingTransactions();
 
         Assert.assertNotNull(alltxs);
         Assert.assertFalse(alltxs.isEmpty());
@@ -281,7 +300,7 @@ public class TransactionPoolImplTest {
         txs.add(tx3);
         txs.add(tx4);
 
-        pendingState.addPendingTransactions(txs);
+        pendingState.addTransactions(txs);
 
         List<Transaction> btxs = new ArrayList<>();
         btxs.add(tx1);
@@ -293,7 +312,7 @@ public class TransactionPoolImplTest {
         pendingState.getBlockStore().saveBlock(genesis, new BlockDifficulty(BigInteger.ONE), true);
         pendingState.processBest(block);
 
-        List<Transaction> alltxs = pendingState.getAllPendingTransactions();
+        List<Transaction> alltxs = pendingState.getPendingTransactions();
 
         Assert.assertNotNull(alltxs);
         Assert.assertFalse(alltxs.isEmpty());
@@ -317,8 +336,8 @@ public class TransactionPoolImplTest {
         Transaction tx3 = createSampleTransaction(2, 3, 1000, 0);
         Transaction tx4 = createSampleTransaction(2, 3, 3000, 1);
 
-        pendingState.addPendingTransaction(tx1);
-        pendingState.addPendingTransaction(tx2);
+        pendingState.addTransaction(tx1);
+        pendingState.addTransaction(tx2);
 
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx3);
@@ -328,7 +347,7 @@ public class TransactionPoolImplTest {
 
         pendingState.retractBlock(block);
 
-        List<Transaction> alltxs = pendingState.getAllPendingTransactions();
+        List<Transaction> alltxs = pendingState.getPendingTransactions();
 
         Assert.assertNotNull(alltxs);
         Assert.assertFalse(alltxs.isEmpty());
@@ -338,7 +357,7 @@ public class TransactionPoolImplTest {
         Assert.assertTrue(alltxs.contains(tx3));
         Assert.assertTrue(alltxs.contains(tx4));
 
-        List<Transaction> ptxs = pendingState.getAllPendingTransactions();
+        List<Transaction> ptxs = pendingState.getPendingTransactions();
 
         Assert.assertNotNull(ptxs);
         Assert.assertFalse(ptxs.isEmpty());
@@ -359,8 +378,8 @@ public class TransactionPoolImplTest {
         Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
         Account receiver = createAccount(2);
 
-        pendingState.addPendingTransaction(tx1);
-        pendingState.addPendingTransaction(tx2);
+        pendingState.addTransaction(tx1);
+        pendingState.addTransaction(tx2);
 
         pendingState.updateState();
 
@@ -370,11 +389,11 @@ public class TransactionPoolImplTest {
 
     @Test
     public void addTwiceAndGetPendingTransaction() {
-        TransactionPoolImpl pendingState = createSampleNewPendingState(createBlockchain());
+        TransactionPoolImpl pendingState = createSampleNewTransactionPool(createBlockchain());
         Transaction tx = createSampleTransaction();
 
-        pendingState.addPendingTransaction(tx);
-        pendingState.addPendingTransaction(tx);
+        pendingState.addTransaction(tx);
+        pendingState.addTransaction(tx);
         List<Transaction> transactions = pendingState.getPendingTransactions();
 
         Assert.assertNotNull(transactions);
@@ -385,9 +404,9 @@ public class TransactionPoolImplTest {
 
     @Test
     public void getEmptyTransactionList() {
-        TransactionPoolImpl pendingState = createSampleNewPendingState(createBlockchain());
+        TransactionPoolImpl pendingState = createSampleNewTransactionPool(createBlockchain());
 
-        List<Transaction> transactions = pendingState.getAllPendingTransactions();
+        List<Transaction> transactions = pendingState.getPendingTransactions();
 
         Assert.assertNotNull(transactions);
         Assert.assertTrue(transactions.isEmpty());
@@ -403,17 +422,17 @@ public class TransactionPoolImplTest {
         String code = "43600055";
         Transaction tx = createSampleTransactionWithData(1, 0, code);
 
-        pendingState.addPendingTransaction(tx);
+        pendingState.addTransaction(tx);
 
         Assert.assertNotNull(tx.getContractAddress().getBytes());
         // Stored value at 0 position should be 1, one more than the blockchain best block
         Assert.assertEquals(DataWord.ONE, pendingState.getRepository().getStorageValue(tx.getContractAddress(), DataWord.ZERO));
     }
 
-    private static TransactionPoolImpl createSampleNewPendingState(BlockChainImpl blockChain) {
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), null, new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
-        transactionPool.processBest(blockChain.getBestBlock());
-        return transactionPool;
+    private static TransactionPoolImpl createSampleNewTransactionPool(BlockChainImpl blockChain) {
+        TransactionPoolImpl pendingState = new TransactionPoolImpl(config, blockChain.getRepository(), blockChain.getBlockStore(), blockChain.getReceiptStore(), new ProgramInvokeFactoryImpl(), new BlockExecutorTest.SimpleEthereumListener(), 10, 100);
+        pendingState.processBest(blockChain.getBestBlock());
+        return pendingState;
     }
 
     private static TransactionPoolImpl createSampleNewPendingStateWithAccounts(int naccounts, Coin balance, BlockChainImpl blockChain) {
@@ -445,10 +464,15 @@ public class TransactionPoolImplTest {
     }
 
     private static Transaction createSampleTransaction() {
+        return createSampleTransaction(0);
+    }
+
+    private static Transaction createSampleTransaction(long nonce) {
         Account sender = new AccountBuilder().name("sender").build();
         Account receiver = new AccountBuilder().name("receiver").build();
 
         Transaction tx = new TransactionBuilder()
+                .nonce(nonce)
                 .sender(sender)
                 .receiver(receiver)
                 .value(BigInteger.TEN)

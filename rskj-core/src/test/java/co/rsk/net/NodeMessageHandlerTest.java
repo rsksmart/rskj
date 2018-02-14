@@ -770,7 +770,7 @@ public class NodeMessageHandlerTest {
         final SimpleChannelManager channelManager = new SimpleChannelManager();
         TxHandler txmock = mock(TxHandler.class);
         TransactionPool state = mock(TransactionPool.class);
-        Mockito.when(state.addPendingTransactions(any())).thenAnswer(i -> i.getArguments()[0]);
+        Mockito.when(state.addTransactions(any())).thenAnswer(i -> i.getArguments()[0]);
         BlockProcessor blockProcessor = mock(BlockProcessor.class);
         Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
 

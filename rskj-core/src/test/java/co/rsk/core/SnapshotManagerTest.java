@@ -169,9 +169,9 @@ public class SnapshotManagerTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(createSampleTransaction());
         txs.add(createSampleTransaction());
-        transactionPool.addPendingTransactions(txs);
-        Assert.assertFalse(transactionPool.getAllPendingTransactions().isEmpty());
-        Assert.assertFalse(transactionPool.getAllPendingTransactions().isEmpty());
+        transactionPool.addTransactions(txs);
+        Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
+        Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
 
         Assert.assertEquals(30, blockchain.getStatus().getBestBlockNumber());
 
@@ -183,7 +183,7 @@ public class SnapshotManagerTest {
         Assert.assertEquals(status.getTotalDifficulty(), newStatus.getTotalDifficulty());
         Assert.assertEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
 
-        Assert.assertTrue(blockchain.getTransactionPool().getAllPendingTransactions().isEmpty());
+        Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
 
         Assert.assertEquals(1, manager.getSnapshots().size());
 
@@ -209,9 +209,9 @@ public class SnapshotManagerTest {
         List<Transaction> txs = new ArrayList<>();
         txs.add(createSampleTransaction());
         txs.add(createSampleTransaction());
-        transactionPool.addPendingTransactions(txs);
-        Assert.assertFalse(transactionPool.getAllPendingTransactions().isEmpty());
-        Assert.assertFalse(transactionPool.getAllPendingTransactions().isEmpty());
+        transactionPool.addTransactions(txs);
+        Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
+        Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
 
         SnapshotManager manager = new SnapshotManager();
 
@@ -228,7 +228,7 @@ public class SnapshotManagerTest {
         Assert.assertEquals(genesisDifficulty, newStatus.getTotalDifficulty());
         Assert.assertEquals(genesis.getHash(), newStatus.getBestBlock().getHash());
 
-        Assert.assertTrue(blockchain.getTransactionPool().getAllPendingTransactions().isEmpty());
+        Assert.assertTrue(blockchain.getTransactionPool().getPendingTransactions().isEmpty());
 
         Assert.assertTrue(manager.getSnapshots().isEmpty());
 

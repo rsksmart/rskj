@@ -143,7 +143,7 @@ public class EthereumImpl implements Ethereum {
         final Future<List<Transaction>> listFuture =
                 TransactionExecutor.getInstance().submitTransaction(transactionTask);
 
-        transactionPool.addPendingTransaction(transaction);
+        transactionPool.addTransaction(transaction);
 
         return new FutureAdapter<Transaction, List<Transaction>>(listFuture) {
             @Override

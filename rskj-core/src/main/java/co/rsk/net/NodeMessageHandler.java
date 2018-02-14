@@ -424,7 +424,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Metrics.processTxsMessage("txsValidated", acceptedTxs, sender.getPeerNodeID());
 
         // TODO(mmarquez): Add all this logic to the TxHandler
-        acceptedTxs = transactionPool.addPendingTransactions(acceptedTxs);
+        acceptedTxs = transactionPool.addTransactions(acceptedTxs);
 
         Metrics.processTxsMessage("validTxsAddedToPendingState", acceptedTxs, sender.getPeerNodeID());
         /* Relay all transactions to peers that don't have them */
