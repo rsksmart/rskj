@@ -18,21 +18,19 @@
 
 package co.rsk.net.discovery.table;
 
+import co.rsk.net.NodeID;
 import org.ethereum.net.rlpx.Node;
 
-import java.io.Serializable;
 import java.util.Comparator;
 
 /**
  * Created by mario on 22/02/17.
  */
-public class NodeDistanceComparator implements Comparator<Node>, Serializable {
-    private static final long serialVersionUID = -6306937255806222133L;
-
-    private byte[] targetNodeId;
+public class NodeDistanceComparator implements Comparator<Node> {
+    private NodeID targetNodeId;
     private transient DistanceCalculator calculator;
 
-    public NodeDistanceComparator(byte[] targetNodeId, DistanceCalculator distanceCalculator) {
+    public NodeDistanceComparator(NodeID targetNodeId, DistanceCalculator distanceCalculator) {
         this.targetNodeId = targetNodeId;
         this.calculator = distanceCalculator;
     }

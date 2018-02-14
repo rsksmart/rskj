@@ -282,8 +282,8 @@ public class PeerExplorerTest {
 
         List<Node> foundNodes = peerExplorer.getNodes();
         Assert.assertEquals(2, foundNodes.size());
-        Assert.assertEquals(NODE_ID_3, Hex.toHexString(foundNodes.get(0).getId()));
-        Assert.assertEquals(NODE_ID_1, Hex.toHexString(foundNodes.get(1).getId()));
+        Assert.assertEquals(NODE_ID_3, Hex.toHexString(foundNodes.get(0).getId().getID()));
+        Assert.assertEquals(NODE_ID_1, Hex.toHexString(foundNodes.get(1).getId().getID()));
 
         String check = UUID.randomUUID().toString();
         FindNodePeerMessage findNodePeerMessage = FindNodePeerMessage.create(key1.getNodeId(), check, key1);

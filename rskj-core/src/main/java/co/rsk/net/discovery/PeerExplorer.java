@@ -18,6 +18,7 @@
 
 package co.rsk.net.discovery;
 
+import co.rsk.net.NodeID;
 import co.rsk.net.discovery.message.*;
 import co.rsk.net.discovery.table.NodeDistanceTable;
 import co.rsk.net.discovery.table.OperationResult;
@@ -26,7 +27,6 @@ import co.rsk.util.IpUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.rlpx.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +52,7 @@ public class PeerExplorer {
     private final Map<String, PeerDiscoveryRequest> pendingPingRequests = new ConcurrentHashMap<>();
     private final Map<String, PeerDiscoveryRequest> pendingFindNodeRequests = new ConcurrentHashMap<>();
 
-    private final Map<ByteArrayWrapper, Node> establishedConnections = new ConcurrentHashMap<>();
+    private final Map<NodeID, Node> establishedConnections = new ConcurrentHashMap<>();
 
     private UDPChannel udpChannel;
 
@@ -129,7 +129,7 @@ public class PeerExplorer {
     public void handlePingMessage(String ip, PingPeerMessage message) {
         this.sendPong(ip, message);
 
-        Node connectedNode = this.establishedConnections.get(new ByteArrayWrapper(message.getNodeId()));
+        Node connectedNode = this.establishedConnections.get(message.getNodeId());
 
         if (connectedNode == null) {
             this.sendPing(new InetSocketAddress(ip, message.getPort()), 1);
@@ -151,10 +151,11 @@ public class PeerExplorer {
     }
 
     public void handleFindNode(FindNodePeerMessage message) {
-        Node connectedNode = this.establishedConnections.get(new ByteArrayWrapper(message.getNodeId()));
+        NodeID nodeId = message.getNodeId();
+        Node connectedNode = this.establishedConnections.get(nodeId);
 
         if (connectedNode != null) {
-            List<Node> nodesToSend = this.distanceTable.getClosestNodes(message.getNodeId());
+            List<Node> nodesToSend = this.distanceTable.getClosestNodes(nodeId);
             logger.debug("About to send [{}] neighbors to ip[{}] port[{}] nodeId[{}]", nodesToSend.size(), connectedNode.getHost(), connectedNode.getPort(), connectedNode.getHexIdShort());
             this.sendNeighbors(connectedNode.getAddress(), nodesToSend, message.getMessageId());
             updateEntry(connectedNode);
@@ -162,7 +163,7 @@ public class PeerExplorer {
     }
 
     public void handleNeighborsMessage(NeighborsPeerMessage message) {
-        Node connectedNode = this.establishedConnections.get(new ByteArrayWrapper(message.getNodeId()));
+        Node connectedNode = this.establishedConnections.get(message.getNodeId());
 
         if (connectedNode != null) {
             logger.debug("Neighbors received from [{}]", connectedNode.getHexIdShort());
@@ -303,7 +304,7 @@ public class PeerExplorer {
                 Node node = req.getRelatedNode();
 
                 if (node != null) {
-                    this.establishedConnections.remove(new ByteArrayWrapper(node.getId()));
+                    this.establishedConnections.remove(node.getId());
                     this.distanceTable.removeNode(node);
                 }
             }
@@ -311,12 +312,12 @@ public class PeerExplorer {
     }
 
     private void addConnection(PongPeerMessage message, String ip, int port) {
-        Node senderNode = new Node(message.getNodeId(), ip, port);
+        Node senderNode = new Node(message.getNodeId().getID(), ip, port);
         if (!StringUtils.equals(senderNode.getHexId(), this.localNode.getHexId())) {
             OperationResult result = this.distanceTable.addNode(senderNode);
 
             if (result.isSuccess()) {
-                ByteArrayWrapper senderId = new ByteArrayWrapper(senderNode.getId());
+                NodeID senderId = senderNode.getId();
                 this.establishedConnections.put(senderId, senderNode);
                 logger.debug("New Peer found ip:[{}] port[{}]", ip, port);
             } else {

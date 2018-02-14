@@ -31,7 +31,6 @@ import java.nio.charset.Charset;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -62,7 +61,7 @@ public class NodeTest {
         Node node_1 = new Node(NODE_ID_1, NODE_HOST_1, NODE_PORT_1);
         Node node_2 = new Node(node_1.getRLP());
 
-        byte[] id_2 = node_2.getId();
+        byte[] id_2 = node_2.getId().getID();
         String host_2 = node_2.getHost();
         int port_2 = node_2.getPort();
 
