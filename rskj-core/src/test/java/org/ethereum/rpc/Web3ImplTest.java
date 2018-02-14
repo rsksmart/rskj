@@ -251,7 +251,7 @@ public class Web3ImplTest {
         RskSystemProperties mockProperties = Web3Mocks.getMockProperties();
         MinerClient minerClient = new SimpleMinerClient();
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(null, null);
+        TxPoolModule txPoolModule = new TxPoolModuleImpl();
         Web3 web3 = new Web3Impl(ethMock, blockchain, pendingState, blockStore, mockProperties, minerClient, null, personalModule, null, txPoolModule,
                 Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, null, null, null);
 
@@ -1253,7 +1253,7 @@ public class Web3ImplTest {
         PendingState pendingState = Web3Mocks.getMockPendingState();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
         EthModule ethModule = new EthModule(config, eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(eth, pendingState);
+        TxPoolModule txPoolModule = new TxPoolModuleImpl();
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(eth, blockchain, pendingState, config, minerClient, Web3Mocks.getMockMinerServer(), personalModule, ethModule, txPoolModule,
@@ -1280,7 +1280,7 @@ public class Web3ImplTest {
         wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, pendingState);
         EthModule ethModule = new EthModule(config, eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, pendingState));
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(eth, pendingState);
+        TxPoolModule txPoolModule = new TxPoolModuleImpl();
         MinerClient minerClient = new SimpleMinerClient();
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(eth, blockchain, pendingState, config, minerClient, Web3Mocks.getMockMinerServer(), personalModule, ethModule, txPoolModule,
@@ -1299,7 +1299,7 @@ public class Web3ImplTest {
         Ethereum eth = Mockito.mock(Ethereum.class);
         EthModule ethModule = new EthModule(config, eth, new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)), null);
         PersonalModule personalModule = new PersonalModuleWalletDisabled();
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(eth, null);
+        TxPoolModule txPoolModule = new TxPoolModuleImpl();
         Web3Impl web3 = new Web3RskImpl(eth, null, null, systemProperties, null, null, personalModule, ethModule, txPoolModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, null, null, null, null, null);
         String contract = "pragma solidity ^0.4.1; contract rsk { function multiply(uint a) returns(uint d) {   return a * 7;   } }";
 
@@ -1329,7 +1329,7 @@ public class Web3ImplTest {
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
         PendingState pendingState = Web3Mocks.getMockPendingState();
         EthModule ethModule = new EthModule(config, eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(eth, pendingState);
+        TxPoolModule txPoolModule = new TxPoolModuleImpl();
         Web3Impl web3 = new Web3RskImpl(eth, blockchain, pendingState, config, null, null, new PersonalModuleWalletDisabled(), ethModule, txPoolModule,
                 Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, null, null, null, null, null);
 

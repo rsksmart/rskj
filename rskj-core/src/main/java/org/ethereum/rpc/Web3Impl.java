@@ -1161,18 +1161,8 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String txpool_content() {
-        return txPoolModule.content();
-    }
-
-    @Override
-    public String txpool_inspect() {
-        return txPoolModule.inspect();
-    }
-
-    @Override
-    public String txpool_status() {
-        return txPoolModule.status();
+    public TxPoolModule getTxPoolModule() {
+        return txPoolModule;
     }
 
     @Override

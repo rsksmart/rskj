@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc;
 
+import co.rsk.rpc.Web3TxPoolModule;
 import co.rsk.scoring.PeerScoringInformation;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
@@ -26,7 +27,7 @@ import org.ethereum.rpc.dto.TransactionResultDTO;
 import java.util.Arrays;
 import java.util.Map;
 
-public interface Web3 {
+public interface Web3 extends Web3TxPoolModule {
     class SyncingResult {
         public String startingBlock;
         public String currentBlock;
@@ -197,10 +198,6 @@ public interface Web3 {
     boolean personal_unlockAccount(String key, String passphrase, String duration);
     boolean personal_lockAccount(String key);
     String personal_dumpRawKey(String address) throws Exception;
-
-    String txpool_content();
-    String txpool_inspect();
-    String txpool_status();
 
     String eth_netHashrate();
     String[] net_peerList();

@@ -669,7 +669,7 @@ public class Web3ImplLogsTest {
     private Web3Impl createWeb3(Ethereum eth, Blockchain blockchain, PendingState pendingState, Wallet wallet) {
         PersonalModule personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, null);
         EthModule ethModule = new EthModule(config, eth, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(config, eth, wallet, null));
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(eth, null);
+        TxPoolModule txPoolModule = new TxPoolModuleImpl();
 
         return new Web3RskImpl(eth, blockchain, pendingState, config, Web3Mocks.getMockMinerClient(), Web3Mocks.getMockMinerServer(),
                 personalModule, ethModule, txPoolModule, Web3Mocks.getMockChannelManager(), Web3Mocks.getMockRepository(), null, null, blockchain.getBlockStore(), null, null, null, new SimpleConfigCapabilities());

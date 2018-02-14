@@ -1,30 +1,48 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2018 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.rpc.modules.txpool;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import org.ethereum.core.PendingState;
-import org.ethereum.facade.Ethereum;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class TxPoolModuleImpl implements TxPoolModule{
+@Component
+public class TxPoolModuleImpl implements TxPoolModule {
 
-    private Ethereum eth;
-    private PendingState pendingState;
-    private ObjectMapper mapper;
-    private final JsonNodeFactory jsonNodeFactory = JsonNodeFactory.instance;
+    private final JsonNodeFactory jsonNodeFactory;
 
-    public TxPoolModuleImpl(Ethereum eth, PendingState pendingState) {
-        this.eth = eth;
-        this.pendingState = pendingState;
-        this.mapper = new ObjectMapper();
+    public TxPoolModuleImpl() {
+        jsonNodeFactory = JsonNodeFactory.instance;
     }
 
+    /**
+     * This method should return 2 dictionaries containing pending and queued transactions
+     * Each entry is an origin-address to a batch of scheduled transactions
+     * These batches themselves are maps associating nonces with actual transactions.
+     * When there are no transactions the answer would be
+     * "{"pending": {}, "queued": {}}"
+     */
     @Override
     public String content() {
-//      return "{"pending": {}, queued: {}}";
         Map<String, JsonNode> txProps = new HashMap<>();
         txProps.put("pending", jsonNodeFactory.objectNode());
         txProps.put("queued", jsonNodeFactory.objectNode());
@@ -32,9 +50,15 @@ public class TxPoolModuleImpl implements TxPoolModule{
         return node.toString();
     }
 
+    /**
+     * This method should return 2 dictionaries containing pending and queued transactions
+     * Each entry is an origin-address to a batch of scheduled transactions
+     * These batches themselves are maps associating nonces with transactions summary strings.
+     * When there are no transactions the answer would be
+     * "{"pending": {}, "queued": {}}"
+     */
     @Override
     public String inspect() {
-//      return "{"pending": {}, "queued": {}}";
         Map<String, JsonNode> txProps = new HashMap<>();
         txProps.put("pending", jsonNodeFactory.objectNode());
         txProps.put("queued", jsonNodeFactory.objectNode());
@@ -42,9 +66,15 @@ public class TxPoolModuleImpl implements TxPoolModule{
         return node.toString();
     }
 
+    /**
+     * This method should return 2 integers for pending and queued transactions
+     * These value represents
+     * the number of transactions currently pending for inclusion in the next block(s),
+     * as well as the ones that are being scheduled for future execution only.
+     * "{"pending": 0, "queued": 0}"
+     */
     @Override
     public String status() {
-//        return "{pending: 0, queued: 0}";
         Map<String, JsonNode> txProps = new HashMap<>();
         txProps.put("pending", jsonNodeFactory.numberNode(0));
         txProps.put("queued", jsonNodeFactory.numberNode(0));

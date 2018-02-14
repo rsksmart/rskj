@@ -16,11 +16,23 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.rpc.modules.txpool;
+package co.rsk.rpc;
 
-public interface TxPoolModule {
+import co.rsk.rpc.modules.txpool.TxPoolModule;
 
-    String content();
-    String inspect();
-    String status();
+public interface Web3TxPoolModule {
+
+    default String txpool_content() {
+        return getTxPoolModule().content();
+    }
+
+    default String txpool_inspect() {
+        return getTxPoolModule().inspect();
+    }
+
+    default String txpool_status() {
+        return getTxPoolModule().status();
+    }
+
+    TxPoolModule getTxPoolModule();
 }

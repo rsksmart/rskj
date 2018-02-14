@@ -171,12 +171,12 @@ public class Web3ImplSnapshotTest {
     private static Web3Impl createWeb3(World world, SimpleEthereum ethereum, MinerServer minerServer) {
         MinerClientImpl minerClient = new MinerClientImpl(null, minerServer, config);
         PersonalModule pm = new PersonalModuleWalletDisabled();
-        TxPoolModule txm = new TxPoolModuleImpl(null, null);
+        TxPoolModule tpm = new TxPoolModuleImpl();
 
         ethereum.repository = world.getRepository();
         ethereum.blockchain = world.getBlockChain();
 
-        return new Web3Impl(ethereum, world.getBlockChain(), null, world.getBlockChain().getBlockStore(), Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, txm, Web3Mocks.getMockChannelManager(), ethereum.repository, null, null, null, null, null);
+        return new Web3Impl(ethereum, world.getBlockChain(), null, world.getBlockChain().getBlockStore(), Web3Mocks.getMockProperties(), minerClient, minerServer, pm, null, tpm, Web3Mocks.getMockChannelManager(), ethereum.repository, null, null, null, null, null);
     }
 
     private static Web3Impl createWeb3(World world) {
