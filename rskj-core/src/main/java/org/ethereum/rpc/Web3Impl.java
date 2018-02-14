@@ -388,11 +388,6 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String[] eth_accounts() {
-        return ethModule.accounts();
-    }
-
-    @Override
     public String eth_blockNumber() {
         Block bestBlock;
 
@@ -596,16 +591,6 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_sign(String addr, String data) throws Exception {
-        return ethModule.sign(addr, data);
-    }
-
-    @Override
-    public String eth_sendTransaction(CallArguments args) throws Exception {
-        return this.ethModule.sendTransaction(args);
-    }
-
-    @Override
     public String eth_sendRawTransaction(String rawData) throws Exception {
         String s = null;
         try {
@@ -625,16 +610,6 @@ public class Web3Impl implements Web3 {
                 logger.debug("eth_sendRawTransaction(" + rawData + "): " + s);
             }
         }
-    }
-
-    @Override
-    public String eth_call(CallArguments args, String bnOrId) throws Exception {
-        return ethModule.call(args, bnOrId);
-    }
-
-    @Override
-    public String eth_estimateGas(CallArguments args) throws Exception {
-        return ethModule.estimateGas(args);
     }
 
     public BlockInformationResult getBlockInformationResult(BlockInformation blockInformation) {
@@ -921,11 +896,6 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public Map<String, CompilationResultDTO> eth_compileSolidity(String contract) throws Exception {
-        return ethModule.compileSolidity(contract);
-    }
-
-    @Override
     public Map<String, CompilationResultDTO> eth_compileSerpent(String contract) {
         throw new UnsupportedOperationException("Serpent compiler not supported");
     }
@@ -1159,13 +1129,13 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public TxPoolModule getTxPoolModule() {
-        return txPoolModule;
+    public EthModule getEthModule() {
+        return ethModule;
     }
 
     @Override
-    public Map<String, Object> eth_bridgeState() throws Exception {
-        return ethModule.bridgeState(blockchain);
+    public TxPoolModule getTxPoolModule() {
+        return txPoolModule;
     }
 
     @Override

@@ -18,6 +18,7 @@
 
 package co.rsk.rpc;
 
+import co.rsk.rpc.modules.eth.EthModule;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
@@ -26,6 +27,36 @@ import org.ethereum.rpc.dto.TransactionResultDTO;
 import java.util.Map;
 
 public interface Web3EthModule {
+    default String[] eth_accounts() {
+        return getEthModule().accounts();
+    }
+
+    default String eth_sign(String addr, String data) {
+        return getEthModule().sign(addr, data);
+    }
+
+    default String eth_sendTransaction(Web3.CallArguments args) {
+        return getEthModule().sendTransaction(args);
+    }
+
+    default String eth_call(Web3.CallArguments args, String bnOrId) {
+        return getEthModule().call(args, bnOrId);
+    }
+
+    default String eth_estimateGas(Web3.CallArguments args) {
+        return getEthModule().estimateGas(args);
+    }
+
+    default Map<String, CompilationResultDTO> eth_compileSolidity(String contract) throws Exception {
+        return getEthModule().compileSolidity(contract);
+    }
+
+    default Map<String, Object> eth_bridgeState() throws Exception {
+        return getEthModule().bridgeState();
+    }
+
+    EthModule getEthModule();
+
     String eth_protocolVersion();
 
     Object eth_syncing();
@@ -37,8 +68,6 @@ public interface Web3EthModule {
     String eth_hashrate();
 
     String eth_gasPrice();
-
-    String[] eth_accounts();
 
     String eth_blockNumber();
 
@@ -60,15 +89,7 @@ public interface Web3EthModule {
 
     String eth_getCode(String addr, String bnOrId)throws Exception;
 
-    String eth_sign(String addr, String data) throws Exception;
-
-    String eth_sendTransaction(Web3.CallArguments transactionArgs) throws Exception;
-
     String eth_sendRawTransaction(String rawData) throws Exception;
-
-    String eth_call(Web3.CallArguments args, String bnOrId) throws Exception;
-
-    String eth_estimateGas(Web3.CallArguments args) throws Exception;
 
     Web3.BlockResult eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) throws Exception;
 
@@ -90,8 +111,6 @@ public interface Web3EthModule {
 
     Map<String, CompilationResultDTO> eth_compileLLL(String contract);
 
-    Map<String, CompilationResultDTO> eth_compileSolidity(String contract) throws Exception;
-
     Map<String, CompilationResultDTO> eth_compileSerpent(String contract);
 
     String eth_newFilter(Web3.FilterRequest fr) throws Exception;
@@ -109,8 +128,6 @@ public interface Web3EthModule {
     Object[] eth_getLogs(Web3.FilterRequest fr) throws Exception;
 
     String eth_netHashrate();
-
-    Map<String, Object> eth_bridgeState() throws Exception;
 
     boolean eth_submitWork(String nonce, String header, String mince);
 

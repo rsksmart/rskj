@@ -50,13 +50,20 @@ public class EthModule
 
     private final RskSystemProperties config;
     private final Ethereum eth;
+    private final Blockchain blockchain;
     private final EthModuleSolidity ethModuleSolidity;
     private final EthModuleWallet ethModuleWallet;
 
     @Autowired
-    public EthModule(RskSystemProperties config, Ethereum eth, EthModuleSolidity ethModuleSolidity, EthModuleWallet ethModuleWallet) {
+    public EthModule(
+            RskSystemProperties config,
+            Ethereum eth,
+            Blockchain blockchain,
+            EthModuleSolidity ethModuleSolidity,
+            EthModuleWallet ethModuleWallet) {
         this.config = config;
         this.eth = eth;
+        this.blockchain = blockchain;
         this.ethModuleSolidity = ethModuleSolidity;
         this.ethModuleWallet = ethModuleWallet;
     }
@@ -66,7 +73,7 @@ public class EthModule
         return ethModuleWallet.accounts();
     }
 
-    public Map<String, Object> bridgeState(Blockchain blockchain) throws IOException, BlockStoreException {
+    public Map<String, Object> bridgeState() throws IOException, BlockStoreException {
         Block block = blockchain.getBestBlock();
         Repository repository = blockchain.getRepository().getSnapshotTo(block.getStateRoot()).startTracking();
 
