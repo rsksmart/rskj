@@ -383,18 +383,11 @@ public class MinerServerImpl implements MinerServer {
 
     @Override
     public SubmitBlockResult submitBitcoinSolution(String blockHashForMergedMining,
-                                                   co.rsk.bitcoinj.core.BtcBlock blockWithOnlyHeader,
-                                                   co.rsk.bitcoinj.core.BtcTransaction coinbase,
-                                                   List<String> txHashes) {
-        return submitBitcoinSolution(blockHashForMergedMining, blockWithOnlyHeader, coinbase, txHashes, true);
-    }
-
-    public SubmitBlockResult submitBitcoinSolution(String blockHashForMergedMining,
-                                                    co.rsk.bitcoinj.core.BtcBlock blockWithOnlyHeader,
+                                                    co.rsk.bitcoinj.core.BtcBlock blockWithHeaderOnly,
                                                     co.rsk.bitcoinj.core.BtcTransaction coinbase,
-                                                    List<String> txHashes, boolean lastTag) {
+                                                    List<String> txHashes) {
         logger.debug("Received block with hash {} for merged mining", blockHashForMergedMining);
-        co.rsk.bitcoinj.core.PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(blockWithOnlyHeader.getParams(), txHashes);
+        co.rsk.bitcoinj.core.PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(blockWithHeaderOnly.getParams(), txHashes);
 
         Block newBlock;
         Keccak256 key = new Keccak256(TypeConverter.removeZeroX(blockHashForMergedMining));
@@ -424,8 +417,8 @@ public class MinerServerImpl implements MinerServer {
 
         logger.info("Received block {} {}", newBlock.getNumber(), Hex.toHexString(newBlock.getHash()));
 
-        newBlock.setBitcoinMergedMiningHeader(blockWithOnlyHeader.cloneAsHeader().bitcoinSerialize());
-        newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(coinbase.bitcoinSerialize(), lastTag));
+        newBlock.setBitcoinMergedMiningHeader(blockWithHeaderOnly.cloneAsHeader().bitcoinSerialize());
+        newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(coinbase.bitcoinSerialize(), true));
         newBlock.setBitcoinMergedMiningMerkleProof(bitcoinMergedMiningMerkleBranch.bitcoinSerialize());
         newBlock.seal();
 
