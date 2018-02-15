@@ -65,7 +65,7 @@ public class ActiveFederationTest extends BridgePerformanceTestCase {
     @Test
     public void getFederatorPublicKey() throws IOException {
         ExecutionStats stats = new ExecutionStats("getFederatorPublicKey");
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, federation.getPublicKeys().size()-1)});
+        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, federation.getBtcPublicKeys().size()-1)});
         executeTestCaseSection(abiEncoder, "getFederatorPublicKey", true,50, stats);
         executeTestCaseSection(abiEncoder, "getFederatorPublicKey", false,500, stats);
         BridgePerformanceTest.addStats(stats);
