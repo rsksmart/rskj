@@ -5,6 +5,7 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
+import co.rsk.peg.FederationMember;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.ECKey;
 import org.bouncycastle.util.encoders.Hex;
@@ -44,12 +45,16 @@ public class BridgeMainNetConstants extends BridgeConstants {
                 federator12PublicKey, federator13PublicKey, federator14PublicKey
         );
 
+        // IMPORTANT: BTC, RSK and MST keys are the same.
+        // Change upon implementation of the <INSERT FORK NAME HERE> fork.
+        List<FederationMember> federationMembers = FederationMember.getFederationMembersFromKeys(genesisFederationPublicKeys);
+
         // Currently set to:
         // Wednesday, January 3, 2018 12:00:00 AM GMT-03:00
         Instant genesisFederationAddressCreatedAt = Instant.ofEpochMilli(1514948400l);
         
         genesisFederation = new Federation(
-                genesisFederationPublicKeys,
+                federationMembers,
                 genesisFederationAddressCreatedAt,
                 1L,
                 getBtcParams()

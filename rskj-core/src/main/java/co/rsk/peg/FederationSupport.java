@@ -49,16 +49,16 @@ public class FederationSupport {
      * @return the federation size
      */
     public int getFederationSize() {
-        return getActiveFederation().getPublicKeys().size();
+        return getActiveFederation().getBtcPublicKeys().size();
     }
 
     /**
-     * Returns the public key of the federation's federator at the given index
+     * Returns the BTC public key of the federation's federator at the given index
      * @param index the federator's index (zero-based)
      * @return the federator's public key
      */
-    public byte[] getFederatorPublicKey(int index) {
-        List<BtcECKey> publicKeys = getActiveFederation().getPublicKeys();
+    public byte[] getFederatorBtcPublicKey(int index) {
+        List<BtcECKey> publicKeys = getActiveFederation().getBtcPublicKeys();
 
         if (index < 0 || index >= publicKeys.size()) {
             throw new IndexOutOfBoundsException(String.format("Federator index must be between 0 and %d", publicKeys.size() - 1));

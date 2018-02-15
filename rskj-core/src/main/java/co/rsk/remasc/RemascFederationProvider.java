@@ -57,7 +57,7 @@ public class RemascFederationProvider {
     }
 
     public RskAddress getFederatorAddress(int n) {
-        byte[] publicKey = this.federationSupport.getFederatorPublicKey(n);
+        byte[] publicKey = this.federationSupport.getFederatorBtcPublicKey(n);
         return new RskAddress(ECKey.fromPublicOnly(publicKey).getAddress());
     }
 }
