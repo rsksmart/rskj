@@ -25,6 +25,7 @@ import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import com.google.common.primitives.UnsignedBytes;
 import org.apache.commons.lang3.tuple.Pair;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
@@ -36,7 +37,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -46,8 +46,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.*;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyVararg;
@@ -135,14 +135,14 @@ public class BridgeSerializationUtilsTest {
         };
 
         Federation federation = new Federation(
-            Arrays.asList(new BtcECKey[]{
+            FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
                     BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[1]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[2]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[3]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[4]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[5]),
-            }),
+            })),
             Instant.ofEpochMilli(0xabcdef), //
             42L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -239,14 +239,14 @@ public class BridgeSerializationUtilsTest {
         };
 
         PendingFederation pendingFederation = new PendingFederation(
-                Arrays.asList(new BtcECKey[]{
+                FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[1]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[2]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[3]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[4]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[5]),
-                })
+                }))
         );
 
         byte[] result = BridgeSerializationUtils.serializePendingFederation(pendingFederation);
@@ -627,14 +627,14 @@ public class BridgeSerializationUtilsTest {
         };
 
         Federation federation = new Federation(
-                Arrays.asList(
+                FederationMember.getFederationMembersFromKeys(Arrays.asList(
                         BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[1]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[2]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[3]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[4]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[5])
-                ),
+                )),
                 Instant.ofEpochMilli(0xabcdef),
                 42L,
                 networkParms

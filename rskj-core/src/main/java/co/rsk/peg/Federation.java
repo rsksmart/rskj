@@ -23,7 +23,6 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import org.ethereum.db.ByteArrayWrapper;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -123,7 +122,7 @@ public final class Federation {
         return members.size();
     }
 
-    public Integer getPublicKeyIndex(BtcECKey key) {
+    public Integer getBtcPublicKeyIndex(BtcECKey key) {
         for (int i = 0; i < members.size(); i++) {
             // note that this comparison doesn't take into account
             // key compression
@@ -135,8 +134,8 @@ public final class Federation {
         return null;
     }
 
-    public boolean hasPublicKey(BtcECKey key) {
-        return getPublicKeyIndex(key) != null;
+    public boolean hasBtcPublicKey(BtcECKey key) {
+        return getBtcPublicKeyIndex(key) != null;
     }
 
     public boolean hasMemberWithRskAddress(byte[] address) {
