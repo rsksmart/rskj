@@ -147,7 +147,7 @@ public class BridgeSerializationUtilsTest {
         StringBuilder expectedBuilder = new StringBuilder();
         expectedBuilder.append("ff00abcdef"); // Creation time
         expectedBuilder.append("ff2a"); // Creation block number
-        federation.getPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
+        federation.getBtcPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
             expectedBuilder.append("dd");
             expectedBuilder.append(Hex.toHexString(key.getPubKey()));
         });
@@ -183,10 +183,10 @@ public class BridgeSerializationUtilsTest {
 
         Assert.assertEquals(5000, deserializedFederation.getCreationTime().toEpochMilli());
         Assert.assertEquals(4, deserializedFederation.getNumberOfSignaturesRequired());
-        Assert.assertEquals(6, deserializedFederation.getPublicKeys().size());
+        Assert.assertEquals(6, deserializedFederation.getBtcPublicKeys().size());
         Assert.assertThat(deserializedFederation.getCreationBlockNumber(), is(42L));
         for (int i = 0; i < 6; i++) {
-            Assert.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedFederation.getPublicKeys().get(i).getPubKey()));
+            Assert.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedFederation.getBtcPublicKeys().get(i).getPubKey()));
         }
         Assert.assertEquals(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), deserializedFederation.getBtcParams());
     }
@@ -246,7 +246,7 @@ public class BridgeSerializationUtilsTest {
 
         byte[] result = BridgeSerializationUtils.serializePendingFederation(pendingFederation);
         StringBuilder expectedBuilder = new StringBuilder();
-        pendingFederation.getPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
+        pendingFederation.getBtcPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
             expectedBuilder.append("dd");
             expectedBuilder.append(Hex.toHexString(key.getPubKey()));
         });
@@ -274,9 +274,9 @@ public class BridgeSerializationUtilsTest {
 
         PendingFederation deserializedPendingFederation = BridgeSerializationUtils.deserializePendingFederation(sample);
 
-        Assert.assertEquals(6, deserializedPendingFederation.getPublicKeys().size());
+        Assert.assertEquals(6, deserializedPendingFederation.getBtcPublicKeys().size());
         for (int i = 0; i < 6; i++) {
-            Assert.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedPendingFederation.getPublicKeys().get(i).getPubKey()));
+            Assert.assertTrue(Arrays.equals(publicKeyBytes[i], deserializedPendingFederation.getBtcPublicKeys().get(i).getPubKey()));
         }
     }
 
