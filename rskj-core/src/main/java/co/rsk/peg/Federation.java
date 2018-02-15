@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import org.ethereum.db.ByteArrayWrapper;
 
 import java.time.Instant;
 import java.util.Arrays;
