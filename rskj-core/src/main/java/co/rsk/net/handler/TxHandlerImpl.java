@@ -44,10 +44,7 @@ public class TxHandlerImpl implements TxHandler {
     private final RskSystemProperties config;
     private Repository repository;
     private Blockchain blockchain;
-    private Map<String, TxTimestamp> knownTxs = new HashMap<>();
     private Lock knownTxsLock = new ReentrantLock();
-    private Map<RskAddress, TxsPerAccount> txsPerAccounts = new HashMap<>();
-    private ScheduledExecutorService executorService;
 
     /**
      * This method will fork two `threads` and should not be instanced more than
@@ -61,22 +58,6 @@ public class TxHandlerImpl implements TxHandler {
         this.config = config;
         this.blockchain = blockchain;
         this.repository = repository;
-
-        // Clean old transactions every so seconds
-        this.executorService = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TxHandler"));
-
-        // Clean txs on new block
-        compositeEthereumListener.addListener(new TxHandlerImpl.Listener());
-    }
-
-    @Override
-    public void start() {
-        executorService.scheduleWithFixedDelay(this::cleanOldTxs, 120, 120, TimeUnit.SECONDS);
-    }
-
-    @Override
-    public void stop() {
-        executorService.shutdown();
     }
 
     @VisibleForTesting TxHandlerImpl(RskSystemProperties config) {
@@ -88,91 +69,9 @@ public class TxHandlerImpl implements TxHandler {
     public List<Transaction> retrieveValidTxs(List<Transaction> txs) {
         try {
             knownTxsLock.lock();
-            return new TxValidator(config, repository, blockchain).filterTxs(txs, knownTxs, txsPerAccounts);
+            return new TxValidator(config, repository, blockchain).filterTxs(txs);
         } finally {
             knownTxsLock.unlock();
         }
     }
-
-    @VisibleForTesting
-    void cleanOldTxs() {
-        try {
-            knownTxsLock.lock();
-            cleanTxs();
-        } finally {
-            knownTxsLock.unlock();
-        }
-    }
-
-    private void cleanTxs() {
-        final long oldTxThresholdInMS = (long)1000 * 60 * 5;
-        Map<String, TxTimestamp> newKnownTxs = new HashMap<>();
-
-        for (Map.Entry<String, TxTimestamp> entry : knownTxs.entrySet()) {
-            long time = System.currentTimeMillis();
-            TxTimestamp txt = entry.getValue();
-
-            if (time - txt.timestamp > oldTxThresholdInMS) {
-                RskAddress addr = txt.tx.getSender();
-                TxsPerAccount txsPerAccount = txsPerAccounts.get(addr);
-
-                if (txsPerAccount != null) {
-                    txsPerAccount.removeNonce(new BigInteger(1, txt.tx.getNonce()));
-                    if (txsPerAccount.getTransactions().isEmpty()) {
-                        txsPerAccounts.remove(addr);
-                    }
-                }
-
-                continue;
-            }
-
-            newKnownTxs.put(entry.getKey(), entry.getValue());
-        }
-
-        knownTxs = newKnownTxs;
-    }
-
-    private class Listener extends EthereumListenerAdapter {
-
-        @Override
-        public void onBlock(Block block, List<TransactionReceipt> receipts) {
-            try {
-                knownTxsLock.lock();
-                for (TransactionReceipt txReceipt : receipts) {
-                    Transaction tx = txReceipt.getTransaction();
-                    String txHash = tx.getHash().toJsonString();
-
-                    if (!knownTxs.containsKey(txHash)) {
-                        continue;
-                    }
-
-                    RskAddress addr = tx.getSender();
-                    TxsPerAccount txsPerAccount = txsPerAccounts.get(addr);
-
-                    if (txsPerAccount == null)
-                    {
-                        knownTxs.remove(txHash);
-                        continue;
-                    }
-
-                    txsPerAccount.removeNonce(new BigInteger(1, tx.getNonce()));
-                    if (txsPerAccount.getTransactions().isEmpty()) {
-                        txsPerAccounts.remove(addr);
-                    }
-
-                    knownTxs.remove(txHash);
-                }
-            }
-            finally {
-                knownTxsLock.unlock();
-            }
-        }
-    }
-
-    @VisibleForTesting void setKnownTxs(Map<String, TxTimestamp> knownTxs) { this.knownTxs = knownTxs; }
-    @VisibleForTesting void setTxsPerAccounts(Map<RskAddress, TxsPerAccount> txsPerAccounts) { this.txsPerAccounts = txsPerAccounts; }
-    @VisibleForTesting Map<String, TxTimestamp> getKnownTxs() { return knownTxs; }
-    @VisibleForTesting Map<RskAddress, TxsPerAccount> getTxsPerAccounts() { return txsPerAccounts; }
-    @VisibleForTesting public void onBlock(Block block, List<TransactionReceipt> receiptList) { new Listener().onBlock(block, receiptList); }
-
 }

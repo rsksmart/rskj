@@ -53,8 +53,6 @@ public class TxValidatorTest {
     public void oneTestToRuleThemAll() {
         List<Transaction> txs;
         List<Transaction> result;
-        Map<String, TxTimestamp> times;
-        Map<RskAddress, TxsPerAccount> txmap;
         Repository repository = Mockito.mock(Repository.class);
         final long blockGasLimit = 100000;
         Blockchain blockchain = Mockito.mock(Blockchain.class);
@@ -62,8 +60,6 @@ public class TxValidatorTest {
         Mockito.when(blockchain.getBestBlock()).thenReturn(block);
         Mockito.when(block.getGasLimit()).thenReturn(BigInteger.valueOf(blockGasLimit).toByteArray());
         Mockito.when(block.getMinimumGasPrice()).thenReturn(Coin.valueOf(1L));
-        times = new HashMap<>();
-        txmap = new HashMap<>();
 
         List<Transaction> vtxs = new LinkedList<>();
         List<Transaction> itxs = new LinkedList<>();
@@ -104,7 +100,7 @@ public class TxValidatorTest {
         vtxs.add(createTransaction(1, 50000, 1, 2, 0, 7));
         vtxs.add(createTransaction(1, 50000, 1, 3, 0, 7));
         vtxs.add(createTransaction(1, 50000, 1, 4, 0, 7));
-        itxs.add(createTransaction(1, 50000, 1, 5, 0, 7));
+        vtxs.add(createTransaction(1, 50000, 1, 5, 0, 7));
         createAccountState(vtxs.get(6), repository, 1000000, 0);
 
         //all possible nonces starting in non zero
@@ -113,23 +109,27 @@ public class TxValidatorTest {
         vtxs.add(createTransaction(1, 50000, 1, 8, 0, 8));
         vtxs.add(createTransaction(1, 50000, 1, 9, 0, 8));
         vtxs.add(createTransaction(1, 50000, 1, 10, 0, 8));
-        itxs.add(createTransaction(1, 50000, 1, 11, 0, 8));
-        createAccountState(vtxs.get(11), repository, 1000000, 6);
+        vtxs.add(createTransaction(1, 50000, 1, 11, 0, 8));
+        createAccountState(vtxs.get(12), repository, 1000000, 6);
 
         //bad balance
         itxs.add(createTransaction(1, 200000, 5, 0, 0, 9));
-        createAccountState(itxs.get(8), repository, 999999, 0);
+        createAccountState(itxs.get(5), repository, 999999, 0);
 
         //just enough balance
         itxs.add(createTransaction(1, 200000, 5, 0, 0, 10));
-        createAccountState(itxs.get(9), repository, 1000000, 0);
+        createAccountState(itxs.get(6), repository, 1000000, 0);
 
         txs = new LinkedList<>();
         txs.addAll(vtxs);
         txs.addAll(itxs);
+
         TxValidator txValidator = new TxValidator(config, repository, blockchain);
-        result = txValidator.filterTxs(txs, times, txmap);
-        Assert.assertEquals(vtxs, result);
+
+        result = txValidator.filterTxs(txs);
+
+        Assert.assertEquals(vtxs.size(), result.size());
+        Assert.assertTrue(vtxs.stream().allMatch(t -> result.contains(t)));
     }
 
     @Test
@@ -140,8 +140,6 @@ public class TxValidatorTest {
         //Bridge Tx
         txs.add(createBridgeTx(config, 1, 0, 1, 0, 0, 6));
 
-        Map<String, TxTimestamp> times;
-        Map<RskAddress, TxsPerAccount> txmap;
         Repository repository = Mockito.mock(Repository.class);
         final long blockGasLimit = 100000;
         Blockchain blockchain = Mockito.mock(Blockchain.class);
@@ -150,18 +148,15 @@ public class TxValidatorTest {
         Mockito.when(block.getGasLimit()).thenReturn(BigInteger.valueOf(blockGasLimit).toByteArray());
         Mockito.when(block.getMinimumGasPrice()).thenReturn(Coin.valueOf(1L));
         createAccountState(txs.get(0), repository, 0, 0);
-        times = new HashMap<>();
-        txmap = new HashMap<>();
 
         TxValidator txValidator = new TxValidator(config, repository, blockchain);
-        List<Transaction> result = txValidator.filterTxs(txs, times, txmap);
+        List<Transaction> result = txValidator.filterTxs(txs);
         Assert.assertTrue(result.size() == 1);
     }
 
     private Transaction createTransaction(long value, long gaslimit, long gasprice, long nonce, long data, long sender) {
         return Tx.create(config, value, gaslimit, gasprice, nonce, data, sender);
     }
-
 
     private void createAccountState(Transaction tx, Repository repository, long balance, long nonce) {
         AccountState as = Mockito.mock(AccountState.class);

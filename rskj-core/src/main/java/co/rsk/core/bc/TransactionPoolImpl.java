@@ -404,6 +404,10 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private long getCurrentBestBlockNumber() {
+        if (bestBlock == null) {
+            return -1;
+        }
+
         return bestBlock.getNumber();
     }
 

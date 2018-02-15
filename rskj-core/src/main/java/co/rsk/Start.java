@@ -126,7 +126,6 @@ public class Start {
         // this should be the genesis block at this point
         transactionPool.start(blockchain.getBestBlock());
         channelManager.start();
-        txHandler.start();
         messageHandler.start();
 
         rsk.init();
@@ -216,7 +215,6 @@ public class Start {
         }
         rsk.close();
         messageHandler.stop();
-        txHandler.stop();
         channelManager.stop();
     }
 

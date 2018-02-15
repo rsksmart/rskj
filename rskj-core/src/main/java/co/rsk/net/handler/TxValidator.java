@@ -67,30 +67,20 @@ class TxValidator {
     }
 
     /**
-     * Where the magic occurs, will filter out invalid txs, but still remember some of them
+     * Where the magic occurs, will filter out invalid txs
      */
-    List<Transaction> filterTxs(List<Transaction> txs,
-                                Map<String, TxTimestamp> knownTxs,
-                                Map<RskAddress, TxsPerAccount> txsPerAccounts) {
-        //TODO(mmarquez): this method is quite coupled with TxHandlerImpl
-        // but it should be fixed when NodeMessageHandler stops managing the wire txs
-        // and related stuff
+    List<Transaction> filterTxs(List<Transaction> txs) {
         List<Transaction> acceptedTxs = new LinkedList<>();
-
 
         for (Transaction tx : txs) {
             String hash = tx.getHash().toJsonString();
-
-            if (knownTxs.containsKey(hash)) {
-                continue;
-            }
-            knownTxs.put(hash, new TxTimestamp(tx, System.currentTimeMillis()));
 
             AccountState state = repository.getAccountState(tx.getSender());
 
             if (state == null) {
                 state = new AccountState();
             }
+
             BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(blockchain.getBestBlock().getGasLimit());
             Coin minimumGasPrice = blockchain.getBestBlock().getMinimumGasPrice();
             long bestBlockNumber = blockchain.getBestBlock().getNumber();
@@ -110,23 +100,7 @@ class TxValidator {
                 continue;
             }
 
-            RskAddress addr = tx.getSender();
-
-            txsPerAccounts.computeIfAbsent(addr, key -> new TxsPerAccount());
-
-            TxsPerAccount txsPerAccount = txsPerAccounts.get(addr);
-
-            BigInteger nonce = new BigInteger(1, tx.getNonce());
-            if (txsPerAccount.containsNonce(nonce)) {
-                continue;
-            }
-            txsPerAccount.getTransactions().add(tx);
-
-            for (TxFilter filter : txFilters) {
-                txsPerAccount.setTransactions(filter.filter(state, txsPerAccount, blockchain.getBestBlock()));
-            }
-
-            acceptedTxs.addAll(txsPerAccount.readyToBeSent(state.getNonce()));
+            acceptedTxs.add(tx);
         }
 
         return acceptedTxs;
