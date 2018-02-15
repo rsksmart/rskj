@@ -80,10 +80,10 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     public void logCommitFederation(Block executionBlock, Federation oldFederation, Federation newFederation) {
         List<DataWord> topics = Collections.singletonList(Bridge.COMMIT_FEDERATION_TOPIC);
 
-        byte[] oldFedFlatPubKeys = flatKeysAsRlpCollection(oldFederation.getPublicKeys());
+        byte[] oldFedFlatPubKeys = flatKeysAsRlpCollection(oldFederation.getBtcPublicKeys());
         byte[] oldFedData = RLP.encodeList(RLP.encodeElement(oldFederation.getAddress().getHash160()), RLP.encodeList(oldFedFlatPubKeys));
 
-        byte[] newFedFlatPubKeys = flatKeysAsRlpCollection(newFederation.getPublicKeys());
+        byte[] newFedFlatPubKeys = flatKeysAsRlpCollection(newFederation.getBtcPublicKeys());
         byte[] newFedData = RLP.encodeList(RLP.encodeElement(newFederation.getAddress().getHash160()), RLP.encodeList(newFedFlatPubKeys));
 
         long newFedActivationBlockNumber = executionBlock.getNumber() + this.bridgeConstants.getFederationActivationAge();

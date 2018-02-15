@@ -69,7 +69,7 @@ public class PendingFederationTest {
     public void publicKeysImmutable() {
         boolean exception = false;
         try {
-            pendingFederation.getPublicKeys().add(BtcECKey.fromPrivate(BigInteger.valueOf(1000)));
+            pendingFederation.getBtcPublicKeys().add(BtcECKey.fromPrivate(BigInteger.valueOf(1000)));
         } catch (Exception e) {
             exception = true;
         }
@@ -77,7 +77,7 @@ public class PendingFederationTest {
 
         exception = false;
         try {
-            pendingFederation.getPublicKeys().remove(0);
+            pendingFederation.getBtcPublicKeys().remove(0);
         } catch (Exception e) {
             exception = true;
         }
