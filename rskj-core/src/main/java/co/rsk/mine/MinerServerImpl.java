@@ -202,10 +202,6 @@ public class MinerServerImpl implements MinerServer {
         return fallbackBlocksGenerated;
     }
 
-    public boolean isFallbackMining() {
-        return isFallbackMining;
-    }
-
     public void setFallbackMiningState() {
         if (isFallbackMining) {
             // setFallbackMining() can be called before start
@@ -237,6 +233,7 @@ public class MinerServerImpl implements MinerServer {
         }
     }
 
+    @Override
     public void setFallbackMining(boolean p) {
         synchronized (lock) {
             if (isFallbackMining == p) {
@@ -253,11 +250,6 @@ public class MinerServerImpl implements MinerServer {
     @VisibleForTesting
     public Map<Keccak256, Block> getBlocksWaitingforPoW() {
         return blocksWaitingforPoW;
-    }
-
-    @Override
-    public boolean isRunning() {
-        return started;
     }
 
     @Override

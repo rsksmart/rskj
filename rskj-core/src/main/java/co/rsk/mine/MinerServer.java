@@ -30,15 +30,11 @@ public interface MinerServer {
 
     void stop();
 
-    boolean isRunning();
-
     SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock);
 
     boolean generateFallbackBlock();
 
     void setFallbackMining(boolean p);
-
-    boolean isFallbackMining();
 
     RskAddress getCoinbaseAddress();
 
