@@ -340,6 +340,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 return null;
             }
 
+            if (blockchainConfig.isRfs94() && GET_STATE_FOR_DEBUGGING.equals(bridgeParsedData.function)) {
+                throw new NoSuchMethodException(GET_STATE_FOR_DEBUGGING.name + " call is not supported after Bamboo");
+            }
+
             this.bridgeSupport = setup();
 
             // bridgeParsedData.function should be one of the CallTransaction.Function declared above.
