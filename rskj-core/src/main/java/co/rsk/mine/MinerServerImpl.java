@@ -447,7 +447,7 @@ public class MinerServerImpl implements MinerServer {
             logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
         }
 
-        logger.info("Received block {} {}", newBlock.getNumber(), Hex.toHexString(newBlock.getHash()));
+        logger.info("Received block {} {}", newBlock.getNumber(), newBlock.getHash());
 
         newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
         newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(bitcoinMergedMiningCoinbaseTransaction.bitcoinSerialize(), lastTag));
@@ -463,7 +463,7 @@ public class MinerServerImpl implements MinerServer {
             ImportResult importResult = ethereum.addNewMinedBlock(newBlock);
 
             logger.info("Mined block import result is {}: {} {} at height {}", importResult, newBlock.getShortHash(), newBlock.getShortHashForMergedMining(), newBlock.getNumber());
-            SubmittedBlockInfo blockInfo = new SubmittedBlockInfo(importResult, newBlock.getHash(), newBlock.getNumber());
+            SubmittedBlockInfo blockInfo = new SubmittedBlockInfo(importResult, newBlock.getHash().getBytes(), newBlock.getNumber());
 
             return new SubmitBlockResult("OK", "OK", blockInfo);
         }
@@ -606,11 +606,11 @@ public class MinerServerImpl implements MinerServer {
             newBlockParent = blockchain.getBlockByHash(newBlockParent.getParentHash());
         }
 
-        logger.info("Starting block to mine from parent {} {}", newBlockParent.getNumber(), Hex.toHexString(newBlockParent.getHash()));
+        logger.info("Starting block to mine from parent {} {}", newBlockParent.getNumber(), newBlockParent.getHash());
 
         List<BlockHeader> uncles;
         if (blockStore != null) {
-            uncles = FamilyUtils.getUnclesHeaders(blockStore, newBlockParent.getNumber() + 1, newBlockParent.getHash(), this.miningConfig.getUncleGenerationLimit());
+            uncles = FamilyUtils.getUnclesHeaders(blockStore, newBlockParent.getNumber() + 1, newBlockParent.getHash().getBytes(), this.miningConfig.getUncleGenerationLimit());
         } else {
             uncles = new ArrayList<>();
         }
@@ -643,7 +643,7 @@ public class MinerServerImpl implements MinerServer {
         executor.executeAndFill(newBlock, newBlockParent);
 
         synchronized (lock) {
-            Keccak256 parentHash = new Keccak256(newBlockParent.getHash());
+            Keccak256 parentHash = newBlockParent.getHash();
             boolean notify = this.getNotify(newBlock, parentHash);
 
             if (notify) {
@@ -784,7 +784,7 @@ public class MinerServerImpl implements MinerServer {
         BigInteger gasLimit = gasLimitCalculator.calculateBlockGasLimit(parentGasLimit,
                 gasUsed, minGasLimit, targetGasLimit, forceLimit);
 
-        final BlockHeader newHeader = new BlockHeader(newBlockParent.getHash(),
+        final BlockHeader newHeader = new BlockHeader(newBlockParent.getHash().getBytes(),
                 unclesListHash,
                 coinbaseAddress.getBytes(),
                 new Bloom().getData(),

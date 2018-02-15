@@ -106,7 +106,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     @Override
     public void processBlockHeaders(@Nonnull final MessageChannel sender, @Nonnull final List<BlockHeader> blockHeaders) {
         blockHeaders.stream()
-                .filter(h -> !hasHeader(h.getHash()))
+                .filter(h -> !hasHeader(h.getHash().getBytes()))
                 // sort block headers in ascending order, so we can process them in that order.
                 .sorted(Comparator.comparingLong(BlockHeader::getNumber))
                 .forEach(h -> processBlockHeader(sender, h));
@@ -117,7 +117,7 @@ public class NodeBlockProcessor implements BlockProcessor {
     }
 
     private void processBlockHeader(@Nonnull final MessageChannel sender, @Nonnull final BlockHeader header) {
-        sender.sendMessage(new GetBlockMessage(header.getHash()));
+        sender.sendMessage(new GetBlockMessage(header.getHash().getBytes()));
 
         this.store.saveHeader(header);
     }
@@ -237,7 +237,7 @@ public class NodeBlockProcessor implements BlockProcessor {
             return;
         }
 
-        BlockHashResponseMessage responseMessage = new BlockHashResponseMessage(requestId, block.getHash());
+        BlockHashResponseMessage responseMessage = new BlockHashResponseMessage(requestId, block.getHash().getBytes());
         sender.sendMessage(responseMessage);
     }
 
@@ -290,7 +290,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         if (blockchain.getBestBlock().getNumber() - skeletonBlockNumber < syncConfiguration.getChunkSize()){
             Block block = getBlockFromBlockchainStore(skeletonBlockNumber);
             if (block != null){
-                return block.getHash();
+                return block.getHash().getBytes();
             }
         }
 
@@ -298,7 +298,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         if (hash == null){
             Block block = getBlockFromBlockchainStore(skeletonBlockNumber);
             if (block != null){
-                hash = block.getHash();
+                hash = block.getHash().getBytes();
                 skeletonCache.put(skeletonBlockNumber, hash);
             }
         }

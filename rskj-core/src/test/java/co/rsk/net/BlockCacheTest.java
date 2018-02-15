@@ -19,6 +19,7 @@
 
 package co.rsk.net;
 
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
@@ -99,7 +100,7 @@ public class BlockCacheTest {
     public void addAndRemoveBlock() {
         BlockCache store = getSubject();
         Block block = Mockito.mock(Block.class);
-        when(block.getHash()).thenReturn(HASH_1);
+        when(block.getHash()).thenReturn(new Keccak256(HASH_1));
         store.addBlock(block);
         store.removeBlock(block);
 

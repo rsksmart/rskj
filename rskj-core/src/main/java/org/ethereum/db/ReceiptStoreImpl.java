@@ -142,7 +142,7 @@ public class ReceiptStoreImpl implements ReceiptStore {
                 return null;
             }
 
-            blockHash = block.getHash();
+            blockHash = block.getHash().getBytes();
         }
     }
 

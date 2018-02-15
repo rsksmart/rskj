@@ -662,7 +662,7 @@ public class Web3Impl implements Web3 {
         br.receiptsRoot = TypeConverter.toJsonHex(b.getReceiptsRoot());
         br.miner = isPending ? null : TypeConverter.toJsonHex(b.getCoinbase().getBytes());
         br.difficulty = TypeConverter.toJsonHex(b.getDifficulty().getBytes());
-        br.totalDifficulty = TypeConverter.toJsonHex(this.blockchain.getBlockStore().getTotalDifficultyForHash(b.getHash()).asBigInteger());
+        br.totalDifficulty = TypeConverter.toJsonHex(this.blockchain.getBlockStore().getTotalDifficultyForHash(b.getHash().getBytes()).asBigInteger());
         br.extraData = TypeConverter.toJsonHex(b.getExtraData());
         br.size = TypeConverter.toJsonHex(b.getEncoded().length);
         br.gasLimit = TypeConverter.toJsonHex(b.getGasLimit());
@@ -688,7 +688,7 @@ public class Web3Impl implements Web3 {
         List<String> ul = new ArrayList<>();
 
         for (BlockHeader header : b.getUncleList()) {
-            ul.add(toJsonHex(header.getHash()));
+            ul.add(toJsonHex(header.getHash().getBytes()));
         }
 
         br.uncles = ul.toArray(new String[ul.size()]);
@@ -765,7 +765,7 @@ public class Web3Impl implements Web3 {
                 block = blockchain.getBlockByHash(txInfo.getBlockHash());
                 // need to return txes only from main chain
                 Block mainBlock = blockchain.getBlockByNumber(block.getNumber());
-                if (!Arrays.equals(block.getHash(), mainBlock.getHash())) {
+                if (!block.getHash().equals(mainBlock.getHash())) {
                     return null;
                 }
                 txInfo.setTransaction(block.getTransactionsList().get(txInfo.getIndex()));
@@ -870,7 +870,7 @@ public class Web3Impl implements Web3 {
             }
 
             BlockHeader uncleHeader = block.getUncleList().get(idx);
-            Block uncle = blockchain.getBlockByHash(uncleHeader.getHash());
+            Block uncle = blockchain.getBlockByHash(uncleHeader.getHash().getBytes());
 
             if (uncle == null) {
                 uncle = new Block(uncleHeader, Collections.emptyList(), Collections.emptyList());
@@ -891,7 +891,7 @@ public class Web3Impl implements Web3 {
             Block block = getByJsonBlockId(blockId);
 
             return s = block == null ? null :
-                    eth_getUncleByBlockHashAndIndex(Hex.toHexString(block.getHash()), uncleIdx);
+                    eth_getUncleByBlockHashAndIndex(Hex.toHexString(block.getHash().getBytes()), uncleIdx);
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getUncleByBlockNumberAndIndex(" + blockId + ", " + uncleIdx + "): " + s);

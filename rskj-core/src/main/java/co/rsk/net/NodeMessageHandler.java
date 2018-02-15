@@ -244,7 +244,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
         Block block = blockChainStatus.getBestBlock();
         BlockDifficulty totalDifficulty = blockChainStatus.getTotalDifficulty();
 
-        Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), totalDifficulty);
+        Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash(), totalDifficulty);
         logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(), Hex.toHexString(status.getBestBlockHash()).substring(0, 8));
         this.channelManager.broadcastStatus(status);
     }
@@ -297,7 +297,7 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
             return;
         }
 
-        boolean wasOrphan = !this.blockProcessor.hasBlockInSomeBlockchain(block.getHash());
+        boolean wasOrphan = !this.blockProcessor.hasBlockInSomeBlockchain(block.getHash().getBytes());
         BlockProcessResult result = this.blockProcessor.processBlock(sender, block);
 
         Metrics.processBlockMessage("blockProcessed", block, sender.getPeerNodeID());
@@ -317,14 +317,14 @@ public class NodeMessageHandler implements MessageHandler, Runnable {
 
     private void relayBlock(@Nonnull MessageChannel sender, Block block) {
         final BlockNodeInformation nodeInformation = this.blockProcessor.getNodeInformation();
-        final Set<NodeID> nodesWithBlock = nodeInformation.getNodesByBlock(block.getHash());
+        final Set<NodeID> nodesWithBlock = nodeInformation.getNodesByBlock(block.getHash().getBytes());
         final Set<NodeID> newNodes = this.syncProcessor.getKnownPeersNodeIDs().stream()
                 .filter(p -> !nodesWithBlock.contains(p))
                 .collect(Collectors.toSet());
 
 
         List<BlockIdentifier> identifiers = new ArrayList<>();
-        identifiers.add(new BlockIdentifier(block.getHash(), block.getNumber()));
+        identifiers.add(new BlockIdentifier(block.getHash().getBytes(), block.getNumber()));
         channelManager.broadcastBlockHash(identifiers, newNodes);
 
         Metrics.processBlockMessage("blockRelayed", block, sender.getPeerNodeID());

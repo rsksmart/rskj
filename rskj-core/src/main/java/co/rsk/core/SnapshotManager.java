@@ -49,7 +49,7 @@ public class SnapshotManager {
         BlockStore store = blockchain.getBlockStore();
 
         Block block = store.getChainBlockByNumber(0);
-        BlockDifficulty difficulty = blockchain.getBlockStore().getTotalDifficultyForHash(block.getHash());
+        BlockDifficulty difficulty = blockchain.getBlockStore().getTotalDifficultyForHash(block.getHash().getBytes());
 
         blockchain.setStatus(block, difficulty);
 
@@ -89,7 +89,7 @@ public class SnapshotManager {
         BlockStore store = blockchain.getBlockStore();
 
         Block block = store.getChainBlockByNumber(newBestBlockNumber);
-        BlockDifficulty difficulty = blockchain.getBlockStore().getTotalDifficultyForHash(block.getHash());
+        BlockDifficulty difficulty = blockchain.getBlockStore().getTotalDifficultyForHash(block.getHash().getBytes());
 
         blockchain.setStatus(block, difficulty);
 

@@ -61,7 +61,7 @@ public class BlockchainTest {
 
         Assert.assertNotNull(block);
         Assert.assertEquals(1, block.getNumber());
-        Assert.assertArrayEquals(blockchain.getBestBlock().getHash(), block.getParentHash());
+        Assert.assertArrayEquals(blockchain.getBestBlock().getHash().getBytes(), block.getParentHash());
     }
 
     @Test

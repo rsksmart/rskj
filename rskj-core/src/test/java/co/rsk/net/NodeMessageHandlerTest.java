@@ -260,7 +260,7 @@ public class NodeMessageHandlerTest {
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
-        final Status status = new Status(block.getNumber(), block.getHash());
+        final Status status = new Status(block.getNumber(), block.getHash().getBytes());
         final Message message = new StatusMessage(status);
 
         handler.processMessage(sender, message);
@@ -274,7 +274,7 @@ public class NodeMessageHandlerTest {
 
         final GetBlockMessage gbMessage = (GetBlockMessage) msg;
 
-        Assert.assertArrayEquals(block.getHash(), gbMessage.getBlockHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), gbMessage.getBlockHash());
     }
 
     @Test
@@ -284,7 +284,7 @@ public class NodeMessageHandlerTest {
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
-        final Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), new BlockDifficulty(BigInteger.TEN));
+        final Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash(), new BlockDifficulty(BigInteger.TEN));
         final Message message = new StatusMessage(status);
 
         handler.processMessage(sender, message);
@@ -317,7 +317,7 @@ public class NodeMessageHandlerTest {
 
         BlockGenerator blockGenerator = new BlockGenerator();
         final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
-        final Status status = new Status(block.getNumber(), block.getHash(), block.getParentHash(), blockchain.getTotalDifficulty());
+        final Status status = new Status(block.getNumber(), block.getHash().getBytes(), block.getParentHash(), blockchain.getTotalDifficulty());
         final Message message = new StatusMessage(status);
 
         store.saveBlock(block);
@@ -347,7 +347,7 @@ public class NodeMessageHandlerTest {
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        handler.processMessage(sender, new GetBlockMessage(block.getHash()));
+        handler.processMessage(sender, new GetBlockMessage(block.getHash().getBytes()));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -358,7 +358,7 @@ public class NodeMessageHandlerTest {
 
         final BlockMessage bMessage = (BlockMessage) message;
 
-        Assert.assertArrayEquals(block.getHash(), bMessage.getBlock().getHash());
+        Assert.assertEquals(block.getHash().getBytes(), bMessage.getBlock().getHash().getBytes());
     }
 
     @Test
@@ -383,7 +383,7 @@ public class NodeMessageHandlerTest {
 
         SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        handler.processMessage(sender, new GetBlockMessage(blocks.get(4).getHash()));
+        handler.processMessage(sender, new GetBlockMessage(blocks.get(4).getHash().getBytes()));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -394,7 +394,7 @@ public class NodeMessageHandlerTest {
 
         BlockMessage bmessage = (BlockMessage) message;
 
-        Assert.assertArrayEquals(blocks.get(4).getHash(), bmessage.getBlock().getHash());
+        Assert.assertArrayEquals(blocks.get(4).getHash().getBytes(), bmessage.getBlock().getHash().getBytes());
     }
 
     @Test
@@ -414,7 +414,7 @@ public class NodeMessageHandlerTest {
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        handler.processMessage(sender, new GetBlockMessage(block.getHash()));
+        handler.processMessage(sender, new GetBlockMessage(block.getHash().getBytes()));
 
         Assert.assertTrue(sender.getMessages().isEmpty());
     }
@@ -440,7 +440,7 @@ public class NodeMessageHandlerTest {
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        handler.processMessage(sender, new BlockHeadersRequestMessage(1,block.getHash(), 1));
+        handler.processMessage(sender, new BlockHeadersRequestMessage(1,block.getHash().getBytes(), 1));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -451,7 +451,7 @@ public class NodeMessageHandlerTest {
 
         final BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
-        Assert.assertArrayEquals(block.getHash(), bMessage.getBlockHeaders().get(0).getHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), bMessage.getBlockHeaders().get(0).getHash().getBytes());
     }
 
     @Test
@@ -476,7 +476,7 @@ public class NodeMessageHandlerTest {
 
         SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        handler.processMessage(sender, new BlockHeadersRequestMessage(1, blocks.get(4).getHash(), 1));
+        handler.processMessage(sender, new BlockHeadersRequestMessage(1, blocks.get(4).getHash().getBytes(), 1));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -487,7 +487,7 @@ public class NodeMessageHandlerTest {
 
         BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
-        Assert.assertArrayEquals(blocks.get(4).getHash(), bMessage.getBlockHeaders().get(0).getHash());
+        Assert.assertArrayEquals(blocks.get(4).getHash().getBytes(), bMessage.getBlockHeaders().get(0).getHash().getBytes());
     }
 
     @Test
@@ -527,7 +527,7 @@ public class NodeMessageHandlerTest {
                 new TestCase(
                         new NewBlockHashesMessage(
                                 Arrays.asList(
-                                        new BlockIdentifier(blocks.get(5).getHash(), blocks.get(5).getNumber())
+                                        new BlockIdentifier(blocks.get(5).getHash().getBytes(), blocks.get(5).getNumber())
                                 )
                         ),
                         null
@@ -535,7 +535,7 @@ public class NodeMessageHandlerTest {
                 new TestCase(
                         new NewBlockHashesMessage(
                                 Arrays.asList(
-                                        new BlockIdentifier(blocks.get(11).getHash(), blocks.get(5).getNumber())
+                                        new BlockIdentifier(blocks.get(11).getHash().getBytes(), blocks.get(5).getNumber())
                                 )
                         ),
                         Arrays.asList(blocks.get(11))
@@ -543,8 +543,8 @@ public class NodeMessageHandlerTest {
                 new TestCase(
                         new NewBlockHashesMessage(
                                 Arrays.asList(
-                                        new BlockIdentifier(blocks.get(11).getHash(), blocks.get(5).getNumber()),
-                                        new BlockIdentifier(blocks.get(5).getHash(), blocks.get(5).getNumber())
+                                        new BlockIdentifier(blocks.get(11).getHash().getBytes(), blocks.get(5).getNumber()),
+                                        new BlockIdentifier(blocks.get(5).getHash().getBytes(), blocks.get(5).getNumber())
                                 )
                         ),
                         Arrays.asList(blocks.get(11))
@@ -552,8 +552,8 @@ public class NodeMessageHandlerTest {
                 new TestCase(
                         new NewBlockHashesMessage(
                                 Arrays.asList(
-                                        new BlockIdentifier(blocks.get(11).getHash(), blocks.get(5).getNumber()),
-                                        new BlockIdentifier(blocks.get(12).getHash(), blocks.get(5).getNumber())
+                                        new BlockIdentifier(blocks.get(11).getHash().getBytes(), blocks.get(5).getNumber()),
+                                        new BlockIdentifier(blocks.get(12).getHash().getBytes(), blocks.get(5).getNumber())
                                 )
                         ),
                         Arrays.asList(blocks.get(11), blocks.get(12))
@@ -561,8 +561,8 @@ public class NodeMessageHandlerTest {
                 new TestCase(
                         new NewBlockHashesMessage(
                                 Arrays.asList(
-                                        new BlockIdentifier(blocks.get(11).getHash(), blocks.get(5).getNumber()),
-                                        new BlockIdentifier(blocks.get(11).getHash(), blocks.get(5).getNumber())
+                                        new BlockIdentifier(blocks.get(11).getHash().getBytes(), blocks.get(5).getNumber()),
+                                        new BlockIdentifier(blocks.get(11).getHash().getBytes(), blocks.get(5).getNumber())
                                 )
                         ),
                         Arrays.asList(blocks.get(11))
@@ -591,7 +591,7 @@ public class NodeMessageHandlerTest {
                     .collect(Collectors.toList());
 
             Set<ByteArrayWrapper> expected = testCase.expected.stream()
-                    .map(b -> b.getHash())
+                    .map(b -> b.getHash().getBytes())
                     .map(h -> new ByteArrayWrapper(h))
                     .collect(Collectors.toSet());
 
@@ -666,17 +666,17 @@ public class NodeMessageHandlerTest {
 
         TestCase[] testCases = {
                 new TestCase(
-                        new GetBlockHeadersMessage(blocks.get(baseBlock).getHash(), 0),
+                        new GetBlockHeadersMessage(blocks.get(baseBlock).getHash().getBytes(), 0),
                         null
                 ),
                 new TestCase(
-                        new GetBlockHeadersMessage(blocks.get(baseBlock).getHash(), 1),
+                        new GetBlockHeadersMessage(blocks.get(baseBlock).getHash().getBytes(), 1),
                         Arrays.asList(
                                 blocks.get(baseBlock).getHeader()
                         )
                 ),
                 new TestCase(
-                        new GetBlockHeadersMessage(blocks.get(baseBlock).getHash(), 5),
+                        new GetBlockHeadersMessage(blocks.get(baseBlock).getHash().getBytes(), 5),
                         Arrays.asList(
                                 blocks.get(baseBlock).getHeader(),
                                 blocks.get(baseBlock - 1).getHeader(),
@@ -686,7 +686,7 @@ public class NodeMessageHandlerTest {
                         )
                 ),
                 new TestCase(
-                        new GetBlockHeadersMessage(0, blocks.get(baseBlock).getHash(), 5, 1, false),
+                        new GetBlockHeadersMessage(0, blocks.get(baseBlock).getHash().getBytes(), 5, 1, false),
                         Arrays.asList(
                                 blocks.get(baseBlock).getHeader(),
                                 blocks.get(baseBlock - 2).getHeader(),
@@ -737,7 +737,7 @@ public class NodeMessageHandlerTest {
         Assert.assertEquals(expected.size(), received.size());
         for (int i = 0; i < received.size(); i += 1) {
             Assert.assertEquals(expected.get(i).getNumber(), received.get(i).getNumber());
-            Assert.assertArrayEquals(expected.get(i).getHash(), received.get(i).getHash());
+            Assert.assertEquals(expected.get(i).getHash().getBytes(), received.get(i).getHash().getBytes());
             Assert.assertArrayEquals(expected.get(i).getParentHash(), received.get(i).getParentHash());
         }
     }
@@ -759,7 +759,7 @@ public class NodeMessageHandlerTest {
 
         final SimpleMessageChannel sender = new SimpleMessageChannel();
 
-        handler.processMessage(sender, new GetBlockHeadersMessage(block.getHash(), 1));
+        handler.processMessage(sender, new GetBlockHeadersMessage(block.getHash().getBytes(), 1));
 
         Assert.assertTrue(sender.getMessages().isEmpty());
     }
@@ -959,12 +959,12 @@ public class NodeMessageHandlerTest {
                 null,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
         Block block = BlockChainBuilder.ofSize(1, true).getBestBlock();
-        Message message = new BlockRequestMessage(100, block.getHash());
+        Message message = new BlockRequestMessage(100, block.getHash().getBytes());
 
         processor.processMessage(new SimpleMessageChannel(), message);
 
         Assert.assertEquals(100, sbp.getRequestId());
-        Assert.assertArrayEquals(block.getHash(), sbp.getHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), sbp.getHash());
     }
 
     @Test

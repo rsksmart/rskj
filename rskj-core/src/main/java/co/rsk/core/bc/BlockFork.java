@@ -81,7 +81,7 @@ public class BlockFork {
             oldBlock = store.getBlockByHash(oldBlock.getParentHash());
         }
 
-        while (!Arrays.equals(oldBlock.getHash(), newBlock.getHash())) {
+        while (!oldBlock.getHash().equals(newBlock.getHash())) {
             newBlocks.add(0, newBlock);
             newBlock = store.getBlockByHash(newBlock.getParentHash());
             oldBlocks.add(0, oldBlock);

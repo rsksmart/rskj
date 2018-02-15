@@ -146,7 +146,7 @@ public class MinerManagerTest {
 
         Assert.assertNotNull(blocks);
         Assert.assertEquals(2, blocks.size());
-        Assert.assertFalse(Arrays.equals(blocks.get(0).getHash(), blocks.get(1).getHash()));
+        Assert.assertFalse(blocks.get(0).getHash().equals(blocks.get(1).getHash()));
     }
 
     @Test

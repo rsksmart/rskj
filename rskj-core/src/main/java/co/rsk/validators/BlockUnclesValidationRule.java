@@ -117,7 +117,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
         Set<ByteArrayWrapper> hashes = new HashSet<>();
 
         for (BlockHeader uncle : uncles) {
-            byte[] uhash = uncle.getHash();
+            byte[] uhash = uncle.getHash().getBytes();
 
             Block blockForUncleHeader = new Block(uncle);
 
@@ -184,7 +184,7 @@ public class BlockUnclesValidationRule implements BlockValidationRule {
     }
 
     private boolean validateUncleParent(Set<ByteArrayWrapper> ancestors, Block uncle) {
-        String uhashString = Hex.toHexString(uncle.getHash());
+        String uhashString = uncle.getHash().toString();
         Block parent = blockStore.getBlockByHash(uncle.getParentHash());
 
         if (ancestors != null && (parent == null || !ancestors.contains(parent.getWrappedHash()))) {

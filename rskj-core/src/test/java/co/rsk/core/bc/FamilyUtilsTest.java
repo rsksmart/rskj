@@ -202,10 +202,10 @@ public class FamilyUtilsTest {
         Assert.assertFalse(list.isEmpty());
         Assert.assertEquals(4, list.size());
 
-        Assert.assertTrue(containsHash(uncle11.getHash(), list));
-        Assert.assertTrue(containsHash(uncle12.getHash(), list));
-        Assert.assertTrue(containsHash(uncle21.getHash(), list));
-        Assert.assertTrue(containsHash(uncle22.getHash(), list));
+        Assert.assertTrue(containsHash(uncle11.getHash().getBytes(), list));
+        Assert.assertTrue(containsHash(uncle12.getHash().getBytes(), list));
+        Assert.assertTrue(containsHash(uncle21.getHash().getBytes(), list));
+        Assert.assertTrue(containsHash(uncle22.getHash().getBytes(), list));
     }
 
     @Test
@@ -258,10 +258,11 @@ public class FamilyUtilsTest {
     }
 
     private static boolean containsHash(byte[] hash, List<BlockHeader> headers) {
-        for (BlockHeader header : headers)
-            if (Arrays.equals(hash, header.getHash()))
+        for (BlockHeader header : headers) {
+            if (hash.equals(header.getHash())) {
                 return true;
-
+            }
+        }
         return false;
     }
 }

@@ -146,7 +146,7 @@ public class WorldDslProcessor {
 
         Block best = world.getBlockChain().getStatus().getBestBlock();
 
-        if (Arrays.equals(best.getHash(), block.getHash()))
+        if (best.getHash().equals(block.getHash()))
             return;
 
         throw new DslProcessorException(String.format("Expected best block '%s'", name));

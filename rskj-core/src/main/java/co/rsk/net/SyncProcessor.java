@@ -173,10 +173,10 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @Override
     public long sendBodyRequest(@Nonnull BlockHeader header, NodeID peerId) {
-        logger.trace("Send body request block {} hash {} to peer {}", header.getNumber(), HashUtil.shortHash(header.getHash()), peerId);
+        logger.trace("Send body request block {} hash {} to peer {}", header.getNumber(), HashUtil.shortHash(header.getHash().getBytes()), peerId);
 
         MessageChannel channel = peerStatuses.getPeer(peerId).getMessageChannel();
-        BodyRequestMessage message = new BodyRequestMessage(pendingMessages.getNextRequestId(), header.getHash());
+        BodyRequestMessage message = new BodyRequestMessage(pendingMessages.getNextRequestId(), header.getHash().getBytes());
         sendMessage(channel, message);
         return message.getId();
     }
@@ -332,7 +332,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
         @Override
         public boolean blockHeaderIsValid(@Nonnull BlockHeader header, @Nonnull BlockHeader parentHeader) {
-            if (!ByteUtil.fastEquals(parentHeader.getHash(), header.getParentHash())) {
+            if (!ByteUtil.fastEquals(parentHeader.getHash().getBytes(), header.getParentHash())) {
                 return false;
             }
 

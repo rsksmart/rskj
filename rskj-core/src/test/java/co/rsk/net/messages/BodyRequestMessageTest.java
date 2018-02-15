@@ -28,7 +28,7 @@ import org.junit.Test;
 public class BodyRequestMessageTest {
     @Test
     public void createWithBlockHash() {
-        byte[] hash = new BlockGenerator().getGenesisBlock().getHash();
+        byte[] hash = new BlockGenerator().getGenesisBlock().getHash().getBytes();
         BodyRequestMessage message = new BodyRequestMessage(100, hash);
 
         Assert.assertEquals(100, message.getId());

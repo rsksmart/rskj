@@ -244,28 +244,28 @@ public class ReceiptStoreImplTest {
         TransactionReceipt receipt0 = createReceipt();
         byte[] blockHash0 = Hex.decode("010203040506070809");
 
-        store.add(block1a.getHash(), 3, receipt0);
+        store.add(block1a.getHash().getBytes(), 3, receipt0);
 
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
 
-        store.add(block1b.getHash(), 42, receipt);
+        store.add(block1b.getHash().getBytes(), 42, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), block2a.getHash(), world.getBlockChain().getBlockStore());
+        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), block2a.getHash().getBytes(), world.getBlockChain().getBlockStore());
 
         Assert.assertNotNull(result.getBlockHash());
-        Assert.assertArrayEquals(block1a.getHash(), result.getBlockHash());
+        Assert.assertEquals(block1a.getHash(), result.getBlockHash());
         Assert.assertEquals(3, result.getIndex());
         Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
 
-        result = store.get(receipt.getTransaction().getHash().getBytes(), block2b.getHash(), world.getBlockChain().getBlockStore());
+        result = store.get(receipt.getTransaction().getHash().getBytes(), block2b.getHash().getBytes(), world.getBlockChain().getBlockStore());
 
         Assert.assertNotNull(result.getBlockHash());
-        Assert.assertArrayEquals(block1b.getHash(), result.getBlockHash());
+        Assert.assertEquals(block1b.getHash(), result.getBlockHash());
         Assert.assertEquals(42, result.getIndex());
         Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
 
-        result = store.get(receipt.getTransaction().getHash().getBytes(), genesis.getHash(), world.getBlockChain().getBlockStore());
+        result = store.get(receipt.getTransaction().getHash().getBytes(), genesis.getHash().getBytes(), world.getBlockChain().getBlockStore());
 
         Assert.assertNull(result);
     }

@@ -36,7 +36,7 @@ public class BlockUtils {
     private BlockUtils() { }
 
     public static boolean blockInSomeBlockChain(Block block, Blockchain blockChain) {
-        return blockInSomeBlockChain(block.getHash(), block.getNumber(), blockChain);
+        return blockInSomeBlockChain(block.getHash().getBytes(), block.getNumber(), blockChain);
     }
 
     public static boolean blockInSomeBlockChain(byte[] blockHash, long blockNumber, Blockchain blockChain) {
@@ -94,7 +94,7 @@ public class BlockUtils {
 
                 if (withUncles) {
                     for (BlockHeader uncleHeader : block.getUncleList()) {
-                        nextHashes.add(new ByteArrayWrapper(uncleHeader.getHash()));
+                        nextHashes.add(new ByteArrayWrapper(uncleHeader.getHash().getBytes()));
                     }
                 }
             }
@@ -103,10 +103,10 @@ public class BlockUtils {
     }
 
     public static void addBlockToList(List<Block> blocks, Block block) {
-        byte[] hash = block.getHash();
+        byte[] hash = block.getHash().getBytes();
 
         for (Block b : blocks) {
-            if (Arrays.equals(b.getHash(), hash)) {
+            if (b.getHash().equals(hash)) {
                 return;
             }
         }

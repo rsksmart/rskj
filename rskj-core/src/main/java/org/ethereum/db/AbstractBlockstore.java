@@ -35,7 +35,7 @@ public abstract class AbstractBlockstore implements BlockStore {
         while(branchBlock.getNumber() > blockNumber) {
             branchBlock = getBlockByHash(branchBlock.getParentHash());
         }
-        return branchBlock.getHash();
+        return branchBlock.getHash().getBytes();
     }
 
     @Override

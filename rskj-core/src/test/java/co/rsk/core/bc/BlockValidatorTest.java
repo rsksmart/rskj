@@ -826,7 +826,7 @@ public class BlockValidatorTest {
         Mockito.when(block.getTimestamp())
                 .thenReturn((System.currentTimeMillis() / 1000) + 2*validPeriod);
 
-        Mockito.when(block.getParentHash()).thenReturn(genesis.getHash());
+        Mockito.when(block.getParentHash()).thenReturn(genesis.getHash().getBytes());
 
         BlockValidatorImpl validator = new BlockValidatorBuilder()
                 .addBlockTimeStampValidationRule(validPeriod)

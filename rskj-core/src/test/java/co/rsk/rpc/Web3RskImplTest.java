@@ -59,7 +59,7 @@ public class Web3RskImplTest {
         Mockito.when(networkStateExporter.exportStatus(Mockito.anyString())).thenReturn(true);
 
         Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getHash()).thenReturn(PegTestUtils.createHash3().getBytes());
+        Mockito.when(block.getHash()).thenReturn(PegTestUtils.createHash3());
         Mockito.when(block.getNumber()).thenReturn(1L);
 
         BlockStore blockStore = Mockito.mock(BlockStore.class);
@@ -87,7 +87,7 @@ public class Web3RskImplTest {
         topics.add(new DataWord("c2"));
         Mockito.when(logInfo.getTopics()).thenReturn(topics);
         Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getHash()).thenReturn(new byte[]{1});
+        Mockito.when(block.getHash()).thenReturn(new Keccak256(new byte[]{1}));
         Mockito.when(block.getNumber()).thenReturn(1L);
         int txIndex = 1;
         Transaction tx = Mockito.mock(Transaction.class);

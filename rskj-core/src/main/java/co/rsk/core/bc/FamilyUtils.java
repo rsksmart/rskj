@@ -89,7 +89,7 @@ public class FamilyUtils {
 
         while(it != null && it.getNumber() >= minNumber) {
             for (BlockHeader uncle : it.getUncleList()) {
-                ret.add(new ByteArrayWrapper(uncle.getHash()));
+                ret.add(new ByteArrayWrapper(uncle.getHash().getBytes()));
             }
             it = blockStore.getBlockByHash(it.getParentHash());
         }
@@ -161,11 +161,11 @@ public class FamilyUtils {
                     continue;
                 }
 
-                if (!Arrays.equals(ancestorParent.getHash(), uncle.getParentHash())) {
+                if (!ancestorParent.getHash().equals(uncle.getParentHash())) {
                     continue;
                 }
 
-                if (Arrays.equals(ancestor.getHash(), uncle.getHash())) {
+                if (ancestor.getHash().equals(uncle.getHash())) {
                     continue;
                 }
 

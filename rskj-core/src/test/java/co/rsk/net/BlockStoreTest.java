@@ -57,7 +57,7 @@ public class BlockStoreTest {
 
         store.saveBlock(block);
 
-        Assert.assertSame(block, store.getBlockByHash(block.getHash()));
+        Assert.assertSame(block, store.getBlockByHash(block.getHash().getBytes()));
         Assert.assertEquals(0, store.minimalHeight());
         Assert.assertEquals(0, store.maximumHeight());
     }
@@ -74,7 +74,7 @@ public class BlockStoreTest {
 
         store.removeBlock(block);
 
-        Assert.assertNull(store.getBlockByHash(block.getHash()));
+        Assert.assertNull(store.getBlockByHash(block.getHash().getBytes()));
         Assert.assertTrue(store.getBlocksByNumber(block.getNumber()).isEmpty());
         Assert.assertTrue(store.getBlocksByParentHash(block.getParentHash()).isEmpty());
         Assert.assertEquals(0, store.size());
@@ -98,10 +98,10 @@ public class BlockStoreTest {
 
         store.removeBlock(grandson);
 
-        Assert.assertNull(store.getBlockByHash(grandson.getHash()));
+        Assert.assertNull(store.getBlockByHash(grandson.getHash().getBytes()));
         Assert.assertTrue(store.getBlocksByNumber(grandson.getNumber()).isEmpty());
-        Assert.assertTrue(store.getBlocksByParentHash(son1.getHash()).isEmpty());
-        Assert.assertTrue(store.getBlocksByParentHash(son2.getHash()).isEmpty());
+        Assert.assertTrue(store.getBlocksByParentHash(son1.getHash().getBytes()).isEmpty());
+        Assert.assertTrue(store.getBlocksByParentHash(son2.getHash().getBytes()).isEmpty());
         Assert.assertEquals(2, store.size());
     }
 
@@ -121,7 +121,7 @@ public class BlockStoreTest {
 
         store.removeBlock(adam);
 
-        Assert.assertNull(store.getBlockByHash(adam.getHash()));
+        Assert.assertNull(store.getBlockByHash(adam.getHash().getBytes()));
         Assert.assertEquals(1, store.size());
         Assert.assertEquals(2, store.minimalHeight());
         Assert.assertEquals(2, store.maximumHeight());
@@ -131,19 +131,19 @@ public class BlockStoreTest {
         Assert.assertNotNull(childrenByNumber);
         Assert.assertEquals(1, childrenByNumber.size());
 
-        Assert.assertArrayEquals(eve.getHash(), childrenByNumber.get(0).getHash());
+        Assert.assertEquals(eve.getHash(), childrenByNumber.get(0).getHash());
 
-        List<Block> childrenByParent = store.getBlocksByParentHash(adam.getHash());
+        List<Block> childrenByParent = store.getBlocksByParentHash(adam.getHash().getBytes());
 
         Assert.assertNotNull(childrenByParent);
         Assert.assertEquals(1, childrenByParent.size());
 
-        Assert.assertArrayEquals(eve.getHash(), childrenByParent.get(0).getHash());
+        Assert.assertEquals(eve.getHash(), childrenByParent.get(0).getHash());
 
-        Block daugther = store.getBlockByHash(eve.getHash());
+        Block daugther = store.getBlockByHash(eve.getHash().getBytes());
 
         Assert.assertNotNull(daugther);
-        Assert.assertArrayEquals(eve.getHash(), daugther.getHash());
+        Assert.assertEquals(eve.getHash(), daugther.getHash());
     }
 
     @Test
@@ -198,7 +198,7 @@ public class BlockStoreTest {
         store.saveBlock(block1);
         store.saveBlock(block2);
 
-        List<Block> blocks = store.getBlocksByParentHash(genesis.getHash());
+        List<Block> blocks = store.getBlocksByParentHash(genesis.getHash().getBytes());
 
         Assert.assertTrue(blocks.contains(block1));
         Assert.assertTrue(blocks.contains(block2));
@@ -236,7 +236,7 @@ public class BlockStoreTest {
         );
 
         store.saveHeader(blockHeader);
-        Assert.assertTrue(store.hasHeader(blockHeader.getHash()));
+        Assert.assertTrue(store.hasHeader(blockHeader.getHash().getBytes()));
     }
 
     @Test
@@ -261,7 +261,7 @@ public class BlockStoreTest {
 
         store.saveHeader(blockHeader);
         store.removeHeader(blockHeader);
-        Assert.assertFalse(store.hasHeader(blockHeader.getHash()));
+        Assert.assertFalse(store.hasHeader(blockHeader.getHash().getBytes()));
     }
 }
 

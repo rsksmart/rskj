@@ -186,7 +186,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         BlockHeader header = headers.poll();
         while (header != null) {
             // we double check if the header was not downloaded or obtained by another way
-            if (!syncInformation.isKnownBlock(header.getHash())) {
+            if (!syncInformation.isKnownBlock(header.getHash().getBytes())) {
                 return Optional.of(header);
             }
             header = headers.poll();
@@ -213,7 +213,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
                 BlockHeader header = headers.poll();
                 while (header != null) {
                     // we double check if the header was not downloaded or obtained by another way
-                    if (!syncInformation.isKnownBlock(header.getHash())) {
+                    if (!syncInformation.isKnownBlock(header.getHash().getBytes())) {
                         chunksBeingDownloaded.put(peerId, chunkNumber);
                         segmentsBeingDownloaded.put(peerId, segmentNumber);
                         return Optional.of(header);
@@ -317,7 +317,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
                     // the hash of the start of next chunk
                     e.getValue().get(chunkNumber + 1).getHash(),
                     // the first header of chunk
-                    pendingHeaders.get(chunkNumber).getLast().getHash()))
+                    pendingHeaders.get(chunkNumber).getLast().getHash().getBytes()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }

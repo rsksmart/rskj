@@ -57,7 +57,7 @@ public abstract class HashRateCalculator {
         if (hasBestBlock()) {
             Instant upto = Clock.systemUTC().instant();
             Instant from = upto.minus(period);
-            return this.hashRate(getHeaderElement(blockStore.getBestBlock().getHash()), countCondition, b -> checkBlockTimeRange(b, from, upto));
+            return this.hashRate(getHeaderElement(blockStore.getBestBlock().getHash().getBytes()), countCondition, b -> checkBlockTimeRange(b, from, upto));
         }
         return BigInteger.ZERO;
     }

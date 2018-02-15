@@ -21,6 +21,7 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.HashUtil;
@@ -397,8 +398,8 @@ public class BlockHeader {
         this.extraData = extraData;
     }
 
-    public byte[] getHash() {
-        return HashUtil.keccak256(getEncoded());
+    public Keccak256 getHash() {
+        return new Keccak256(HashUtil.keccak256(getEncoded()));
     }
 
     public byte[] getEncoded() {
@@ -533,7 +534,7 @@ public class BlockHeader {
 
     // TODO added to comply with SerializableObject
 
-    public byte[] getRawHash() {
+    public Keccak256 getRawHash() {
         return getHash();
     }
     // TODO added to comply with SerializableObject
@@ -589,7 +590,7 @@ public class BlockHeader {
     }
 
     public String getShortHash() {
-        return HashUtil.shortHash(getHash());
+        return HashUtil.shortHash(getHash().getBytes());
     }
 
     public String getParentShortHash() {

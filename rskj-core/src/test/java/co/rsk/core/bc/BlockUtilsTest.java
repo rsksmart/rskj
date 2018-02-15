@@ -85,29 +85,29 @@ public class BlockUtilsTest {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
         Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockChain.tryToConnect(block1b));
 
-        Set<ByteArrayWrapper> hashes = BlockUtils.unknownAncestorsHashes(genesis.getHash(), blockChain, store);
+        Set<ByteArrayWrapper> hashes = BlockUtils.unknownAncestorsHashes(genesis.getHash().getBytes(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertTrue(hashes.isEmpty());
 
-        hashes = BlockUtils.unknownAncestorsHashes(block1.getHash(), blockChain, store);
+        hashes = BlockUtils.unknownAncestorsHashes(block1.getHash().getBytes(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertTrue(hashes.isEmpty());
 
-        hashes = BlockUtils.unknownAncestorsHashes(block1b.getHash(), blockChain, store);
+        hashes = BlockUtils.unknownAncestorsHashes(block1b.getHash().getBytes(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertTrue(hashes.isEmpty());
 
-        hashes = BlockUtils.unknownAncestorsHashes(block2.getHash(), blockChain, store);
+        hashes = BlockUtils.unknownAncestorsHashes(block2.getHash().getBytes(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertFalse(hashes.isEmpty());
         Assert.assertEquals(1, hashes.size());
         Assert.assertTrue(hashes.contains(block2.getWrappedHash()));
 
-        hashes = BlockUtils.unknownAncestorsHashes(block3.getHash(), blockChain, store);
+        hashes = BlockUtils.unknownAncestorsHashes(block3.getHash().getBytes(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertFalse(hashes.isEmpty());
@@ -143,30 +143,30 @@ public class BlockUtilsTest {
         blockChain.tryToConnect(block1);
         blockChain.tryToConnect(block1b);
 
-        Set<ByteArrayWrapper> hashes = BlockUtils.unknownAncestorsHashes(genesis.getHash(), blockChain, store);
+        Set<ByteArrayWrapper> hashes = BlockUtils.unknownAncestorsHashes(genesis.getHash().getBytes(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertTrue(hashes.isEmpty());
 
-        hashes = BlockUtils.unknownAncestorsHashes(block1.getHash(), blockChain, store);
+        hashes = BlockUtils.unknownAncestorsHashes(block1.getHash().getBytes(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertTrue(hashes.isEmpty());
 
-        hashes = BlockUtils.unknownAncestorsHashes(block1b.getHash(), blockChain, store);
+        hashes = BlockUtils.unknownAncestorsHashes(block1b.getHash().getBytes(), blockChain, store);
 
         Assert.assertNotNull(hashes);
 
         Assert.assertTrue(hashes.isEmpty());
 
-        hashes = BlockUtils.unknownAncestorsHashes(block2.getHash(), blockChain, store);
+        hashes = BlockUtils.unknownAncestorsHashes(block2.getHash().getBytes(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertFalse(hashes.isEmpty());
         Assert.assertEquals(1, hashes.size());
         Assert.assertTrue(hashes.contains(block2.getWrappedHash()));
 
-        hashes = BlockUtils.unknownAncestorsHashes(block3.getHash(), blockChain, store);
+        hashes = BlockUtils.unknownAncestorsHashes(block3.getHash().getBytes(), blockChain, store);
 
         Assert.assertNotNull(hashes);
         Assert.assertFalse(hashes.isEmpty());

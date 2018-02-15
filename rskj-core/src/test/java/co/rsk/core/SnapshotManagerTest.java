@@ -139,7 +139,7 @@ public class SnapshotManagerTest {
 
         Assert.assertEquals(status.getBestBlockNumber(), newStatus.getBestBlockNumber());
         Assert.assertEquals(status.getTotalDifficulty(), newStatus.getTotalDifficulty());
-        Assert.assertArrayEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
+        Assert.assertEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
 
         for (int k = 11; k <= 30; k++)
             Assert.assertTrue(blockchain.getBlocksByNumber(k).isEmpty());
@@ -180,7 +180,7 @@ public class SnapshotManagerTest {
 
         Assert.assertEquals(status.getBestBlockNumber(), newStatus.getBestBlockNumber());
         Assert.assertEquals(status.getTotalDifficulty(), newStatus.getTotalDifficulty());
-        Assert.assertArrayEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
+        Assert.assertEquals(status.getBestBlock().getHash(), newStatus.getBestBlock().getHash());
 
         Assert.assertTrue(blockchain.getPendingState().getAllPendingTransactions().isEmpty());
         Assert.assertTrue(blockchain.getPendingState().getWireTransactions().isEmpty());
@@ -226,7 +226,7 @@ public class SnapshotManagerTest {
 
         Assert.assertEquals(0, newStatus.getBestBlockNumber());
         Assert.assertEquals(genesisDifficulty, newStatus.getTotalDifficulty());
-        Assert.assertArrayEquals(genesis.getHash(), newStatus.getBestBlock().getHash());
+        Assert.assertEquals(genesis.getHash(), newStatus.getBestBlock().getHash());
 
         Assert.assertTrue(blockchain.getPendingState().getAllPendingTransactions().isEmpty());
         Assert.assertTrue(blockchain.getPendingState().getWireTransactions().isEmpty());

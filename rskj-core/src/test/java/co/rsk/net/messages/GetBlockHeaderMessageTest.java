@@ -28,7 +28,7 @@ import org.junit.Test;
 public class GetBlockHeaderMessageTest {
     @Test
     public void createWithBlockHeaderHash() {
-        final byte[] hash = new BlockGenerator().getGenesisBlock().getHash();
+        final byte[] hash = new BlockGenerator().getGenesisBlock().getHash().getBytes();
         GetBlockHeadersMessage message = new GetBlockHeadersMessage(0, hash, 1, 0, false);
 
         Assert.assertArrayEquals(hash, message.getBlockHash());

@@ -36,7 +36,7 @@ public class NewBlockFilter extends Filter {
 
         @Override
         public String getJsonEventObject() {
-            return toJsonHex(b.getHash());
+            return toJsonHex(b.getHash().getBytes());
         }
     }
 

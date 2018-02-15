@@ -167,7 +167,7 @@ public class BlockChainImpl implements Blockchain {
         }
 
         if (!block.isSealed()) {
-            panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), Hex.toHexString(block.getHash())));
+            panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), block.getHash()));
             block.seal();
         }
 
@@ -195,8 +195,8 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private ImportResult internalTryToConnect(Block block) {
-        if (blockStore.getBlockByHash(block.getHash()) != null &&
-                !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash()))) {
+        if (blockStore.getBlockByHash(block.getHash().getBytes()) != null &&
+                !BlockDifficulty.ZERO.equals(blockStore.getTotalDifficultyForHash(block.getHash().getBytes()))) {
             logger.debug("Block already exist in chain hash: {}, number: {}",
                          block.getShortHash(),
                          block.getNumber());
@@ -232,7 +232,7 @@ public class BlockChainImpl implements Blockchain {
                 return ImportResult.NO_PARENT;
             }
 
-            parentTotalDifficulty = blockStore.getTotalDifficultyForHash(parent.getHash());
+            parentTotalDifficulty = blockStore.getTotalDifficultyForHash(parent.getHash().getBytes());
 
             if (parentTotalDifficulty == null || parentTotalDifficulty.equals(BlockDifficulty.ZERO)) {
                 return ImportResult.NO_PARENT;
@@ -243,7 +243,7 @@ public class BlockChainImpl implements Blockchain {
         if (!isValid(block)) {
             long blockNumber = block.getNumber();
             logger.warn("Invalid block with number: {}", blockNumber);
-            panicProcessor.panic("invalidblock", String.format("Invalid block %s %s", blockNumber, Hex.toHexString(block.getHash())));
+            panicProcessor.panic("invalidblock", String.format("Invalid block %s %s", blockNumber, block.getHash()));
             return ImportResult.INVALID_BLOCK;
         }
 
@@ -480,7 +480,7 @@ public class BlockChainImpl implements Blockchain {
 
     @Override
     public byte[] getBestBlockHash() {
-        return status.getBestBlock().getHash();
+        return status.getBestBlock().getHash().getBytes();
     }
 
     @Override
@@ -518,7 +518,7 @@ public class BlockChainImpl implements Blockchain {
             return;
         }
 
-        receiptStore.saveMultiple(block.getHash(), result.getTransactionReceipts());
+        receiptStore.saveMultiple(block.getHash().getBytes(), result.getTransactionReceipts());
     }
 
     private void processBest(final Block block) {

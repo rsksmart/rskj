@@ -39,7 +39,7 @@ public class RskMessageTest {
     @Test
     public void encodeDecodeGetBlockMessage() {
         Block block = new BlockGenerator().getBlock(1);
-        GetBlockMessage message = new GetBlockMessage(block.getHash());
+        GetBlockMessage message = new GetBlockMessage(block.getHash().getBytes());
         RskMessage rskmessage = new RskMessage(config, message);
 
         byte[] encoded = rskmessage.getEncoded();
@@ -58,13 +58,13 @@ public class RskMessageTest {
         Message resultMessage = result.getMessage();
 
         Assert.assertEquals(MessageType.GET_BLOCK_MESSAGE, resultMessage.getMessageType());
-        Assert.assertArrayEquals(block.getHash(), ((GetBlockMessage)resultMessage).getBlockHash());
+        Assert.assertArrayEquals(block.getHash().getBytes(), ((GetBlockMessage)resultMessage).getBlockHash());
     }
 
     @Test
     public void encodeDecodeStatusMessage() {
         Block block = new BlockGenerator().getBlock(1);
-        Status status = new Status(block.getNumber(), block.getHash());
+        Status status = new Status(block.getNumber(), block.getHash().getBytes());
         StatusMessage message = new StatusMessage(status);
         RskMessage rskmessage = new RskMessage(config, message);
 
@@ -84,7 +84,7 @@ public class RskMessageTest {
         Message resultMessage = result.getMessage();
 
         Assert.assertEquals(MessageType.STATUS_MESSAGE, resultMessage.getMessageType());
-        Assert.assertArrayEquals(block.getHash(), ((StatusMessage)resultMessage).getStatus().getBestBlockHash());
+        Assert.assertEquals(block.getHash(), ((StatusMessage)resultMessage).getStatus().getBestBlockHash());
         Assert.assertEquals(block.getNumber(), ((StatusMessage)resultMessage).getStatus().getBestBlockNumber());
     }
 
@@ -110,7 +110,7 @@ public class RskMessageTest {
         Message resultMessage = result.getMessage();
 
         Assert.assertEquals(MessageType.BLOCK_MESSAGE, resultMessage.getMessageType());
-        Assert.assertArrayEquals(block.getHash(), ((BlockMessage)resultMessage).getBlock().getHash());
+        Assert.assertEquals(block.getHash(), ((BlockMessage)resultMessage).getBlock().getHash());
         Assert.assertArrayEquals(block.getEncoded(), ((BlockMessage)resultMessage).getBlock().getEncoded());
         Assert.assertEquals(block.getNumber(), ((BlockMessage)resultMessage).getBlock().getNumber());
     }
