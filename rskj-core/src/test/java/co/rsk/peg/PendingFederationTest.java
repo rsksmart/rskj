@@ -20,8 +20,6 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.crypto.Sha3Hash;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
@@ -31,12 +29,9 @@ import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -74,7 +69,7 @@ public class PendingFederationTest {
     public void publicKeysImmutable() {
         boolean exception = false;
         try {
-            pendingFederation.getPublicKeys().add(BtcECKey.fromPrivate(BigInteger.valueOf(1000)));
+            pendingFederation.getBtcPublicKeys().add(BtcECKey.fromPrivate(BigInteger.valueOf(1000)));
         } catch (Exception e) {
             exception = true;
         }
@@ -82,7 +77,7 @@ public class PendingFederationTest {
 
         exception = false;
         try {
-            pendingFederation.getPublicKeys().remove(0);
+            pendingFederation.getBtcPublicKeys().remove(0);
         } catch (Exception e) {
             exception = true;
         }

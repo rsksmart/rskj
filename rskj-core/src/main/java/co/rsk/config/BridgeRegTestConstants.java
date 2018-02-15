@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
+import co.rsk.peg.FederationMember;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -50,10 +51,16 @@ public class BridgeRegTestConstants extends BridgeConstants {
         federatorPrivateKeys = Lists.newArrayList(federator0PrivateKey, federator1PrivateKey, federator2PrivateKey);
         List<BtcECKey> federatorPublicKeys = federatorPrivateKeys.stream().map(key -> BtcECKey.fromPublicOnly(key.getPubKey())).collect(Collectors.toList());
 
+        // IMPORTANT: Both BTC and RSK keys are the same.
+        // Change upon implementation of the <INSERT FORK NAME HERE> fork.
+        List<FederationMember> federationMembers = federatorPublicKeys.stream().map(pk -> new FederationMember(
+                pk, ECKey.fromPublicOnly(pk.getPubKey())
+        )).collect(Collectors.toList());
+
         Instant genesisFederationCreatedAt = ZonedDateTime.parse("2016-01-01T00:00:00Z").toInstant();
 
         genesisFederation = new Federation(
-                federatorPublicKeys,
+                federationMembers,
                 genesisFederationCreatedAt,
                 1L,
                 getBtcParams()
