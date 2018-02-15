@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 
 /**
  * Immutable representation of an RSK Pending Federation.
- * A pending federation is one that is being actively
+ * A pending federation is one that is being activelyt
  * voted by the current federation to potentially become
  * the new active federation.
  *
