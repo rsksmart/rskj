@@ -38,8 +38,6 @@ public interface MinerServer {
 
     void setFallbackMining(boolean p);
 
-    void setAutoSwitchBetweenNormalAndFallbackMining(boolean p);
-
     boolean isFallbackMining();
 
     RskAddress getCoinbaseAddress();

@@ -126,10 +126,10 @@ public class MinerServerImpl implements MinerServer {
 
     private final BlockProcessor nodeBlockProcessor;
     private final DifficultyCalculator difficultyCalculator;
+    private final boolean autoSwitchBetweenNormalAndFallbackMining;
 
     private long timeAdjustment;
     private long minimumAcceptableTime;
-    private boolean autoSwitchBetweenNormalAndFallbackMining;
     private boolean fallbackMiningScheduled;
     private final RskSystemProperties config;
 
@@ -157,6 +157,7 @@ public class MinerServerImpl implements MinerServer {
         this.difficultyCalculator = difficultyCalculator;
         this.gasLimitCalculator = gasLimitCalculator;
         this.powRule = powRule;
+        this.autoSwitchBetweenNormalAndFallbackMining = !config.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BlockDifficulty.ZERO);
 
         executor = new BlockExecutor(config, repository, blockchain, blockStore, null);
 
@@ -179,7 +180,6 @@ public class MinerServerImpl implements MinerServer {
         if (secsBetweenFallbackMinedBlocks==0) {
             secsBetweenFallbackMinedBlocks = (config.getBlockchainConfig().getCommonConstants().getDurationLimit());
         }
-        autoSwitchBetweenNormalAndFallbackMining = !config.getBlockchainConfig().getCommonConstants().getFallbackMiningDifficulty().equals(BlockDifficulty.ZERO);
     }
 
     // This method is used for tests
@@ -235,11 +235,6 @@ public class MinerServerImpl implements MinerServer {
                 fallbackMiningTimer = null;
             }
         }
-    }
-
-    @Override
-    public void setAutoSwitchBetweenNormalAndFallbackMining(boolean p) {
-        autoSwitchBetweenNormalAndFallbackMining = p;
     }
 
     public void setFallbackMining(boolean p) {
