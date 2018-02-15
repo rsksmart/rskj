@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import com.google.common.primitives.UnsignedBytes;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.Assert;
@@ -130,14 +131,14 @@ public class BridgeSerializationUtilsTest {
         };
 
         Federation federation = new Federation(
-            Arrays.asList(new BtcECKey[]{
+            FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
                     BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[1]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[2]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[3]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[4]),
                     BtcECKey.fromPublicOnly(publicKeyBytes[5]),
-            }),
+            })),
             Instant.ofEpochMilli(0xabcdef), //
             42L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
@@ -234,14 +235,14 @@ public class BridgeSerializationUtilsTest {
         };
 
         PendingFederation pendingFederation = new PendingFederation(
-                Arrays.asList(new BtcECKey[]{
+                FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey[]{
                         BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[1]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[2]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[3]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[4]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[5]),
-                })
+                }))
         );
 
         byte[] result = BridgeSerializationUtils.serializePendingFederation(pendingFederation);
@@ -592,14 +593,14 @@ public class BridgeSerializationUtilsTest {
         };
 
         Federation federation = new Federation(
-                Arrays.asList(
+                FederationMember.getFederationMembersFromKeys(Arrays.asList(
                         BtcECKey.fromPublicOnly(publicKeyBytes[0]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[1]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[2]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[3]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[4]),
                         BtcECKey.fromPublicOnly(publicKeyBytes[5])
-                ),
+                )),
                 Instant.ofEpochMilli(0xabcdef),
                 42L,
                 networkParms
