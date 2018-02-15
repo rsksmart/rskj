@@ -18,8 +18,7 @@
 
 package co.rsk.mine;
 
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.config.MiningConfig;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
@@ -383,70 +382,32 @@ public class MinerServerImpl implements MinerServer {
 
     @Override
     public SubmitBlockResult submitBitcoinSolution(String blockHashForMergedMining,
-                                                    co.rsk.bitcoinj.core.BtcBlock blockWithHeaderOnly,
-                                                    co.rsk.bitcoinj.core.BtcTransaction coinbase,
+                                                    BtcBlock blockWithHeaderOnly,
+                                                    BtcTransaction coinbase,
                                                     List<String> txHashes) {
-        logger.debug("Received block with hash {} for merged mining", blockHashForMergedMining);
-        co.rsk.bitcoinj.core.PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(blockWithHeaderOnly.getParams(), txHashes);
+        logger.debug("Received solution with hash {} for merged mining", blockHashForMergedMining);
 
-        Block newBlock;
-        Keccak256 key = new Keccak256(TypeConverter.removeZeroX(blockHashForMergedMining));
+        PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(blockWithHeaderOnly.getParams(), txHashes);
 
-        synchronized (lock) {
-            Block workingBlock = blocksWaitingforPoW.get(key);
-
-            if (workingBlock == null) {
-                String message = "Cannot publish block, could not find hash " + blockHashForMergedMining + " in the cache";
-                logger.warn(message);
-
-                return new SubmitBlockResult("ERROR", message);
-            }
-
-            // just in case, remove all references to this block.
-            if (latestBlock == workingBlock) {
-                latestBlock = null;
-                latestblockHashWaitingforPoW = null;
-                currentWork = null;
-            }
-
-            // clone the block
-            newBlock = workingBlock.cloneBlock();
-
-            logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
-        }
-
-        logger.info("Received block {} {}", newBlock.getNumber(), Hex.toHexString(newBlock.getHash()));
-
-        newBlock.setBitcoinMergedMiningHeader(blockWithHeaderOnly.cloneAsHeader().bitcoinSerialize());
-        newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(coinbase.bitcoinSerialize(), true));
-        newBlock.setBitcoinMergedMiningMerkleProof(bitcoinMergedMiningMerkleBranch.bitcoinSerialize());
-        newBlock.seal();
-
-        if (!isValid(newBlock)) {
-            String message = "Invalid block supplied by miner: " + newBlock.getShortHash() + " " + newBlock.getShortHashForMergedMining() + " at height " + newBlock.getNumber();
-            logger.error(message);
-
-            return new SubmitBlockResult("ERROR", message);
-        } else {
-            ImportResult importResult = ethereum.addNewMinedBlock(newBlock);
-
-            logger.info("Mined block import result is {}: {} {} at height {}", importResult, newBlock.getShortHash(), newBlock.getShortHashForMergedMining(), newBlock.getNumber());
-            SubmittedBlockInfo blockInfo = new SubmittedBlockInfo(importResult, newBlock.getHash(), newBlock.getNumber());
-
-            return new SubmitBlockResult("OK", "OK", blockInfo);
-        }
+        return processSolution(blockHashForMergedMining, blockWithHeaderOnly, coinbase, bitcoinMergedMiningMerkleBranch, true);
     }
 
     @Override
-    public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
+    public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock) {
         return submitBitcoinBlock(blockHashForMergedMining, bitcoinMergedMiningBlock, true);
     }
 
-    public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock, boolean lastTag) {
+    public SubmitBlockResult submitBitcoinBlock(String blockHashForMergedMining, BtcBlock bitcoinMergedMiningBlock, boolean lastTag) {
         logger.debug("Received block with hash {} for merged mining", blockHashForMergedMining);
-        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningBlock.getTransactions().get(0);
-        co.rsk.bitcoinj.core.PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(bitcoinMergedMiningBlock);
 
+        //noinspection ConstantConditions
+        BtcTransaction coinbase = bitcoinMergedMiningBlock.getTransactions().get(0);
+        PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(bitcoinMergedMiningBlock);
+
+        return processSolution(blockHashForMergedMining, bitcoinMergedMiningBlock, coinbase, bitcoinMergedMiningMerkleBranch, lastTag);
+    }
+
+    private SubmitBlockResult processSolution(String blockHashForMergedMining, BtcBlock blockWithHeaderOnly, BtcTransaction coinbase, PartialMerkleTree bitcoinMergedMiningMerkleBranch, boolean lastTag) {
         Block newBlock;
         Keccak256 key = new Keccak256(TypeConverter.removeZeroX(blockHashForMergedMining));
 
@@ -475,8 +436,8 @@ public class MinerServerImpl implements MinerServer {
 
         logger.info("Received block {} {}", newBlock.getNumber(), newBlock.getHash());
 
-        newBlock.setBitcoinMergedMiningHeader(bitcoinMergedMiningBlock.cloneAsHeader().bitcoinSerialize());
-        newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(bitcoinMergedMiningCoinbaseTransaction.bitcoinSerialize(), lastTag));
+        newBlock.setBitcoinMergedMiningHeader(blockWithHeaderOnly.cloneAsHeader().bitcoinSerialize());
+        newBlock.setBitcoinMergedMiningCoinbaseTransaction(compressCoinbase(coinbase.bitcoinSerialize(), lastTag));
         newBlock.setBitcoinMergedMiningMerkleProof(bitcoinMergedMiningMerkleBranch.bitcoinSerialize());
         newBlock.seal();
 
@@ -542,7 +503,7 @@ public class MinerServerImpl implements MinerServer {
      * @param txnHashes the bitcoin block that includes all the txs.
      * @return A Partial Merkle Branch in which you can validate the coinbase tx.
      */
-    public static co.rsk.bitcoinj.core.PartialMerkleTree getBitcoinMergedMerkleBranch(NetworkParameters networkParams, List<String> txStringHashes) {
+    public static PartialMerkleTree getBitcoinMergedMerkleBranch(NetworkParameters networkParams, List<String> txStringHashes) {
         List<co.rsk.bitcoinj.core.Sha256Hash> txHashes = txStringHashes.stream().map(Sha256Hash::wrap).collect(Collectors.toList());
 
         /**
@@ -554,7 +515,7 @@ public class MinerServerImpl implements MinerServer {
          */
         byte[] bitvector = new byte[(int) Math.ceil(txHashes.size() / 8.0)];
         co.rsk.bitcoinj.core.Utils.setBitLE(bitvector, 0);
-        return co.rsk.bitcoinj.core.PartialMerkleTree.buildFromLeaves(networkParams, bitvector, txHashes);
+        return PartialMerkleTree.buildFromLeaves(networkParams, bitvector, txHashes);
     }
 
     /**
@@ -564,10 +525,10 @@ public class MinerServerImpl implements MinerServer {
      * @param bitcoinMergedMiningBlock the bitcoin block that includes all the txs.
      * @return A Partial Merkle Branch in which you can validate the coinbase tx.
      */
-    public static co.rsk.bitcoinj.core.PartialMerkleTree getBitcoinMergedMerkleBranch(co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock) {
-        List<co.rsk.bitcoinj.core.BtcTransaction> txs = bitcoinMergedMiningBlock.getTransactions();
+    public static PartialMerkleTree getBitcoinMergedMerkleBranch(BtcBlock bitcoinMergedMiningBlock) {
+        List<BtcTransaction> txs = bitcoinMergedMiningBlock.getTransactions();
         List<co.rsk.bitcoinj.core.Sha256Hash> txHashes = new ArrayList<>(txs.size());
-        for (co.rsk.bitcoinj.core.BtcTransaction tx : txs) {
+        for (BtcTransaction tx : txs) {
             txHashes.add(tx.getHash());
         }
         /**
@@ -579,7 +540,7 @@ public class MinerServerImpl implements MinerServer {
          */
         byte[] bitvector = new byte[(int) Math.ceil(txs.size() / 8.0)];
         co.rsk.bitcoinj.core.Utils.setBitLE(bitvector, 0);
-        return co.rsk.bitcoinj.core.PartialMerkleTree.buildFromLeaves(bitcoinMergedMiningBlock.getParams(), bitvector, txHashes);
+        return PartialMerkleTree.buildFromLeaves(bitcoinMergedMiningBlock.getParams(), bitvector, txHashes);
     }
 
     @Override
