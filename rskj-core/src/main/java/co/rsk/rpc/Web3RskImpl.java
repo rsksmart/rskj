@@ -18,7 +18,9 @@
 
 package co.rsk.rpc;
 
+import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
@@ -49,13 +51,14 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
- * Created by adrian.eidelman on 3/11/2016.
+ * Handles requests for work and block submission.
+ * Full responsibility for processing the request is delegated to MinerServer.
+ *
+ * @author Adrian Eidelman
+ * @author Martin Medina
  */
 public class Web3RskImpl extends Web3Impl {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -90,6 +93,7 @@ public class Web3RskImpl extends Web3Impl {
         if (logger.isDebugEnabled()) {
             logger.debug("mnr_getWork()");
         }
+
         return minerServer.getWork();
     }
 
@@ -98,28 +102,17 @@ public class Web3RskImpl extends Web3Impl {
             logger.debug("mnr_submitBitcoinBlock(): {}", bitcoinBlockHex.length());
         }
 
-        co.rsk.bitcoinj.core.NetworkParameters params = co.rsk.bitcoinj.params.RegTestParams.get();
+        NetworkParameters params = co.rsk.bitcoinj.params.RegTestParams.get();
         new co.rsk.bitcoinj.core.Context(params);
-        byte[] bitcoinBlockByteArray = Hex.decode(bitcoinBlockHex);
-        co.rsk.bitcoinj.core.BtcBlock bitcoinBlock = params.getDefaultSerializer().makeBlock(bitcoinBlockByteArray);
-        co.rsk.bitcoinj.core.BtcTransaction coinbase = bitcoinBlock.getTransactions().get(0);
-        byte[] coinbaseAsByteArray = coinbase.bitcoinSerialize();
-        List<Byte> coinbaseAsByteList = java.util.Arrays.asList(ArrayUtils.toObject(coinbaseAsByteArray));
 
-        List<Byte> rskTagAsByteList = java.util.Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
+        BtcBlock bitcoinBlock = getBtcBlock(bitcoinBlockHex, params);
+        BtcTransaction coinbase = bitcoinBlock.getTransactions().get(0);
 
-        int rskTagPosition = Collections.lastIndexOfSubList(coinbaseAsByteList, rskTagAsByteList);
-        byte[] blockHashForMergedMiningArray = new byte[Keccak256Helper.Size.S256.getValue()/8];
-        System.arraycopy(coinbaseAsByteArray, rskTagPosition+ RskMiningConstants.RSK_TAG.length, blockHashForMergedMiningArray, 0, blockHashForMergedMiningArray.length);
-        String blockHashForMergedMining = TypeConverter.toJsonHex(blockHashForMergedMiningArray);
+        String blockHashForMergedMining = extractBlockHashForMergedMining(coinbase);
 
         SubmitBlockResult result = minerServer.submitBitcoinBlock(blockHashForMergedMining, bitcoinBlock);
 
-        if("OK".equals(result.getStatus())) {
-            return result.getBlockInfo();
-        } else {
-            throw new JsonRpcSubmitBlockException(result.getMessage());
-        }
+        return parseResultAndReturn(result);
     }
 
     public SubmittedBlockInfo mnr_submitBitcoinSolution(String blockHashHex, String blockHeaderHex, String coinbaseHex, String txnHashesHex) {
@@ -127,33 +120,19 @@ public class Web3RskImpl extends Web3Impl {
             logger.debug("mnr_submitBitcoinSolution(): {}, {}, {}, {}", blockHashHex, blockHeaderHex, coinbaseHex, txnHashesHex);
         }
 
-        co.rsk.bitcoinj.core.NetworkParameters params = co.rsk.bitcoinj.params.RegTestParams.get();
+        NetworkParameters params = co.rsk.bitcoinj.params.RegTestParams.get();
         new co.rsk.bitcoinj.core.Context(params);
-        byte[] bitcoinBlockByteArray = Hex.decode(blockHeaderHex);
-        co.rsk.bitcoinj.core.BtcBlock bitcoinBlock = params.getDefaultSerializer().makeBlock(bitcoinBlockByteArray);
-        co.rsk.bitcoinj.core.BtcTransaction coinbase = new BtcTransaction(params, Hex.decode(coinbaseHex));
-        byte[] coinbaseAsByteArray = coinbase.bitcoinSerialize();
-        List<Byte> coinbaseAsByteList = java.util.Arrays.asList(ArrayUtils.toObject(coinbaseAsByteArray));
 
-        List<Byte> rskTagAsByteList = java.util.Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
+        BtcBlock bitcoinBlockWithHeaderOnly = getBtcBlock(blockHeaderHex, params);
+        BtcTransaction coinbase = new BtcTransaction(params, Hex.decode(coinbaseHex));
 
-        int rskTagPosition = Collections.lastIndexOfSubList(coinbaseAsByteList, rskTagAsByteList);
-        byte[] blockHashForMergedMiningArray = new byte[SHA3Helper.Size.S256.getValue()/8];
-        System.arraycopy(coinbaseAsByteArray, rskTagPosition+ RskMiningConstants.RSK_TAG.length, blockHashForMergedMiningArray, 0, blockHashForMergedMiningArray.length);
-        String blockHashForMergedMining = TypeConverter.toJsonHex(blockHashForMergedMiningArray);
+        String blockHashForMergedMining = extractBlockHashForMergedMining(coinbase);
 
-        List<String> txnHashes = new ArrayList<>();
-        for (int start = 0; start < txnHashesHex.length(); start += 64) {
-            txnHashes.add(txnHashesHex.substring(start, Math.min(txnHashesHex.length(), start + 64)));
-        }
+        List<String> txnHashes = parseTransactionHashes(txnHashesHex);
 
-        SubmitBlockResult result = minerServer.submitBitcoinSolution(blockHashForMergedMining, bitcoinBlock, coinbase, txnHashes);
+        SubmitBlockResult result = minerServer.submitBitcoinSolution(blockHashForMergedMining, bitcoinBlockWithHeaderOnly, coinbase, txnHashes);
 
-        if("OK".equals(result.getStatus())) {
-            return result.getBlockInfo();
-        } else {
-            throw new JsonRpcSubmitBlockException(result.getMessage());
-        }
+        return parseResultAndReturn(result);
     }
 
     public void ext_dumpState()  {
@@ -210,4 +189,36 @@ public class Web3RskImpl extends Web3Impl {
         return Hex.toHexString(input).substring(56,64);
     }
 
+    private BtcBlock getBtcBlock(String blockHeaderHex, NetworkParameters params) {
+        byte[] bitcoinBlockByteArray = Hex.decode(blockHeaderHex);
+        return params.getDefaultSerializer().makeBlock(bitcoinBlockByteArray);
+    }
+
+    private String extractBlockHashForMergedMining(BtcTransaction coinbase) {
+        byte[] coinbaseAsByteArray = coinbase.bitcoinSerialize();
+        List<Byte> coinbaseAsByteList = Arrays.asList(ArrayUtils.toObject(coinbaseAsByteArray));
+
+        List<Byte> rskTagAsByteList = Arrays.asList(ArrayUtils.toObject(RskMiningConstants.RSK_TAG));
+
+        int rskTagPosition = Collections.lastIndexOfSubList(coinbaseAsByteList, rskTagAsByteList);
+        byte[] blockHashForMergedMiningArray = new byte[Keccak256Helper.Size.S256.getValue()/8];
+        System.arraycopy(coinbaseAsByteArray, rskTagPosition+ RskMiningConstants.RSK_TAG.length, blockHashForMergedMiningArray, 0, blockHashForMergedMiningArray.length);
+        return TypeConverter.toJsonHex(blockHashForMergedMiningArray);
+    }
+
+    private List<String> parseTransactionHashes(String txnHashesHex) {
+        List<String> txnHashes = new ArrayList<>();
+        for (int start = 0; start < txnHashesHex.length(); start += 64) {
+            txnHashes.add(txnHashesHex.substring(start, Math.min(txnHashesHex.length(), start + 64)));
+        }
+        return txnHashes;
+    }
+
+    private SubmittedBlockInfo parseResultAndReturn(SubmitBlockResult result) {
+        if("OK".equals(result.getStatus())) {
+            return result.getBlockInfo();
+        } else {
+            throw new JsonRpcSubmitBlockException(result.getMessage());
+        }
+    }
 }

@@ -397,7 +397,7 @@ public class MinerServerImpl implements MinerServer {
         co.rsk.bitcoinj.core.PartialMerkleTree bitcoinMergedMiningMerkleBranch = getBitcoinMergedMerkleBranch(blockWithOnlyHeader.getParams(), txHashes);
 
         Block newBlock;
-        Sha3Hash key = new Sha3Hash(TypeConverter.removeZeroX(blockHashForMergedMining));
+        Keccak256 key = new Keccak256(TypeConverter.removeZeroX(blockHashForMergedMining));
 
         synchronized (lock) {
             Block workingBlock = blocksWaitingforPoW.get(key);
