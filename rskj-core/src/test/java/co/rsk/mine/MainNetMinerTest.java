@@ -163,7 +163,7 @@ public class MainNetMinerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(tempConfig, ethereumImpl, blockchain, null,
+        MinerServerImpl minerServer = new MinerServerImpl(tempConfig, ethereumImpl, blockchain, null,
                 blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
                 unclesValidationRule, null, DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(config),
@@ -173,7 +173,7 @@ public class MainNetMinerTest {
             minerServer.setFallbackMining(true);
 
             // Accelerate mining
-            ((MinerServerImpl) minerServer).setSecsBetweenFallbackMinedBlocks(1);
+            minerServer.setSecsBetweenFallbackMinedBlocks(1);
 
             minerServer.start();
 
@@ -182,7 +182,7 @@ public class MainNetMinerTest {
             // boolean result = minerServer.generateFallbackBlock();
             // Assert.assertTrue(result);
             long start = System.currentTimeMillis();
-            while (((MinerServerImpl) minerServer).getFallbackBlocksGenerated() == 0) {
+            while (minerServer.getFallbackBlocksGenerated() == 0) {
 
                 if (System.currentTimeMillis() - start > 20 * 1000) {
                     Assert.assertTrue(false);
@@ -200,7 +200,7 @@ public class MainNetMinerTest {
             //result = minerServer.generateFallbackBlock();
             //Assert.assertTrue(result);
             start = System.currentTimeMillis();
-            while (((MinerServerImpl) minerServer).getFallbackBlocksGenerated() == 1) {
+            while (minerServer.getFallbackBlocksGenerated() == 1) {
                 if (System.currentTimeMillis() - start > 20 * 1000) {
                     Assert.assertTrue(false);
                 }

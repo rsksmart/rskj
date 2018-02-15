@@ -120,7 +120,7 @@ public class MinerServerTest {
 
         BlockUnclesValidationRule unclesValidationRule = Mockito.mock(BlockUnclesValidationRule.class);
         Mockito.when(unclesValidationRule.isValid(Mockito.any())).thenReturn(true);
-        MinerServer minerServer = new MinerServerImpl(config, ethereumImpl, blockchain, null,
+        MinerServerImpl minerServer = new MinerServerImpl(config, ethereumImpl, blockchain, null,
                 blockchain.getPendingState(), blockchain.getRepository(), ConfigUtils.getDefaultMiningConfig(),
                 unclesValidationRule, null, DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(config),
@@ -137,7 +137,7 @@ public class MinerServerTest {
 
         findNonce(work, bitcoinMergedMiningBlock);
         SubmitBlockResult result;
-        result = ((MinerServerImpl) minerServer).submitBitcoinBlock(work2.getBlockHashForMergedMining(), bitcoinMergedMiningBlock,true);
+        result = minerServer.submitBitcoinBlock(work2.getBlockHashForMergedMining(), bitcoinMergedMiningBlock, true);
 
 
         Assert.assertEquals("OK", result.getStatus());
@@ -146,7 +146,7 @@ public class MinerServerTest {
         Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
         // Submit again the save PoW for a different header
-        result = ((MinerServerImpl) minerServer).submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock,false);
+        result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock, false);
 
         Assert.assertEquals("ERROR", result.getStatus());
 
@@ -282,7 +282,7 @@ public class MinerServerTest {
     public void getCurrentTimeInMilliseconds() {
         long current = System.currentTimeMillis() / 1000;
 
-        MinerServer server = new MinerServerImpl(config, null, null, null, null,
+        MinerServerImpl server = new MinerServerImpl(config, null, null, null, null,
                 null, ConfigUtils.getDefaultMiningConfig(), null, null, DIFFICULTY_CALCULATOR,
                 new GasLimitCalculator(config), new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
@@ -296,7 +296,7 @@ public class MinerServerTest {
     public void increaseTime() {
         long current = System.currentTimeMillis() / 1000;
 
-        MinerServer server = new MinerServerImpl(config, null, null, null, null,
+        MinerServerImpl server = new MinerServerImpl(config, null, null, null, null,
                 null, ConfigUtils.getDefaultMiningConfig(), null, null,
                 DIFFICULTY_CALCULATOR, new GasLimitCalculator(config),
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
@@ -313,7 +313,7 @@ public class MinerServerTest {
     public void increaseTimeUsingNegativeNumberHasNoEffect() {
         long current = System.currentTimeMillis() / 1000;
 
-        MinerServer server = new MinerServerImpl(config, null, null, null, null, null, ConfigUtils.getDefaultMiningConfig(), null, null, DIFFICULTY_CALCULATOR, new GasLimitCalculator(config),
+        MinerServerImpl server = new MinerServerImpl(config, null, null, null, null, null, ConfigUtils.getDefaultMiningConfig(), null, null, DIFFICULTY_CALCULATOR, new GasLimitCalculator(config),
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         Assert.assertEquals(0, server.increaseTime(-10));
@@ -327,7 +327,7 @@ public class MinerServerTest {
     public void increaseTimeTwice() {
         long current = System.currentTimeMillis() / 1000;
 
-        MinerServer server = new MinerServerImpl(config, null, null, null, null, null, ConfigUtils.getDefaultMiningConfig(), null, null, DIFFICULTY_CALCULATOR, new GasLimitCalculator(config),
+        MinerServerImpl server = new MinerServerImpl(config, null, null, null, null, null, ConfigUtils.getDefaultMiningConfig(), null, null, DIFFICULTY_CALCULATOR, new GasLimitCalculator(config),
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false));
 
         Assert.assertEquals(5, server.increaseTime(5));

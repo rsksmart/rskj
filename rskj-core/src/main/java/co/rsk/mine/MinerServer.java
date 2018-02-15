@@ -34,15 +34,11 @@ public interface MinerServer {
 
     boolean generateFallbackBlock();
 
-    void setFallbackMining(boolean p);
-
     RskAddress getCoinbaseAddress();
 
     MinerWork getWork();
 
     void buildBlockToMine(@Nonnull Block newParent, boolean createCompetitiveBlock);
-
-    long getCurrentTimeInSeconds();
 
     long increaseTime(long seconds);
 }
