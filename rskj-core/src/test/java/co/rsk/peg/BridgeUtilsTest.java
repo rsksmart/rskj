@@ -318,7 +318,7 @@ public class BridgeUtilsTest {
 
     private Script signWithOneKey(Federation federation, List<BtcECKey> privateKeys, Script inputScript, Sha256Hash sighash, int federatorIndex, BridgeRegTestConstants bridgeConstants) {
         BtcECKey federatorPrivKey = privateKeys.get(federatorIndex);
-        BtcECKey federatorPublicKey = federation.getPublicKeys().get(federatorIndex);
+        BtcECKey federatorPublicKey = federation.getBtcPublicKeys().get(federatorIndex);
 
         BtcECKey.ECDSASignature sig = federatorPrivKey.sign(sighash);
         TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);

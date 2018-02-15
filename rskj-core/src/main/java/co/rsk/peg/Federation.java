@@ -23,7 +23,6 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.db.ByteArrayWrapper;
 
 import java.time.Instant;
@@ -40,8 +39,7 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 public final class Federation {
-    private final List<BtcECKey> publicKeys;
-    private final List<ECKey> rskPublicKeys;
+    private final List<FederationMember> members;
     private final Instant creationTime;
     private final long creationBlockNumber;
     private final NetworkParameters btcParams;
@@ -50,31 +48,39 @@ public final class Federation {
     private Script p2shScript;
     private Address address;
 
-    public Federation(List<BtcECKey> publicKeys, Instant creationTime, long creationBlockNumber,  NetworkParameters btcParams) {
-        // Sorting public keys ensures same order of federators for same public keys
-        // Immutability provides protection unless unwanted modification, thus making the Federation instance
+    public Federation(List<FederationMember> members, Instant creationTime, long creationBlockNumber,  NetworkParameters btcParams) {
+        // Sorting members ensures same order of federation members for same members
+        // Immutability provides protection against unwanted modification, thus making the Federation instance
         // effectively immutable
-        this.publicKeys = Collections.unmodifiableList(publicKeys.stream().sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList()));
-        // using this.publicKeys ensures order in rskPublicKeys
-        this.rskPublicKeys = Collections.unmodifiableList(this.publicKeys.stream()
-                .map(BtcECKey::getPubKey)
-                .map(ECKey::fromPublicOnly)
-                .collect(Collectors.toList()));
+        this.members = Collections.unmodifiableList(members.stream().sorted(FederationMember.BTC_RSK_PUBKEYS_COMPARATOR).collect(Collectors.toList()));
+
         this.creationTime = creationTime;
         this.creationBlockNumber = creationBlockNumber;
         this.btcParams = btcParams;
+
         // Calculated once on-demand
         this.redeemScript = null;
         this.p2shScript = null;
         this.address = null;
     }
 
-    public List<BtcECKey> getPublicKeys() {
-        return publicKeys;
+    public List<FederationMember> getMembers() {
+        // Safe to return members since
+        // both list and instances are immutable
+        return members;
+    }
+
+    public List<BtcECKey> getBtcPublicKeys() {
+        // Copy instances since we don't control
+        // immutability of BtcECKey instances
+        return members.stream()
+                .map(m -> m.getBtcPublicKey().getPubKey())
+                .map(BtcECKey::fromPublicOnly)
+                .collect(Collectors.toList());
     }
 
     public int getNumberOfSignaturesRequired() {
-        return publicKeys.size() / 2 + 1;
+        return members.size() / 2 + 1;
     }
 
     public Instant getCreationTime() {
@@ -91,7 +97,7 @@ public final class Federation {
 
     public Script getRedeemScript() {
         if (redeemScript == null) {
-            redeemScript = ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getPublicKeys());
+            redeemScript = ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
         }
 
         return redeemScript;
@@ -99,7 +105,7 @@ public final class Federation {
 
     public Script getP2SHScript() {
         if (p2shScript == null) {
-            p2shScript = ScriptBuilder.createP2SHOutputScript(getNumberOfSignaturesRequired(), getPublicKeys());
+            p2shScript = ScriptBuilder.createP2SHOutputScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
         }
 
         return p2shScript;
@@ -114,14 +120,14 @@ public final class Federation {
     }
 
     public int getSize() {
-        return publicKeys.size();
+        return members.size();
     }
 
     public Integer getPublicKeyIndex(BtcECKey key) {
-        for (int i = 0; i < publicKeys.size(); i++) {
+        for (int i = 0; i < members.size(); i++) {
             // note that this comparison doesn't take into account
             // key compression
-            if (Arrays.equals(key.getPubKey(), publicKeys.get(i).getPubKey())) {
+            if (Arrays.equals(key.getPubKey(), members.get(i).getBtcPublicKey().getPubKey())) {
                 return i;
             }
         }
@@ -134,13 +140,13 @@ public final class Federation {
     }
 
     public boolean hasMemberWithRskAddress(byte[] address) {
-        return rskPublicKeys.stream()
-                .anyMatch(k -> Arrays.equals(k.getAddress(), address));
+        return members.stream()
+                .anyMatch(m -> Arrays.equals(m.getRskPublicKey().getAddress(), address));
     }
 
     @Override
     public String toString() {
-        return String.format("%d of %d signatures federation", getNumberOfSignaturesRequired(), publicKeys.size());
+        return String.format("%d of %d signatures federation", getNumberOfSignaturesRequired(), members.size());
     }
 
     @Override
@@ -155,21 +161,12 @@ public final class Federation {
 
         Federation otherFederation = (Federation) other;
 
-        ByteArrayWrapper[] thisPublicKeys = this.getPublicKeys().stream()
-                .sorted(BtcECKey.PUBKEY_COMPARATOR)
-                .map(k -> new ByteArrayWrapper(k.getPubKey()))
-                .toArray(ByteArrayWrapper[]::new);
-        ByteArrayWrapper[] otherPublicKeys = otherFederation.getPublicKeys().stream()
-                .sorted(BtcECKey.PUBKEY_COMPARATOR)
-                .map(k -> new ByteArrayWrapper(k.getPubKey()))
-                .toArray(ByteArrayWrapper[]::new);
-
         return this.getNumberOfSignaturesRequired() == otherFederation.getNumberOfSignaturesRequired() &&
                 this.getSize() == otherFederation.getSize() &&
                 this.getCreationTime().equals(otherFederation.getCreationTime()) &&
                 this.creationBlockNumber == otherFederation.creationBlockNumber &&
                 this.btcParams.equals(otherFederation.btcParams) &&
-                Arrays.equals(thisPublicKeys, otherPublicKeys);
+                this.members.equals(otherFederation.members);
     }
 
     @Override
@@ -180,7 +177,7 @@ public final class Federation {
                 getCreationTime(),
                 this.creationBlockNumber,
                 getNumberOfSignaturesRequired(),
-                getPublicKeys()
+                getBtcPublicKeys()
         );
     }
 }

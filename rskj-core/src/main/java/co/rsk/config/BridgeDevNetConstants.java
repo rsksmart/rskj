@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
+import co.rsk.peg.FederationMember;
 import com.google.common.collect.Lists;
 import org.ethereum.crypto.ECKey;
 import org.spongycastle.util.encoders.Hex;
@@ -45,6 +46,12 @@ public class BridgeDevNetConstants extends BridgeConstants {
         List<BtcECKey> genesisFederationPublicKeys = Lists.newArrayList(
                 federator0PublicKey, federator1PublicKey, federator2PublicKey
         );
+
+        // IMPORTANT: Both BTC and RSK keys are the same.
+        // Change upon implementation of the <INSERT FORK NAME HERE> fork.
+        List<FederationMember> federationMembers = genesisFederationPublicKeys.stream().map(pk -> new FederationMember(
+                pk, ECKey.fromPublicOnly(pk.getPubKey())
+        )).collect(Collectors.toList());
         
         // Currently set to:
         // Monday, November 13, 2017 9:00:00 PM GMT-03:00
@@ -53,7 +60,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
         // Expected federation address is:
         // 2NCEo1RdmGDj6MqiipD6DUSerSxKv79FNWX
         genesisFederation = new Federation(
-                genesisFederationPublicKeys,
+                federationMembers,
                 genesisFederationAddressCreatedAt,
                 1L,
                 getBtcParams()

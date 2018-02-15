@@ -81,7 +81,7 @@ public class FederationTest {
     public void publicKeysImmutable() {
         boolean exception = false;
         try {
-            federation.getPublicKeys().add(BtcECKey.fromPrivate(BigInteger.valueOf(1000)));
+            federation.getBtcPublicKeys().add(BtcECKey.fromPrivate(BigInteger.valueOf(1000)));
         } catch (Exception e) {
             exception = true;
         }
@@ -89,7 +89,7 @@ public class FederationTest {
 
         exception = false;
         try {
-            federation.getPublicKeys().remove(0);
+            federation.getBtcPublicKeys().remove(0);
         } catch (Exception e) {
             exception = true;
         }
@@ -287,7 +287,7 @@ public class FederationTest {
 
     @Test
     public void getPublicKeyIndex() {
-        for (int i = 0; i < federation.getPublicKeys().size(); i++) {
+        for (int i = 0; i < federation.getBtcPublicKeys().size(); i++) {
             Assert.assertEquals(i, federation.getPublicKeyIndex(sortedPublicKeys.get(i)).intValue());
         }
         Assert.assertNull(federation.getPublicKeyIndex(BtcECKey.fromPrivate(BigInteger.valueOf(1234))));
@@ -295,7 +295,7 @@ public class FederationTest {
 
     @Test
     public void hasPublicKey() {
-        for (int i = 0; i < federation.getPublicKeys().size(); i++) {
+        for (int i = 0; i < federation.getBtcPublicKeys().size(); i++) {
             Assert.assertTrue(federation.hasPublicKey(sortedPublicKeys.get(i)));
         }
         Assert.assertFalse(federation.hasPublicKey(BtcECKey.fromPrivate(BigInteger.valueOf(1234))));
@@ -303,7 +303,7 @@ public class FederationTest {
 
     @Test
     public void hasMemberWithRskAddress() {
-        for (int i = 0; i < federation.getPublicKeys().size(); i++) {
+        for (int i = 0; i < federation.getBtcPublicKeys().size(); i++) {
             Assert.assertTrue(federation.hasMemberWithRskAddress(rskAddresses.get(i)));
         }
 

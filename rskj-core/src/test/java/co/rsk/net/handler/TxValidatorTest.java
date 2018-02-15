@@ -182,7 +182,7 @@ public class TxValidatorTest {
         Mockito.when(transaction.getGasLimitAsInteger()).thenReturn(BigInteger.ZERO);
         // Federation is the genesis federation ATM
         Federation federation = config.getBlockchainConfig().getCommonConstants().getBridgeConstants().getGenesisFederation();
-        byte[] federator0PubKey = federation.getPublicKeys().get(0).getPubKey();
+        byte[] federator0PubKey = federation.getBtcPublicKeys().get(0).getPubKey();
         Mockito.when(transaction.getKey()).thenReturn(ECKey.fromPublicOnly(federator0PubKey));
         return transaction;
     }
