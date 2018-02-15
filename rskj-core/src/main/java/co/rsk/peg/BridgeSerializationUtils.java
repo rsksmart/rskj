@@ -23,9 +23,11 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
+import org.apache.commons.lang3.tuple.Pair;
+import org.bouncycastle.util.BigIntegers;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.bouncycastle.util.BigIntegers;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
@@ -37,7 +39,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Created by mario on 20/04/17.
@@ -206,7 +207,7 @@ public class BridgeSerializationUtils {
     // list of public keys -> [pubkey1, pubkey2, ..., pubkeyn], sorted
     // using the lexicographical order of the public keys (see BtcECKey.PUBKEY_COMPARATOR).
     public static byte[] serializeFederation(Federation federation) {
-        List<byte[]> publicKeys = federation.getPublicKeys().stream()
+        List<byte[]> publicKeys = federation.getBtcPublicKeys().stream()
                 .sorted(BtcECKey.PUBKEY_COMPARATOR)
                 .map(key -> RLP.encodeElement(key.getPubKey()))
                 .collect(Collectors.toList());
@@ -228,27 +229,40 @@ public class BridgeSerializationUtils {
         byte[] creationTimeBytes = rlpList.get(FEDERATION_CREATION_TIME_INDEX).getRLPData();
         Instant creationTime = Instant.ofEpochMilli(BigIntegers.fromUnsignedByteArray(creationTimeBytes).longValue());
 
-        List<BtcECKey> pubKeys = ((RLPList) rlpList.get(FEDERATION_PUB_KEYS_INDEX)).stream()
-                .map(pubKeyBytes -> BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
+        // IMPORTANT: Both BTC and RSK public keys are the same.
+        // This is for compatibility with the pre <INSERT FORK NAME HERE> fork network.
+        List<FederationMember> federationMembers = ((RLPList) rlpList.get(FEDERATION_PUB_KEYS_INDEX)).stream()
+                .map(pubKeyBytes -> new FederationMember(
+                        BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()),
+                        ECKey.fromPublicOnly(pubKeyBytes.getRLPData())
+                )).collect(Collectors.toList());
+
+        List<ECKey> rskPubKeys = ((RLPList) rlpList.get(FEDERATION_PUB_KEYS_INDEX)).stream()
+                .map(pubKeyBytes -> ECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
                 .collect(Collectors.toList());
 
         byte[] creationBlockNumberBytes = rlpList.get(FEDERATION_CREATION_BLOCK_NUMBER_INDEX).getRLPData();
         long creationBlockNumber = BigIntegers.fromUnsignedByteArray(creationBlockNumberBytes).longValue();
 
-        return new Federation(pubKeys, creationTime, creationBlockNumber, networkParameters);
+        return new Federation(federationMembers, creationTime, creationBlockNumber, networkParameters);
     }
 
     // A pending federation is serialized as the
     // public keys conforming it.
     // See BridgeSerializationUtils::serializePublicKeys
     public static byte[] serializePendingFederation(PendingFederation pendingFederation) {
-        return serializeBtcPublicKeys(pendingFederation.getPublicKeys());
+        return serializeBtcPublicKeys(pendingFederation.getBtcPublicKeys());
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializePendingFederation
     // and serializePublicKeys::deserializePublicKeys
     public static PendingFederation deserializePendingFederation(byte[] data) {
-        return new PendingFederation(deserializeBtcPublicKeys(data));
+        // BTC and RSK keys are the same
+        List<FederationMember> members = deserializeBtcPublicKeys(data).stream().map(pk ->
+            new FederationMember(pk, ECKey.fromPublicOnly(pk.getPubKey()))
+        ).collect(Collectors.toList());
+
+        return new PendingFederation(members);
     }
 
     // An ABI call election is serialized as a list of the votes, like so:
