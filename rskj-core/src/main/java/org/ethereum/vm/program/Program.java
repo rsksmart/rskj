@@ -27,6 +27,7 @@ import co.rsk.remasc.RemascContract;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.BlockchainConfig;
+import org.ethereum.config.BlockchainNetConfig;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -183,8 +184,10 @@ public class Program {
 
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
-    private boolean isLogEnabled;
-    private boolean isGasLogEnabled;
+    private final BlockchainNetConfig blockchainNetConfig;
+
+    boolean isLogEnabled;
+    boolean isGasLogEnabled;
 
     public Program(
             VmConfig config,
@@ -197,6 +200,7 @@ public class Program {
         this.precompiledContracts = precompiledContracts;
         this.blockchainConfig = blockchainConfig;
         this.transaction = transaction;
+        this.blockchainNetConfig = config.getBlockchainNetConfig();
         isLogEnabled = logger.isInfoEnabled();
         isGasLogEnabled = gasLogger.isInfoEnabled();
 
@@ -877,6 +881,7 @@ public class Program {
 
         returnDataBuffer = null; // reset return buffer right before the call
         ProgramResult childResult = null;
+
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
                 this, new DataWord(contextAddress.getBytes()),
                 msg.getType() == MsgType.DELEGATECALL ? getCallerAddress() : getOwnerAddress(),
@@ -1430,6 +1435,10 @@ public class Program {
         return Optional.of(copiedData);
     }
 
+    public BlockchainConfig getBlockchainConfig() {
+        return blockchainConfig;
+    }
+
     static class ByteCodeIterator {
         private byte[] code;
         private int pc;
@@ -1596,10 +1605,6 @@ public class Program {
 
     public boolean byTestingSuite() {
         return invoke.byTestingSuite();
-    }
-
-    public BlockchainConfig getBlockchainConfig() {
-        return blockchainConfig;
     }
 
     public interface ProgramOutListener {
