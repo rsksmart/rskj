@@ -134,6 +134,7 @@ public class TxValidatorTest {
         Assert.assertTrue(vtxs.stream().allMatch(t -> result.contains(t)));
     }
 
+    
     @Test
     public void brigdeTxTest() {
         config.setBlockchainConfig(new RegTestConfig());
