@@ -25,7 +25,9 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Immutable representation of an RSK Federation member.
@@ -38,6 +40,14 @@ import java.util.Objects;
 public final class FederationMember {
     private final BtcECKey btcPublicKey;
     private final ECKey rskPublicKey;
+
+    // To be removed when different keys per federation member feature is implemented. This is just a helper
+    // method to make it easier w.r.t. compatibility with the current approach
+    public static List<FederationMember> getFederationMembersFromKeys(List<BtcECKey> pks) {
+        return pks.stream().map(pk ->
+                new FederationMember(pk, ECKey.fromPublicOnly(pk.getPubKey()))
+        ).collect(Collectors.toList());
+    }
 
     /**
      * Compares federation members based on their underlying keys.

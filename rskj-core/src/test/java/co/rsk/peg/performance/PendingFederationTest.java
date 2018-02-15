@@ -21,15 +21,18 @@ package co.rsk.peg.performance;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.FederationMember;
 import co.rsk.peg.PendingFederation;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
+import org.ethereum.crypto.ECKey;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Ignore
 public class PendingFederationTest extends BridgePerformanceTestCase {
@@ -89,7 +92,9 @@ public class PendingFederationTest extends BridgePerformanceTestCase {
                 for (int i = 0; i < numFederators; i++) {
                     federatorKeys.add(new BtcECKey());
                 }
-                pendingFederation = new PendingFederation(federatorKeys);
+                pendingFederation = new PendingFederation(federatorKeys.stream().map(pk ->
+                        new FederationMember(pk, ECKey.fromPublicOnly(pk.getPubKey())
+                )).collect(Collectors.toList()));
                 provider.setPendingFederation(pendingFederation);
             } else {
                 pendingFederation = null;
