@@ -6,4 +6,9 @@ public class MainNetFirstForkConfig extends MainNetAfterBridgeSyncConfig {
     public boolean isRfs55() {
         return true;
     }
+
+    @Override
+    public boolean isRfs94() {
+        return true;
+    }
 }
