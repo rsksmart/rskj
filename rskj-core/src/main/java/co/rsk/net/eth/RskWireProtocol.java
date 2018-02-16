@@ -340,11 +340,6 @@ public class RskWireProtocol extends EthHandler {
         disconnect(USELESS_PEER);
     }
 
-    @Override
-    public void fetchBodies(List<BlockHeaderWrapper> headers) {
-
-    }
-
     /*************************
      *       Logging         *
      *************************/

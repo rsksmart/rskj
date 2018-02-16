@@ -20,7 +20,6 @@
 package org.ethereum.net.eth.handler;
 
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeaderWrapper;
 import org.ethereum.core.Transaction;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.EthMessage;
@@ -130,13 +129,6 @@ public interface Eth {
      * It should be called when peer don't behave
      */
     void dropConnection();
-
-    /**
-     * Force peer to fetch block bodies
-     *
-     * @param headers related headers
-     */
-    void fetchBodies(List<BlockHeaderWrapper> headers);
 
     // Send eth message directly
     void sendMessage(EthMessage message);
