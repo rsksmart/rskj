@@ -20,6 +20,7 @@
 package org.ethereum.net.eth.handler;
 
 import org.ethereum.core.Block;
+
 import org.ethereum.core.Transaction;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.EthMessage;
